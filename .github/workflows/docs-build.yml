@@ -8,6 +8,7 @@ on:
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
+      - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_documents.py'
       - '.github/workflows/docs-build.yml'
   push:
@@ -19,6 +20,7 @@ on:
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
+      - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_documents.py'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -43,12 +45,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install documentation dependencies
+        run: python -m pip install --disable-pip-version-check reportlab==4.2.5
+
       - name: Generate architecture diagrams
         run: |
           python tools/generate_architecture_diagrams.py
           python tools/generate_timing_detail_diagrams.py
           python tools/generate_data_display_diagrams.py
           python tools/generate_system_model_diagrams.py
+
+      - name: Generate SIP roadmap
+        run: python tools/generate_sip_roadmap.py
 
       - name: Validate generated diagram XML
         run: |
@@ -60,6 +68,8 @@ jobs:
               ET.parse(path)
           for path in Path('bld/docs/architecture').glob('*.svg'):
               ET.parse(path)
+          ET.parse(Path('bld/docs/planning/sip-roadmap.drawio'))
+          ET.parse(Path('bld/docs/planning/sip-roadmap.svg'))
           PY
 
       - name: Generate complete document set
@@ -80,6 +90,11 @@ jobs:
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
           test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
+          test -f bld/docs/planning/README.md
+          test -f bld/docs/planning/sip-roadmap.svg
+          test -f bld/docs/planning/sip-roadmap.drawio
+          test -s bld/docs/planning/sip-roadmap-a3-tiled.pdf
+          test -s bld/docs/planning/sip-roadmap-a2-overview.pdf
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
