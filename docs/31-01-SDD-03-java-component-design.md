@@ -4,37 +4,35 @@ Status: working draft / non-authoritative
 
 Software item: **SI-01 — Headless Timing Application**
 
-This SDD refines the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules. The application architecture itself — including the layered responsibility view — is owned by `31-01-SAD-timing-application-architecture.md`.
+This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
 
-The runtime/source hierarchy is refined where needed in `31-01-SDD-04-runtime-topology-and-configuration.md`. Transport-independent backoffice behaviour is refined in `31-01-SDD-05-backoffice-transport-design.md`.
+The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by `31-01-SAD-timing-application-architecture.md`.
 
-The earlier `timing-api / timing-core / timing-runtime / timing-adapters / timing-testkit / timing-app` proposal, and the later one-artifact-per-layer `domain / core / platform / comm / app` reactor, are both superseded. Both were useful discussion steps but coupled architecture vocabulary too directly to Maven publication boundaries.
+## Why this SDD exists
 
-## Architecture-to-Java mapping rule
+This detail is kept separate because artifact/package choices already affect source layout, dependency checks, public/private composition and release boundaries in the implementation repository.
 
-The SI-01 SAD defines architectural responsibilities such as presentation, application, domain, core runtime support, integrations and platform abstraction.
-
-This SDD defines how those responsibilities may be organised in Java. The central rule is:
+The central rule is:
 
 > **An architecture layer or Java package is not automatically a Maven artifact.**
 
 Keep these concepts distinct:
 
-1. **Architecture responsibility** — semantic ownership and allowed dependency direction, defined primarily by the SAD.
+1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SAD.
 2. **Java package** — cohesive source organisation and enforceable dependency discipline.
-3. **Maven artifact** — a reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
-4. **Application composition** — which framework/infrastructure implementations are assembled into an executable.
-5. **Contract/port** — a semantic boundary owned by the responsibility whose semantics it expresses.
+3. **Maven artifact** — reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
+4. **Application composition** — assembly of framework code and selected implementations into an executable.
+5. **Contract/port** — semantic boundary placed with the responsibility that owns its meaning.
 
-Create a separate artifact only when there is a concrete consumer or independent reuse, dependency, lifecycle, deployment, ownership, public/private, release or versioning boundary. Do not create an artifact merely to mirror an architecture diagram.
+A separate artifact is justified only by a real consumer, reuse, dependency, lifecycle, deployment, ownership, public/private, release or versioning boundary.
 
 ## Initial Maven reactor
 
-The first structure deliberately proves only one reusable library and one executable application:
+The current implementation deliberately proves only one reusable library and one executable application:
 
 ```text
 event-timing-framework/
-├── pom.xml                  event-timing-parent (build/aggregation metadata)
+├── pom.xml                  event-timing-parent
 ├── framework/
 │   └── pom.xml              event-timing-framework.jar
 └── app/
@@ -51,15 +49,15 @@ library:    event-timing-framework
 executable: event-timing-app
 ```
 
-The root parent POM is build metadata, not a deployed product component.
+The root parent POM is build/aggregation metadata, not a deployed product component.
 
 ## Package direction
 
-The layered responsibility model in the SAD is finer-grained than the initial artifact model.
+The SAD responsibility model is finer-grained than the current artifact model.
 
-The first framework skeleton contains marker packages such as `domain`, `core`, `platform` and `comm`. Those packages proved the framework-to-application artifact boundary; they are **not** a commitment that every architectural responsibility must map one-to-one to those four package names.
+The first framework skeleton contains marker packages such as `domain`, `core`, `platform` and `comm`. Those packages proved the framework-to-application artifact boundary; they are not a commitment that every architectural responsibility maps one-to-one to those four names.
 
-As real implementation classes appear, clearer package responsibilities may be justified, for example:
+As real implementation classes appear, package responsibilities may evolve toward areas such as:
 
 ```text
 io.github.brainboxemb.eventtiming.application
@@ -72,20 +70,20 @@ io.github.brainboxemb.eventtiming.platform
 
 Capability-oriented subpackages may exist beneath those responsibilities.
 
-Do not rename or split packages merely to make the source tree match a diagram. Refine the package layout when real classes make semantic ownership and dependency direction testable.
+Do not rename or split packages merely to make the source tree match an architecture diagram. Refine package layout when real classes make semantic ownership and dependency direction testable.
 
 ## Contract placement
 
 Do not collect every interface into one generic top-level `api` package/module.
 
-Place contracts with the responsibility that owns their semantics. Examples:
+Place contracts with the responsibility that owns their semantics. For example:
 
 ```text
 presentation
-  external endpoint/wire-facing contracts and DTO mapping
+  endpoint/wire-facing contracts and DTO mapping
 
 application
-  commands, queries, application-level ports
+  commands, queries and application-level ports
 
 domain
   domain service/model contracts and semantic domain ports
@@ -100,21 +98,21 @@ platform
   execution-environment abstractions
 ```
 
-A dedicated public API/SPI artifact can be introduced later when an external Java consumer needs a stable independently versioned contract.
+A dedicated public API/SPI artifact can be introduced later when an external Java consumer requires a stable independently versioned contract.
 
 ## Internal dependency direction
 
-Java/package dependencies should preserve the architectural ownership defined by the SAD.
+Java/package dependencies should preserve the ownership defined by the SAD.
 
 Working rules:
 
-- presentation packages depend inward on application contracts and do not own application state;
-- application packages own running mutable application state and coordinate domain/core/integration contracts;
+- presentation depends inward on application contracts and does not own application state;
+- application owns running mutable application state and coordinates domain/core/integration contracts;
 - domain services/rules do not depend on presentation or concrete integrations;
-- core packages supply runtime mechanics and may depend on stable domain/application abstractions where required;
+- core supplies reusable runtime mechanics without becoming a second owner of application/domain behaviour;
 - concrete integrations depend inward on application/domain ports and may use platform facilities;
-- platform packages do not depend on event-timing domain/application behaviour;
-- the executable composition package may depend on the complete supported framework surface and selected external libraries.
+- platform packages do not depend on event-timing application/domain behaviour;
+- executable composition may depend on the complete supported framework surface and selected external libraries.
 
 Circular package dependencies are not an acceptable substitute for choosing semantic ownership.
 
@@ -128,7 +126,7 @@ Its package root remains:
 io.github.brainboxemb.eventtiming.app
 ```
 
-The executable should stay a composition/startup boundary:
+The executable stays primarily a composition/startup boundary:
 
 ```text
 main()
@@ -140,30 +138,20 @@ main()
   -> install shutdown handling
 ```
 
-Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called “application”.
+Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`.
 
-## Derived applications
+## Derived consumers
 
-The framework is deliberately not tied to one executable topology.
-
-Plausible consumers include:
+The framework is deliberately not tied to one executable topology. Plausible consumers include:
 
 ```text
 single-system application
-  compose exactly one TimingSystemInstance
-
-multi-system application
-  compose 1..X TimingSystemInstance objects
-  add registry/routing/aggregate status where required
-
-simulation/reference application
-  inject deterministic integrations and platform facilities
-
+multi-system / simulation application
+public reference/test application
 private/product application
-  inject proprietary/product-specific components
 ```
 
-These are consumer examples, not modules to create now.
+These are consumer possibilities, not modules to create now.
 
 ## Public/private composition
 
@@ -175,17 +163,11 @@ Expected private/product-specific areas may include:
 - production backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
-Prefer normal composition and constructor/factory injection.
+Prefer normal composition and constructor/factory injection. Do not introduce runtime plugin discovery unless a real requirement appears.
 
-If true runtime plugin discovery later becomes a requirement, evaluate that separately rather than building it into the first framework structure.
+## Possible future artifacts
 
-## Tests and possible future libraries
-
-Ordinary tests stay next to the code/application they verify.
-
-Do not create a reusable `testkit` artifact until a real second consumer needs reusable test components across artifact/repository boundaries.
-
-Possible future artifacts, only when justified by concrete consumers, include:
+Create future artifacts only when a real boundary requires them. Candidates might eventually include:
 
 - RabbitMQ integration;
 - Linux/Raspberry-Pi platform integration;
@@ -193,30 +175,25 @@ Possible future artifacts, only when justified by concrete consumers, include:
 - stable Java API/SPI;
 - reusable test support.
 
-Splitting later is preferred over speculative libraries, provided package/responsibility boundaries stay clean enough to extract.
+Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
 
 ## Architecture/dependency checks
 
-Useful future automated rules may include:
+Useful automated rules may include:
 
 - presentation packages do not own or persist application state;
 - domain services do not reference presentation or concrete integration classes;
-- platform packages do not depend on event-timing domain/application behaviour;
-- protocol/wire classes stay with their presentation/integration capability;
-- semantic domain contracts are not moved into transport packages merely because transport code uses them;
-- `RegistrationSequence` remains registration-source scoped;
-- registration and ready-team remain separate capabilities;
-- `RegistrationService` may delegate start-time-specific work to `StartTimeService`; no separate active start-procedure service is assumed;
-- backoffice start-time/reference updates enter through integration -> application flow before invoking domain services;
+- platform packages do not depend on event-timing application/domain behaviour;
+- wire/protocol classes stay with their presentation/integration capability;
+- semantic contracts are not moved into transport packages merely because transport code uses them;
 - public code contains no real deployment mappings or proprietary values;
-- the executable application consumes `event-timing-framework` rather than copying/forking framework source.
+- the executable consumes `event-timing-framework` rather than copying/forking framework source.
 
 ## Open detailed-design decisions
 
 - exact package granularity after real application/domain classes exist;
-- whether final package names use `presentation` / `integration` explicitly or capability-oriented subpackages;
-- exact reusable boundary between single-instance core mechanics and multi-system application orchestration;
-- which low-level hardware concerns are platform primitives versus integration implementations;
+- final package naming where capability-oriented packages prove clearer than layer names;
+- exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - how applications select/inject presentation/integration/platform implementations;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework and private implementations;
