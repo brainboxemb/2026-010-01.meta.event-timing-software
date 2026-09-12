@@ -14,7 +14,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/00-brainstorm.md`](docs/00-brainstorm.md) — working area for ideas, questions, alternatives, and early software thoughts.
 - [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
-- [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts/terminology such as registration-system IDs, locations, source sequences, team/tag identity and reference data.
+- [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts/terminology such as registration assets/sources, locations, source sequences, team/tag identity and reference data, while keeping real deployment identities private.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level phased software development plan.
 - [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence, scope and exit criteria.
 - [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — common development environment, GitHub/AI workflow and repository conventions.
@@ -23,7 +23,8 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/31-01-SDD-01-timing-system-design.md`](docs/31-01-SDD-01-timing-system-design.md) — software item 01 detailed timing-system design.
 - [`docs/31-01-SDD-02-data-and-display-design.md`](docs/31-01-SDD-02-data-and-display-design.md) — software item 01 detailed data/display design.
 - [`docs/31-01-SDD-03-java-component-design.md`](docs/31-01-SDD-03-java-component-design.md) — software item 01 Java/Maven component/package design.
-- [`docs/31-01-SDD-04-runtime-topology-and-configuration.md`](docs/31-01-SDD-04-runtime-topology-and-configuration.md) — software item 01 runtime hierarchy, registration-source/antenna mapping and settings-driven composition.
+- [`docs/31-01-SDD-04-runtime-topology-and-configuration.md`](docs/31-01-SDD-04-runtime-topology-and-configuration.md) — software item 01 runtime hierarchy, registration asset/source/antenna topology and settings-driven composition.
+- [`docs/31-01-SDD-05-backoffice-rabbitmq-design.md`](docs/31-01-SDD-05-backoffice-rabbitmq-design.md) — software item 01 RabbitMQ connection, per-source messaging, outbox/recovery and integration-test design.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
 - [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy including Pi Zero/resource and fault-injection evidence.
