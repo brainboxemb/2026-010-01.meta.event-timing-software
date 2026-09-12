@@ -16,18 +16,24 @@ Software ideas, possible requirements, technology choices, architecture options,
 
 Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
 
+Working drafts such as the software plan, software planning, and architecture sketch may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
+
 ## Sources of truth
 
 Use these documents for their specific roles:
 
 ```text
-README.md             repository purpose and navigation
-AGENTS.md             persistent agent rules
-docs/agent-plan.md    phased work plan and progress
-docs/handoff.md       reusable session handoff
-docs/brainstorm.md    ideas, questions, alternatives, early thinking
-reference/            collected source material and its index
-CHANGELOG.md          notable repository changes
+README.md                         repository purpose and navigation
+AGENTS.md                         persistent agent rules
+docs/agent-plan.md                meta-project/agent work plan and progress
+docs/handoff.md                   reusable session handoff
+docs/brainstorm.md                ideas, candidate requirements, alternatives, early thinking
+docs/software-architecture-sketch.md
+                                  non-authoritative architecture working draft
+docs/software-plan.md             staged high-level software evolution
+docs/software-planning.md         current concrete software increment sequence
+reference/                        collected source material and its index
+CHANGELOG.md                      notable repository changes
 ```
 
 When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them.
@@ -36,10 +42,12 @@ When documents disagree, prefer the more specific source for that topic. Do not 
 
 1. Read `AGENTS.md` and `docs/agent-plan.md` before substantial work.
 2. Read `docs/handoff.md` when continuing work from another session.
-3. Capture new software ideas in `docs/brainstorm.md` before turning them into decisions.
-4. Keep research evidence traceable to its source.
-5. Update the plan when a step is completed, materially changed, or blocked.
-6. Keep implementation details in the future implementation repository rather than duplicating them here.
+3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
+4. Capture new software ideas in `docs/brainstorm.md` before turning them into decisions.
+5. Use `docs/software-plan.md` for high-level staged software evolution and `docs/software-planning.md` for the current increment sequence.
+6. Keep research evidence traceable to its source.
+7. Update the plan when a step is completed, materially changed, or blocked.
+8. Keep implementation details in the future implementation repository rather than duplicating them here.
 
 ## Pull-request-first workflow
 
