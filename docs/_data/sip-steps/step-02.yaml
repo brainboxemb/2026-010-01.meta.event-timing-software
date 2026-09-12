@@ -3,8 +3,9 @@ title: Framework repository skeleton
 state: active
 summary: >-
   SI-01 is established as the first real consumer of the reusable Java toolchain.
-  Complete Step 2 with the minimal startup/shutdown lifecycle and the remaining
-  architecture/dependency checks.
+  Complete Step 2 by making the current framework/app skeleton demonstrably runnable:
+  build it, start it, show build identity, and shut it down cleanly. Keep
+  architecture/dependency rules as exit evidence rather than the headline demo.
 documents:
   - name: 13-SDE
     title: Java build/test toolchain
@@ -123,7 +124,7 @@ activities:
   - id: A05
     lane: application
     kind: implementation
-    title: Minimal startup/shutdown lifecycle
+    title: Minimal runnable app lifecycle
     state: next
     estimate_project_days: 0.5
     depends_on: [A04]
