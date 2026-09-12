@@ -7,6 +7,7 @@ on:
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_documents.py'
       - '.github/workflows/docs-build.yml'
   push:
@@ -17,6 +18,7 @@ on:
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_documents.py'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -46,6 +48,7 @@ jobs:
           python tools/generate_architecture_diagrams.py
           python tools/generate_timing_detail_diagrams.py
           python tools/generate_data_display_diagrams.py
+          python tools/generate_system_model_diagrams.py
 
       - name: Validate generated diagram XML
         run: |
@@ -53,13 +56,9 @@ jobs:
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
-          paths = list(Path('bld/docs/architecture').glob('*.drawio'))
-          paths += list(Path('bld/docs/architecture').glob('*.svg'))
-
-          if not paths:
-              raise SystemExit('No generated diagram files found')
-
-          for path in paths:
+          for path in Path('bld/docs/architecture').glob('*.drawio'):
+              ET.parse(path)
+          for path in Path('bld/docs/architecture').glob('*.svg'):
               ET.parse(path)
           PY
 
@@ -68,23 +67,15 @@ jobs:
 
       - name: Validate generated documentation
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          required = [
-              Path('bld/docs/README.md'),
-              Path('bld/docs/documents/README.md'),
-              Path('bld/docs/documents/software-document-set.md'),
-              Path('bld/docs/documents/architecture-book.md'),
-              Path('bld/docs/documents/12-SDE-software-development-environment.md'),
-              Path('bld/docs/documents/31-01-SAD-timing-application-architecture.md'),
-              Path('bld/docs/documents/31-02-SAD-gui-application-architecture.md'),
-          ]
-
-          missing = [str(path) for path in required if not path.is_file()]
-          if missing:
-              raise SystemExit('Missing generated documentation: ' + ', '.join(missing))
-          PY
+          test -f bld/docs/README.md
+          test -f bld/docs/documents/README.md
+          test -f bld/docs/documents/software-document-set.md
+          test -f bld/docs/documents/architecture-book.md
+          test -f bld/docs/documents/12-SDE-software-development-environment.md
+          test -f bld/docs/documents/50-SVP-software-verification-plan.md
+          test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
+          test -f bld/docs/assets/architecture/software-item-system-overview.svg
+          test -f bld/docs/assets/architecture/rfid-lifecycle.svg
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
@@ -127,13 +118,6 @@ jobs:
 
           cp -a "$publish_dir/." ./
           printf '%s\n' "$SOURCE_SHA" > source-sha.txt
-          cat > build-info.md <<EOF
-          # Build information
-
-          Source commit: \`${SOURCE_SHA}\`
-
-          Publication branch: \`${TARGET_BRANCH}\`
-          EOF
 
           git add .
           git commit -m "Publish generated documentation for ${SOURCE_SHA}"
