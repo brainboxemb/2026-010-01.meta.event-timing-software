@@ -52,25 +52,26 @@ def software_item_overview() -> Diagram:
 
 def runtime_topology() -> Diagram:
     nodes = [
-        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 510, 70, 390, 90, "core"),
+        Node("settings", "External settings/configuration\\ninstance → source → antenna bindings", 40, 70, 400, 90, "interface"),
+        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 540, 70, 390, 90, "core"),
+        Node("backoffice", "Backoffice / integration test\\nall source streams + reference data", 1030, 70, 390, 90, "external"),
 
-        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 160, 245, 390, 90, "service"),
-        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 860, 245, 390, 90, "service"),
+        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 170, 280, 390, 90, "service"),
+        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 870, 280, 390, 90, "service"),
 
-        Node("rsa", "RegistrationSystem A\\nsequence A • own registration file", 60, 445, 370, 95, "queue"),
-        Node("rsb", "RegistrationSystem B / name FINISH\\nsequence B • own registration file", 450, 445, 420, 95, "queue"),
-        Node("rsc", "RegistrationSystem C\\nsequence C • own registration file", 930, 445, 370, 95, "queue"),
+        Node("rsa", "RegistrationSystem A\\nsequence A • own registration file", 60, 500, 370, 95, "queue"),
+        Node("rsb", "RegistrationSystem B / name FINISH\\nsequence B • own registration file", 455, 500, 430, 95, "queue"),
+        Node("rsc", "RegistrationSystem C\\nsequence C • own registration file", 970, 500, 370, 95, "queue"),
 
-        Node("a1", "RS-A-ANT1", 20, 660, 220, 70, "external"),
-        Node("f1", "RS-FINISH-ANT1", 335, 650, 260, 80, "external"),
-        Node("f2", "RS-FINISH-ANT2", 625, 650, 260, 80, "external"),
-        Node("c1", "RS-C-ANT1\\nstub or real adapter", 1020, 650, 260, 80, "external"),
-
-        Node("settings", "External settings/configuration\\ninstance → registration source → antenna binding", 410, 825, 600, 95, "interface"),
-        Node("backoffice", "Backoffice integration test\\nall source streams from one application", 460, 1010, 500, 90, "external"),
+        Node("a1", "RS-A-ANT1", 90, 735, 220, 70, "external"),
+        Node("f1", "RS-FINISH-ANT1", 390, 725, 260, 80, "external"),
+        Node("f2", "RS-FINISH-ANT2", 690, 725, 260, 80, "external"),
+        Node("c1", "RS-C-ANT1\\nstub or real adapter", 1050, 725, 260, 80, "external"),
     ]
 
     edges = [
+        Edge("settings", "app", "build topology", True),
+        Edge("app", "backoffice", "sync / test complete field", True),
         Edge("app", "sys1"),
         Edge("app", "sys2"),
         Edge("sys1", "rsa", "1..X sources"),
@@ -80,17 +81,13 @@ def runtime_topology() -> Diagram:
         Edge("rsb", "f1", "1..X antennas"),
         Edge("rsb", "f2"),
         Edge("rsc", "c1", "1..X antennas"),
-        Edge("settings", "app", "build topology", True),
-        Edge("rsa", "backoffice", "ordered source stream", True),
-        Edge("rsb", "backoffice", "ordered source stream", True),
-        Edge("rsc", "backoffice", "ordered source stream", True),
     ]
 
     return Diagram(
         "runtime-registration-topology",
         "Configurable runtime topology — instances, registration sources and antennas",
-        1400,
-        1160,
+        1480,
+        900,
         nodes,
         edges,
     )
