@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-Software item: **01 — Headless Timing Application**
+Software item: **SI-01 — Headless Timing Application**
 
 This Software Architecture Document describes the architecture of software item 01: the headless Java timing application. It sits below the system-level architecture in `30-SSAD-software-system-architecture.md` and above the detailed design documents that share the `31-01` software-item prefix.
 
@@ -44,50 +44,106 @@ The timing application is the headless system authority for local timing/registr
 
 Presentation clients such as the desktop GUI and browser/iPad application are separate software items and do not own authoritative timing-domain state.
 
-## Application decomposition
+## Layered application architecture
+
+The primary SI-01 application-architecture view is a responsibility/layer view. It describes architectural ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
+
+![SI-01 layered architecture](../../../raw/prod/docs/assets/architecture/layered-architecture.svg)
+
+The source for this view is `docs/_diagrams/layered-architecture.yaml`.
+
+### Presentation
+
+Presentation exposes application behaviour and current state to external clients through concerns such as:
 
 ```text
-Timing Application
-  |
-  +-- bootstrap / composition root
-  |
-  +-- external interface adapters
-  |     local console
-  |     remote shell
-  |     HTTP / JSON
-  |     WebSocket
-  |
-  +-- runtime / orchestration
-  |     TimingSystemInstance registry
-  |     routing
-  |     scheduling
-  |     serialized execution
-  |     runtime status aggregation
-  |
-  +-- application/domain capabilities
-  |     registration
-  |     registration asset/source routing
-  |     ready-team
-  |     RFID processing
-  |     start procedure
-  |     penalties
-  |     reference data
-  |     display model
-  |     backoffice semantic/outbox behaviour
-  |     status
-  |
-  +-- ports / contracts
-        persistence / backup
-        RFID
-        CAN
-        display
-        backoffice semantic transport boundary
-        clock
-        settings / secrets
-        platform capabilities
+HTTP / JSON
+WebSocket
+local console
+remote shell
+protocol/DTO mapping for those interfaces
 ```
 
-Concrete device, transport and platform implementations remain outside the core behaviour.
+Presentation translates external requests into application commands/queries and application status/events into external representations. It does not own running application state.
+
+### Application
+
+The application responsibility owns running application state and coordinates use cases. Representative concerns include:
+
+```text
+TimingSystemInstance state
+registration/source ledgers and current runtime state
+commands / queries / workflows
+status management and aggregation
+immutable status snapshots
+single-system or multi-system application coordination
+```
+
+The application responsibility invokes domain services and coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
+
+### Domain
+
+The domain responsibility owns reusable event-timing rules, services, entities and value semantics. Representative services currently include:
+
+```text
+RegistrationService
+StartTimeService
+ReadyTeamService
+ReferenceDataService
+```
+
+Representative domain concepts include `TimingSystemInstance` identity/value concepts, `RegistrationAsset`, `RegistrationSource`, `RegistrationSequence`, registration observations/results, start-time values, ready-team values and reference-data value objects.
+
+`RegistrationSequence` remains registration-source scoped. Product/deployment-specific policy does not automatically belong in the reusable domain model.
+
+### Core runtime support
+
+Core runtime support provides reusable execution mechanics that let application/domain behaviour run predictably, for example:
+
+```text
+serialized execution
+lifecycle mechanics
+routing primitives
+scheduling
+command/event dispatch mechanics
+```
+
+Core runtime support is not a second owner of domain behaviour or application state.
+
+### Infrastructure / integration
+
+Integration implementations connect SI-01 to external systems/devices and persistence mechanisms, including:
+
+```text
+persistence / file backup and restore
+backoffice socket / RabbitMQ integration
+RFID integration
+CAN integration
+display integration
+```
+
+The distinction from presentation is semantic: presentation is how external clients inspect/control SI-01, while integrations are how SI-01 interacts with backoffice, devices and persistence.
+
+### Platform
+
+Platform abstractions isolate execution-environment and low-level facilities such as:
+
+```text
+Clock / time source
+filesystem/path primitives
+executor/thread primitives
+process/runtime information
+network/OS primitives
+low-level platform/device primitives where portability requires them
+```
+
+Platform is not a catch-all location for HTTP, RabbitMQ or device/domain protocols.
+
+### Cross-cutting concerns
+
+Cross-cutting concerns may span multiple responsibilities without becoming owners of domain/application state. Examples include logging, configuration, diagnostics and build/version identity.
+
+Detailed Java package, Maven artifact and contract placement that implements this architecture belongs in `31-01-SDD-03-java-component-design.md`.
 
 ## Runtime hierarchy
 
@@ -193,7 +249,7 @@ application/domain
             +--> private/proprietary adapter/codec where needed
 ```
 
-The lightweight socket adapter exists specifically so multi-process/network system behaviour can be tested without RabbitMQ or Docker. It uses a synthetic/public test protocol and must not expose or copy proprietary production serialization.
+The lightweight socket adapter exists so multi-process/network system behaviour can be tested without RabbitMQ or Docker. It uses a synthetic/public test protocol and must not expose or copy proprietary production serialization.
 
 The RabbitMQ adapter provides the production-shaped broker transport. Several registration sources may have independent inbound consumers/routing while sharing one physical broker connection.
 
@@ -201,20 +257,13 @@ Detailed backoffice design belongs in `31-01-SDD-05-backoffice-transport-design.
 
 ## Hardware and platform abstraction
 
-Core code depends on public contracts rather than concrete libraries. Important port families include RFID, CAN, display, backoffice, clock, settings/secrets, persistence/backup and platform capabilities.
+Core/application/domain code depends on public contracts rather than concrete device libraries. Important port families include RFID, CAN, display, backoffice, clock, settings/secrets, persistence/backup and platform capabilities.
 
-Those same public contracts must support:
-
-- public/default implementations;
-- development/test stubs;
-- lightweight socket/network test adapters;
-- private/proprietary production implementations.
+Those contracts must support public/default implementations, development/test stubs, lightweight socket/network test adapters and private/proprietary production implementations.
 
 ## Public/private extension model
 
 Private repositories may provide production RFID antenna control, encrypted RFID protocol/decryption, product-specific communication protocols, production asset/source mappings and proprietary backoffice message codecs. The public framework must compile and test without those private implementations or identities.
-
-The detailed Maven/module/package design belongs in `31-01-SDD-03-java-component-design.md`.
 
 ## System-test architecture direction
 
@@ -245,7 +294,7 @@ Current baseline decisions/directions include:
 - Java SE 8 initially, driven by mandatory original Raspberry Pi Zero support;
 - Java 11 as an evidence-driven future upgrade candidate;
 - externally configured settings/credentials/topology/transport selection;
-- Python-generated architecture documentation;
+- generated architecture documentation;
 - Docker/Compose only where real external integration services such as RabbitMQ materially improve verification;
 - generated architecture documents/diagrams published to `dev/pr-<N>/docs` and `prod/docs`.
 
@@ -277,6 +326,8 @@ A system-level operator-GUI IDD may define the user-facing screen/interaction co
 - `31-01-SDD-03-java-component-design.md`
 - `31-01-SDD-04-runtime-topology-and-configuration.md`
 - `31-01-SDD-05-backoffice-transport-design.md`
+
+These documents are refinements, not an instruction to split every architectural responsibility into a separate detailed-design document.
 
 ## Open architecture questions
 
