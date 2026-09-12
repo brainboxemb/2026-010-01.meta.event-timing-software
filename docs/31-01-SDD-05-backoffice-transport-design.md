@@ -4,18 +4,20 @@ Status: working draft / non-authoritative
 
 Software item: **SI-01 — Headless Timing Application**
 
-This SDD defines the transport-independent backoffice boundary and two intended transport adapters:
+This SDD defines the transport-independent backoffice boundary and two intended communication implementations:
 
-- a lightweight **socket adapter** for automated loop/network system tests;
-- a **RabbitMQ adapter** for production-shaped integration and deployment.
+- a lightweight **socket implementation** for automated loop/network system tests;
+- a **RabbitMQ implementation** for production-shaped integration and deployment.
 
 The application/domain model must not depend on RabbitMQ classes, socket classes, broker names, or the proprietary production message format.
 
 Concrete production broker endpoint names, credentials, queue/exchange names, routing keys, external source IDs and message schemas are deployment/proprietary information and are intentionally excluded from this public repository.
 
+Package/artifact placement follows `31-01-SDD-03-java-component-design.md`: a transport implementation can initially live under the framework `comm` packages and becomes a separate Maven library only when independent reuse, dependencies, lifecycle, ownership or release boundaries justify that split.
+
 ## Architectural goal
 
-Backoffice semantics and transport are separate layers:
+Backoffice semantics and transport are separate responsibilities:
 
 ```text
 Timing/domain behaviour
@@ -29,18 +31,18 @@ Backoffice semantic boundary
        +-----------------------+
        |                       |
        v                       v
-SocketBackofficeAdapter    RabbitMqBackofficeAdapter
+SocketBackoffice           RabbitMqBackoffice
 system-test transport      production-shaped transport
        |                       |
        v                       v
 socket test peer           RabbitMQ broker
 ```
 
-Both adapters must preserve the same logical `RegistrationSource` identity and feed the same serialized application/domain path.
+Both implementations must preserve the same logical `RegistrationSource` identity and feed the same serialized application/domain path.
 
 ## Semantic backoffice boundary
 
-The public application/core layer should work with semantic source-aware messages, not transport destinations.
+The reusable framework/domain side should work with semantic source-aware messages, not transport destinations.
 
 Illustrative contracts:
 
@@ -55,6 +57,8 @@ interface BackofficeInboundListener {
 ```
 
 `BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public framework.
+
+These semantic contracts belong with the domain/backoffice responsibility that owns their meaning. Transport/session/wire types belong under `comm`.
 
 The final system-level backoffice IDD can define the semantic obligations that both sides must fulfil while transport-specific/private specifications define their actual encoding where required.
 
@@ -76,9 +80,9 @@ source-02
 
 This logical separation remains the same regardless of whether the selected transport is an in-memory stub, socket connection, or RabbitMQ.
 
-## Transport selection
+## Transport selection and composition
 
-Backoffice transport is selected through settings/composition rather than compiled into domain code.
+Backoffice transport is selected through settings/application composition rather than compiled into domain code.
 
 Pseudo-configuration:
 
@@ -87,13 +91,15 @@ backoffice:
   transport: socket-test   # or rabbitmq
 ```
 
-The public reference/test project can use `socket-test` or a stub. A private deployment configuration can select the production adapter and provide proprietary mappings/secrets.
+The executable application resolves this selection to a concrete communication implementation. A public reference/test application can use `socket-test` or a stub. A private/product application can select RabbitMQ plus private mappings/codecs where required.
+
+This selection does not imply a separate Maven artifact for every transport. Initial implementations may coexist in the framework library while their boundaries are being tested.
 
 ## Socket test transport
 
 ### Purpose
 
-The socket adapter provides a lightweight real communication boundary without requiring RabbitMQ or Docker.
+The socket implementation provides a lightweight real communication boundary without requiring RabbitMQ or Docker.
 
 It is intended for automated system tests that need to prove:
 
@@ -112,13 +118,13 @@ System test driver / backoffice simulator
              |
              | simple TCP socket
              v
-SocketBackofficeAdapter
+SocketBackoffice
              |
              v
 Backoffice semantic boundary
              |
              v
-SI-01 application/domain
+framework domain/core
 ```
 
 One connection can multiplex several logical registration sources because every test message includes a generic source key.
@@ -141,18 +147,18 @@ The important contract is deterministic framing, source identity, reconnect beha
 
 Candidate scenarios include:
 
-- connect a backoffice simulator to SI-01;
+- connect a backoffice simulator to a real application process;
 - inject source-01 and source-02 messages over one connection;
 - verify they reach the correct source path;
 - trigger application behaviour through the normal application interface;
 - observe outbound source messages at the simulator;
 - drop the socket and verify status/reconnect behaviour;
-- reconnect and continue without changing committed registration sequence identity;
-- run multiple `TimingSystemInstance`/asset/source combinations in one SI-01 process.
+- reconnect and continue without changing committed registration-sequence identity;
+- exercise one or multiple `TimingSystemInstance`/asset/source combinations according to the selected executable topology.
 
 ## RabbitMQ transport
 
-RabbitMQ is a concrete transport adapter beneath the same semantic boundary.
+RabbitMQ is a concrete communication implementation beneath the same semantic boundary.
 
 ![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
 
@@ -173,14 +179,14 @@ RabbitMqSourceMessagingConfig
   outboundRoutingKey
 ```
 
-If production uses the default exchange or a direct-to-queue convention, the adapter can represent that through the same outbound-endpoint abstraction.
+If production uses the default exchange or a direct-to-queue convention, the implementation can represent that through the same outbound-endpoint abstraction.
 
 ### RabbitMQ connection topology
 
-The preferred initial architecture is one RabbitMQ connection manager per SI-01 process:
+The preferred initial architecture is one RabbitMQ connection manager per executable process using that transport:
 
 ```text
-SI-01
+application
   RabbitMqConnectionManager
         |
         +-- source-01 inbound consumer/channel
@@ -205,10 +211,10 @@ RabbitMQ consumer callback
 source-aware BackofficeInboundMessage
       |
       v
-route to TimingSystemInstance / RegistrationSource
+resolve TimingSystemInstance / RegistrationSource
       |
       v
-serialized application/domain boundary
+serialized framework/domain boundary
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.
@@ -261,9 +267,9 @@ local outbox / sync state
        v
 BackofficePublisherPort
        |
-       +--> SocketBackofficeAdapter
+       +--> SocketBackoffice
        |
-       +--> RabbitMqBackofficeAdapter
+       +--> RabbitMqBackoffice
 ```
 
 A locally committed registration must not disappear because a transport is unavailable.
@@ -303,6 +309,32 @@ BackofficeStatus
 
 For RabbitMQ, connection status can additionally expose broker/authentication/recovery information. For socket testing, it can expose connected/disconnected peer state.
 
+## Java package and future artifact placement
+
+Working package direction inside the reusable framework:
+
+```text
+io.github.brainboxemb.eventtiming.domain.backoffice
+    semantic backoffice contracts/state/outbox concepts
+
+io.github.brainboxemb.eventtiming.comm.socket
+    socket session/framing/test transport
+
+io.github.brainboxemb.eventtiming.comm.rabbitmq
+    RabbitMQ connection/channel/consumer/publisher implementation
+```
+
+This does **not** require three Maven libraries.
+
+A future `event-timing-comm-rabbitmq` (or similarly named) artifact becomes useful when, for example:
+
+- several applications need RabbitMQ independently;
+- the RabbitMQ client dependency should be optional and excluded from non-RabbitMQ applications;
+- lifecycle/release ownership needs an independent boundary;
+- public/private implementation ownership requires extraction.
+
+Until such evidence exists, clean package boundaries are sufficient and make later extraction straightforward.
+
 ## Public/private boundary
 
 Public framework/test code may define:
@@ -310,8 +342,8 @@ Public framework/test code may define:
 - transport-independent semantic ports;
 - generic `RegistrationSourceKey`;
 - generic/test `BackofficeEnvelope`;
-- socket-test adapter and protocol;
-- RabbitMQ connection/consumer infrastructure if the production message codec itself can remain separate;
+- socket-test communication implementation/protocol;
+- RabbitMQ connection/consumer infrastructure if proprietary production codec details remain separate;
 - synthetic RabbitMQ topology for integration tests.
 
 Private components/configuration may provide:
@@ -328,31 +360,31 @@ The transport abstraction supports progressively more realistic automated system
 
 ### ST-1 — Application behaviour
 
-Goal: validate SI-01 behaviour through its public application interface while external dependencies are controlled stubs.
+Goal: validate application behaviour through its public control/status interface while external dependencies are controlled stubs.
 
 ```text
 System-test driver
       |
       | public application control/status interface
       v
-SI-01 real application process
+real application process
       |
       +-- stub RFID/CAN/display
       +-- in-memory/stub backoffice port
 ```
 
-This should be the fastest system-level feedback loop. It verifies application commands, state transitions, registrations, status and externally visible behaviour without requiring a network backoffice service.
+This is the fastest system-level feedback loop and does not require a network backoffice service.
 
 ### ST-2 — Socket loop/network
 
 Goal: add a real communication/process boundary with minimal infrastructure.
 
 ```text
-application test driver --> SI-01 application interface
-backoffice simulator <----> simple socket adapter
+application test driver --> real application process
+backoffice simulator <----> simple socket implementation
 ```
 
-This profile verifies source multiplexing/routing, network session state, disconnect/reconnect and outbound/inbound backoffice semantics without RabbitMQ.
+This profile verifies source multiplexing/routing, network session state, disconnect/reconnect and outbound/inbound semantics without RabbitMQ.
 
 ### ST-3 — RabbitMQ integration
 
@@ -361,7 +393,7 @@ Goal: verify the production-shaped broker transport with a real disposable broke
 ```text
 system-test driver
       |
-      +--> SI-01 application interface
+      +--> application interface
       |
       +--> RabbitMQ test broker (Docker Compose)
 ```
@@ -374,7 +406,7 @@ These profiles complement unit/component tests and Pi Zero/hardware-in-the-loop 
 
 RabbitMQ is a good candidate for a containerised integration dependency because it is a real external service with meaningful connection and recovery behaviour.
 
-A future implementation/reference repository should provide a small Compose environment:
+A future implementation/reference application can provide a small Compose environment:
 
 ```text
 compose.yaml
@@ -388,14 +420,14 @@ Typical lifecycle:
 ```text
 start RabbitMQ container
 wait for health
-start SI-01/reference application
+start application
 exercise several source consumers + publisher
 stop/restart broker
 verify consumer restoration + pending delivery
 clean up
 ```
 
-Docker is deliberately optional for ST-1 and ST-2 so most application/system behaviour can be tested without container startup cost.
+Docker remains optional for ST-1 and ST-2 so most behaviour can be tested without container startup cost.
 
 ## Candidate requirements
 
@@ -419,9 +451,10 @@ Temporary identifiers only.
 
 - What exact semantic messages belong in the public backoffice IDD?
 - What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
-- Should the socket adapter use one bidirectional connection or separate inbound/outbound sockets?
+- Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
 - Is one RabbitMQ connection sufficient in production, or should consumer and publisher traffic use separate connections?
-- Are RabbitMQ queues/exchanges pre-provisioned or should SI-01 declare/bind any topology?
+- Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
+- At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the framework artifact?
 - What is the production acknowledgement/reconciliation protocol?
 - Which outbound items require durable local outbox persistence versus rebuildable state?
 - What publisher-confirm/retry policy is required?
