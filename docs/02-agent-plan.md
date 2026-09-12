@@ -11,6 +11,7 @@ Agent-plan steps use the prefix `AP-` so they cannot be confused with numbered s
 - Keep this repository focused on planning, research, coordination, and decision preparation.
 - Keep project documentation generic and independent of any specific real-world event.
 - Keep detailed current-step work and evidence in the active pull request rather than expanding this plan into an activity log.
+- Do not create documents merely to satisfy a process pattern; new documents need a distinct engineering purpose and consumer as defined by `AGENTS.md`.
 
 ## AP-0 — Repository bootstrap
 
@@ -42,6 +43,23 @@ Exit criteria:
 - generated documentation can be reviewed from `dev/pr-<N>/docs`;
 - early requirements/architecture/design material remains explicitly non-authoritative until promoted;
 - no implementation repository is created accidentally as part of bootstrap.
+
+### AP-0 closure review
+
+Before closing the bootstrap PR, perform one deliberate review rather than continuing to expand the baseline indefinitely.
+
+The review should confirm:
+
+- each persistent document has a clear engineering purpose and does not materially duplicate another document;
+- SDP, SIP, SDE and SVP boundaries remain distinct;
+- public/private information boundaries are respected;
+- the current SIP is sufficiently concrete to start its next implementation step without inventing foundational process or architecture during coding;
+- generated Markdown, diagrams and SIP roadmap/print artifacts build successfully and have been inspected where visual output matters;
+- unresolved architecture/requirements topics are visible as working/open items rather than silently assumed;
+- topics that belong to later formal requirements/IDD work remain deferred rather than being promoted only to make AP-0 look complete;
+- the active PR contains enough evidence for a future session to understand why AP-0 was considered complete.
+
+If these conditions are met, prefer closing AP-0 and starting the next scoped work item over adding more speculative detail to the bootstrap PR.
 
 ## AP-1 — Collect and structure source material
 
