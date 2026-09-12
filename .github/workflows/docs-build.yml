@@ -1,0 +1,147 @@
+name: Build software documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
+      - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
+      - 'tools/generate_sip_roadmap.py'
+      - 'tools/generate_documents.py'
+      - 'tools/requirements-docs.txt'
+      - '.github/workflows/docs-build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
+      - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
+      - 'tools/generate_sip_roadmap.py'
+      - 'tools/generate_documents.py'
+      - 'tools/requirements-docs.txt'
+      - '.github/workflows/docs-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install documentation dependencies
+        run: python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
+
+      - name: Generate architecture diagrams
+        run: |
+          python tools/generate_architecture_diagrams.py
+          python tools/generate_timing_detail_diagrams.py
+          python tools/generate_data_display_diagrams.py
+          python tools/generate_system_model_diagrams.py
+
+      - name: Generate SIP roadmap
+        run: python tools/generate_sip_roadmap.py
+
+      - name: Validate generated diagram XML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          for path in Path('bld/docs/architecture').glob('*.drawio'):
+              ET.parse(path)
+          for path in Path('bld/docs/architecture').glob('*.svg'):
+              ET.parse(path)
+          ET.parse(Path('bld/docs/planning/sip-roadmap.drawio'))
+          ET.parse(Path('bld/docs/planning/sip-roadmap.svg'))
+          PY
+
+      - name: Generate complete document set
+        run: python tools/generate_documents.py
+
+      - name: Validate generated documentation
+        run: |
+          test -f bld/docs/README.md
+          test -f bld/docs/documents/README.md
+          test -f bld/docs/documents/software-document-set.md
+          test -f bld/docs/documents/architecture-book.md
+          test -f bld/docs/documents/12-SDE-software-development-environment.md
+          test -f bld/docs/documents/31-01-SDD-04-runtime-topology-and-configuration.md
+          test -f bld/docs/documents/31-01-SDD-05-backoffice-transport-design.md
+          test -f bld/docs/documents/50-SVP-software-verification-plan.md
+          test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
+          test -f bld/docs/assets/architecture/software-item-system-overview.svg
+          test -f bld/docs/assets/architecture/runtime-registration-topology.svg
+          test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
+          test -f bld/docs/assets/architecture/rfid-lifecycle.svg
+          test -f bld/docs/planning/README.md
+          test -f bld/docs/planning/sip-roadmap.svg
+          test -f bld/docs/planning/sip-roadmap.drawio
+          test -s bld/docs/planning/sip-roadmap-a3-tiled.pdf
+          test -s bld/docs/planning/sip-roadmap-a2-overview.pdf
+
+      - name: Upload generated documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: software-docs
+          path: bld/docs
+          retention-days: 14
+
+      - name: Publish generated documentation branch
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+              echo "ERROR: missing or invalid pull-request number" >&2
+              exit 1
+            fi
+            TARGET_BRANCH="dev/pr-${PR_NUMBER}/docs"
+          else
+            TARGET_BRANCH="prod/docs"
+          fi
+
+          publish_dir="$(mktemp -d)"
+          cp -a bld/docs/. "$publish_dir/"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global credential.helper store
+          printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
+
+          git switch --orphan generated-docs
+          git clean -fdx
+
+          cp -a "$publish_dir/." ./
+          printf '%s\n' "$SOURCE_SHA" > source-sha.txt
+
+          git add .
+          git commit -m "Publish generated documentation for ${SOURCE_SHA}"
+          git push --force origin "HEAD:${TARGET_BRANCH}"
+
+          echo "Published generated documentation to ${TARGET_BRANCH}"

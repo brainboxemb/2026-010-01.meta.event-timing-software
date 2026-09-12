@@ -1,0 +1,429 @@
+# Backoffice transport detailed design
+
+Status: working draft / non-authoritative
+
+Software item: **SI-01 — Headless Timing Application**
+
+This SDD defines the transport-independent backoffice boundary and two intended transport adapters:
+
+- a lightweight **socket adapter** for automated loop/network system tests;
+- a **RabbitMQ adapter** for production-shaped integration and deployment.
+
+The application/domain model must not depend on RabbitMQ classes, socket classes, broker names, or the proprietary production message format.
+
+Concrete production broker endpoint names, credentials, queue/exchange names, routing keys, external source IDs and message schemas are deployment/proprietary information and are intentionally excluded from this public repository.
+
+## Architectural goal
+
+Backoffice semantics and transport are separate layers:
+
+```text
+Timing/domain behaviour
+       |
+       v
+Backoffice semantic boundary
+  source-aware messages
+  status
+  outbox
+       |
+       +-----------------------+
+       |                       |
+       v                       v
+SocketBackofficeAdapter    RabbitMqBackofficeAdapter
+system-test transport      production-shaped transport
+       |                       |
+       v                       v
+socket test peer           RabbitMQ broker
+```
+
+Both adapters must preserve the same logical `RegistrationSource` identity and feed the same serialized application/domain path.
+
+## Semantic backoffice boundary
+
+The public application/core layer should work with semantic source-aware messages, not transport destinations.
+
+Illustrative contracts:
+
+```java
+interface BackofficePublisherPort {
+    void publish(RegistrationSourceKey source, BackofficeEnvelope message);
+}
+
+interface BackofficeInboundListener {
+    void onMessage(RegistrationSourceKey source, BackofficeEnvelope message);
+}
+```
+
+`BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public framework.
+
+The final system-level backoffice IDD can define the semantic obligations that both sides must fulfil while transport-specific/private specifications define their actual encoding where required.
+
+## Registration-source separation
+
+Every configured `RegistrationSource` has its own logical inbound and outbound backoffice path.
+
+Conceptually:
+
+```text
+source-01
+  inbound semantic stream
+  outbound semantic stream
+
+source-02
+  inbound semantic stream
+  outbound semantic stream
+```
+
+This logical separation remains the same regardless of whether the selected transport is an in-memory stub, socket connection, or RabbitMQ.
+
+## Transport selection
+
+Backoffice transport is selected through settings/composition rather than compiled into domain code.
+
+Pseudo-configuration:
+
+```yaml
+backoffice:
+  transport: socket-test   # or rabbitmq
+```
+
+The public reference/test project can use `socket-test` or a stub. A private deployment configuration can select the production adapter and provide proprietary mappings/secrets.
+
+## Socket test transport
+
+### Purpose
+
+The socket adapter provides a lightweight real communication boundary without requiring RabbitMQ or Docker.
+
+It is intended for automated system tests that need to prove:
+
+- SI-01 runs as a real process;
+- source-aware messages cross a real TCP/socket boundary;
+- inbound and outbound routing works for several sources;
+- connect/disconnect/reconnect behaviour is observable;
+- tests can run quickly and locally without production infrastructure.
+
+It is not intended to define or expose the production backoffice protocol.
+
+### Test topology
+
+```text
+System test driver / backoffice simulator
+             |
+             | simple TCP socket
+             v
+SocketBackofficeAdapter
+             |
+             v
+Backoffice semantic boundary
+             |
+             v
+SI-01 application/domain
+```
+
+One connection can multiplex several logical registration sources because every test message includes a generic source key.
+
+### Test framing
+
+The exact framing remains an implementation choice. A simple public test protocol could use a length-prefixed or line-delimited synthetic envelope such as:
+
+```text
+sourceKey
+messageType
+payload
+```
+
+The socket test protocol must use only synthetic/public fields and must not copy proprietary production serialization.
+
+The important contract is deterministic framing, source identity, reconnect behaviour and unambiguous message boundaries.
+
+### Socket-loop scenarios
+
+Candidate scenarios include:
+
+- connect a backoffice simulator to SI-01;
+- inject source-01 and source-02 messages over one connection;
+- verify they reach the correct source path;
+- trigger application behaviour through the normal application interface;
+- observe outbound source messages at the simulator;
+- drop the socket and verify status/reconnect behaviour;
+- reconnect and continue without changing committed registration sequence identity;
+- run multiple `TimingSystemInstance`/asset/source combinations in one SI-01 process.
+
+## RabbitMQ transport
+
+RabbitMQ is a concrete transport adapter beneath the same semantic boundary.
+
+![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
+
+### RabbitMQ terminology
+
+Receiving and sending are intentionally modelled differently:
+
+- a consumer reads/delivers messages from a RabbitMQ **queue**;
+- a publisher normally publishes to an **exchange** with a **routing key**;
+- RabbitMQ routes that publication to one or more queues according to broker bindings.
+
+The working source configuration is therefore:
+
+```text
+RabbitMqSourceMessagingConfig
+  inboundQueue
+  outboundExchange
+  outboundRoutingKey
+```
+
+If production uses the default exchange or a direct-to-queue convention, the adapter can represent that through the same outbound-endpoint abstraction.
+
+### RabbitMQ connection topology
+
+The preferred initial architecture is one RabbitMQ connection manager per SI-01 process:
+
+```text
+SI-01
+  RabbitMqConnectionManager
+        |
+        +-- source-01 inbound consumer/channel
+        +-- source-02 inbound consumer/channel
+        +-- ...
+        |
+        +-- controlled outbound publisher/channel(s)
+```
+
+Several source-specific queues can therefore be consumed over one physical broker connection.
+
+A later implementation may use separate consumer and publisher connections if fault-isolation, channel/thread ownership, broker-client behaviour or measured Pi Zero evidence justifies it. That refinement must not change the semantic source interface.
+
+### RabbitMQ threading
+
+RabbitMQ callbacks are external I/O callbacks and must not directly mutate timing-domain state.
+
+```text
+RabbitMQ consumer callback
+      |
+      v
+source-aware BackofficeInboundMessage
+      |
+      v
+route to TimingSystemInstance / RegistrationSource
+      |
+      v
+serialized application/domain boundary
+```
+
+Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.
+
+### RabbitMQ source-specific settings
+
+Pseudo-configuration only:
+
+```yaml
+backoffice:
+  transport: rabbitmq
+  rabbitmq:
+    host: ${BROKER_HOST}
+    port: ${BROKER_PORT}
+    virtualHost: ${BROKER_VHOST}
+    credentials: external-secret-reference
+
+systemInstances:
+  - id: system-01
+    registrationAssets:
+      - id: asset-01
+        sources:
+          - key: source-01
+            externalId: ${PRIVATE_SOURCE_ID_01}
+            messaging:
+              inboundQueue: ${PRIVATE_SOURCE_01_IN_QUEUE}
+              outboundExchange: ${PRIVATE_SOURCE_01_OUT_EXCHANGE}
+              outboundRoutingKey: ${PRIVATE_SOURCE_01_OUT_KEY}
+          - key: source-02
+            externalId: ${PRIVATE_SOURCE_ID_02}
+            messaging:
+              inboundQueue: ${PRIVATE_SOURCE_02_IN_QUEUE}
+              outboundExchange: ${PRIVATE_SOURCE_02_OUT_EXCHANGE}
+              outboundRoutingKey: ${PRIVATE_SOURCE_02_OUT_KEY}
+```
+
+For two configured sources, two inbound consumers exist even if they share one physical RabbitMQ connection.
+
+## Outbox and delivery
+
+Local commitment and external transport are deliberately separated.
+
+```text
+RegistrationSource
+  committed record
+       |
+       v
+local outbox / sync state
+       |
+       v
+BackofficePublisherPort
+       |
+       +--> SocketBackofficeAdapter
+       |
+       +--> RabbitMqBackofficeAdapter
+```
+
+A locally committed registration must not disappear because a transport is unavailable.
+
+Working direction:
+
+1. commit registration locally according to the final persistence rule;
+2. represent it as pending in local outbox/synchronisation state;
+3. selected transport attempts delivery;
+4. transport acknowledgement/reconciliation advances pending state;
+5. failure remains pending and visible through status.
+
+The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules belong to later requirements/IDD/detail design.
+
+## Status model
+
+Transport status and source status remain separately observable.
+
+```text
+BackofficeStatus
+  selectedTransport
+  connection/session state
+
+  source-01
+    inbound
+      configured
+      active
+      lastMessage
+    outbound
+      pendingCount
+      lastPublish
+      lastFailure
+
+  source-02
+    ...
+```
+
+For RabbitMQ, connection status can additionally expose broker/authentication/recovery information. For socket testing, it can expose connected/disconnected peer state.
+
+## Public/private boundary
+
+Public framework/test code may define:
+
+- transport-independent semantic ports;
+- generic `RegistrationSourceKey`;
+- generic/test `BackofficeEnvelope`;
+- socket-test adapter and protocol;
+- RabbitMQ connection/consumer infrastructure if the production message codec itself can remain separate;
+- synthetic RabbitMQ topology for integration tests.
+
+Private components/configuration may provide:
+
+- actual external source-ID mappings;
+- actual broker topology names;
+- proprietary message schemas/codecs;
+- authentication details;
+- production-specific retry/reconciliation protocol details where sensitive.
+
+## Automated system-test profiles
+
+The transport abstraction supports progressively more realistic automated system tests.
+
+### ST-1 — Application behaviour
+
+Goal: validate SI-01 behaviour through its public application interface while external dependencies are controlled stubs.
+
+```text
+System-test driver
+      |
+      | public application control/status interface
+      v
+SI-01 real application process
+      |
+      +-- stub RFID/CAN/display
+      +-- in-memory/stub backoffice port
+```
+
+This should be the fastest system-level feedback loop. It verifies application commands, state transitions, registrations, status and externally visible behaviour without requiring a network backoffice service.
+
+### ST-2 — Socket loop/network
+
+Goal: add a real communication/process boundary with minimal infrastructure.
+
+```text
+application test driver --> SI-01 application interface
+backoffice simulator <----> simple socket adapter
+```
+
+This profile verifies source multiplexing/routing, network session state, disconnect/reconnect and outbound/inbound backoffice semantics without RabbitMQ.
+
+### ST-3 — RabbitMQ integration
+
+Goal: verify the production-shaped broker transport with a real disposable broker.
+
+```text
+system-test driver
+      |
+      +--> SI-01 application interface
+      |
+      +--> RabbitMQ test broker (Docker Compose)
+```
+
+This verifies broker connection/channel/consumer behaviour, source-specific queues/routing, outbox recovery and broker restart scenarios.
+
+These profiles complement unit/component tests and Pi Zero/hardware-in-the-loop verification; they do not replace them.
+
+## Docker-based RabbitMQ test environment
+
+RabbitMQ is a good candidate for a containerised integration dependency because it is a real external service with meaningful connection and recovery behaviour.
+
+A future implementation/reference repository should provide a small Compose environment:
+
+```text
+compose.yaml
+  rabbitmq-test
+```
+
+The broker must use synthetic/public queue names and credentials.
+
+Typical lifecycle:
+
+```text
+start RabbitMQ container
+wait for health
+start SI-01/reference application
+exercise several source consumers + publisher
+stop/restart broker
+verify consumer restoration + pending delivery
+clean up
+```
+
+Docker is deliberately optional for ST-1 and ST-2 so most application/system behaviour can be tested without container startup cost.
+
+## Candidate requirements
+
+Temporary identifiers only.
+
+- **CAND-BO-001** — SI-01 backoffice semantics shall be independent from the concrete communication transport.
+- **CAND-BO-002** — The backoffice transport shall be selectable through external configuration/composition.
+- **CAND-BO-003** — A lightweight socket transport shall be available for automated system/integration testing without requiring RabbitMQ.
+- **CAND-BO-004** — The socket test protocol shall support multiple logical registration sources over a real communication boundary.
+- **CAND-BO-005** — RabbitMQ shall support a source-specific inbound queue configuration for each configured registration source.
+- **CAND-BO-006** — RabbitMQ shall support source-specific outbound routing configuration for each configured registration source.
+- **CAND-BO-007** — Multiple RabbitMQ source consumers shall be able to share one physical broker connection.
+- **CAND-BO-008** — External transport callbacks shall not directly mutate timing-domain state.
+- **CAND-BO-009** — Transport connection status and per-source inbound/outbound status shall be observable independently.
+- **CAND-BO-010** — Loss of external backoffice transport shall not discard locally committed registration data.
+- **CAND-BO-011** — Reconnection shall restore configured source communication and resume pending outbound synchronisation.
+- **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
+- **CAND-BO-013** — A disposable RabbitMQ broker shall be available for automated ST-3 integration tests.
+
+## Open questions
+
+- What exact semantic messages belong in the public backoffice IDD?
+- What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
+- Should the socket adapter use one bidirectional connection or separate inbound/outbound sockets?
+- Is one RabbitMQ connection sufficient in production, or should consumer and publisher traffic use separate connections?
+- Are RabbitMQ queues/exchanges pre-provisioned or should SI-01 declare/bind any topology?
+- What is the production acknowledgement/reconciliation protocol?
+- Which outbound items require durable local outbox persistence versus rebuildable state?
+- What publisher-confirm/retry policy is required?
+- How are duplicates/redeliveries detected and handled?
+- What broker/client settings are appropriate on the Raspberry Pi Zero memory/CPU budget?

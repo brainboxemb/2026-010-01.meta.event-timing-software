@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Generate detailed timing-system architecture diagrams.
+
+This script reuses the shared SVG/draw.io renderer from
+`generate_architecture_diagrams.py` and adds timing-domain specific views.
+"""
+
+from pathlib import Path
+import argparse
+
+from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, render_svg
+
+
+def timing_system_internals() -> Diagram:
+    nodes = [
+        Node("operator", "Operator commands\\nconsole • API • web UI", 40, 90, 260, 80, "client"),
+        Node("rfid", "RFID observations", 340, 90, 220, 80, "external"),
+        Node("can", "CAN observations\\nkeypad + discovery", 600, 90, 240, 80, "external"),
+        Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
+        Node("backoffice", "Backoffice input\\nreference data", 1140, 90, 230, 80, "external"),
+
+        Node("messages", "Immutable TimingSystemMessage\\nsource timestamp + system id", 390, 230, 610, 90, "interface"),
+        Node("queue", "Per-TimingSystem ingress queue", 505, 370, 380, 75, "queue"),
+        Node("serial", "Logical SerialExecutor\\none writer / ordered state changes", 445, 505, 500, 90, "core"),
+
+        Node("coordinator", "TimingSystem coordinator\\nlifecycle + routing", 120, 675, 310, 90, "service"),
+        Node("registration", "Registration service\\npassage • start • manual • penalty", 465, 675, 370, 90, "service"),
+        Node("status", "Status service\\nimmutable snapshots", 870, 675, 280, 90, "service"),
+        Node("reference", "Reference data + local calculations\\nreserve tags • start times • ranking", 1185, 665, 330, 110, "service"),
+
+        Node("store", "RegistrationStore\\ndurable local records", 330, 865, 300, 85, "port"),
+        Node("outbox", "Backoffice outbox\\npending committed data", 670, 865, 300, 85, "queue"),
+        Node("events", "UI / WebSocket events\\nstatus + registrations", 1010, 865, 300, 85, "interface"),
+    ]
+
+    edges = [
+        Edge("operator", "messages"),
+        Edge("rfid", "messages"),
+        Edge("can", "messages"),
+        Edge("timers", "messages"),
+        Edge("backoffice", "messages"),
+        Edge("messages", "queue"),
+        Edge("queue", "serial"),
+        Edge("serial", "coordinator"),
+        Edge("serial", "registration"),
+        Edge("serial", "status"),
+        Edge("serial", "reference"),
+        Edge("registration", "store", "append"),
+        Edge("registration", "outbox", "after commit"),
+        Edge("registration", "events"),
+        Edge("status", "events"),
+        Edge("reference", "registration", "lookup", True),
+        Edge("coordinator", "status"),
+    ]
+
+    return Diagram(
+        "timing-system-internals",
+        "TimingSystem internals — ordered ingress, services and persistence",
+        1580,
+        1020,
+        nodes,
+        edges,
+    )
+
+
+def device_network_topology() -> Diagram:
+    nodes = [
+        Node("runtime", "Headless timing runtime", 620, 80, 330, 85, "core"),
+        Node("status", "Status service", 1020, 80, 230, 85, "service"),
+
+        Node("rfid_power", "RFID power control", 70, 275, 220, 70, "port"),
+        Node("rfid_reader", "RFID reader / antenna\\nboot + heartbeat", 70, 420, 250, 90, "external"),
+
+        Node("can_port", "CAN bus", 390, 275, 190, 70, "port"),
+        Node("scanner", "Periodic CAN scanner", 360, 415, 250, 80, "service"),
+        Node("display1", "Display V1\\nCAN • discoverable", 335, 570, 220, 85, "external"),
+        Node("keypad", "Keypad\\nCAN • configured / not discoverable", 590, 560, 280, 95, "external"),
+
+        Node("router", "Local Wi-Fi router\\n4G uplink", 980, 275, 240, 85, "external"),
+        Node("display2", "Display V2\\nIP/Wi-Fi client", 890, 440, 220, 85, "external"),
+        Node("mdns", "mDNS service advertisement\\nruntime is discoverable service", 630, 285, 290, 85, "interface"),
+        Node("internet", "Internet", 1260, 275, 190, 70, "external"),
+        Node("rabbit", "RabbitMQ / backoffice", 1230, 440, 250, 85, "external"),
+
+        Node("stub", "Stub/simulated adapters\\ntest-control interface", 600, 760, 330, 90, "adapter"),
+    ]
+
+    edges = [
+        Edge("runtime", "rfid_power"),
+        Edge("rfid_power", "rfid_reader"),
+        Edge("rfid_reader", "runtime", "reads/status", True),
+        Edge("runtime", "can_port"),
+        Edge("can_port", "scanner"),
+        Edge("scanner", "display1", "discover"),
+        Edge("can_port", "keypad"),
+        Edge("keypad", "runtime", "team number", True),
+        Edge("runtime", "mdns"),
+        Edge("mdns", "router"),
+        Edge("display2", "router"),
+        Edge("display2", "runtime", "connects after mDNS", True),
+        Edge("router", "internet"),
+        Edge("internet", "rabbit"),
+        Edge("runtime", "rabbit", "RabbitMQ", True),
+        Edge("runtime", "status"),
+        Edge("rfid_reader", "status", "health", True),
+        Edge("scanner", "status", "devices", True),
+        Edge("router", "status", "local link", True),
+        Edge("internet", "status", "reachability", True),
+        Edge("rabbit", "status", "broker", True),
+        Edge("stub", "runtime", "same adapter contracts", True),
+    ]
+
+    return Diagram(
+        "device-network-topology",
+        "Device and network topology — RFID, CAN, displays and connectivity",
+        1540,
+        920,
+        nodes,
+        edges,
+    )
+
+
+def rfid_pipeline() -> Diagram:
+    nodes = [
+        Node("reader", "RFID reader callback", 40, 150, 210, 70, "external"),
+        Node("timestamp", "Capture observation timestamp", 290, 150, 250, 70, "interface"),
+        Node("decrypt", "Decrypt + validate tag", 580, 150, 230, 70, "service"),
+        Node("filter", "Accumulate / filter observations\\nfirst read is not automatically accepted", 850, 135, 340, 100, "service"),
+        Node("resolve", "Resolve identity\\nnormal tag or reserve-tag mapping", 1230, 135, 300, 100, "service"),
+
+        Node("reject", "Rejected / incomplete observation\\nstatus/diagnostic only", 610, 350, 300, 85, "queue"),
+        Node("accepted", "AcceptedTag\\nwith evidence + observation time", 1040, 350, 300, 85, "queue"),
+        Node("registration", "Registration candidate", 1040, 540, 300, 80, "core"),
+        Node("store", "RegistrationStore", 820, 720, 250, 70, "port"),
+        Node("outbox", "Backoffice outbox", 1110, 720, 250, 70, "queue"),
+        Node("ui", "Status / WebSocket update", 1400, 720, 250, 70, "interface"),
+    ]
+
+    edges = [
+        Edge("reader", "timestamp"),
+        Edge("timestamp", "decrypt"),
+        Edge("decrypt", "filter"),
+        Edge("filter", "resolve", "accepted"),
+        Edge("decrypt", "reject", "invalid", True),
+        Edge("filter", "reject", "not enough evidence", True),
+        Edge("resolve", "accepted"),
+        Edge("resolve", "reject", "unknown", True),
+        Edge("accepted", "registration"),
+        Edge("registration", "store", "commit"),
+        Edge("registration", "outbox"),
+        Edge("registration", "ui"),
+    ]
+
+    return Diagram(
+        "rfid-pipeline",
+        "RFID pipeline — raw encrypted reads to accepted registration",
+        1700,
+        850,
+        nodes,
+        edges,
+    )
+
+
+def generate(out_dir: Path):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    diagrams = [timing_system_internals(), device_network_topology(), rfid_pipeline()]
+
+    for diagram in diagrams:
+        render_svg(diagram, out_dir / (diagram.name + ".svg"))
+        render_drawio(diagram, out_dir / (diagram.name + ".drawio"))
+
+    readme = out_dir / "README.md"
+    with readme.open("a", encoding="utf-8") as handle:
+        handle.write("\n## Timing-system detail views\n\n")
+        for diagram in diagrams:
+            handle.write("### " + diagram.title + "\n\n")
+            handle.write("![" + diagram.title + "](./" + diagram.name + ".svg)\n\n")
+            handle.write("- [Editable draw.io file](./" + diagram.name + ".drawio)\n\n")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", default="bld/docs/architecture")
+    args = parser.parse_args()
+    generate(Path(args.out))
+
+
+if __name__ == "__main__":
+    main()
