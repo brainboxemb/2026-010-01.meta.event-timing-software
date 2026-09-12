@@ -1,8 +1,8 @@
-# Software plan
+# Software Development Plan (SDP)
 
-Status: working draft
+Status: working draft / non-authoritative
 
-This document describes the intended **phased evolution** of the software and related repositories. `docs/software-planning.md` remains the more concrete step-by-step roadmap.
+This document describes the intended **phased evolution** of the software and related repositories. `docs/11-software-implementation-roadmap.md` is the more concrete step-by-step roadmap.
 
 The plan deliberately proves architectural risks one at a time instead of building the complete timing system in one pass.
 
@@ -21,10 +21,10 @@ The plan deliberately proves architectural risks one at a time instead of buildi
 
 See also:
 
-- `docs/software-architecture-sketch.md`;
-- `docs/timing-system-architecture-detail.md`;
-- `docs/data-and-display-architecture.md`;
-- `docs/java-component-structure.md`.
+- `docs/30-SSAD-software-system-architecture.md`;
+- `docs/31-SAD-timing-system-architecture.md`;
+- `docs/32-SDD-data-and-display-design.md`;
+- `docs/33-SDD-java-component-structure.md`.
 
 ## Intended repository chain
 
@@ -330,16 +330,13 @@ A Java 11 move is an explicit architecture decision, not an automatic phase tran
 
 ## Documentation evolution
 
-As phases mature, brainstorm/candidate material should be promoted into the correct authoritative documents:
+As phases mature, brainstorm/candidate material should be promoted into the correct authoritative document families:
 
 ```text
-system requirements
-software architecture
-software development
-software plan/planning
-system-level IDDs
-software-item requirements/design
-verification evidence
+20-29  software/system requirements
+30-39  architecture and detailed design
+40-49  system-level IDDs
+50-59  verification planning/evidence structure
 ```
 
 The IDD remains system-level. A software-item requirement may reference the applicable IDD requirement/interface identifier.
