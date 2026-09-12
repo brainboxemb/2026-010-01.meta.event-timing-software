@@ -11,22 +11,30 @@ This document also records architecture decisions as they become sufficiently co
 | ID | Status | Decision | Rationale / notes |
 | --- | --- | --- | --- |
 | ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. Avoid introducing Gradle without a concrete need. |
-| ADR-002 | proposed | Use **Java SE 17 LTS** as the language/API/runtime baseline. | Java 17 is a mature LTS release from September 2021 and is a conservative upgrade from the legacy Java 8 application. It also retains broader 32-bit ARM ecosystem options than Java 21. The exact JDK distribution may differ per target platform. |
+| ADR-002 | proposed | Use **Java SE 21 LTS** as the language/API/runtime baseline. | Java 21 was released in September 2023 and is a mature LTS baseline with a substantially longer useful support horizon than Java 17 while avoiding adoption of the much newer Java 25 baseline immediately. The application should target the Java SE level rather than depend on one JDK vendor. |
 
 ### Java runtime portability note
 
 The Java language/API baseline and the concrete JDK/runtime distribution are separate concerns.
 
-The intended baseline is one Java SE level for application source and bytecode, while the runtime distribution can be selected per supported platform when necessary.
+The intended baseline is one Java SE level for application source and bytecode, while the runtime distribution can be selected per supported platform when necessary. Development and CI can standardise on one OpenJDK distribution for reproducibility without making that distribution part of the application architecture contract.
+
+For Java 21, Eclipse Temurin is a suitable default candidate for normal Windows, Linux x86-64, and Linux AArch64 development/CI/runtime environments. Other Java SE 21-compatible OpenJDK distributions remain valid where platform support requires them.
 
 This matters particularly for Raspberry Pi Zero-class hardware:
 
-- original Raspberry Pi Zero / Zero W hardware is 32-bit ARMv6;
-- Raspberry Pi Zero 2 W hardware is 64-bit ARMv8;
-- runtime availability and performance therefore need to be validated explicitly on the actual target hardware before declaring that platform supported;
-- the application architecture must not depend on vendor-specific JDK APIs unless explicitly justified.
+- original Raspberry Pi Zero / Zero W hardware uses the BCM2835 with a single-core ARM1176JZF-S (ARMv6-class) processor;
+- Raspberry Pi Zero 2 W uses a quad-core 64-bit ARM Cortex-A53 (ARMv8) processor;
+- current mainstream Java 21 distributions have good AArch64 support, making the Zero 2 W a much more natural target;
+- Eclipse Temurin does not publish 32-bit ARM binaries for Java 21 and later;
+- Azul documents that its Java 17+ 32-bit ARM builds do not support the original Raspberry Pi Zero 1;
+- therefore selecting Java 17 instead of Java 21 does not provide a clean, vendor-neutral solution for original Raspberry Pi Zero / Zero W hardware;
+- if original ARMv6 Zero hardware is a mandatory target, that needs a separate explicit runtime investigation and may require a special/older runtime strategy;
+- if Raspberry Pi Zero 2 W or newer is the minimum Raspberry Pi target, Java 21 is the preferred current baseline.
 
-ADR-002 remains `proposed` until the Java baseline is explicitly accepted and the minimum Raspberry Pi target is clarified or validated.
+The application architecture must not depend on vendor-specific JDK APIs unless explicitly justified.
+
+ADR-002 remains `proposed` until the Java baseline and minimum Raspberry Pi target are explicitly accepted.
 
 ## Architectural goals
 
@@ -269,9 +277,9 @@ This is intentionally small but exercises the boundaries that later registration
 
 ## Open architecture questions
 
-- final acceptance of Java 17 LTS as the baseline;
+- final acceptance of Java 21 LTS as the baseline;
 - minimum Raspberry Pi Zero generation / CPU architecture that must be supported;
-- JDK/runtime distribution per platform;
+- standard development/CI JDK distribution and runtime distribution policy per platform;
 - module/package boundaries;
 - dependency injection or explicit composition approach;
 - API protocol and server technology;
