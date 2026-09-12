@@ -1,20 +1,52 @@
-# Data and display architecture detail
+# Data and display detailed design
 
 Status: working draft / non-authoritative
 
-This document refines the initial timing-system architecture for local data ownership, backup/restore, keypad behaviour, traceable records, and the two display generations.
+Software item: **01 — Headless Timing Application**
+
+This document refines local data ownership, backup/restore, traceable registration streams, ready-team behaviour, reference data, and the two display generations.
 
 The initial design does **not** require a conventional embedded database. Runtime state is held in typed Java data structures/repositories and is backed up to simple files so the application can restore its state after restart.
 
-A second important distinction is that **timing/registration records** and **teams prepared through the keypad** are two different information models. Both need traceability/persistence, but they have different meaning and different current-state projections.
+Domain identifiers and known ranges are captured in `03-domain-baseline.md`. This SDD translates those facts into software/data-design direction.
 
-## Two traceable data flows
+## Core distinction: two traceable information models
 
-### 1. Registration ledger
+Two information flows must not be conflated:
 
-The registration ledger contains actual timing/registration-domain records such as:
+1. **registration stream/ledger** — timing and operational entries that are synchronised as an ordered source stream;
+2. **ready-team journal/state** — keypad/operator actions that prepare/remove teams and drive current display state.
+
+Both need traceability and persistence, but they have different semantics and sequence scopes.
+
+## Registration-source identity
+
+Every registration source/system has a `RegistrationSystemId`.
+
+Known source classes are:
 
 ```text
+normal registration systems   A..I
+reserve registration systems  1..4 (exact identifier representation TBD)
+virtual registration systems  exist; exact identifier representation TBD
+```
+
+Every physical location has:
+
+```text
+LocationId = 1..25
+```
+
+A registration entry is associated with both its source and its location.
+
+The exact mapping between the architecture concept `TimingSystem` and domain concept `RegistrationSystemId` still needs confirmation. Code should not rely on those being identical until that mapping is explicitly decided.
+
+## Registration ledger
+
+The registration ledger contains timing/registration-domain and traceable operational records such as:
+
+```text
+SYSTEM_OPEN
 PASSAGE
 START
 MANUAL_REGISTRATION
@@ -22,43 +54,88 @@ PENALTY
 PENALTY_REVOKED
 ```
 
-These records are traceable history. They are not silently overwritten when something is corrected or revoked.
+`SYSTEM_OPEN` is explicitly part of the registration stream: opening a location/waypoint is not merely a transient status change; it produces a synchronisable traceable entry.
 
-Each accepted registration record shall receive a unique sequence number so its creation/order is traceable.
+Additional operational record types may be added only when domain requirements justify them.
+
+Records are historical facts and are not silently overwritten when corrected or revoked.
+
+## Registration sequence and stable record key
+
+The registration sequence is **monotonically increasing per `RegistrationSystemId` / source**.
+
+It is not scoped by location and it is not one global sequence across all registration systems.
 
 Conceptually:
 
 ```text
-RegistrationLedger
-  1001  PASSAGE            team 123  10:14:03.421
-  1002  PENALTY            team 123  code ...
-  1003  PENALTY_REVOKED    ref 1002
-  1004  MANUAL_REGISTRATION team 456 ...
+RegistrationRecordKey = (RegistrationSystemId, SequenceNumber)
 ```
 
-The exact uniqueness scope still needs a formal requirement. A practical first design is a monotonically increasing `long` sequence **per logical TimingSystem**, with `(timingSystemId, sequenceNumber)` forming the stable trace reference.
+Example:
 
-Illustrative model:
+```text
+source A:  1041, 1042, 1043, 1044, ...
+source B:   551,  552,  553, ...
+```
+
+The location remains explicit data on each record:
+
+```text
+source=A  sequence=1042  location=7   type=PASSAGE  ...
+source=A  sequence=1043  location=7   type=SYSTEM_OPEN ...
+```
+
+If the source is later associated with another location, the source sequence does not implicitly restart. This preserves one consistent source stream for higher-level synchronisation.
+
+A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
+
+### Illustrative record model
 
 ```java
 final class RegistrationRecord {
+    private RegistrationSystemId registrationSystemId;
     private long sequenceNumber;
-    private TimingSystemId timingSystemId;
+    private LocationId locationId;
     private RegistrationType type;
     private Instant observedAt;
     private Instant createdAt;
-    private RegistrationSource source;
-    private TeamId teamId;
-    private Long referencedSequenceNumber;
+    private RegistrationOrigin origin;
+    private TeamNumber teamNumber;              // when applicable
+    private RegistrationRecordKey reference;    // corrections/revocations
+    private RegistrationPayload payload;         // type-specific data
+}
+
+final class RegistrationRecordKey {
+    private RegistrationSystemId registrationSystemId;
+    private long sequenceNumber;
 }
 ```
 
-The serialized `TimingSystem` execution path is a natural place to allocate this sequence because it already owns ordering.
+Names are illustrative; the important design is the source-scoped sequence and explicit location association.
+
+### Sequence allocation
+
+A sequence allocator is owned per registration source:
+
+```java
+interface RegistrationSequence {
+    long next(RegistrationSystemId sourceId);
+}
+```
+
+Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    long sequence = registrationSequence.next();
-    RegistrationRecord record = registrationFactory.create(sequence, candidate);
+    RegistrationSystemId source = candidate.registrationSystemId();
+    long sequence = registrationSequence.next(source);
+
+    RegistrationRecord record = registrationFactory.create(
+        source,
+        sequence,
+        candidate.locationId(),
+        candidate);
 
     registrationRepository.append(record);
     registrationState.apply(record);
@@ -67,9 +144,34 @@ void acceptRegistration(RegistrationCandidate candidate) {
 }
 ```
 
-### 2. Ready-team journal and current queue
+The serialized application path is a natural place to allocate/order records, but the exact relationship between executor ownership and multiple `RegistrationSystemId` streams remains part of the `TimingSystem` mapping decision.
 
-Keypad input has a different purpose. It indicates which team numbers should be **prepared/ready** for local operation/display. A keypad action is not itself a passage/start/penalty registration.
+## Sequence persistence and synchronisation
+
+Sequence allocation is a domain consistency mechanism, not a storage implementation detail.
+
+Required direction:
+
+- never reuse a committed `(RegistrationSystemId, SequenceNumber)` after restart;
+- preserve monotonic order independently for each registration source;
+- persist enough allocator state that restore cannot accidentally restart a source sequence;
+- expose source + sequence in synchronisation/support data;
+- support upstream gap/consistency detection;
+- corrections/revocations refer to a stable earlier record key rather than mutating history.
+
+Backup metadata should therefore be source-keyed, for example:
+
+```text
+registration.nextSequence.A  = 1045
+registration.nextSequence.B  = 554
+registration.nextSequence.R1 = ...   # exact reserve identifier form TBD
+```
+
+Whether sequence gaps are allowed is still a formal requirement question. **No reuse and monotonicity** are already known; contiguity across failed/aborted persistence still needs definition.
+
+## Ready-team journal and current state
+
+Keypad input has a different purpose. It indicates which teams should be prepared/ready for local operation/display. A keypad action is not itself a passage/start/penalty registration.
 
 The keypad can:
 
@@ -78,7 +180,7 @@ add team to ready list
 remove team from ready list
 ```
 
-Those actions must still be registered/stored so the operational history is traceable and the state can be recovered.
+Those actions still need to be stored so operational history is traceable and state can be recovered.
 
 Conceptually:
 
@@ -94,12 +196,12 @@ ReadyTeamState
   [456]
 ```
 
-This gives two useful representations:
+This provides:
 
-- **journal/history** — what operators/keypad did and in what order;
+- **journal/history** — what keypad/operator did and in what order;
 - **current state** — which teams are currently ready.
 
-A possible record is:
+Illustrative record:
 
 ```java
 final class ReadyTeamEvent {
@@ -112,7 +214,30 @@ final class ReadyTeamEvent {
 }
 ```
 
-The ready-team sequence may use its own sequence stream, or later we may decide to use one timing-system-wide operational sequence across several journals. That choice should be explicit in the formal requirements/data design.
+The ready-team sequence is a separate design question from the registration-source sequence. It may use its own journal sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `RegistrationSystemId` registration sequence unless requirements explicitly make a ready-team action a registration-stream entry.
+
+## Team and tag identities
+
+Decoded team numbers are in the known range:
+
+```text
+TeamNumber = 0..999
+```
+
+An RFID tag identity ultimately contains:
+
+```text
+prefix + team number + postfix
+```
+
+Known semantics:
+
+- a dedicated prefix indicates a reserve tag;
+- two physical tags exist for the same team/identity;
+- the postfix distinguishes those two physical tag copies;
+- exact encoded prefix/postfix values and encryption/protocol format are not defined in this public design.
+
+Reserve-tag identities are resolved through locally available backoffice-synchronised mapping data before normal participant/team processing.
 
 ## In-memory authoritative state with file backup
 
@@ -121,8 +246,8 @@ The initial implementation direction is:
 ```text
 live application
     |
-    +-- RegistrationRepository      history / ledger in memory
-    +-- RegistrationState           current derived registration view
+    +-- RegistrationRepository      source-ordered history in memory
+    +-- RegistrationState           current/derived registration views
     |
     +-- ReadyTeamEventRepository    keypad/operator history in memory
     +-- ReadyTeamState              current ready-team queue/list
@@ -130,12 +255,12 @@ live application
     +-- StartTimeRepository         backoffice reference data in memory
     +-- ReserveTagRepository        backoffice reference data in memory
     |
+    +-- RegistrationSequenceState   next sequence per RegistrationSystemId
+    |
     +-- simple file backup / restore
 ```
 
-The application should operate on typed in-memory structures rather than repeatedly parsing files during normal operation.
-
-Files provide persistence/recovery, not the primary domain API.
+The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. Files provide persistence/recovery, not the primary domain API.
 
 Possible interfaces:
 
@@ -157,33 +282,12 @@ interface ReadyTeamState {
 
 interface StartTimeRepository {
     void replace(StartTimeSnapshot snapshot);
-    StartTime find(TeamId teamId);
+    StartTime find(TeamNumber teamNumber);
     StartTimeSnapshot snapshot();
 }
 ```
 
-The concrete implementations can use collections/maps appropriate to the lookup patterns.
-
-## Traceability and sequence allocation
-
-Sequence allocation is not just a storage detail. It is part of the traceability model.
-
-Desired properties:
-
-- never reuse a sequence number after restart;
-- preserve ordering of accepted events within its defined sequence scope;
-- persist enough sequence metadata that restoring from backup does not restart numbering at zero;
-- corrections/revocations refer to earlier records rather than mutating their history;
-- UI/API/logging can show sequence numbers for support and reconciliation.
-
-Example backup metadata:
-
-```text
-registration.nextSequence = 1005
-readyTeam.nextSequence    = 504
-```
-
-Whether sequence numbers must be contiguous is a separate question. Usually **unique and monotonically increasing** is more important than guaranteeing no gaps, especially around failed writes/recovery.
+Concrete implementations can use collections/maps appropriate to lookup patterns.
 
 ## Backup policy
 
@@ -192,7 +296,7 @@ The exact write policy still needs evidence and requirements. Candidates include
 - persist every accepted traceable event before acknowledging it;
 - keep an append recovery journal plus periodic snapshots;
 - atomically write current-state/reference snapshots using temporary-file + rename/replace;
-- keep sequence allocator state in the same recoverable persistence set.
+- keep all source sequence allocator state in the same recoverable persistence set.
 
 For the initial implementation, correctness and recoverability are more important than introducing a database engine.
 
@@ -202,7 +306,7 @@ Status should eventually expose at least:
 backup state
 last successful backup time
 last restore result
-last registration sequence
+last registration sequence per source
 last ready-team sequence
 last reference-data synchronisation time/version
 ```
@@ -218,7 +322,7 @@ start process
 load configuration
    |
    v
-load trace journals / snapshots / sequence metadata
+load trace journals / snapshots / source sequence metadata
    |
    v
 reconstruct in-memory repositories and derived state
@@ -227,13 +331,16 @@ reconstruct in-memory repositories and derived state
 load reference-data backup
    |
    v
+validate sequence state against restored records
+   |
+   v
 start interfaces/devices
    |
    v
 connect/synchronise with backoffice when available
 ```
 
-For ready teams, restoration can either restore a snapshot or replay the journal:
+For ready teams, restoration can restore a snapshot or replay the journal:
 
 ```java
 ReadyTeamState readyTeams = new InMemoryReadyTeamState();
@@ -242,32 +349,31 @@ for (ReadyTeamEvent event : readyTeamEvents.snapshot()) {
 }
 ```
 
-A missing/corrupt backup must result in explicit status rather than silently looking healthy.
+A missing/corrupt backup or inconsistent sequence metadata must result in explicit status rather than silently looking healthy.
 
-## Start-time data synchronisation
+## Start-time and reserve-tag synchronisation
 
-Start times are backoffice-owned reference data that must also be available locally.
+Start times and reserve-tag mappings are backoffice-owned reference data that must also be available locally.
 
-The timing application maintains a local in-memory start-time repository and synchronises it from the backoffice.
+The application maintains local in-memory repositories and synchronises accepted data from the backoffice.
 
-A useful synchronisation model is snapshot/version based:
+A useful model is snapshot/version based:
 
 ```text
 Backoffice
    |
-   | StartTimeSnapshot(version, entries)
+   | ReferenceDataSnapshot(version, entries)
    v
 Backoffice adapter
    |
    v
-TimingSystem message queue
+TimingSystem/application message queue
    |
    v
 ReferenceDataService
    |
    +--> validate version/content
-   +--> replace/update StartTimeRepository
-   +--> update ReferenceDataSnapshot
+   +--> replace/update repositories
    +--> write simple backup file
    +--> publish status/data-changed event
 ```
@@ -290,13 +396,11 @@ void handle(StartTimeSnapshotReceived message) {
 }
 ```
 
-The same pattern can be used for reserve-tag conversion data.
-
-Open questions include full-snapshot versus delta updates, version identifiers, correction semantics, and whether updates are per timing system or runtime-wide.
+The same pattern applies to reserve-tag conversion data. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/IDD design.
 
 ## Keypad behaviour
 
-The CAN keypad can both add and remove team numbers from the ready-team state.
+The CAN keypad can both add and remove team numbers from ready-team state.
 
 Possible incoming messages:
 
@@ -305,7 +409,7 @@ KeypadTeamAddRequested(teamNumber)
 KeypadTeamRemoveRequested(teamNumber)
 ```
 
-Both enter the normal `TimingSystem` queue. The handler creates a traceable `ReadyTeamEvent`, stores it, applies it to current state, and then rebuilds/publishes display data.
+Both enter the normal serialized state-change path. The handler creates a traceable `ReadyTeamEvent`, stores it, applies it to current state and then rebuilds/publishes display data.
 
 ```java
 void handle(KeypadTeamAddRequested command) {
@@ -326,15 +430,11 @@ void handle(KeypadTeamAddRequested command) {
 
 Removing a team follows the same path with `REMOVED`.
 
-The application, not the keypad, remains authoritative for the current ready-team list.
-
-Duplicate-add, remove-not-present, ordering and capacity behaviour need explicit requirements.
+The application, not the keypad, remains authoritative for current ready-team state. Duplicate-add, remove-not-present, ordering and capacity behaviour need explicit requirements.
 
 ## Display model
 
 Display data is derived from **current state**, not by forwarding keypad history directly.
-
-The preferred direction is:
 
 ```text
 ReadyTeamJournal          StartTimeRepository
@@ -368,13 +468,13 @@ final class TeamDisplayData {
 }
 ```
 
-Fields are illustrative. The display IDD will ultimately define the contract.
+Fields are illustrative. The display IDD will ultimately define the system contract.
 
 ## Display V1 — passive CAN display
 
-Display V1 is relatively passive. It must be actively driven by the timing application.
+Display V1 is relatively passive and must be actively driven by the timing application.
 
-Crucially, V1 does not need to reconstruct add/remove actions. The application derives the **current ready-team list** and actively writes the appropriate complete/current display state.
+V1 does not reconstruct add/remove history. The application derives the **current ready-team list** and writes the appropriate complete/current display state.
 
 ```java
 void refreshV1() {
@@ -383,29 +483,27 @@ void refreshV1() {
 }
 ```
 
-The V1 adapter translates the model into the CAN protocol/device commands needed to keep the physical display correct.
-
 Implications:
 
 - `TEAM_ADDED` updates `ReadyTeamState`, then triggers a refreshed current list;
 - `TEAM_REMOVED` updates `ReadyTeamState`, then triggers a refreshed current list;
-- after V1 discovery/reconnect, send a full refresh from current state;
-- a V1 reset does not destroy the application's ready-team state;
-- status should distinguish discovered/reachable/last successfully updated.
+- after discovery/reconnect/reset, send a full refresh from current state;
+- a V1 reset does not destroy application ready-team state;
+- status distinguishes discovered/reachable/last successfully updated.
 
 ## Display V2 — smart Wi-Fi display
 
-Display V2 is a smarter network client. The timing application communicates domain/display **data**, while V2 owns its presentation/rendering behaviour.
+Display V2 is a smarter network client. The timing application communicates domain/display **data**, while V2 owns presentation/rendering behaviour.
 
-The intended connection direction remains:
+Intended connection direction:
 
 1. timing application advertises an mDNS service;
 2. V2 discovers the service;
 3. V2 connects to the timing application;
 4. application sends current ready-team/reference/result data;
-5. application and V2 keep the data synchronised while connected.
+5. application and V2 keep data synchronised while connected.
 
-The data can still be represented as a revisioned snapshot/model even though V2 is free to render it differently from V1.
+The data can be represented as a revisioned snapshot/model even though V2 renders it differently from V1.
 
 ```java
 void onDisplayV2Connected(DisplaySession session) {
@@ -413,14 +511,14 @@ void onDisplayV2Connected(DisplaySession session) {
 }
 ```
 
-A later optimisation may send deltas, but a reconnect must always be recoverable through a complete current snapshot.
+A later optimisation may send deltas, but reconnect must always be recoverable through a complete current snapshot.
 
 ## Registration versus ready-team display state
 
-These flows must remain separate:
+These flows remain separate:
 
 ```text
-RFID/manual/start/penalty
+RFID/manual/start/penalty/system-open
           |
           v
  RegistrationLedger
@@ -440,40 +538,52 @@ keypad/UI prepare/remove team
           +--> V2 synchronised data
 ```
 
-A team can therefore be ready for display without having produced a registration, and a registration can exist independently from whether that team is currently in the ready list.
+A team can be ready for display without having produced a registration, and a registration can exist independently from whether that team is currently ready.
 
-The application may later define interactions between the two (for example automatically removing a team after a successful start/passage), but that must be an explicit domain requirement rather than an accidental display side effect.
+Later interactions (for example automatically removing a team after a successful start/passage) must be explicit domain requirements rather than accidental display side effects.
 
 ## Synchronisation and threading
 
-Registration records, ready-team events, reference-data updates and UI/device commands all enter through the timing-system serialized execution boundary so their in-memory state transitions are deterministic.
+Registration records, ready-team events, reference-data updates and UI/device commands enter through controlled serialized state-change boundaries so in-memory transitions are deterministic.
 
-File writes/network sends should not stall that boundary indefinitely. Durability semantics need explicit requirements, particularly for traceable registration/ready-team events.
+File writes/network sends should not stall those boundaries indefinitely. Durability semantics need explicit requirements, particularly for traceable registration records whose source sequence is used for upstream consistency checking.
 
-One likely pattern is:
+One possible pattern is:
 
 ```text
 serial handler
    |
-   +-- allocate sequence
-   +-- append in-memory journal
+   +-- allocate source sequence
+   +-- append in-memory ledger
    +-- update derived state
-   +-- create immutable persistence snapshot/event
+   +-- create immutable persistence work
    +-- schedule durable file write
-   +-- create downstream display/backoffice work
+   +-- create downstream backoffice work
 ```
 
-For safety-critical traceability we may instead require durable persistence acknowledgement before considering the event committed. That remains to be decided.
+However, because upstream systems depend on the sequence stream, formal requirements must decide when a sequence/record is considered committed and which failure gaps are legal.
 
 ## Candidate requirements
 
 Temporary identifiers only; these are not yet formal requirements.
 
-### Registration traceability
+### Registration identity and traceability
 
-- **CAND-REG-001** — Each accepted registration-domain record shall receive a unique monotonically increasing sequence number within its defined sequence scope.
-- **CAND-REG-002** — Registration corrections and revocations shall remain traceable to the original registration record and shall not silently overwrite historical records.
-- **CAND-REG-003** — Registration sequence allocation shall remain consistent across application restart/restore and shall not reuse previously allocated committed sequence numbers.
+- **CAND-REG-001** — Each registration system/source shall have a stable `RegistrationSystemId`.
+- **CAND-REG-002** — Each physical location shall have a unique `LocationId` in the known domain range `1..25`.
+- **CAND-REG-003** — Each committed registration entry shall contain both `RegistrationSystemId` and `LocationId`.
+- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `RegistrationSystemId`.
+- **CAND-REG-005** — The stable registration record identity shall include `RegistrationSystemId` and sequence number so upstream systems can order records and detect gaps per source.
+- **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
+- **CAND-REG-007** — Opening a location/waypoint shall create a traceable registration-stream entry.
+- **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
+
+### Tag/team identity
+
+- **CAND-TAG-001** — Decoded team numbers shall support the known range `0..999`.
+- **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
+- **CAND-TAG-003** — Tag decoding shall retain the postfix/copy identity needed to distinguish the two physical tags associated with one team identity.
+- **CAND-TAG-004** — Reserve tags shall be resolvable using locally available mapping data synchronised from the backoffice.
 
 ### Local data and backup
 
@@ -481,30 +591,36 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-DATA-002** — The system shall back up locally required traceable history/state to simple persistent files and shall be able to restore that information during startup.
 - **CAND-DATA-003** — Backup/restore failures shall be represented in system status.
 - **CAND-DATA-004** — The local start-time data set shall be synchronisable from the backoffice and remain available after loss of live backoffice connectivity.
-- **CAND-DATA-005** — The system shall track enough start-time synchronisation metadata to determine whether the local data is current/stale relative to the latest accepted update.
+- **CAND-DATA-005** — The system shall track enough reference-data synchronisation metadata to determine whether local data is current/stale relative to the latest accepted update.
 
 ### Ready-team/keypad data
 
-- **CAND-READY-001** — The system shall maintain a ready-team state that is logically separate from timing/registration records.
-- **CAND-READY-002** — Adding or removing a team from the ready-team state shall create a traceable persisted event.
-- **CAND-READY-003** — Ready-team events shall be processed through the normal timing-system state-change queue.
-- **CAND-READY-004** — The ready-team state shall be recoverable after application restart from locally persisted information.
+- **CAND-READY-001** — The system shall maintain ready-team state logically separate from timing/registration records.
+- **CAND-READY-002** — Adding or removing a team from ready-team state shall create a traceable persisted ready-team event.
+- **CAND-READY-003** — Ready-team events shall be processed through the normal controlled state-change path.
+- **CAND-READY-004** — Ready-team state shall be recoverable after application restart from locally persisted information.
 - **CAND-READY-005** — The keypad shall be able to request both addition and removal of a team number.
 
 ### Displays
 
 - **CAND-DISP-004** — The application shall derive display data from current timing/reference/ready-team state rather than requiring displays to reconstruct operational event history.
-- **CAND-DISP-005** — Display V1 shall be actively controlled by the application and shall receive the current ready-team display state/list after relevant changes or reconnect.
-- **CAND-DISP-006** — Display V2 shall consume synchronised timing/ready-team/reference data from the application and shall own its local presentation/rendering behaviour.
+- **CAND-DISP-005** — Display V1 shall be actively controlled by the application and shall receive current ready-team display state/list after relevant changes or reconnect.
+- **CAND-DISP-006** — Display V2 shall consume synchronised timing/ready-team/reference data from the application and shall own local presentation/rendering behaviour.
 - **CAND-DISP-007** — When Display V2 connects or reconnects, the application shall be able to provide a complete current data snapshot independent of previously delivered incremental updates.
 - **CAND-DISP-008** — Display data shall support a revision/version mechanism or equivalent means of detecting stale/missed state.
 
 ## Open questions
 
-- Is the registration sequence unique per `TimingSystem`, per running application, or globally across devices/events?
-- Should ready-team events use their own sequence stream or one common operational event sequence?
-- Are sequence-number gaps acceptable after failures, provided numbers are never reused?
-- Which traceable events must be durably written before the operator/device receives acknowledgement?
+- What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
+- What exact identifiers represent virtual registration systems?
+- Is one architecture `TimingSystem` exactly one `RegistrationSystemId`, or can a TimingSystem host/coordinate multiple registration sources?
+- At what value does a new source sequence start?
+- Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
+- Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
+- What sequence numeric width/wraparound policy is required?
+- Which operational events besides `SYSTEM_OPEN` belong in the registration stream?
+- What payload is required on a `SYSTEM_OPEN` entry?
+- Should ready-team events use their own sequence stream or a broader operational event sequence?
 - Which state must survive restart: all registration history, all ready-team history, current ready-team snapshot, start times, reserve tags, display revision, outbox, or all of these?
 - Is snapshot-only backup sufficient for registrations/ready-team events, or should traceable changes use an append journal plus periodic snapshot?
 - How frequently may simple backup files be written without unnecessary SD-card wear?
