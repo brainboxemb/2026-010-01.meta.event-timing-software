@@ -5,15 +5,16 @@ This document is the current phased work plan for the meta project.
 ## Working rules
 
 - Work one plan step at a time unless a later step is needed to correct the plan itself.
-- Record software ideas and unresolved design topics in `docs/brainstorm.md` before promoting them into authoritative documents.
+- Record software ideas and unresolved design topics in `docs/00-brainstorm.md` before promoting them into authoritative documents.
 - Keep this repository focused on planning, research, coordination, and decision preparation.
 - Keep project documentation generic and independent of any specific real-world event.
+- Keep detailed current-step work and evidence in the active pull request rather than expanding this plan into an activity log.
 
 ## Step 0 — Repository bootstrap
 
 Status: in progress
 
-Goal: establish a stable repository structure and working method before software design begins.
+Goal: establish a stable repository structure and working method before the first implementation repository is created.
 
 Scope:
 
@@ -23,15 +24,19 @@ Scope:
 - this agent plan;
 - reusable handoff document;
 - brainstorm document;
+- ordered software-document convention;
 - reference-material area;
-- PR-first working method.
+- PR-first working method;
+- initial non-authoritative SDP/roadmap and architecture/design working documents needed to prepare later formalisation.
 
 Exit criteria:
 
 - the core documents exist and have clearly separated responsibilities;
-- a new chat can continue from `AGENTS.md`, this plan, and `docs/handoff.md`;
-- early software discussion has a defined landing place in `docs/brainstorm.md`;
-- no premature requirements or architecture are presented as settled.
+- a new chat can continue from `AGENTS.md`, this plan, `docs/01-handoff.md`, and the current PR state;
+- early software discussion has a defined landing place in `docs/00-brainstorm.md`;
+- the document set has a predictable numbering/type convention;
+- early architecture/design material remains explicitly non-authoritative until promoted;
+- no implementation repository is created accidentally as part of bootstrap.
 
 ## Step 1 — Collect and structure source material
 
@@ -44,18 +49,18 @@ Expected work:
 - collect source documents;
 - index each source with origin, date/version where known, and relevance;
 - identify overlaps, contradictions, assumptions, and missing information;
-- capture emerging software questions in `docs/brainstorm.md` rather than resolving them prematurely.
+- capture emerging software questions in `docs/00-brainstorm.md` rather than resolving them prematurely.
 
 Detailed scope will be refined after the initial document set is known.
 
-## Step 2 — Software/domain brainstorm
+## Step 2 — Formalise software/domain direction
 
 Status: not started
 
-Goal: explore the intended system, domain concepts, operational scenarios, constraints, and possible software boundaries without yet freezing requirements or architecture.
+Goal: use the collected source material, brainstorm, SDP, architecture working drafts, and candidate requirements to determine what is mature enough to promote into authoritative software-system requirements, architecture, and IDDs.
 
-The exact structure of this step will be agreed after the first source material has been reviewed.
+Do not automatically promote every candidate requirement or design idea. Explicitly resolve conflicts and open questions first.
 
 ## Later steps
 
-Requirements, architecture, implementation decomposition, and repository creation will be planned only after the brainstorm and source review provide enough evidence. Do not infer those steps in detail yet.
+Implementation-repository creation, formal software-item decomposition, and implementation execution will be planned only when the meta-project evidence is mature enough. The software development plan may describe likely phases before those agent steps are activated, but that does not authorise agents to implement them early.
