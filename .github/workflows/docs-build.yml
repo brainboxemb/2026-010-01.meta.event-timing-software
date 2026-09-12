@@ -10,6 +10,7 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_review_views.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -24,6 +25,7 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_review_views.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -68,7 +70,9 @@ jobs:
           python tools/generate_system_model_diagrams.py
 
       - name: Generate SIP planning
-        run: python tools/generate_sip_planning.py
+        run: |
+          python tools/generate_sip_planning.py
+          python tools/generate_sip_review_views.py
 
       - name: Validate generated diagram XML
         run: |
@@ -85,6 +89,8 @@ jobs:
           for path in Path('bld/docs/planning/steps').glob('*.drawio'):
               ET.parse(path)
           for path in Path('bld/docs/planning/steps').glob('*.svg'):
+              ET.parse(path)
+          for path in Path('bld/docs/planning/review').glob('*.svg'):
               ET.parse(path)
           PY
 
@@ -116,6 +122,8 @@ jobs:
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
           test -f bld/docs/assets/architecture/system-device-network-topology.svg
           test -f bld/docs/assets/architecture/system-device-network-topology.drawio
+          test -f bld/docs/assets/architecture/system-connectivity-status.svg
+          test -f bld/docs/assets/architecture/system-connectivity-status.drawio
           test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
           test -f bld/docs/planning/README.md
@@ -126,6 +134,10 @@ jobs:
           test -f bld/docs/planning/steps/step-02-board.svg
           test -f bld/docs/planning/steps/step-02-board.drawio
           test -s bld/docs/planning/steps/step-02-board-a3-portrait.pdf
+          test -f bld/docs/planning/review/sip-roadmap-a4-review-1.svg
+          test -f bld/docs/planning/review/sip-roadmap-a4-review-2.svg
+          test -f bld/docs/planning/review/sip-roadmap-a4-review-3.svg
+          test -f bld/docs/planning/review/step-02-a4-review.svg
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
