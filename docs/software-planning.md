@@ -20,6 +20,8 @@ Current outputs:
 - shared command/query boundary;
 - first-class status representation;
 - configuration/settings boundary;
+- Maven as accepted build tooling;
+- Java 8 as the conservative default candidate, with Java 11 to be evaluated on original Raspberry Pi Zero / Zero W hardware before final selection;
 - first implementation sequence.
 
 Exit criteria:
@@ -27,7 +29,31 @@ Exit criteria:
 - the responsibilities of the headless runtime, application services, external interfaces, and platform/device adapters are understandable;
 - status has a clear central ownership/model direction;
 - the first headless implementation can be started without inventing architecture ad hoc inside its PR;
-- unresolved technical choices are explicitly listed rather than silently assumed.
+- unresolved technical choices are explicitly listed rather than silently assumed;
+- Java 8 and Java 11 have a concrete comparison plan on real Raspberry Pi Zero 1 hardware;
+- the final Java baseline can be selected from evidence covering runtime support, footprint, performance, dependency compatibility, and deployment complexity.
+
+### Java baseline validation
+
+The original Raspberry Pi Zero / Zero W is a mandatory target. The Java version must therefore be validated on that hardware before the baseline is accepted.
+
+Compare at least:
+
+- Java 8 LTS using a maintained ARMv6-capable runtime;
+- Java 11 LTS using a maintained ARMv6-capable runtime.
+
+Use the same small representative application and measure or verify:
+
+- startup time;
+- steady-state resident memory use;
+- heap behaviour under a small representative workload;
+- version/status command responsiveness;
+- JSON/API responsiveness;
+- availability of intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
+- runtime update/security availability;
+- packaging, installation, and upgrade complexity.
+
+Do not assume that the Raspberry Pi OS default Java package is suitable for Zero 1. The current OS package baseline and ARMv6 runtime support are separate concerns.
 
 ## Step 2 — Minimal version/status application
 
@@ -53,8 +79,8 @@ Required behaviour:
 
 Implementation choices needed before or during this step:
 
-- Java version;
-- Maven/Gradle;
+- final Java baseline selected from Step 1 evidence;
+- reference runtime/version for Raspberry Pi Zero 1;
 - logging framework/facade;
 - API technology;
 - remote shell technology;
@@ -67,7 +93,9 @@ Expected verification:
 - interface-level checks showing the same version value through all three interfaces;
 - build/test evidence on GitHub Actions;
 - basic Windows and Linux execution evidence;
-- Raspberry Pi compatibility assessment, with actual deployment allowed to remain a later step.
+- actual execution on an original Raspberry Pi Zero / Zero W using the selected runtime;
+- captured startup time, steady-state memory use, and basic command/API responsiveness on the Pi Zero 1;
+- confirmation that dependencies and APIs remain compatible with the selected Java baseline.
 
 ## Step 3 — GUI status client
 
