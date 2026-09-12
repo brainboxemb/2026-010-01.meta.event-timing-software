@@ -3,7 +3,7 @@
 
 The source documents remain authoritative on the normal source branch. This
 script creates a review/output document set under bld/docs with local diagram
-links, plus a combined architecture book.
+links, an architecture book, and a combined software document set.
 """
 
 from pathlib import Path
@@ -12,13 +12,22 @@ import re
 import shutil
 
 
-DOCUMENTS = [
+PLANNING_DOCUMENTS = [
+    "10-SDP-software-development-plan.md",
+    "11-SIP-software-implementation-planning.md",
+    "12-SDE-software-development-environment.md",
+]
+
+ARCHITECTURE_DOCUMENTS = [
     "30-SSAD-software-system-architecture.md",
     "31-01-SAD-timing-application-architecture.md",
-    "31-02-SDD-timing-system-detailed-design.md",
-    "31-03-SDD-data-and-display-design.md",
-    "31-04-SDD-java-component-design.md",
+    "31-01-SDD-01-timing-system-design.md",
+    "31-01-SDD-02-data-and-display-design.md",
+    "31-01-SDD-03-java-component-design.md",
+    "31-02-SAD-gui-application-architecture.md",
 ]
+
+DOCUMENTS = PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS
 
 
 RAW_DIAGRAM_LINK = re.compile(
@@ -30,6 +39,7 @@ BLOB_DIAGRAM_LINK = re.compile(
 
 
 def localise_links(text: str) -> str:
+    """Rewrite generated-branch diagram links to local generated assets."""
     text = RAW_DIAGRAM_LINK.sub(r"../assets/architecture/\1", text)
     text = BLOB_DIAGRAM_LINK.sub(r"../assets/architecture/\1", text)
     return text
@@ -48,15 +58,47 @@ def title_of(text: str, fallback: str) -> str:
 
 
 def as_book_section(text: str, title: str) -> str:
+    """Embed a Markdown document one heading level lower in a combined book."""
     lines = text.splitlines()
     if lines and lines[0].startswith("# "):
         lines = lines[1:]
+
     shifted = []
+    fenced = False
     for line in lines:
-        if line.startswith("#"):
+        if line.startswith("```"):
+            fenced = not fenced
+            shifted.append(line)
+            continue
+        if not fenced and line.startswith("#"):
             line = "#" + line
         shifted.append(line)
+
     return "## " + title + "\n\n" + "\n".join(shifted).strip() + "\n"
+
+
+def write_book(path: Path, title: str, description: str, built) -> None:
+    content = [
+        f"# {title}",
+        "",
+        description,
+        "",
+        "The numbered source documents on the source branch remain authoritative.",
+        "",
+        "## Contents",
+        "",
+    ]
+
+    for filename, document_title, _ in built:
+        content.append(f"- [{document_title}](./{filename})")
+
+    content.extend(["", "---", ""])
+
+    for _, document_title, text in built:
+        content.append(as_book_section(text, document_title))
+        content.append("\n---\n")
+
+    path.write_text("\n".join(content), encoding="utf-8")
 
 
 def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
@@ -73,10 +115,13 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
             shutil.copy2(path, assets_dir / path.name)
 
     built = []
+    by_name = {}
+
     for filename in DOCUMENTS:
         source = source_dir / filename
         if not source.exists():
             raise SystemExit(f"missing document source: {source}")
+
         text = read_source(source)
         title = title_of(text, filename)
         generated = (
@@ -84,30 +129,51 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
             + text
         )
         (documents_dir / filename).write_text(generated, encoding="utf-8")
-        built.append((filename, title, text))
+        item = (filename, title, text)
+        built.append(item)
+        by_name[filename] = item
 
-    book = [
-        "# Software architecture document set",
+    architecture_built = [by_name[name] for name in ARCHITECTURE_DOCUMENTS]
+
+    write_book(
+        documents_dir / "architecture-book.md",
+        "Software architecture document set",
+        "Generated review/output book containing the current SSAD and software-item SAD/SDD documents.",
+        architecture_built,
+    )
+
+    write_book(
+        documents_dir / "software-document-set.md",
+        "Software engineering document set",
+        "Generated review/output book containing the current planning, development-environment, architecture and detailed-design documents.",
+        built,
+    )
+
+    doc_index = [
+        "# Generated documents",
         "",
-        "Generated review/output document. The numbered source documents remain authoritative.",
-        "",
-        "## Contents",
+        "## Planning and development environment",
         "",
     ]
-    for filename, title, _ in built:
-        book.append(f"- [{title}](./{filename})")
-    book.append("")
-    book.append("---")
-    book.append("")
-    for _, title, text in built:
-        book.append(as_book_section(text, title))
-        book.append("\n---\n")
-    (documents_dir / "architecture-book.md").write_text("\n".join(book), encoding="utf-8")
+    for name in PLANNING_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
 
-    doc_index = ["# Generated documents", ""]
-    for filename, title, _ in built:
-        doc_index.append(f"- [{title}](./{filename})")
-    doc_index.extend(["", "- [Combined architecture book](./architecture-book.md)", ""])
+    doc_index.extend(["", "## Architecture and design", ""])
+    for name in ARCHITECTURE_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(
+        [
+            "",
+            "## Combined documents",
+            "",
+            "- [Complete software engineering document set](./software-document-set.md)",
+            "- [Architecture book](./architecture-book.md)",
+            "",
+        ]
+    )
     (documents_dir / "README.md").write_text("\n".join(doc_index), encoding="utf-8")
 
     root_index = [
@@ -115,8 +181,9 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         "",
         "This branch contains generated review/output documentation. Edit source Markdown on the source branch, not here.",
         "",
-        "- [Generated document set](documents/README.md)",
-        "- [Combined architecture book](documents/architecture-book.md)",
+        "- [Generated document index](documents/README.md)",
+        "- [Complete software engineering document set](documents/software-document-set.md)",
+        "- [Architecture book](documents/architecture-book.md)",
         "- [Architecture assets](assets/architecture/README.md)",
         "",
     ]
