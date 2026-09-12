@@ -62,7 +62,7 @@ At closure:
 
 ## AP-1 — Formalise the first executable slice
 
-Status: not started
+Status: in progress — issue/PR #2
 
 Goal: make only the requirements, interfaces and verification material needed for the first SI-01 executable sufficiently concrete to begin implementation without inventing externally visible behaviour inside implementation PRs.
 
