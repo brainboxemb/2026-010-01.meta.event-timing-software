@@ -53,9 +53,9 @@ nodes:
   layout: {x: 215, y: 330, w: 330, h: 85}
 - id: app-state
   group: application-layer
-  label: "Application state\nTimingSystemInstance • ledgers • current runtime state"
+  label: "Application state\nTimingSystemInstance • ledgers • current runtime state\nowned here and supplied to domain services"
   kind: application
-  layout: {x: 585, y: 330, w: 330, h: 85}
+  layout: {x: 585, y: 320, w: 330, h: 95}
 - id: status-management
   group: application-layer
   label: "Status management\naggregate current state • immutable snapshots"
@@ -65,7 +65,7 @@ nodes:
   group: application-layer
   label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
   kind: runtime
-  layout: {x: 360, y: 430, w: 690, h: 45}
+  layout: {x: 585, y: 430, w: 330, h: 45}
 - id: registration-service
   group: domain-layer
   label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
@@ -148,13 +148,16 @@ edges:
   route: [{x: 1095, y: 250}, {x: 672, y: 250}]
 - from: app-command-query
   to: registration-service
-  route: [{x: 300, y: 500}, {x: 300, y: 560}]
+- from: app-command-query
+  to: start-time-service
+  label: start-time updates
+  route: [{x: 565, y: 500}, {x: 750, y: 500}, {x: 750, y: 560}]
 - from: app-command-query
   to: ready-team-service
   route: [{x: 455, y: 500}, {x: 1095, y: 500}, {x: 1095, y: 560}]
 - from: app-command-query
   to: reference-service
-  route: [{x: 265, y: 500}, {x: 265, y: 700}]
+  route: [{x: 190, y: 500}, {x: 190, y: 737}]
 - from: registration-service
   to: start-time-service
   label: start procedure
@@ -169,43 +172,23 @@ edges:
   route: [{x: 1095, y: 700}, {x: 1095, y: 705}]
 - from: reference-service
   to: domain-model
-- from: registration-service
-  to: app-state
-  label: state changes
-  dashed: true
-  route: [{x: 565, y: 550}, {x: 680, y: 550}, {x: 680, y: 500}]
-- from: start-time-service
-  to: app-state
-  label: start-time changes
-  dashed: true
-  route: [{x: 750, y: 550}, {x: 750, y: 500}]
-- from: ready-team-service
-  to: app-state
-  label: state changes
-  dashed: true
-  route: [{x: 935, y: 550}, {x: 820, y: 550}, {x: 820, y: 500}]
 - from: app-state
   to: status-management
 - from: core-runtime
-  to: app-command-query
-  dashed: true
-  route: [{x: 520, y: 420}]
-- from: core-runtime
   to: app-state
   dashed: true
-  route: [{x: 750, y: 420}]
 - from: app-state
   to: persistence
   label: persist / restore
-  route: [{x: 610, y: 800}, {x: 380, y: 800}]
+  route: [{x: 565, y: 500}, {x: 565, y: 800}, {x: 380, y: 800}]
 - from: backoffice
   to: core-runtime
   label: inbound updates
-  route: [{x: 735, y: 805}, {x: 735, y: 495}]
+  route: [{x: 565, y: 805}, {x: 565, y: 495}]
 - from: device-integration
   to: core-runtime
   label: observations/events
-  route: [{x: 1080, y: 805}, {x: 1080, y: 495}, {x: 950, y: 495}]
+  route: [{x: 935, y: 805}, {x: 935, y: 495}]
 - from: persistence
   to: platform-primitives
 - from: backoffice
