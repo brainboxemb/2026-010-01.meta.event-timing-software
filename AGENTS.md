@@ -60,6 +60,35 @@ SI-03  Web Operator Application
 
 The agent plan uses `AP-*` identifiers so its coordination steps cannot be confused with SIP implementation steps.
 
+## Planning-document responsibilities
+
+Do not allow the SDP, SIP and SDE to drift into duplicates of each other.
+
+```text
+SDP
+  high-level development strategy
+  objectives and broad phases/workstreams
+  risks and major unknowns
+  assumptions/dependencies
+  resource/environment needs at planning level
+
+SIP
+  ordered implementation steps
+  step scope
+  concrete deliverables
+  repeatable demonstrations
+  evidence / exit criteria
+
+SDE
+  concrete engineering environment
+  repository/content layout and conventions
+  GitHub issue/branch/PR workflow
+  developer/CI/target environment conventions
+  tooling, generated-output and artifact handling
+```
+
+Verification strategy belongs in the SVP; architecture/design belongs in SSAD/SAD/SDD/IDD documents. Do not put detailed commands/tasks in the SDP merely because they belong to a future phase.
+
 ## Sources of truth
 
 Use these documents for their specific roles:
@@ -72,9 +101,9 @@ docs/01-handoff.md                                 reusable session handoff
 docs/02-agent-plan.md                              AP-* meta-project/agent work plan and progress
 docs/03-domain-baseline.md                         supplied domain facts/terminology and unresolved mappings
 docs/04-UC-system-use-cases.md                     system operational goals/use cases and alternative flows
-docs/10-SDP-software-development-plan.md           high-level phased software development
-docs/11-SIP-software-implementation-planning.md    concrete software implementation sequence
-docs/12-SDE-software-development-environment.md    common tooling/GitHub/AI/repository workflow
+docs/10-SDP-software-development-plan.md           high-level strategy, broad phases, risks, resources and assumptions
+docs/11-SIP-software-implementation-planning.md    concrete implementation steps, deliverables, demos and exit evidence
+docs/12-SDE-software-development-environment.md    repositories, GitHub flow, tooling, CI/artifact and environment conventions
 docs/30-SSAD-software-system-architecture.md       software-item register, interface catalogue and system architecture
 docs/31-01-SAD-timing-application-architecture.md  SI-01 architecture
 docs/31-01-SDD-*                                   SI-01 detailed design
@@ -96,13 +125,14 @@ When documents disagree, prefer the more specific source for that topic. Do not 
 3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
 4. Read `docs/03-domain-baseline.md` when work depends on domain identifiers, registration semantics, tag/team identity, locations, or source sequencing.
 5. Read `docs/04-UC-system-use-cases.md` when work changes externally meaningful system behaviour, actor flows, failure/recovery scenarios or system-test intent.
-6. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
-7. Read the SSAD/software-item design and SVP relevant to the current work.
-8. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
-9. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
-10. Keep research and verification evidence traceable to its source.
-11. Update the plan when a step is completed, materially changed, or blocked.
-12. Keep implementation details in the future implementation repository rather than duplicating them here.
+6. Read the SDP when work changes overall development strategy, broad phase ordering, risks, assumptions or required resources.
+7. Read the SIP when work changes concrete implementation sequencing, deliverables, demonstrations or exit criteria.
+8. Read the SDE before changing repository/workflow/tooling/environment/artifact conventions.
+9. Read the SSAD/software-item design and SVP relevant to the current work.
+10. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
+11. Keep research and verification evidence traceable to its source.
+12. Update the appropriate plan when a step/phase/risk is completed, materially changed, or blocked.
+13. Keep implementation details in the future implementation repository rather than duplicating them here.
 
 ## Pull-request-first workflow
 
