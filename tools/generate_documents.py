@@ -40,10 +40,10 @@ DOCUMENTS = CONTEXT_DOCUMENTS + PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS + VE
 
 
 RAW_DIAGRAM_LINK = re.compile(
-    r"\.\./\.\./\.\./raw/(?:prod/docs|dev/pr-\d+/docs)/architecture/([^\s)]+)"
+    r"\.\./\.\./\.\./raw/(?:prod/docs|dev/pr-\d+/docs)/(?:assets/)?architecture/([^\s)]+)"
 )
 BLOB_DIAGRAM_LINK = re.compile(
-    r"\.\./\.\./\.\./blob/(?:prod/docs|dev/pr-\d+/docs)/architecture/([^\s)]+)"
+    r"\.\./\.\./\.\./blob/(?:prod/docs|dev/pr-\d+/docs)/(?:assets/)?architecture/([^\s)]+)"
 )
 
 
