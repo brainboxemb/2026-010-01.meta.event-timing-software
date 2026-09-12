@@ -139,55 +139,93 @@ nodes:
 edges:
 - from: http-api
   to: app-command-query
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.42}
 - from: shell
   to: app-command-query
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.80}
+  route: [{x: 1030, y: 260}, {x: 479, y: 260}]
 - from: status-management
   to: websocket
   label: status/events
   dashed: true
-  route: [{x: 1095, y: 250}, {x: 672, y: 250}]
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
+  route: [{x: 1095, y: 248}, {x: 672.5, y: 248}]
 - from: app-command-query
   to: registration-service
+  from_anchor: {side: bottom, position: 0.28}
+  to_anchor: {side: top, position: 0.28}
 - from: app-command-query
   to: start-time-service
-  route: [{x: 565, y: 500}, {x: 750, y: 500}, {x: 750, y: 560}]
+  from_anchor: {side: bottom, position: 0.55}
+  to_anchor: {side: top, position: 0.50}
+  route: [{x: 396.5, y: 500}, {x: 750, y: 500}]
 - from: app-command-query
   to: ready-team-service
-  route: [{x: 455, y: 500}, {x: 1095, y: 500}, {x: 1095, y: 560}]
-- from: app-command-query
-  to: race-data-service
-  route: [{x: 190, y: 500}, {x: 190, y: 737}]
+  from_anchor: {side: bottom, position: 0.82}
+  to_anchor: {side: top, position: 0.50}
+  route: [{x: 485.6, y: 510}, {x: 1095, y: 510}]
 - from: registration-service
   to: start-time-service
-  route: [{x: 565, y: 638}]
+  from_anchor: {side: right, position: 0.42}
+  to_anchor: {side: left, position: 0.42}
+- from: registration-service
+  to: race-data-service
+  from_anchor: {side: bottom, position: 0.28}
+  to_anchor: {side: top, position: 0.28}
 - from: registration-service
   to: domain-model
-  route: [{x: 520, y: 690}, {x: 650, y: 690}]
+  from_anchor: {side: right, position: 0.78}
+  to_anchor: {side: left, position: 0.48}
+  route: [{x: 565, y: 666.9}, {x: 565, y: 736.4}]
 - from: start-time-service
   to: domain-model
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.25}
 - from: ready-team-service
   to: domain-model
-  route: [{x: 1095, y: 700}, {x: 1095, y: 705}]
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.78}
 - from: race-data-service
   to: domain-model
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
 - from: app-state
   to: status-management
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
 - from: core-runtime
   to: app-state
   dashed: true
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
 - from: app-state
   to: persistence
   label: persist / restore
-  route: [{x: 565, y: 500}, {x: 565, y: 800}, {x: 380, y: 800}]
+  from_anchor: {side: left, position: 0.72}
+  to_anchor: {side: top, position: 0.50}
+  route: [{x: 555, y: 388.4}, {x: 555, y: 800}, {x: 380, y: 800}]
 - from: backoffice
   to: core-runtime
-  route: [{x: 565, y: 805}, {x: 565, y: 495}]
+  from_anchor: {side: top, position: 0.10}
+  to_anchor: {side: left, position: 0.55}
+  route: [{x: 575, y: 850}, {x: 575, y: 454.8}]
 - from: device-integration
   to: core-runtime
-  route: [{x: 935, y: 805}, {x: 935, y: 495}]
+  from_anchor: {side: top, position: 0.05}
+  to_anchor: {side: right, position: 0.55}
+  route: [{x: 935, y: 850}, {x: 935, y: 454.8}]
 - from: persistence
   to: platform-primitives
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.16}
 - from: backoffice
   to: platform-primitives
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
 - from: device-integration
   to: platform-primitives
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.84}
