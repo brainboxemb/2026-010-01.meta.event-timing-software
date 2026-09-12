@@ -1,0 +1,27 @@
+{
+  "status": "working estimate / non-authoritative",
+  "start_date": "2026-09-12",
+  "cadence_project_days_per_week": 1.0,
+  "planning_reserve_fraction": 0.25,
+  "notes": [
+    "Estimates are focused project days, not calendar days.",
+    "The baseline assumes approximately one focused project day per week.",
+    "Target dates are planning aids, not commitments.",
+    "Re-estimate a step when implementation evidence materially changes uncertainty."
+  ],
+  "steps": {
+    "1":  {"estimate_project_days": 1, "workstream": "architecture", "note": "remaining work after the current bootstrap round"},
+    "2":  {"estimate_project_days": 2, "workstream": "architecture"},
+    "3":  {"estimate_project_days": 3, "workstream": "application"},
+    "4":  {"estimate_project_days": 4, "workstream": "platform"},
+    "5":  {"estimate_project_days": 3, "workstream": "client"},
+    "6":  {"estimate_project_days": 3, "workstream": "test"},
+    "7":  {"estimate_project_days": 2, "workstream": "extension"},
+    "8":  {"estimate_project_days": 6, "workstream": "domain"},
+    "9":  {"estimate_project_days": 4, "workstream": "client"},
+    "10": {"estimate_project_days": 5, "workstream": "test"},
+    "11": {"estimate_project_days": 7, "workstream": "hardware"},
+    "12": {"estimate_project_days": 6, "workstream": "backoffice"},
+    "13": {"estimate_project_days": 5, "workstream": "platform"}
+  }
+}
