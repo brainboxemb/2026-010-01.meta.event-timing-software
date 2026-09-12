@@ -28,6 +28,7 @@ ARCHITECTURE_DOCUMENTS = [
     "31-01-SDD-01-timing-system-design.md",
     "31-01-SDD-02-data-and-display-design.md",
     "31-01-SDD-03-java-component-design.md",
+    "31-01-SDD-04-runtime-topology-and-configuration.md",
     "31-02-SAD-gui-application-architecture.md",
     "31-03-SAD-web-operator-application-architecture.md",
 ]
