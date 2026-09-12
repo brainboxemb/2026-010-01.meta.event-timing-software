@@ -33,6 +33,7 @@ SI-01 architecture is driven by these concerns:
 - support one or more logical timing-system instances without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
+- preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
 - remain testable without production RFID, CAN, backoffice or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
@@ -51,7 +52,8 @@ Representative architecture-validation scenarios include:
 4. persist accepted operational state and recover it after restart;
 5. continue local operation while a GUI/browser or backoffice connection is unavailable;
 6. host several timing-system instances in a development/simulation composition without state leakage;
-7. substitute public stubs for production devices/transports while exercising the same application/domain paths.
+7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
+8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
 
 These scenarios are used to check the logical, process, development and deployment views below.
 
@@ -107,7 +109,9 @@ RaceDataService
 
 `RaceDataService` is specifically the domain capability for race/event data in the sporting-event sense: participant/team data, tag-reference lookup and reserve-tag mapping semantics. It is deliberately not named `EventDataService`, because software events are a separate architecture concept. Start-time state remains owned by `StartTimeService`, ready-team state by `ReadyTeamService`, and registrations by `RegistrationService`.
 
-Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, start-time values, ready-team values and race/participant/tag-reference values.
+Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, `TimeStamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
+
+Decoded RFID identity must preserve whether a tag is normal, reserve or test-class until the applicable domain/use-case policy has been applied. A test tag is therefore not silently normalised into a normal participant identity at an adapter boundary.
 
 Product/deployment-specific policy does not automatically belong in the reusable domain model.
 
@@ -201,7 +205,7 @@ External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID,
 
 The intended processing path is:
 
-1. capture externally meaningful timestamps immediately where timing matters;
+1. capture externally meaningful `TimeStamp` values immediately where timing matters;
 2. attach stable instance/device/source context;
 3. convert input into an immutable command/event;
 4. route it to the addressed `TimingSystemInstance`;
@@ -239,6 +243,63 @@ Initial architectural preference:
 
 The exact queue bounds, rejection/backpressure policy, backing-pool size and fairness policy remain architecture decisions to be measured and resolved before the corresponding workload is implemented.
 
+## Time and clock architecture
+
+Time is an explicit architecture concern rather than an incidental use of `Date`, `Calendar`, `LocalDateTime` or raw millisecond values throughout the codebase.
+
+### `TimeStamp` value
+
+SI-01 should use one small immutable application/domain value type named `TimeStamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
+
+Working semantics:
+
+- `TimeStamp` represents an absolute point on a UTC-based time line;
+- it does not contain an implicit local time zone or daylight-saving state;
+- conversion to/from local civil time happens at explicit presentation/configuration/integration boundaries;
+- its precision and external serialisation are explicit rather than inherited accidentally from a Java API or wire codec;
+- domain/application APIs should pass `TimeStamp` rather than arbitrary `long`, `Date` or local-date/time values where an absolute event time is intended.
+
+The implementation may internally delegate to suitable Java time primitives, but the project-owned value type keeps the semantic contract independent of one Java API, storage format or external protocol representation.
+
+### Time sources
+
+Code that needs the current absolute time receives it through an injectable time-source/clock abstraction. Production composition can use the operating-system wall clock; deterministic tests can supply a controlled clock that can be advanced or stepped explicitly.
+
+Elapsed durations, retry intervals, filtering windows, scheduling delays and timeout measurements should use a **monotonic time source** where their semantics are duration-based. On Java 8 this can be backed by `System.nanoTime()` behind a small platform abstraction. A monotonic mark is process-local and is not a persisted event timestamp.
+
+The distinction is therefore:
+
+```text
+TimeStamp / wall-clock source
+  absolute event time
+  persistence / synchronisation / external semantics
+
+monotonic time source
+  elapsed duration
+  timeout / retry / filtering windows
+  process-local only
+
+RegistrationSource SequenceNumber
+  stable source ordering / gap detection
+```
+
+A source sequence is not derived from a timestamp. Two registrations may have equal timestamps, and a wall-clock correction may even make a later observation carry an earlier absolute timestamp; source ordering must remain recoverable from source sequence semantics.
+
+### Architecture risk — wall-clock discontinuity and local-time ambiguity
+
+This is an explicit architecture risk because timing software can produce plausible but incorrect results when local civil time and elapsed time are conflated.
+
+| Risk | Possible consequence | Architectural mitigation / open work |
+| --- | --- | --- |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted as authority | persist/use absolute `TimeStamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
+| NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
+| clock offset/drift differs between SI-01 and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
+| restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimeStamp` plus domain/source state |
+
+Daylight-saving time by itself does **not** change UTC/absolute time; the ambiguity appears when a local civil time is treated as if it were an absolute timestamp. Conversely, using an absolute `TimeStamp` does not make the operating-system clock monotonic: a wall-clock correction can still cause newly captured absolute timestamps to move backwards.
+
+Before physical timing behaviour is accepted, the project must decide how an active timing system reacts to a material clock correction: whether it is merely diagnosed, blocks/marks the system degraded, records an audit event, or uses an explicit correction/offset mechanism. That policy needs requirements and verification evidence rather than being hidden inside the `TimeStamp` class.
+
 ## Internal messaging direction
 
 Internal messaging is a programming/architecture mechanism, not a reason to introduce a broker inside SI-01.
@@ -270,6 +331,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - CAN/device availability;
 - persistence/backup state;
 - race-data freshness;
+- local clock/time-source health where relevant to timing validity;
 - network/backoffice connectivity;
 - inbound/outbound synchronisation state.
 
@@ -328,8 +390,9 @@ Keep these concepts distinct:
 2. registration ledger/source sequence — traceable domain/operational history;
 3. ready-team journal/current projection — separate operational capability;
 4. race/reference data — locally available participant/team/tag-reference input received from external sources;
-5. local backup/restore — restart/power-loss recovery;
-6. backoffice outbox/synchronisation — pending external delivery/reconciliation.
+5. absolute event time — project-owned `TimeStamp` semantics independent of local display time;
+6. local backup/restore — restart/power-loss recovery;
+7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
 Registration identity remains source-scoped; the current stable conceptual key is `(RegistrationSystemId, SequenceNumber)`.
 
@@ -358,6 +421,8 @@ The socket implementation exists to test a real process/network boundary without
 ### RFID
 
 RFID integration is an adapter boundary. Raw callbacks/protocol data do not directly mutate application state. The adapter is responsible for protocol/device interaction and turns accepted observations/health changes into typed application-facing messages.
+
+Decoding must retain public semantic tag classification (normal/reserve/test) even if proprietary prefix/encryption details stay in a private codec. Reserve resolution and test-tag policy are domain/use-case concerns rather than reasons for the adapter to silently rewrite every decoded tag to one normal identity.
 
 Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
 
@@ -414,6 +479,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Build | Maven | accepted |
 | Concurrency | JDK `java.util.concurrent` + small serial-execution abstraction | working direction; measure pool/queue behaviour |
 | Internal messaging | typed immutable commands/events + explicit routing; no generic event bus initially | working direction |
+| Time model | project-owned immutable `TimeStamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | stable facade; lightweight backend to be selected | compare SLF4J-based backend vs JDK logging on target |
 | Configuration | external typed/validated configuration | file format/library still open |
@@ -451,7 +517,9 @@ The architecture should not require a different domain implementation for simula
 Testability is an architecture property. Application/domain code should where practical:
 
 - avoid uncontrolled threads and global mutable state;
-- receive time through an injectable abstraction;
+- receive absolute time through an injectable abstraction;
+- receive duration/timeout measurements through a controllable monotonic abstraction where needed;
+- include tests that step the wall clock forwards/backwards and cross representative DST/local-time transitions;
 - depend on semantic ports rather than concrete device/network libraries;
 - keep protocol parsing in adapters;
 - use deterministic handlers that can run synchronously in unit tests;
@@ -494,6 +562,8 @@ The next useful architecture work is to resolve concrete implementation choices,
 - remote-shell technology;
 - exact `SerialExecutor`/backing-executor design and queue/backpressure policy;
 - typed internal message/dispatcher API shape;
+- `TimeStamp` representation/precision/serialisation and equality/comparison semantics;
+- wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
 - configuration format, validation library and override/secrets model;
 - persistence commit/durability/atomic-write/recovery policy;
 - reference ARMv6 Java 8 runtime/vendor/version;
