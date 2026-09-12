@@ -167,13 +167,15 @@ Show the Maven dependency direction and demonstrate that `timing-core` does not 
 - README explains build/run/test;
 - repository contains the required SDE baseline files.
 
-## Step 3 — Minimal version/status application (SI-01)
+## Step 3 — Minimal version/status application on development host (SI-01)
 
 Status: not started
 
 ### Goal
 
-Prove the public runtime/application boundary with deliberately small behaviour and establish the first Pi Zero resource baseline.
+Prove the public runtime/application boundary with deliberately small behaviour on the primary development environment before introducing target-image complexity.
+
+Windows is the first concrete execution target for this step. Linux-host execution may also be included through CI or developer testing, but Raspberry Pi deployment is deliberately separated into Step 4.
 
 ### Scope
 
@@ -190,16 +192,15 @@ Prove the public runtime/application boundary with deliberately small behaviour 
 - logging and externalised settings are active;
 - first `ST-1 Application Behaviour` black-box tests through the public application interface;
 - GitHub Actions verifies fast tests;
-- Windows/Linux execution;
-- real Raspberry Pi Zero 1 execution.
+- repeatable Windows execution from built artifacts.
 
 ### Deliverable
 
-The first useful SI-01 executable: a headless Java application with one shared version/status model exposed through multiple interfaces and runnable on the mandatory Pi Zero target.
+The first useful SI-01 executable for the development environment: a headless Java application with one shared version/status model exposed through multiple interfaces and a repeatable black-box test path.
 
 ### Demonstration
 
-Start SI-01 and show:
+On a Windows development machine, start SI-01 from the built artifact and show:
 
 ```text
 local console  -> version + status
@@ -208,23 +209,112 @@ HTTP/JSON      -> same version/status model
 WebSocket      -> receive a status/event update
 ```
 
-Then run the same application artifact/configuration class on an original Raspberry Pi Zero / Zero W and repeat at least the HTTP/status check.
+Then run the `ST-1` black-box scenario against that process.
 
-A useful stakeholder statement at the end of the step is:
+A useful stakeholder statement is:
 
-> We now have the real headless application running on the target hardware and can inspect the same live status locally and remotely through three different interfaces.
+> We now have the real headless application running as a separate process and can inspect the same live state through all initial public interfaces.
 
 ### Evidence / exit criteria
 
 - automated tests verify shared application behaviour rather than duplicating behaviour in each transport;
 - `ST-1` demonstrates the running process through public interfaces;
 - GitHub Actions is green;
-- Windows/Linux execution evidence exists;
-- real Pi Zero execution evidence exists;
-- measured baseline includes startup time, RSS/heap behaviour, CPU, thread count and version/status responsiveness as defined by the SVP;
-- lifecycle/status architecture is not coupled to one client transport.
+- Windows execution from produced artifacts is repeatable;
+- Linux-host execution is smoke-tested where practical;
+- lifecycle/status architecture is not coupled to one client transport;
+- no Raspberry Pi-specific code is required to run the application behaviour.
 
-## Step 4 — First Desktop GUI client (SI-02)
+## Step 4 — Raspberry Pi Zero image, target run and update automation
+
+Status: not started
+
+### Goal
+
+Move the already-working SI-01 executable to the mandatory original Raspberry Pi Zero / Zero W using reproducible automation rather than a hand-built target.
+
+This step deliberately introduces target deployment early. It should establish both **clean-device provisioning** and a **fast application-update path** before the rest of the product grows.
+
+### Scope
+
+#### Reproducible target image
+
+- select and pin the supported Raspberry Pi OS/base-image baseline;
+- select and pin the ARMv6-capable Java 8 runtime;
+- automated construction/customisation of a complete flashable Pi image;
+- install SI-01 artifact and required runtime files;
+- install service definition/startup configuration;
+- include safe default/public configuration only;
+- keep deployment secrets and real/proprietary configuration out of the public image source;
+- record image/source/application/runtime versions for traceability.
+
+The concrete image technology remains an implementation choice. Candidates may include a Raspberry Pi image-generation toolchain or deterministic customisation of a pinned base image. The requirement is reproducibility, not a specific image builder.
+
+#### Application update path
+
+Normal SI-01 changes should not require reflashing the complete SD image.
+
+Introduce a versioned update artifact/process capable of at least:
+
+- transferring/installing a new SI-01 application build onto an existing prepared Pi;
+- stopping/restarting the service safely;
+- reporting the running application version;
+- preserving configuration/data that should survive an application update;
+- supporting an initial rollback/recovery direction.
+
+Full-image rebuilding remains appropriate for OS, Java runtime or image-layout changes.
+
+#### Target verification
+
+- boot the generated image on an original Pi Zero / Zero W;
+- automatically start SI-01 as a service;
+- run version/status checks over the network;
+- establish the first real Pi Zero resource baseline;
+- capture startup time, RSS/heap behaviour, CPU, thread count and response latency;
+- exercise the application-update path on the same target.
+
+### Deliverable
+
+Two concrete build/deployment artifacts:
+
+1. a **reproducibly generated, flashable Raspberry Pi Zero image** containing the pinned Java runtime and SI-01 service;
+2. a **versioned SI-01 application-update artifact/process** for updating an already provisioned target without reflashing the whole image.
+
+The image/update artifacts should be produced by CI or an equally reproducible automated build path rather than committed as source files to normal Git branches.
+
+### Demonstration
+
+Starting from generated artifacts:
+
+1. flash the generated image to an SD card;
+2. boot an original Raspberry Pi Zero / Zero W;
+3. show that SI-01 starts automatically as a service;
+4. query version/status over HTTP from another computer;
+5. show the pinned OS/application/Java build identity;
+6. record the first Pi Zero resource measurements;
+7. build a newer SI-01 version;
+8. apply the application update **without reflashing the SD card**;
+9. show that the service restarts and reports the new version;
+10. demonstrate the initial rollback/recovery route where implemented.
+
+A useful stakeholder statement is:
+
+> We can generate a complete target image automatically, boot it on the weakest supported hardware, and deploy a new application version without rebuilding the device by hand.
+
+### Evidence / exit criteria
+
+- complete image construction is scripted/reproducible from documented inputs;
+- image provenance includes OS/base image, Java runtime and SI-01 version/commit;
+- the resulting image boots on real original Pi Zero hardware;
+- SI-01 starts automatically through the target service manager;
+- HTTP version/status is reachable remotely after boot;
+- the first Pi Zero resource baseline from the SVP is recorded;
+- application update can be repeated without manual file-copy guesswork or full-image reflashing;
+- persistent configuration/data required across app updates is preserved;
+- no secrets or real proprietary deployment mappings are embedded in the public image recipe;
+- CI/build artifacts are retained sufficiently for review/reproduction.
+
+## Step 5 — First Desktop GUI client (SI-02)
 
 Status: not started
 
@@ -256,7 +346,7 @@ Run SI-02 on a workstation and:
 2. show live version/status;
 3. stop SI-01 and show clear disconnected/stale state;
 4. reconnect;
-5. change the configured endpoint to an SI-01 instance running on a Raspberry Pi;
+5. change the configured endpoint to the Step-4 SI-01 image running on a Raspberry Pi;
 6. show the same information without changing GUI business logic.
 
 ### Evidence / exit criteria
@@ -264,10 +354,10 @@ Run SI-02 on a workstation and:
 - GUI and SI-01 build independently;
 - GUI contains no direct dependency on SI-01 implementation classes;
 - automated interface tests cover connect/status/disconnect where practical;
-- local and remote-host demonstrations both work;
+- local and remote-Pi demonstrations both work;
 - the interface model is sufficient to support a genuinely separate client.
 
-## Step 5 — External reference/test project
+## Step 6 — External reference/test project
 
 Status: not started
 
@@ -315,7 +405,7 @@ From the reference project only:
 - test controls exercise normal adapters/queues rather than mutating domain state directly;
 - documentation is sufficient for a new consumer to run the project.
 
-## Step 6 — Proprietary extension proof
+## Step 7 — Proprietary extension proof
 
 Status: not started
 
@@ -353,7 +443,7 @@ Demonstrate that the higher-level application behaviour and test interface remai
 - public verification remains meaningful without exposing proprietary protocol details;
 - private identifiers/protocol data do not leak into public repository fixtures.
 
-## Step 7 — Timing-system data/state foundation (SI-01)
+## Step 8 — Timing-system data/state foundation (SI-01)
 
 Status: not started
 
@@ -430,7 +520,7 @@ Using only synthetic data and public/test interfaces:
 - state can be driven without production hardware;
 - fault/status behaviour is explicit rather than silent.
 
-## Step 8 — Web/iPad operator application (SI-03)
+## Step 9 — Web/iPad operator application (SI-03)
 
 Status: not started
 
@@ -478,7 +568,7 @@ On an iPad/browser connected to the local network:
 - reconnect/stale-state behaviour is verified;
 - business rules remain server-side.
 
-## Step 9 — Stub-controlled hardware integration
+## Step 10 — Stub-controlled hardware integration
 
 Status: not started
 
@@ -537,7 +627,7 @@ Display V2 connects, receives snapshot, disconnects and reconnects
 - lifecycle/recovery/status tests are automated where practical;
 - same contracts remain suitable for production adapters.
 
-## Step 10 — Production RFID/CAN/display integration
+## Step 11 — Production RFID/CAN/display integration
 
 Status: not started
 
@@ -582,7 +672,7 @@ On representative hardware:
 - device status/recovery is observable;
 - Pi Zero resource behaviour remains viable for representative production topology.
 
-## Step 11 — Backoffice/reference-data integration
+## Step 12 — Backoffice/reference-data integration
 
 Status: not started
 
@@ -635,49 +725,52 @@ Where permitted, repeat the applicable interface scenario with the private/real 
 - actual proprietary mappings/protocol remain outside the public repository;
 - IDD and software-item implementation remain traceable.
 
-## Step 12 — Deployment and operationalisation
+## Step 13 — Deployment hardening and operationalisation
 
 Status: not started
 
 ### Goal
 
-Make target deployment reproducible and supportable.
+Turn the early Step-4 image/update automation into a production-supportable deployment lifecycle once the application, devices and backoffice integration are representative.
 
 ### Scope
 
-- automated Raspberry Pi deployment;
-- Java runtime provisioning;
-- service startup/restart;
+- harden/review the Raspberry Pi image-generation pipeline;
+- service startup/restart and watchdog/recovery policy;
 - configuration and secret provisioning;
-- update/rollback;
+- application update policy and artifact retention;
+- rollback/recovery after failed update;
+- OS/runtime/image update policy;
 - diagnostic/support export;
-- long-running integration and hardware-in-the-loop tests;
+- longer-running integration and hardware-in-the-loop tests;
 - `ST-4 Target / Full-system` scenarios;
 - resource budgets promoted from measured baselines where evidence supports useful limits.
 
 ### Deliverable
 
-A reproducibly deployable and supportable Raspberry Pi software package/environment with documented installation, configuration, service management, update and recovery procedures.
+A reproducibly deployable and supportable Raspberry Pi operational environment with documented clean provisioning, configuration, service management, normal application updates, image-level updates, diagnostics and recovery procedures.
 
 ### Demonstration
 
-Starting with a prepared or clean target according to the chosen provisioning model:
+Using the automated deployment pipeline established in Step 4:
 
-1. deploy/install SI-01 and its pinned Java runtime;
-2. provision non-secret configuration and required secrets through the supported mechanism;
-3. start/restart the system service;
-4. connect SI-02 and/or SI-03 and show normal status/operation;
-5. perform an application update;
-6. demonstrate rollback or recovery from a deliberately failed update where supported;
-7. produce a diagnostic/support export;
-8. run the representative `ST-4`/HIL operational scenario.
+1. create/flash a clean target image;
+2. provision environment-specific configuration and secrets through the supported mechanism;
+3. boot and show automatic service startup;
+4. connect SI-02 and/or SI-03 and show normal operation;
+5. perform a normal application update;
+6. demonstrate rollback/recovery from a deliberately failed update;
+7. demonstrate the documented image/OS/runtime upgrade path where applicable;
+8. produce a diagnostic/support export;
+9. run the representative `ST-4`/HIL operational scenario.
 
 ### Evidence / exit criteria
 
-- deployment is repeatable from documented automation/instructions;
+- provisioning and update pipelines are repeatable from documented automation;
 - service survives reboot/restart as required;
-- configuration/secrets are not embedded in public source;
-- update/recovery path is verified;
+- configuration/secrets are not embedded in public source or generic image artifacts;
+- update/rollback/recovery paths are verified;
+- artifacts and versions remain traceable;
 - resource measurements remain within accepted/promoted budgets;
 - operational diagnostics provide enough information to investigate common faults.
 
@@ -706,6 +799,8 @@ Only an explicit architecture decision with target-hardware evidence may superse
 - Every implementation step should end with a concrete deliverable and repeatable demonstration.
 - A successful demonstration is not by itself sufficient evidence for completion.
 - Prefer demonstrations that exercise the same public interfaces/adapters intended for normal operation instead of special demo-only bypasses.
+- Establish target-image and application-update automation early; do not let manual Pi provisioning become the normal development workflow.
+- Prefer fast application updates for ordinary SI-01 changes; rebuild/reflash complete images when OS/runtime/image-level inputs change.
 - Do not start a later software step merely because an abstraction already exists.
 - Keep fast unit/build checks suitable for normal pull requests.
 - Separate longer integration/hardware/deployment pipelines when needed.
@@ -714,5 +809,5 @@ Only an explicit architecture decision with target-hardware evidence may superse
 - Keep registration and ready-team models distinct unless an explicit later requirement defines an interaction.
 - Keep registration asset identity, registration-source identity and external deployment mapping distinct.
 - Prefer public contracts plus composition over subclass-based/private-source coupling.
-- Measure Pi Zero resource behaviour from the first executable and avoid invented numeric budgets without evidence.
+- Measure Pi Zero resource behaviour from the first target image and avoid invented numeric budgets without evidence.
 - Keep lifecycle state, subsystem health and connectivity status separate concepts.
