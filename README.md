@@ -15,7 +15,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — current phased meta-project/agent plan and progress source of truth.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — phased high-level software development plan.
-- [`docs/11-software-implementation-roadmap.md`](docs/11-software-implementation-roadmap.md) — concrete current sequence of software increments.
+- [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete software implementation sequence, scope and exit criteria.
 - [`docs/30-SSAD-software-system-architecture.md`](docs/30-SSAD-software-system-architecture.md) — working software-system architecture document.
 - [`docs/31-SAD-timing-system-architecture.md`](docs/31-SAD-timing-system-architecture.md) — architecture detail for one logical timing system.
 - [`docs/32-SDD-data-and-display-design.md`](docs/32-SDD-data-and-display-design.md) — detailed design for traceable data, ready-team state and display behaviour.
@@ -30,6 +30,7 @@ Generated architecture diagrams for an active pull request are published to `dev
 Software documents use a numeric prefix so GitHub presents them in a predictable lifecycle-oriented order. Stable document-type abbreviations are used where the type is meaningful:
 
 - `SDP` — Software Development Plan;
+- `SIP` — Software Implementation Planning;
 - `SDE` — Software Development Environment;
 - `SSAD` — Software System Architecture Document;
 - `SAD` — Software Architecture Document;
@@ -55,7 +56,7 @@ This leaves room to add documents later without renaming the complete set.
 The project intentionally keeps three planning levels separate:
 
 - **brainstorm** — ideas, possible requirements, alternatives, and unresolved questions;
-- **software development plan/roadmap** — staged product/software evolution and concrete implementation increments;
+- **SDP / SIP** — high-level software-development direction versus concrete implementation planning;
 - **agent plan** — coordination steps for work performed in this meta repository and across chat/agent sessions.
 
 Detailed implementation evidence for an active software step should live primarily in that step's pull request rather than turning the long-term planning documents into activity logs.
