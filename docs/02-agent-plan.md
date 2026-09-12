@@ -107,21 +107,58 @@ At closure:
 - RFID, CAN, display, registration-domain and backoffice requirements remain deliberately deferred;
 - generated documentation successfully published the review candidate to `dev/pr-2/docs` from the AP-1 head commit.
 
-## AP-2 — Bootstrap the public implementation repository
+## AP-2 — Define reusable Java build/test toolchain baseline
+
+Status: in progress — PR #3
+
+Goal: establish the generic Java/Maven engineering toolchain before the first SI-01 implementation repository is bootstrapped.
+
+This step was introduced deliberately after AP-1 because a source repository alone does not guarantee a reproducible cross-platform build/test environment.
+
+Expected scope:
+
+- define build/test **roles** separately from physical machines;
+- define the initial Windows developer, GitHub Linux CI, GitHub Windows CI, Raspberry Pi target and optional integration-host matrix;
+- adopt Maven Wrapper as the repository-owned Maven entry point;
+- define Java 8 canonical build/source/bytecode policy;
+- define one canonical platform-neutral Java artifact where feasible;
+- define Linux canonical build and Windows compatibility/artifact-smoke responsibilities;
+- define build provenance and artifact evidence;
+- define the reusable `tool.java-project` boundary and versioned workflow-consumption direction;
+- keep self-hosted build/test infrastructure optional until a real need is demonstrated;
+- keep Docker outside the normal Java compile/unit-test path;
+- decide what must exist before SI-01 can become the first real toolchain consumer.
+
+Deliverable:
+
+> A reviewable Java toolchain baseline that tells a future implementation repository how a clean checkout is built, tested and packaged across the first supported environments, and what reusable tooling belongs outside the product repository.
+
+Exit criteria:
+
+- Maven Wrapper policy is explicit;
+- canonical build/artifact producer is explicit;
+- Windows and Linux build/test responsibilities are explicit;
+- target Pi execution is separated from normal hosted CI build responsibility;
+- reusable-tool ownership and versioning/pinning direction are explicit;
+- no timing-domain/product behaviour is moved into generic tooling;
+- dedicated self-hosted infrastructure remains optional until justified;
+- generated SDE/SIP documentation is reviewable and green.
+
+## AP-3 — Bootstrap the public implementation repository
 
 Status: not started
 
-Goal: after AP-1 is accepted, create the public implementation repository and execute the SIP framework-skeleton step using the approved SDE and first-executable baseline.
-
-A follow-up plan correction is being evaluated in draft PR #3: establish a reusable Java/Maven build/test toolchain baseline **before** this repository bootstrap. If accepted, that follow-up will become the next AP step and this implementation bootstrap will move one step later.
+Goal: after AP-1 and AP-2 are accepted, create the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the accepted Java toolchain.
 
 Expected direction:
 
 - create the repository through the normal issue → branch → draft PR workflow;
+- consume the accepted Java toolchain rather than inventing CI/build conventions locally;
 - establish the SDE repository baseline (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
+- include the Maven Wrapper in the implementation repository;
 - create the Maven/Java 8 framework skeleton from the documented component architecture;
 - keep detailed implementation work/evidence in the implementation repository PR;
-- feed material architecture/process corrections back to this meta repository through separate scoped work when needed.
+- feed material architecture/process/toolchain corrections back to the appropriate coordination/tool repository through separate scoped work when needed.
 
 ## Ongoing supporting activity — source collection
 
