@@ -1,0 +1,33 @@
+font:
+  family: Arial, sans-serif
+  title_size: 26
+  group_title_size: 17
+  node_size: 14
+  note_size: 12
+canvas:
+  background: "#ffffff"
+  text: "#202124"
+  edge: "#5f6368"
+  edge_label_background: "#ffffff"
+kinds:
+  layer-presentation: {fill: "#eef4ff", stroke: "#6c8ebf"}
+  layer-application: {fill: "#eef8ee", stroke: "#82b366"}
+  layer-domain: {fill: "#fff8df", stroke: "#d6b656"}
+  layer-infrastructure: {fill: "#fff0ee", stroke: "#b85450"}
+  layer-platform: {fill: "#f2eff8", stroke: "#9673a6"}
+  layer-crosscutting: {fill: "#f5f5f5", stroke: "#777777"}
+  presentation: {fill: "#dae8fc", stroke: "#6c8ebf"}
+  application: {fill: "#d5e8d4", stroke: "#82b366"}
+  service: {fill: "#fff2cc", stroke: "#d6b656"}
+  model: {fill: "#fffaf0", stroke: "#d6b656"}
+  runtime: {fill: "#e1f0e1", stroke: "#5b8f5a"}
+  integration: {fill: "#f8cecc", stroke: "#b85450"}
+  storage: {fill: "#f4cccc", stroke: "#b85450"}
+  platform: {fill: "#e1d5e7", stroke: "#9673a6"}
+  crosscutting: {fill: "#eeeeee", stroke: "#777777"}
+  client: {fill: "#f5f5f5", stroke: "#666666"}
+  interface: {fill: "#dae8fc", stroke: "#6c8ebf"}
+  core: {fill: "#d5e8d4", stroke: "#82b366"}
+  port: {fill: "#e1d5e7", stroke: "#9673a6"}
+  adapter: {fill: "#f8cecc", stroke: "#b85450"}
+  external: {fill: "#eeeeee", stroke: "#777777"}
