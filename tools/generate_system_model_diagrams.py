@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate system-level software-item and state-model diagrams."""
+"""Generate system-level software-item, topology and state-model diagrams."""
 
 from pathlib import Path
 import argparse
@@ -13,7 +13,7 @@ def software_item_overview() -> Diagram:
         Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
         Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
         Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..X logical TimingSystems", 500, 490, 450, 100, "core"),
+        Node("timing", "SI-01 Headless Timing Application\\n1..X TimingSystemInstances", 500, 490, 450, 100, "core"),
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
@@ -50,12 +50,58 @@ def software_item_overview() -> Diagram:
     )
 
 
+def runtime_topology() -> Diagram:
+    nodes = [
+        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 510, 70, 390, 90, "core"),
+
+        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 160, 245, 390, 90, "service"),
+        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 860, 245, 390, 90, "service"),
+
+        Node("rsa", "RegistrationSystem A\\nsequence A • own registration file", 60, 445, 370, 95, "queue"),
+        Node("rsb", "RegistrationSystem B / name FINISH\\nsequence B • own registration file", 450, 445, 420, 95, "queue"),
+        Node("rsc", "RegistrationSystem C\\nsequence C • own registration file", 930, 445, 370, 95, "queue"),
+
+        Node("a1", "RS-A-ANT1", 20, 660, 220, 70, "external"),
+        Node("f1", "RS-FINISH-ANT1", 335, 650, 260, 80, "external"),
+        Node("f2", "RS-FINISH-ANT2", 625, 650, 260, 80, "external"),
+        Node("c1", "RS-C-ANT1\\nstub or real adapter", 1020, 650, 260, 80, "external"),
+
+        Node("settings", "External settings/configuration\\ninstance → registration source → antenna binding", 410, 825, 600, 95, "interface"),
+        Node("backoffice", "Backoffice integration test\\nall source streams from one application", 460, 1010, 500, 90, "external"),
+    ]
+
+    edges = [
+        Edge("app", "sys1"),
+        Edge("app", "sys2"),
+        Edge("sys1", "rsa", "1..X sources"),
+        Edge("sys1", "rsb"),
+        Edge("sys2", "rsc", "1..X sources"),
+        Edge("rsa", "a1", "1..X antennas"),
+        Edge("rsb", "f1", "1..X antennas"),
+        Edge("rsb", "f2"),
+        Edge("rsc", "c1", "1..X antennas"),
+        Edge("settings", "app", "build topology", True),
+        Edge("rsa", "backoffice", "ordered source stream", True),
+        Edge("rsb", "backoffice", "ordered source stream", True),
+        Edge("rsc", "backoffice", "ordered source stream", True),
+    ]
+
+    return Diagram(
+        "runtime-registration-topology",
+        "Configurable runtime topology — instances, registration sources and antennas",
+        1400,
+        1160,
+        nodes,
+        edges,
+    )
+
+
 def timing_system_lifecycle() -> Diagram:
     nodes = [
         Node("closed", "CLOSED\\nnot accepting normal timing operation", 170, 210, 330, 90, "core"),
         Node("open", "OPEN\\nlocal timing operation enabled", 770, 210, 330, 90, "core"),
         Node("health", "Subsystem health is orthogonal\\nHEALTHY • DEGRADED • ERROR states do not silently change OPEN/CLOSED", 355, 440, 560, 110, "service"),
-        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> timing system remains OPEN but status is degraded", 355, 650, 560, 95, "interface"),
+        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> system instance remains OPEN but status is degraded", 355, 650, 560, 95, "interface"),
     ]
     edges = [
         Edge("closed", "open", "Open command"),
@@ -66,7 +112,7 @@ def timing_system_lifecycle() -> Diagram:
     ]
     return Diagram(
         "timing-system-lifecycle",
-        "TimingSystem lifecycle — operational lifecycle and health are separate",
+        "TimingSystemInstance lifecycle — operational lifecycle and health are separate",
         1280,
         820,
         nodes,
@@ -138,6 +184,7 @@ def generate(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     diagrams = [
         software_item_overview(),
+        runtime_topology(),
         timing_system_lifecycle(),
         rfid_lifecycle(),
         connectivity_layers(),
@@ -149,7 +196,7 @@ def generate(out_dir: Path) -> None:
 
     readme = out_dir / "README.md"
     with readme.open("a", encoding="utf-8") as handle:
-        handle.write("\n## System software-item and state-model views\n\n")
+        handle.write("\n## System software-item, topology and state-model views\n\n")
         for diagram in diagrams:
             handle.write("### " + diagram.title + "\n\n")
             handle.write("![" + diagram.title + "](./" + diagram.name + ".svg)\n\n")
