@@ -1,0 +1,247 @@
+status: working estimate / non-authoritative
+start_date: 2026-09-12
+cadence_project_days_per_week: 1.0
+planning_reserve_fraction: 0.25
+active_step: 2
+
+documentation_maturity:
+  levels:
+    outline: Outline / only high-level intent needed
+    working: Working detail sufficient for the next engineering activity
+    review: Review candidate; intended contract/behaviour is concrete
+    accepted: Accepted baseline for the applicable implemented scope
+  principle: >-
+    Maturity applies only to the documentation scope needed by the current/next
+    capability. Future functionality may remain outline while earlier implemented
+    scope is already accepted.
+
+notes:
+  - Estimates are focused project days, not calendar days.
+  - The baseline assumes approximately one focused project day per week.
+  - Target dates are planning aids, not commitments.
+  - Documentation maturity and completeness are capability/step scoped, not a single score for the whole future product.
+  - The overview roadmap names relevant documents compactly; concrete engineering activities belong on the per-step A3 board.
+  - Re-estimate a step when implementation evidence materially changes uncertainty.
+
+steps:
+  1:
+    estimate_project_days: 1
+    workstream: architecture
+    docs:
+      requirements:
+        level: outline
+        scope: system/domain direction; candidate requirements only
+      idd:
+        level: outline
+        scope: interface catalogue and expected IDDs
+      design:
+        level: working
+        scope: SSAD/SI-01 SAD/SDD architecture baseline
+      verification:
+        level: working
+        scope: SVP strategy and planned test profiles
+    note: remaining work after the current bootstrap round
+
+  2:
+    estimate_project_days: 2
+    workstream: architecture
+    docs:
+      requirements:
+        level: review
+        scope: first-executable SI-01 scope needed by the framework skeleton
+      idd:
+        level: review
+        scope: IF-03 version/status contract for the first executable
+      design:
+        level: working
+        scope: module/package/repository structure sufficient to code
+      verification:
+        level: working
+        scope: toolchain, build/unit checks and first executable ST-1 preparation
+
+  3:
+    estimate_project_days: 3
+    workstream: application
+    docs:
+      requirements:
+        level: working
+        scope: version/status/lifecycle behaviour only
+      idd:
+        level: working
+        scope: application-control/status API used by first executable
+      design:
+        level: review
+        scope: SI-01 runtime/status design exercised by code
+      verification:
+        level: working
+        scope: ST-1 plus executable behaviour evidence
+
+  4:
+    estimate_project_days: 4
+    workstream: platform
+    docs:
+      requirements:
+        level: working
+        scope: target provisioning/update requirements
+      idd:
+        level: outline
+        scope: no new product IDD required unless target tooling exposes one
+      design:
+        level: review
+        scope: target/image/update design based on real Pi evidence
+      verification:
+        level: review
+        scope: Pi baseline and deployment verification evidence
+
+  5:
+    estimate_project_days: 3
+    workstream: client
+    docs:
+      requirements:
+        level: working
+        scope: SI-02 connection/status GUI behaviour
+      idd:
+        level: review
+        scope: application-control/status interface between SI-01 and SI-02
+      design:
+        level: working
+        scope: SI-02 SAD sufficient for first GUI
+      verification:
+        level: working
+        scope: local/Pi GUI interface scenarios
+
+  6:
+    estimate_project_days: 3
+    workstream: test
+    docs:
+      requirements:
+        level: working
+        scope: external-consumer/test-project behaviour
+      idd:
+        level: review
+        scope: public API/SPI and lightweight socket-test interface
+      design:
+        level: review
+        scope: public extension/composition boundaries proven externally
+      verification:
+        level: review
+        scope: ST-1/ST-2 scenarios repeatable outside framework reactor
+
+  7:
+    estimate_project_days: 2
+    workstream: extension
+    docs:
+      requirements:
+        level: working
+        scope: private replacement capability only
+      idd:
+        level: review
+        scope: public/private extension contracts
+      design:
+        level: review
+        scope: composition boundary backed by private proof
+      verification:
+        level: working
+        scope: stub/private replacement equivalence evidence
+
+  8:
+    estimate_project_days: 6
+    workstream: domain
+    docs:
+      requirements:
+        level: review
+        scope: registration, ready-team, reference-data and persistence behaviour
+      idd:
+        level: working
+        scope: only interfaces needed by timing-domain state
+      design:
+        level: review
+        scope: SI-01 timing/data SDD matched to executable domain
+      verification:
+        level: review
+        scope: state, sequence, restart/restore and fault evidence
+
+  9:
+    estimate_project_days: 4
+    workstream: client
+    docs:
+      requirements:
+        level: review
+        scope: SI-03 operator/browser behaviour
+      idd:
+        level: review
+        scope: operator HTTP/WebSocket interface and UI interaction contract
+      design:
+        level: review
+        scope: SI-03 SAD/implementation design exercised on browser/iPad
+      verification:
+        level: review
+        scope: operator/reconnect/local-LAN scenarios
+
+  10:
+    estimate_project_days: 5
+    workstream: test
+    docs:
+      requirements:
+        level: review
+        scope: RFID/CAN/keypad/display behaviour needed for stub flows
+      idd:
+        level: review
+        scope: RFID/CAN/display interfaces concrete against deterministic stubs
+      design:
+        level: review
+        scope: adapter/lifecycle/recovery design exercised without production hardware
+      verification:
+        level: review
+        scope: deterministic lifecycle/fault/recovery scenarios
+
+  11:
+    estimate_project_days: 7
+    workstream: hardware
+    docs:
+      requirements:
+        level: accepted
+        scope: implemented RFID/CAN/keypad/display capability
+      idd:
+        level: accepted
+        scope: implemented hardware/device interfaces where evidence supports acceptance
+      design:
+        level: accepted
+        scope: implemented production-adapter design baseline
+      verification:
+        level: review
+        scope: HIL evidence for representative hardware
+
+  12:
+    estimate_project_days: 6
+    workstream: backoffice
+    docs:
+      requirements:
+        level: accepted
+        scope: implemented backoffice/reference-data/offline synchronisation behaviour
+      idd:
+        level: accepted
+        scope: backoffice semantic interface; proprietary mappings remain private
+      design:
+        level: accepted
+        scope: transport/outbox/recovery design baseline
+      verification:
+        level: review
+        scope: ST-3 broker/outage/reconciliation evidence
+
+  13:
+    estimate_project_days: 5
+    workstream: platform
+    docs:
+      requirements:
+        level: accepted
+        scope: implemented operational/deployment behaviour
+      idd:
+        level: accepted
+        scope: all interfaces required by the operational baseline
+      design:
+        level: accepted
+        scope: implemented deployment/support design baseline
+      verification:
+        level: accepted
+        scope: operational ST-4/HIL/update/rollback evidence baseline
