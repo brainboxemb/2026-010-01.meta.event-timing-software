@@ -219,11 +219,11 @@ Asset and antenna context may additionally be retained where useful for diagnost
 
 Recorded event time and start-time data need one unambiguous absolute-time meaning independent of how a local clock is displayed.
 
-The working software value name is `TimeStamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. Local time-zone and daylight-saving conversion are presentation/configuration concerns unless a future business rule explicitly depends on a local civil time.
+The working dedicated software value name is `TimingTimestamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. Local time-zone and daylight-saving conversion are presentation/configuration concerns unless a future business rule explicitly depends on a local civil time.
 
 A timestamp is **not** the source-ordering mechanism. Registration source sequence numbers remain the stable ordering/consistency mechanism even if an operating-system wall clock is corrected forwards or backwards.
 
-The SI-01 SAD owns the implementation architecture for `TimeStamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
+The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
 ## Team number
 
