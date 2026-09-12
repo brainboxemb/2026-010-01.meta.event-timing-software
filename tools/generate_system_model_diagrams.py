@@ -103,6 +103,54 @@ def runtime_topology() -> Diagram:
     )
 
 
+def rabbitmq_source_topology() -> Diagram:
+    nodes = [
+        Node("broker", "RabbitMQ broker\\nreal external service", 505, 55, 390, 85, "external"),
+        Node("inq1", "source-01 inbound queue", 90, 200, 290, 70, "queue"),
+        Node("out", "outbound exchange + routing keys", 555, 200, 300, 70, "queue"),
+        Node("inq2", "source-02 inbound queue", 1020, 200, 290, 70, "queue"),
+
+        Node("conn", "RabbitMqConnectionManager\\ninitial preference: one shared connection", 480, 345, 440, 90, "adapter"),
+        Node("c1", "source-01 consumer\\nown channel/ownership", 80, 505, 310, 85, "adapter"),
+        Node("pub", "controlled publisher\\ndedicated channel or small pool", 545, 505, 310, 85, "adapter"),
+        Node("c2", "source-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
+
+        Node("s1", "RegistrationSource source-01\\nserialized application path", 80, 690, 310, 85, "service"),
+        Node("outbox", "local durable/pending outbox\\nsource identity retained", 545, 690, 310, 85, "service"),
+        Node("s2", "RegistrationSource source-02\\nserialized application path", 1010, 690, 310, 85, "service"),
+
+        Node("split", "Possible later refinement\\nseparate consumer + publisher connections\\nonly if evidence justifies it", 500, 850, 400, 95, "interface"),
+    ]
+
+    edges = [
+        Edge("broker", "inq1", "broker resource"),
+        Edge("broker", "out", "broker resource"),
+        Edge("broker", "inq2", "broker resource"),
+        Edge("conn", "broker", "shared TCP connection", True),
+        Edge("conn", "c1", "channel"),
+        Edge("conn", "pub", "channel(s)"),
+        Edge("conn", "c2", "channel"),
+        Edge("inq1", "c1", "deliver", True),
+        Edge("inq2", "c2", "deliver", True),
+        Edge("c1", "s1", "enqueue inbound"),
+        Edge("c2", "s2", "enqueue inbound"),
+        Edge("s1", "outbox", "committed outbound"),
+        Edge("s2", "outbox", "committed outbound"),
+        Edge("outbox", "pub", "publish pending"),
+        Edge("pub", "out", "exchange + routing key", True),
+        Edge("split", "conn", "implementation option", True),
+    ]
+
+    return Diagram(
+        "rabbitmq-source-topology",
+        "RabbitMQ — shared connection with per-source consumers and controlled publishing",
+        1400,
+        1010,
+        nodes,
+        edges,
+    )
+
+
 def timing_system_lifecycle() -> Diagram:
     nodes = [
         Node("closed", "CLOSED\\nnot accepting normal timing operation", 170, 210, 330, 90, "core"),
@@ -192,6 +240,7 @@ def generate(out_dir: Path) -> None:
     diagrams = [
         software_item_overview(),
         runtime_topology(),
+        rabbitmq_source_topology(),
         timing_system_lifecycle(),
         rfid_lifecycle(),
         connectivity_layers(),
