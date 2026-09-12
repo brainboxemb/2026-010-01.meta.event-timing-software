@@ -1,0 +1,12 @@
+schema_version: 1
+
+project:
+  name: 2026-010-01.meta.event-timing-software
+
+dependencies:
+  - name: tool.eng-docs
+    role: tooling
+    type: git-submodule
+    url: https://github.com/brainboxemb/tool.eng-docs.git
+    path: tools/tool.eng-docs
+    ref: 184e030a188385451a3392a8c43b081ae18c0650
