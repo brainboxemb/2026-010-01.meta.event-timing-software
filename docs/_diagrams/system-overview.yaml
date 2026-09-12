@@ -1,0 +1,57 @@
+diagram:
+  id: system-overview
+  title: Headless timing application — component and interface overview
+  width: 1520
+  height: 1030
+  description: Existing architecture overview migrated from hard-coded Python semantics to declarative YAML.
+
+groups: []
+
+nodes:
+  - {id: console, label: "Local console", kind: client, layout: {x: 40, y: 90, w: 190, h: 70}}
+  - {id: remote, label: "Remote terminal", kind: client, layout: {x: 250, y: 90, w: 190, h: 70}}
+  - {id: desktop, label: "SI-02 Desktop GUI", kind: client, layout: {x: 460, y: 90, w: 210, h: 70}}
+  - {id: ipad, label: "SI-03 Web / iPad\nReact application", kind: client, layout: {x: 700, y: 75, w: 230, h: 100}}
+  - {id: backoffice, label: "Backoffice", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
+  - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
+  - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
+  - {id: web_adapter, label: "HTTP + WebSocket adapter\nserves React bundle", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
+  - {id: backoffice_adapter, label: "Backoffice adapter\nRabbitMQ intended", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
+  - {id: gateway, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
+  - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
+  - {id: backoffice_port, label: "BackofficePort", kind: port, layout: {x: 1190, y: 395, w: 220, h: 70}}
+  - {id: runtime, label: "SI-01 runtime / orchestration\n1..X logical TimingSystems", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
+  - {id: status, label: "Status service\nimmutable snapshots", kind: service, layout: {x: 545, y: 555, w: 280, h: 95}}
+  - {id: domain, label: "Timing/domain capabilities\nregistration • ready-team • reference data", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
+  - {id: memory, label: "Typed in-memory state/repositories\nauthoritative runtime state", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}
+  - {id: device_ports, label: "RFID + CAN + Display ports", kind: port, layout: {x: 575, y: 750, w: 300, h: 80}}
+  - {id: platform_ports, label: "Clock + Settings + Platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
+  - {id: backup, label: "Simple file backup / restore", kind: adapter, layout: {x: 200, y: 900, w: 290, h: 70}}
+  - {id: device_adapters, label: "Hardware / network adapters\nreal, stub or proprietary", kind: adapter, layout: {x: 575, y: 885, w: 300, h: 95}}
+  - {id: platform_adapters, label: "Windows / Linux /\nPi Zero adapters", kind: adapter, layout: {x: 955, y: 885, w: 260, h: 95}}
+
+edges:
+  - {from: console, to: console_adapter}
+  - {from: remote, to: remote_adapter}
+  - {from: desktop, to: web_adapter}
+  - {from: ipad, to: web_adapter}
+  - {from: backoffice, to: backoffice_adapter}
+  - {from: console_adapter, to: gateway}
+  - {from: remote_adapter, to: gateway}
+  - {from: web_adapter, to: gateway}
+  - {from: events, to: web_adapter, label: "WebSocket push", dashed: true}
+  - {from: backoffice_adapter, to: backoffice_port}
+  - {from: gateway, to: runtime}
+  - {from: gateway, to: domain}
+  - {from: runtime, to: status}
+  - {from: domain, to: status}
+  - {from: status, to: events}
+  - {from: domain, to: events}
+  - {from: domain, to: backoffice_port}
+  - {from: runtime, to: memory}
+  - {from: domain, to: memory}
+  - {from: domain, to: device_ports}
+  - {from: runtime, to: platform_ports}
+  - {from: memory, to: backup, label: "backup / restore"}
+  - {from: device_ports, to: device_adapters}
+  - {from: platform_ports, to: platform_adapters}
