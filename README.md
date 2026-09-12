@@ -33,12 +33,10 @@ The merged/default-branch documentation build is published to the generated [`pr
 - [`docs/13-SDE-java-build-test-toolchain.md`](docs/13-SDE-java-build-test-toolchain.md) — Java-specific refinement of the SDE covering build/test roles, Maven Wrapper, canonical artifacts, cross-platform CI and the reusable `tool.java-project` boundary.
 - [`docs/20-01-SRD-timing-application-requirements.md`](docs/20-01-SRD-timing-application-requirements.md) — AP-1 working requirement baseline for the first SI-01 executable slice; later capabilities remain deliberately deferred.
 - [`docs/30-SSAD-software-system-architecture.md`](docs/30-SSAD-software-system-architecture.md) — software-item register, interface catalogue and software-system architecture working draft.
-- [`docs/31-01-SAD-timing-application-architecture.md`](docs/31-01-SAD-timing-application-architecture.md) — software item 01, headless timing application architecture.
-- [`docs/31-01-SDD-01-timing-system-design.md`](docs/31-01-SDD-01-timing-system-design.md) — software item 01 detailed timing-system design.
-- [`docs/31-01-SDD-02-data-and-display-design.md`](docs/31-01-SDD-02-data-and-display-design.md) — software item 01 detailed data/display design.
-- [`docs/31-01-SDD-03-java-component-design.md`](docs/31-01-SDD-03-java-component-design.md) — software item 01 Java/Maven component/package design.
-- [`docs/31-01-SDD-04-runtime-topology-and-configuration.md`](docs/31-01-SDD-04-runtime-topology-and-configuration.md) — software item 01 runtime hierarchy, registration asset/source/antenna topology and settings-driven composition.
-- [`docs/31-01-SDD-05-backoffice-transport-design.md`](docs/31-01-SDD-05-backoffice-transport-design.md) — software item 01 transport-independent backoffice design with lightweight socket-loop and RabbitMQ adapters.
+- [`docs/31-01-SAD-timing-application-architecture.md`](docs/31-01-SAD-timing-application-architecture.md) — software item 01, headless timing application architecture and primary current technical design document.
+- [`docs/31-01-SDD-01-data-and-display-design.md`](docs/31-01-SDD-01-data-and-display-design.md) — deferred software item 01 data/display detailed-design note.
+- [`docs/31-01-SDD-02-java-component-design.md`](docs/31-01-SDD-02-java-component-design.md) — active focused software item 01 Java/Maven component/package detailed design.
+- [`docs/31-01-SDD-03-backoffice-transport-design.md`](docs/31-01-SDD-03-backoffice-transport-design.md) — deferred software item 01 transport-independent backoffice detailed-design note.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
 - [`docs/40-01-IDD-application-control-status.md`](docs/40-01-IDD-application-control-status.md) — AP-1 working IF-03 application-control/status contract for the first executable slice.
@@ -94,14 +92,14 @@ Examples:
 20-03-SRD-...                 requirements for software item 03
 
 31-01-SAD-...                 architecture for software item 01
-31-01-SDD-01-...              first detailed-design document for software item 01
-31-01-SDD-02-...              second detailed-design document for software item 01
+31-01-SDD-01-...              first current detailed-design document for software item 01
+31-01-SDD-02-...              second current detailed-design document for software item 01
 
 31-02-SAD-...                 architecture for software item 02
 31-03-SAD-...                 architecture for software item 03
 ```
 
-The software-item number therefore does not change merely because another SDD is added.
+The software-item number therefore does not change merely because another SDD is added. During the current working-draft phase, retiring an SDD also compacts the SDD sequence so the current document set does not retain obsolete numbering gaps. Historical names remain available through Git history.
 
 ## Documentation levels
 
