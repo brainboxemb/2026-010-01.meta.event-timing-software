@@ -85,7 +85,7 @@ def title_of(text: str, fallback: str) -> str:
     return fallback
 
 
-def as_book_section(text: str, title: str) -> str:
+def as_book_section(text: str, title: str, filename: str) -> str:
     """Embed a Markdown document one heading level lower in a combined book."""
     lines = text.splitlines()
     if lines and lines[0].startswith("# "):
@@ -102,7 +102,13 @@ def as_book_section(text: str, title: str) -> str:
             line = "#" + line
         shifted.append(line)
 
-    return "## " + title + "\n\n" + "\n".join(shifted).strip() + "\n"
+    source_ref = f"**Source document:** [{filename}](./{filename})"
+    return (
+        "## " + title + "\n\n"
+        + source_ref + "\n\n"
+        + "\n".join(shifted).strip()
+        + "\n"
+    )
 
 
 def write_book(path: Path, title: str, description: str, built) -> None:
@@ -122,8 +128,8 @@ def write_book(path: Path, title: str, description: str, built) -> None:
 
     content.extend(["", "---", ""])
 
-    for _, document_title, text in built:
-        content.append(as_book_section(text, document_title))
+    for filename, document_title, text in built:
+        content.append(as_book_section(text, document_title, filename))
         content.append("\n---\n")
 
     path.write_text("\n".join(content), encoding="utf-8")
