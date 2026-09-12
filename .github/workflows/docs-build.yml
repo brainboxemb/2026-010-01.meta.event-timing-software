@@ -114,7 +114,8 @@ jobs:
           test -f bld/docs/assets/architecture/layered-architecture.drawio
           test -f bld/docs/assets/architecture/software-item-system-overview.svg
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
-          test -f bld/docs/assets/architecture/device-network-topology.svg
+          test -f bld/docs/assets/architecture/system-device-network-topology.svg
+          test -f bld/docs/assets/architecture/system-device-network-topology.drawio
           test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
           test -f bld/docs/planning/README.md
