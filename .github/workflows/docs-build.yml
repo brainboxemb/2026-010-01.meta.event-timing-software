@@ -9,6 +9,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
+      - 'tools/generate_sip_planning.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -22,6 +23,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
+      - 'tools/generate_sip_planning.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -57,8 +59,8 @@ jobs:
           python tools/generate_data_display_diagrams.py
           python tools/generate_system_model_diagrams.py
 
-      - name: Generate SIP roadmap
-        run: python tools/generate_sip_roadmap.py
+      - name: Generate SIP planning
+        run: python tools/generate_sip_planning.py
 
       - name: Validate generated diagram XML
         run: |
@@ -72,6 +74,10 @@ jobs:
               ET.parse(path)
           ET.parse(Path('bld/docs/planning/sip-roadmap.drawio'))
           ET.parse(Path('bld/docs/planning/sip-roadmap.svg'))
+          for path in Path('bld/docs/planning/steps').glob('*.drawio'):
+              ET.parse(path)
+          for path in Path('bld/docs/planning/steps').glob('*.svg'):
+              ET.parse(path)
           PY
 
       - name: Generate complete document set
@@ -84,6 +90,7 @@ jobs:
           test -f bld/docs/documents/software-document-set.md
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
+          test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
           test -f bld/docs/documents/31-01-SDD-04-runtime-topology-and-configuration.md
           test -f bld/docs/documents/31-01-SDD-05-backoffice-transport-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
@@ -97,6 +104,9 @@ jobs:
           test -f bld/docs/planning/sip-roadmap.drawio
           test -s bld/docs/planning/sip-roadmap-a3-tiled.pdf
           test -s bld/docs/planning/sip-roadmap-a2-overview.pdf
+          test -f bld/docs/planning/steps/step-02-board.svg
+          test -f bld/docs/planning/steps/step-02-board.drawio
+          test -s bld/docs/planning/steps/step-02-board-a3-portrait.pdf
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4

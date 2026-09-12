@@ -1,0 +1,182 @@
+step: 2
+title: Framework skeleton and first reusable Java toolchain consumer
+state: active
+summary: >-
+  Prove the reusable Java build/test toolchain first, then bootstrap SI-01 as
+  its first real product consumer.
+
+documents:
+  - name: 13-SDE
+    title: Java build/test toolchain
+    maturity: accepted
+    completeness: 100
+  - name: 20-01-SRD
+    title: SI-01 first executable requirements
+    maturity: review
+    completeness: 100
+  - name: 31-01-SDD-03
+    title: Java component/package design
+    maturity: working
+    completeness: 85
+  - name: 40-01-IDD
+    title: Application control/status interface
+    maturity: review
+    completeness: 100
+  - name: 50-SVP
+    title: Verification strategy / Step 2 evidence
+    maturity: working
+    completeness: 80
+
+activities:
+  - id: T01
+    lane: tooling
+    kind: decision
+    title: Java toolchain baseline
+    state: done
+    note: AP-2 / PR #3
+
+  - id: T02
+    lane: tooling
+    kind: setup
+    title: Create tool.java-project
+    state: next
+    estimate_project_days: 0.5
+    depends_on: [T01]
+
+  - id: T03
+    lane: tooling
+    kind: implementation
+    title: Maven Wrapper fixture
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T02]
+
+  - id: T04
+    lane: tooling
+    kind: decision
+    title: Pin Java 8 + Maven baseline
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T02]
+
+  - id: T05
+    lane: tooling
+    kind: implementation
+    title: Linux canonical CI
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T03, T04]
+
+  - id: T06
+    lane: tooling
+    kind: implementation
+    title: Windows compatibility CI
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T03, T04]
+
+  - id: T07
+    lane: tooling
+    kind: integration
+    title: Canonical artifact + provenance
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T05]
+
+  - id: T08
+    lane: tooling
+    kind: implementation
+    title: Version reusable workflow
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [T05, T06, T07]
+
+  - id: A01
+    lane: application
+    kind: setup
+    title: Create SI-01 implementation repository
+    state: blocked
+    depends_on: [T08]
+    note: First real toolchain consumer
+
+  - id: A02
+    lane: application
+    kind: documentation
+    title: Repository baseline files
+    state: planned
+    depends_on: [A01]
+    note: README.md, AGENTS.md, CHANGELOG.md
+
+  - id: A03
+    lane: application
+    kind: implementation
+    title: Maven reactor / module skeleton
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [A01]
+
+  - id: A04
+    lane: application
+    kind: implementation
+    title: Package/module boundaries
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [A03]
+    note: Based on 31-01-SDD-03
+
+  - id: A05
+    lane: application
+    kind: implementation
+    title: Minimal startup/shutdown shell
+    state: planned
+    estimate_project_days: 0.5
+    depends_on: [A04]
+
+  - id: V01
+    lane: verification
+    kind: verification
+    title: Generic fixture - Linux verify
+    state: planned
+    depends_on: [T05]
+
+  - id: V02
+    lane: verification
+    kind: verification
+    title: Generic fixture - Windows verify
+    state: planned
+    depends_on: [T06]
+
+  - id: V03
+    lane: verification
+    kind: verification
+    title: Canonical artifact smoke
+    state: planned
+    depends_on: [T07, V02]
+
+  - id: V04
+    lane: verification
+    kind: verification
+    title: Clean-checkout consumer proof
+    state: planned
+    depends_on: [T08]
+
+  - id: V05
+    lane: verification
+    kind: verification
+    title: Architecture/dependency checks
+    state: planned
+    depends_on: [A03]
+
+  - id: P01
+    lane: platform
+    kind: decision
+    title: Hosted CI; no build server yet
+    state: done
+    note: Self-hosted infrastructure deferred until justified
+
+  - id: P02
+    lane: platform
+    kind: integration
+    title: Pi target execution
+    state: deferred
+    note: Handled by the later target/image step
