@@ -198,6 +198,47 @@ Questions to resolve:
 - How are private modules integrated during build, test, and release?
 - What dependency direction prevents the generic framework from depending on proprietary modules?
 
+## Java artifact/package boundary exploration
+
+The first framework bootstrap exposed a useful distinction that was not clear enough in the earlier modularity discussion.
+
+Two successive structures were considered and then rejected as too eager:
+
+```text
+timing-api / timing-core / timing-runtime / timing-adapters / timing-testkit / timing-app
+```
+
+and later:
+
+```text
+domain / core / platform / comm / app
+```
+
+as one Maven artifact per architectural responsibility.
+
+The improved working direction is:
+
+```text
+event-timing-framework.jar
+  io.github.brainboxemb.eventtiming.domain
+  io.github.brainboxemb.eventtiming.core
+  io.github.brainboxemb.eventtiming.platform
+  io.github.brainboxemb.eventtiming.comm
+
+event-timing-app.jar
+  io.github.brainboxemb.eventtiming.app
+```
+
+The reasoning is that an architecture layer/package and a Maven publication boundary answer different questions. A separate artifact should have a concrete consumer or lifecycle reason, for example independent reuse, an optional heavy dependency, deployment/release ownership, or a public/private boundary.
+
+This leaves room for later extraction of infrastructure such as RabbitMQ/platform/device support without creating those libraries before their consumers exist.
+
+The reusable framework should also permit several executable compositions. Examples include a deliberately single-system application and a multi-system/simulation application. Multi-instance registry/routing should remain application-level until it proves generically reusable across applications.
+
+Likewise, reusable event-timing domain behaviour can belong in the framework while one product/application can add specific domain policy through its own composition or extension library.
+
+This direction has been promoted as a **working/non-authoritative design** in PR #7 through `31-01-SDD-03`, `31-01-SDD-04`, and `31-01-SDD-05`. Future splits should be driven by implementation/consumer evidence rather than by keeping an architecture diagram visually symmetric.
+
 ## Logging and observability
 
 Use a logging framework rather than direct ad-hoc console output.
