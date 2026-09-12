@@ -19,4 +19,18 @@ Do not use filenames or notes that identify the specific real-world event that m
 
 ## Sources
 
-No reference documents have been collected yet.
+### Embedded IoT Platform architecture reference
+
+Source: <https://github.com/SvenWesterhof/embedded-iot-platform>
+
+Type: illustrative architecture reference.
+
+Relevant aspects:
+
+- layered separation between application, control/services/features, OS/runtime facilities, and drivers/HAL;
+- explicit hardware/platform abstraction;
+- service-style infrastructure components;
+- event-driven communication used to reduce direct coupling between layers;
+- separation between target-specific implementation and shared/common functionality.
+
+This is an embedded C/C++ architecture and is **not** a prescribed implementation model for the Java software. It is retained as a useful reference for the kind of service layering, dependency direction, and platform abstraction the project may want to achieve in a different runtime and domain.
