@@ -15,6 +15,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts/terminology such as registration assets/sources, locations, source sequences, team/tag identity and reference data, while keeping real deployment identities private.
+- [`docs/04-UC-system-use-cases.md`](docs/04-UC-system-use-cases.md) — system-level operational use cases connecting domain goals to later requirements, interfaces and verification scenarios.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level phased software development plan.
 - [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence, scope and exit criteria.
 - [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — common development environment, GitHub/AI workflow and repository conventions.
@@ -37,6 +38,7 @@ Generated documentation for an active pull request is published to `dev/pr-<N>/d
 
 Software documents use numeric prefixes so GitHub presents them predictably. Established abbreviations include:
 
+- `UC` — system use cases / operational scenarios;
 - `SDP` — Software Development Plan;
 - `SIP` — Software Implementation Planning;
 - `SDE` — Software Development Environment;
@@ -50,7 +52,7 @@ Software documents use numeric prefixes so GitHub presents them predictably. Est
 Current top-level document families:
 
 ```text
-00-09  working context / brainstorm / handoff / agent coordination / domain baseline
+00-09  working context / brainstorm / handoff / agent coordination / domain baseline / use cases
 10-19  development planning and development environment
 20-29  requirements / SRDs
 30-39  architecture and detailed design
@@ -93,6 +95,7 @@ The project intentionally separates:
 
 - **brainstorm** — ideas, candidate requirements, alternatives and unresolved questions;
 - **domain baseline** — supplied domain facts/terminology that later requirements/design must preserve or explicitly revise;
+- **use cases** — externally meaningful operational goals and scenarios used as input to requirements/interfaces and later verification;
 - **SDP** — overall development approach and phased evolution;
 - **SIP** — concrete implementation sequence and exit criteria;
 - **SDE** — common tooling, repository and development-process environment;
@@ -109,6 +112,7 @@ The intended chain is:
 
 ```text
 system/domain source
+  -> system use case where applicable
   -> system requirement
   -> system IDD where applicable
   -> software-item SRD
@@ -117,7 +121,7 @@ system/domain source
   -> verification case/evidence
 ```
 
-System-level IDDs own interface definitions; software-item SRDs reference applicable interface obligations instead of duplicating them.
+Use cases capture operational intent and may lead to multiple system/software requirements and verification scenarios. System-level IDDs own interface definitions; software-item SRDs reference applicable interface obligations instead of duplicating them.
 
 ## Workflow
 
