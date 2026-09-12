@@ -28,7 +28,8 @@ Current baseline:
 - **Maven** — accepted Java build/dependency-management baseline;
 - **Java 8** — initial runtime/language baseline for software item 01 because the original Raspberry Pi Zero is mandatory;
 - **Python** — project tooling/document generation where it provides a simple reproducible solution;
-- **draw.io + generated SVG** — editable and GitHub-readable architecture diagrams generated from project-controlled source where practical.
+- **draw.io + generated SVG** — editable and GitHub-readable architecture diagrams generated from project-controlled source where practical;
+- **Docker / Docker Compose** — for reproducible integration-test dependencies such as RabbitMQ where running a real external service materially improves verification.
 
 Individual software items may add development tools, but system-wide choices should remain documented and deliberate.
 
@@ -285,9 +286,40 @@ Expected direction:
 - separate integration-test jobs/workflows when tests become slower;
 - hardware-specific tests separated from ordinary hosted-runner tests;
 - generated artifacts retained/published when they materially improve review or traceability;
-- dependency/runtime choices validated against the mandatory target platform rather than desktop development machines alone.
+- dependency/runtime choices validated against the mandatory target platform rather than desktop development machines alone;
+- real external-service integration tests use reproducible disposable dependencies where this adds meaningful evidence.
 
 For software item 01, Raspberry Pi Zero compatibility must remain visible in Java/runtime/library choices.
+
+## Containerized integration services
+
+Docker/Compose is appropriate when an integration test needs a real external service with meaningful protocol, connection, persistence or recovery behaviour.
+
+RabbitMQ is the first identified example.
+
+The future implementation/reference repository should provide a small, disposable test environment, conceptually:
+
+```text
+compose.yaml
+  rabbitmq-test
+```
+
+Possible later services may be added only when they are genuinely required by integration tests.
+
+Rules for containerized test services:
+
+- use synthetic/public test topology and credentials;
+- do not embed production queue names, source IDs, broker endpoints or secrets;
+- pin image versions/tags deliberately rather than floating silently;
+- expose a health check so test startup waits for service readiness;
+- allow the same environment to run locally and in GitHub Actions where practical;
+- make cleanup/disposal simple;
+- keep service startup separate from unit tests so fast tests do not require Docker;
+- include stop/restart scenarios when recovery behaviour is part of the interface contract.
+
+For RabbitMQ, integration tests should eventually prove multi-source consumers, publishing, disconnect/reconnect and local-outbox recovery against a real broker. Detailed design is in `31-01-SDD-05-backoffice-rabbitmq-design.md`.
+
+Docker is **not** automatically required for every tool. Small deterministic project tooling such as the current Python documentation generators should run directly when that is simpler and equally reproducible.
 
 ## Public and private repositories
 
@@ -299,6 +331,8 @@ Development-environment rules should preserve that separation:
 - private implementations consume public contracts/artifacts;
 - secrets and credentials must not be committed;
 - proprietary protocols/hardware implementations stay in the intended private repository;
+- real registration-asset/source/broker mappings stay in private/external deployment configuration;
+- public integration tests use generic synthetic identities/topology;
 - the public reference/test project should prove external consumption of public framework artifacts independently from private code.
 
 ## Secrets and configuration
@@ -306,6 +340,8 @@ Development-environment rules should preserve that separation:
 Credentials, tokens, encryption keys and environment-specific secrets must not be hard-coded or committed to source control.
 
 Use repository/environment secret mechanisms and runtime configuration appropriate to the deployment environment. Exact application configuration/secret design belongs in the relevant architecture/SDD/IDD documents.
+
+Public example configuration must use synthetic placeholders rather than real production identifiers.
 
 ## Tooling reproducibility
 
@@ -316,9 +352,10 @@ Start with the simplest adequate mechanism:
 - pinned/action-versioned CI steps;
 - Maven for Java builds;
 - Python standard-library tooling where sufficient;
-- dedicated Docker tooling only where it provides meaningful reproducibility or isolates a non-trivial external toolchain.
+- Docker/Compose for non-trivial external service dependencies such as RabbitMQ integration tests;
+- dedicated custom Docker build images only where they provide meaningful reproducibility or isolate a substantial toolchain.
 
-Do not introduce a Docker image merely because a build contains Python or a small script. Introduce containers when they solve a concrete environment/reproducibility problem.
+Do not introduce a custom Docker image merely because a build contains Python or a small script. Introduce containers when they solve a concrete environment/reproducibility problem.
 
 ## Repository-specific extensions
 
@@ -336,4 +373,5 @@ Repository-specific rules may add constraints, but should not silently weaken co
 - release/versioning conventions across framework, reference app and private integrations;
 - whether a reusable repository bootstrap/template should be created once the conventions stabilise;
 - standard mechanism for deployment credentials and target inventory;
+- exact Docker/Compose versioning/pinning policy for integration services;
 - whether generated document output later also includes PDF/HTML in addition to GitHub Markdown.
