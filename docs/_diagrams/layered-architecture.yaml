@@ -9,279 +9,133 @@ groups:
 - id: presentation-layer
   label: Presentation / external application interfaces
   kind: layer-presentation
-  layout:
-    x: 170
-    y: 85
-    w: 1110
-    h: 155
+  layout: {x: 170, y: 85, w: 1110, h: 155}
 - id: application-layer
   label: Application layer — running state and orchestration
   kind: layer-application
-  layout:
-    x: 170
-    y: 270
-    w: 1110
-    h: 220
+  layout: {x: 170, y: 270, w: 1110, h: 220}
 - id: domain-layer
   label: Domain layer — reusable services, rules and model
   kind: layer-domain
-  layout:
-    x: 170
-    y: 520
-    w: 1110
-    h: 265
+  layout: {x: 170, y: 520, w: 1110, h: 265}
 - id: infrastructure-layer
   label: Infrastructure / integrations
   kind: layer-infrastructure
-  layout:
-    x: 170
-    y: 815
-    w: 1110
-    h: 175
+  layout: {x: 170, y: 815, w: 1110, h: 175}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout:
-    x: 170
-    y: 1020
-    w: 1110
-    h: 110
+  layout: {x: 170, y: 1020, w: 1110, h: 110}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
-  layout:
-    x: 1310
-    y: 85
-    w: 245
-    h: 1045
+  layout: {x: 1310, y: 85, w: 245, h: 1045}
 nodes:
 - id: http-api
   group: presentation-layer
-  label: 'HTTP / JSON
-
-    commands + queries'
+  label: "HTTP / JSON\ncommands + queries"
   kind: presentation
-  layout:
-    x: 215
-    y: 135
-    w: 275
-    h: 70
+  layout: {x: 215, y: 135, w: 275, h: 70}
 - id: websocket
   group: presentation-layer
-  label: 'WebSocket
-
-    status + events'
+  label: "WebSocket\nstatus + events"
   kind: presentation
-  layout:
-    x: 535
-    y: 135
-    w: 275
-    h: 70
+  layout: {x: 535, y: 135, w: 275, h: 70}
 - id: shell
   group: presentation-layer
-  label: 'Console / remote shell
-
-    operator interaction'
+  label: "Console / remote shell\noperator interaction"
   kind: presentation
-  layout:
-    x: 855
-    y: 135
-    w: 350
-    h: 70
+  layout: {x: 855, y: 135, w: 350, h: 70}
 - id: app-command-query
   group: application-layer
-  label: 'Commands / queries / workflows
-
-    validate intent • coordinate use cases'
+  label: "Commands / queries / workflows\nvalidate intent • coordinate use cases"
   kind: application
-  layout:
-    x: 215
-    y: 330
-    w: 330
-    h: 85
+  layout: {x: 215, y: 330, w: 330, h: 85}
 - id: app-state
   group: application-layer
-  label: 'Application state
-
-    TimingSystemInstance • ledgers • current runtime state'
+  label: "Application state\nTimingSystemInstance • ledgers • current runtime state"
   kind: application
-  layout:
-    x: 585
-    y: 330
-    w: 330
-    h: 85
+  layout: {x: 585, y: 330, w: 330, h: 85}
 - id: status-management
   group: application-layer
-  label: 'Status management
-
-    aggregate current state • immutable snapshots'
+  label: "Status management\naggregate current state • immutable snapshots"
   kind: application
-  layout:
-    x: 955
-    y: 330
-    w: 280
-    h: 85
+  layout: {x: 955, y: 330, w: 280, h: 85}
 - id: core-runtime
   group: application-layer
-  label: 'Core runtime support
-
-    serialized execution • lifecycle • routing • scheduling'
+  label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
   kind: runtime
-  layout:
-    x: 360
-    y: 430
-    w: 690
-    h: 45
+  layout: {x: 360, y: 430, w: 690, h: 45}
 - id: registration-service
   group: domain-layer
-  label: 'RegistrationService
-
-    registration flow • source sequencing
-
-    passes start procedure to StartTimeService'
+  label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
   kind: service
-  layout:
-    x: 215
-    y: 585
-    w: 330
-    h: 105
+  layout: {x: 215, y: 585, w: 330, h: 105}
 - id: start-time-service
   group: domain-layer
-  label: 'StartTimeService
-
-    start-time rules • updates • lookup
-
-    operates on application-owned start-time state'
+  label: "StartTimeService\nstart-time rules • updates • lookup\noperates on application-owned start-time state"
   kind: service
-  layout:
-    x: 585
-    y: 585
-    w: 330
-    h: 105
+  layout: {x: 585, y: 585, w: 330, h: 105}
 - id: ready-team-service
   group: domain-layer
-  label: 'ReadyTeamService
-
-    ready-team behaviour and ledger semantics'
+  label: "ReadyTeamService\nready-team behaviour and ledger semantics"
   kind: service
-  layout:
-    x: 955
-    y: 585
-    w: 280
-    h: 105
+  layout: {x: 955, y: 585, w: 280, h: 105}
 - id: reference-service
   group: domain-layer
-  label: 'ReferenceDataService
-
-    participant / event reference semantics'
+  label: "ReferenceDataService\nparticipant / event reference semantics"
   kind: service
-  layout:
-    x: 215
-    y: 710
-    w: 330
-    h: 55
+  layout: {x: 215, y: 710, w: 330, h: 55}
 - id: domain-model
   group: domain-layer
-  label: 'Domain model + rules
-
-    registrations • source sequence • start-time values • value objects'
+  label: "Domain model + rules\nregistrations • source sequence • start-time values • value objects"
   kind: model
-  layout:
-    x: 585
-    y: 710
-    w: 650
-    h: 55
+  layout: {x: 585, y: 710, w: 650, h: 55}
 - id: persistence
   group: infrastructure-layer
-  label: 'Persistence / file storage
-
-    repository + backup / restore implementations'
+  label: "Persistence / file storage\nrepository + backup / restore implementations"
   kind: storage
-  layout:
-    x: 215
-    y: 875
-    w: 330
-    h: 80
+  layout: {x: 215, y: 875, w: 330, h: 80}
 - id: backoffice
   group: infrastructure-layer
-  label: 'Backoffice integration
-
-    socket / RabbitMQ
-
-    reference + start-time updates'
+  label: "Backoffice integration\nsocket / RabbitMQ\nreference + start-time updates"
   kind: integration
-  layout:
-    x: 585
-    y: 875
-    w: 300
-    h: 80
+  layout: {x: 585, y: 875, w: 300, h: 80}
 - id: device-integration
   group: infrastructure-layer
-  label: 'Device integrations
-
-    RFID • CAN • display'
+  label: "Device integrations\nRFID • CAN • display"
   kind: integration
-  layout:
-    x: 925
-    y: 875
-    w: 310
-    h: 80
+  layout: {x: 925, y: 875, w: 310, h: 80}
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout:
-    x: 300
-    y: 1060
-    w: 850
-    h: 50
+  layout: {x: 300, y: 1060, w: 850, h: 50}
 - id: logging
   group: crosscutting-layer
   label: Logging
   kind: crosscutting
-  layout:
-    x: 1340
-    y: 150
-    w: 185
-    h: 55
+  layout: {x: 1340, y: 150, w: 185, h: 55}
 - id: configuration
   group: crosscutting-layer
   label: Configuration
   kind: crosscutting
-  layout:
-    x: 1340
-    y: 230
-    w: 185
-    h: 55
+  layout: {x: 1340, y: 230, w: 185, h: 55}
 - id: diagnostics
   group: crosscutting-layer
   label: Diagnostics
   kind: crosscutting
-  layout:
-    x: 1340
-    y: 310
-    w: 185
-    h: 55
+  layout: {x: 1340, y: 310, w: 185, h: 55}
 - id: build-info
   group: crosscutting-layer
   label: Build / version identity
   kind: crosscutting
-  layout:
-    x: 1340
-    y: 390
-    w: 185
-    h: 70
+  layout: {x: 1340, y: 390, w: 185, h: 70}
 - id: boundary-note
   group: crosscutting-layer
-  label: 'Responsibility view only
-
-    ≠ Maven artifact split'
+  label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
-  layout:
-    x: 1340
-    y: 1035
-    w: 185
-    h: 70
+  layout: {x: 1340, y: 1035, w: 185, h: 70}
 edges:
 - from: http-api
   to: app-command-query
@@ -291,85 +145,67 @@ edges:
   to: websocket
   label: status/events
   dashed: true
-  route:
-  - x: 1095
-    y: 255
-  - x: 672
-    y: 255
+  route: [{x: 1095, y: 250}, {x: 672, y: 250}]
 - from: app-command-query
   to: registration-service
+  route: [{x: 300, y: 500}, {x: 300, y: 560}]
 - from: app-command-query
   to: ready-team-service
+  route: [{x: 455, y: 500}, {x: 1095, y: 500}, {x: 1095, y: 560}]
 - from: app-command-query
   to: reference-service
+  route: [{x: 265, y: 500}, {x: 265, y: 700}]
 - from: registration-service
   to: start-time-service
   label: start procedure
-  route:
-  - x: 565
-    y: 638
+  route: [{x: 565, y: 638}]
 - from: registration-service
   to: domain-model
+  route: [{x: 520, y: 690}, {x: 650, y: 690}]
 - from: start-time-service
   to: domain-model
 - from: ready-team-service
   to: domain-model
+  route: [{x: 1095, y: 700}, {x: 1095, y: 705}]
 - from: reference-service
   to: domain-model
 - from: registration-service
   to: app-state
   label: state changes
   dashed: true
-  route:
-  - x: 380
-    y: 505
-  - x: 750
-    y: 505
+  route: [{x: 565, y: 550}, {x: 680, y: 550}, {x: 680, y: 500}]
 - from: start-time-service
   to: app-state
   label: start-time changes
   dashed: true
-  route:
-  - x: 750
-    y: 505
+  route: [{x: 750, y: 550}, {x: 750, y: 500}]
 - from: ready-team-service
   to: app-state
   label: state changes
   dashed: true
-  route:
-  - x: 1095
-    y: 505
-  - x: 750
-    y: 505
+  route: [{x: 935, y: 550}, {x: 820, y: 550}, {x: 820, y: 500}]
 - from: app-state
   to: status-management
 - from: core-runtime
   to: app-command-query
   dashed: true
+  route: [{x: 520, y: 420}]
 - from: core-runtime
   to: app-state
   dashed: true
+  route: [{x: 750, y: 420}]
 - from: app-state
   to: persistence
   label: persist / restore
+  route: [{x: 610, y: 800}, {x: 380, y: 800}]
 - from: backoffice
   to: core-runtime
   label: inbound updates
-  route:
-  - x: 735
-    y: 800
-  - x: 735
-    y: 500
+  route: [{x: 735, y: 805}, {x: 735, y: 495}]
 - from: device-integration
   to: core-runtime
   label: observations/events
-  route:
-  - x: 1080
-    y: 800
-  - x: 1080
-    y: 500
-  - x: 950
-    y: 500
+  route: [{x: 1080, y: 805}, {x: 1080, y: 495}, {x: 950, y: 495}]
 - from: persistence
   to: platform-primitives
 - from: backoffice
