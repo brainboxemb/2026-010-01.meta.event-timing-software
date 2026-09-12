@@ -283,7 +283,9 @@ Implementation repositories should introduce CI from the first useful executable
 Expected direction:
 
 - fast compile/unit-test checks on normal PRs;
-- separate integration-test jobs/workflows when tests become slower;
+- application-level system tests through the public application interface from the first useful executable;
+- lightweight socket/network system tests without external broker dependencies;
+- separate RabbitMQ integration jobs/workflows when the production-shaped transport is introduced;
 - hardware-specific tests separated from ordinary hosted-runner tests;
 - generated artifacts retained/published when they materially improve review or traceability;
 - dependency/runtime choices validated against the mandatory target platform rather than desktop development machines alone;
@@ -291,11 +293,39 @@ Expected direction:
 
 For software item 01, Raspberry Pi Zero compatibility must remain visible in Java/runtime/library choices.
 
+## Automated system-test profiles
+
+The common verification environment should support the profiles defined in the SVP:
+
+```text
+ST-1  application behaviour
+      real SI-01 process
+      public application interface
+      controlled stub dependencies
+
+ST-2  socket loop/network
+      real SI-01 process
+      simple socket backoffice simulator
+      no RabbitMQ/Docker requirement
+
+ST-3  RabbitMQ integration
+      real SI-01 process
+      disposable RabbitMQ broker
+      Docker/Compose
+
+ST-4  target/full-system
+      Raspberry Pi Zero and/or real hardware/services
+```
+
+ST-1 should be inexpensive enough for normal pull requests. ST-2 should provide a real communication boundary while staying lightweight. ST-3 deliberately adds the external broker only where RabbitMQ-specific behaviour is under test.
+
+Scenario concepts should be reusable across profiles where possible so the same functional behaviour can be checked with progressively more realistic infrastructure.
+
 ## Containerized integration services
 
 Docker/Compose is appropriate when an integration test needs a real external service with meaningful protocol, connection, persistence or recovery behaviour.
 
-RabbitMQ is the first identified example.
+RabbitMQ is the first identified example and belongs primarily to ST-3, not ST-1/ST-2.
 
 The future implementation/reference repository should provide a small, disposable test environment, conceptually:
 
@@ -314,10 +344,10 @@ Rules for containerized test services:
 - expose a health check so test startup waits for service readiness;
 - allow the same environment to run locally and in GitHub Actions where practical;
 - make cleanup/disposal simple;
-- keep service startup separate from unit tests so fast tests do not require Docker;
+- keep service startup separate from unit/ST-1/ST-2 tests so most tests do not require Docker;
 - include stop/restart scenarios when recovery behaviour is part of the interface contract.
 
-For RabbitMQ, integration tests should eventually prove multi-source consumers, publishing, disconnect/reconnect and local-outbox recovery against a real broker. Detailed design is in `31-01-SDD-05-backoffice-rabbitmq-design.md`.
+For RabbitMQ, ST-3 should eventually prove multi-source consumers, publishing, disconnect/reconnect and local-outbox recovery against a real broker. Detailed design is in `31-01-SDD-05-backoffice-transport-design.md`.
 
 Docker is **not** automatically required for every tool. Small deterministic project tooling such as the current Python documentation generators should run directly when that is simpler and equally reproducible.
 
@@ -332,7 +362,7 @@ Development-environment rules should preserve that separation:
 - secrets and credentials must not be committed;
 - proprietary protocols/hardware implementations stay in the intended private repository;
 - real registration-asset/source/broker mappings stay in private/external deployment configuration;
-- public integration tests use generic synthetic identities/topology;
+- public ST-1/ST-2/ST-3 tests use generic synthetic identities/topology;
 - the public reference/test project should prove external consumption of public framework artifacts independently from private code.
 
 ## Secrets and configuration
@@ -352,7 +382,8 @@ Start with the simplest adequate mechanism:
 - pinned/action-versioned CI steps;
 - Maven for Java builds;
 - Python standard-library tooling where sufficient;
-- Docker/Compose for non-trivial external service dependencies such as RabbitMQ integration tests;
+- simple native socket test harnesses for ST-2 where possible;
+- Docker/Compose for non-trivial external service dependencies such as RabbitMQ ST-3 integration tests;
 - dedicated custom Docker build images only where they provide meaningful reproducibility or isolate a substantial toolchain.
 
 Do not introduce a custom Docker image merely because a build contains Python or a small script. Introduce containers when they solve a concrete environment/reproducibility problem.
@@ -373,5 +404,7 @@ Repository-specific rules may add constraints, but should not silently weaken co
 - release/versioning conventions across framework, reference app and private integrations;
 - whether a reusable repository bootstrap/template should be created once the conventions stabilise;
 - standard mechanism for deployment credentials and target inventory;
-- exact Docker/Compose versioning/pinning policy for integration services;
+- exact public test-driver mechanism for ST-1;
+- exact socket framing/tooling for ST-2;
+- exact Docker/Compose versioning/pinning policy for ST-3 integration services;
 - whether generated document output later also includes PDF/HTML in addition to GitHub Markdown.
