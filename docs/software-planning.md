@@ -15,10 +15,15 @@ Goal: define enough architecture to start implementation without prematurely fre
 Current outputs:
 
 - `docs/software-architecture-sketch.md`;
+- generated architecture diagrams from `tools/generate_architecture_diagrams.py`;
+- generated documentation publication model using `prod/docs`;
 - initial layered/service-oriented direction;
-- platform/device abstraction direction;
-- shared command/query boundary;
+- explicit platform/device abstraction direction;
+- shared command/query/event boundary;
 - first-class status representation;
+- initial threading/concurrency model;
+- explicit unit-testability rules;
+- HTTP/WebSocket boundary for future browser/iPad clients;
 - configuration/settings boundary;
 - Maven as accepted build tooling;
 - Java 8 as the accepted initial application baseline for the mandatory original Raspberry Pi Zero / Zero W target;
@@ -29,7 +34,11 @@ Exit criteria:
 
 - the responsibilities of the headless runtime, application services, external interfaces, and platform/device adapters are understandable;
 - status has a clear central ownership/model direction;
-- the first headless implementation can be started without inventing architecture ad hoc inside its PR;
+- external I/O concurrency is separated from domain state mutation;
+- the proposed serialized execution model and its remaining topology questions are documented;
+- unit-testability rules make it possible to exercise application/domain behaviour without real threads, time, storage, or hardware;
+- the browser/iPad communication shape is explicit enough that later React work does not require bypassing the application boundary;
+- architecture diagrams are generated reproducibly and are readable from GitHub after publication;
 - Java 8 and Maven are fixed as the initial implementation baseline;
 - the need for an ARMv6-capable reference Java 8 runtime is explicitly captured;
 - unresolved technical choices are explicitly listed rather than silently assumed.
@@ -74,27 +83,31 @@ Required behaviour:
 - version can be read through:
   1. local console/shell;
   2. remote terminal/shell connection;
-  3. machine-readable API, initially expected to use JSON;
-- a basic shared application/status representation is exposed through the same architecture;
+  3. machine-readable HTTP/JSON interface;
+- basic status is exposed through the same shared application model;
+- a minimal WebSocket event/status path exists so browser clients can later use push updates without inventing a second application model;
+- application/domain handlers remain independent of transport threads;
 - a logging framework is used;
 - settings/configuration are externalised;
 - credentials are not hard-coded;
-- unit tests exist for application-level behaviour;
+- unit tests exist for application-level behaviour using fake/test ports;
 - GitHub Actions builds and runs the fast test suite.
 
 Implementation choices needed before or during this step:
 
 - reference Java 8 runtime/version for Raspberry Pi Zero 1;
 - logging framework/facade;
-- API technology;
+- HTTP/API/WebSocket technology compatible with Java 8 and Zero 1;
 - remote shell technology;
 - initial configuration mechanism;
-- version-source strategy.
+- version-source strategy;
+- initial concrete executor/queue implementation for the serialized application boundary.
 
 Expected verification:
 
 - automated unit tests;
-- interface-level checks showing the same version value through all three interfaces;
+- interface-level checks showing the same version value through all three query interfaces;
+- WebSocket connection/status smoke check;
 - build/test evidence on GitHub Actions;
 - basic Windows and Linux execution evidence;
 - actual execution on an original Raspberry Pi Zero / Zero W using the selected Java 8 runtime;
@@ -117,11 +130,11 @@ Possible outcomes:
 
 If Java 11 is accepted later, record that as a new/superseding architecture decision and update the build, CI, deployment, and dependency baselines deliberately.
 
-## Step 3 — GUI status client
+## Step 3 — Desktop GUI status client
 
 Status: not started
 
-Goal: create a separate GUI/operator application that connects to the headless runtime using the defined system interface.
+Goal: create a separate desktop GUI/operator application that connects to the headless runtime using the defined system interface.
 
 Initial behaviour:
 
@@ -149,11 +162,32 @@ Candidate scope:
 - penalty-code revocation/correction;
 - simple text/file-based registration persistence;
 - common registration/event model capable of representing time and non-time registrations;
-- status/health for registration and persistence services.
+- status/health for registration and persistence services;
+- application commands/queries/events needed by operator clients.
 
 Before implementation, these candidate behaviours should be promoted into appropriate requirements and interface documentation.
 
-## Step 5 — RFID and CAN adapters
+## Step 5 — Browser/iPad operator application
+
+Status: not started
+
+Goal: provide an operator interface that runs in Safari/browser on an iPad while keeping the headless runtime as the system authority.
+
+Candidate scope:
+
+- headless runtime serves a compiled React web application over HTTP;
+- browser connects to the same HTTP application interface defined for other clients;
+- WebSocket carries live status and registration updates;
+- show registration data;
+- show runtime/waypoint/subsystem status;
+- open and close a logical waypoint system;
+- initiate the local start procedure;
+- later expose manual registration and penalty operations where applicable;
+- clearly represent disconnected/stale state.
+
+The React application must not contain authoritative registration/business rules. Commands are validated and executed by the headless application.
+
+## Step 6 — RFID and CAN adapters
 
 Status: not started
 
@@ -164,11 +198,12 @@ Candidate scope:
 - RFID implementation;
 - CAN interface implementation;
 - simulated/fake adapters;
+- timestamp capture at the device/adapter boundary;
 - platform-specific capability handling;
 - device status integration;
 - integration tests.
 
-## Step 6 — Backoffice integration
+## Step 7 — Backoffice integration
 
 Status: not started
 
@@ -184,7 +219,7 @@ Candidate scope:
 - message idempotency/reconciliation;
 - integration-test pipeline.
 
-## Step 7 — Raspberry Pi deployment and operationalisation
+## Step 8 — Raspberry Pi deployment and operationalisation
 
 Status: not started
 
@@ -203,6 +238,7 @@ Candidate scope:
 
 - The architecture sketch may evolve as implementation provides evidence.
 - Do not expand a software step into later domain work merely because the architecture makes it possible.
+- Keep mutable domain state behind a controlled serialized execution boundary unless an explicit later architecture decision supersedes that model.
 - Keep fast unit/build checks suitable for normal pull requests.
 - Treat longer integration/hardware/deployment tests as a separate pipeline concern when needed.
 - Keep system-level IDDs authoritative for interfaces; software-item requirements may reference them.
