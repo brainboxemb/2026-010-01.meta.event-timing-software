@@ -109,7 +109,7 @@ RaceDataService
 
 `RaceDataService` is specifically the domain capability for race/event data in the sporting-event sense: participant/team data, tag-reference lookup and reserve-tag mapping semantics. It is deliberately not named `EventDataService`, because software events are a separate architecture concept. Start-time state remains owned by `StartTimeService`, ready-team state by `ReadyTeamService`, and registrations by `RegistrationService`.
 
-Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, `TimeStamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
+Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
 
 Decoded RFID identity must preserve whether a tag is normal, reserve or test-class until the applicable domain/use-case policy has been applied. A test tag is therefore not silently normalised into a normal participant identity at an adapter boundary.
 
@@ -205,7 +205,7 @@ External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID,
 
 The intended processing path is:
 
-1. capture externally meaningful `TimeStamp` values immediately where timing matters;
+1. capture externally meaningful `TimingTimestamp` values immediately where timing matters;
 2. attach stable instance/device/source context;
 3. convert input into an immutable command/event;
 4. route it to the addressed `TimingSystemInstance`;
@@ -245,21 +245,21 @@ The exact queue bounds, rejection/backpressure policy, backing-pool size and fai
 
 ## Time and clock architecture
 
-Time is an explicit architecture concern rather than an incidental use of `Date`, `Calendar`, `LocalDateTime` or raw millisecond values throughout the codebase.
+Time is an explicit architecture concern rather than an incidental use of `Date`, `Calendar`, `LocalDateTime`, Java/SQL timestamp classes or raw millisecond values throughout the codebase.
 
-### `TimeStamp` value
+### `TimingTimestamp` value
 
-SI-01 should use one small immutable application/domain value type named `TimeStamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
+SI-01 uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
 
 Working semantics:
 
-- `TimeStamp` represents an absolute point on a UTC-based time line;
+- `TimingTimestamp` represents an absolute point on a UTC-based time line;
 - it does not contain an implicit local time zone or daylight-saving state;
 - conversion to/from local civil time happens at explicit presentation/configuration/integration boundaries;
 - its precision and external serialisation are explicit rather than inherited accidentally from a Java API or wire codec;
-- domain/application APIs should pass `TimeStamp` rather than arbitrary `long`, `Date` or local-date/time values where an absolute event time is intended.
+- domain/application APIs pass `TimingTimestamp` rather than arbitrary `long`, `Date`, generic Java timestamp classes or local-date/time values where an absolute event time is intended.
 
-The implementation may internally delegate to suitable Java time primitives, but the project-owned value type keeps the semantic contract independent of one Java API, storage format or external protocol representation.
+The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing, time-only strings and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. This keeps the domain type independent of one protocol, storage format or deployment time zone.
 
 ### Time sources
 
@@ -270,7 +270,7 @@ Elapsed durations, retry intervals, filtering windows, scheduling delays and tim
 The distinction is therefore:
 
 ```text
-TimeStamp / wall-clock source
+TimingTimestamp / wall-clock source
   absolute event time
   persistence / synchronisation / external semantics
 
@@ -291,14 +291,14 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted as authority | persist/use absolute `TimeStamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted as authority | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
 | clock offset/drift differs between SI-01 and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
-| restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimeStamp` plus domain/source state |
+| restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
 
-Daylight-saving time by itself does **not** change UTC/absolute time; the ambiguity appears when a local civil time is treated as if it were an absolute timestamp. Conversely, using an absolute `TimeStamp` does not make the operating-system clock monotonic: a wall-clock correction can still cause newly captured absolute timestamps to move backwards.
+Daylight-saving time by itself does **not** change UTC/absolute time; the ambiguity appears when a local civil time is treated as if it were an absolute timestamp. Conversely, using an absolute `TimingTimestamp` does not make the operating-system clock monotonic: a wall-clock correction can still cause newly captured absolute timestamps to move backwards.
 
-Before physical timing behaviour is accepted, the project must decide how an active timing system reacts to a material clock correction: whether it is merely diagnosed, blocks/marks the system degraded, records an audit event, or uses an explicit correction/offset mechanism. That policy needs requirements and verification evidence rather than being hidden inside the `TimeStamp` class.
+Before physical timing behaviour is accepted, the project must decide how an active timing system reacts to a material clock correction: whether it is merely diagnosed, blocks/marks the system degraded, records an audit event, or uses an explicit correction/offset mechanism. That policy needs requirements and verification evidence rather than being hidden inside the `TimingTimestamp` class.
 
 ## Internal messaging direction
 
@@ -390,7 +390,7 @@ Keep these concepts distinct:
 2. registration ledger/source sequence — traceable domain/operational history;
 3. ready-team journal/current projection — separate operational capability;
 4. race/reference data — locally available participant/team/tag-reference input received from external sources;
-5. absolute event time — project-owned `TimeStamp` semantics independent of local display time;
+5. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
 6. local backup/restore — restart/power-loss recovery;
 7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
@@ -479,7 +479,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Build | Maven | accepted |
 | Concurrency | JDK `java.util.concurrent` + small serial-execution abstraction | working direction; measure pool/queue behaviour |
 | Internal messaging | typed immutable commands/events + explicit routing; no generic event bus initially | working direction |
-| Time model | project-owned immutable `TimeStamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
+| Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | stable facade; lightweight backend to be selected | compare SLF4J-based backend vs JDK logging on target |
 | Configuration | external typed/validated configuration | file format/library still open |
@@ -562,7 +562,7 @@ The next useful architecture work is to resolve concrete implementation choices,
 - remote-shell technology;
 - exact `SerialExecutor`/backing-executor design and queue/backpressure policy;
 - typed internal message/dispatcher API shape;
-- `TimeStamp` representation/precision/serialisation and equality/comparison semantics;
+- `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;
 - wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
 - configuration format, validation library and override/secrets model;
 - persistence commit/durability/atomic-write/recovery policy;
