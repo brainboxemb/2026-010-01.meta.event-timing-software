@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Generate detailed timing-system architecture diagrams.
 
-This script reuses the shared SVG/draw.io renderer from
+This script reuses the remaining legacy SVG/draw.io renderer from
 `generate_architecture_diagrams.py` and adds timing-domain specific views.
+
+System-level device/network topology is declarative and owned by the SSAD in
+`docs/_diagrams/system-device-network-topology.yaml`; it deliberately does not
+live in this SI-01 detail generator.
 """
 
 from pathlib import Path
@@ -17,7 +21,7 @@ def timing_system_internals() -> Diagram:
         Node("rfid", "RFID observations", 340, 90, 220, 80, "external"),
         Node("can", "CAN observations\\nkeypad + discovery", 600, 90, 240, 80, "external"),
         Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
-        Node("backoffice", "Backoffice input\\nreference data", 1140, 90, 230, 80, "external"),
+        Node("backoffice", "Backoffice input\\nrace/reference data", 1140, 90, 230, 80, "external"),
 
         Node("messages", "Immutable TimingSystemMessage\\nsource timestamp + system id", 390, 230, 610, 90, "interface"),
         Node("queue", "Per-TimingSystem ingress queue", 505, 370, 380, 75, "queue"),
@@ -26,7 +30,7 @@ def timing_system_internals() -> Diagram:
         Node("coordinator", "TimingSystem coordinator\\nlifecycle + routing", 120, 675, 310, 90, "service"),
         Node("registration", "Registration service\\npassage • start • manual • penalty", 465, 675, 370, 90, "service"),
         Node("status", "Status service\\nimmutable snapshots", 870, 675, 280, 90, "service"),
-        Node("reference", "Reference data + local calculations\\nreserve tags • start times • ranking", 1185, 665, 330, 110, "service"),
+        Node("race_data", "Race data + local calculations\\nparticipants/teams • reserve tags • start-related lookup", 1185, 665, 330, 110, "service"),
 
         Node("store", "RegistrationStore\\ndurable local records", 330, 865, 300, 85, "port"),
         Node("outbox", "Backoffice outbox\\npending committed data", 670, 865, 300, 85, "queue"),
@@ -44,12 +48,12 @@ def timing_system_internals() -> Diagram:
         Edge("serial", "coordinator"),
         Edge("serial", "registration"),
         Edge("serial", "status"),
-        Edge("serial", "reference"),
+        Edge("serial", "race_data"),
         Edge("registration", "store", "append"),
         Edge("registration", "outbox", "after commit"),
         Edge("registration", "events"),
         Edge("status", "events"),
-        Edge("reference", "registration", "lookup", True),
+        Edge("race_data", "registration", "lookup", True),
         Edge("coordinator", "status"),
     ]
 
@@ -58,63 +62,6 @@ def timing_system_internals() -> Diagram:
         "TimingSystem internals — ordered ingress, services and persistence",
         1580,
         1020,
-        nodes,
-        edges,
-    )
-
-
-def device_network_topology() -> Diagram:
-    nodes = [
-        Node("runtime", "Headless timing runtime", 620, 80, 330, 85, "core"),
-        Node("status", "Status service", 1020, 80, 230, 85, "service"),
-
-        Node("rfid_power", "RFID power control", 70, 275, 220, 70, "port"),
-        Node("rfid_reader", "RFID reader / antenna\\nboot + heartbeat", 70, 420, 250, 90, "external"),
-
-        Node("can_port", "CAN bus", 390, 275, 190, 70, "port"),
-        Node("scanner", "Periodic CAN scanner", 360, 415, 250, 80, "service"),
-        Node("display1", "Display V1\\nCAN • discoverable", 335, 570, 220, 85, "external"),
-        Node("keypad", "Keypad\\nCAN • configured / not discoverable", 590, 560, 280, 95, "external"),
-
-        Node("router", "Local Wi-Fi router\\n4G uplink", 980, 275, 240, 85, "external"),
-        Node("display2", "Display V2\\nIP/Wi-Fi client", 890, 440, 220, 85, "external"),
-        Node("mdns", "mDNS service advertisement\\nruntime is discoverable service", 630, 285, 290, 85, "interface"),
-        Node("internet", "Internet", 1260, 275, 190, 70, "external"),
-        Node("rabbit", "RabbitMQ / backoffice", 1230, 440, 250, 85, "external"),
-
-        Node("stub", "Stub/simulated adapters\\ntest-control interface", 600, 760, 330, 90, "adapter"),
-    ]
-
-    edges = [
-        Edge("runtime", "rfid_power"),
-        Edge("rfid_power", "rfid_reader"),
-        Edge("rfid_reader", "runtime", "reads/status", True),
-        Edge("runtime", "can_port"),
-        Edge("can_port", "scanner"),
-        Edge("scanner", "display1", "discover"),
-        Edge("can_port", "keypad"),
-        Edge("keypad", "runtime", "team number", True),
-        Edge("runtime", "mdns"),
-        Edge("mdns", "router"),
-        Edge("display2", "router"),
-        Edge("display2", "runtime", "connects after mDNS", True),
-        Edge("router", "internet"),
-        Edge("internet", "rabbit"),
-        Edge("runtime", "rabbit", "RabbitMQ", True),
-        Edge("runtime", "status"),
-        Edge("rfid_reader", "status", "health", True),
-        Edge("scanner", "status", "devices", True),
-        Edge("router", "status", "local link", True),
-        Edge("internet", "status", "reachability", True),
-        Edge("rabbit", "status", "broker", True),
-        Edge("stub", "runtime", "same adapter contracts", True),
-    ]
-
-    return Diagram(
-        "device-network-topology",
-        "Device and network topology — RFID, CAN, displays and connectivity",
-        1540,
-        920,
         nodes,
         edges,
     )
@@ -163,7 +110,7 @@ def rfid_pipeline() -> Diagram:
 
 def generate(out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
-    diagrams = [timing_system_internals(), device_network_topology(), rfid_pipeline()]
+    diagrams = [timing_system_internals(), rfid_pipeline()]
 
     for diagram in diagrams:
         render_svg(diagram, out_dir / (diagram.name + ".svg"))
