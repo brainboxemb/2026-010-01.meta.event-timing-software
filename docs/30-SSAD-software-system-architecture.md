@@ -96,7 +96,7 @@ SI-03 is a browser-based network client. SI-01 exposes the system-defined contro
 
 ### SI-01 ↔ backoffice
 
-SI-01 exchanges reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport and codec are SI-01/integration design concerns unless they change the external system contract.
+SI-01 exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport and codec are SI-01/integration design concerns unless they change the external system contract.
 
 ### SI-01 ↔ field devices
 
@@ -113,7 +113,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-03 Application Control & Status** | SI-02/SI-03 ↔ SI-01 | HTTP/JSON + WebSocket direction | Network command/query/status/event boundary | `40-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-05 Web Operator HMI** | Operator ↔ SI-03 | browser/iPad | Browser screens, controls and feedback | Web HMI IDD candidate |
-| **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
+| **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | LAN/Wi-Fi | Synchronised display/domain data | system IDD candidate |
@@ -134,33 +134,43 @@ The following rules apply across software-item boundaries:
 
 ## System deployment view
 
+The principal device/network relationships are a **software-system concern** because they show where SI-01, the operator software items, external field devices, local network and backoffice meet. Internal SI-01 adapters, scanners, status services and protocol-processing mechanics are intentionally not shown here.
+
+![System device and network topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
+
 Representative deployment relationships are:
 
 ```text
 Field host
   SI-01 Headless Timing Application
     |
-    +-- local field devices
+    +-- RFID subsystem
+    +-- CAN devices / keypad / Display V1
     +-- local persistent state
-    +-- LAN/backoffice connectivity
+    +-- local LAN/Wi-Fi
 
 Operator workstation
   SI-02 Desktop GUI
     |
-    +-- IF-03 over network --> SI-01
+    +-- IF-03 over local network --> SI-01
 
 Browser / iPad
   SI-03 Web Operator Application
     |
-    +-- IF-03 over network --> SI-01
+    +-- IF-03 over local network --> SI-01
+
+Smart Display V2
+  network client
+    |
+    +-- IF-09 over local LAN/Wi-Fi --> SI-01
 
 Backoffice
   external system
     |
-    +-- IF-06 --> SI-01
+    +-- IF-06 over external connectivity --> SI-01
 ```
 
-The exact process/thread topology, internal runtime cardinality, queueing model and adapter implementation are intentionally outside this SSAD.
+The exact process/thread topology, internal runtime cardinality, queueing model, service composition and adapter implementation are intentionally outside this SSAD.
 
 ## Cross-system architectural constraints
 
@@ -191,8 +201,8 @@ The SI-01 SAD owns, among other things:
 - persistence and restore strategy;
 - logging/configuration/composition choices;
 - Java/framework/library decisions;
-- RFID/CAN/display adapter architecture;
-- backoffice transport implementation;
+- RFID/CAN/display adapter architecture behind the system device interfaces;
+- backoffice transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
 The SI-02 and SI-03 SADs similarly own their internal architectures while conforming to the system interfaces defined here and in applicable IDDs.
