@@ -12,6 +12,10 @@ import re
 import shutil
 
 
+CONTEXT_DOCUMENTS = [
+    "03-domain-baseline.md",
+]
+
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-planning.md",
@@ -32,7 +36,7 @@ VERIFICATION_DOCUMENTS = [
     "50-SVP-software-verification-plan.md",
 ]
 
-DOCUMENTS = PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS + VERIFICATION_DOCUMENTS
+DOCUMENTS = CONTEXT_DOCUMENTS + PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS + VERIFICATION_DOCUMENTS
 
 
 RAW_DIAGRAM_LINK = re.compile(
@@ -150,16 +154,21 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current planning, development-environment, architecture, detailed-design and verification documents.",
+        "Generated review/output book containing the current domain baseline, planning, development-environment, architecture, detailed-design and verification documents.",
         built,
     )
 
     doc_index = [
         "# Generated documents",
         "",
-        "## Planning and development environment",
+        "## Domain context",
         "",
     ]
+    for name in CONTEXT_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Planning and development environment", ""])
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
