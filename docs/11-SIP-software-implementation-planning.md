@@ -36,7 +36,7 @@ A demonstration does not replace verification. Automated tests, CI results, meas
 
 ## Step 1 — Architecture baseline
 
-Status: in progress
+Status: completed
 
 ### Goal
 
@@ -110,59 +110,65 @@ No executable product behaviour is claimed in this step.
 
 ## Step 2 — Framework repository skeleton
 
-Status: not started
+Status: active
 
 ### Goal
 
-Create the public framework repository and establish build/dependency/test foundations for SI-01/framework development.
+Complete the public SI-01 framework/application repository baseline and prove that it can be bootstrapped, built, tested and run independently.
 
 ### Scope
 
-- Maven reactor;
+- Maven parent/reactor with the current artifact baseline:
+  - `framework/` -> `event-timing-framework.jar`;
+  - `app/` -> `event-timing-app.jar`;
 - Java 8 compiler/runtime baseline;
-- initial modules: `timing-api`, `timing-core`, `timing-runtime`, `timing-adapters`, `timing-testkit`, `timing-app`;
-- version-source strategy;
-- logging framework;
+- responsibility/package boundaries inside the framework without mapping every architecture layer to a separate Maven artifact;
+- version/build identity source;
+- logging baseline;
 - unit-test framework;
-- initial settings/configuration structure;
+- initial settings/configuration structure sufficient for startup;
 - GitHub Actions build/test;
 - architecture/dependency checks where useful;
-- minimal headless startup/shutdown;
+- minimal runnable headless startup/shutdown lifecycle;
 - repository baseline from the SDE (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
-- PR/generated-output conventions where applicable.
+- shared `tool.git-project` / `tool.java-project` project-file bootstrap and reusable workflow conventions.
 
 No production device/backoffice protocols yet.
 
 ### Deliverable
 
-A clean public Java/Maven framework repository that can be cloned, built and tested independently and produces a minimal runnable headless application artifact.
+A clean public Java/Maven repository that can be cloned, bootstrapped, built and tested independently and produces both the reusable framework JAR and a minimal runnable headless application JAR.
 
 ### Demonstration
 
-From a clean checkout:
+From a clean checkout, bootstrap the pinned tooling, run the canonical Maven verify/build, produce the framework and app artifacts, start the app, show build/version identity, and shut it down cleanly.
 
 ```text
-mvn verify
-    -> all modules compile
-    -> unit/architecture checks pass
+bootstrap project tooling
+    -> exact pinned tooling revisions are restored
 
-run timing-app
+run the canonical Maven verify/build
+    -> framework and app compile
+    -> automated checks pass
+    -> framework and runnable app artifacts are produced
+
+run the app artifact
     -> application starts
-    -> configuration is loaded
-    -> version/build identity is logged
+    -> build/version identity is visible
     -> application shuts down cleanly
 ```
 
-Show the Maven dependency direction and demonstrate that `timing-core` does not require concrete device/network libraries.
-
 ### Evidence / exit criteria
 
-- clean checkout builds on supported development environments;
+- clean checkout/project bootstrap succeeds on supported development environments;
 - GitHub Actions is green;
 - Java 8 source/bytecode baseline is enforced;
-- initial module dependencies follow the documented architecture;
+- `framework/` remains reusable and `app/` owns executable composition;
+- package/dependency direction follows the documented architecture;
+- concrete device/network libraries are not required by domain/application responsibility packages unless their boundary role explicitly requires them;
 - minimal startup/shutdown is covered by automated tests where practical;
-- README explains build/run/test;
+- framework and app artifacts are produced with traceable build/version identity;
+- README explains bootstrap/build/run/test;
 - repository contains the required SDE baseline files.
 
 ## Step 3 — Minimal version/status application on development host (SI-01)
