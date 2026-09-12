@@ -1,0 +1,170 @@
+diagram:
+  id: layered-architecture
+  title: SI-01 layered architecture — responsibilities and services
+  width: 1600
+  height: 1180
+  description: Working responsibility view of the reusable framework and executable application.
+  note: Layers and capability blocks show architectural responsibility, not Maven artifact boundaries.
+
+groups:
+  - id: presentation-layer
+    label: Presentation / external application interfaces
+    kind: layer-presentation
+    layout: {x: 170, y: 85, w: 1110, h: 155}
+  - id: application-layer
+    label: Application layer — running state and orchestration
+    kind: layer-application
+    layout: {x: 170, y: 270, w: 1110, h: 220}
+  - id: domain-layer
+    label: Domain layer — reusable services, rules and model
+    kind: layer-domain
+    layout: {x: 170, y: 520, w: 1110, h: 265}
+  - id: infrastructure-layer
+    label: Infrastructure / integrations
+    kind: layer-infrastructure
+    layout: {x: 170, y: 815, w: 1110, h: 175}
+  - id: platform-layer
+    label: Platform abstractions / execution environment
+    kind: layer-platform
+    layout: {x: 170, y: 1020, w: 1110, h: 110}
+  - id: crosscutting-layer
+    label: Cross-cutting
+    kind: layer-crosscutting
+    layout: {x: 1310, y: 85, w: 245, h: 1045}
+
+nodes:
+  - id: http-api
+    group: presentation-layer
+    label: "HTTP / JSON\ncommands + queries"
+    kind: presentation
+    layout: {x: 215, y: 135, w: 275, h: 70}
+  - id: websocket
+    group: presentation-layer
+    label: "WebSocket\nstatus + events"
+    kind: presentation
+    layout: {x: 535, y: 135, w: 275, h: 70}
+  - id: shell
+    group: presentation-layer
+    label: "Console / remote shell\noperator interaction"
+    kind: presentation
+    layout: {x: 855, y: 135, w: 350, h: 70}
+
+  - id: app-command-query
+    group: application-layer
+    label: "Commands / queries / workflows\nvalidate intent • coordinate use cases"
+    kind: application
+    layout: {x: 215, y: 330, w: 330, h: 85}
+  - id: app-state
+    group: application-layer
+    label: "Application state\nTimingSystemInstance • ledgers • current runtime state"
+    kind: application
+    layout: {x: 585, y: 330, w: 330, h: 85}
+  - id: status-management
+    group: application-layer
+    label: "Status management\naggregate current state • immutable snapshots"
+    kind: application
+    layout: {x: 955, y: 330, w: 280, h: 85}
+  - id: core-runtime
+    group: application-layer
+    label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
+    kind: runtime
+    layout: {x: 360, y: 430, w: 690, h: 45}
+
+  - id: registration-service
+    group: domain-layer
+    label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
+    kind: service
+    layout: {x: 215, y: 585, w: 330, h: 105}
+  - id: start-time-service
+    group: domain-layer
+    label: "StartTimeService\nstart-time rules • updates • lookup\noperates on application-owned start-time state"
+    kind: service
+    layout: {x: 585, y: 585, w: 330, h: 105}
+  - id: ready-team-service
+    group: domain-layer
+    label: "ReadyTeamService\nready-team behaviour and ledger semantics"
+    kind: service
+    layout: {x: 955, y: 585, w: 280, h: 105}
+  - id: reference-service
+    group: domain-layer
+    label: "ReferenceDataService\nparticipant / event reference semantics"
+    kind: service
+    layout: {x: 215, y: 710, w: 330, h: 55}
+  - id: domain-model
+    group: domain-layer
+    label: "Domain model + rules\nregistrations • source sequence • start-time values • value objects"
+    kind: model
+    layout: {x: 585, y: 710, w: 650, h: 55}
+
+  - id: persistence
+    group: infrastructure-layer
+    label: "Persistence / file storage\nrepository + backup / restore implementations"
+    kind: storage
+    layout: {x: 215, y: 875, w: 330, h: 80}
+  - id: backoffice
+    group: infrastructure-layer
+    label: "Backoffice integration\nsocket / RabbitMQ\nreference + start-time updates"
+    kind: integration
+    layout: {x: 585, y: 875, w: 300, h: 80}
+  - id: device-integration
+    group: infrastructure-layer
+    label: "Device integrations\nRFID • CAN • display"
+    kind: integration
+    layout: {x: 925, y: 875, w: 310, h: 80}
+
+  - id: platform-primitives
+    group: platform-layer
+    label: "Clock • filesystem • executors • process/network/OS primitives"
+    kind: platform
+    layout: {x: 300, y: 1060, w: 850, h: 50}
+
+  - id: logging
+    group: crosscutting-layer
+    label: Logging
+    kind: crosscutting
+    layout: {x: 1340, y: 150, w: 185, h: 55}
+  - id: configuration
+    group: crosscutting-layer
+    label: Configuration
+    kind: crosscutting
+    layout: {x: 1340, y: 230, w: 185, h: 55}
+  - id: diagnostics
+    group: crosscutting-layer
+    label: Diagnostics
+    kind: crosscutting
+    layout: {x: 1340, y: 310, w: 185, h: 55}
+  - id: build-info
+    group: crosscutting-layer
+    label: Build / version identity
+    kind: crosscutting
+    layout: {x: 1340, y: 390, w: 185, h: 70}
+  - id: boundary-note
+    group: crosscutting-layer
+    label: "Responsibility view only\n≠ Maven artifact split"
+    kind: crosscutting
+    layout: {x: 1340, y: 1035, w: 185, h: 70}
+
+edges:
+  - {from: http-api, to: app-command-query}
+  - {from: shell, to: app-command-query}
+  - {from: status-management, to: websocket, label: status/events, dashed: true}
+  - {from: app-command-query, to: registration-service}
+  - {from: app-command-query, to: ready-team-service}
+  - {from: app-command-query, to: reference-service}
+  - {from: registration-service, to: start-time-service, label: start procedure}
+  - {from: registration-service, to: domain-model}
+  - {from: start-time-service, to: domain-model}
+  - {from: ready-team-service, to: domain-model}
+  - {from: reference-service, to: domain-model}
+  - {from: registration-service, to: app-state, label: state changes, dashed: true}
+  - {from: start-time-service, to: app-state, label: start-time changes, dashed: true}
+  - {from: ready-team-service, to: app-state, label: state changes, dashed: true}
+  - {from: app-state, to: status-management}
+  - {from: core-runtime, to: app-command-query, dashed: true}
+  - {from: core-runtime, to: app-state, dashed: true}
+  - {from: app-state, to: persistence, label: persist / restore}
+  - {from: backoffice, to: app-command-query, label: inbound updates}
+  - {from: device-integration, to: app-command-query, label: observations/events}
+  - {from: persistence, to: platform-primitives}
+  - {from: backoffice, to: platform-primitives}
+  - {from: device-integration, to: platform-primitives}
