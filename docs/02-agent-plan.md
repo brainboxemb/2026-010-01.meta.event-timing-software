@@ -224,9 +224,9 @@ At closure:
 
 ## AP-4 — Bootstrap the public SI-01 implementation repository
 
-Status: in progress — implementation PR #2 / architecture correction PR #7
+Status: completed — meta PR #7 / framework PR #2
 
-Goal: establish the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the proven reusable Git/Java tooling.
+Goal: establish the public SI-01/framework implementation repository and execute the repository/framework-skeleton bootstrap using the proven reusable Git/Java tooling.
 
 Repository:
 
@@ -234,36 +234,32 @@ Repository:
 brainboxemb/2026-010-02.java.event-timing-framework
 ```
 
-Current direction:
+Final bootstrap baseline:
 
-- use the normal issue → branch → draft PR workflow;
-- restore generic repository tooling through `brainboxemb/tool.git-project` pinned at `5db2b23b95ad0a230ab5d5d2bed725927328fcfe`;
-- consume Java build/test tooling through `brainboxemb/tool.java-project` pinned at `35d26ba14e3f3d5c5e65b97b9e01881496295edb`;
-- establish the SDE repository baseline (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
-- include and validate the Maven Wrapper in the implementation repository;
-- prove one reusable `event-timing-framework` library plus one `event-timing-app` executable consumer;
-- keep `domain`, `core`, `platform` and `comm` as architecture/package responsibilities inside the framework library until a real independent artifact boundary is justified;
-- use `io.github.brainboxemb.eventtiming` as the working Maven/Java namespace;
-- prove clean-checkout bootstrap and exact canonical-artifact portability through Linux/Windows CI;
-- keep detailed implementation work/evidence in the implementation repository PR;
-- feed material architecture/process/toolchain corrections back to the coordination/tool repositories through separate scoped work.
+- generic repository tooling is restored through `brainboxemb/tool.git-project` pinned at `5db2b23b95ad0a230ab5d5d2bed725927328fcfe`;
+- Java build/test tooling is consumed through `brainboxemb/tool.java-project` pinned at `35d26ba14e3f3d5c5e65b97b9e01881496295edb`;
+- repository baseline includes `README.md`, `AGENTS.md`, `CHANGELOG.md`, Maven Wrapper and root bootstrap/update launchers;
+- Maven/Java namespace is `io.github.brainboxemb.eventtiming`;
+- the reactor proves one reusable `event-timing-framework` library plus one `event-timing-app` executable consumer;
+- `domain`, `core`, `platform` and `comm` are architecture/package responsibilities inside the framework library rather than speculative separate artifacts;
+- the executable depends on the reusable framework library and remains free of substantive timing-domain behaviour in the bootstrap increment;
+- clean-checkout bootstrap and exact canonical-artifact portability are verified on Linux and Windows.
 
-Current evidence:
+### AP-4 closure evidence
 
-- implementation repository PR #2 is open as the framework bootstrap review;
-- local bootstrap uses `tool.git-project` to restore the pinned `tool.java-project` dependency from a clean checkout;
-- CI run `34697292572` is green for Linux canonical build, Windows compatibility build, and execution on Windows of the exact Linux-produced application JAR;
-- artifact inspection confirms the runnable application contains the consumed framework classes/packages and Maven metadata for `event-timing-framework`;
-- the canonical JAR independently prints the expected `event-timing-framework bootstrap OK` output;
-- meta PR #7 records the corrected package/artifact model and aligns runtime/backoffice design with possible single-system and multi-system executable consumers.
+The architecture/package correction was merged first in meta PR #7 as commit `e97f1f93d3e9f34dcbd0ef8d94e3d65468f073bc`.
 
-Exit criteria before AP-4 can close:
+At closure:
 
-- the corrected working component/artifact design is reviewable and merged in the meta repository;
-- implementation PR #2 contains no stale speculative module structure;
-- the framework library → application consumer path remains green in Linux/Windows CI;
-- canonical artifact/provenance evidence has been inspected rather than inferred from job status alone;
-- the implementation PR is merged with an immutable framework/tooling baseline suitable for the next SIP increment.
+- the generated `prod/docs` publication is green and `prod/docs/source-sha.txt` points exactly to `e97f1f93d3e9f34dcbd0ef8d94e3d65468f073bc`;
+- `31-01-SDD-03`, `31-01-SDD-04`, and `31-01-SDD-05` distinguish architecture/package responsibilities from Maven artifact boundaries and allow later single-system/multi-system executable compositions;
+- framework PR #2 was merged as `50ee1a24351def8ce91fabb3769956a797c10fd5`;
+- framework issue #1 records that the original six-module proposal was deliberately superseded during review by the tested `framework + app` boundary;
+- latest pre-merge framework CI run `34697694095` was green and its canonical artifact was independently inspected/executed;
+- framework post-merge run `34697920820` is green for Linux/Windows clean bootstrap, Linux canonical reactor build, Windows compatibility reactor build, and Windows execution of the exact Linux-produced application JAR;
+- the implementation repository therefore provides a reproducible clean-checkout consumer proof for both reusable tooling layers and a stable starting point for subsequent SI-01 increments.
+
+AP-4 closes only the repository/tooling/framework-skeleton coordination goal. It does **not** by itself declare the complete SIP Step 2 capability/exit set finished. The next coordination activity should review the remaining Step-2 activities/evidence — especially the intended minimal startup/shutdown/lifecycle behaviour — before either closing SIP Step 2 or moving to the Step-3 version/status interface increment.
 
 ## Ongoing supporting activity — source collection
 
