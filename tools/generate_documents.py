@@ -25,9 +25,14 @@ ARCHITECTURE_DOCUMENTS = [
     "31-01-SDD-02-data-and-display-design.md",
     "31-01-SDD-03-java-component-design.md",
     "31-02-SAD-gui-application-architecture.md",
+    "31-03-SAD-web-operator-application-architecture.md",
 ]
 
-DOCUMENTS = PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS
+VERIFICATION_DOCUMENTS = [
+    "50-SVP-software-verification-plan.md",
+]
+
+DOCUMENTS = PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS + VERIFICATION_DOCUMENTS
 
 
 RAW_DIAGRAM_LINK = re.compile(
@@ -145,7 +150,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current planning, development-environment, architecture and detailed-design documents.",
+        "Generated review/output book containing the current planning, development-environment, architecture, detailed-design and verification documents.",
         built,
     )
 
@@ -161,6 +166,11 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
 
     doc_index.extend(["", "## Architecture and design", ""])
     for name in ARCHITECTURE_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Verification", ""])
+    for name in VERIFICATION_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
