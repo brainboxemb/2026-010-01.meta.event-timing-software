@@ -94,16 +94,24 @@ jobs:
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
           test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
-          test -f bld/docs/documents/31-01-SDD-04-runtime-topology-and-configuration.md
+          test -f bld/docs/documents/31-01-SAD-timing-application-architecture.md
+          test -f bld/docs/documents/31-01-SDD-03-java-component-design.md
+          test -f bld/docs/documents/31-01-SDD-02-data-and-display-design.md
           test -f bld/docs/documents/31-01-SDD-05-backoffice-transport-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
           test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
+          grep -q '31-01-SDD-03-java-component-design.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-01-timing-system-design.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-02-data-and-display-design.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-04-runtime-topology-and-configuration.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-05-backoffice-transport-design.md' bld/docs/documents/architecture-book.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
           test -f bld/docs/assets/architecture/layered-architecture.drawio
           test -f bld/docs/assets/architecture/software-item-system-overview.svg
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
+          test -f bld/docs/assets/architecture/device-network-topology.svg
           test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
           test -f bld/docs/planning/README.md
