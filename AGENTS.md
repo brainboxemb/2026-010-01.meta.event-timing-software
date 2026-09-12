@@ -89,6 +89,22 @@ SDE
 
 Verification strategy belongs in the SVP; architecture/design belongs in SSAD/SAD/SDD/IDD documents. Do not put detailed commands/tasks in the SDP merely because they belong to a future phase.
 
+## Document value rule
+
+Documentation exists to support engineering work, decisions, communication, traceability or verification. **Do not create a document merely because a document type exists in the process model.**
+
+Before creating a new persistent document, be able to answer:
+
+1. **Purpose** — what engineering question, decision or communication need does it serve?
+2. **Audience/use** — who will read or use it, and during which activity?
+3. **Boundary** — why does the content not belong in an existing document or active pull request?
+4. **Inputs/outputs** — what sources feed it and what later decisions, requirements, designs or tests consume it?
+5. **Lifecycle** — what causes it to be updated, accepted, superseded or removed?
+
+Prefer extending an existing authoritative/working document when that preserves a clear boundary. Prefer PR discussion/evidence for temporary implementation detail. Introduce a new document only when a distinct long-lived engineering concern justifies its own source of truth.
+
+A document that no longer has a useful consumer should be considered for consolidation or supersession rather than maintained indefinitely for process compliance.
+
 ## Sources of truth
 
 Use these documents for their specific roles:
