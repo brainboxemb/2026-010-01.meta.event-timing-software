@@ -14,6 +14,7 @@ import shutil
 
 CONTEXT_DOCUMENTS = [
     "03-domain-baseline.md",
+    "04-UC-system-use-cases.md",
 ]
 
 PLANNING_DOCUMENTS = [
@@ -156,14 +157,14 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current domain baseline, planning, development-environment, architecture, detailed-design and verification documents.",
+        "Generated review/output book containing the current domain baseline, use cases, planning, development-environment, architecture, detailed-design and verification documents.",
         built,
     )
 
     doc_index = [
         "# Generated documents",
         "",
-        "## Domain context",
+        "## Domain context and use cases",
         "",
     ]
     for name in CONTEXT_DOCUMENTS:
