@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,13 +57,26 @@ jobs:
           path: bld/docs/architecture
           retention-days: 14
 
-      - name: Publish prod/docs branch
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      - name: Publish generated documentation branch
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         env:
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+              echo "ERROR: missing or invalid pull-request number" >&2
+              exit 1
+            fi
+            TARGET_BRANCH="dev/pr-${PR_NUMBER}/docs"
+          else
+            TARGET_BRANCH="prod/docs"
+          fi
 
           publish_dir="$(mktemp -d)"
           cp -a bld/docs/architecture "$publish_dir/architecture"
@@ -82,10 +96,14 @@ jobs:
 
           Generated from source commit \`${SOURCE_SHA}\`.
 
+          Publication branch: \`${TARGET_BRANCH}\`.
+
           - [Architecture diagrams](architecture/README.md)
           EOF
           printf '%s\n' "$SOURCE_SHA" > source-sha.txt
 
           git add README.md source-sha.txt architecture
           git commit -m "Publish generated documentation for ${SOURCE_SHA}"
-          git push --force origin HEAD:prod/docs
+          git push --force origin "HEAD:${TARGET_BRANCH}"
+
+          echo "Published generated documentation to ${TARGET_BRANCH}"
