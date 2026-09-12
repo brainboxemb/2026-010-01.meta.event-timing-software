@@ -341,17 +341,41 @@ Logging records diagnostic/history information; status represents current operat
 
 ## Logging architecture
 
-Logging is a SAD-level technology decision because it affects almost every component, operational diagnostics, footprint and private/public integration.
+Logging is a SAD-level technology decision because it affects almost every component, operational diagnostics, footprint and public/private integration.
 
-Working direction:
+The baseline logging architecture is:
 
-- application/framework code should log through a stable logging facade rather than bind domain code to a concrete backend;
-- structured context should include stable identifiers such as timing-system/source/device/correlation identity where useful;
-- logging must not become the mechanism for application status or durable domain history;
-- configuration should permit development verbosity while keeping field deployment output and resource use controlled;
-- concrete backend and version must be selected and measured on the Pi Zero before the architecture decision is accepted.
+```text
+framework/application code
+        |
+        v
+      SLF4J API
+        |
+        v
+provider selected by executable composition
+        |
+        +-- initial default: slf4j-jdk14
+                         |
+                         v
+                  java.util.logging
+```
 
-**Open technology decision:** evaluate a lightweight SLF4J-based approach versus using only JDK logging. The decision should consider Java 8 support, footprint, configuration, rolling/file behaviour and operational familiarity rather than popularity alone.
+Working decisions:
+
+- reusable framework code logs through the SLF4J API;
+- `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
+- the executable composition selects exactly one provider;
+- the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating to the JDK `java.util.logging` backend;
+- Logback/reload4j or another backend is not part of the baseline unless later operational requirements justify it;
+- another executable/private consumer may choose a different compatible provider without changing framework/domain source;
+- log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
+- high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
+- stable timing-system/source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
+- logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state.
+
+The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.
+
+SLF4J 2.0.x is compatible with the Java-8 baseline; the implementation repository should pin the API/provider patch version together through Maven dependency management.
 
 ## Configuration and composition architecture
 
@@ -481,7 +505,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Internal messaging | typed immutable commands/events + explicit routing; no generic event bus initially | working direction |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
-| Logging | stable facade; lightweight backend to be selected | compare SLF4J-based backend vs JDK logging on target |
+| Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
 | Configuration | external typed/validated configuration | file format/library still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
 | HTTP/WebSocket | embedded Java-8-compatible technology | selection still open |
@@ -557,7 +581,7 @@ No new SDD should be created during this cleanup unless a clear separate detaile
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 
-- logging facade/backend and field log configuration;
+- field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
 - embedded HTTP/WebSocket technology compatible with Java 8 and Pi Zero constraints;
 - remote-shell technology;
 - exact `SerialExecutor`/backing-executor design and queue/backpressure policy;
