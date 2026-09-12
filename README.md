@@ -19,6 +19,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level development strategy: objectives, broad phases, risks, assumptions, resources and major unknowns.
 - [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
 - [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — concrete engineering environment: repositories, GitHub workflow, tooling, CI, generated-output and development-host conventions.
+- [`docs/20-01-SRD-timing-application-requirements.md`](docs/20-01-SRD-timing-application-requirements.md) — AP-1 working requirement baseline for the first SI-01 executable slice; later capabilities remain deliberately deferred.
 - [`docs/30-SSAD-software-system-architecture.md`](docs/30-SSAD-software-system-architecture.md) — software-item register, interface catalogue and software-system architecture working draft.
 - [`docs/31-01-SAD-timing-application-architecture.md`](docs/31-01-SAD-timing-application-architecture.md) — software item 01, headless timing application architecture.
 - [`docs/31-01-SDD-01-timing-system-design.md`](docs/31-01-SDD-01-timing-system-design.md) — software item 01 detailed timing-system design.
@@ -28,6 +29,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/31-01-SDD-05-backoffice-transport-design.md`](docs/31-01-SDD-05-backoffice-transport-design.md) — software item 01 transport-independent backoffice design with lightweight socket-loop and RabbitMQ adapters.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
+- [`docs/40-01-IDD-application-control-status.md`](docs/40-01-IDD-application-control-status.md) — AP-1 working IF-03 application-control/status contract for the first executable slice.
 - [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model including Pi Zero/resource and fault-injection verification.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
@@ -113,7 +115,7 @@ The intended chain is:
 ```text
 system/domain source
   -> system use case where applicable
-  -> system requirement
+  -> system requirement where a distinct system-level obligation needs to be owned
   -> system IDD where applicable
   -> software-item SRD
   -> SAD / SDD
@@ -121,7 +123,7 @@ system/domain source
   -> verification case/evidence
 ```
 
-Use cases capture operational intent and may lead to multiple system/software requirements and verification scenarios. System-level IDDs own interface definitions; software-item SRDs reference applicable interface obligations instead of duplicating them.
+Use cases capture operational intent and may lead to multiple system/software requirements and verification scenarios. System-level IDDs own interface definitions; software-item SRDs reference applicable interface obligations instead of duplicating them. Do not introduce an additional requirements document when it would only duplicate an already well-owned software-item or interface obligation.
 
 ## Workflow
 

@@ -23,6 +23,10 @@ PLANNING_DOCUMENTS = [
     "12-SDE-software-development-environment.md",
 ]
 
+REQUIREMENTS_DOCUMENTS = [
+    "20-01-SRD-timing-application-requirements.md",
+]
+
 ARCHITECTURE_DOCUMENTS = [
     "30-SSAD-software-system-architecture.md",
     "31-01-SAD-timing-application-architecture.md",
@@ -35,11 +39,22 @@ ARCHITECTURE_DOCUMENTS = [
     "31-03-SAD-web-operator-application-architecture.md",
 ]
 
+INTERFACE_DOCUMENTS = [
+    "40-01-IDD-application-control-status.md",
+]
+
 VERIFICATION_DOCUMENTS = [
     "50-SVP-software-verification-plan.md",
 ]
 
-DOCUMENTS = CONTEXT_DOCUMENTS + PLANNING_DOCUMENTS + ARCHITECTURE_DOCUMENTS + VERIFICATION_DOCUMENTS
+DOCUMENTS = (
+    CONTEXT_DOCUMENTS
+    + PLANNING_DOCUMENTS
+    + REQUIREMENTS_DOCUMENTS
+    + ARCHITECTURE_DOCUMENTS
+    + INTERFACE_DOCUMENTS
+    + VERIFICATION_DOCUMENTS
+)
 
 
 RAW_DIAGRAM_LINK = re.compile(
@@ -157,7 +172,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current domain baseline, use cases, planning, development-environment, architecture, detailed-design and verification documents.",
+        "Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, interfaces, detailed-design and verification documents.",
         built,
     )
 
@@ -177,8 +192,18 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
     doc_index.append("- [Generated SIP roadmap and printable PDFs](../planning/README.md)")
 
+    doc_index.extend(["", "## Requirements", ""])
+    for name in REQUIREMENTS_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
     doc_index.extend(["", "## Architecture and design", ""])
     for name in ARCHITECTURE_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Interfaces", ""])
+    for name in INTERFACE_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
