@@ -2,302 +2,364 @@
 
 Status: working draft
 
-This document is an initial architecture sketch used to shape the software plan and early implementation increments. It is not yet the authoritative software architecture.
+This document is the first concrete architecture sketch for the waypoint timing/registration software. It is intentionally detailed enough to guide the first implementation increments, while still leaving unresolved choices explicit.
 
 ## Architecture decisions
 
-This document also records architecture decisions as they become sufficiently concrete. A decision can be `proposed`, `accepted`, `superseded`, or `rejected`.
+A decision can be `proposed`, `accepted`, `superseded`, or `rejected`.
 
 | ID | Status | Decision | Rationale / notes |
 | --- | --- | --- | --- |
-| ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. Avoid introducing Gradle without a concrete need. |
-| ADR-002 | accepted | Use **Java SE 8** as the initial language/API/runtime baseline for the headless waypoint runtime. | The original Raspberry Pi Zero / Zero W (ARMv6) is a mandatory deployment target and the legacy application already uses Java 8. Starting with Java 8 minimises migration and runtime risk on the constrained target and allows implementation to begin without first proving a newer JVM. |
-| ADR-003 | proposed | Keep the application vendor-neutral at the Java SE level and select an explicit ARMv6-capable reference runtime for Raspberry Pi Zero 1 deployment after validation. | Current Raspberry Pi OS repositories do not provide a simple modern JVM path suitable for Zero 1. An ARMv6-capable runtime should therefore be pinned for reproducible deployment without using vendor-specific application APIs. |
-| ADR-004 | proposed | Evaluate **Java 11** as a later baseline upgrade after sufficient Zero 1 evidence exists. | Java 11 is a desirable modernisation path, but migration must be justified by measured compatibility, footprint, performance, dependency support, and deployment behaviour on the mandatory Zero 1 target. The project should not delay its initial implementation while waiting for that evidence. |
+| ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. |
+| ADR-002 | accepted | Use **Java SE 8** as the initial language/API/runtime baseline for the headless waypoint runtime. | The original Raspberry Pi Zero / Zero W (ARMv6) is mandatory and the legacy application already uses Java 8. Start conservatively and gather evidence before increasing the baseline. |
+| ADR-003 | proposed | Keep application code vendor-neutral at the Java SE level and pin an explicit ARMv6-capable reference runtime for Zero 1 deployment. | Deployment must be reproducible, but application code should not depend on vendor-specific JDK APIs. |
+| ADR-004 | proposed | Evaluate **Java 11** as a later baseline upgrade after sufficient Zero 1 evidence exists. | Migration is desirable only when compatibility, footprint, performance, dependency support, maintenance, and deployment are proven on the mandatory target. |
+| ADR-005 | proposed | Use **serialized application/domain execution** so mutable waypoint state has one logical writer; adapters own external I/O concurrency. | This avoids pervasive locking, makes ordering explicit, and keeps application/domain code straightforward to unit test. The exact executor topology for `1..X` logical waypoint systems remains open. |
+| ADR-006 | proposed | Generate architecture diagrams from Python into both **SVG** and **draw.io** and publish generated documentation on `prod/docs`. | SVG keeps GitHub documentation directly readable; draw.io remains editable. One Python model prevents the two formats from drifting. No diagram-rendering Docker image is required initially. |
 
-### Java runtime portability note
+## Visual overview
 
-The Java language/API baseline and the concrete JDK/runtime distribution are separate concerns.
+After the documentation workflow has published `prod/docs`, the generated diagrams are available here:
 
-The original Raspberry Pi Zero / Zero W is a hard target constraint rather than an optional legacy platform. It uses an ARMv6-class processor and therefore materially constrains the Java baseline and runtime choice.
+- [Generated architecture documentation](../../../tree/prod/docs)
+- [Editable system overview](../../../blob/prod/docs/architecture/system-overview.drawio)
+- [Editable threading model](../../../blob/prod/docs/architecture/threading-model.drawio)
 
-The current policy is deliberately conservative:
+![Waypoint runtime component and interface overview](../../../raw/prod/docs/architecture/system-overview.svg)
 
-- Java 8 is the accepted initial application baseline;
-- application code must remain vendor-neutral and must not depend on vendor-specific JDK APIs unless explicitly justified;
-- an ARMv6-capable Java 8 runtime must be selected and validated on the actual Zero 1 hardware;
-- Java 11 remains a planned upgrade candidate rather than a prerequisite for starting development;
-- migration to Java 11 should only be accepted when real Zero 1 evidence shows that runtime support, footprint, performance, dependency compatibility, maintenance, and deployment are acceptable;
-- newer language/runtime features alone are not sufficient reason to increase the baseline if they materially worsen Zero 1 behaviour.
+The source model for these diagrams is `tools/generate_architecture_diagrams.py`.
 
-When Java 11 is evaluated, compare it with the working Java 8 baseline using the same representative application. Evidence should include at least:
+## System boundary and clients
 
-- application startup time;
-- steady-state resident memory use;
-- JVM heap behaviour under a small representative workload;
-- version/status command responsiveness;
-- JSON/API responsiveness;
-- availability of the intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
-- current security/update availability for the selected runtime;
-- packaging and deployment complexity.
+The core product is a **headless Java runtime**. User interfaces and external systems interact with it through defined interfaces rather than by calling internal runtime classes directly.
 
-The Java 11 evaluation does not block the initial architecture or implementation increments.
+Current client/interface set:
 
-## Architectural goals
+1. **Local console** — interactive shell attached to the running process.
+2. **Remote terminal/shell** — remotely reachable command-line interface using the same application command/query concepts.
+3. **Machine-readable API** — HTTP/JSON-style queries and commands.
+4. **Desktop GUI** — separate software item connecting through the public application interface.
+5. **iPad/browser client** — React-based web application downloaded from the waypoint runtime itself.
+6. **Backoffice system** — external system reached through a transport-independent backoffice boundary; RabbitMQ is the first intended adapter.
+7. **Waypoint hardware** — RFID and CAN devices behind explicit device contracts.
 
-The current direction is a reusable Java-based waypoint runtime with the following characteristics:
+The runtime should be able to host `1..X` logical waypoint systems in one process.
 
-- headless-first operation;
-- support for Windows, Linux, and Raspberry Pi Zero / Zero W targets;
-- one runtime capable of hosting one to multiple logical waypoint systems;
-- multiple external control/operator clients;
-- explicit platform and device abstraction boundaries;
-- good testability without requiring production hardware;
-- clear status monitoring and status representation as a first-class architectural concern;
-- generic/public framework parts separated cleanly from later product-specific/private implementations.
+## Web / iPad interface
 
-## Initial layered view
+The iPad use case adds a browser-facing interface without adding a separate domain API.
 
-The embedded architecture reference collected in `reference/README.md` is useful as inspiration for explicit layering, service-style components, and platform abstraction. The Java design should adapt those ideas rather than copy the embedded implementation literally.
+The preferred direction is:
+
+- the headless application serves the compiled React application as static files over simple HTTP;
+- HTTP is used for initial state, queries, and operator commands;
+- WebSocket is used for live status and registration updates;
+- HTTP and WebSocket adapters translate to the same shared application command/query/event model used by other clients;
+- the React application contains presentation logic, not waypoint domain rules.
+
+Expected iPad/browser capabilities include:
+
+- view registration data;
+- view current status;
+- open a logical waypoint system;
+- close a logical waypoint system;
+- initiate the local start procedure;
+- later expose manual registration and penalty operations where authorised.
+
+Authentication, authorisation, HTTPS, and deployment-network assumptions still need explicit requirements/design work. The first architecture only defines the separation and communication shape.
+
+## Shared application boundary
+
+The console, remote shell, API, GUI, and browser should not each implement business behaviour independently.
+
+All command/query adapters should converge on a shared application boundary containing operations such as:
 
 ```text
-External interfaces / clients
-  - local console
-  - remote terminal/shell
-  - JSON/API interface
-  - GUI client later
-             |
-             v
-Application command/query boundary
-  - version queries
-  - status queries
-  - operator commands
-             |
-             v
-Runtime / orchestration
-  - application lifecycle
-  - waypoint-system manager (1..X)
-  - status aggregation
-             |
-             v
-Application and domain services
-  - registration
-  - waypoint open/closed lifecycle
-  - start procedure
-  - penalty-code handling
-  - manual registration
-  - backoffice communication
-             |
-             v
-Ports / contracts
-  - registration storage
-  - RFID
-  - CAN
-  - backoffice transport
-  - clock/time
-  - settings/configuration
-  - platform capabilities
-             |
-             v
-Concrete adapters
-  - text/file storage
-  - RFID hardware or simulator
-  - CAN implementation or simulator
-  - RabbitMQ transport
-  - Windows/Linux/Raspberry Pi platform adapters
+version query
+status query
+open waypoint
+close waypoint
+start participant
+manual registration
+penalty registration
+penalty revocation
 ```
 
-The exact module boundaries, package structure, dependency-injection approach, and use of an internal event bus are still open.
+The exact names and interfaces are illustrative. The important rule is that transport/presentation code translates input into application commands/queries and translates application results/events back to the client.
 
-## Shared command and query model
+## Runtime and service structure
 
-The local console, remote terminal connection, JSON/API interface, and future GUI should not each implement their own version of application behaviour.
+A first decomposition is:
 
-The preferred direction is a shared application command/query boundary. Interface adapters translate their protocol or presentation model into the same application operations.
+```text
+Bootstrap / composition
+    |
+    +-- interface adapters
+    |     console
+    |     remote shell
+    |     HTTP + WebSocket
+    |
+    +-- runtime / orchestration
+    |     application lifecycle
+    |     logical waypoint manager (1..X)
+    |
+    +-- application/domain services
+    |     status
+    |     registration
+    |     start procedure
+    |     penalty handling
+    |
+    +-- ports / contracts
+          registration storage
+          RFID
+          CAN
+          backoffice
+          clock
+          settings
+          platform capabilities
+```
 
-The first implementation can validate this architecture with two simple queries:
-
-- application version;
-- application/system status.
-
-This gives the initial interfaces real architectural value without requiring the registration domain to be implemented immediately.
+Concrete platform, hardware, persistence, and network implementations live below those contracts.
 
 ## Status as a first-class model
 
-Status monitoring and representation should be designed centrally rather than reconstructed independently by each interface.
+Status must have one central representation. Interfaces should display that model rather than each reconstructing status from logs or adapter-specific state.
 
-A possible status model includes:
+Possible status levels include:
 
 ### Application status
 
 - software version;
 - startup time / uptime;
-- overall health/state;
-- configuration loaded/not loaded;
-- active logical waypoint-system count.
+- overall health;
+- configuration state;
+- number of configured/running logical waypoint systems.
 
-### Logical waypoint-system status
+### Logical waypoint status
 
-- waypoint-system identifier;
-- lifecycle state, including at least `OPEN` and `CLOSED`;
-- operational/health state;
-- last meaningful activity or state transition;
-- current start-procedure state when applicable.
+- identifier;
+- lifecycle state such as `OPEN` / `CLOSED`;
+- operational health;
+- current start-procedure state;
+- last meaningful activity/state transition.
 
 ### Subsystem status
 
-Potential monitored subsystems include:
-
-- RFID interface;
-- CAN interface;
+- RFID;
+- CAN;
 - registration storage;
 - backoffice connection;
 - clock/time synchronisation;
-- configuration/settings;
-- external interface endpoints.
+- settings/configuration;
+- public interface endpoints.
 
-A status item should be able to represent more than a boolean. A useful structure may include state, reason/detail, and last-change/observation time.
+Status should be representable as immutable snapshots that can safely be consumed by console, API, WebSocket, GUI, diagnostics, and future monitoring integrations.
 
-The same status representation should be consumable by the console, remote shell, API, future GUI, logging/diagnostics, and later monitoring integrations.
+## Threading and concurrency model
 
-## Registration domain direction
+The goal is to keep threading **out of the domain model** as much as possible.
 
-The initial registration model must support more than RFID passage times.
+![Threading and unit-testability model](../../../raw/prod/docs/architecture/threading-model.svg)
 
-Candidate registration/event categories include:
+### External I/O
 
-- participant passage detected through RFID;
-- participant start at the waypoint;
-- manual participant registration;
-- penalty-code registration;
-- penalty-code revocation/correction.
+External libraries may create their own threads or callbacks, for example:
 
-The exact domain model is not yet fixed. A unified append-oriented registration/event model may be useful because corrections and revocations should remain traceable rather than silently erasing operational history, but this needs explicit design work before becoming a requirement.
+- HTTP/WebSocket server threads;
+- remote-shell connections;
+- RFID reader callbacks/threads;
+- CAN receive thread;
+- RabbitMQ consumer/connection threads.
 
-## Registration persistence
+Those threads must not directly mutate waypoint domain state.
 
-An early implementation should use a simple local text/file-based database or storage file for registrations.
+At the adapter boundary they should instead:
 
-It must eventually be capable of storing timing registrations as well as other operational registrations such as penalty codes and their revocations.
+1. capture externally meaningful timestamps immediately, especially RFID/CAN observations;
+2. convert external input into immutable commands/events;
+3. place the work on an application ingress queue/execution boundary.
 
-Still open:
+This prevents queue/thread scheduling delay from changing the actual recorded observation time.
 
-- file format;
-- schema/versioning;
-- append-only versus update semantics;
-- indexing/query strategy;
-- crash/power-loss safety;
-- file rotation/archival;
-- concurrency model when multiple logical waypoint systems share a runtime.
+### Serialized domain execution
 
-The storage contract should be isolated from the application/domain logic so a later implementation can replace the first file-based store without changing higher-level services.
+The current proposed model is **single-writer/serialized execution for mutable logical waypoint state**.
 
-## Waypoint lifecycle and operations
+Benefits:
 
-The registration system needs explicit lifecycle/operational concepts.
+- deterministic ordering of registrations and operator commands;
+- few or no locks inside domain services;
+- less risk of partially updated state;
+- simpler reasoning about `OPEN` / `CLOSED`, start procedures, penalties, and manual corrections;
+- the same command handlers can be executed synchronously in unit tests.
 
-Initial candidate behaviours:
+The exact implementation remains open. Options include one runtime executor, one logical serialized executor per waypoint, or multiple logical serial executors multiplexed over a small thread pool. The Zero 1 memory/CPU constraint must be considered before choosing thread-per-waypoint designs.
 
-- a waypoint system can be active/open;
-- a waypoint system can be inactive/closed;
-- a start procedure can register a participant starting locally at the waypoint;
-- RFID passage registration is supported;
-- manual registration is supported;
-- penalty codes can be registered;
-- penalty codes can later be revoked/corrected.
+### Blocking I/O
 
-The exact commands, state transitions, validation rules, and audit semantics still need requirements work.
+The serialized application/domain execution path must not be blocked for arbitrary periods by disk, network, or hardware access.
 
-## Device and transport abstraction
+Blocking/slow operations should be owned by adapters or dedicated I/O executors. Completion/failure can return to the application as events so state transitions remain serialized.
 
-RFID and CAN are distinct external interfaces and should be represented behind contracts rather than embedded directly in domain logic.
+Durability requirements for registrations may later require an explicit rule such as "registration becomes committed only after local persistence acknowledgement". That belongs in requirements and detailed persistence design rather than being guessed here.
 
-Possible ports include:
+## Unit-testability rules
+
+Testability should be an architecture property rather than something added after implementation.
+
+Application/domain code should therefore follow these rules where practical:
+
+- do not create threads inside domain services;
+- do not call `Thread.sleep()` in domain logic;
+- do not use global/static mutable state;
+- inject time through a `Clock`/clock port instead of directly reading system time throughout the code;
+- inject storage, RFID, CAN, backoffice, and platform dependencies through contracts;
+- keep commands/events/value objects immutable where practical;
+- keep parsing/protocol logic in adapters, not in domain services;
+- expose deterministic handlers that can be called synchronously in unit tests.
+
+Typical unit tests can then use:
 
 ```text
-RfidReaderPort
-CanPort
-RegistrationStore
-BackofficePort
-ClockPort
-PlatformPort(s)
-SettingsProvider
+FakeClock
+InMemoryRegistrationStore
+FakeRfidPort
+FakeCanPort
+FakeBackofficePort
 ```
 
-Names are illustrative only.
+Integration tests exercise real interface/server/persistence adapters separately.
 
-Real and simulated implementations should conform to the same contracts where practical so normal development and automated tests can run without waypoint hardware.
+This separation also makes Windows/Linux development possible without the real Pi/RFID/CAN hardware.
+
+## Registration model direction
+
+The registration store must eventually represent more than timing observations.
+
+Candidate record/event categories include:
+
+- RFID participant passage;
+- participant start at the waypoint;
+- manual registration;
+- penalty-code registration;
+- penalty-code revocation/correction;
+- relevant operational/state transitions when required for audit/recovery.
+
+A simple text/file-based implementation is the first persistence target, but higher-level code should depend on `RegistrationStore` rather than the file format.
+
+A traceable append-oriented event model is worth investigating because revocations/corrections should not silently erase operational history. This is not yet an accepted requirement.
+
+## Platform and device abstraction
+
+Platform-level concerns and device-level concerns should be distinguishable.
+
+Platform examples:
+
+- clock;
+- filesystem paths;
+- process/service lifecycle;
+- settings/secret sources;
+- optional Raspberry Pi facilities.
+
+Device examples:
+
+- RFID reader/antenna;
+- CAN interface.
+
+Real and simulated adapters should implement the same relevant contracts. Unsupported facilities on Windows/development machines should therefore be representable without contaminating the application/domain layer with platform checks.
 
 ## Configuration and credentials
 
-Credentials and environment-specific configuration must not be hard-coded in the application.
+Credentials and environment-specific values must not be hard-coded.
 
-The architecture should provide a settings/configuration structure that can supply:
+The settings structure needs to cover at least:
 
-- normal application settings;
-- per-waypoint settings;
-- interface configuration;
-- backoffice/RabbitMQ configuration;
+- application settings;
+- logical waypoint settings;
+- interface/server configuration;
 - device configuration;
-- credentials/secrets through an appropriate external mechanism.
+- backoffice/RabbitMQ configuration;
+- credentials/secrets through an external mechanism.
 
-The exact source hierarchy (configuration files, environment variables, secret files/stores, command-line overrides, etc.) remains to be selected.
+The source hierarchy (files, environment, secret files/stores, command-line overrides, etc.) remains open.
 
 ## Logging and diagnostics
 
-A logging framework is required as a cross-cutting infrastructure concern.
+A logging framework is required. Logs and status have different purposes:
 
-Logging should include enough structured context to distinguish:
+- **logging** records what happened;
+- **status** represents the current observable state.
 
-- runtime/application;
-- logical waypoint system;
-- subsystem/device/interface;
-- registration or operator operation where appropriate.
+Log context should make runtime, logical waypoint, subsystem/device/interface, and relevant operation identifiers visible where useful.
 
-Logging is not a replacement for the status model. Logs describe events/history; status describes the current observable state.
+## Java/runtime direction
 
-## Backoffice boundary
+Java 8 is the accepted initial baseline. Java 11 is a later upgrade candidate and does not block the initial architecture or implementation.
 
-RabbitMQ is one intended backoffice communication mechanism, but application/domain services should not depend directly on RabbitMQ-specific APIs.
+The original Raspberry Pi Zero / Zero W is a mandatory ARMv6 target. The chosen Java 8 runtime must therefore be validated on actual hardware. Application code must remain vendor-neutral.
 
-A backoffice contract should allow a RabbitMQ adapter initially or later while preserving the option for other transports.
+When Java 11 is evaluated, compare it with the working Java 8 application using evidence such as startup time, resident memory, heap behaviour, command/API responsiveness, dependency availability, maintenance/security updates, and deployment complexity.
 
-Offline buffering, retry, idempotency, message contracts, and reconciliation remain later design topics.
+## Generated documentation strategy
+
+The source repository should remain easy to review while generated images remain easy to view.
+
+The chosen initial pattern mirrors the CAD projects:
+
+```text
+source branch
+  docs/*.md
+  tools/generate_architecture_diagrams.py
+            |
+            | GitHub Actions
+            v
+prod/docs
+  README.md
+  architecture/
+    system-overview.svg
+    system-overview.drawio
+    threading-model.svg
+    threading-model.drawio
+```
+
+The Python generator uses only the standard library and produces both formats from the same node/edge/layout model.
+
+Therefore no dedicated Docker image is required initially. A pinned documentation-toolchain container should only be introduced later if external renderers or fonts/tool versions become necessary for reproducible output.
 
 ## First architecture-validation increment
 
-Before implementing the registration domain, the architecture should be validated with the smallest useful executable:
+The first executable increment should validate the architecture rather than implement the complete event domain:
 
-1. start a headless Java 8 application;
-2. create a central version service/model;
-3. create a central status service/model;
-4. expose version (and preferably the same basic status) through:
-   - local console;
-   - remote terminal/shell connection;
-   - JSON/API interface;
-5. use a logging framework;
-6. load settings through the configuration structure;
-7. add unit tests around the shared application behaviour;
-8. build and test through GitHub Actions;
-9. execute the application on an original Raspberry Pi Zero / Zero W using the selected ARMv6-capable Java 8 runtime and record startup, memory, and responsiveness evidence.
+1. Maven-based headless Java 8 application;
+2. central version model/service;
+3. central status model/service;
+4. local console interface;
+5. remote terminal/shell interface;
+6. HTTP/JSON interface;
+7. basic WebSocket status/event path so the future browser client uses the same boundaries;
+8. logging framework;
+9. external settings structure;
+10. unit tests around shared application behaviour;
+11. GitHub Actions build/test;
+12. execution on original Raspberry Pi Zero / Zero W with captured startup/memory/responsiveness evidence.
 
-This is intentionally small but exercises the boundaries that later registration, GUI, hardware, and backoffice functionality will use.
+The React browser application itself can remain a subsequent software increment, but the server boundary should already anticipate it.
 
 ## Open architecture questions
 
 - reference Java 8 runtime/version for Raspberry Pi Zero 1 deployment;
 - evidence threshold and timing for a possible Java 11 migration;
-- standard development/CI JDK distribution policy for Windows and Linux;
-- minimum supported Raspberry Pi OS / Linux baseline;
-- module/package boundaries;
-- dependency injection or explicit composition approach;
-- API protocol and server technology;
-- remote shell/terminal technology;
-- status state/health vocabulary;
-- event bus versus direct service interaction;
-- exact relationship between runtime-wide services and per-waypoint services;
-- configuration and secret-loading approach;
-- text/file registration format;
-- CAN library/platform support;
+- exact serialized executor topology for `1..X` logical waypoint systems;
+- queue sizing/backpressure/overload behaviour;
+- exact HTTP/API technology compatible with Java 8 and Zero 1;
+- remote shell technology;
+- desktop GUI technology;
+- authentication/authorisation for browser/remote clients;
+- status/health vocabulary;
+- whether an internal event bus adds value beyond explicit application events;
+- persistence commit/durability rules;
+- text/file registration format and schema/versioning;
 - RFID hardware contract;
-- GUI technology and repository/software-item boundary.
+- CAN library/platform support;
+- backoffice message contracts, retry, buffering, and reconciliation;
+- configuration/secret-loading hierarchy.
