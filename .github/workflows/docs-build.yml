@@ -10,6 +10,7 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_documents.py'
+      - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
     branches:
@@ -22,6 +23,7 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_documents.py'
+      - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
 
@@ -46,7 +48,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install documentation dependencies
-        run: python -m pip install --disable-pip-version-check reportlab==4.2.5
+        run: python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
 
       - name: Generate architecture diagrams
         run: |
