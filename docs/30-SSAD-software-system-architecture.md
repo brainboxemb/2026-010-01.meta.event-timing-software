@@ -48,7 +48,8 @@ The software-system architecture is driven by these system-level concerns:
 - external devices and backoffice systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
 - deployments must support constrained field hardware as well as development/test hosts;
-- system interfaces and software-item ownership should remain stable even when internal implementation technology changes.
+- system interfaces and software-item ownership should remain stable even when internal implementation technology changes;
+- IP-based system interfaces must not require a particular router or Wi-Fi topology merely to exercise the interface.
 
 ## Software-item register
 
@@ -58,7 +59,7 @@ The second-level number used in SRD/SAD/SDD filenames identifies the software it
 | --- | --- | --- | --- | --- |
 | **SI-01** | Headless Timing Application | working architecture | Authoritative local timing/registration runtime, device integration, local state, status, persistence and backoffice synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | working architecture | Desktop operator client for status and control through the system interface | Operator workstation/laptop |
-| **SI-03** | Web Operator Application | working architecture | Browser/iPad operator client using the SI-01 network interface | Browser/iPad on the local network |
+| **SI-03** | Web Operator Application | working architecture | Browser/iPad operator client using the SI-01 network interface | Browser/iPad on an available IP path to SI-01 |
 
 Supporting framework modules, adapters, testkits/reference projects and private implementation repositories are engineering components, not automatically separate product software items.
 
@@ -88,15 +89,15 @@ The desktop GUI and browser clients may disconnect without transferring authorit
 
 ### SI-01 ↔ SI-02
 
-SI-02 is a network client of SI-01. It presents operator status and control but does not access SI-01 memory, files or Java objects directly.
+SI-02 is an IP network client of SI-01. It presents operator status and control but does not access SI-01 memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
 
 ### SI-01 ↔ SI-03
 
-SI-03 is a browser-based network client. SI-01 exposes the system-defined control/status/event interface required by the browser application.
+SI-03 is a browser-based IP client. SI-01 exposes the system-defined control/status/event interface required by the browser application. As with SI-02, the interface is defined between endpoints rather than through a particular router topology.
 
 ### SI-01 ↔ backoffice
 
-SI-01 exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport and codec are SI-01/integration design concerns unless they change the external system contract.
+SI-01 exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport, codec and network route are SI-01/integration design concerns unless they change the external system contract.
 
 ### SI-01 ↔ field devices
 
@@ -110,13 +111,13 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Application Control & Status** | SI-02/SI-03 ↔ SI-01 | HTTP/JSON + WebSocket direction | Network command/query/status/event boundary | `40-01-IDD-application-control-status.md` candidate |
+| **IF-03 Application Control & Status** | SI-02/SI-03 ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | Network command/query/status/event boundary | `40-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-05 Web Operator HMI** | Operator ↔ SI-03 | browser/iPad | Browser screens, controls and feedback | Web HMI IDD candidate |
 | **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
-| **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | LAN/Wi-Fi | Synchronised display/domain data | system IDD candidate |
+| **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | IP path; direct or LAN/Wi-Fi deployment | Synchronised display/domain data | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
@@ -128,49 +129,59 @@ The following rules apply across software-item boundaries:
 - operator behaviour exposed through console, desktop and browser should converge on shared system semantics rather than implementing different business rules per client;
 - network clients observe and control SI-01 but do not become the authority for timing state;
 - loss of SI-02 or SI-03 must not by itself stop local SI-01 operation;
+- IF-03 and IF-09 are endpoint-to-endpoint logical interfaces and must not make a physical Wi-Fi router an architectural prerequisite;
+- development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become authoritative;
 - transport-specific implementation detail should not leak into the semantic system interface unless that transport is itself part of the external contract;
-- system status must let clients distinguish an unavailable client/network path from failure of authoritative local timing operation.
+- system status must distinguish local IP availability, configured network-infrastructure state, external reachability and backoffice/session health where those distinctions affect operator decisions.
 
 ## System deployment view
 
-The principal device/network relationships are a **software-system concern** because they show where SI-01, the operator software items, external field devices, local network and backoffice meet. Internal SI-01 adapters, scanners, status services and protocol-processing mechanics are intentionally not shown here.
+The principal device/interface relationships are a **software-system concern** because they show where SI-01, the operator software items, external field devices and backoffice meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
 
-![System device and network topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
+![System device and logical interface topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
 
-Representative deployment relationships are:
+Representative relationships are:
 
 ```text
 Field host
   SI-01 Headless Timing Application
     |
-    +-- RFID subsystem
-    +-- CAN devices / keypad / Display V1
+    +-- IF-07 --> RFID subsystem
+    +-- IF-08 --> CAN devices / keypad / Display V1
     +-- local persistent state
-    +-- local LAN/Wi-Fi
 
-Operator workstation
-  SI-02 Desktop GUI
-    |
-    +-- IF-03 over local network --> SI-01
+SI-02 Desktop GUI
+  +-- IF-03 over available IP path --> SI-01
 
-Browser / iPad
-  SI-03 Web Operator Application
-    |
-    +-- IF-03 over local network --> SI-01
+SI-03 Web Operator Application
+  +-- IF-03 over available IP path --> SI-01
 
 Smart Display V2
-  network client
-    |
-    +-- IF-09 over local LAN/Wi-Fi --> SI-01
+  +-- IF-09 over available IP path --> SI-01
 
 Backoffice
-  external system
-    |
-    +-- IF-06 over external connectivity --> SI-01
+  +-- IF-06 over configured external path --> SI-01
 ```
 
-The exact process/thread topology, internal runtime cardinality, queueing model, service composition and adapter implementation are intentionally outside this SSAD.
+An available IP path may be direct/point-to-point, same-host or loopback during development/test, or may run over normal LAN/Wi-Fi infrastructure in a field deployment. A Wi-Fi router/access point is therefore **optional deployment infrastructure**, not part of the semantic definition of IF-03 or IF-09.
+
+### Connectivity and reachability state
+
+Network health is not one boolean and should not be modeled as one mandatory chain. The system needs to expose separately observable states because they answer different operational questions.
+
+![Network connectivity status — separate observations](../../../raw/prod/docs/assets/architecture/system-connectivity-status.svg)
+
+At minimum distinguish:
+
+- **local IP connectivity** — SI-01 network interface/link and ability to communicate with local peers;
+- **configured router/AP connectivity** — whether the deployment is connected/associated with the configured local router or access point; this may legitimately be **N/A** for direct/development/test compositions;
+- **external network reachability** — whether connectivity beyond the local network is available;
+- **backoffice connectivity** — whether the configured backoffice endpoint/transport/session is healthy.
+
+These states must not be conflated. For example, local timing and direct local clients may remain fully operational while the router, external uplink or backoffice is unavailable. Conversely, a configured field deployment may need to report that it has lost its expected router/AP even before external reachability is tested.
+
+The exact process/thread topology, internal runtime cardinality, queueing model, service composition, connectivity probing mechanism and adapter implementation are intentionally outside this SSAD.
 
 ## Cross-system architectural constraints
 
@@ -188,7 +199,7 @@ Software-item interaction is defined in terms of system-owned semantics. Interna
 
 ### Deployment portability
 
-The architecture must support constrained field deployment and normal Linux/Windows development/test environments without changing the software-item boundaries.
+The architecture must support constrained field deployment and normal Linux/Windows development/test environments without changing the software-item boundaries. Automated integration verification must be able to exercise network interfaces without provisioning a physical Wi-Fi router unless the test explicitly targets router/AP behaviour.
 
 ## Relationship to software-item architecture
 
@@ -220,5 +231,5 @@ Reference: `reference/README.md`.
 - compatibility/versioning policy for IF-03 and IF-06;
 - final deployment ownership for serving SI-03 assets;
 - which device semantics require system-level IDDs versus software-item-only design;
-- required behaviour when LAN, internet or backoffice connectivity is unavailable;
+- required behaviour when local IP, configured router/AP, external network or backoffice connectivity is unavailable;
 - final system-level availability/recovery requirements.
