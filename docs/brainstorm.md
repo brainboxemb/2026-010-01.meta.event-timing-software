@@ -236,6 +236,19 @@ Potential documents:
 
 The software plan could act as the higher-level anchor for a deliberately staged implementation, for example beginning with a minimal versioned executable before adding complex capabilities.
 
+### Interface documentation
+
+A working documentation convention is that an **Interface Design/Description Document (IDD)** is a **software-system-level document**, not documentation owned by one software item.
+
+The intended traceability model is:
+
+- the IDD defines the interface contract at software-system level;
+- a software-item requirement may reference an IDD, or a specific identified part of an IDD, as a requirement applicable to that software item;
+- the software item therefore implements/conforms to the system-owned interface definition rather than duplicating that interface definition in its own requirements document;
+- interface identifiers and requirement identifiers should support traceability between the system interface definition, the applicable software-item requirement, implementation, and verification.
+
+The exact IDD template, identifier scheme, and reference syntax still need to be defined.
+
 ### Software-item documentation
 
 In addition to system-level documentation, individual software items may need their own documentation.
@@ -249,7 +262,7 @@ Possible software items include:
 - platform-specific adapters;
 - reusable framework modules.
 
-Each relevant software item could have its own focused requirements/design/interface documentation while remaining linked to the system-level architecture.
+Each relevant software item could have its own focused requirements/design documentation while remaining linked to the system-level architecture and system-level interface documents.
 
 The exact document hierarchy and naming convention still need to be designed.
 
@@ -348,6 +361,7 @@ Still to select or validate:
 - Which command/query capabilities should be common across console, remote shell, API, and future GUI clients?
 - What information would be most useful on a project-specific meta dashboard, and which information should remain in Markdown only?
 - What is the intended distinction between `software plan` and `software planning`, or should these ultimately be one document?
+- What IDD template, identifier scheme, and software-item requirement reference syntax should be used?
 
 ## Decision candidates
 
@@ -364,5 +378,6 @@ Possible candidates for later formalisation, not yet approved decisions:
 - Unit and integration tests as first-class development practices.
 - GitHub Actions as the initial CI platform.
 - Separate system-level and software-item-level documentation.
+- IDDs as software-system-level interface documents referenced by applicable software-item requirements.
 
 When a brainstorm topic is mature enough to become authoritative, record the promotion explicitly and link to the resulting document or decision record rather than silently deleting its history here.
