@@ -1,246 +1,275 @@
-# Software planning
+# Software implementation roadmap
 
-Status: working draft
+Status: working draft / non-authoritative
 
-This document is the current software implementation roadmap. It is intentionally more concrete than `docs/software-plan.md`.
+This document is the concrete software implementation sequence derived from `docs/10-SDP-software-development-plan.md`.
 
-Detailed implementation work, evidence, test results, and deviations belong in the pull request for the active implementation step rather than being duplicated here.
+Detailed implementation decisions, tests and evidence for an active step belong in that step's pull request.
 
-## Step 1 — Initial architecture baseline
+## Step 1 — Architecture baseline
 
-Status: draft
+Status: in progress
 
-Goal: define enough architecture to start implementation without prematurely freezing the full system design.
+Goal: define enough software-system/component architecture to start the framework repository deliberately.
 
-Current outputs:
+Current outputs include:
 
-- `docs/software-architecture-sketch.md`;
-- generated architecture diagrams from `tools/generate_architecture_diagrams.py`;
-- generated documentation publication model using `prod/docs`;
-- initial layered/service-oriented direction;
-- explicit platform/device abstraction direction;
-- shared command/query/event boundary;
-- first-class status representation;
-- initial threading/concurrency model;
-- explicit unit-testability rules;
-- HTTP/WebSocket boundary for future browser/iPad clients;
-- configuration/settings boundary;
+- `docs/30-SSAD-software-system-architecture.md`;
+- `docs/31-SAD-timing-system-architecture.md`;
+- `docs/32-SDD-data-and-display-design.md`;
+- `docs/33-SDD-java-component-structure.md`;
+- generated architecture diagrams on `dev/pr-<N>/docs`;
 - Maven as accepted build tooling;
-- Java 8 as the accepted initial application baseline for the mandatory original Raspberry Pi Zero / Zero W target;
-- Java 11 retained as a later evidence-driven upgrade candidate rather than a prerequisite for implementation;
-- first implementation sequence.
+- Java 8 as accepted initial baseline for the mandatory original Raspberry Pi Zero target;
+- Java 11 as a later evidence-driven upgrade candidate;
+- `TimingSystem` as logical isolation boundary;
+- serialized execution/threading direction;
+- first-class status model;
+- platform/device ports;
+- public/private extension strategy;
+- registration and ready-team traceability as separate capabilities;
+- in-memory active state with simple file backup/restore.
 
 Exit criteria:
 
-- the responsibilities of the headless runtime, application services, external interfaces, and platform/device adapters are understandable;
-- status has a clear central ownership/model direction;
-- external I/O concurrency is separated from domain state mutation;
-- the proposed serialized execution model and its remaining topology questions are documented;
-- unit-testability rules make it possible to exercise application/domain behaviour without real threads, time, storage, or hardware;
-- the browser/iPad communication shape is explicit enough that later React work does not require bypassing the application boundary;
-- architecture diagrams are generated reproducibly and are readable from GitHub after publication;
-- Java 8 and Maven are fixed as the initial implementation baseline;
-- the need for an ARMv6-capable reference Java 8 runtime is explicitly captured;
-- unresolved technical choices are explicitly listed rather than silently assumed.
+- system, runtime, core, adapter and client responsibilities are understandable;
+- Maven module/package direction is clear enough to create the framework skeleton;
+- registration versus ready-team ownership is explicit;
+- public contracts can support stubs and private implementations;
+- unresolved decisions remain visible rather than being silently assumed;
+- generated diagrams and documentation are reviewable in GitHub.
 
-### Java baseline policy
-
-The original Raspberry Pi Zero / Zero W is a mandatory target.
-
-Initial development therefore uses Java 8. The project does not wait for Java 11 validation before starting implementation.
-
-The first executable should be validated on a real Zero 1 using an ARMv6-capable Java 8 runtime. Record at least:
-
-- startup time;
-- steady-state resident memory use;
-- heap behaviour under a small representative workload;
-- version/status command responsiveness;
-- JSON/API responsiveness;
-- packaging, installation, and restart behaviour.
-
-Java 11 remains a planned upgrade candidate. A later migration decision should compare Java 11 with the known-working Java 8 baseline on the same hardware and representative workload. Migration should only be accepted when the evidence is strong enough to justify the additional runtime/deployment requirements.
-
-The Java 11 comparison should include:
-
-- startup and memory behaviour;
-- command/API responsiveness;
-- availability of intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
-- runtime security/update availability;
-- packaging, installation, and upgrade complexity;
-- the amount of source/build change required to raise the baseline.
-
-## Step 2 — Minimal version/status application
+## Step 2 — Framework repository skeleton
 
 Status: not started
 
-Goal: create the first executable Java application and validate the main software boundaries.
+Goal: create the public framework repository and establish build/dependency/test foundations.
+
+Candidate scope:
+
+- Maven reactor;
+- Java 8 compiler/runtime baseline;
+- initial modules: `timing-api`, `timing-core`, `timing-runtime`, `timing-adapters`, `timing-testkit`, `timing-app`;
+- version-source strategy;
+- logging framework;
+- unit-test framework;
+- initial settings/configuration structure;
+- GitHub Actions build/test;
+- architecture/dependency checks where useful;
+- minimal headless startup/shutdown.
+
+No production device/backoffice protocols yet.
+
+## Step 3 — Minimal version/status application
+
+Status: not started
+
+Goal: prove the public runtime/application boundary with deliberately small behaviour.
 
 Required behaviour:
 
-- headless Java 8 application starts successfully;
-- application has an explicit version;
-- version is available through one shared application-level query/service;
-- version can be read through:
+- one central version source;
+- central application/status model;
+- version/status readable through:
   1. local console/shell;
-  2. remote terminal/shell connection;
-  3. machine-readable HTTP/JSON interface;
-- basic status is exposed through the same shared application model;
-- a minimal WebSocket event/status path exists so browser clients can later use push updates without inventing a second application model;
-- application/domain handlers remain independent of transport threads;
-- a logging framework is used;
-- settings/configuration are externalised;
-- credentials are not hard-coded;
-- unit tests exist for application-level behaviour using fake/test ports;
-- GitHub Actions builds and runs the fast test suite.
+  2. remote terminal/shell;
+  3. HTTP/JSON API;
+- minimal WebSocket status/event stream;
+- minimal configurable `TimingSystem` instance;
+- transport adapters do not own application state;
+- application handlers can run synchronously in unit tests;
+- logging and externalised settings are active;
+- GitHub Actions verifies fast tests;
+- Windows/Linux execution;
+- real Raspberry Pi Zero 1 execution with startup/memory/responsiveness evidence.
 
-Implementation choices needed before or during this step:
-
-- reference Java 8 runtime/version for Raspberry Pi Zero 1;
-- logging framework/facade;
-- HTTP/API/WebSocket technology compatible with Java 8 and Zero 1;
-- remote shell technology;
-- initial configuration mechanism;
-- version-source strategy;
-- initial concrete executor/queue implementation for the serialized application boundary.
-
-Expected verification:
-
-- automated unit tests;
-- interface-level checks showing the same version value through all three query interfaces;
-- WebSocket connection/status smoke check;
-- build/test evidence on GitHub Actions;
-- basic Windows and Linux execution evidence;
-- actual execution on an original Raspberry Pi Zero / Zero W using the selected Java 8 runtime;
-- captured startup time, steady-state memory use, and basic command/API responsiveness on the Pi Zero 1;
-- confirmation that the selected initial dependencies remain Java-8-compatible.
-
-## Java 11 upgrade checkpoint
-
-Status: future / evidence-driven
-
-Goal: decide whether the established Java 8 baseline should be raised to Java 11.
-
-This is not a blocking step for the initial application or GUI work. It should be scheduled when there is a representative application and enough Zero 1 evidence to make the comparison meaningful.
-
-Possible outcomes:
-
-- retain Java 8 because Zero 1 compatibility/footprint/deployment remains more important;
-- migrate to Java 11 because the benefits outweigh the measured costs;
-- defer the decision until a later software increment provides better evidence.
-
-If Java 11 is accepted later, record that as a new/superseding architecture decision and update the build, CI, deployment, and dependency baselines deliberately.
-
-## Step 3 — Desktop GUI status client
+## Step 4 — First GUI client
 
 Status: not started
 
-Goal: create a separate desktop GUI/operator application that connects to the headless runtime using the defined system interface.
+Goal: prove a separate software item can consume the public interface/IDD.
 
-Initial behaviour:
+Initial scope:
 
 - connect/disconnect;
 - display application version;
-- display central application status;
-- display available subsystem/waypoint status;
-- clearly represent stale/unavailable/disconnected state.
+- display application, timing-system and subsystem status;
+- show disconnected/stale state;
+- no direct dependency on internal runtime classes.
 
-The GUI must not depend directly on internal runtime classes. This step should validate the API/IDD and status representation from a second software item.
-
-## Step 4 — Registration core
+## Step 5 — External reference/test project
 
 Status: not started
 
-Goal: introduce the core waypoint registration behaviours independent of real hardware.
+Goal: create a separate public consumer/template project that builds against framework Maven artifacts.
 
 Candidate scope:
 
-- lifecycle state `OPEN` / `CLOSED`;
-- RFID-based participant registration through an abstraction;
-- local start procedure;
-- manual registration;
-- penalty-code registration;
-- penalty-code revocation/correction;
-- simple text/file-based registration persistence;
-- common registration/event model capable of representing time and non-time registrations;
-- status/health for registration and persistence services;
-- application commands/queries/events needed by operator clients.
+- complete runnable composition using public/stub adapters;
+- deterministic integration scenarios;
+- use of `timing-testkit`;
+- console/remote/API/WebSocket system tests;
+- documentation proving external consumer setup;
+- CI that builds without relying on framework-reactor internals.
 
-Before implementation, these candidate behaviours should be promoted into appropriate requirements and interface documentation.
-
-## Step 5 — Browser/iPad operator application
+## Step 6 — Proprietary extension proof
 
 Status: not started
 
-Goal: provide an operator interface that runs in Safari/browser on an iPad while keeping the headless runtime as the system authority.
+Goal: prove one private implementation can replace a public stub through the same API/SPI contract.
 
-Candidate scope:
+Preferred early candidate:
 
-- headless runtime serves a compiled React web application over HTTP;
-- browser connects to the same HTTP application interface defined for other clients;
-- WebSocket carries live status and registration updates;
-- show registration data;
-- show runtime/waypoint/subsystem status;
-- open and close a logical waypoint system;
-- initiate the local start procedure;
-- later expose manual registration and penalty operations where applicable;
-- clearly represent disconnected/stale state.
+- production RFID antenna adapter shell and/or proprietary tag protocol/decryption component.
 
-The React application must not contain authoritative registration/business rules. Commands are validated and executed by the headless application.
+Evidence should show:
 
-## Step 6 — RFID and CAN adapters
+- public framework source remains unchanged;
+- reference and private applications use the same public contract;
+- private Maven/dependency consumption works through the chosen secure mechanism;
+- private code is not required to compile/test the public framework.
+
+## Step 7 — TimingSystem data/state foundation
 
 Status: not started
 
-Goal: connect the registration core to external waypoint hardware/interfaces through explicit contracts.
+Goal: implement deterministic local domain behaviour without production hardware.
 
-Candidate scope:
+### Registration
 
-- RFID implementation;
-- CAN interface implementation;
-- simulated/fake adapters;
-- timestamp capture at the device/adapter boundary;
-- platform-specific capability handling;
-- device status integration;
-- integration tests.
+- registration ledger;
+- unique monotonically increasing sequence number within the selected scope;
+- passage, start, manual, penalty and revocation records;
+- traceable correction/revocation relationships;
+- local derived result/ranking views.
 
-## Step 7 — Backoffice integration
+### Ready-team
+
+- separate ready-team event journal;
+- add/remove actions;
+- current ready-team state projection;
+- current ordered list for display logic;
+- traceable persisted history.
+
+### Reference data
+
+- start-time repository;
+- reserve-tag conversion repository;
+- synchronisation/version metadata.
+
+### Persistence
+
+- in-memory repositories as application API;
+- simple file backup/restore;
+- sequence-state recovery;
+- explicit backup/restore status.
+
+Promote mature candidate requirements before implementation.
+
+## Step 8 — Browser/iPad operator application
 
 Status: not started
 
-Goal: integrate with a backoffice through a transport-independent boundary, with RabbitMQ as an intended transport.
+Goal: provide the React-based operational client over the existing HTTP/WebSocket system interface.
 
 Candidate scope:
 
-- system-level interface definition/IDD;
+- application serves the compiled React bundle;
+- show registrations/status;
+- open/close timing system;
+- start procedure control;
+- show/manage ready-team state;
+- later manual registrations/penalties where authorised;
+- clear stale/disconnected representation.
+
+Business rules remain server-side.
+
+## Step 9 — Stub-controlled hardware integration
+
+Status: not started
+
+Goal: exercise complete device flows deterministically before production adapters are integrated.
+
+Stub/test-control scope may include:
+
+- RFID power/lifecycle and raw reads;
+- RFID health/heartbeat;
+- CAN bus and discovery;
+- keypad team add/remove;
+- V1 display discovery/control;
+- V2 display connection/data synchronisation;
+- network/internet/RabbitMQ failures and recovery.
+
+Injected events must follow the same normal application paths as real adapters.
+
+## Step 10 — Production RFID/CAN/display integration
+
+Status: not started
+
+Goal: replace proven stubs with real implementations.
+
+Candidate scope:
+
+- private RFID antenna/control adapter;
+- proprietary RFID decrypt/protocol implementation;
+- RFID filtering/tuning;
+- production CAN adapter;
+- periodic device scanner;
+- keypad protocol;
+- V1 passive CAN display driver;
+- V2 mDNS/network data interface;
+- status/heartbeat/recovery behaviour.
+
+## Step 11 — Backoffice/reference-data integration
+
+Status: not started
+
+Goal: connect local operation to the real backoffice while retaining offline capability.
+
+Candidate scope:
+
+- system-level IDD(s);
 - RabbitMQ adapter;
-- connection/status monitoring;
-- retries/reconnect;
-- buffering/offline behaviour;
-- message idempotency/reconciliation;
-- integration-test pipeline.
+- start-time synchronisation;
+- reserve-tag mapping synchronisation;
+- registration outbox/delivery;
+- retry/reconnect/idempotency/reconciliation;
+- network/link/internet/broker status;
+- slower integration-test pipeline.
 
-## Step 8 — Raspberry Pi deployment and operationalisation
+## Step 12 — Deployment and operationalisation
 
 Status: not started
 
-Goal: make the application reproducibly deployable and operable on the Raspberry Pi target.
+Goal: make target deployment reproducible and supportable.
 
 Candidate scope:
 
-- automated deployment;
+- automated Raspberry Pi deployment;
+- Java runtime provisioning;
 - service startup/restart;
-- target configuration and credential provisioning;
+- configuration and secret provisioning;
 - update/rollback;
-- long-running integration checks;
-- hardware-in-the-loop testing where appropriate.
+- diagnostic/support export;
+- long-running integration and hardware-in-the-loop tests;
+- measured resource budgets.
+
+## Java 11 checkpoint
+
+Status: future / evidence-driven
+
+Do not block early development on Java 11.
+
+When the application is representative enough, compare Java 11 with the working Java 8 baseline on the same Pi Zero hardware for runtime availability, deployment, startup, memory, responsiveness, library compatibility and maintenance support.
+
+Only an explicit architecture decision may supersede the Java 8 baseline.
 
 ## Planning rules
 
-- The architecture sketch may evolve as implementation provides evidence.
-- Do not expand a software step into later domain work merely because the architecture makes it possible.
-- Keep mutable domain state behind a controlled serialized execution boundary unless an explicit later architecture decision supersedes that model.
+- Do not start a later software step merely because an abstraction already exists.
 - Keep fast unit/build checks suitable for normal pull requests.
-- Treat longer integration/hardware/deployment tests as a separate pipeline concern when needed.
+- Separate longer integration/hardware/deployment pipelines when needed.
 - Keep system-level IDDs authoritative for interfaces; software-item requirements may reference them.
-- Keep current-step implementation details and evidence in its pull request.
-- Treat Java 8 as the working baseline until an explicit later architecture decision supersedes it.
+- Keep implementation/evidence details in the active implementation PR.
+- Keep registration and ready-team models distinct unless an explicit later requirement defines an interaction.
+- Prefer public contracts plus composition over subclass-based/private-source coupling.
