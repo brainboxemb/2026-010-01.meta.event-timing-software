@@ -60,11 +60,11 @@ Conceptually:
 ```text
 TimingSystemInstance
   +-- RegistrationSystem A
-  |     +-- Antenna A1
-  |     +-- Antenna A2
+  |     +-- Antenna RS-A-ANT1
+  |     +-- Antenna RS-A-ANT2
   |
   +-- RegistrationSystem B
-        +-- Antenna B1
+        +-- Antenna RS-B-ANT1
 ```
 
 An RFID observation must retain enough antenna/source context for the software to route it to the correct registration-system processing path.
@@ -72,6 +72,31 @@ An RFID observation must retain enough antenna/source context for the software t
 The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
 
 Whether one physical antenna may ever be intentionally shared by more than one registration system remains an open domain/configuration question. The initial architecture should prefer an unambiguous configured ownership relationship.
+
+### Antenna identifiers
+
+The current antennas are not necessarily physically labelled. The software nevertheless needs a stable configuration identity for each antenna.
+
+The preferred working naming convention is:
+
+```text
+RS-<registration-system-name>-ANT<n>
+```
+
+Examples:
+
+```text
+RS-A-ANT1
+RS-B-ANT1
+RS-FINISH-ANT1
+RS-FINISH-ANT2
+```
+
+The numeric antenna suffix should be present even when a registration system currently has only one antenna, so adding a second antenna does not require renaming the first.
+
+A future physical label may use the same `AntennaId`.
+
+`RegistrationSystemId` and a readable/configuration name such as `FINISH` are kept conceptually separate until the exact domain naming is confirmed. This avoids accidentally changing the source identity merely to obtain useful device labels.
 
 ## Configurable topology
 
@@ -261,6 +286,7 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 - What identifiers are used for virtual registration systems?
 - Does each `TimingSystemInstance` always correspond to exactly one `LocationId`, or are there valid cases where one instance contains multiple location contexts?
 - Can the same physical antenna ever intentionally feed more than one registration system, or is ownership always exactly one registration system?
+- Is `FINISH` a registration-source identifier, a human-readable registration-system name/role, or both?
 - Does sequence numbering start at a defined value for a new registration system?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
