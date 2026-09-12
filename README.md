@@ -23,6 +23,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/31-01-SDD-01-timing-system-design.md`](docs/31-01-SDD-01-timing-system-design.md) — software item 01 detailed timing-system design.
 - [`docs/31-01-SDD-02-data-and-display-design.md`](docs/31-01-SDD-02-data-and-display-design.md) — software item 01 detailed data/display design.
 - [`docs/31-01-SDD-03-java-component-design.md`](docs/31-01-SDD-03-java-component-design.md) — software item 01 Java/Maven component/package design.
+- [`docs/31-01-SDD-04-runtime-topology-and-configuration.md`](docs/31-01-SDD-04-runtime-topology-and-configuration.md) — software item 01 runtime hierarchy, registration-source/antenna mapping and settings-driven composition.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
 - [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy including Pi Zero/resource and fault-injection evidence.
