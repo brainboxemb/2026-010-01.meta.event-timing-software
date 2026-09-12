@@ -231,6 +231,10 @@ adapter callbacks / operator endpoints / timers
           shared backing ExecutorService
 ```
 
+![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
+
+The source for this process view is `docs/_diagrams/runtime-dispatch-process.yaml`. Boxes show state/execution ownership and arrows show the principal dispatch, execution and published-snapshot relationships rather than a complete call graph.
+
 ### Per-instance serialized state lane
 
 Every `TimingSystemInstance` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
