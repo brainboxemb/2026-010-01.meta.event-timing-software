@@ -26,6 +26,8 @@ RegistrationSource source-02
 
 The source separation is logical. It does **not** imply one TCP connection per source.
 
+![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
+
 ## RabbitMQ terminology
 
 For clarity, receiving and sending are intentionally modelled differently:
