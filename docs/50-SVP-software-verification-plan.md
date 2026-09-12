@@ -16,6 +16,7 @@ Verification should provide evidence that:
 - real and stub/proprietary adapters conform to the same public contracts;
 - faults and reconnect/recovery paths behave deliberately;
 - local operation remains available where required during backoffice/network outages;
+- multiple registration assets/sources remain isolated and correctly routed;
 - the mandatory original Raspberry Pi Zero target remains viable;
 - public framework code can be consumed by external reference and private integration projects;
 - generated documentation and build artifacts are reproducible and reviewable.
@@ -59,7 +60,7 @@ Typical techniques:
 - in-memory repositories;
 - fake/stub RFID, CAN, display and backoffice ports;
 - deterministic state-machine and filtering tests;
-- sequence/traceability tests;
+- source-routing and sequence/traceability tests;
 - restore/replay tests for local state.
 
 Examples:
@@ -67,7 +68,8 @@ Examples:
 - first RFID observation does not automatically create a registration;
 - `OPEN` / `CLOSED` transition rules;
 - ready-team add/remove projection;
-- registration and ready-team sequence allocation;
+- registration-source sequence allocation;
+- registration asset/source routing does not use hard-coded production IDs;
 - penalty revocation references the original record;
 - full Display V1 state is rebuilt from current ready-team state;
 - Display V2 reconnect receives a complete current snapshot;
@@ -85,6 +87,7 @@ Examples:
 - remote shell adapter;
 - CAN scanner with simulated CAN traffic;
 - public stub devices;
+- RabbitMQ adapter against a controlled broker fixture;
 - proprietary RFID implementation in its private repository.
 
 ### V3 — Interface verification
@@ -97,7 +100,7 @@ Expected examples:
 - remote shell returns the same version/status semantics;
 - Desktop GUI (SI-02) connects to Timing Application (SI-01) across a real network boundary;
 - Web Operator Application (SI-03) loads over HTTP and communicates through HTTP/WebSocket;
-- RabbitMQ/backoffice message exchange;
+- RabbitMQ/backoffice message exchange with correct registration-source identity/routing;
 - Display V2 mDNS discovery and subsequent data/session protocol;
 - CAN keypad/display interactions.
 
@@ -114,9 +117,11 @@ Candidate scenarios:
 - SI-01 + browser/iPad client;
 - stub RFID + real domain pipeline + local persistence;
 - CAN scanner + keypad + Display V1 stub/real hardware;
+- RabbitMQ test broker with multiple configured source consumers/publishers;
 - backoffice disconnect/reconnect with local outbox;
 - restart/restore followed by synchronisation;
-- multiple logical `TimingSystem` instances in one runtime.
+- multiple `TimingSystemInstance` objects, assets and source streams in one runtime;
+- full-field simulation using synthetic identities against the same normal backoffice path.
 
 ### V5 — Hardware-in-the-loop verification
 
@@ -146,7 +151,9 @@ Measure at least:
 - idle CPU usage;
 - representative active CPU usage;
 - application/thread count;
-- queue backlog/latency under representative input;
+- timing-system queue backlog/latency under representative input;
+- registration-source count and source-scaling overhead;
+- RabbitMQ connection/channel/consumer count and their resource cost;
 - HTTP/status response latency;
 - backup/write behaviour and SD-card write rate where relevant;
 - reconnect/recovery timings;
@@ -175,11 +182,64 @@ heap settings / observed heap use
 thread count
 idle CPU
 representative workload CPU
+configured TimingSystemInstance / asset / source counts
+RabbitMQ connection/channel/consumer counts when enabled
 version/status request latency
 notes / anomalies
 ```
 
 A later Java 11 evaluation must compare against the same or equivalent workload and hardware rather than only desktop benchmarks.
+
+## RabbitMQ container integration environment
+
+RabbitMQ integration verification should use a disposable real broker, preferably through Docker Compose in the implementation/reference repository.
+
+The broker fixture must use only synthetic/public test topology and credentials.
+
+A normal test sequence should be automatable as:
+
+```text
+start RabbitMQ container
+      |
+      v
+wait for broker health/readiness
+      |
+      v
+start SI-01/reference application with synthetic multi-source configuration
+      |
+      v
+exercise inbound + outbound messaging
+      |
+      v
+stop/restart RabbitMQ
+      |
+      v
+verify connection recovery + source consumer restoration + outbox resume
+      |
+      v
+collect evidence and remove test environment
+```
+
+The same basic Compose definition should be usable locally and in GitHub Actions where practical.
+
+RabbitMQ scenarios should include at least:
+
+- one registration source using one inbound queue and one outbound routing endpoint;
+- two or more registration sources sharing one broker connection;
+- independent inbound consumers for each source;
+- source-01 messages never appearing as source-02 data;
+- source-specific outbound routing;
+- broker outage while local registrations continue;
+- pending outbound data retained while broker is unavailable;
+- reconnect restoring every configured source consumer;
+- broker restart without reuse of committed registration sequence numbers;
+- malformed/unknown input;
+- unavailable/misconfigured source queue;
+- authentication/configuration failure;
+- full-field simulation with many synthetic source streams;
+- comparison of one-connection versus optional split consumer/publisher connection strategies when resource/recovery evidence is needed.
+
+Actual production queue names, source IDs, schemas and credentials are not public test data.
 
 ## Fault-injection verification
 
@@ -194,7 +254,9 @@ Candidate injected conditions include:
 - Display V2 network disconnect/reconnect;
 - local network loss;
 - internet loss with local LAN still available;
-- RabbitMQ/backoffice loss;
+- RabbitMQ/backoffice connection loss;
+- individual registration-source consumer failure while broker remains connected;
+- RabbitMQ broker restart;
 - delayed or rejected reference-data update;
 - file backup write failure;
 - corrupt/missing restore data;
@@ -218,10 +280,12 @@ PR fast checks
 PR/merge integration
   process-level API/WebSocket tests
   reference-project consumer tests
-  selected fault scenarios
+  RabbitMQ Docker/Compose integration tests
+  selected fault/reconnect scenarios
 
 scheduled/on-demand
   long-running integration
+  high-source-count/full-field simulations
   performance/resource regression where a suitable target exists
 
 hardware pipeline
@@ -232,11 +296,13 @@ Exact workflow names and triggers belong in implementation repositories and the 
 
 ## Public/private verification model
 
-The public framework must be verifiable without proprietary source.
+The public framework must be verifiable without proprietary source or deployment identities.
 
-The public reference/test project should prove that published Maven artifacts and public contracts work outside the framework reactor.
+The public reference/test project should prove that published Maven artifacts and public contracts work outside the framework reactor, including the RabbitMQ adapter with synthetic source/broker topology.
 
 Private repositories should reuse the same contract tests/scenario concepts where possible. A private implementation is successful when it can replace a public stub/default adapter through the supported API/SPI without requiring changes to public framework source.
+
+Production asset names, source IDs, broker mappings, proprietary message schemas and credentials must not be copied into public verification fixtures.
 
 ## Generated evidence
 
@@ -245,6 +311,7 @@ Useful evidence may include:
 - JUnit/Maven test reports;
 - GitHub Actions run links;
 - integration logs;
+- Docker/Compose service logs for integration failures;
 - resource-measurement summaries;
 - generated architecture/documentation review output;
 - hardware-test notes or captured device logs;
@@ -273,10 +340,12 @@ The exact traceability tooling is still open; initially this can remain Markdown
 - when numeric Pi Zero budgets become acceptance criteria rather than measured baselines;
 - standard test framework/version compatible with Java 8;
 - architecture-test tooling compatible with the Java baseline;
+- Docker/Compose version/image-pinning conventions for integration services;
 - hardware-runner setup and how hardware tests are triggered;
 - coverage expectations and whether line coverage is useful for this project;
 - long-running/soak-test duration and acceptance criteria;
 - timestamp precision/clock-synchronisation verification method;
 - RFID filtering verification data sets;
+- RabbitMQ production acknowledgement/reconciliation verification approach;
 - how proprietary interface/protocol verification evidence is referenced without exposing private details in public repositories;
 - release-level regression criteria.
