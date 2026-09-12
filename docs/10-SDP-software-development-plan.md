@@ -123,6 +123,33 @@ Harden target deployment, update/rollback, secrets/configuration handling, diagn
 
 The goal is to mature automation introduced earlier, not to introduce deployment automation only at the end.
 
+## Planning cadence and indicative horizon
+
+The current working planning assumption is approximately **one focused project day per week**.
+
+Effort is estimated in **project days**, not ordinary calendar days. This is useful for a part-time/learning project because a five-project-day task means roughly five focused working sessions even when those sessions are spread across several weeks.
+
+Detailed per-step estimates are maintained as working SIP-roadmap data in `docs/_data/sip-roadmap.json` and are rendered into the generated SIP roadmap. They are planning aids, not commitments or formal requirements.
+
+The current baseline contains approximately **51 focused project days** from the remaining architecture work through deployment hardening. At one project day per week this gives a theoretical baseline of roughly one year. A **25% planning reserve** is currently shown for learning, integration surprises, hardware availability, target-image tooling and proprietary/backoffice unknowns.
+
+The resulting high-level horizon is approximately:
+
+| SDP phase | Indicative target at 1 project day/week | Planning meaning |
+| --- | --- | --- |
+| Phase A — Architecture and engineering baseline | September 2026 | Architecture/document baseline ready to start implementation. |
+| Phase B — Framework and first executable | October 2026 | Public framework skeleton and first SI-01 behaviour running on the development host. |
+| Phase C — Target deployment foundation | November 2026 | Reproducible Pi Zero image, service startup and normal application-update path demonstrated. |
+| Phase D — Client and external-consumer proofs | December 2026 – January 2027 | Desktop GUI, external reference project and initial private-extension proof available. |
+| Phase E — Timing-domain and operator capability growth | February – March 2027 | Local registration/state/recovery behaviour and first useful browser/iPad operator flow available. |
+| Phase F — Device and backoffice integration | April – July 2027 | Stub hardware, representative real devices and backoffice integration progressively demonstrated. |
+| Phase G — Operational maturity | August – September 2027 | Deployment/update/diagnostic lifecycle hardened against a representative system. |
+| Planning reserve | Q4 2027 | Capacity for learning, rework, hardware/protocol uncertainty and slippage without pretending the baseline is a fixed deadline. |
+
+These dates should be reforecast when evidence materially changes the estimate of a SIP step. The roadmap should therefore show both **estimated project days** and **baseline target dates**, while remaining a deliverable/capability roadmap rather than becoming a classical Gantt chart.
+
+A cadence of one project day per week also creates a context-switching risk: work can lose momentum when a difficult investigation spans several weeks. Where possible, steps should therefore remain small enough to reach a demonstrable result within a limited number of focused sessions.
+
 ## Development resources and environments
 
 The project should plan explicitly for the environments needed to develop and verify the system.
@@ -200,6 +227,7 @@ The following risks/unknowns should remain visible at SDP level because they can
 | Backoffice/RabbitMQ protocol details may constrain public interfaces. | Keep semantic backoffice ports transport-independent and isolate proprietary protocol mapping. |
 | Full-field simulation may stress the runtime differently from normal Pi deployment. | Support configurable multi-instance/source simulations and measure scaling independently from target topology. |
 | A single development PC + Pi Zero may be insufficient for repeatable integration/HIL tests. | Evaluate a separate integration host as test infrastructure needs become concrete. |
+| One-day-per-week cadence may create context-switching overhead and stretch difficult investigations. | Keep increments demonstrable and reforecast project-day estimates when learning/integration evidence changes uncertainty. |
 | AI-assisted development can create large/fast changes that are difficult to review. | Require the same PR-first workflow, tests, generated evidence and source-of-truth discipline for AI work. |
 
 This table is expected to evolve as evidence replaces uncertainty.
