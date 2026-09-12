@@ -129,6 +129,54 @@ Questions to resolve:
 - How should optional capabilities be discovered and reported at runtime?
 - How much Raspberry Pi-specific code should exist in the generic repository?
 
+## Architecture layering reference
+
+The repository <https://github.com/SvenWesterhof/embedded-iot-platform> is a useful illustrative reference for the architectural style the project may want, even though that project targets embedded C/C++ systems rather than a Java application.
+
+Relevant ideas to investigate rather than copy literally:
+
+- a thin application/bootstrap layer that composes and starts the system;
+- an explicit control/orchestration layer for state machines and higher-level coordination;
+- service-style components for reusable/background infrastructure;
+- user-facing or protocol-facing features kept separate from low-level platform/device access;
+- platform/hardware access hidden behind explicit abstractions;
+- a clear dependency direction where higher-level behaviour depends on contracts rather than directly on concrete hardware/platform implementations;
+- event-driven or message-driven communication where this usefully reduces horizontal/upward coupling.
+
+A possible Java-oriented interpretation to explore is therefore something conceptually like:
+
+```text
+Application / bootstrap
+        |
+        v
+Control / orchestration
+        |
+        +---- Services / domain capabilities
+        |
+        +---- Features / external interfaces
+        |
+        v
+Platform + device contracts
+        |
+        v
+Concrete adapters
+  - Windows/Linux
+  - Raspberry Pi
+  - RFID hardware
+  - simulated/test implementations
+```
+
+This is deliberately only an architectural direction. The eventual Java architecture may fit ports-and-adapters, clean architecture, modular services, or another model better than the exact embedded layering of the reference project.
+
+Questions to resolve:
+
+- Which responsibilities are genuinely distinct enough to justify `control`, `service`, and `feature` concepts in this Java system?
+- Should domain/application services know only interfaces/ports while platform and hardware implementations live entirely in adapter modules?
+- Is an internal event bus useful for timing observations, device status, command handling, and lifecycle events, or would it add unnecessary indirection?
+- How do multiple logical waypoint systems share framework services without accidentally sharing waypoint-specific state?
+- Which abstractions are platform-level (clock, filesystem, process/service management, GPIO) and which are device-level (RFID reader, antenna/controller)?
+- Can the same contracts support both real hardware adapters and deterministic simulated adapters used by unit/integration tests?
+
 ## Modularity and public/private boundaries
 
 The project should remain usable as a generic framework while allowing parts of a later complete application to be developed privately/proprietarily.
@@ -362,6 +410,7 @@ Still to select or validate:
 - What information would be most useful on a project-specific meta dashboard, and which information should remain in Markdown only?
 - What is the intended distinction between `software plan` and `software planning`, or should these ultimately be one document?
 - What IDD template, identifier scheme, and software-item requirement reference syntax should be used?
+- Which concepts from the embedded architecture reference should become actual Java architectural rules, and which should remain inspiration only?
 
 ## Decision candidates
 
@@ -375,6 +424,7 @@ Possible candidates for later formalisation, not yet approved decisions:
 - RFID as the participant observation mechanism at waypoints.
 - RabbitMQ as one supported backoffice transport.
 - A platform/device abstraction layer for unavailable or platform-specific capabilities.
+- A service-oriented application structure with explicit dependency direction and platform/device adapters, inspired by the embedded architecture reference but adapted for Java.
 - Unit and integration tests as first-class development practices.
 - GitHub Actions as the initial CI platform.
 - Separate system-level and software-item-level documentation.
