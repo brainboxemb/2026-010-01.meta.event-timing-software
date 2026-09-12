@@ -11,26 +11,40 @@ This document also records architecture decisions as they become sufficiently co
 | ID | Status | Decision | Rationale / notes |
 | --- | --- | --- | --- |
 | ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. Avoid introducing Gradle without a concrete need. |
-| ADR-002 | proposed | Use **Java SE 11 LTS** as the language/API/runtime baseline. | The original Raspberry Pi Zero / Zero W (ARMv6) is a mandatory deployment target. Java 11 is one LTS generation newer than the legacy Java 8 application and remains available in current ARM32 hard-float builds tested on ARMv6-class hardware. Java 17+ no longer provides a clean supported path for Raspberry Pi Zero 1. |
-| ADR-003 | proposed | Use **Azul Zulu 11** as the reference runtime for Raspberry Pi Zero 1 validation, while keeping application code Java-SE-11 vendor-neutral. | Azul explicitly documents ARM32 hard-float Java 11 builds tested on ARMv6/ARMv7/ARMv8 hardware and explicitly excludes Raspberry Pi Zero 1 only for Java 17+. A single reference runtime reduces deployment ambiguity while avoiding vendor-specific application APIs. |
+| ADR-002 | proposed | Use **Java SE 8 LTS** as the default compatibility candidate for the headless waypoint runtime, with Java 11 evaluated before final acceptance. | The original Raspberry Pi Zero / Zero W (ARMv6) is a mandatory deployment target and the legacy application already uses Java 8. Java 8 remains available in maintained ARMv6-capable runtimes. Java 11 is also technically available on ARMv6 and should be tested as the newer alternative, but should not be selected without evidence that footprint, performance, library compatibility, and deployment are acceptable on Zero 1. |
+| ADR-003 | proposed | Keep the application vendor-neutral at the Java SE level and select an explicit ARMv6-capable reference runtime for Raspberry Pi Zero 1 deployment after validation. | Current Raspberry Pi OS repositories no longer provide a simple modern JVM path that is suitable for Zero 1. Azul Zulu provides ARM32 C1 builds for both Java 8 and Java 11 that are documented as tested on ARMv6-class hardware. A reference runtime should be pinned for reproducible deployment without using vendor-specific application APIs. |
 
 ### Java runtime portability note
 
 The Java language/API baseline and the concrete JDK/runtime distribution are separate concerns.
 
-The intended baseline is Java SE 11 for application source and bytecode. Application code must not depend on vendor-specific JDK APIs unless explicitly justified.
-
-The original Raspberry Pi Zero / Zero W is a hard target constraint rather than an optional legacy platform. It uses an ARMv6-class processor, which materially constrains the usable Java runtime baseline.
+The original Raspberry Pi Zero / Zero W is a hard target constraint rather than an optional legacy platform. It uses an ARMv6-class processor and therefore materially constrains the Java baseline and runtime choice.
 
 Current evidence indicates:
 
-- current Azul Zulu Java 11 ARM32 hard-float builds are available for ARMv6/ARMv7-class Linux targets;
-- Azul documents that its C1 ARM32 bundles are tested on ARMv6, ARMv7, and ARMv8 hardware;
-- Azul explicitly states that Java 17+ ARM32 builds do not support Raspberry Pi Zero 1;
-- therefore Java 11 is the newest practical LTS baseline currently identified for this mandatory platform;
-- Java 8 remains a fallback compatibility option, but should not be selected unless real Zero 1 validation shows a blocking Java 11 problem.
+- Raspberry Pi OS Legacy 32-bit remains available for Zero / Zero W, but its current Debian Bookworm package baseline uses OpenJDK 17 as the default Java runtime;
+- mainstream Java 17+ ARM32 builds do not provide a supported Raspberry Pi Zero 1 path;
+- OpenJDK 8 is no longer part of the normal Debian Bookworm package set, so Java 8 should not be assumed to be available through the default package repository either;
+- current Azul Zulu Java 8 and Java 11 ARM32 C1 bundles are available for ARMv6-class Linux targets and documented as tested on ARMv6, ARMv7, and ARMv8 hardware;
+- Java 8 therefore remains a valid maintained LTS option for this target rather than merely a historical compatibility choice;
+- Java 11 is the newest practical LTS alternative currently identified for Zero 1 and should be evaluated against Java 8 on the real hardware;
+- the existing Java 8 application reduces migration risk if Java 8 is retained;
+- newer language/runtime features alone are not sufficient reason to increase the baseline if they materially worsen Zero 1 behaviour.
 
-For normal Windows/Linux development and CI, another Java SE 11-compatible distribution may be used, but standardising on the same vendor where practical may reduce differences. The runtime policy should be validated by actual execution on the real Zero 1 hardware before ADR-002 and ADR-003 are accepted.
+The Step 1 architecture work should therefore treat Java 8 as the conservative default candidate and compare Java 11 on real Zero 1 hardware before ADR-002 is accepted.
+
+The comparison should include at least:
+
+- application startup time;
+- steady-state resident memory use;
+- JVM heap behaviour under a small representative workload;
+- version/status command responsiveness;
+- JSON/API responsiveness;
+- availability of the intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
+- current security/update availability for the selected runtime;
+- packaging and deployment complexity.
+
+Application code must not depend on vendor-specific JDK APIs unless explicitly justified.
 
 ## Architectural goals
 
@@ -268,14 +282,14 @@ Before implementing the registration domain, the architecture should be validate
 6. load settings through the configuration structure;
 7. add unit tests around the shared application behaviour;
 8. build and test through GitHub Actions;
-9. execute the same application on an original Raspberry Pi Zero / Zero W using the selected Java 11 runtime and record memory/startup/runtime observations.
+9. run a small representative build on an original Raspberry Pi Zero / Zero W with Java 8 and Java 11 ARMv6-capable runtimes and record comparative evidence before finalising ADR-002.
 
 This is intentionally small but exercises the boundaries that later registration, GUI, hardware, and backoffice functionality will use.
 
 ## Open architecture questions
 
-- final acceptance of Java 11 LTS as the baseline after real Raspberry Pi Zero 1 validation;
-- final acceptance of Azul Zulu 11 as the Raspberry Pi Zero 1 reference runtime;
+- final Java 8 versus Java 11 LTS baseline after real Raspberry Pi Zero 1 comparison;
+- reference runtime/version for Raspberry Pi Zero 1 deployment;
 - standard development/CI JDK distribution policy for Windows and Linux;
 - minimum supported Raspberry Pi OS / Linux baseline;
 - module/package boundaries;
