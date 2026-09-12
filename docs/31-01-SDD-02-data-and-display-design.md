@@ -90,6 +90,8 @@ If the source is later associated with another location, the source sequence doe
 
 A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
 
+![Registration traceability — sequence per source](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
+
 ### Illustrative record model
 
 ```java
@@ -450,6 +452,8 @@ ReadyTeamState ------------------+
              v            v
       V1 CAN adapter    V2 data session
 ```
+
+![In-memory data, backup and V1/V2 display behaviour](../../../raw/prod/docs/assets/architecture/data-display-flow.svg)
 
 A conceptual model might contain:
 
