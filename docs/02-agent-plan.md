@@ -12,10 +12,11 @@ Agent-plan steps use the prefix `AP-` so they cannot be confused with numbered s
 - Keep project documentation generic and independent of any specific real-world event.
 - Keep detailed current-step work and evidence in the active pull request rather than expanding this plan into an activity log.
 - Do not create documents merely to satisfy a process pattern; new documents need a distinct engineering purpose and consumer as defined by `AGENTS.md`.
+- Mature requirements, interfaces and design **just in time for the capability being implemented**. Future capability documentation may remain outline-level until a later SIP step needs it.
 
 ## AP-0 — Repository bootstrap
 
-Status: in progress
+Status: completed
 
 Goal: establish a stable repository structure and working method before the first implementation repository is created.
 
@@ -44,46 +45,78 @@ Exit criteria:
 - early requirements/architecture/design material remains explicitly non-authoritative until promoted;
 - no implementation repository is created accidentally as part of bootstrap.
 
-### AP-0 closure review
+### AP-0 closure evidence
 
-Before closing the bootstrap PR, perform one deliberate review rather than continuing to expand the baseline indefinitely.
+The closure review was performed in PR #1.
 
-The review should confirm:
+At closure:
 
-- each persistent document has a clear engineering purpose and does not materially duplicate another document;
-- SDP, SIP, SDE and SVP boundaries remain distinct;
-- public/private information boundaries are respected;
-- the current SIP is sufficiently concrete to start its next implementation step without inventing foundational process or architecture during coding;
-- generated Markdown, diagrams and SIP roadmap/print artifacts build successfully and have been inspected where visual output matters;
-- unresolved architecture/requirements topics are visible as working/open items rather than silently assumed;
-- topics that belong to later formal requirements/IDD work remain deferred rather than being promoted only to make AP-0 look complete;
-- the active PR contains enough evidence for a future session to understand why AP-0 was considered complete.
+- SDP, SIP, SDE and SVP responsibilities are separated explicitly;
+- public/private information boundaries are recorded in `AGENTS.md` and the architecture/design working drafts;
+- generated Markdown, diagrams, architecture books and the printable SIP roadmap build successfully in CI;
+- the SIP roadmap includes effort/calendar planning plus scope-aware documentation maturity for REQ/SRD, IDD, SAD/SDD and SVP/evidence;
+- generated A3 roadmap pages were visually inspected rather than accepted from CI status alone;
+- unresolved topics remain visible as working/open items;
+- formal requirements and IDDs for later capabilities remain deliberately deferred;
+- the next meta-project step is scoped around only the first executable slice rather than broad speculative formalisation.
 
-If these conditions are met, prefer closing AP-0 and starting the next scoped work item over adding more speculative detail to the bootstrap PR.
-
-## AP-1 — Collect and structure source material
+## AP-1 — Formalise the first executable slice
 
 Status: not started
 
-Goal: gather the existing documents and other source material relevant to the future framework and make them traceable and reviewable.
+Goal: make only the requirements, interfaces and verification material needed for the first SI-01 executable sufficiently concrete to begin implementation without inventing externally visible behaviour inside implementation PRs.
 
-Expected work:
+This step is intentionally **just-in-time**. It does not attempt to formalise the full future timing system.
 
-- collect source documents;
-- index each source with origin, date/version where known, and relevance;
-- identify overlaps, contradictions, assumptions, and missing information;
-- capture emerging software questions in `docs/00-brainstorm.md` rather than resolving them prematurely.
+Expected scope:
 
-Detailed scope will be refined after the initial document set is known.
+- identify the use cases and behaviours needed by SIP Steps 2–3;
+- create the initial `20-01-SRD` scope for SI-01 startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour;
+- create the first system-level application-control/status IDD needed by the executable and later clients;
+- establish a traceable example from use case → system requirement → IDD where applicable → SI-01 requirement → SAD/SDD → verification case;
+- make the relevant ST-1/SVP verification material concrete enough for the first executable;
+- update SAD/SDD working drafts only where the formalised slice exposes a conflict or ambiguity;
+- collect/index source material only where it is needed to resolve this slice;
+- keep RFID, CAN, displays, backoffice and other later capability requirements/IDDs at outline level unless this step exposes a true foundational dependency.
 
-## AP-2 — Formalise software/domain direction
+Deliverable:
+
+> A small, reviewable first-executable requirements/interface/verification baseline that is sufficient to start SI-01 implementation without prematurely formalising later capabilities.
+
+Exit criteria:
+
+- the first executable's externally visible behaviour is traceable and reviewable;
+- the application-control/status interface boundary is concrete enough for implementation and ST-1 verification;
+- implementation can begin without inventing core public semantics in the implementation repository;
+- later capability requirements remain explicitly deferred rather than being expanded for completeness alone;
+- relevant generated documentation and traceability views are reviewable in the active PR.
+
+## AP-2 — Bootstrap the public implementation repository
 
 Status: not started
 
-Goal: use the collected source material, brainstorm, SDP, architecture working drafts, candidate requirements, interface catalogue, and verification strategy to determine what is mature enough to promote into authoritative software-system requirements, software-item SRDs, architecture, and IDDs.
+Goal: after AP-1 is accepted, create the public implementation repository and execute the SIP framework-skeleton step using the approved SDE and first-executable baseline.
 
-Do not automatically promote every candidate requirement or design idea. Explicitly resolve conflicts and open questions first.
+Expected direction:
+
+- create the repository through the normal issue → branch → draft PR workflow;
+- establish the SDE repository baseline (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
+- create the Maven/Java 8 framework skeleton from the documented component architecture;
+- keep detailed implementation work/evidence in the implementation repository PR;
+- feed material architecture/process corrections back to this meta repository through separate scoped work when needed.
+
+## Ongoing supporting activity — source collection
+
+Source collection is continuous and capability-driven rather than a mandatory stage that blocks all implementation.
+
+When a current AP/SIP step needs source evidence:
+
+- collect relevant source documents;
+- index origin, date/version where known, and relevance;
+- identify conflicts, assumptions and missing information;
+- capture unresolved software questions in `docs/00-brainstorm.md`;
+- avoid collecting or formalising unrelated material merely for completeness.
 
 ## Later agent-plan steps
 
-Implementation-repository creation, formal software-item decomposition, and implementation execution will be planned only when the meta-project evidence is mature enough. The SDP/SIP may describe likely software phases before those agent steps are activated, but that does not authorise agents to implement them early.
+Later formalisation, implementation increments, interface promotion and verification work should follow SIP/document-maturity needs. Add a new AP step when a distinct coordination goal has a clear deliverable; do not create AP steps merely to mirror every SIP step.
