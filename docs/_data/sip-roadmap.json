@@ -3,25 +3,102 @@
   "start_date": "2026-09-12",
   "cadence_project_days_per_week": 1.0,
   "planning_reserve_fraction": 0.25,
+  "maturity_levels": {
+    "M0": "Exploration",
+    "M1": "Structured baseline",
+    "M2": "Executable baseline",
+    "M3": "Interfaces / deployment proven",
+    "M4": "Functional system",
+    "M5": "Integrated system",
+    "M6": "Operational baseline"
+  },
   "notes": [
     "Estimates are focused project days, not calendar days.",
     "The baseline assumes approximately one focused project day per week.",
     "Target dates are planning aids, not commitments.",
+    "Maturity indicates the overall engineering state expected after a step; it is not a substitute for step exit evidence.",
+    "Documentation milestones show when existing/future engineering documents are expected to become concrete, reviewable or authoritative.",
     "Re-estimate a step when implementation evidence materially changes uncertainty."
   ],
   "steps": {
-    "1":  {"estimate_project_days": 1, "workstream": "architecture", "note": "remaining work after the current bootstrap round"},
-    "2":  {"estimate_project_days": 2, "workstream": "architecture"},
-    "3":  {"estimate_project_days": 3, "workstream": "application"},
-    "4":  {"estimate_project_days": 4, "workstream": "platform"},
-    "5":  {"estimate_project_days": 3, "workstream": "client"},
-    "6":  {"estimate_project_days": 3, "workstream": "test"},
-    "7":  {"estimate_project_days": 2, "workstream": "extension"},
-    "8":  {"estimate_project_days": 6, "workstream": "domain"},
-    "9":  {"estimate_project_days": 4, "workstream": "client"},
-    "10": {"estimate_project_days": 5, "workstream": "test"},
-    "11": {"estimate_project_days": 7, "workstream": "hardware"},
-    "12": {"estimate_project_days": 6, "workstream": "backoffice"},
-    "13": {"estimate_project_days": 5, "workstream": "platform"}
+    "1": {
+      "estimate_project_days": 1,
+      "workstream": "architecture",
+      "maturity": "M1",
+      "documentation": "Domain/UC/SDP/SIP/SDE/SSAD/SAD/SDD/SVP baseline reviewable; formal SRDs/IDDs still deferred",
+      "note": "remaining work after the current bootstrap round"
+    },
+    "2": {
+      "estimate_project_days": 2,
+      "workstream": "architecture",
+      "maturity": "M1",
+      "documentation": "SI-01 requirement/interface set identified; implementation-repo README/AGENTS/CHANGELOG established"
+    },
+    "3": {
+      "estimate_project_days": 3,
+      "workstream": "application",
+      "maturity": "M2",
+      "documentation": "SI-01 SRD baseline and application-control/status IDD concrete enough for executable/API verification"
+    },
+    "4": {
+      "estimate_project_days": 4,
+      "workstream": "platform",
+      "maturity": "M3",
+      "documentation": "Target/deployment design and SDE/SVP target evidence updated from real Pi image/update results"
+    },
+    "5": {
+      "estimate_project_days": 3,
+      "workstream": "client",
+      "maturity": "M3",
+      "documentation": "Application-control IDD accepted baseline; GUI/operator IDD and SI-02 SRD review candidate"
+    },
+    "6": {
+      "estimate_project_days": 3,
+      "workstream": "test",
+      "maturity": "M3",
+      "documentation": "Public API/SPI and test-interface contracts proven by external consumer; SVP ST-1/ST-2 evidence updated"
+    },
+    "7": {
+      "estimate_project_days": 2,
+      "workstream": "extension",
+      "maturity": "M3",
+      "documentation": "Public/private extension contracts reviewable and backed by one private replacement proof"
+    },
+    "8": {
+      "estimate_project_days": 6,
+      "workstream": "domain",
+      "maturity": "M4",
+      "documentation": "Registration/ready-team/reference-data requirements and SI-01 detailed design mature against executable domain behaviour"
+    },
+    "9": {
+      "estimate_project_days": 4,
+      "workstream": "client",
+      "maturity": "M4",
+      "documentation": "Operator UI IDD and SI-03 SRD concrete/verified against browser/iPad behaviour"
+    },
+    "10": {
+      "estimate_project_days": 5,
+      "workstream": "test",
+      "maturity": "M4",
+      "documentation": "RFID/CAN/display interface documents are review candidates against deterministic stub-controlled flows"
+    },
+    "11": {
+      "estimate_project_days": 7,
+      "workstream": "hardware",
+      "maturity": "M5",
+      "documentation": "RFID/CAN/display IDDs promoted where evidence supports it; HIL verification evidence linked"
+    },
+    "12": {
+      "estimate_project_days": 6,
+      "workstream": "backoffice",
+      "maturity": "M5",
+      "documentation": "Backoffice semantic IDD accepted baseline; private transport/protocol mapping and ST-3 evidence maintained separately"
+    },
+    "13": {
+      "estimate_project_days": 5,
+      "workstream": "platform",
+      "maturity": "M6",
+      "documentation": "SDE/SVP/deployment/support documentation form an operational baseline with update/rollback/diagnostic evidence"
+    }
   }
 }
