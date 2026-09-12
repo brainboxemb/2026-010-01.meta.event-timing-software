@@ -167,6 +167,10 @@ Source routing occurs after asset/device resolution; an antenna identity is ther
 
 Runtime-wide infrastructure may be shared where that does not leak mutable timing-system state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
 
+![SI-01 configurable runtime topology](../../../raw/prod/docs/assets/architecture/runtime-registration-topology.svg)
+
+Stable domain facts behind this topology are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
+
 ## Command, query and event model
 
 All presentation transports should converge on one shared application model.
@@ -331,6 +335,10 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ## Integration architecture
 
+The principal device/network relationships are shown below. The diagram is an SI-01 integration/deployment view, not a software-system decomposition.
+
+![SI-01 device and network integration topology](../../../raw/prod/docs/assets/architecture/device-network-topology.svg)
+
 ### Backoffice
 
 RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports and local synchronisation/outbox behaviour.
@@ -356,6 +364,8 @@ Power/startup/recovery lifecycle and filtering semantics are architectural conce
 ### CAN, keypad and displays
 
 CAN/device integrations follow the same rule: device/protocol callbacks enter SI-01 through integration boundaries and application-facing messages. Display state remains owned by SI-01 rather than by the display device.
+
+Display V1 is a CAN-based integration. Display V2 is a network client that discovers the SI-01 service on the local network and connects for synchronised display data. Exact protocol/session details remain deferred until implementation requires them.
 
 ### Connectivity
 
@@ -463,15 +473,15 @@ A separate SDD should be introduced or retained only when at least one of these 
 
 Examples that may eventually justify focused SDDs include exact persistence/restore mechanics or exact RabbitMQ connection/retry/topology behaviour. Threading, messaging, logging and the main runtime topology remain SAD concerns unless their implementation becomes substantially more complex.
 
-## Current detailed-design document disposition
+## Detailed-design document disposition
 
-The existing SDD set predates this architecture review and must not be preserved merely because files already exist.
+This architecture review deliberately reduced the active SDD set.
 
-- `31-01-SDD-01-timing-system-design.md`: largely duplicates SAD-level logical/process architecture and uses older terminology; candidate for retirement after useful material is consolidated here.
-- `31-01-SDD-02-data-and-display-design.md`: contains useful data/detail material, but much is premature; retain temporarily while deciding whether persistence/data mechanics need a focused SDD.
-- `31-01-SDD-03-java-component-design.md`: currently has a real purpose because artifact/package/composition decisions have already affected the implementation repository; retain but keep it narrow.
-- `31-01-SDD-04-runtime-topology-and-configuration.md`: much of its current content belongs in this SAD; candidate for retirement or strong narrowing.
-- `31-01-SDD-05-backoffice-transport-design.md`: detailed transport design should mature just in time with backoffice implementation; retain only as deferred working detail until then.
+- `31-01-SDD-01-timing-system-design.md`: **retired**. Its useful logical/process architecture was consolidated into this SAD or is already represented by the domain baseline; speculative pseudocode/history remains available through Git history rather than as active design.
+- `31-01-SDD-02-data-and-display-design.md`: **deferred working note**. It is excluded from the architecture book while persistence/data mechanics are still too early for a dedicated active SDD.
+- `31-01-SDD-03-java-component-design.md`: **active focused SDD** because artifact/package/composition decisions already affect the implementation repository.
+- `31-01-SDD-04-runtime-topology-and-configuration.md`: **retired**. Stable topology facts are in `03-domain-baseline.md`; runtime/configuration architecture is owned here.
+- `31-01-SDD-05-backoffice-transport-design.md`: **deferred working note**. Detailed transport design should mature just in time with backoffice implementation and is excluded from the architecture book for now.
 
 No new SDD should be created during this cleanup unless a clear separate detailed-design purpose is demonstrated.
 
