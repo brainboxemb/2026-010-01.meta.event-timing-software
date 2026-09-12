@@ -52,42 +52,52 @@ def software_item_overview() -> Diagram:
 
 def runtime_topology() -> Diagram:
     nodes = [
-        Node("settings", "External settings/configuration\\ninstance → source → antenna bindings", 40, 70, 400, 90, "interface"),
-        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 540, 70, 390, 90, "core"),
-        Node("backoffice", "Backoffice / integration test\\nall source streams + reference data", 1030, 70, 390, 90, "external"),
+        Node("settings", "External settings\\npublic schema + private deployment mapping", 40, 65, 360, 90, "interface"),
+        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 65, 390, 90, "core"),
+        Node("backoffice", "Backoffice\\nreceives ordered source streams", 1000, 65, 330, 90, "external"),
 
-        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 170, 280, 390, 90, "service"),
-        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 870, 280, 390, 90, "service"),
+        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 160, 235, 390, 90, "service"),
+        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 860, 235, 390, 90, "service"),
 
-        Node("rsa", "RegistrationSystem A\\nsequence A • own registration file", 60, 500, 370, 95, "queue"),
-        Node("rsb", "RegistrationSystem B / name FINISH\\nsequence B • own registration file", 455, 500, 430, 95, "queue"),
-        Node("rsc", "RegistrationSystem C\\nsequence C • own registration file", 970, 500, 370, 95, "queue"),
+        Node("asset1", "RegistrationAsset asset-01\\nphysical/logical box identity", 150, 420, 400, 90, "service"),
+        Node("asset2", "RegistrationAsset asset-02\\nphysical/logical box identity", 850, 420, 400, 90, "service"),
 
-        Node("a1", "RS-A-ANT1", 90, 735, 220, 70, "external"),
-        Node("f1", "RS-FINISH-ANT1", 390, 725, 260, 80, "external"),
-        Node("f2", "RS-FINISH-ANT2", 690, 725, 260, 80, "external"),
-        Node("c1", "RS-C-ANT1\\nstub or real adapter", 1050, 725, 260, 80, "external"),
+        Node("ant1", "RS-<asset-key>-ANT1", 30, 610, 250, 70, "external"),
+        Node("ant2", "RS-<asset-key>-ANT2", 300, 610, 250, 70, "external"),
+        Node("src1", "RegistrationSource source-01\\nsequence + own file", 575, 595, 300, 100, "queue"),
+        Node("src2", "RegistrationSource source-02\\nvirtual/source mapping possible\\nsequence + own file", 900, 585, 330, 120, "queue"),
+        Node("ant3", "RS-<asset-key>-ANT1", 1110, 770, 250, 70, "external"),
+        Node("src3", "RegistrationSource source-03\\nsequence + own file", 760, 755, 300, 100, "queue"),
+
+        Node("routing", "Explicit source-routing policy\\naccepted observation → configured source stream(s)", 300, 820, 390, 100, "interface"),
+        Node("privacy", "Actual asset names + external IDs\\nremain private deployment data", 300, 995, 390, 85, "external"),
     ]
 
     edges = [
         Edge("settings", "app", "build topology", True),
-        Edge("app", "backoffice", "sync / test complete field", True),
+        Edge("app", "backoffice", "sync/outbox", True),
         Edge("app", "sys1"),
         Edge("app", "sys2"),
-        Edge("sys1", "rsa", "1..X sources"),
-        Edge("sys1", "rsb"),
-        Edge("sys2", "rsc", "1..X sources"),
-        Edge("rsa", "a1", "1..X antennas"),
-        Edge("rsb", "f1", "1..X antennas"),
-        Edge("rsb", "f2"),
-        Edge("rsc", "c1", "1..X antennas"),
+        Edge("sys1", "asset1", "1..X assets"),
+        Edge("sys2", "asset2", "1..X assets"),
+        Edge("asset1", "ant1", "1..X antennas"),
+        Edge("asset1", "ant2"),
+        Edge("asset1", "src1", "1..X sources"),
+        Edge("asset1", "src2"),
+        Edge("asset2", "ant3", "1..X antennas"),
+        Edge("asset2", "src3", "1..X sources"),
+        Edge("ant1", "routing", "observation", True),
+        Edge("ant2", "routing", "observation", True),
+        Edge("routing", "src1", "route", True),
+        Edge("routing", "src2", "route", True),
+        Edge("settings", "privacy", "production mapping private", True),
     ]
 
     return Diagram(
         "runtime-registration-topology",
-        "Configurable runtime topology — instances, registration sources and antennas",
-        1480,
-        900,
+        "Configurable runtime topology — instances, assets, sources and antennas",
+        1400,
+        1140,
         nodes,
         edges,
     )
