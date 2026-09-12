@@ -12,9 +12,20 @@ It is a meta repository. Do not treat it as the implementation repository for th
 
 Keep repository documentation generic. Do not identify or name a specific real-world event that motivated the project.
 
+This is a public repository. Do not copy live/proprietary deployment inventory into it merely because those details were supplied in a chat or private source. In particular, keep the following out of public source/documentation unless publication is explicitly approved:
+
+- real registration-box/asset names;
+- concrete external registration-system/source IDs and their actual mappings;
+- reserve/virtual source assignments;
+- real deployment topology/inventory;
+- proprietary protocol values/field mappings;
+- credentials, encryption keys or secrets.
+
+When such details are useful for architecture reasoning, capture only the reusable structural rule in the public repository and use generic placeholders such as `asset-01`, `source-01`, `system-01`, or `RS-<asset-key>-ANT1`. Actual deployment mappings belong in private repositories or external/private configuration.
+
 Software ideas, possible requirements, technology choices, architecture options, and unresolved questions must first be captured in `docs/00-brainstorm.md`.
 
-Stable domain facts/terminology supplied by project sources or the user may be consolidated in `docs/03-domain-baseline.md`. That document is not itself a formal requirements specification; later SRDs/IDDs/designs must preserve or explicitly revise those facts.
+Stable domain facts/terminology supplied by project sources or the user may be consolidated in `docs/03-domain-baseline.md`. That document is not itself a formal requirements specification; later SRDs/IDDs/designs must preserve or explicitly revise those facts. Apply the public/private boundary above when consolidating domain knowledge.
 
 Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
 
@@ -115,6 +126,8 @@ AI agents use the same controlled GitHub workflow as human developers. Do not cr
 
 Do not claim tests, generated output inspection or hardware verification occurred unless it actually occurred.
 
+When private/proprietary details are present in the working conversation, use them only to derive the required generic architecture/contract unless the target repository is explicitly private and those details belong there.
+
 ## Document lifecycle
 
 While the project is consolidating source/domain knowledge, design documents may remain `working draft / non-authoritative`.
@@ -139,7 +152,8 @@ When collecting documents or external information:
 - preserve original files where appropriate;
 - add enough metadata to identify the source and relevance;
 - distinguish source facts from project interpretation;
-- avoid copying volatile facts into multiple documents.
+- avoid copying volatile facts into multiple documents;
+- avoid copying proprietary deployment identities from private sources into public repository documents.
 
 ## Handoff discipline
 
