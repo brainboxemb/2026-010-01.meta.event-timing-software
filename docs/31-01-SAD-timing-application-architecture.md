@@ -102,10 +102,12 @@ The domain responsibility owns reusable timing rules, services, entities and val
 RegistrationService
 StartTimeService
 ReadyTeamService
-ReferenceDataService
+RaceDataService
 ```
 
-Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, start-time values, ready-team values and reference-data value objects.
+`RaceDataService` is specifically the domain capability for race/event data in the sporting-event sense: participant/team data, tag-reference lookup and reserve-tag mapping semantics. It is deliberately not named `EventDataService`, because software events are a separate architecture concept. Start-time state remains owned by `StartTimeService`, ready-team state by `ReadyTeamService`, and registrations by `RegistrationService`.
+
+Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, start-time values, ready-team values and race/participant/tag-reference values.
 
 Product/deployment-specific policy does not automatically belong in the reusable domain model.
 
@@ -267,7 +269,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - RFID power/startup/protocol/heartbeat;
 - CAN/device availability;
 - persistence/backup state;
-- reference-data freshness;
+- race-data freshness;
 - network/backoffice connectivity;
 - inbound/outbound synchronisation state.
 
@@ -325,7 +327,7 @@ Keep these concepts distinct:
 1. ingress/ordering — concurrency ownership;
 2. registration ledger/source sequence — traceable domain/operational history;
 3. ready-team journal/current projection — separate operational capability;
-4. reference data — locally available input received from external sources;
+4. race/reference data — locally available participant/team/tag-reference input received from external sources;
 5. local backup/restore — restart/power-loss recovery;
 6. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
@@ -335,9 +337,7 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ## Integration architecture
 
-The principal device/network relationships are shown below. The diagram is an SI-01 integration/deployment view, not a software-system decomposition.
-
-![SI-01 device and network integration topology](../../../raw/prod/docs/assets/architecture/device-network-topology.svg)
+The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backoffice are system-level deployment/interface relationships. This SAD starts at the SI-01 boundary and explains how SI-01 realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 ### Backoffice
 
@@ -444,7 +444,7 @@ Development/test host
     may host larger multi-instance simulation topology
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of SI-01 relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
 
 ## Testability and failure/recovery architecture
 
