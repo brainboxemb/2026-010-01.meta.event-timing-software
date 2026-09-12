@@ -62,7 +62,7 @@ At closure:
 
 ## AP-1 — Formalise the first executable slice
 
-Status: in progress — issue/PR #2
+Status: completed — PR #2
 
 Goal: make only the requirements, interfaces and verification material needed for the first SI-01 executable sufficiently concrete to begin implementation without inventing externally visible behaviour inside implementation PRs.
 
@@ -70,7 +70,7 @@ This step is intentionally **just-in-time**. It does not attempt to formalise th
 
 Expected scope:
 
-- identify the use cases and behaviours needed by SIP Steps 2–3;
+- identify the use cases and behaviours needed by the first executable;
 - create the initial `20-01-SRD` scope for SI-01 startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour;
 - create the first system-level application-control/status IDD needed by the executable and later clients;
 - establish a traceable example from use case → system requirement → IDD where applicable → SI-01 requirement → SAD/SDD → verification case;
@@ -91,11 +91,29 @@ Exit criteria:
 - later capability requirements remain explicitly deferred rather than being expanded for completeness alone;
 - relevant generated documentation and traceability views are reviewable in the active PR.
 
+### AP-1 closure evidence
+
+PR #2 established the first reviewable SRD/IDD slice without expanding later product capabilities.
+
+At closure:
+
+- `20-01-SRD-timing-application-requirements.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
+- `40-01-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
+- IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
+- first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
+- the first operational timing instance remains `CLOSED`; open/close and later domain behaviour are not partially invented for this baseline;
+- `VC-ST1-001` traces representative status/version behaviour from existing use cases through SI-01/IF-03 obligations to a black-box running-process verification scenario;
+- remote-shell technology remains an implementation/support-adapter choice and does not receive an unnecessary standalone IDD yet;
+- RFID, CAN, display, registration-domain and backoffice requirements remain deliberately deferred;
+- generated documentation successfully published the review candidate to `dev/pr-2/docs` from the AP-1 head commit.
+
 ## AP-2 — Bootstrap the public implementation repository
 
 Status: not started
 
 Goal: after AP-1 is accepted, create the public implementation repository and execute the SIP framework-skeleton step using the approved SDE and first-executable baseline.
+
+A follow-up plan correction is being evaluated in draft PR #3: establish a reusable Java/Maven build/test toolchain baseline **before** this repository bootstrap. If accepted, that follow-up will become the next AP step and this implementation bootstrap will move one step later.
 
 Expected direction:
 
