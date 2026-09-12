@@ -16,6 +16,7 @@ Ideas and unresolved software topics belong in [`docs/brainstorm.md`](docs/brain
 - [`docs/brainstorm.md`](docs/brainstorm.md) — working area for ideas, questions, alternatives, and early software thoughts.
 - [`docs/software-architecture-sketch.md`](docs/software-architecture-sketch.md) — non-authoritative first system architecture sketch used to prepare implementation.
 - [`docs/timing-system-architecture.md`](docs/timing-system-architecture.md) — detailed non-authoritative `TimingSystem` architecture, pseudocode, device/network flows, and candidate requirements.
+- [`docs/data-and-display-architecture.md`](docs/data-and-display-architecture.md) — refinement for in-memory repositories with simple file backup, start-time synchronisation, keypad add/remove behaviour, and V1/V2 display semantics.
 - [`docs/software-plan.md`](docs/software-plan.md) — staged high-level software evolution plan.
 - [`docs/software-planning.md`](docs/software-planning.md) — concrete current sequence of software increments.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
