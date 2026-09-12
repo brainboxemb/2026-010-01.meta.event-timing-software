@@ -51,10 +51,10 @@ ROADMAP_DOC_TOP = 143.0
 ROADMAP_DOC_H = 40.0
 
 STEP_CARD_COLS = 3
-STEP_CARD_H = 20.0
-STEP_CARD_GAP = 2.0
-STEP_LANE_HEADER_H = 6.0
-STEP_LANE_GAP = 2.0
+STEP_CARD_H = 22.0
+STEP_CARD_GAP = 1.5
+STEP_LANE_HEADER_H = 5.5
+STEP_LANE_GAP = 1.5
 
 
 def svg_text(
@@ -186,7 +186,7 @@ def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
 
 def lane_height(activity_count: int) -> float:
     rows = math.ceil(activity_count / STEP_CARD_COLS)
-    return STEP_LANE_HEADER_H + 2.0 + rows * STEP_CARD_H + max(0, rows - 1) * STEP_CARD_GAP + 2.0
+    return STEP_LANE_HEADER_H + 1.3 + rows * STEP_CARD_H + max(0, rows - 1) * STEP_CARD_GAP + 1.3
 
 
 def render_step_review(board: dict, step: Step, path: Path) -> None:
@@ -195,18 +195,18 @@ def render_step_review(board: dict, step: Step, path: Path) -> None:
         f'viewBox="0 0 {A4_P_W_MM} {A4_P_H_MM}">',
         '<rect width="100%" height="100%" fill="white"/>',
     ]
-    svg_text(parts, MARGIN_MM, 10.0, wrap(f"SIP Step {step.number} — {board['title']}", 78, 2), 4.25, anchor="start", weight="bold")
+    svg_text(parts, MARGIN_MM, 10.0, wrap(f"SIP Step {step.number} — {board['title']}", 82, 2), 4.0, anchor="start", weight="bold")
     svg_text(
         parts,
         MARGIN_MM,
         17.0,
         [f"{board['state'].upper()} | ~{step.estimate_days} roadmap project days | target {step.target_date.strftime('%d %b %Y')}"],
-        2.85,
+        2.9,
         anchor="start",
         weight="bold",
         fill="#555",
     )
-    svg_text(parts, MARGIN_MM, 24.0, wrap(board.get("summary", ""), 78, 3), 2.6, anchor="start", fill="#555")
+    svg_text(parts, MARGIN_MM, 24.0, wrap(board.get("summary", ""), 75, 3), 2.7, anchor="start", fill="#555")
 
     docs = board["documents"]
     docs_top = 34.0
@@ -216,15 +216,15 @@ def render_step_review(board: dict, step: Step, path: Path) -> None:
         f'<rect x="{MARGIN_MM}" y="{docs_top}" width="{usable_w}" height="{docs_h}" rx="1.5" '
         'fill="#fafafa" stroke="#999" stroke-width="0.4"/>'
     )
-    svg_text(parts, MARGIN_MM + 3, docs_top + 5.5, ["DOCUMENTATION"], 2.45, anchor="start", weight="bold", fill="#444")
+    svg_text(parts, MARGIN_MM + 3, docs_top + 5.5, ["DOCUMENTATION"], 2.55, anchor="start", weight="bold", fill="#444")
     doc_col_w = (usable_w - 9) / 2
     for idx, document in enumerate(docs):
         row, col = divmod(idx, 2)
         x = MARGIN_MM + 3 + col * (doc_col_w + 3)
         y = docs_top + 8.0 + row * 6.4
         style = MATURITY[document["maturity"]]
-        label = f"{document['name']} {style['label']}{document['completeness']} — {concise(document['title'], 28)}"
-        svg_text(parts, x, y + 2.1, [label], 2.1, anchor="start", weight="bold", fill=style["stroke"])
+        label = f"{document['name']} {style['label']}{document['completeness']} — {concise(document['title'], 27)}"
+        svg_text(parts, x, y + 2.1, [label], 2.2, anchor="start", weight="bold", fill=style["stroke"])
 
     y = docs_top + docs_h + 4.0
     card_w = (usable_w - STEP_CARD_GAP * (STEP_CARD_COLS - 1)) / STEP_CARD_COLS
@@ -248,9 +248,9 @@ def render_step_review(board: dict, step: Step, path: Path) -> None:
             f'<rect x="{MARGIN_MM}" y="{y:.2f}" width="{usable_w:.2f}" height="{STEP_LANE_HEADER_H:.2f}" rx="1.5" '
             f'fill="{lane_fill}" stroke="{lane_stroke}" stroke-width="0.35"/>'
         )
-        svg_text(parts, MARGIN_MM + 2.5, y + 4.5, [title], 2.4, anchor="start", weight="bold", fill=lane_stroke)
+        svg_text(parts, MARGIN_MM + 2.5, y + 4.15, [title], 2.55, anchor="start", weight="bold", fill=lane_stroke)
 
-        cards_top = y + STEP_LANE_HEADER_H + 2.0
+        cards_top = y + STEP_LANE_HEADER_H + 1.3
         for idx, activity in enumerate(activities):
             row, col = divmod(idx, STEP_CARD_COLS)
             card_x = MARGIN_MM + col * (card_w + STEP_CARD_GAP)
@@ -260,17 +260,17 @@ def render_step_review(board: dict, step: Step, path: Path) -> None:
                 f'<rect x="{card_x:.2f}" y="{card_y:.2f}" width="{card_w:.2f}" height="{STEP_CARD_H:.2f}" rx="1.2" '
                 f'fill="#fffdf2" stroke="{status_stroke}" stroke-width="0.45"/>'
             )
-            svg_text(parts, card_x + 1.6, card_y + 4.2, [activity["id"]], 2.05, anchor="start", weight="bold", fill="#555")
-            badge_w = 15.0
+            svg_text(parts, card_x + 1.6, card_y + 4.7, [activity["id"]], 2.3, anchor="start", weight="bold", fill="#555")
+            badge_w = 16.0
             parts.append(
-                f'<rect x="{card_x+card_w-badge_w-1.2:.2f}" y="{card_y+1.0:.2f}" width="{badge_w:.2f}" height="4.2" rx="0.8" '
+                f'<rect x="{card_x+card_w-badge_w-1.2:.2f}" y="{card_y+1.0:.2f}" width="{badge_w:.2f}" height="5.0" rx="0.8" '
                 f'fill="{status_fill}" stroke="{status_stroke}" stroke-width="0.25"/>'
             )
-            svg_text(parts, card_x + card_w - badge_w / 2 - 1.2, card_y + 4.0, [status_label], 1.6, weight="bold", fill=status_stroke)
-            svg_text(parts, card_x + card_w / 2, card_y + 9.0, wrap(activity["title"], 23, 3), 2.65, weight="bold")
+            svg_text(parts, card_x + card_w - badge_w / 2 - 1.2, card_y + 4.55, [status_label], 1.9, weight="bold", fill=status_stroke)
+            svg_text(parts, card_x + card_w / 2, card_y + 9.5, wrap(activity["title"], 22, 3), 3.0, weight="bold")
             meta = step_card_meta(activity)
             if meta:
-                svg_text(parts, card_x + 1.6, card_y + STEP_CARD_H - 2.0, [concise(meta, 39)], 1.7, anchor="start", fill="#666")
+                svg_text(parts, card_x + 1.6, card_y + STEP_CARD_H - 1.8, [concise(meta, 34)], 2.2, anchor="start", fill="#555")
         y += h + STEP_LANE_GAP
 
     svg_text(parts, MARGIN_MM, A4_P_H_MM - 4.5, ["A4 portrait review view — three activity cards per row; A3 remains the print-oriented board."], 1.9, anchor="start", fill="#666")
