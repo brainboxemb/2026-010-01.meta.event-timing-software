@@ -1,0 +1,91 @@
+name: Build architecture documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - '.github/workflows/docs-build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - '.github/workflows/docs-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  architecture-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate architecture diagrams
+        run: python tools/generate_architecture_diagrams.py
+
+      - name: Validate generated XML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          for path in Path('bld/docs/architecture').glob('*.drawio'):
+              ET.parse(path)
+          for path in Path('bld/docs/architecture').glob('*.svg'):
+              ET.parse(path)
+          PY
+
+      - name: Upload generated documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-docs
+          path: bld/docs/architecture
+          retention-days: 14
+
+      - name: Publish prod/docs branch
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          publish_dir="$(mktemp -d)"
+          cp -a bld/docs/architecture "$publish_dir/architecture"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global credential.helper store
+          printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
+
+          git switch --orphan generated-docs
+          git rm -rf .
+          git clean -fdx
+
+          cp -a "$publish_dir/architecture" ./architecture
+          cat > README.md <<EOF
+          # Generated documentation
+
+          Generated from source commit \`${SOURCE_SHA}\`.
+
+          - [Architecture diagrams](architecture/README.md)
+          EOF
+          printf '%s\n' "$SOURCE_SHA" > source-sha.txt
+
+          git add README.md source-sha.txt architecture
+          git commit -m "Publish generated documentation for ${SOURCE_SHA}"
+          git push --force origin HEAD:prod/docs
