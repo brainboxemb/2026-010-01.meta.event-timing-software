@@ -14,7 +14,7 @@ The merged/default-branch documentation build is published to the generated [`pr
 
 - [architecture book](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/prod/docs/documents/architecture-book.md) — assembled architecture/design view with generated diagrams;
 - [complete software document set](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/prod/docs/documents/software-document-set.md) — assembled generated document set;
-- [planning output](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/planning) — SIP roadmap, printable A2/A3 outputs and step boards;
+- [planning output](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/planning) — continuous SIP roadmap, four A4-landscape roadmap pages/PDF and A4-portrait step details;
 - [generated architecture diagrams](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/architecture) — SVG and editable draw.io outputs.
 
 `prod/docs` is generated publication/review output. The authored source on `main` remains the source of truth and generated files should not be hand-edited. Active pull-request builds use `dev/pr-<N>/docs`.
