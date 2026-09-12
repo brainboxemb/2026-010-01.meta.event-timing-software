@@ -1,12 +1,12 @@
 # Timing Application Requirements (SRD)
 
-Status: working draft / AP-1 first-executable slice
+Status: review candidate / AP-1 first-executable slice
 
 Software item: **SI-01 — Headless Timing Application**
 
 ## Purpose
 
-This Software Requirements Document captures only the SI-01 requirements needed for the **first executable slice** covered by SIP Steps 2–3.
+This Software Requirements Document captures only the SI-01 requirements needed for the **first executable slice** covered by the current framework-skeleton and minimal version/status SIP increments.
 
 It is intentionally incomplete for the future product. RFID, CAN, displays, registration-domain behaviour, ready-team behaviour and production backoffice integration remain outside this requirement baseline until their SIP increments approach implementation.
 
@@ -17,7 +17,7 @@ The goal is to make the first executable implementable without forcing the imple
 This first slice is derived from:
 
 - `04-UC-system-use-cases.md`, especially the status/control aspects of UC-001, UC-008 and UC-009;
-- `11-SIP-software-implementation-planning.md`, Steps 2–3;
+- `11-SIP-software-implementation-planning.md`, the framework-skeleton and minimal version/status increments;
 - `30-SSAD-software-system-architecture.md`;
 - `31-01-SAD-timing-application-architecture.md`;
 - `50-SVP-software-verification-plan.md`, especially ST-1.
@@ -26,13 +26,13 @@ Interface semantics for IF-03 are owned by `40-01-IDD-application-control-status
 
 ## Requirement identifier convention
 
-Requirements in this working slice use:
+Requirements in this slice use:
 
 ```text
 SI01-REQ-<number>
 ```
 
-The identifier convention is provisional until AP-1 closes, but identifiers should remain stable once the slice becomes a review baseline.
+Identifiers in this review candidate are intended to remain stable. A later capability should add requirements without renumbering these merely for document neatness.
 
 ## First-executable requirements
 
@@ -57,7 +57,7 @@ A running SI-01 process shall expose one authoritative application build/version
 **SI01-REQ-011 — Consistent identity across interfaces**  
 The build/version identity exposed through supported first-executable operator/application interfaces shall represent the same underlying build identity rather than interface-specific copies.
 
-The transport representation is defined by the applicable IDD/interface design.
+The public representation and required fields are defined by IF-03.
 
 ### Status
 
@@ -68,20 +68,20 @@ SI-01 shall maintain an authoritative current application status model that is s
 The first-executable status shall expose enough information to determine at least:
 
 - application/build identity;
-- whether the process is running and able to answer application queries;
+- application state;
 - configured `TimingSystemInstance` identity/identities;
-- the current lifecycle state represented by the minimal first-executable instance model;
+- the current minimal lifecycle state represented for those instances;
 - explicit degraded/error information for first-executable configuration/startup failures that remain observable while the process can continue serving status.
 
-The exact schema and field names belong to IF-03 and implementation design.
+The concrete IF-03 schema is defined by `40-01-IDD-application-control-status.md`.
 
 **SI01-REQ-022 — Equivalent status semantics across first interfaces**  
 Local console, remote-shell and IF-03 application-control/status representations shall be derived from the same application status semantics. A transport adapter shall not maintain a separate authoritative status model.
 
 **SI01-REQ-023 — Status-change publication**  
-Where IF-03 WebSocket/event delivery is enabled by the first executable, SI-01 shall publish status-change information from the same authoritative status model used for status queries.
+SI-01 shall publish first-executable status-change information through IF-03 WebSocket/event delivery from the same authoritative status model used for status queries.
 
-The exact event envelope and resynchronisation rules remain to be defined by IF-03 before AP-1 closes.
+On connection/reconnection the client shall be able to recover a complete authoritative snapshot according to the IF-03 contract.
 
 ### Application boundary and testability
 
@@ -90,6 +90,25 @@ Transport-specific adapters shall invoke shared SI-01 application commands/queri
 
 **SI01-REQ-031 — Externally testable executable**  
 The produced SI-01 application shall support ST-1 verification as a separate running process through its public application interface without direct test mutation of internal application/domain state.
+
+**SI01-REQ-032 — Safe default network exposure**  
+The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
+
+**SI01-REQ-033 — Compatible first API evolution**  
+SI-01 shall implement IF-03 `v1` such that compatible additions can be made without requiring clients to understand every newly added JSON member or event type; breaking interface semantics shall not silently redefine the existing `v1` contract.
+
+## First-executable lifecycle interpretation
+
+The first executable is not yet an operational timing implementation.
+
+Therefore:
+
+- application state may move through `STARTING`, `RUNNING`, `DEGRADED` and `STOPPING` according to IF-03;
+- at least one configured minimal `TimingSystemInstance` is represented;
+- that instance reports lifecycle `CLOSED` in this slice;
+- operational open/close commands and resulting registration-stream events remain deferred to the later domain increment.
+
+This prevents the first version/status executable from inventing partial operational semantics merely to make a demo look more complete.
 
 ## Explicitly deferred requirements
 
@@ -104,34 +123,48 @@ The following areas are intentionally not made concrete by this SRD slice:
 - backoffice semantic/protocol behaviour;
 - RabbitMQ-specific behaviour;
 - target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
-- final authentication/authorisation and production security policy.
+- production authentication/authorisation and final security policy;
+- browser-specific CORS/origin policy.
 
 These areas remain governed by the working architecture/use cases until a later SIP/document-maturity gate requires formalisation.
 
-## Initial traceability view
+## Traceability view
 
 | Requirement | Current source | Interface/design allocation | Planned verification |
 | --- | --- | --- | --- |
-| SI01-REQ-001/002 | SIP Step 2–3 | SI-01 composition/runtime | build/start/stop + ST-1 process control |
-| SI01-REQ-003 | SIP Step 3; SSAD runtime topology | SI-01 runtime registry/configuration | ST-1 status inspection |
-| SI01-REQ-010/011 | SIP Step 2–3 | IF-01/02/03; shared query boundary | V2/V3 + ST-1 version query |
-| SI01-REQ-020/021/022 | SSAD/SAD status model; SIP Step 3 | Status service/model + IF-01/02/03 | V1/V2 + ST-1 status query |
-| SI01-REQ-023 | SIP Step 3; IF-03 direction | IF-03 WebSocket/event adapter | V2/V3 + ST-1 event observation |
-| SI01-REQ-030/031 | SAD testability; SVP ST-1 | shared application boundary | architecture/component checks + ST-1 |
+| SI01-REQ-001/002 | SIP framework/version-status increments | SI-01 composition/runtime | build/start/stop + ST-1 process control |
+| SI01-REQ-003 | UC-001; SSAD runtime topology | SI-01 runtime registry/configuration | `VC-ST1-001` status inspection |
+| SI01-REQ-010/011 | UC-008/009; SIP first executable | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-020/021/022 | UC-001/008/009; SSAD/SAD status model | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
+| SI01-REQ-023 | first executable live status need | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-030/031 | SAD testability; SVP ST-1 | shared application boundary | architecture/component checks + `VC-ST1-001` |
+| SI01-REQ-032 | AP-1 controlled development exposure | IF03-REQ-002/009 | configuration/interface verification |
+| SI01-REQ-033 | AP-1 interface evolution policy | IF03-REQ-010 | contract/component verification |
 
-This table is a starting point. AP-1 should tighten traceability rather than expanding requirement count for its own sake.
+## AP-1 decisions resolved by this baseline
 
-## Open AP-1 decisions
+The following are now fixed for the first-executable contract:
 
-The following need resolution before this first-executable baseline can be considered review-ready:
+- build/version identity fields are owned by IF-03: `application`, `version`, `revision`, `buildTime`, `apiVersion`;
+- minimal application status/lifecycle semantics are defined in IF-03 and the lifecycle interpretation above;
+- IF-03 HTTP resources are `/api/v1/version` and `/api/v1/status`;
+- IF-03 WebSocket endpoint is `/api/v1/events`;
+- WebSocket connect/reconnect starts with a complete status snapshot;
+- first-executable change events carry complete current status rather than a patch/replay protocol;
+- explicit JSON error responses and initial HTTP status mapping are defined in the IDD;
+- authentication/authorisation is explicitly deferred for the first executable while default network binding remains loopback-only;
+- verification-case identifiers use `VC-<profile>-<number>` for the first baseline;
+- no separate remote-shell IDD is required by AP-1 because that adapter reuses shared version/status semantics and is not yet a stable software-to-software contract.
 
-- exact build/version identity fields that form the stable public contract;
-- exact minimal lifecycle/status representation for the placeholder `TimingSystemInstance`;
-- IF-03 HTTP resource/path and JSON schema mapping;
-- IF-03 WebSocket endpoint/event envelope and initial-state/resynchronisation behaviour;
-- remote-shell technology and the degree to which IF-02 needs a separate formal IDD now versus later;
-- error response semantics for malformed/unsupported application queries;
-- whether authentication is explicitly out of scope for the first executable or whether a minimal policy is required from the start;
-- exact verification-case identifier convention.
+## Remaining implementation/toolchain choices
 
-Questions that do not block SIP Steps 2–3 should remain deferred.
+The following do **not** block this requirement baseline and belong in the implementation/toolchain increments:
+
+- concrete Java HTTP/WebSocket library;
+- concrete remote-shell implementation;
+- JSON/configuration/logging libraries;
+- Maven/JDK provisioning details;
+- concrete code/package classes implementing the shared status model;
+- exact mechanism used to cause the first deterministic status transition in `VC-ST1-001`.
+
+A chosen implementation technology must satisfy this SRD and IF-03 rather than redefining them.
