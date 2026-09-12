@@ -1,0 +1,165 @@
+diagram:
+  id: runtime-dispatch-process
+  title: SI-01 runtime dispatch — process and state ownership
+  width: 1580
+  height: 930
+  description: Process view of concurrent ingress, explicit instance routing and serialized state ownership.
+  note: Messages are used at asynchronous/ownership boundaries. Direct Java calls remain normal inside a serialized instance handler.
+
+groups:
+  - id: ingress
+    label: Concurrent ingress
+    kind: layer-presentation
+    layout: {x: 60, y: 110, w: 330, h: 690}
+
+  - id: runtime
+    label: Application/runtime ownership
+    kind: layer-application
+    layout: {x: 430, y: 110, w: 790, h: 690}
+
+  - id: execution
+    label: Execution resources
+    kind: layer-platform
+    layout: {x: 1260, y: 110, w: 260, h: 690}
+
+nodes:
+  - id: operator-ingress
+    label: "Operator / presentation ingress\nHTTP • shell • console"
+    kind: presentation
+    group: ingress
+    layout: {x: 100, y: 190, w: 250, h: 85}
+
+  - id: device-ingress
+    label: "Device / integration callbacks\nRFID • CAN • backoffice"
+    kind: integration
+    group: ingress
+    layout: {x: 100, y: 365, w: 250, h: 85}
+
+  - id: timer-ingress
+    label: "Scheduled triggers\ntimer callback only submits work"
+    kind: platform
+    group: ingress
+    layout: {x: 100, y: 540, w: 250, h: 85}
+
+  - id: dispatcher
+    label: "TimingSystemDispatcher\nresolve instance • accept typed immutable message"
+    kind: application
+    group: runtime
+    layout: {x: 520, y: 175, w: 610, h: 90}
+
+  - id: serial-01
+    label: "SerialExecutor — system-01\nbounded FIFO • one active handler"
+    kind: runtime
+    group: runtime
+    layout: {x: 505, y: 365, w: 300, h: 85}
+
+  - id: serial-02
+    label: "SerialExecutor — system-02\nbounded FIFO • one active handler"
+    kind: runtime
+    group: runtime
+    layout: {x: 845, y: 365, w: 300, h: 85}
+
+  - id: state-01
+    label: "TimingSystemInstance state — system-01\napplication/domain handlers"
+    kind: model
+    group: runtime
+    layout: {x: 505, y: 520, w: 300, h: 85}
+
+  - id: state-02
+    label: "TimingSystemInstance state — system-02\napplication/domain handlers"
+    kind: model
+    group: runtime
+    layout: {x: 845, y: 520, w: 300, h: 85}
+
+  - id: snapshots
+    label: "Immutable published snapshots\nstatus / presentation reads"
+    kind: application
+    group: runtime
+    layout: {x: 675, y: 675, w: 300, h: 70}
+
+  - id: state-executor
+    label: "Shared state ExecutorService\n1 worker in constrained profile\nconfigurable >1 for independent instances"
+    kind: platform
+    group: execution
+    layout: {x: 1300, y: 260, w: 180, h: 125}
+
+  - id: io-execution
+    label: "I/O / scheduler execution\nblocking work stays outside state lane\ncompletion returns via dispatcher"
+    kind: platform
+    group: execution
+    layout: {x: 1300, y: 500, w: 180, h: 125}
+
+edges:
+  - from: operator-ingress
+    to: dispatcher
+    label: command/query
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.25}
+
+  - from: device-ingress
+    to: dispatcher
+    label: observation/event
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.50}
+
+  - from: timer-ingress
+    to: dispatcher
+    label: scheduled event
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.75}
+
+  - from: dispatcher
+    to: serial-01
+    label: route system-01
+    from_anchor: {side: bottom, position: 0.28}
+    to_anchor: {side: top, position: 0.50}
+
+  - from: dispatcher
+    to: serial-02
+    label: route system-02
+    from_anchor: {side: bottom, position: 0.72}
+    to_anchor: {side: top, position: 0.50}
+
+  - from: serial-01
+    to: state-01
+    from_anchor: {side: bottom, position: 0.50}
+    to_anchor: {side: top, position: 0.50}
+
+  - from: serial-02
+    to: state-02
+    from_anchor: {side: bottom, position: 0.50}
+    to_anchor: {side: top, position: 0.50}
+
+  - from: state-01
+    to: snapshots
+    label: publish
+    dashed: true
+    from_anchor: {side: bottom, position: 0.65}
+    to_anchor: {side: top, position: 0.30}
+
+  - from: state-02
+    to: snapshots
+    label: publish
+    dashed: true
+    from_anchor: {side: bottom, position: 0.35}
+    to_anchor: {side: top, position: 0.70}
+
+  - from: serial-01
+    to: state-executor
+    label: delegates execution
+    dashed: true
+    from_anchor: {side: right, position: 0.25}
+    to_anchor: {side: left, position: 0.35}
+    route:
+      - {x: 1190, y: 386}
+      - {x: 1190, y: 304}
+
+  - from: serial-02
+    to: state-executor
+    label: delegates execution
+    dashed: true
+    from_anchor: {side: right, position: 0.75}
+    to_anchor: {side: left, position: 0.70}
+    route:
+      - {x: 1215, y: 429}
+      - {x: 1215, y: 348}
