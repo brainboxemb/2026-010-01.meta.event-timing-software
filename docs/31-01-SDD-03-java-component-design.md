@@ -6,7 +6,7 @@ Software item: **SI-01 — Headless Timing Application**
 
 This SDD proposes the initial Java/Maven component structure. Its main purpose is to keep **architectural responsibility**, **Maven modules**, and **Java packages** distinct so layering does not become ambiguous.
 
-The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`. Backoffice/RabbitMQ detail is defined in `31-01-SDD-05-backoffice-rabbitmq-design.md`.
+The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`. Transport-independent backoffice design is defined in `31-01-SDD-05-backoffice-transport-design.md`.
 
 ## Core rule
 
@@ -56,7 +56,7 @@ Candidate contracts include:
 - RFID antenna/reader control and observation ports;
 - CAN transport/device contracts;
 - display data/session contracts;
-- backoffice/reference-data contracts;
+- transport-independent backoffice semantic contracts;
 - clock/platform abstractions;
 - externally exposed status/query models;
 - extension/composition contracts.
@@ -129,6 +129,7 @@ Proposed capability structure:
     BackofficeService
     BackofficeOutbox
     BackofficeEnvelope
+    RegistrationSourceKey
 
 ...timing.core.status
     StatusService
@@ -181,7 +182,7 @@ Dependencies:
 timing-core -> timing-api
 ```
 
-`timing-core` must not reference HTTP servers, RabbitMQ libraries, concrete CAN libraries, Raspberry Pi libraries or proprietary RFID protocol code.
+`timing-core` must not reference HTTP servers, socket classes, RabbitMQ libraries, concrete CAN libraries, Raspberry Pi libraries or proprietary RFID/backoffice protocol code.
 
 ## `timing-runtime`
 
@@ -238,18 +239,19 @@ An initial single module can use capability-oriented packages:
 External/platform-specific adapters should become separate Maven artifacts when they bring significant dependencies or lifecycle concerns, for example:
 
 ```text
+timing-adapter-backoffice-socket
 timing-adapter-rabbitmq
 timing-adapter-linux-can
 timing-adapter-mdns
 ```
 
-`timing-adapter-rabbitmq` is a good candidate for an early split because it introduces an external client library, connection/channel lifecycle, reconnect behaviour and integration-test infrastructure.
+`timing-adapter-backoffice-socket` can stay lightweight and public for ST-2 loop/network tests. `timing-adapter-rabbitmq` is a good candidate for an early split because it introduces an external client library, connection/channel lifecycle, reconnect behaviour and Docker-based integration-test infrastructure.
 
-Production/proprietary adapters should normally live in a private repository rather than inside the public adapter module.
+Production/proprietary adapters/codecs should normally live in a private repository when they contain sensitive protocols or deployment mappings.
 
-## RabbitMQ adapter boundary
+## Backoffice transport boundary
 
-The core/application side should depend on semantic ports, not RabbitMQ types.
+The core/application side depends on semantic ports rather than transport types.
 
 Candidate public contracts:
 
@@ -263,7 +265,18 @@ interface BackofficeInboundListener {
 }
 ```
 
-The concrete RabbitMQ adapter owns:
+Concrete adapters can implement the same boundary:
+
+```text
+StubBackofficeAdapter           ST-1
+SocketBackofficeAdapter         ST-2
+RabbitMqBackofficeAdapter       ST-3 / production-shaped
+PrivateProductionBackoffice...  when proprietary protocol details require it
+```
+
+The socket adapter owns simple test framing/session/reconnect only. It must not copy the proprietary RabbitMQ message format merely to make tests convenient.
+
+The RabbitMQ adapter owns:
 
 - one or more broker connections;
 - source-specific inbound consumers;
@@ -291,6 +304,7 @@ StubCanAdapter
 StubDisplayV1
 StubDisplayV2Session
 StubBackofficeAdapter
+BackofficeSocketTestPeer
 ScenarioBuilder
 TopologyBuilder
 status/registration/ready-team assertions
@@ -329,7 +343,7 @@ main()
   -> construct runtime
   -> create configured TimingSystemInstances
   -> create RegistrationAssets + antennas + RegistrationSources
-  -> create/configure backoffice adapter
+  -> select stub/socket/RabbitMQ backoffice transport
   -> start public interfaces
 ```
 
@@ -362,7 +376,7 @@ Expected proprietary areas include candidates such as:
 - production RFID protocol/decryption details;
 - product-specific communication/protocol implementations;
 - production asset/source inventory and mappings;
-- potentially production backoffice message schemas/adapter implementation.
+- production backoffice message schemas/codecs where sensitive.
 
 The public framework exposes only the contracts required for those components.
 
@@ -409,6 +423,9 @@ RegistrationAsset asset = new RegistrationAsset(
     Arrays.asList(source),
     sourceRouter);
 
+BackofficePublisherPort backoffice =
+    backofficeAdapterFactory.create(settings.backoffice());
+
 TimingSystemInstance instance = new TimingSystemInstance(
     instanceId,
     Arrays.asList(asset),
@@ -426,7 +443,7 @@ If true runtime plugin discovery later becomes necessary, evaluate `ServiceLoade
 
 ## Settings and composition root
 
-Configuration must describe the runtime topology without naming private Java classes in public source.
+Configuration must describe the runtime topology and transport selection without naming private Java classes in public source.
 
 A composition/factory layer resolves configured adapter types to actual implementations.
 
@@ -435,10 +452,11 @@ Conceptually:
 ```java
 interface AdapterFactoryRegistry {
     RfidAntennaPort createRfid(String adapterType, DeviceSettings settings);
+    BackofficeTransport createBackoffice(BackofficeSettings settings);
 }
 ```
 
-A public distribution can register public/stub factories. A private product repository can register proprietary factories during composition.
+A public distribution can register stub/socket/RabbitMQ factories where appropriate. A private product repository can register proprietary factories/codecs during composition.
 
 The final file format and factory mechanism remain open.
 
@@ -461,8 +479,9 @@ public framework repository
 public reference/test repository
   application composition
   configurable multi-instance topology
-  stub/default components
-  Docker-based RabbitMQ integration environment
+  ST-1 stub application tests
+  ST-2 socket loop/network tests
+  ST-3 Docker-based RabbitMQ integration environment
   integration scenarios
            |
            | same public contracts
@@ -480,6 +499,7 @@ The reference project should prove:
 - documentation is sufficient for an external consumer;
 - stub components can produce a complete application;
 - multiple system instances/assets/source streams can be configured;
+- the same backoffice semantics work through stub, socket and RabbitMQ transports;
 - a real RabbitMQ broker can be exercised with synthetic/public topology;
 - system IDDs can be exercised in integration tests;
 - the same extension points are usable by a private repository;
@@ -513,11 +533,12 @@ A later Java 11 migration does not automatically mean JPMS should be adopted.
 Useful automated rules can eventually include:
 
 - `timing-core` does not reference adapter packages;
-- `timing-core` does not reference HTTP/RabbitMQ/CAN implementation libraries;
+- `timing-core` does not reference socket/HTTP/RabbitMQ/CAN implementation libraries;
 - API packages do not depend on implementation packages;
 - `RegistrationSequence` exists at registration-source scope, not as one global/asset/system counter;
 - registration-asset/source topology is not inferred from adapter implementation classes;
 - public code does not contain real deployment asset/source mappings;
+- semantic backoffice code does not depend on RabbitMQ or socket implementation classes;
 - `registration` does not depend on `readyteam` merely to update a display;
 - `readyteam` does not create participant/timing registration-domain records;
 - adapters depend inward, never the reverse;
@@ -533,7 +554,8 @@ A Java-8-compatible ArchUnit version can be evaluated later, but Maven dependenc
 - how configuration selects adapter implementations;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between framework/API and private adapters;
-- whether RabbitMQ stays a separate public adapter artifact from the beginning;
+- whether socket and RabbitMQ adapters are independent artifacts from their first implementation;
+- whether the production RabbitMQ codec lives in the public adapter or private integration repository;
 - where the compiled React application belongs;
 - whether public adapter implementations eventually move to independent repositories;
 - exact boundary between public reference application and private product composition.
