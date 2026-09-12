@@ -2,9 +2,24 @@
 
 Status: working draft / non-authoritative
 
-This Software Development Environment document defines the common development environment, repository conventions, GitHub workflow, automation model, and AI/agent working method for the software system.
+This Software Development Environment document defines the **concrete engineering environment and repository conventions** used to develop, build, test, document and review the software system.
 
-The SDE is **project/software-system level**. It applies across software items and implementation repositories unless a repository documents a justified exception.
+The SDE is project/software-system level and applies across software items and implementation repositories unless a repository documents a justified exception.
+
+## Document boundary
+
+The SDE is not the high-level development plan and it is not the detailed implementation sequence.
+
+Use the documents as follows:
+
+```text
+SDP  why/how the project is developed at high level: strategy, phases, risks, resources, assumptions
+SIP  what is implemented next: concrete steps, deliverables, demonstrations and exit evidence
+SDE  where/how engineering work is performed: repositories, tooling, GitHub flow, CI, artifacts, local environments
+SVP  how the product is verified: levels, profiles, verification cases and evidence
+```
+
+The SDE may define detailed mechanisms that support the SDP/SIP/SVP, but should not duplicate their planning or verification content.
 
 ## Purpose
 
@@ -16,22 +31,54 @@ The development environment should make work:
 - usable by both human developers and AI agents;
 - consistent across public and private repositories;
 - suitable for generated documentation and build artifacts;
-- simple enough to use on a small project without losing engineering discipline.
+- easy to reconstruct on a new workstation or CI runner;
+- simple enough for a small project without losing engineering discipline.
+
+## Development hosts and execution environments
+
+The high-level need for development/test hardware belongs in the SDP. This SDE defines how those environments are used once selected.
+
+Expected environment classes are:
+
+```text
+Developer workstation
+  primary interactive development
+  initially Windows
+  Java/Maven/Python/Git
+  optional Docker/Compose
+
+GitHub-hosted CI
+  build/unit/system/integration automation where supported
+  generated documentation/artifacts
+
+Raspberry Pi Zero target
+  generated target image
+  pinned ARMv6-compatible Java runtime
+  SI-01 service
+  target/resource/HIL verification
+
+Optional integration host
+  broker/test services
+  test drivers/simulators
+  longer integration workloads
+```
+
+Exact host provisioning scripts and image tooling are introduced by the relevant SIP steps and implementation repositories.
 
 ## Primary development services and tools
 
 Current baseline:
 
-- **GitHub** — source control, issues, pull requests, review history and CI/CD;
-- **GitHub Actions** — automated build, test, generated documentation and later deployment workflows;
+- **GitHub** — source control, issues, pull requests and review history;
+- **GitHub Actions** — automated build, test, generated documentation and later image/deployment workflows;
 - **Git** — source/version control;
-- **Maven** — accepted Java build/dependency-management baseline;
-- **Java 8** — initial runtime/language baseline for software item 01 because the original Raspberry Pi Zero is mandatory;
-- **Python** — project tooling/document generation where it provides a simple reproducible solution;
-- **draw.io + generated SVG** — editable and GitHub-readable architecture diagrams generated from project-controlled source where practical;
-- **Docker / Docker Compose** — for reproducible integration-test dependencies such as RabbitMQ where running a real external service materially improves verification.
+- **Maven** — Java build/dependency-management baseline;
+- **Java 8** — initial SI-01 language/API/runtime baseline;
+- **Python** — lightweight project tooling/document generation where appropriate;
+- **draw.io + generated SVG** — editable and GitHub-readable diagrams;
+- **Docker / Docker Compose** — reproducible external integration services such as RabbitMQ where a real service materially improves verification.
 
-Individual software items may add development tools, but system-wide choices should remain documented and deliberate.
+Individual repositories may add tools, but system-wide additions should be deliberate and documented.
 
 ## Repository baseline
 
@@ -45,166 +92,186 @@ CHANGELOG.md
 
 ### `README.md`
 
-The README should provide the human entry point and normally include:
+The human entry point. It should normally contain:
 
 - repository purpose;
-- relationship to the wider software system/project;
-- current status where useful;
-- basic build/run/test instructions or links to them;
+- relationship to the wider software system;
+- build/run/test entry points or links;
 - important document/navigation links;
 - generated-output links where applicable.
 
 ### `AGENTS.md`
 
-`AGENTS.md` contains persistent repository-specific instructions for AI/coding agents.
-
-It should define or reference:
+Persistent repository-specific instructions for AI/coding agents, including:
 
 - repository purpose and boundaries;
 - sources of truth;
-- active development/workflow rules;
-- files/documents that must be read before substantial work;
-- privacy/public-private boundaries;
-- test/build expectations;
-- rules that prevent agents from silently jumping to later plan steps.
+- workflow rules;
+- files that must be read before work;
+- public/private boundaries;
+- build/test expectations;
+- scope/plan discipline.
 
-Agent instructions should not contradict the engineering process used by human developers. AI is an implementation/research aid inside the same controlled workflow.
+AI follows the same controlled engineering workflow as human development.
 
 ### `CHANGELOG.md`
 
-The changelog records notable repository changes at an appropriate level. It is not intended to replace Git history or PR evidence.
+Records notable repository changes. It does not replace Git history, issue history or PR evidence.
+
+## Repository content layout
+
+Exact source trees differ by repository, but use predictable top-level locations where applicable.
+
+Typical coordination/documentation repository:
+
+```text
+README.md
+AGENTS.md
+CHANGELOG.md
+.github/
+  workflows/
+docs/
+reference/
+tools/
+bld/                 local/generated build output; normally ignored in source
+```
+
+Typical Java implementation repository may evolve toward:
+
+```text
+README.md
+AGENTS.md
+CHANGELOG.md
+.github/
+  workflows/
+docs/
+<module>/
+  src/main/...
+  src/test/...
+tools/
+integration/         integration fixtures/config where useful
+bld/ or target/      generated output, not hand-maintained source
+pom.xml
+```
+
+Do not create directories merely to satisfy a template. Introduce them when the repository has content that belongs there.
+
+### Source versus generated versus reference material
+
+Keep these categories distinct:
+
+- **source** — hand-maintained code/config/documentation on normal branches;
+- **generated output** — CI/build artifacts, generated documents/images/packages/images;
+- **reference material** — preserved external/source documents used for research or traceability;
+- **runtime/deployment data** — environment-specific configuration, secrets and mutable operational data; not normal public source.
+
+Generated output should not be manually edited as if it were source.
 
 ## Documentation layout
 
-Repositories should prefer predictable, reviewable Markdown documentation. This meta repository uses numbered document families so GitHub sorts them meaningfully.
-
-Project-level examples include:
+Use predictable numbered document families in the meta/engineering documentation where applicable:
 
 ```text
-10-SDP-...   Software Development Plan
-11-SIP-...   Software Implementation Planning
-12-SDE-...   Software Development Environment
-20-xx-...    Requirements / SRDs
-30-SSAD-...  Software System Architecture
-31-01-...    Software item 01 design family
-31-02-...    Software item 02 design family
-40-xx-IDD... system-level interface documents
-50-xx-SVP... verification planning
+00-09  working context, brainstorm, use cases and domain baseline
+10-19  development planning/environment
+20-29  requirements / SRDs
+30-39  architecture and detailed design
+40-49  system-level IDDs
+50-59  verification planning
 ```
 
-The second-level software-item number, where used, identifies the software item rather than the sequence of the document.
+Established abbreviations include `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, `SVP` and `UC`.
+
+Software-item numbers remain stable across requirement/design documents.
 
 ## GitHub issue → branch → pull-request workflow
 
-Normal development follows a PR-first workflow.
-
-The intended lifecycle is:
+Normal development follows a PR-first workflow:
 
 ```text
 issue / work item
-      |
-      v
+      ↓
 feature branch
-      |
-      v
+      ↓
 draft pull request
-      |
-      | implementation + discussion + tests + evidence
-      v
-ready-for-review pull request
-      |
-      v
-merge to target branch
+      ↓
+implementation + discussion + tests + evidence
+      ↓
+ready-for-review
+      ↓
+merge
 ```
 
-### 1. Issue/work-item creation
+### Issue/work-item creation
 
-Use a GitHub issue when useful to reserve/identify the work and provide a stable work-item number.
+Use a GitHub issue when useful to reserve/identify work and provide a stable work number.
 
-Where supported by the project workflow, the issue number is reused as the pull-request/work number.
+### Feature branch
 
-### 2. Feature branch
-
-Create a branch from the intended target branch using:
+Create from the intended target branch using:
 
 ```text
 feature/pr-<N>-<short-slug>
 ```
 
-Example:
+Do not perform normal work directly on `main`.
 
-```text
-feature/pr-12-add-status-api
-```
+### Draft PR as active work container
 
-Do not perform normal implementation work directly on `main`.
-
-### 3. Promote/convert to draft PR
-
-Create or promote the work item into the corresponding draft pull request as early as practical.
-
-The draft PR becomes the active work container for:
+Create/promote the draft PR early. It carries:
 
 - scope;
-- design discussion specific to the change;
+- change-specific design discussion;
 - implementation commits;
-- test results;
+- tests/results;
 - generated evidence;
-- deviations from the plan;
+- deviations and deferred scope;
 - review conversation.
 
-Long-lived planning documents should not be turned into minute-by-minute implementation logs when the PR can carry that detail.
+Long-term planning documents should not become detailed activity logs when the PR can carry that evidence.
 
-### 4. Continue on the PR branch
-
-All work for that scope continues on the same feature branch while the draft PR is open.
-
-The PR should remain draft until its intended scope and evidence are sufficiently complete.
-
-### 5. Review and merge
+### Review and merge
 
 Before merge:
 
-- required automated checks should be green;
-- relevant generated outputs should have been visually/reviewed where applicable;
-- important evidence should be recorded in the PR;
-- documentation and changelog should be updated when required;
-- unresolved scope should be explicitly deferred rather than silently omitted.
+- required checks are green;
+- generated outputs have been inspected where relevant;
+- important evidence is recorded;
+- documentation/changelog updates are included where required;
+- deferred or unresolved scope is explicit.
 
 ## Branch protection direction
 
-The default branch should be protected through a repository/ruleset configuration appropriate for a solo developer while still enforcing PR-first work.
+Expected default-branch policy:
 
-Expected baseline direction:
+- require pull requests for normal merges;
+- prevent force pushes;
+- restrict deletion;
+- allow zero required approving reviewers where appropriate for a solo-maintainer project;
+- require meaningful stable CI checks once available;
+- delete merged feature branches where appropriate.
 
-- require a pull request before merging to the default branch;
-- prevent force pushes to the protected default branch;
-- restrict deletion of the protected default branch;
-- use zero required approving reviewers when appropriate for a solo-maintainer repository;
-- add required CI checks once the repository has stable meaningful checks;
-- automatically delete merged feature branches where appropriate.
-
-Avoid process mechanisms such as merge queues unless they solve a real project need.
+Do not introduce merge queues or similarly heavy process unless there is a concrete need.
 
 ## Generated-output branches
 
-Generated artifacts should not pollute normal source branches when they are build output.
+Build outputs may be published separately from source branches.
 
-The project uses the same general pattern as the CAD projects:
+General pattern:
 
 ```text
-source branch / pull request
-          |
-          | CI
-          v
+source PR/branch
+      |
+      | CI
+      v
 dev/pr-<N>/<output-type>
-          |
-          | after merge to main
-          v
+      |
+      | merged main
+      v
 prod/<output-type>
 ```
 
-For generated documentation in this meta repository:
+Current documentation example:
 
 ```text
 dev/pr-<N>/docs
@@ -213,198 +280,185 @@ prod/docs
 
 Rules:
 
-- generated branches are build output, not hand-edited source;
-- the PR branch remains the source of truth;
-- PR-generated branches allow both human and AI review of the actual rendered/generated result before merge;
-- the corresponding `dev/pr-N/...` output branch should be removed when the PR closes;
+- generated branches are build output;
+- the normal source branch is authoritative;
+- generated PR branches exist so human/AI reviewers can inspect the real generated result before merge;
+- corresponding `dev/pr-N/...` branches should be removed when the PR closes;
 - `prod/...` represents output generated from merged/default-branch source.
 
-This pattern may also be used for future build/test/package outputs when it is useful, but should not be introduced without a clear purpose.
+The same approach can later be used for target images/packages when it provides useful review/release separation.
 
 ## Generated documentation
 
-Source documentation remains Markdown and generated-diagram source on normal branches.
+Source documentation remains Markdown plus project-controlled diagram-generator source.
 
-The documentation build may create a generated document set containing:
+The generated documentation set may contain:
 
-- complete GitHub-readable Markdown documents;
-- local SVG diagram assets;
+- complete GitHub-readable Markdown copies;
+- local SVG assets;
 - editable draw.io files;
-- combined review documents/books where useful.
+- combined review books;
+- source commit/provenance metadata.
 
-The generated form is for review/publication. The source documents remain authoritative and editable.
+Generated documents are for review/publication. Their source Markdown remains authoritative.
 
-## AI-assisted development
+## AI-assisted development environment
 
-AI agents are expected to follow the same repository process as other developers.
+AI is an engineering tool inside the repository process, not an alternative process.
 
 Before substantial work an agent should:
 
 1. read `AGENTS.md`;
-2. read the repository handoff/active plan where present;
-3. inspect the current open/draft PR state;
-4. inspect the most recently completed PR when it supplies predecessor context;
-5. identify the currently active plan/work step;
-6. work only inside that scope unless correcting the plan itself is necessary.
+2. read handoff/active plan where present;
+3. inspect the current open/draft PR;
+4. inspect predecessor PR context when relevant;
+5. identify the active SIP/AP scope;
+6. work within that scope unless a plan correction is necessary.
 
-An agent should not:
+An agent must not:
 
-- bypass pull requests by writing normal changes directly to `main`;
-- treat brainstorm ideas as approved requirements automatically;
-- silently make major architectural decisions without recording them;
-- duplicate private/proprietary information into public repositories;
-- edit generated output branches as though they were source;
-- claim tests/evidence were performed when they were not.
+- bypass PR-first development;
+- treat brainstorm material as approved requirements automatically;
+- silently promote major architecture decisions;
+- copy proprietary/private information into public source;
+- edit generated branches as hand-maintained source;
+- claim test/build/hardware evidence that was not actually produced.
 
-AI-generated implementation is expected to be reviewable through normal source diffs, tests and generated evidence.
+## AI/session handoff environment
 
-## Handoff between AI sessions
+A new session should reconstruct current state from repository artifacts rather than requiring hidden conversation state.
 
-A repository intended for agent-assisted work should make it possible for a new session to reconstruct current state without relying on hidden conversational history.
-
-Preferred sources are:
+Preferred sources include:
 
 ```text
 AGENTS.md
 current open/draft PR
-most recently completed PR where relevant
-active agent/implementation plan
+relevant predecessor PR
+active SIP/AP material
 requirements / architecture / IDDs
 README.md
 CHANGELOG.md
 ```
 
-Detailed active-step evidence belongs primarily in the active PR. Persistent rules belong in `AGENTS.md`; long-term sequencing belongs in the appropriate plan.
+Active implementation evidence belongs mainly in the PR. Persistent rules belong in `AGENTS.md`; development strategy belongs in the SDP; implementation ordering belongs in the SIP.
 
-## Build and test principles
+## Build and CI environment
 
-Implementation repositories should introduce CI from the first useful executable increment.
+Implementation repositories should introduce CI from the first useful increment.
 
-Expected direction:
+Environment expectations include:
 
-- fast compile/unit-test checks on normal PRs;
-- application-level system tests through the public application interface from the first useful executable;
-- lightweight socket/network system tests without external broker dependencies;
-- separate RabbitMQ integration jobs/workflows when the production-shaped transport is introduced;
-- hardware-specific tests separated from ordinary hosted-runner tests;
-- generated artifacts retained/published when they materially improve review or traceability;
-- dependency/runtime choices validated against the mandatory target platform rather than desktop development machines alone;
-- real external-service integration tests use reproducible disposable dependencies where this adds meaningful evidence.
+- Maven build/test entry points that also work locally;
+- Java source/bytecode baseline enforced in build configuration;
+- fast checks suitable for normal PRs;
+- separate integration jobs where external services make tests slower;
+- target/HIL workflows separated from hosted-runner-only tests;
+- generated artifacts retained or published when they improve review/traceability;
+- CI configuration kept in source under `.github/workflows/`.
 
-For software item 01, Raspberry Pi Zero compatibility must remain visible in Java/runtime/library choices.
+Which behaviours belong to unit, ST-1, ST-2, ST-3 or ST-4 is defined by the SVP; the SDE only defines the environment mechanisms that make those profiles executable.
 
-## Automated system-test profiles
+## Test-support environment
 
-The common verification environment should support the profiles defined in the SVP:
+The engineering environment should support progressively more realistic verification without forcing every developer/test to require all infrastructure.
 
-```text
-ST-1  application behaviour
-      real SI-01 process
-      public application interface
-      controlled stub dependencies
+Expected mechanisms include:
 
-ST-2  socket loop/network
-      real SI-01 process
-      simple socket backoffice simulator
-      no RabbitMQ/Docker requirement
+- in-process/direct fakes for unit/component work;
+- executable SI-01 plus external test driver for application/system testing;
+- lightweight native socket simulator for network-loop tests;
+- Docker/Compose service fixtures for RabbitMQ-specific integration;
+- real Pi Zero / hardware environment for target/HIL testing.
 
-ST-3  RabbitMQ integration
-      real SI-01 process
-      disposable RabbitMQ broker
-      Docker/Compose
-
-ST-4  target/full-system
-      Raspberry Pi Zero and/or real hardware/services
-```
-
-ST-1 should be inexpensive enough for normal pull requests. ST-2 should provide a real communication boundary while staying lightweight. ST-3 deliberately adds the external broker only where RabbitMQ-specific behaviour is under test.
-
-Scenario concepts should be reusable across profiles where possible so the same functional behaviour can be checked with progressively more realistic infrastructure.
+Do not make Docker a prerequisite for fast tests that do not need an external service.
 
 ## Containerized integration services
 
-Docker/Compose is appropriate when an integration test needs a real external service with meaningful protocol, connection, persistence or recovery behaviour.
+Docker/Compose is appropriate for real external dependencies with meaningful connection/protocol/recovery behaviour.
 
-RabbitMQ is the first identified example and belongs primarily to ST-3, not ST-1/ST-2.
+RabbitMQ is the first identified example.
 
-The future implementation/reference repository should provide a small, disposable test environment, conceptually:
+Environment rules:
 
-```text
-compose.yaml
-  rabbitmq-test
-```
+- synthetic/public test topology and credentials only;
+- no real queue/source/deployment names or secrets;
+- intentionally pinned image versions/tags;
+- health/readiness checks;
+- same basic environment usable locally and in GitHub Actions where practical;
+- simple teardown/cleanup;
+- restart/failure control where recovery is under test.
 
-Possible later services may be added only when they are genuinely required by integration tests.
+Detailed verification scenarios belong in the SVP and relevant SDD, not in this SDE.
 
-Rules for containerized test services:
+## Raspberry Pi build/deployment environment
 
-- use synthetic/public test topology and credentials;
-- do not embed production queue names, source IDs, broker endpoints or secrets;
-- pin image versions/tags deliberately rather than floating silently;
-- expose a health check so test startup waits for service readiness;
-- allow the same environment to run locally and in GitHub Actions where practical;
-- make cleanup/disposal simple;
-- keep service startup separate from unit/ST-1/ST-2 tests so most tests do not require Docker;
-- include stop/restart scenarios when recovery behaviour is part of the interface contract.
+Once the relevant SIP step begins, the implementation environment should provide reproducible automation for:
 
-For RabbitMQ, ST-3 should eventually prove multi-source consumers, publishing, disconnect/reconnect and local-outbox recovery against a real broker. Detailed design is in `31-01-SDD-05-backoffice-transport-design.md`.
+- downloading/selecting a pinned compatible base OS image;
+- provisioning the pinned Java runtime;
+- installing SI-01 and service files;
+- embedding only safe/default public configuration;
+- producing a versioned flashable image artifact;
+- recording source/build provenance;
+- installing a versioned application update on an existing target without requiring a full reflash;
+- preserving runtime data/configuration according to the application design.
 
-Docker is **not** automatically required for every tool. Small deterministic project tooling such as the current Python documentation generators should run directly when that is simpler and equally reproducible.
+The SDE defines the automation/environment expectations; the SIP defines when these are delivered and demonstrated; detailed scripts/tool choices belong in the implementation repository.
 
-## Public and private repositories
+## Public and private repository environment
 
-The system is expected to contain both public and private components.
+Public/private separation must be enforceable by normal build structure:
 
-Development-environment rules should preserve that separation:
-
-- public framework repositories must build/test without private source;
-- private implementations consume public contracts/artifacts;
-- secrets and credentials must not be committed;
-- proprietary protocols/hardware implementations stay in the intended private repository;
-- real registration-asset/source/broker mappings stay in private/external deployment configuration;
-- public ST-1/ST-2/ST-3 tests use generic synthetic identities/topology;
-- the public reference/test project should prove external consumption of public framework artifacts independently from private code.
+- public framework repositories build/test without private source;
+- private implementations consume public APIs/artifacts;
+- private Maven/repository credentials use secure CI/developer credential mechanisms;
+- proprietary protocols and real deployment mappings remain private;
+- public integration fixtures use synthetic identities;
+- public reference projects prove external consumption independently from private code.
 
 ## Secrets and configuration
 
-Credentials, tokens, encryption keys and environment-specific secrets must not be hard-coded or committed to source control.
+Credentials, tokens, encryption keys and environment-specific secrets are not committed to source control.
 
-Use repository/environment secret mechanisms and runtime configuration appropriate to the deployment environment. Exact application configuration/secret design belongs in the relevant architecture/SDD/IDD documents.
+Use GitHub environment/repository secrets and runtime configuration mechanisms appropriate to each target.
 
-Public example configuration must use synthetic placeholders rather than real production identifiers.
+Public example configuration uses placeholders/synthetic values.
+
+Exact application configuration semantics remain architecture/SDD/IDD concerns.
 
 ## Tooling reproducibility
 
-Prefer tooling that is easy to reproduce in GitHub Actions and locally.
+Start with the simplest adequate reproducible mechanism:
 
-Start with the simplest adequate mechanism:
+- pinned/action-versioned CI actions;
+- Maven for Java;
+- Python standard library where sufficient;
+- native/simple socket tooling where sufficient;
+- Docker/Compose for meaningful external service dependencies;
+- dedicated custom build containers only when they isolate a substantial toolchain or solve a real reproducibility problem.
 
-- pinned/action-versioned CI steps;
-- Maven for Java builds;
-- Python standard-library tooling where sufficient;
-- simple native socket test harnesses for ST-2 where possible;
-- Docker/Compose for non-trivial external service dependencies such as RabbitMQ ST-3 integration tests;
-- dedicated custom Docker build images only where they provide meaningful reproducibility or isolate a substantial toolchain.
-
-Do not introduce a custom Docker image merely because a build contains Python or a small script. Introduce containers when they solve a concrete environment/reproducibility problem.
+Do not introduce a custom Docker image merely because a small script exists.
 
 ## Repository-specific extensions
 
-Each repository may extend this system-level SDE through its own `AGENTS.md`, README, build files and local documentation.
+Each repository may extend this SDE via its own `AGENTS.md`, README, workflows, build files and local development documentation.
 
-Repository-specific rules may add constraints, but should not silently weaken core traceability/workflow rules. Material deviations should be documented explicitly.
+Repository-specific rules may add constraints but should not silently weaken system-level traceability/workflow rules. Material deviations should be documented.
 
 ## Open SDE topics
 
-- exact Java/JDK distribution provisioning for developer machines and Raspberry Pi Zero;
-- Maven repository/publication strategy for public and private artifacts;
-- standard Java formatting/static-analysis choices;
-- standard unit-test and integration-test frameworks;
-- exact branch/ruleset templates to replicate across repositories;
-- release/versioning conventions across framework, reference app and private integrations;
-- whether a reusable repository bootstrap/template should be created once the conventions stabilise;
-- standard mechanism for deployment credentials and target inventory;
-- exact public test-driver mechanism for ST-1;
-- exact socket framing/tooling for ST-2;
-- exact Docker/Compose versioning/pinning policy for ST-3 integration services;
-- whether generated document output later also includes PDF/HTML in addition to GitHub Markdown.
+Environment/convention decisions still to resolve include:
+
+- exact developer-machine JDK provisioning;
+- exact ARMv6 Java runtime provisioning mechanism;
+- Maven public/private artifact repository and credential setup;
+- standard Java formatting/static-analysis toolchain;
+- standard unit/integration-test libraries;
+- reusable repository bootstrap/template conventions;
+- exact ruleset/branch-protection template;
+- release/version/artifact naming conventions;
+- image-builder tooling and artifact-storage mechanism;
+- application-update transport/install mechanism;
+- generated package/image branch/release conventions;
+- exact local integration-host setup if a separate host becomes necessary;
+- whether generated documentation later also produces PDF/HTML.
