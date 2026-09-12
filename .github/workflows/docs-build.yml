@@ -15,6 +15,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -34,6 +35,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -88,7 +90,9 @@ jobs:
           python tools/generate_system_model_diagrams.py
 
       - name: Generate SIP planning
-        run: python tools/generate_sip_planning.py
+        run: |
+          python tools/generate_sip_planning.py
+          python tools/generate_sip_manager_roadmap.py
 
       - name: Validate generated diagram XML
         run: |
@@ -151,6 +155,7 @@ jobs:
           test -f bld/docs/planning/steps/step-02.svg
           test "$(find bld/docs/planning/roadmap -maxdepth 1 -name 'sip-roadmap-*.svg' | wc -l)" -eq 4
           test "$(find bld/docs/planning -type f \( -name '*a2*' -o -name '*a3*' -o -name '*review*' \) | wc -l)" -eq 0
+          ! grep -q '\.\.\.' bld/docs/planning/roadmap/sip-roadmap-*.svg
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
