@@ -1,0 +1,45 @@
+name: Clean up PR documentation
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-docs:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove generated PR documentation branch
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ERROR: invalid pull-request number" >&2
+            exit 1
+          fi
+
+          TARGET_BRANCH="dev/pr-${PR_NUMBER}/docs"
+
+          git config --global credential.helper store
+          printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
+
+          if git ls-remote --exit-code --heads origin "refs/heads/${TARGET_BRANCH}" >/dev/null 2>&1; then
+            git push origin --delete "${TARGET_BRANCH}"
+            echo "Removed generated documentation branch: ${TARGET_BRANCH}"
+          else
+            echo "Generated documentation branch already absent: ${TARGET_BRANCH}"
+          fi
