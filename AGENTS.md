@@ -14,6 +14,8 @@ Keep repository documentation generic. Do not identify or name a specific real-w
 
 Software ideas, possible requirements, technology choices, architecture options, and unresolved questions must first be captured in `docs/00-brainstorm.md`.
 
+Stable domain facts/terminology supplied by project sources or the user may be consolidated in `docs/03-domain-baseline.md`. That document is not itself a formal requirements specification; later SRDs/IDDs/designs must preserve or explicitly revise those facts.
+
 Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
 
 Working drafts such as the SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
@@ -23,7 +25,7 @@ Working drafts such as the SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may o
 Use the repository's numbered document families. Do not add new unnumbered software documents when an existing family applies.
 
 ```text
-00-09  working context / brainstorm / handoff / agent coordination
+00-09  working context / brainstorm / handoff / agent coordination / domain baseline
 10-19  development planning and development environment
 20-29  requirements / SRDs
 30-39  architecture and detailed design
@@ -55,6 +57,7 @@ AGENTS.md                                          persistent agent rules
 docs/00-brainstorm.md                              ideas, candidate requirements, alternatives
 docs/01-handoff.md                                 reusable session handoff
 docs/02-agent-plan.md                              AP-* meta-project/agent work plan and progress
+docs/03-domain-baseline.md                         supplied domain facts/terminology and unresolved mappings
 docs/10-SDP-software-development-plan.md           high-level phased software development
 docs/11-SIP-software-implementation-planning.md    concrete software implementation sequence
 docs/12-SDE-software-development-environment.md    common tooling/GitHub/AI/repository workflow
@@ -70,20 +73,21 @@ CHANGELOG.md                                       notable repository changes
 
 Future system-level IDDs in the `40-49` family own interface definitions. Software-item SRDs may reference applicable IDD obligations but should not duplicate interface definitions.
 
-When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them.
+When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them. A material conflict with `03-domain-baseline.md` must be made explicit rather than silently designing around it.
 
 ## Working method
 
 1. Read `AGENTS.md` and `docs/02-agent-plan.md` before substantial work.
 2. Read `docs/01-handoff.md` when continuing work from another session.
 3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
-4. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
-5. Read the SSAD/software-item design and SVP relevant to the current work.
-6. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
-7. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
-8. Keep research and verification evidence traceable to its source.
-9. Update the plan when a step is completed, materially changed, or blocked.
-10. Keep implementation details in the future implementation repository rather than duplicating them here.
+4. Read `docs/03-domain-baseline.md` when work depends on domain identifiers, registration semantics, tag/team identity, locations, or source sequencing.
+5. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
+6. Read the SSAD/software-item design and SVP relevant to the current work.
+7. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
+8. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
+9. Keep research and verification evidence traceable to its source.
+10. Update the plan when a step is completed, materially changed, or blocked.
+11. Keep implementation details in the future implementation repository rather than duplicating them here.
 
 ## Pull-request-first workflow
 
