@@ -4,7 +4,7 @@ Persistent guidance for automated agents working in `2026-010-01.meta.event-timi
 
 ## Purpose
 
-This repository coordinates planning, research, source collection, development-environment definition, and decision preparation for a reusable Java framework for event timing and time registration.
+This repository coordinates planning, research, source collection, development/verification-environment definition, and decision preparation for a reusable Java framework for event timing and time registration.
 
 It is a meta repository. Do not treat it as the implementation repository for the framework itself unless the project plan explicitly changes that boundary.
 
@@ -16,7 +16,7 @@ Software ideas, possible requirements, technology choices, architecture options,
 
 Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
 
-Working drafts such as the SDP, SIP, SDE, SSAD, SAD and SDD documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
+Working drafts such as the SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
 
 ## Document naming and ordering
 
@@ -33,7 +33,17 @@ Use the repository's numbered document families. Do not add new unnumbered softw
 
 Use established abbreviations when applicable, including `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, and `SVP`.
 
-When a software-item number is used, keep it stable across that software item's requirements/design documents. Current direction is software item `01` for the headless timing application and `02` for the desktop GUI application.
+When a software-item number is used, keep it stable across that software item's requirements/design documents.
+
+Current working software-item register:
+
+```text
+SI-01  Headless Timing Application
+SI-02  Desktop GUI Application
+SI-03  Web Operator Application
+```
+
+The agent plan uses `AP-*` identifiers so its coordination steps cannot be confused with SIP implementation steps.
 
 ## Sources of truth
 
@@ -44,17 +54,21 @@ README.md                                          repository purpose and naviga
 AGENTS.md                                          persistent agent rules
 docs/00-brainstorm.md                              ideas, candidate requirements, alternatives
 docs/01-handoff.md                                 reusable session handoff
-docs/02-agent-plan.md                              meta-project/agent work plan and progress
+docs/02-agent-plan.md                              AP-* meta-project/agent work plan and progress
 docs/10-SDP-software-development-plan.md           high-level phased software development
 docs/11-SIP-software-implementation-planning.md    concrete software implementation sequence
 docs/12-SDE-software-development-environment.md    common tooling/GitHub/AI/repository workflow
-docs/30-SSAD-software-system-architecture.md       software-system architecture working draft
-docs/31-01-SAD-timing-application-architecture.md  software item 01 architecture
-docs/31-01-SDD-*                                   software item 01 detailed design
-docs/31-02-SAD-gui-application-architecture.md     software item 02 architecture
+docs/30-SSAD-software-system-architecture.md       software-item register, interface catalogue and system architecture
+docs/31-01-SAD-timing-application-architecture.md  SI-01 architecture
+docs/31-01-SDD-*                                   SI-01 detailed design
+docs/31-02-SAD-gui-application-architecture.md     SI-02 architecture
+docs/31-03-SAD-web-operator-application-architecture.md  SI-03 architecture
+docs/50-SVP-software-verification-plan.md          system-level verification strategy
 reference/                                         collected source material and its index
 CHANGELOG.md                                       notable repository changes
 ```
+
+Future system-level IDDs in the `40-49` family own interface definitions. Software-item SRDs may reference applicable IDD obligations but should not duplicate interface definitions.
 
 When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them.
 
@@ -64,11 +78,12 @@ When documents disagree, prefer the more specific source for that topic. Do not 
 2. Read `docs/01-handoff.md` when continuing work from another session.
 3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
 4. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
-5. Capture new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
-6. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
-7. Keep research evidence traceable to its source.
-8. Update the plan when a step is completed, materially changed, or blocked.
-9. Keep implementation details in the future implementation repository rather than duplicating them here.
+5. Read the SSAD/software-item design and SVP relevant to the current work.
+6. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
+7. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
+8. Keep research and verification evidence traceable to its source.
+9. Update the plan when a step is completed, materially changed, or blocked.
+10. Keep implementation details in the future implementation repository rather than duplicating them here.
 
 ## Pull-request-first workflow
 
@@ -95,6 +110,21 @@ Use generated output as review evidence: inspect actual rendered/generated artif
 AI agents use the same controlled GitHub workflow as human developers. Do not create an AI-only bypass around issues, branches, pull requests, tests or review evidence.
 
 Do not claim tests, generated output inspection or hardware verification occurred unless it actually occurred.
+
+## Document lifecycle
+
+While the project is consolidating source/domain knowledge, design documents may remain `working draft / non-authoritative`.
+
+Preferred future lifecycle:
+
+```text
+working draft
+review candidate
+accepted / authoritative
+superseded
+```
+
+Promotion is explicit. Generated review copies do not become authoritative merely because they render successfully.
 
 ## Change discipline
 
