@@ -4,6 +4,12 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'project.yml'
+      - '.gitmodules'
+      - 'bootstrap.sh'
+      - 'bootstrap.ps1'
+      - 'tools/tool.git-project'
+      - 'tools/tool.eng-docs'
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
@@ -17,6 +23,12 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'project.yml'
+      - '.gitmodules'
+      - 'bootstrap.sh'
+      - 'bootstrap.ps1'
+      - 'tools/tool.git-project'
+      - 'tools/tool.eng-docs'
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
@@ -42,13 +54,23 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Bootstrap project tooling
+        run: bash ./bootstrap.sh
+
+      - name: Verify project dependency state
+        run: |
+          tools/tool.git-project/git-project.sh validate --repo "$PWD"
+          tools/tool.git-project/git-project.sh status --repo "$PWD"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install documentation dependencies
-        run: python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
+        run: |
+          python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
+          python -m pip install --disable-pip-version-check ./tools/tool.eng-docs
 
       - name: Validate current SDD references
         run: |
