@@ -21,6 +21,7 @@ PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-planning.md",
     "12-SDE-software-development-environment.md",
+    "13-SDE-java-build-test-toolchain.md",
 ]
 
 REQUIREMENTS_DOCUMENTS = [
