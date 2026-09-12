@@ -4,6 +4,30 @@ Status: working draft
 
 This document is an initial architecture sketch used to shape the software plan and early implementation increments. It is not yet the authoritative software architecture.
 
+## Architecture decisions
+
+This document also records architecture decisions as they become sufficiently concrete. A decision can be `proposed`, `accepted`, `superseded`, or `rejected`.
+
+| ID | Status | Decision | Rationale / notes |
+| --- | --- | --- | --- |
+| ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. Avoid introducing Gradle without a concrete need. |
+| ADR-002 | proposed | Use **Java SE 17 LTS** as the language/API/runtime baseline. | Java 17 is a mature LTS release from September 2021 and is a conservative upgrade from the legacy Java 8 application. It also retains broader 32-bit ARM ecosystem options than Java 21. The exact JDK distribution may differ per target platform. |
+
+### Java runtime portability note
+
+The Java language/API baseline and the concrete JDK/runtime distribution are separate concerns.
+
+The intended baseline is one Java SE level for application source and bytecode, while the runtime distribution can be selected per supported platform when necessary.
+
+This matters particularly for Raspberry Pi Zero-class hardware:
+
+- original Raspberry Pi Zero / Zero W hardware is 32-bit ARMv6;
+- Raspberry Pi Zero 2 W hardware is 64-bit ARMv8;
+- runtime availability and performance therefore need to be validated explicitly on the actual target hardware before declaring that platform supported;
+- the application architecture must not depend on vendor-specific JDK APIs unless explicitly justified.
+
+ADR-002 remains `proposed` until the Java baseline is explicitly accepted and the minimum Raspberry Pi target is clarified or validated.
+
 ## Architectural goals
 
 The current direction is a reusable Java-based waypoint runtime with the following characteristics:
@@ -245,8 +269,9 @@ This is intentionally small but exercises the boundaries that later registration
 
 ## Open architecture questions
 
-- Java version/LTS baseline;
-- Maven versus Gradle;
+- final acceptance of Java 17 LTS as the baseline;
+- minimum Raspberry Pi Zero generation / CPU architecture that must be supported;
+- JDK/runtime distribution per platform;
 - module/package boundaries;
 - dependency injection or explicit composition approach;
 - API protocol and server technology;
