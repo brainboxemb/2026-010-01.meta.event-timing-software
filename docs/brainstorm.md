@@ -11,63 +11,358 @@ Content in this document is **not** an approved requirement or architecture deci
 - Keep alternatives visible until a decision is made.
 - Link ideas back to source material where possible.
 - Prefer questions over premature answers when evidence is missing.
+- Keep generic framework concerns separate from event-specific application concerns.
+- Do not use a concrete event name in project documentation; describe the intended domain generically.
 
-## Initial topic areas
+## Initial product direction
 
-The software/domain structure will be discussed next. Until then, use the sections below only as collection buckets rather than an implied architecture.
+The intended domain is a distributed timing/registration system for a large relay-style event with multiple waypoints.
 
-### Domain and terminology
+Current direction:
 
-- To be discussed.
+- Java is the intended implementation language.
+- The software at a waypoint records participant passages using RFID carried by the participant.
+- A waypoint system therefore interacts with at least one RFID reader/antenna setup.
+- The software should be designed as a reusable framework rather than only as one event-specific application.
+- A complete product may later combine public/generic framework components with proprietary/private implementation components.
 
-### Timing and observations
+The exact Java version, framework boundaries, packaging model, and repository split still need to be decided.
 
-- To be discussed.
+## Runtime and application topology
 
-### Participants, identifiers, and registration
+Explore a headless core application as the normal runtime foundation.
 
-- To be discussed.
+Desired direction:
 
-### Events, locations, and course structure
+- run on Windows;
+- run on Linux;
+- run on Raspberry Pi Zero-class hardware;
+- allow one running application/process to host one to multiple logical waypoint systems;
+- allow one to multiple separate user-facing/control applications to connect to the headless application.
 
-- To be discussed.
+This suggests a distinction between the runtime/service and its user interfaces, but the exact process and module boundaries are not yet fixed.
 
-### Devices and external systems
+Questions to resolve:
 
-- To be discussed.
+- Does `1..X waypoint systems` mean multiple fully isolated logical systems inside one JVM, or multiple configured waypoint instances sharing selected services?
+- Which resources are shared across instances: logging, backoffice connections, persistence, metrics, hardware access, configuration?
+- Should every logical system be independently startable/stoppable/reconfigurable?
+- What are the practical CPU and memory limits on the target Raspberry Pi Zero generation?
+- Is one Java distribution/package expected to run unchanged on every target platform?
 
-### Data flow, reliability, and recovery
+## Waypoints, timing, and RFID observations
 
-- To be discussed.
+A waypoint is expected to observe participant passages through RFID.
 
-### User interfaces and operations
+Topics that need later requirements and design work:
 
-- To be discussed.
+- RFID reader/antenna abstraction;
+- mapping an RFID identifier to a participant or registration known by the wider system;
+- conversion of raw RFID reads into a single timing/registration observation;
+- handling repeated reads while a participant remains in antenna range;
+- handling simultaneous or near-simultaneous participants;
+- timestamp source and required precision;
+- clock synchronisation between distributed waypoint systems;
+- late, duplicate, missing, or corrected observations;
+- local persistence/recovery after restart or power loss;
+- behaviour when backoffice connectivity is unavailable.
 
-### Reporting and exports
+None of these points yet defines the final timing algorithm or RFID hardware contract.
 
-- To be discussed.
+## Headless control and management interfaces
 
-### Technology and framework choices
+The headless application should expose multiple ways to inspect and control the running system.
 
-- To be discussed.
+Initial interface ideas:
 
-### Project dashboard and documentation
+1. a local interactive console/shell;
+2. a shell/terminal interface reachable through a remote terminal connection;
+3. a machine-readable API, with JSON as an initial candidate representation.
 
-- Explore a GitHub Pages dashboard for this meta repository.
-- Use the central `brainboxemb.dashboard` as a visual and structural reference rather than inventing an unrelated presentation style.
-- Possible dashboard content includes planning progress, document navigation, decisions, collected references, and links to related implementation repositories.
-- The exact information model, generation approach, and scope are still open questions; this is not yet an implementation decision.
+Possible GUI or other operator applications should connect through a defined application interface rather than require the core to have a graphical desktop environment.
 
-### Open questions
+Questions to resolve:
+
+- Can the local and remote shell use one shared command model?
+- Can the API expose the same command/query model where appropriate?
+- Which interfaces are always enabled and which are optional modules?
+- How are authentication, authorization, and secure transport handled for remote access?
+- Is the future GUI a separate software item/repository or one module in a larger product repository?
+
+## Backoffice communication
+
+The waypoint software communicates with a backoffice system.
+
+RabbitMQ is one intended communication mechanism and should be investigated as a transport/integration option.
+
+The architecture should avoid unnecessarily coupling the domain model to one transport so other communication methods can be supported when needed.
+
+Topics to explore:
+
+- connection lifecycle and reconnect behaviour;
+- message contracts and versioning;
+- acknowledgement and delivery semantics;
+- retry and dead-letter behaviour;
+- ordering expectations;
+- offline queueing/local buffering;
+- idempotency and duplicate delivery;
+- configuration of one or multiple backoffice destinations;
+- observability of communication health.
+
+## Platform abstraction
+
+A platform abstraction boundary is likely needed because not all facilities and hardware are present on every supported platform.
+
+Examples:
+
+- RFID hardware may only be attached on a production waypoint device;
+- GPIO or other Raspberry Pi-specific facilities are unavailable on a normal development PC;
+- development/test environments need simulated or fake implementations;
+- deployment and service-management behaviour differs between Windows and Linux.
+
+The abstraction should make normal development and automated tests possible without production hardware.
+
+Questions to resolve:
+
+- Which capabilities belong behind platform interfaces versus device-specific interfaces?
+- Should hardware simulation be part of the generic framework?
+- How should optional capabilities be discovered and reported at runtime?
+- How much Raspberry Pi-specific code should exist in the generic repository?
+
+## Modularity and public/private boundaries
+
+The project should remain usable as a generic framework while allowing parts of a later complete application to be developed privately/proprietarily.
+
+Potential implications to explore:
+
+- define stable module/service interfaces rather than allowing implementation details to spread through the codebase;
+- keep generic contracts reusable;
+- allow selected implementations to live in separate private repositories;
+- ensure a complete application can compose public and private modules cleanly;
+- avoid designing public components around assumptions that only exist in the private product.
+
+Logging and backoffice communication were specifically identified as areas that may eventually have private/product-specific implementation work. The exact split is still open and should be designed deliberately rather than moved between repositories ad hoc.
+
+Questions to resolve:
+
+- Which modules are generic contracts and which are default implementations?
+- Does the public project provide usable reference implementations for all important contracts?
+- How are private modules integrated during build, test, and release?
+- What dependency direction prevents the generic framework from depending on proprietary modules?
+
+## Logging and observability
+
+Use a logging framework rather than direct ad-hoc console output.
+
+Later design should determine:
+
+- logging facade/framework choice;
+- configuration model;
+- console/file/system logging targets;
+- per-waypoint/logical-system context;
+- log rotation and retention;
+- structured logging where useful;
+- separation between normal logs, audit information, metrics, and timing observations;
+- behaviour on storage-constrained Raspberry Pi systems.
+
+The Java logging stack is not selected yet.
+
+## Testing strategy
+
+Automated testing is expected from the start.
+
+Desired layers include:
+
+- unit tests;
+- integration tests;
+- later, where useful, hardware or deployment-level tests.
+
+GitHub Actions is intended for build and test automation.
+
+The CI pipeline should account for the fact that integration tests may become significantly slower than normal unit tests.
+
+Possible model to investigate:
+
+- fast build + unit-test checks on every pull request;
+- a separate integration-test job or workflow;
+- selective integration tests on normal PRs where feasible;
+- broader integration suites on merge, schedule, or explicit request;
+- hardware-specific tests separated from tests that can run on hosted GitHub runners.
+
+The exact pipeline is not yet decided.
+
+## Build, versioning, and deployment
+
+Java is selected as the language direction, but the Java release and build tooling still need evaluation.
+
+Potential early development milestone:
+
+- create the smallest runnable application;
+- give it an explicit software version;
+- make that version queryable through a simple interface;
+- then incrementally introduce the architectural building blocks.
+
+This could become the first step in a staged software plan rather than attempting the complete architecture in the first implementation.
+
+Longer-term deployment direction:
+
+- automate build/package creation;
+- automate testing through GitHub;
+- eventually support automated deployment of the application to a Raspberry Pi target.
+
+Questions to resolve:
+
+- Java version/LTS baseline;
+- Maven versus Gradle or another build approach;
+- packaging format and runtime distribution;
+- whether to ship a bundled Java runtime;
+- service installation/startup model on Linux/Raspberry Pi;
+- safe update/rollback strategy;
+- how deployment credentials and device identities are managed.
+
+## Documentation model
+
+A deliberate software documentation set is wanted rather than putting everything in one architecture document.
+
+### Project-level software documentation
+
+Potential documents:
+
+- **Requirements** — system-level functional and non-functional requirements.
+- **Software architecture** — system decomposition, architectural principles, boundaries, runtime topology, major interfaces, and cross-cutting concerns.
+- **Software development** — development environment, tooling, repository conventions, Git/PR workflow, build tooling, testing approach, coding conventions, and local developer setup.
+- **Software plan** — staged implementation approach and major development increments.
+- **Software planning** — tracked roadmap/milestones derived from the plan; exact distinction from the software plan still needs refinement.
+
+The software plan could act as the higher-level anchor for a deliberately staged implementation, for example beginning with a minimal versioned executable before adding complex capabilities.
+
+### Software-item documentation
+
+In addition to system-level documentation, individual software items may need their own documentation.
+
+Possible software items include:
+
+- headless core application;
+- GUI/operator application;
+- RFID/device integration;
+- backoffice communication components;
+- platform-specific adapters;
+- reusable framework modules.
+
+Each relevant software item could have its own focused requirements/design/interface documentation while remaining linked to the system-level architecture.
+
+The exact document hierarchy and naming convention still need to be designed.
+
+## Architecture documentation and diagrams
+
+Architecture should be documented visually as well as textually.
+
+Candidate approaches:
+
+- Mermaid for diagrams that work naturally as text in Markdown;
+- draw.io for diagrams that need richer manual layout;
+- preferably generated or assisted diagrams where practical, potentially using Python, to avoid repetitive manual alignment/editing work.
+
+A useful principle to investigate is keeping authoritative diagram information in a text-reviewable form where possible while using richer generated outputs for presentation when needed.
+
+Questions to resolve:
+
+- Which diagram types are required: system context, containers/components, deployment, data flow, sequence, state, interface/dependency views?
+- Can Mermaid cover most architecture views acceptably?
+- Can draw.io files be generated or updated predictably from Python when richer diagrams are needed?
+- What belongs in source-controlled architecture documentation versus generated project-dashboard content?
+
+## Agent-driven development workflow
+
+Keep an agent plan separate from the software plan.
+
+Current intended distinction:
+
+- the **software plan** describes how the software itself is expected to evolve;
+- the **agent plan** breaks the current work into executable coordination steps for coding agents/chat sessions;
+- detailed work and evidence for the active step live primarily in its pull request rather than turning the long-term agent plan into a detailed activity log.
+
+The repository's normal Git workflow should follow the PR-first approach established for the project: work is performed on a numbered feature branch attached to a draft pull request and merged only when the step is ready.
+
+## Project dashboard and documentation
+
+Explore a GitHub Pages dashboard for this meta repository.
+
+Ideas:
+
+- use the central `brainboxemb.dashboard` as a visual and structural reference rather than inventing an unrelated presentation style;
+- show planning progress;
+- provide document navigation;
+- surface decisions and open topics;
+- index collected reference material;
+- link to related implementation repositories when those are created;
+- potentially expose high-level software-plan/agent-plan progress without duplicating their authoritative Markdown content.
+
+The exact information model, generation approach, and scope are still open questions; this is not yet an implementation decision.
+
+## Reporting and exports
+
+Still to be discussed.
+
+Potential future topics include operational reports, diagnostic exports, backoffice reconciliation data, and support bundles, but no format or requirement is defined yet.
+
+## Technology choices still open
+
+Known direction:
+
+- Java application;
+- headless-first architecture;
+- Windows, Linux, and Raspberry Pi Zero-class target environments;
+- GitHub Actions for automated build/test;
+- unit and integration testing;
+- RabbitMQ as at least one backoffice communication option;
+- a real logging framework;
+- APIs/interfaces that permit multiple operator/control clients.
+
+Still to select or validate:
+
+- Java version;
+- Maven/Gradle/build tooling;
+- logging stack;
+- API technology/protocol;
+- remote shell technology;
+- configuration format/library;
+- dependency injection/module model, if any;
+- persistence approach;
+- RabbitMQ client and message conventions;
+- GUI technology;
+- packaging/deployment model;
+- diagram tooling.
+
+## Open questions
 
 - Which source documents already exist and should be collected first?
 - Which terminology in those documents should become project terminology, and which is specific to a source system?
 - Which concerns belong in a reusable framework and which belong in a concrete application built on top of it?
+- What exactly defines one logical `waypoint system` inside a multi-system runtime?
+- What timing precision and clock-synchronisation guarantees are actually required?
+- How should a waypoint continue operating when backoffice connectivity is lost?
+- What is the expected RFID hardware and what abstraction can remain hardware-independent?
+- Which functionality must remain usable on the lowest-spec Raspberry Pi target?
+- Which modules need to be public/generic and which may eventually have private implementations?
+- Which command/query capabilities should be common across console, remote shell, API, and future GUI clients?
 - What information would be most useful on a project-specific meta dashboard, and which information should remain in Markdown only?
+- What is the intended distinction between `software plan` and `software planning`, or should these ultimately be one document?
 
 ## Decision candidates
 
-None yet.
+Possible candidates for later formalisation, not yet approved decisions:
+
+- Java as the primary implementation language.
+- Headless core as the primary runtime model.
+- Support for Windows, Linux, and Raspberry Pi Zero-class systems.
+- Multiple logical waypoint systems per running core application.
+- Multiple external control/operator clients per running core application.
+- RFID as the participant observation mechanism at waypoints.
+- RabbitMQ as one supported backoffice transport.
+- A platform/device abstraction layer for unavailable or platform-specific capabilities.
+- Unit and integration tests as first-class development practices.
+- GitHub Actions as the initial CI platform.
+- Separate system-level and software-item-level documentation.
 
 When a brainstorm topic is mature enough to become authoritative, record the promotion explicitly and link to the resulting document or decision record rather than silently deleting its history here.
