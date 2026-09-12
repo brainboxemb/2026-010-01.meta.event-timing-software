@@ -109,7 +109,7 @@ At closure:
 
 ## AP-2 — Define reusable Java build/test toolchain baseline
 
-Status: in progress — PR #3
+Status: completed — PR #3
 
 Goal: establish the generic Java/Maven engineering toolchain before the first SI-01 implementation repository is bootstrapped.
 
@@ -143,6 +143,26 @@ Exit criteria:
 - no timing-domain/product behaviour is moved into generic tooling;
 - dedicated self-hosted infrastructure remains optional until justified;
 - generated SDE documentation is reviewable and green.
+
+### AP-2 closure evidence
+
+PR #3 established `13-SDE-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
+
+At closure:
+
+- build/test roles are separated from physical machines;
+- GitHub-hosted Linux is the intended canonical build/artifact producer;
+- GitHub-hosted Windows is the compatibility build/test and later canonical-artifact smoke environment;
+- the Windows developer workstation remains the interactive development/demo environment;
+- the original Raspberry Pi Zero is a target execution/resource/HIL environment, not the normal source-build machine;
+- Maven Wrapper is the repository-owned Maven entry point for Windows and Linux consumers;
+- Java SE 8 remains the canonical source/API/bytecode baseline until target evidence supports a later upgrade;
+- the normal Java artifact is expected to remain platform-neutral unless a real native/platform dependency requires an adapter-specific artifact;
+- Docker/Compose is deliberately excluded from fast Java compile/unit-test paths and reserved for meaningful external services;
+- `tool.java-project` is defined as reusable Java engineering tooling, with timing-domain, Pi-image and proprietary product logic explicitly excluded;
+- reusable workflow consumers should pin a deliberate version/immutable ref rather than follow an unversioned moving branch;
+- dedicated self-hosted build/test hardware is deferred until external services, HIL, endurance or target orchestration demonstrate a concrete need;
+- the generated documentation set includes the Java toolchain SDE and was built successfully from the PR head.
 
 ## AP-3 — Implement reusable Java toolchain repository
 
