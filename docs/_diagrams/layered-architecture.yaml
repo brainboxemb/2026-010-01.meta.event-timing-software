@@ -139,12 +139,12 @@ edges:
 
 - from: app-command-query
   to: registration-service
-  from_anchor: {side: bottom, position: 0.22}
+  from_anchor: {side: bottom, position: 0.222222}
   to_anchor: {side: top, position: 0.50}
 
 - from: app-command-query
   to: start-time-service
-  from_anchor: {side: bottom, position: 0.85}
+  from_anchor: {side: bottom, position: 0.847222}
   to_anchor: {side: top, position: 0.15}
 
 - from: app-state
@@ -171,12 +171,12 @@ edges:
 - from: start-time-service
   to: domain-model
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.25}
+  to_anchor: {side: top, position: 0.238095}
 
 - from: ready-team-service
   to: domain-model
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.78}
+  to_anchor: {side: top, position: 0.761905}
 
 - from: race-data-service
   to: domain-model
@@ -186,14 +186,14 @@ edges:
 - from: persistence
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.16}
+  to_anchor: {side: top, position: 0.085227}
 
 - from: backoffice
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.460227}
 
 - from: device-integration
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.84}
+  to_anchor: {side: top, position: 0.835227}
