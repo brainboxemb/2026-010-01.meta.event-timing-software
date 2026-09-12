@@ -1,5 +1,5 @@
 status: working estimate / non-authoritative
-start_date: 2026-09-12
+start_date: "2026-09-12"
 cadence_project_days_per_week: 1.0
 planning_reserve_fraction: 0.25
 active_step: 2
