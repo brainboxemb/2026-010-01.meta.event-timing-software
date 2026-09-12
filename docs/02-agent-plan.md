@@ -166,14 +166,14 @@ At closure:
 
 ## AP-3 — Implement reusable Java toolchain repository
 
-Status: not started
+Status: completed — `brainboxemb/tool.java-project` PR #1
 
 Goal: realise the AP-2 baseline as a reusable public Java engineering-tool repository before SI-01 becomes its first product consumer.
 
-Working repository name:
+Repository:
 
 ```text
-tool.java-project
+brainboxemb/tool.java-project
 ```
 
 Expected direction:
@@ -190,7 +190,7 @@ Expected direction:
 
 Deliverable:
 
-> A versioned reusable Java toolchain with its own green CI and a minimal generic consumer/fixture that proves the workflow can be adopted independently of SI-01.
+> A reusable Java toolchain with its own green CI and a minimal generic consumer/fixture that proves the workflow can be adopted independently of SI-01.
 
 Exit criteria:
 
@@ -202,19 +202,40 @@ Exit criteria:
 - no SI-01 source is required to test the generic toolchain;
 - the toolchain is ready for SI-01 to become its first real consumer.
 
+### AP-3 closure evidence
+
+`tool.java-project` PR #1 was merged as commit `5a7135194b94644129d05a5f4a8ceffc5de499bf`.
+
+At closure:
+
+- the repository contains `README.md`, `AGENTS.md`, `CHANGELOG.md` and consumer documentation;
+- a domain-free runnable Java fixture verifies the toolchain without SI-01 source;
+- hosted CI uses Eclipse Temurin `8.0.504+1`, Java SE 8, Maven 3.9.16 and Maven Wrapper 3.3.4;
+- Maven distribution checksum validation is configured;
+- Linux Ubuntu 24.04 is the canonical artifact producer;
+- Windows 2025 independently builds/tests the same source;
+- a separate Windows job downloads and successfully executes the exact JAR produced by the Linux canonical build;
+- Linux evidence records test reports and build provenance, including actual checked-out SHA plus PR head/base SHA where applicable;
+- reusable-workflow action dependencies are pinned to immutable commit SHAs;
+- the PR self-test and the post-merge `main` self-test are green across Linux canonical build, Windows compatibility build and Windows canonical-artifact smoke;
+- pre-v1 consumers are instructed to pin the reusable workflow to an immutable full commit SHA rather than follow `main`;
+- a moving `v1` tag/release policy remains deliberately deferred until a real external consumer has exercised the workflow contract;
+- Docker remains outside the fast Java build/unit-test path and may be introduced later only where an external integration service justifies it.
+
 ## AP-4 — Bootstrap the public SI-01 implementation repository
 
-Status: not started
+Status: next
 
-Goal: after AP-1 through AP-3 are accepted, create the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the proven reusable Java toolchain.
+Goal: create the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the proven reusable Java toolchain.
 
 Expected direction:
 
 - create the repository through the normal issue → branch → draft PR workflow;
-- consume the versioned Java toolchain rather than inventing CI/build conventions locally;
+- consume `brainboxemb/tool.java-project` at immutable commit `5a7135194b94644129d05a5f4a8ceffc5de499bf` for the first consumer proof;
 - establish the SDE repository baseline (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
 - include the Maven Wrapper in the implementation repository;
 - create the Maven/Java 8 framework skeleton from the documented component architecture;
+- prove the clean-checkout consumer path through the reusable Java workflow;
 - keep detailed implementation work/evidence in the implementation repository PR;
 - feed material architecture/process/toolchain corrections back to the appropriate coordination/tool repository through separate scoped work when needed.
 
