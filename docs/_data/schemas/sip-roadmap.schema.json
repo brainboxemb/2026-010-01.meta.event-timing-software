@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/sip-roadmap.schema.json",
+  "title": "SIP roadmap planning data",
+  "type": "object",
+  "required": ["status", "start_date", "cadence_project_days_per_week", "planning_reserve_fraction", "steps"],
+  "properties": {
+    "status": {"type": "string"},
+    "start_date": {"type": "string", "format": "date"},
+    "cadence_project_days_per_week": {"type": "number", "exclusiveMinimum": 0},
+    "planning_reserve_fraction": {"type": "number", "minimum": 0},
+    "active_step": {"type": "integer", "minimum": 1},
+    "documentation_maturity": {"type": "object"},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "steps": {
+      "type": "object",
+      "patternProperties": {
+        "^[1-9][0-9]*$": {"$ref": "#/$defs/step"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["estimate_project_days", "workstream", "docs"],
+      "properties": {
+        "estimate_project_days": {"type": "integer", "minimum": 1},
+        "workstream": {"type": "string"},
+        "note": {"type": "string"},
+        "docs": {
+          "type": "object",
+          "required": ["requirements", "idd", "design", "verification"],
+          "properties": {
+            "requirements": {"$ref": "#/$defs/docGate"},
+            "idd": {"$ref": "#/$defs/docGate"},
+            "design": {"$ref": "#/$defs/docGate"},
+            "verification": {"$ref": "#/$defs/docGate"}
+          },
+          "additionalProperties": false
+        },
+        "documents": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/documentIndicator"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "docGate": {
+      "type": "object",
+      "required": ["level", "scope"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["outline", "working", "review", "accepted"]
+        },
+        "scope": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "documentIndicator": {
+      "type": "object",
+      "required": ["name", "maturity", "completeness"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "title": {"type": "string"},
+        "maturity": {
+          "type": "string",
+          "enum": ["outline", "working", "review", "accepted"]
+        },
+        "completeness": {"type": "integer", "minimum": 0, "maximum": 100}
+      },
+      "additionalProperties": false
+    }
+  }
+}
