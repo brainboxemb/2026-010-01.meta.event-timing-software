@@ -16,9 +16,9 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts/terminology such as registration assets/sources, locations, source sequences, team/tag identity and reference data, while keeping real deployment identities private.
 - [`docs/04-UC-system-use-cases.md`](docs/04-UC-system-use-cases.md) — system-level operational use cases connecting domain goals to later requirements, interfaces and verification scenarios.
-- [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level phased software development plan.
-- [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence, scope and exit criteria.
-- [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — common development environment, GitHub/AI workflow and repository conventions.
+- [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level development strategy: objectives, broad phases, risks, assumptions, resources and major unknowns.
+- [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
+- [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — concrete engineering environment: repositories, GitHub workflow, tooling, CI, generated-output and development-host conventions.
 - [`docs/30-SSAD-software-system-architecture.md`](docs/30-SSAD-software-system-architecture.md) — software-item register, interface catalogue and software-system architecture working draft.
 - [`docs/31-01-SAD-timing-application-architecture.md`](docs/31-01-SAD-timing-application-architecture.md) — software item 01, headless timing application architecture.
 - [`docs/31-01-SDD-01-timing-system-design.md`](docs/31-01-SDD-01-timing-system-design.md) — software item 01 detailed timing-system design.
@@ -28,7 +28,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/31-01-SDD-05-backoffice-transport-design.md`](docs/31-01-SDD-05-backoffice-transport-design.md) — software item 01 transport-independent backoffice design with lightweight socket-loop and RabbitMQ adapters.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
-- [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy including Pi Zero/resource and fault-injection evidence.
+- [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model including Pi Zero/resource and fault-injection verification.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
 
@@ -96,15 +96,15 @@ The project intentionally separates:
 - **brainstorm** — ideas, candidate requirements, alternatives and unresolved questions;
 - **domain baseline** — supplied domain facts/terminology that later requirements/design must preserve or explicitly revise;
 - **use cases** — externally meaningful operational goals and scenarios used as input to requirements/interfaces and later verification;
-- **SDP** — overall development approach and phased evolution;
-- **SIP** — concrete implementation sequence and exit criteria;
-- **SDE** — common tooling, repository and development-process environment;
+- **SDP** — development management view: objectives, broad approach/phases, risks, assumptions, required resources/environments and major unknowns;
+- **SIP** — implementation execution view: ordered steps, concrete deliverables, demonstrations and exit evidence;
+- **SDE** — engineering-environment view: repository layout, GitHub/branch/PR workflow, tooling, CI, generated artifacts, developer/target environment conventions;
 - **system requirements / SSAD / IDDs** — software-system-level behaviour, architecture and interfaces;
 - **software-item SRD / SAD / SDD** — requirements, architecture and detailed design for each software item;
-- **SVP** — system-level verification strategy and evidence model;
+- **SVP** — verification strategy, levels/test profiles and evidence model;
 - **agent plan (`AP-*`)** — coordination steps for work performed in this meta repository and across agent/chat sessions.
 
-Detailed implementation evidence for an active software step should live primarily in that step's pull request rather than turning long-term planning documents into activity logs.
+The SDP should not duplicate the detailed SIP sequence, and the SDE should not become a second development plan. Detailed implementation evidence for an active software step should live primarily in that step's pull request.
 
 ## Traceability direction
 
