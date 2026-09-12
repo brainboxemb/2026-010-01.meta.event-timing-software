@@ -27,16 +27,18 @@ Software ideas, possible requirements, technology choices, architecture options,
 
 Stable domain facts/terminology supplied by project sources or the user may be consolidated in `docs/03-domain-baseline.md`. That document is not itself a formal requirements specification; later SRDs/IDDs/designs must preserve or explicitly revise those facts. Apply the public/private boundary above when consolidating domain knowledge.
 
+System-level operational goals and actor scenarios may be consolidated in `docs/04-UC-system-use-cases.md`. Use cases are inputs to later requirements/interfaces and verification; they are not themselves implementation design or test cases.
+
 Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
 
-Working drafts such as the SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
+Working drafts such as the UC, SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
 
 ## Document naming and ordering
 
 Use the repository's numbered document families. Do not add new unnumbered software documents when an existing family applies.
 
 ```text
-00-09  working context / brainstorm / handoff / agent coordination / domain baseline
+00-09  working context / brainstorm / handoff / agent coordination / domain baseline / use cases
 10-19  development planning and development environment
 20-29  requirements / SRDs
 30-39  architecture and detailed design
@@ -44,7 +46,7 @@ Use the repository's numbered document families. Do not add new unnumbered softw
 50-59  verification and validation planning
 ```
 
-Use established abbreviations when applicable, including `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, and `SVP`.
+Use established abbreviations when applicable, including `UC`, `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, and `SVP`.
 
 When a software-item number is used, keep it stable across that software item's requirements/design documents.
 
@@ -69,6 +71,7 @@ docs/00-brainstorm.md                              ideas, candidate requirements
 docs/01-handoff.md                                 reusable session handoff
 docs/02-agent-plan.md                              AP-* meta-project/agent work plan and progress
 docs/03-domain-baseline.md                         supplied domain facts/terminology and unresolved mappings
+docs/04-UC-system-use-cases.md                     system operational goals/use cases and alternative flows
 docs/10-SDP-software-development-plan.md           high-level phased software development
 docs/11-SIP-software-implementation-planning.md    concrete software implementation sequence
 docs/12-SDE-software-development-environment.md    common tooling/GitHub/AI/repository workflow
@@ -84,7 +87,7 @@ CHANGELOG.md                                       notable repository changes
 
 Future system-level IDDs in the `40-49` family own interface definitions. Software-item SRDs may reference applicable IDD obligations but should not duplicate interface definitions.
 
-When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them. A material conflict with `03-domain-baseline.md` must be made explicit rather than silently designing around it.
+When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them. A material conflict with `03-domain-baseline.md` or an established use-case goal must be made explicit rather than silently designing around it.
 
 ## Working method
 
@@ -92,13 +95,14 @@ When documents disagree, prefer the more specific source for that topic. Do not 
 2. Read `docs/01-handoff.md` when continuing work from another session.
 3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
 4. Read `docs/03-domain-baseline.md` when work depends on domain identifiers, registration semantics, tag/team identity, locations, or source sequencing.
-5. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
-6. Read the SSAD/software-item design and SVP relevant to the current work.
-7. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
-8. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
-9. Keep research and verification evidence traceable to its source.
-10. Update the plan when a step is completed, materially changed, or blocked.
-11. Keep implementation details in the future implementation repository rather than duplicating them here.
+5. Read `docs/04-UC-system-use-cases.md` when work changes externally meaningful system behaviour, actor flows, failure/recovery scenarios or system-test intent.
+6. Read `docs/12-SDE-software-development-environment.md` before changing repository/workflow/tooling conventions.
+7. Read the SSAD/software-item design and SVP relevant to the current work.
+8. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
+9. Use the SDP for high-level staged evolution and the SIP for the current software implementation sequence.
+10. Keep research and verification evidence traceable to its source.
+11. Update the plan when a step is completed, materially changed, or blocked.
+12. Keep implementation details in the future implementation repository rather than duplicating them here.
 
 ## Pull-request-first workflow
 
@@ -130,7 +134,7 @@ When private/proprietary details are present in the working conversation, use th
 
 ## Document lifecycle
 
-While the project is consolidating source/domain knowledge, design documents may remain `working draft / non-authoritative`.
+While the project is consolidating source/domain knowledge, use cases and design documents may remain `working draft / non-authoritative`.
 
 Preferred future lifecycle:
 
