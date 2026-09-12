@@ -12,4 +12,6 @@ The repository is currently in its planning and research phase.
 - Persistent agent guidance.
 - Agent work plan and reusable handoff document.
 - Brainstorm document for early software ideas and unresolved questions.
-- Reference-material index and collection area.
+- Initial software architecture sketch with service, status, platform/device, RFID, CAN, persistence, and interface boundaries.
+- Initial high-level software plan and concrete software planning roadmap.
+- Reference-material index and collection area, including an illustrative layered embedded architecture reference.
