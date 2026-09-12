@@ -141,7 +141,7 @@ A clean public Java/Maven repository that can be cloned, bootstrapped, built and
 
 ### Demonstration
 
-From a clean checkout:
+From a clean checkout, bootstrap the pinned tooling, run the canonical Maven verify/build, produce the framework and app artifacts, start the app, show build/version identity, and shut it down cleanly.
 
 ```text
 bootstrap project tooling
@@ -157,8 +157,6 @@ run the app artifact
     -> build/version identity is visible
     -> application shuts down cleanly
 ```
-
-This demonstration proves that the repository skeleton is a real runnable software baseline. Dependency-direction and architecture rules are verified as exit evidence rather than being the headline demonstration.
 
 ### Evidence / exit criteria
 
