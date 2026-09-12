@@ -14,11 +14,14 @@ Ideas and unresolved software topics belong in [`docs/brainstorm.md`](docs/brain
 - [`docs/agent-plan.md`](docs/agent-plan.md) — current phased meta-project/agent plan and progress source of truth.
 - [`docs/handoff.md`](docs/handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/brainstorm.md`](docs/brainstorm.md) — working area for ideas, questions, alternatives, and early software thoughts.
-- [`docs/software-architecture-sketch.md`](docs/software-architecture-sketch.md) — non-authoritative first architecture sketch used to prepare implementation.
+- [`docs/software-architecture-sketch.md`](docs/software-architecture-sketch.md) — non-authoritative first system architecture sketch used to prepare implementation.
+- [`docs/timing-system-architecture.md`](docs/timing-system-architecture.md) — detailed non-authoritative `TimingSystem` architecture, pseudocode, device/network flows, and candidate requirements.
 - [`docs/software-plan.md`](docs/software-plan.md) — staged high-level software evolution plan.
 - [`docs/software-planning.md`](docs/software-planning.md) — concrete current sequence of software increments.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
+
+Generated architecture diagrams for an active pull request are published to `dev/pr-<N>/docs`; merged/main documentation is published to `prod/docs`. This keeps source documents reviewable on the normal branch while making generated SVG/draw.io output directly inspectable during review.
 
 ## Planning levels
 
