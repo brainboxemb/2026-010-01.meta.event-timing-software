@@ -52,11 +52,19 @@ The software/domain structure will be discussed next. Until then, use the sectio
 
 - To be discussed.
 
+### Project dashboard and documentation
+
+- Explore a GitHub Pages dashboard for this meta repository.
+- Use the central `brainboxemb.dashboard` as a visual and structural reference rather than inventing an unrelated presentation style.
+- Possible dashboard content includes planning progress, document navigation, decisions, collected references, and links to related implementation repositories.
+- The exact information model, generation approach, and scope are still open questions; this is not yet an implementation decision.
+
 ### Open questions
 
 - Which source documents already exist and should be collected first?
 - Which terminology in those documents should become project terminology, and which is specific to a source system?
 - Which concerns belong in a reusable framework and which belong in a concrete application built on top of it?
+- What information would be most useful on a project-specific meta dashboard, and which information should remain in Markdown only?
 
 ## Decision candidates
 
