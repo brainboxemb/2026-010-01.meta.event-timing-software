@@ -150,7 +150,6 @@ edges:
   to: registration-service
 - from: app-command-query
   to: start-time-service
-  label: start-time updates
   route: [{x: 565, y: 500}, {x: 750, y: 500}, {x: 750, y: 560}]
 - from: app-command-query
   to: ready-team-service
@@ -160,7 +159,6 @@ edges:
   route: [{x: 190, y: 500}, {x: 190, y: 737}]
 - from: registration-service
   to: start-time-service
-  label: start procedure
   route: [{x: 565, y: 638}]
 - from: registration-service
   to: domain-model
@@ -183,11 +181,9 @@ edges:
   route: [{x: 565, y: 500}, {x: 565, y: 800}, {x: 380, y: 800}]
 - from: backoffice
   to: core-runtime
-  label: inbound updates
   route: [{x: 565, y: 805}, {x: 565, y: 495}]
 - from: device-integration
   to: core-runtime
-  label: observations/events
   route: [{x: 935, y: 805}, {x: 935, y: 495}]
 - from: persistence
   to: platform-primitives
