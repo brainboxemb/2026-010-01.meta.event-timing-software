@@ -14,6 +14,7 @@ Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00
 - [`docs/00-brainstorm.md`](docs/00-brainstorm.md) — working area for ideas, questions, alternatives, and early software thoughts.
 - [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
+- [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts/terminology such as registration-system IDs, locations, source sequences, team/tag identity and reference data.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — high-level phased software development plan.
 - [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence, scope and exit criteria.
 - [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — common development environment, GitHub/AI workflow and repository conventions.
@@ -47,7 +48,7 @@ Software documents use numeric prefixes so GitHub presents them predictably. Est
 Current top-level document families:
 
 ```text
-00-09  working context / brainstorm / handoff / agent coordination
+00-09  working context / brainstorm / handoff / agent coordination / domain baseline
 10-19  development planning and development environment
 20-29  requirements / SRDs
 30-39  architecture and detailed design
@@ -89,6 +90,7 @@ The software-item number therefore does not change merely because another SDD is
 The project intentionally separates:
 
 - **brainstorm** — ideas, candidate requirements, alternatives and unresolved questions;
+- **domain baseline** — supplied domain facts/terminology that later requirements/design must preserve or explicitly revise;
 - **SDP** — overall development approach and phased evolution;
 - **SIP** — concrete implementation sequence and exit criteria;
 - **SDE** — common tooling, repository and development-process environment;
@@ -104,7 +106,8 @@ Detailed implementation evidence for an active software step should live primari
 The intended chain is:
 
 ```text
-system requirement
+system/domain source
+  -> system requirement
   -> system IDD where applicable
   -> software-item SRD
   -> SAD / SDD
