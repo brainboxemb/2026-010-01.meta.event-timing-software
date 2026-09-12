@@ -87,7 +87,6 @@ jobs:
           printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
 
           git switch --orphan generated-docs
-          git rm -rf .
           git clean -fdx
 
           cp -a "$publish_dir/architecture" ./architecture
