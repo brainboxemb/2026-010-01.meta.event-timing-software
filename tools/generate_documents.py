@@ -31,13 +31,14 @@ REQUIREMENTS_DOCUMENTS = [
 ARCHITECTURE_DOCUMENTS = [
     "30-SSAD-software-system-architecture.md",
     "31-01-SAD-timing-application-architecture.md",
-    "31-01-SDD-01-timing-system-design.md",
-    "31-01-SDD-02-data-and-display-design.md",
     "31-01-SDD-03-java-component-design.md",
-    "31-01-SDD-04-runtime-topology-and-configuration.md",
-    "31-01-SDD-05-backoffice-transport-design.md",
     "31-02-SAD-gui-application-architecture.md",
     "31-03-SAD-web-operator-application-architecture.md",
+]
+
+DEFERRED_DESIGN_DOCUMENTS = [
+    "31-01-SDD-02-data-and-display-design.md",
+    "31-01-SDD-05-backoffice-transport-design.md",
 ]
 
 INTERFACE_DOCUMENTS = [
@@ -53,6 +54,7 @@ DOCUMENTS = (
     + PLANNING_DOCUMENTS
     + REQUIREMENTS_DOCUMENTS
     + ARCHITECTURE_DOCUMENTS
+    + DEFERRED_DESIGN_DOCUMENTS
     + INTERFACE_DOCUMENTS
     + VERIFICATION_DOCUMENTS
 )
@@ -172,14 +174,14 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "architecture-book.md",
         "Software architecture document set",
-        "Generated review/output book containing the current SSAD and software-item SAD/SDD documents.",
+        "Generated review/output book containing the software-system architecture, software-item architectures, and only currently active focused detailed design.",
         architecture_built,
     )
 
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, interfaces, detailed-design and verification documents.",
+        "Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, deferred design notes, interfaces and verification documents.",
         built,
     )
 
@@ -204,8 +206,13 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Architecture and design", ""])
+    doc_index.extend(["", "## Architecture", ""])
     for name in ARCHITECTURE_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Deferred detailed-design notes", ""])
+    for name in DEFERRED_DESIGN_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
