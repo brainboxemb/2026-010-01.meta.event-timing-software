@@ -81,16 +81,11 @@ nodes:
   label: "ReadyTeamService\nready-team behaviour and ledger semantics"
   kind: service
   layout: {x: 955, y: 585, w: 280, h: 105}
-- id: reference-service
-  group: domain-layer
-  label: "ReferenceDataService\nparticipant / event reference semantics"
-  kind: service
-  layout: {x: 215, y: 710, w: 330, h: 55}
 - id: domain-model
   group: domain-layer
   label: "Domain model + rules\nregistrations • source sequence • start-time values • value objects"
   kind: model
-  layout: {x: 585, y: 710, w: 650, h: 55}
+  layout: {x: 215, y: 710, w: 1020, h: 55}
 - id: persistence
   group: infrastructure-layer
   label: "Persistence / file storage\nrepository + backup / restore implementations"
@@ -154,21 +149,14 @@ edges:
 - from: app-command-query
   to: ready-team-service
   route: [{x: 455, y: 500}, {x: 1095, y: 500}, {x: 1095, y: 560}]
-- from: app-command-query
-  to: reference-service
-  route: [{x: 190, y: 500}, {x: 190, y: 737}]
 - from: registration-service
   to: start-time-service
   route: [{x: 565, y: 638}]
 - from: registration-service
   to: domain-model
-  route: [{x: 520, y: 690}, {x: 650, y: 690}]
 - from: start-time-service
   to: domain-model
 - from: ready-team-service
-  to: domain-model
-  route: [{x: 1095, y: 700}, {x: 1095, y: 705}]
-- from: reference-service
   to: domain-model
 - from: app-state
   to: status-management
