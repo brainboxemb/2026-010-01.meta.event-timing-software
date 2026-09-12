@@ -2,7 +2,11 @@
 
 Status: working draft / non-authoritative
 
-This SDD proposes an initial Java/Maven component structure. Its main purpose is to keep **architectural responsibility**, **Maven modules**, and **Java packages** distinct so layering does not become ambiguous.
+Software item: **SI-01 — Headless Timing Application**
+
+This SDD proposes the initial Java/Maven component structure. Its main purpose is to keep **architectural responsibility**, **Maven modules**, and **Java packages** distinct so layering does not become ambiguous.
+
+The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`.
 
 ## Core rule
 
@@ -22,7 +26,7 @@ Start deliberately small:
 event-timing/
 ├── pom.xml
 ├── timing-api/          public contracts and shared cross-module models
-├── timing-core/         TimingSystem/application/domain behaviour
+├── timing-core/         application/domain behaviour
 ├── timing-runtime/      hosting, routing, scheduling and serialized execution
 ├── timing-adapters/     public/default infrastructure adapters
 ├── timing-testkit/      reusable fakes, stubs and test scenarios
@@ -49,7 +53,7 @@ Possible packages:
 
 Candidate contracts include:
 
-- RFID reader/control and observation ports;
+- RFID antenna/reader control and observation ports;
 - CAN transport/device contracts;
 - display data/session contracts;
 - backoffice/reference-data contracts;
@@ -61,7 +65,7 @@ Keep this module conservative. A class belongs here only because it is an intent
 
 ## `timing-core`
 
-Purpose: timing-system/application behaviour independent from concrete hardware, transport, filesystem and UI technologies.
+Purpose: application/domain behaviour independent from concrete hardware, network, filesystem and UI technologies.
 
 Top-level packages should be organised by **capability**, not by vague technical categories such as one application-wide `service`, `manager`, `impl` or `util` package.
 
@@ -69,15 +73,24 @@ Proposed capability structure:
 
 ```text
 ...timing.core.timingsystem
-    TimingSystem
-    TimingSystemState
+    TimingSystemInstance
+    TimingSystemInstanceId
+    TimingSystemInstanceState
     TimingSystemHandler
+
+...timing.core.registrationsystem
+    RegistrationSystem
+    RegistrationSystemId
+    RegistrationSystemRegistry
+    RegistrationSequence
+    AntennaId
+    AntennaBinding
 
 ...timing.core.registration
     RegistrationService
+    RegistrationRecord
     RegistrationLedger
     RegistrationRepository
-    RegistrationSequence
 
 ...timing.core.readyteam
     ReadyTeamService
@@ -88,6 +101,7 @@ Proposed capability structure:
 
 ...timing.core.rfid
     RfidService
+    TagDecryptor
     TagFilter
     ParticipantResolver
 
@@ -110,14 +124,46 @@ Proposed capability structure:
     StatusService
 ```
 
+### Total system versus registration source
+
+These are different aggregates and the Java model must make that obvious.
+
+```text
+TimingSystemInstance
+  lifecycle / ready-team / start procedure / display / instance state
+       |
+       +-- 1..X RegistrationSystem
+               source identity
+               source sequence
+               source registration file
+               1..X antenna bindings
+```
+
+A `RegistrationSystem` owns **source identity and source-scoped sequence state**. It is not merely a field on `RegistrationRecord`.
+
+The actual registration record capability remains separate:
+
+```text
+RegistrationSystem
+    |
+    | allocates source sequence / selects source repository
+    v
+RegistrationService
+    |
+    v
+RegistrationRecord / RegistrationLedger
+```
+
+This prevents `RegistrationSequence` from accidentally becoming one global or one-total-system counter.
+
 ### Registration and ready-team are deliberately separate
 
 These are different capabilities even though both require traceability and persistence:
 
 ```text
 registration
-  passage / start / manual / penalty / revocation
-  unique sequence
+  passage / start / manual / penalty / revocation / operational registration entries
+  sequence allocated by RegistrationSystem source
   registration ledger
   local result/ranking derivation
 
@@ -128,9 +174,7 @@ readyteam
   feeds current display state
 ```
 
-A keypad action must therefore not create a `RegistrationRecord` merely because it is persisted. It creates a `ReadyTeamEvent` and updates the ready-team projection.
-
-This distinction should remain visible in package names, types, repositories and tests.
+A keypad action must therefore not create a participant/timing `RegistrationRecord` merely because it is persisted. It creates a `ReadyTeamEvent` and updates the ready-team projection.
 
 Dependencies:
 
@@ -138,16 +182,17 @@ Dependencies:
 timing-core -> timing-api
 ```
 
-`timing-core` must not reference HTTP servers, RabbitMQ libraries, a concrete CAN library, Raspberry Pi libraries or proprietary RFID protocol code.
+`timing-core` must not reference HTTP servers, RabbitMQ libraries, concrete CAN libraries, Raspberry Pi libraries or proprietary RFID protocol code.
 
 ## `timing-runtime`
 
-Purpose: host `1..X` logical timing systems and provide non-domain execution/orchestration infrastructure.
+Purpose: host `1..X` complete `TimingSystemInstance` objects and provide non-domain execution/orchestration infrastructure.
 
 Likely packages:
 
 ```text
 ...timing.runtime.bootstrap
+...timing.runtime.configuration
 ...timing.runtime.execution
 ...timing.runtime.routing
 ...timing.runtime.lifecycle
@@ -157,15 +202,17 @@ Likely packages:
 
 Responsibilities include:
 
-- timing-system registry;
-- routing messages to a timing-system instance;
+- application/runtime registry;
+- constructing configured system instances;
+- routing commands/queries to a system instance;
+- routing antenna observations through configured `AntennaBinding` data;
 - ingress queues;
 - logical `SerialExecutor` implementation;
 - scheduling heartbeat/scanner/connectivity messages;
 - runtime lifecycle;
 - runtime-wide status aggregation.
 
-The proposed threading model is **logical serialization per TimingSystem**, not necessarily one OS thread per system. Multiple logical serial executors may use a small shared backing executor on Raspberry Pi Zero.
+The proposed threading model is **logical serialization per `TimingSystemInstance`**, not one OS thread per system, registration source or antenna. Multiple logical serial executors may use a small shared backing executor on Raspberry Pi Zero.
 
 Dependencies:
 
@@ -203,7 +250,7 @@ Production/proprietary adapters should normally live in a private repository rat
 
 Purpose: reusable test components for framework tests, the external reference application and private integration tests.
 
-Expected contents:
+Expected contents include:
 
 ```text
 DirectExecutor
@@ -216,6 +263,7 @@ StubDisplayV1
 StubDisplayV2Session
 StubBackofficeAdapter
 ScenarioBuilder
+TopologyBuilder
 status/registration/ready-team assertions
 ```
 
@@ -230,10 +278,13 @@ Possible packages:
 ...timing.testkit.can
 ...timing.testkit.display
 ...timing.testkit.backoffice
+...timing.testkit.topology
 ...timing.testkit.scenario
 ```
 
-The test-control interface must manipulate the stubs/adapters and still drive the normal application path. It should not mutate domain state directly.
+The test-control interface manipulates stubs/adapters and still drives the normal application path. It must not mutate domain state directly.
+
+A particularly important integration-test use case is constructing a multi-instance, multi-source topology to emulate complete field behaviour towards the backoffice.
 
 ## `timing-app`
 
@@ -244,10 +295,12 @@ It should contain little or no domain logic:
 ```text
 main()
   -> load settings
+  -> validate topology
   -> construct/select adapters
   -> construct runtime
+  -> create configured TimingSystemInstances
+  -> create RegistrationSystems + antenna bindings
   -> start public interfaces
-  -> create configured TimingSystem instances
 ```
 
 The more important external consumer proof belongs in a **separate reference/test repository**.
@@ -267,13 +320,13 @@ Conceptually:
           timing-app
 ```
 
-More precisely, adapters implement API ports and are selected in the composition root. Core behaviour must never depend back outward on a concrete adapter.
+Adapters implement API ports and are selected in the composition root. Core behaviour must never depend back outward on a concrete adapter.
 
 Where an adapter only needs `timing-api`, it should not depend on `timing-core` or `timing-runtime` unnecessarily.
 
 ## Public versus proprietary components
 
-Expected proprietary areas include at least candidates such as:
+Expected proprietary areas include candidates such as:
 
 - production RFID antenna control;
 - production RFID protocol/decryption details;
@@ -282,11 +335,11 @@ Expected proprietary areas include at least candidates such as:
 
 The public framework exposes only the contracts required for those components.
 
-Example:
+Example public contract:
 
 ```java
-// public timing-api
-public interface RfidReaderPort {
+public interface RfidAntennaPort {
+    AntennaId id();
     void powerOn();
     void powerOff();
     void initialise();
@@ -297,7 +350,7 @@ public interface RfidReaderPort {
 Private repository:
 
 ```java
-public final class ProductionRfidReaderAdapter implements RfidReaderPort {
+public final class ProductionRfidAntennaAdapter implements RfidAntennaPort {
     // proprietary hardware/protocol implementation
 }
 ```
@@ -308,26 +361,49 @@ The public framework must not import or compile against that private implementat
 
 Do not make subclassing the primary extension mechanism.
 
-Prefer constructor injection and composition:
+Prefer constructor injection and composition.
+
+Illustrative composition:
 
 ```java
-RegistrationRepository registrations = repositories.registration();
-ReadyTeamEventRepository readyTeamEvents = repositories.readyTeams();
-RfidReaderPort rfid = adapters.rfid();
-DisplaySink display = adapters.display();
+RegistrationSystem sourceA = new RegistrationSystem(
+    RegistrationSystemId.of("A"),
+    sequenceA,
+    registrationRepositoryA,
+    Arrays.asList(rsAntenna1));
 
-TimingSystem system = new TimingSystem(
-    registrations,
-    readyTeamEvents,
-    rfid,
-    display,
+TimingSystemInstance instance = new TimingSystemInstance(
+    instanceId,
+    Arrays.asList(sourceA),
+    readyTeamState,
+    displayService,
     clock,
     statusService);
 ```
 
+The actual constructor surface may use factories/builders to avoid large parameter lists.
+
 No large dependency-injection framework is required initially.
 
 If true runtime plugin discovery later becomes necessary, evaluate `ServiceLoader` or another plugin mechanism as a separate architecture decision. Separate repositories alone do **not** require dynamic plugin loading.
+
+## Settings and composition root
+
+Configuration must describe the runtime topology without naming private Java classes in public source.
+
+A composition/factory layer resolves configured adapter types to actual implementations.
+
+Conceptually:
+
+```java
+interface AdapterFactoryRegistry {
+    RfidAntennaPort createRfid(String adapterType, DeviceSettings settings);
+}
+```
+
+A public distribution can register public/stub factories. A private product repository can register proprietary factories during composition.
+
+The final file format and factory mechanism remain open.
 
 ## External reference/test project
 
@@ -347,6 +423,7 @@ public framework repository
            v
 public reference/test repository
   application composition
+  configurable multi-instance topology
   stub/default components
   integration scenarios
            |
@@ -363,6 +440,7 @@ The reference project should prove:
 - framework artifacts work outside their own reactor;
 - documentation is sufficient for an external consumer;
 - stub components can produce a complete application;
+- multiple system instances and source streams can be configured;
 - system IDDs can be exercised in integration tests;
 - the same extension points are usable by a private repository;
 - no framework source copy/fork is required.
@@ -397,8 +475,10 @@ Useful automated rules can eventually include:
 - `timing-core` does not reference adapter packages;
 - `timing-core` does not reference HTTP/RabbitMQ/CAN implementation libraries;
 - API packages do not depend on implementation packages;
+- `RegistrationSequence` exists at registration-system/source scope, not as one global counter;
+- registration-system topology is not inferred from adapter implementation classes;
 - `registration` does not depend on `readyteam` merely to update a display;
-- `readyteam` does not create registration-domain records;
+- `readyteam` does not create participant/timing registration-domain records;
 - adapters depend inward, never the reverse;
 - testkit is absent from production runtime dependencies unless an explicit demo/test composition includes it.
 
@@ -408,7 +488,8 @@ A Java-8-compatible ArchUnit version can be evaluated later, but Maven dependenc
 
 - final Maven `groupId` and artifact naming convention;
 - whether `timing-api` stays one module or is split after extension contracts stabilise;
-- how application configuration selects adapter implementations;
+- final configuration file format and include/override model;
+- how configuration selects adapter implementations;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between framework/API and private adapters;
 - where the compiled React application belongs;
