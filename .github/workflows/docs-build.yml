@@ -73,11 +73,12 @@ jobs:
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
           test -f bld/docs/documents/31-01-SDD-04-runtime-topology-and-configuration.md
-          test -f bld/docs/documents/31-01-SDD-05-backoffice-rabbitmq-design.md
+          test -f bld/docs/documents/31-01-SDD-05-backoffice-transport-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
           test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
           test -f bld/docs/assets/architecture/software-item-system-overview.svg
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
+          test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
 
       - name: Upload generated documentation
