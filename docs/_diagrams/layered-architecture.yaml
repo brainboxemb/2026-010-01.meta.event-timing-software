@@ -81,9 +81,9 @@ nodes:
   label: "ReadyTeamService\nready-team behaviour and ledger semantics"
   kind: service
   layout: {x: 955, y: 585, w: 280, h: 105}
-- id: event-data-service
+- id: race-data-service
   group: domain-layer
-  label: "EventDataService\nevent • participant/team • tag reference lookup\nreserve-tag mapping semantics"
+  label: "RaceDataService\nrace • participant/team • tag reference lookup\nreserve-tag mapping semantics"
   kind: service
   layout: {x: 215, y: 710, w: 330, h: 55}
 - id: domain-model
@@ -98,7 +98,7 @@ nodes:
   layout: {x: 215, y: 875, w: 330, h: 80}
 - id: backoffice
   group: infrastructure-layer
-  label: "Backoffice integration\nsocket / RabbitMQ\nevent data + start-time updates"
+  label: "Backoffice integration\nsocket / RabbitMQ\nrace data + start-time updates"
   kind: integration
   layout: {x: 585, y: 875, w: 300, h: 80}
 - id: device-integration
@@ -155,7 +155,7 @@ edges:
   to: ready-team-service
   route: [{x: 455, y: 500}, {x: 1095, y: 500}, {x: 1095, y: 560}]
 - from: app-command-query
-  to: event-data-service
+  to: race-data-service
   route: [{x: 190, y: 500}, {x: 190, y: 737}]
 - from: registration-service
   to: start-time-service
@@ -168,7 +168,7 @@ edges:
 - from: ready-team-service
   to: domain-model
   route: [{x: 1095, y: 700}, {x: 1095, y: 705}]
-- from: event-data-service
+- from: race-data-service
   to: domain-model
 - from: app-state
   to: status-management
