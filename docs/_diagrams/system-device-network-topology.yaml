@@ -1,0 +1,129 @@
+diagram:
+  id: system-device-network-topology
+  title: System device and logical interface topology
+  width: 1540
+  height: 900
+  note: Solid relationships show logical system interfaces between endpoints. Intermediate LAN/Wi-Fi equipment is a deployment option, not an IF-03 or IF-09 dependency.
+
+groups:
+  - id: field
+    label: Field timing system
+    kind: layer-application
+    layout: {x: 70, y: 105, w: 650, h: 700}
+  - id: clients
+    label: Network clients
+    kind: layer-presentation
+    layout: {x: 750, y: 105, w: 470, h: 700}
+  - id: external
+    label: External system
+    kind: layer-crosscutting
+    layout: {x: 1250, y: 105, w: 250, h: 700}
+
+nodes:
+  - id: si01
+    label: "SI-01 Headless Timing Application\nauthoritative local timing runtime"
+    kind: core
+    group: field
+    layout: {x: 235, y: 180, w: 330, h: 95}
+
+  - id: rfid
+    label: "RFID subsystem\nreader / antennas"
+    kind: external
+    group: field
+    layout: {x: 115, y: 410, w: 250, h: 85}
+
+  - id: can
+    label: "CAN devices\nkeypad + Display V1"
+    kind: external
+    group: field
+    layout: {x: 410, y: 410, w: 250, h: 85}
+
+  - id: local-storage
+    label: "Local persistent state"
+    kind: storage
+    group: field
+    layout: {x: 260, y: 625, w: 280, h: 75}
+
+  - id: si02
+    label: "SI-02 Desktop GUI\nIP client"
+    kind: client
+    group: clients
+    layout: {x: 805, y: 190, w: 350, h: 75}
+
+  - id: si03
+    label: "SI-03 Web / iPad\nIP client"
+    kind: client
+    group: clients
+    layout: {x: 805, y: 375, w: 350, h: 75}
+
+  - id: display2
+    label: "Smart Display V2\nIP / Wi-Fi client"
+    kind: external
+    group: clients
+    layout: {x: 805, y: 560, w: 350, h: 85}
+
+  - id: network-note
+    label: "Transport path may be direct / same-host / point-to-point\nor use LAN / Wi-Fi infrastructure. A router is not part of the logical interface."
+    kind: interface
+    group: clients
+    layout: {x: 785, y: 690, w: 390, h: 80}
+
+  - id: backoffice
+    label: "Backoffice system"
+    kind: external
+    group: external
+    layout: {x: 1275, y: 345, w: 200, h: 80}
+
+edges:
+  - from: rfid
+    to: si01
+    label: IF-07
+    from_anchor: {side: top, position: 0.50}
+    to_anchor: {side: left, position: 0.65}
+
+  - from: can
+    to: si01
+    label: IF-08
+    from_anchor: {side: top, position: 0.50}
+    to_anchor: {side: right, position: 0.65}
+
+  - from: si01
+    to: local-storage
+    label: local state
+    from_anchor: {side: bottom, position: 0.50}
+    to_anchor: {side: top, position: 0.50}
+
+  - from: si02
+    to: si01
+    label: IF-03
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.25}
+
+  - from: si03
+    to: si01
+    label: IF-03
+    route:
+      - {x: 745, y: 412.5}
+      - {x: 745, y: 227.5}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.50}
+
+  - from: display2
+    to: si01
+    label: IF-09
+    route:
+      - {x: 730, y: 602.5}
+      - {x: 730, y: 251.0}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.75}
+
+  - from: si01
+    to: backoffice
+    label: IF-06
+    dashed: true
+    route:
+      - {x: 690, y: 300}
+      - {x: 1225, y: 300}
+      - {x: 1225, y: 385}
+    from_anchor: {side: right, position: 0.90}
+    to_anchor: {side: left, position: 0.50}

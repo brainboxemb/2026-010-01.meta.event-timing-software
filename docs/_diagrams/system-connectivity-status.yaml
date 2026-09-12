@@ -1,0 +1,101 @@
+diagram:
+  id: system-connectivity-status
+  title: Network connectivity status — separate observations
+  width: 1460
+  height: 780
+  note: Router/AP connectivity is optional and may be N/A for direct or automated-test deployments. Local, external and backoffice connectivity are reported separately.
+
+groups:
+  - id: paths
+    label: Possible local network paths
+    kind: layer-presentation
+    layout: {x: 70, y: 105, w: 600, h: 590}
+  - id: status
+    label: Connectivity status exposed by the system
+    kind: layer-application
+    layout: {x: 710, y: 105, w: 680, h: 590}
+
+nodes:
+  - id: direct-path
+    label: "Direct / development / test IP path\nloopback • same host • point-to-point\nno router required"
+    kind: interface
+    group: paths
+    layout: {x: 120, y: 180, w: 500, h: 100}
+
+  - id: router-path
+    label: "Optional LAN / Wi-Fi router or AP\nfield deployment path\nmay also provide an external uplink"
+    kind: external
+    group: paths
+    layout: {x: 120, y: 355, w: 500, h: 100}
+
+  - id: local-clients
+    label: "SI-02 • SI-03 • Smart Display V2\nuse the available IP path to reach SI-01"
+    kind: client
+    group: paths
+    layout: {x: 120, y: 530, w: 500, h: 90}
+
+  - id: local-ip-status
+    label: "Local IP connectivity\nSI-01 interface/link and local peer reachability"
+    kind: application
+    group: status
+    layout: {x: 760, y: 170, w: 280, h: 95}
+
+  - id: router-status
+    label: "Configured router / AP connectivity\nconnected / associated / reachable\nor N/A when not configured"
+    kind: application
+    group: status
+    layout: {x: 1060, y: 170, w: 280, h: 95}
+
+  - id: external-status
+    label: "External network reachability\noutside the local network / Internet"
+    kind: application
+    group: status
+    layout: {x: 760, y: 380, w: 280, h: 95}
+
+  - id: backoffice-status
+    label: "Backoffice connectivity\nendpoint / transport / session health"
+    kind: application
+    group: status
+    layout: {x: 1060, y: 380, w: 280, h: 95}
+
+  - id: independence-note
+    label: "These states are not interchangeable:\nlocal operation may be healthy while router, external or backoffice connectivity is unavailable."
+    kind: model
+    group: status
+    layout: {x: 810, y: 545, w: 480, h: 80}
+
+edges:
+  - from: direct-path
+    to: local-ip-status
+    label: valid local path
+    dashed: true
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.35}
+
+  - from: router-path
+    to: router-status
+    label: when configured
+    dashed: true
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.65}
+
+  - from: router-path
+    to: external-status
+    label: possible uplink
+    dashed: true
+    from_anchor: {side: right, position: 0.75}
+    to_anchor: {side: left, position: 0.50}
+
+  - from: local-clients
+    to: local-ip-status
+    label: peer reachability
+    dashed: true
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.75}
+
+  - from: external-status
+    to: backoffice-status
+    label: distinct from session health
+    dashed: true
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.50}

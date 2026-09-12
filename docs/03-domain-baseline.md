@@ -215,6 +215,16 @@ RegistrationRecord
 
 Asset and antenna context may additionally be retained where useful for diagnostics/audit, but the exact storage/wire schema is not yet fixed.
 
+## Time semantics
+
+Recorded event time and start-time data need one unambiguous absolute-time meaning independent of how a local clock is displayed.
+
+The working dedicated software value name is `TimingTimestamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. Local time-zone and daylight-saving conversion are presentation/configuration concerns unless a future business rule explicitly depends on a local civil time.
+
+A timestamp is **not** the source-ordering mechanism. Registration source sequence numbers remain the stable ordering/consistency mechanism even if an operating-system wall clock is corrected forwards or backwards.
+
+The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
+
 ## Team number
 
 The decoded participant/team identity contains a team number in the range:
@@ -234,11 +244,15 @@ prefix + team number + postfix
 Known semantics:
 
 - `team number` is `0..999`;
+- prefix semantics distinguish at least normal, reserve and test tag classes;
 - a dedicated prefix indicates that a tag is a reserve tag;
+- a dedicated prefix indicates that a tag is a test tag;
 - there are two physical tags for a team/identity;
 - a postfix distinguishes the two tag copies.
 
 The exact encoded prefix/postfix values, encryption details and protocol representation are proprietary and are not defined here.
+
+A working public semantic representation should preserve the tag class after decoding rather than immediately flattening every tag into one normal participant identity. The exact class/type API remains an implementation/design decision.
 
 ## Reserve tags
 
@@ -247,6 +261,14 @@ Reserve tags require conversion/mapping data supplied by the backoffice.
 The local timing application therefore needs to be able to resolve a decoded reserve-tag identity through locally synchronised reference data before treating it as the intended team identity.
 
 The mapping must remain available locally when live backoffice connectivity is temporarily unavailable, subject to later freshness/validity requirements.
+
+## Test tags
+
+Test tags are a separate RFID tag class identified by their prefix. They are **not** the same concept as software test doubles, stub adapters or synthetic test tooling.
+
+After decoding, SI-01 must be able to distinguish a test tag from both a normal tag and a reserve tag so test-specific behaviour can be applied deliberately. A test tag must not be silently treated as a normal participant tag merely because its decoded payload also contains a team-like number.
+
+The exact behaviour is intentionally not fixed in this domain baseline. It belongs in operational use cases and later requirements, including whether a test tag creates a registration record, affects calculations, is synchronised to backoffice, is allowed in all lifecycle states, and how it is made visible to an operator.
 
 ## Start-time reference data
 
@@ -316,3 +338,4 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 - Which operational events besides `OPEN` must be part of a registration stream (for example close/reinitialisation/configuration changes)?
 - What exact data must an `OPEN` registration entry contain?
 - Are normal, reserve and virtual registration sources treated identically by backoffice synchronisation once their source identity is known?
+- What exact operational behaviour is required for test tags, and which parts deliberately differ from normal and reserve tags?

@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - 'docs/**'
-      - 'tools/generate_diagrams.py'
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_a4_views.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -19,13 +19,13 @@ on:
       - main
     paths:
       - 'docs/**'
-      - 'tools/generate_diagrams.py'
       - 'tools/generate_architecture_diagrams.py'
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_roadmap.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_a4_views.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
@@ -54,16 +54,25 @@ jobs:
       - name: Install documentation dependencies
         run: python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
 
+      - name: Validate current SDD references
+        run: |
+          ! grep -R -n -E '31-01-SDD-02-data-and-display-design\.md|31-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
+
       - name: Generate architecture diagrams
         run: |
-          python tools/generate_diagrams.py
+          eng-docs diagrams \
+            --source docs/_diagrams \
+            --theme docs/_diagram-theme/default.yaml \
+            --out bld/docs/architecture
           python tools/generate_architecture_diagrams.py
           python tools/generate_timing_detail_diagrams.py
           python tools/generate_data_display_diagrams.py
           python tools/generate_system_model_diagrams.py
 
       - name: Generate SIP planning
-        run: python tools/generate_sip_planning.py
+        run: |
+          python tools/generate_sip_planning.py
+          python tools/generate_sip_a4_views.py
 
       - name: Validate generated diagram XML
         run: |
@@ -81,6 +90,8 @@ jobs:
               ET.parse(path)
           for path in Path('bld/docs/planning/steps').glob('*.svg'):
               ET.parse(path)
+          for path in Path('bld/docs/planning/a4').glob('*.svg'):
+              ET.parse(path)
           PY
 
       - name: Generate complete document set
@@ -94,16 +105,27 @@ jobs:
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
           test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
-          test -f bld/docs/documents/31-01-SDD-04-runtime-topology-and-configuration.md
-          test -f bld/docs/documents/31-01-SDD-05-backoffice-transport-design.md
+          test -f bld/docs/documents/31-01-SAD-timing-application-architecture.md
+          test -f bld/docs/documents/31-01-SDD-01-data-and-display-design.md
+          test -f bld/docs/documents/31-01-SDD-02-java-component-design.md
+          test -f bld/docs/documents/31-01-SDD-03-backoffice-transport-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
           test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
+          grep -q '31-01-SDD-02-java-component-design.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-01-data-and-display-design.md' bld/docs/documents/architecture-book.md
+          ! grep -q '31-01-SDD-03-backoffice-transport-design.md' bld/docs/documents/architecture-book.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
           test -f bld/docs/assets/architecture/layered-architecture.drawio
+          test -f bld/docs/assets/architecture/runtime-dispatch-process.svg
+          test -f bld/docs/assets/architecture/runtime-dispatch-process.drawio
           test -f bld/docs/assets/architecture/software-item-system-overview.svg
           test -f bld/docs/assets/architecture/runtime-registration-topology.svg
+          test -f bld/docs/assets/architecture/system-device-network-topology.svg
+          test -f bld/docs/assets/architecture/system-device-network-topology.drawio
+          test -f bld/docs/assets/architecture/system-connectivity-status.svg
+          test -f bld/docs/assets/architecture/system-connectivity-status.drawio
           test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
           test -f bld/docs/assets/architecture/rfid-lifecycle.svg
           test -f bld/docs/planning/README.md
@@ -114,6 +136,11 @@ jobs:
           test -f bld/docs/planning/steps/step-02-board.svg
           test -f bld/docs/planning/steps/step-02-board.drawio
           test -s bld/docs/planning/steps/step-02-board-a3-portrait.pdf
+          test -f bld/docs/planning/a4/sip-roadmap-a4-1.svg
+          test -f bld/docs/planning/a4/sip-roadmap-a4-2.svg
+          test -f bld/docs/planning/a4/sip-roadmap-a4-3.svg
+          test -f bld/docs/planning/a4/sip-roadmap-a4-4.svg
+          test -f bld/docs/planning/a4/step-02-a4.svg
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4

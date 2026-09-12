@@ -37,4 +37,9 @@ The repository is currently in its planning and research phase.
 - Defined just-in-time document maturity so requirements/IDDs become concrete when their capability approaches implementation rather than all documentation being completed up front.
 - Closed AP-0 repository bootstrap and scoped AP-1 around formalising only the first SI-01 executable slice.
 - Clarified the handoff so active work is resolved across the meta, SI-01 implementation and reusable tooling repositories instead of assuming the current meta PR is always the implementation PR.
-- Moved ownership of the SI-01 layered responsibility architecture to the software-item SAD and refocused SDD-03 on Java package, Maven artifact, contract-placement and composition detail.
+- Moved ownership of the SI-01 layered responsibility architecture to the software-item SAD and refocused the Java detailed design on Java package, Maven artifact, contract-placement and composition detail.
+- Refocused the SSAD on software-system context, software-item relationships, system interfaces, deployment relationships and cross-item constraints; SI-01 runtime/threading/messaging/persistence/device detail now belongs to the SI-01 SAD.
+- Restructured the SI-01 SAD as the primary current technical design document, including logical/process/development/deployment views plus concrete threading, messaging, logging, configuration, persistence and technology-decision directions.
+- Retired the former TimingSystem SDD and runtime-topology/configuration SDD after consolidating their useful architecture into the SAD and stable domain facts into the domain baseline.
+- Renumbered the remaining SI-01 SDDs after those retirements so the current sequence is contiguous: `SDD-01` data/display, `SDD-02` Java component/package/artifact, and `SDD-03` backoffice transport.
+- Reduced the active architecture book to the SSAD, software-item SADs and the focused Java component/package/artifact SDD; data/display and backoffice transport SDDs remain deferred working notes outside the active architecture book until implementation justifies detailed design.
