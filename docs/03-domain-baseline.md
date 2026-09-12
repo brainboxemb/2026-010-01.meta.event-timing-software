@@ -4,6 +4,26 @@ Status: working domain knowledge / non-authoritative requirements
 
 This document captures stable domain facts and terminology supplied during the initial architecture work. It is intentionally separate from formal requirements: it records what the system domain looks like so later requirements, IDDs, architecture and code use the same concepts consistently.
 
+## Runtime and total system instances
+
+One running headless timing application must be able to host **multiple complete logical system instances** at the same time.
+
+The working software term is `TimingSystemInstance` for one such complete logical system.
+
+This is required for both normal composition flexibility and test/simulation use. In particular, one application should be able to simulate the behaviour of a complete field of multiple system instances towards the backoffice.
+
+Conceptually:
+
+```text
+TimingApplication
+  +-- TimingSystemInstance 1
+  +-- TimingSystemInstance 2
+  +-- TimingSystemInstance 3
+  +-- ...
+```
+
+A `TimingSystemInstance` is **not** the same thing as a `RegistrationSystemId` source.
+
 ## Registration systems
 
 Every registration system/source has its own identifier.
@@ -16,7 +36,59 @@ Known identifier classes are:
 
 The term `RegistrationSystemId` is used as the working software name for this identity.
 
-A registration system is a **source of an ordered registration stream**. Its sequence numbering is independent from the location number.
+A registration system is a **source of an ordered registration stream**. Its sequence numbering is independent from the location number and from the containing `TimingSystemInstance`.
+
+One `TimingSystemInstance` can contain **one or more registration systems**.
+
+Conceptually:
+
+```text
+TimingSystemInstance
+  +-- RegistrationSystem A
+  +-- RegistrationSystem B
+  +-- ...
+```
+
+A total system can therefore register for one source or for multiple sources.
+
+## RFID antenna mapping
+
+One registration system can be coupled to **one or more RFID antennas**.
+
+Conceptually:
+
+```text
+TimingSystemInstance
+  +-- RegistrationSystem A
+  |     +-- Antenna A1
+  |     +-- Antenna A2
+  |
+  +-- RegistrationSystem B
+        +-- Antenna B1
+```
+
+An RFID observation must retain enough antenna/source context for the software to route it to the correct registration-system processing path.
+
+The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
+
+Whether one physical antenna may ever be intentionally shared by more than one registration system remains an open domain/configuration question. The initial architecture should prefer an unambiguous configured ownership relationship.
+
+## Configurable topology
+
+The relationship between application instances, registration systems and antennas should be externally configurable through a settings/configuration file rather than hard-coded in application source.
+
+The configuration needs to be able to describe at least:
+
+```text
+TimingApplication
+  1..X TimingSystemInstance
+    1..X RegistrationSystemId
+      1..X antenna/device binding
+```
+
+The concrete configuration file format is not yet selected.
+
+The same topology mechanism should support both real hardware adapters and stub/simulated adapters so a single application can model multiple total systems for integration/backoffice testing.
 
 ## Locations
 
@@ -33,7 +105,7 @@ RegistrationSystemId
 LocationId
 ```
 
-The relationship between the current architecture term `TimingSystem` and the domain term `registration system` still needs to be made explicit. Do not silently assume they are identical until that mapping is confirmed.
+The exact configuration ownership of `LocationId` still needs to be made explicit. A likely model is that the containing total system instance provides the normal location context, while every persisted registration still carries the location explicitly for traceability and synchronisation.
 
 ## Registration sequence
 
@@ -62,7 +134,30 @@ Important intended properties:
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
 - moving/changing location must not implicitly reset the source sequence;
+- multiple registration systems inside one total system keep independent sequence streams;
 - the exact rules for allowed gaps, wraparound and sequence persistence still need formal requirements.
+
+## Per-registration-system persistence
+
+Each registration system/source has its **own registration file**.
+
+The active application model may remain in memory, but registration persistence/recovery must preserve the source boundary so one source stream and its sequence state can be recovered and synchronised independently.
+
+Conceptually:
+
+```text
+RegistrationSystem A
+  in-memory ledger/state
+  sequence A
+  source-specific registration file
+
+RegistrationSystem B
+  in-memory ledger/state
+  sequence B
+  source-specific registration file
+```
+
+The exact file format, append/snapshot policy, atomicity and durability rules still need detailed design and formal requirements.
 
 ## Registration entries
 
@@ -126,6 +221,20 @@ Start times are also supplied/synchronised from the backoffice and retained loca
 
 They support local calculations such as elapsed time and ranking without requiring every calculation to make a live backoffice request.
 
+## Full-field simulation
+
+A single SI-01 application must be capable of running enough configured `TimingSystemInstance` objects to represent the complete field behaviour required for backoffice integration testing.
+
+For this use case:
+
+- each total system instance remains separately addressable;
+- each registration source retains its real/source-like identity and independent sequence stream;
+- antennas/devices may be stubbed or simulated through the normal adapter contracts;
+- registrations still follow the same normal queue, source-sequence, persistence and backoffice paths as production data;
+- simulation must not require a special bypass around the application/domain model.
+
+Resource limits for the original Raspberry Pi Zero and larger desktop/integration-test deployments are different concerns. The architecture should permit the same logical model to run with different configured scale and adapter sets.
+
 ## Traceability implications
 
 The combination of source identity and monotonically increasing sequence is a domain-level consistency mechanism, not merely an implementation convenience.
@@ -135,10 +244,12 @@ Later requirements/design must therefore preserve at least:
 ```text
 source identity
 sequence order
+containing total-system context
 location association
+antenna/source routing context where relevant
 record type/payload
 record time
-recovery without sequence reuse
+source-specific persistence/recovery without sequence reuse
 synchronisation/gap detection
 ```
 
@@ -148,7 +259,8 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 
 - What is the exact identifier format/name for reserve registration systems 1..4?
 - What identifiers are used for virtual registration systems?
-- Is a `TimingSystem` exactly one `RegistrationSystemId`, or does the architecture need a separate mapping between those concepts?
+- Does each `TimingSystemInstance` always correspond to exactly one `LocationId`, or are there valid cases where one instance contains multiple location contexts?
+- Can the same physical antenna ever intentionally feed more than one registration system, or is ownership always exactly one registration system?
 - Does sequence numbering start at a defined value for a new registration system?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
