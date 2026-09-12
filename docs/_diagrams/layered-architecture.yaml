@@ -1,230 +1,198 @@
 diagram:
   id: layered-architecture
   title: SI-01 layered architecture — responsibilities and services
-  width: 1600
-  height: 1180
+  width: 1540
+  height: 1150
   description: Working responsibility view of the reusable framework and executable application.
-  note: Layers and capability blocks show architectural responsibility, not Maven artifact boundaries.
+  note: Selected arrows show principal relationships only; this is not a complete call graph or Maven artifact view.
+
 groups:
 - id: presentation-layer
   label: Presentation / external application interfaces
   kind: layer-presentation
-  layout: {x: 170, y: 85, w: 1110, h: 155}
+  layout: {x: 120, y: 85, w: 1120, h: 145}
 - id: application-layer
   label: Application layer — running state and orchestration
   kind: layer-application
-  layout: {x: 170, y: 270, w: 1110, h: 220}
+  layout: {x: 120, y: 260, w: 1120, h: 230}
 - id: domain-layer
   label: Domain layer — reusable services, rules and model
   kind: layer-domain
-  layout: {x: 170, y: 520, w: 1110, h: 265}
+  layout: {x: 120, y: 520, w: 1120, h: 260}
 - id: infrastructure-layer
   label: Infrastructure / integrations
   kind: layer-infrastructure
-  layout: {x: 170, y: 815, w: 1110, h: 175}
+  layout: {x: 120, y: 810, w: 1120, h: 165}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 170, y: 1020, w: 1110, h: 110}
+  layout: {x: 120, y: 1005, w: 1120, h: 100}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1310, y: 85, w: 245, h: 1045}
+  layout: {x: 1270, y: 85, w: 230, h: 1020}
+
 nodes:
-- id: http-api
+- id: command-interfaces
   group: presentation-layer
-  label: "HTTP / JSON\ncommands + queries"
+  label: "Command / query interfaces\nHTTP / JSON • console • remote shell"
   kind: presentation
-  layout: {x: 215, y: 135, w: 275, h: 70}
-- id: websocket
+  layout: {x: 165, y: 135, w: 500, h: 65}
+- id: status-interface
   group: presentation-layer
-  label: "WebSocket\nstatus + events"
+  label: "Status / event interface\nWebSocket"
   kind: presentation
-  layout: {x: 535, y: 135, w: 275, h: 70}
-- id: shell
-  group: presentation-layer
-  label: "Console / remote shell\noperator interaction"
-  kind: presentation
-  layout: {x: 855, y: 135, w: 350, h: 70}
+  layout: {x: 895, y: 135, w: 300, h: 65}
+
 - id: app-command-query
   group: application-layer
   label: "Commands / queries / workflows\nvalidate intent • coordinate use cases"
   kind: application
-  layout: {x: 215, y: 330, w: 330, h: 85}
+  layout: {x: 235, y: 315, w: 360, h: 75}
 - id: app-state
   group: application-layer
-  label: "Application state\nTimingSystemInstance • ledgers • current runtime state\nowned here and supplied to domain services"
+  label: "Application state\nTimingSystemInstance • ledgers • runtime state"
   kind: application
-  layout: {x: 585, y: 320, w: 330, h: 95}
+  layout: {x: 625, y: 315, w: 300, h: 75}
 - id: status-management
   group: application-layer
-  label: "Status management\naggregate current state • immutable snapshots"
+  label: "Status management\naggregate state • immutable snapshots"
   kind: application
-  layout: {x: 955, y: 330, w: 280, h: 85}
+  layout: {x: 955, y: 315, w: 240, h: 75}
 - id: core-runtime
   group: application-layer
   label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
   kind: runtime
-  layout: {x: 585, y: 430, w: 330, h: 45}
+  layout: {x: 625, y: 415, w: 300, h: 50}
+
 - id: registration-service
   group: domain-layer
   label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
   kind: service
-  layout: {x: 215, y: 585, w: 330, h: 105}
+  layout: {x: 165, y: 580, w: 300, h: 90}
 - id: start-time-service
   group: domain-layer
-  label: "StartTimeService\nstart-time rules • updates • lookup\noperates on application-owned start-time state"
+  label: "StartTimeService\nstart-time rules • updates • lookup"
   kind: service
-  layout: {x: 585, y: 585, w: 330, h: 105}
+  layout: {x: 495, y: 580, w: 300, h: 90}
 - id: ready-team-service
   group: domain-layer
   label: "ReadyTeamService\nready-team behaviour and ledger semantics"
   kind: service
-  layout: {x: 955, y: 585, w: 280, h: 105}
+  layout: {x: 825, y: 580, w: 300, h: 90}
 - id: race-data-service
   group: domain-layer
-  label: "RaceDataService\nrace • participant/team • tag reference lookup\nreserve-tag mapping semantics"
+  label: "RaceDataService\nparticipant/team • tag/reference lookup • reserve-tag mapping"
   kind: service
-  layout: {x: 215, y: 710, w: 330, h: 55}
+  layout: {x: 165, y: 695, w: 300, h: 55}
 - id: domain-model
   group: domain-layer
-  label: "Domain model + rules\nregistrations • source sequence • start-time values • value objects"
+  label: "Domain model + rules\nregistrations • source sequence • start-time • ready-team • race/reference values"
   kind: model
-  layout: {x: 585, y: 710, w: 650, h: 55}
+  layout: {x: 495, y: 695, w: 630, h: 55}
+
 - id: persistence
   group: infrastructure-layer
   label: "Persistence / file storage\nrepository + backup / restore implementations"
   kind: storage
-  layout: {x: 215, y: 875, w: 330, h: 80}
+  layout: {x: 165, y: 860, w: 300, h: 75}
 - id: backoffice
   group: infrastructure-layer
-  label: "Backoffice integration\nsocket / RabbitMQ\nrace data + start-time updates"
+  label: "Backoffice integration\nsocket / RabbitMQ • race/start-time synchronisation"
   kind: integration
-  layout: {x: 585, y: 875, w: 300, h: 80}
+  layout: {x: 495, y: 860, w: 300, h: 75}
 - id: device-integration
   group: infrastructure-layer
   label: "Device integrations\nRFID • CAN • display"
   kind: integration
-  layout: {x: 925, y: 875, w: 310, h: 80}
+  layout: {x: 825, y: 860, w: 300, h: 75}
+
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout: {x: 300, y: 1060, w: 850, h: 50}
-- id: logging
+  layout: {x: 240, y: 1035, w: 880, h: 45}
+
+- id: crosscutting-concerns
   group: crosscutting-layer
-  label: Logging
+  label: "Logging\n\nConfiguration\n\nDiagnostics\n\nBuild / version identity"
   kind: crosscutting
-  layout: {x: 1340, y: 150, w: 185, h: 55}
-- id: configuration
-  group: crosscutting-layer
-  label: Configuration
-  kind: crosscutting
-  layout: {x: 1340, y: 230, w: 185, h: 55}
-- id: diagnostics
-  group: crosscutting-layer
-  label: Diagnostics
-  kind: crosscutting
-  layout: {x: 1340, y: 310, w: 185, h: 55}
-- id: build-info
-  group: crosscutting-layer
-  label: Build / version identity
-  kind: crosscutting
-  layout: {x: 1340, y: 390, w: 185, h: 70}
+  layout: {x: 1300, y: 165, w: 170, h: 235}
 - id: boundary-note
   group: crosscutting-layer
   label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
-  layout: {x: 1340, y: 1035, w: 185, h: 70}
+  layout: {x: 1300, y: 970, w: 170, h: 70}
+
 edges:
-- from: http-api
+- from: command-interfaces
   to: app-command-query
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.42}
-- from: shell
-  to: app-command-query
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.80}
-  route: [{x: 1030, y: 260}, {x: 479, y: 260}]
+  to_anchor: {side: top, position: 0.50}
+
 - from: status-management
-  to: websocket
+  to: status-interface
   label: status/events
   dashed: true
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
-  route: [{x: 1095, y: 248}, {x: 672.5, y: 248}]
+  to_anchor: {side: bottom, position: 0.60}
+
 - from: app-command-query
   to: registration-service
-  from_anchor: {side: bottom, position: 0.28}
-  to_anchor: {side: top, position: 0.28}
+  from_anchor: {side: bottom, position: 0.22}
+  to_anchor: {side: top, position: 0.50}
+
 - from: app-command-query
   to: start-time-service
-  from_anchor: {side: bottom, position: 0.55}
-  to_anchor: {side: top, position: 0.50}
-  route: [{x: 396.5, y: 500}, {x: 750, y: 500}]
-- from: app-command-query
-  to: ready-team-service
-  from_anchor: {side: bottom, position: 0.82}
-  to_anchor: {side: top, position: 0.50}
-  route: [{x: 485.6, y: 510}, {x: 1095, y: 510}]
-- from: registration-service
-  to: start-time-service
-  from_anchor: {side: right, position: 0.42}
-  to_anchor: {side: left, position: 0.42}
-- from: registration-service
-  to: race-data-service
-  from_anchor: {side: bottom, position: 0.28}
-  to_anchor: {side: top, position: 0.28}
-- from: registration-service
-  to: domain-model
-  from_anchor: {side: right, position: 0.78}
-  to_anchor: {side: left, position: 0.48}
-  route: [{x: 565, y: 666.9}, {x: 565, y: 736.4}]
-- from: start-time-service
-  to: domain-model
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.25}
-- from: ready-team-service
-  to: domain-model
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.78}
-- from: race-data-service
-  to: domain-model
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
+  from_anchor: {side: bottom, position: 0.85}
+  to_anchor: {side: top, position: 0.15}
+
 - from: app-state
   to: status-management
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: left, position: 0.50}
+
 - from: core-runtime
   to: app-state
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.50}
-- from: app-state
-  to: persistence
-  label: persist / restore
-  from_anchor: {side: left, position: 0.72}
+
+- from: registration-service
+  to: start-time-service
+  from_anchor: {side: right, position: 0.48}
+  to_anchor: {side: left, position: 0.48}
+
+- from: registration-service
+  to: race-data-service
+  from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
-  route: [{x: 555, y: 388.4}, {x: 555, y: 800}, {x: 380, y: 800}]
-- from: backoffice
-  to: core-runtime
-  from_anchor: {side: top, position: 0.10}
-  to_anchor: {side: left, position: 0.55}
-  route: [{x: 575, y: 850}, {x: 575, y: 454.8}]
-- from: device-integration
-  to: core-runtime
-  from_anchor: {side: top, position: 0.05}
-  to_anchor: {side: right, position: 0.55}
-  route: [{x: 935, y: 850}, {x: 935, y: 454.8}]
+
+- from: start-time-service
+  to: domain-model
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.25}
+
+- from: ready-team-service
+  to: domain-model
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.78}
+
+- from: race-data-service
+  to: domain-model
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
+
 - from: persistence
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.16}
+
 - from: backoffice
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
+
 - from: device-integration
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
