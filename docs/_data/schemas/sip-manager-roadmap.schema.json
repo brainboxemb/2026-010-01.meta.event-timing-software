@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/sip-manager-roadmap.schema.json",
+  "title": "Manager-facing SIP roadmap summaries",
+  "type": "object",
+  "required": ["status", "steps"],
+  "properties": {
+    "status": {"type": "string"},
+    "steps": {
+      "type": "object",
+      "patternProperties": {
+        "^[1-9][0-9]*$": {"$ref": "#/$defs/summary"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "bulletList": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 68
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["deliverable", "demonstration"],
+      "properties": {
+        "deliverable": {"$ref": "#/$defs/bulletList"},
+        "demonstration": {"$ref": "#/$defs/bulletList"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
