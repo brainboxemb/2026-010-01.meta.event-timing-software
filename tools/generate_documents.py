@@ -175,6 +175,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
+    doc_index.append("- [Generated SIP roadmap and printable PDFs](../planning/README.md)")
 
     doc_index.extend(["", "## Architecture and design", ""])
     for name in ARCHITECTURE_DOCUMENTS:
@@ -204,6 +205,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         "This branch contains generated review/output documentation. Edit source Markdown on the source branch, not here.",
         "",
         "- [Generated document index](documents/README.md)",
+        "- [SIP roadmap and printable planning PDFs](planning/README.md)",
         "- [Complete software engineering document set](documents/software-document-set.md)",
         "- [Architecture book](documents/architecture-book.md)",
         "- [Architecture assets](assets/architecture/README.md)",
