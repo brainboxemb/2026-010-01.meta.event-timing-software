@@ -36,3 +36,5 @@ The repository is currently in its planning and research phase.
 - Changed source collection from a mandatory blocking phase to capability-driven supporting work.
 - Defined just-in-time document maturity so requirements/IDDs become concrete when their capability approaches implementation rather than all documentation being completed up front.
 - Closed AP-0 repository bootstrap and scoped AP-1 around formalising only the first SI-01 executable slice.
+- Clarified the handoff so active work is resolved across the meta, SI-01 implementation and reusable tooling repositories instead of assuming the current meta PR is always the implementation PR.
+- Moved ownership of the SI-01 layered responsibility architecture to the software-item SAD and refocused SDD-03 on Java package, Maven artifact, contract-placement and composition detail.
