@@ -6,7 +6,7 @@ Software item: **SI-01 — Headless Timing Application**
 
 This SDD proposes the initial Java/Maven component structure. Its main purpose is to keep **architectural responsibility**, **Maven modules**, and **Java packages** distinct so layering does not become ambiguous.
 
-The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`.
+The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`. Backoffice/RabbitMQ detail is defined in `31-01-SDD-05-backoffice-rabbitmq-design.md`.
 
 ## Core rule
 
@@ -78,13 +78,18 @@ Proposed capability structure:
     TimingSystemInstanceState
     TimingSystemHandler
 
-...timing.core.registrationsystem
-    RegistrationSystem
-    RegistrationSystemId
-    RegistrationSystemRegistry
-    RegistrationSequence
+...timing.core.registrationasset
+    RegistrationAsset
+    RegistrationAssetId
     AntennaId
     AntennaBinding
+    RegistrationSourceRouter
+
+...timing.core.registrationsource
+    RegistrationSource
+    RegistrationSystemId
+    RegistrationSourceRegistry
+    RegistrationSequence
 
 ...timing.core.registration
     RegistrationService
@@ -120,41 +125,35 @@ Proposed capability structure:
     DisplayService
     DisplayModelBuilder
 
+...timing.core.backoffice
+    BackofficeService
+    BackofficeOutbox
+    BackofficeEnvelope
+
 ...timing.core.status
     StatusService
 ```
 
-### Total system versus registration source
+### Total system, registration asset and registration source
 
-These are different aggregates and the Java model must make that obvious.
+These are different concepts and the Java model must make that obvious.
 
 ```text
 TimingSystemInstance
   lifecycle / ready-team / start procedure / display / instance state
        |
-       +-- 1..X RegistrationSystem
-               source identity
-               source sequence
-               source registration file
-               1..X antenna bindings
+       +-- 1..X RegistrationAsset
+               device/antenna identity + source-routing policy
+               |
+               +-- 1..X RegistrationSource
+                       external RegistrationSystemId
+                       source sequence
+                       source registration file
 ```
 
-A `RegistrationSystem` owns **source identity and source-scoped sequence state**. It is not merely a field on `RegistrationRecord`.
+A `RegistrationAsset` represents the configured physical/logical box. A `RegistrationSource` represents one ordered source stream. One asset can expose several sources, including virtual sources.
 
-The actual registration record capability remains separate:
-
-```text
-RegistrationSystem
-    |
-    | allocates source sequence / selects source repository
-    v
-RegistrationService
-    |
-    v
-RegistrationRecord / RegistrationLedger
-```
-
-This prevents `RegistrationSequence` from accidentally becoming one global or one-total-system counter.
+`RegistrationSequence` therefore belongs at source scope, not at total-system, asset or global scope.
 
 ### Registration and ready-team are deliberately separate
 
@@ -163,7 +162,7 @@ These are different capabilities even though both require traceability and persi
 ```text
 registration
   passage / start / manual / penalty / revocation / operational registration entries
-  sequence allocated by RegistrationSystem source
+  sequence allocated by RegistrationSource
   registration ledger
   local result/ranking derivation
 
@@ -203,16 +202,16 @@ Likely packages:
 Responsibilities include:
 
 - application/runtime registry;
-- constructing configured system instances;
+- constructing configured system instances/assets/sources;
 - routing commands/queries to a system instance;
-- routing antenna observations through configured `AntennaBinding` data;
+- routing antenna observations through configured asset bindings;
 - ingress queues;
 - logical `SerialExecutor` implementation;
 - scheduling heartbeat/scanner/connectivity messages;
 - runtime lifecycle;
 - runtime-wide status aggregation.
 
-The proposed threading model is **logical serialization per `TimingSystemInstance`**, not one OS thread per system, registration source or antenna. Multiple logical serial executors may use a small shared backing executor on Raspberry Pi Zero.
+The proposed threading model is **logical serialization per `TimingSystemInstance`**, not one OS thread per system, asset, source or antenna. Multiple logical serial executors may use a small shared backing executor on Raspberry Pi Zero.
 
 Dependencies:
 
@@ -236,7 +235,7 @@ An initial single module can use capability-oriented packages:
 ...timing.adapter.stub
 ```
 
-Later, heavy/platform-specific adapters can become separate Maven artifacts, for example:
+External/platform-specific adapters should become separate Maven artifacts when they bring significant dependencies or lifecycle concerns, for example:
 
 ```text
 timing-adapter-rabbitmq
@@ -244,7 +243,37 @@ timing-adapter-linux-can
 timing-adapter-mdns
 ```
 
+`timing-adapter-rabbitmq` is a good candidate for an early split because it introduces an external client library, connection/channel lifecycle, reconnect behaviour and integration-test infrastructure.
+
 Production/proprietary adapters should normally live in a private repository rather than inside the public adapter module.
+
+## RabbitMQ adapter boundary
+
+The core/application side should depend on semantic ports, not RabbitMQ types.
+
+Candidate public contracts:
+
+```java
+interface BackofficePublisherPort {
+    void publish(RegistrationSourceKey source, BackofficeEnvelope message);
+}
+
+interface BackofficeInboundListener {
+    void onMessage(RegistrationSourceKey source, BackofficeEnvelope message);
+}
+```
+
+The concrete RabbitMQ adapter owns:
+
+- one or more broker connections;
+- source-specific inbound consumers;
+- channel ownership;
+- source-specific outbound exchange/routing configuration;
+- reconnect/recovery;
+- broker status;
+- serialization/protocol implementation where public.
+
+Actual production queue/exchange/routing names and proprietary protocol mappings stay in private/external deployment configuration.
 
 ## `timing-testkit`
 
@@ -284,7 +313,7 @@ Possible packages:
 
 The test-control interface manipulates stubs/adapters and still drives the normal application path. It must not mutate domain state directly.
 
-A particularly important integration-test use case is constructing a multi-instance, multi-source topology to emulate complete field behaviour towards the backoffice.
+A particularly important integration-test use case is constructing a multi-instance, multi-asset, multi-source topology to emulate complete field behaviour towards the backoffice.
 
 ## `timing-app`
 
@@ -299,7 +328,8 @@ main()
   -> construct/select adapters
   -> construct runtime
   -> create configured TimingSystemInstances
-  -> create RegistrationSystems + antenna bindings
+  -> create RegistrationAssets + antennas + RegistrationSources
+  -> create/configure backoffice adapter
   -> start public interfaces
 ```
 
@@ -331,7 +361,8 @@ Expected proprietary areas include candidates such as:
 - production RFID antenna control;
 - production RFID protocol/decryption details;
 - product-specific communication/protocol implementations;
-- potentially production backoffice message contracts/adapter implementation.
+- production asset/source inventory and mappings;
+- potentially production backoffice message schemas/adapter implementation.
 
 The public framework exposes only the contracts required for those components.
 
@@ -363,18 +394,24 @@ Do not make subclassing the primary extension mechanism.
 
 Prefer constructor injection and composition.
 
-Illustrative composition:
+Illustrative composition with generic identities:
 
 ```java
-RegistrationSystem sourceA = new RegistrationSystem(
-    RegistrationSystemId.of("A"),
-    sequenceA,
-    registrationRepositoryA,
-    Arrays.asList(rsAntenna1));
+RegistrationSource source = new RegistrationSource(
+    sourceKey,
+    externalRegistrationSystemId,
+    sequence,
+    registrationRepository);
+
+RegistrationAsset asset = new RegistrationAsset(
+    assetId,
+    antennas,
+    Arrays.asList(source),
+    sourceRouter);
 
 TimingSystemInstance instance = new TimingSystemInstance(
     instanceId,
-    Arrays.asList(sourceA),
+    Arrays.asList(asset),
     readyTeamState,
     displayService,
     clock,
@@ -425,6 +462,7 @@ public reference/test repository
   application composition
   configurable multi-instance topology
   stub/default components
+  Docker-based RabbitMQ integration environment
   integration scenarios
            |
            | same public contracts
@@ -432,6 +470,7 @@ public reference/test repository
 private product/integration repository
   proprietary RFID adapter
   proprietary protocols
+  real asset/source/broker mapping
   production composition/configuration
 ```
 
@@ -440,7 +479,8 @@ The reference project should prove:
 - framework artifacts work outside their own reactor;
 - documentation is sufficient for an external consumer;
 - stub components can produce a complete application;
-- multiple system instances and source streams can be configured;
+- multiple system instances/assets/source streams can be configured;
+- a real RabbitMQ broker can be exercised with synthetic/public topology;
 - system IDDs can be exercised in integration tests;
 - the same extension points are usable by a private repository;
 - no framework source copy/fork is required.
@@ -475,8 +515,9 @@ Useful automated rules can eventually include:
 - `timing-core` does not reference adapter packages;
 - `timing-core` does not reference HTTP/RabbitMQ/CAN implementation libraries;
 - API packages do not depend on implementation packages;
-- `RegistrationSequence` exists at registration-system/source scope, not as one global counter;
-- registration-system topology is not inferred from adapter implementation classes;
+- `RegistrationSequence` exists at registration-source scope, not as one global/asset/system counter;
+- registration-asset/source topology is not inferred from adapter implementation classes;
+- public code does not contain real deployment asset/source mappings;
 - `registration` does not depend on `readyteam` merely to update a display;
 - `readyteam` does not create participant/timing registration-domain records;
 - adapters depend inward, never the reverse;
@@ -492,6 +533,7 @@ A Java-8-compatible ArchUnit version can be evaluated later, but Maven dependenc
 - how configuration selects adapter implementations;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between framework/API and private adapters;
+- whether RabbitMQ stays a separate public adapter artifact from the beginning;
 - where the compiled React application belongs;
 - whether public adapter implementations eventually move to independent repositories;
 - exact boundary between public reference application and private product composition.
