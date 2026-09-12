@@ -475,13 +475,13 @@ Examples that may eventually justify focused SDDs include exact persistence/rest
 
 ## Detailed-design document disposition
 
-This architecture review deliberately reduced the active SDD set.
+This architecture review deliberately reduced and renumbered the current SDD set. At this project stage SDD numbers are working document identifiers, so removing a document also closes the numbering gap rather than preserving obsolete sequence numbers.
 
-- `31-01-SDD-01-timing-system-design.md`: **retired**. Its useful logical/process architecture was consolidated into this SAD or is already represented by the domain baseline; speculative pseudocode/history remains available through Git history rather than as active design.
-- `31-01-SDD-02-data-and-display-design.md`: **deferred working note**. It is excluded from the architecture book while persistence/data mechanics are still too early for a dedicated active SDD.
-- `31-01-SDD-03-java-component-design.md`: **active focused SDD** because artifact/package/composition decisions already affect the implementation repository.
-- `31-01-SDD-04-runtime-topology-and-configuration.md`: **retired**. Stable topology facts are in `03-domain-baseline.md`; runtime/configuration architecture is owned here.
-- `31-01-SDD-05-backoffice-transport-design.md`: **deferred working note**. Detailed transport design should mature just in time with backoffice implementation and is excluded from the architecture book for now.
+- `31-01-SDD-01-data-and-display-design.md`: **deferred working note**. It is excluded from the architecture book while persistence/data mechanics are still too early for a dedicated active SDD.
+- `31-01-SDD-02-java-component-design.md`: **active focused SDD** because artifact/package/composition decisions already affect the implementation repository.
+- `31-01-SDD-03-backoffice-transport-design.md`: **deferred working note**. Detailed transport design should mature just in time with backoffice implementation and is excluded from the architecture book for now.
+
+The former timing-system detailed design and runtime-topology/configuration detailed design were retired after their useful architecture was consolidated into this SAD or the domain baseline. Their historical filenames and content remain available through Git history rather than reserving gaps in the current SDD numbering.
 
 No new SDD should be created during this cleanup unless a clear separate detailed-design purpose is demonstrated.
 
