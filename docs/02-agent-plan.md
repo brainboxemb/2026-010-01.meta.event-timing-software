@@ -224,20 +224,46 @@ At closure:
 
 ## AP-4 — Bootstrap the public SI-01 implementation repository
 
-Status: next
+Status: in progress — implementation PR #2 / architecture correction PR #7
 
-Goal: create the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the proven reusable Java toolchain.
+Goal: establish the public SI-01/framework implementation repository and execute the SIP framework-skeleton increment using the proven reusable Git/Java tooling.
 
-Expected direction:
+Repository:
 
-- create the repository through the normal issue → branch → draft PR workflow;
-- consume `brainboxemb/tool.java-project` at immutable commit `5a7135194b94644129d05a5f4a8ceffc5de499bf` for the first consumer proof;
+```text
+brainboxemb/2026-010-02.java.event-timing-framework
+```
+
+Current direction:
+
+- use the normal issue → branch → draft PR workflow;
+- restore generic repository tooling through `brainboxemb/tool.git-project` pinned at `5db2b23b95ad0a230ab5d5d2bed725927328fcfe`;
+- consume Java build/test tooling through `brainboxemb/tool.java-project` pinned at `35d26ba14e3f3d5c5e65b97b9e01881496295edb`;
 - establish the SDE repository baseline (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
-- include the Maven Wrapper in the implementation repository;
-- create the Maven/Java 8 framework skeleton from the documented component architecture;
-- prove the clean-checkout consumer path through the reusable Java workflow;
+- include and validate the Maven Wrapper in the implementation repository;
+- prove one reusable `event-timing-framework` library plus one `event-timing-app` executable consumer;
+- keep `domain`, `core`, `platform` and `comm` as architecture/package responsibilities inside the framework library until a real independent artifact boundary is justified;
+- use `io.github.brainboxemb.eventtiming` as the working Maven/Java namespace;
+- prove clean-checkout bootstrap and exact canonical-artifact portability through Linux/Windows CI;
 - keep detailed implementation work/evidence in the implementation repository PR;
-- feed material architecture/process/toolchain corrections back to the appropriate coordination/tool repository through separate scoped work when needed.
+- feed material architecture/process/toolchain corrections back to the coordination/tool repositories through separate scoped work.
+
+Current evidence:
+
+- implementation repository PR #2 is open as the framework bootstrap review;
+- local bootstrap uses `tool.git-project` to restore the pinned `tool.java-project` dependency from a clean checkout;
+- CI run `34697292572` is green for Linux canonical build, Windows compatibility build, and execution on Windows of the exact Linux-produced application JAR;
+- artifact inspection confirms the runnable application contains the consumed framework classes/packages and Maven metadata for `event-timing-framework`;
+- the canonical JAR independently prints the expected `event-timing-framework bootstrap OK` output;
+- meta PR #7 records the corrected package/artifact model and aligns runtime/backoffice design with possible single-system and multi-system executable consumers.
+
+Exit criteria before AP-4 can close:
+
+- the corrected working component/artifact design is reviewable and merged in the meta repository;
+- implementation PR #2 contains no stale speculative module structure;
+- the framework library → application consumer path remains green in Linux/Windows CI;
+- canonical artifact/provenance evidence has been inspected rather than inferred from job status alone;
+- the implementation PR is merged with an immutable framework/tooling baseline suitable for the next SIP increment.
 
 ## Ongoing supporting activity — source collection
 
