@@ -48,11 +48,9 @@ Define enough software-system/component architecture to start the framework repo
 - `docs/04-UC-system-use-cases.md`;
 - `docs/30-SSAD-software-system-architecture.md`;
 - `docs/31-01-SAD-timing-application-architecture.md`;
-- `docs/31-01-SDD-01-timing-system-design.md`;
-- `docs/31-01-SDD-02-data-and-display-design.md`;
-- `docs/31-01-SDD-03-java-component-design.md`;
-- `docs/31-01-SDD-04-runtime-topology-and-configuration.md`;
-- `docs/31-01-SDD-05-backoffice-transport-design.md`;
+- `docs/31-01-SDD-01-data-and-display-design.md`;
+- `docs/31-01-SDD-02-java-component-design.md`;
+- `docs/31-01-SDD-03-backoffice-transport-design.md`;
 - `docs/31-02-SAD-gui-application-architecture.md`;
 - `docs/31-03-SAD-web-operator-application-architecture.md`;
 - `docs/50-SVP-software-verification-plan.md`;
