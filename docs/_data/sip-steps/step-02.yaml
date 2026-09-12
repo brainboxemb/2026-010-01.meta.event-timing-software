@@ -4,7 +4,6 @@ state: active
 summary: >-
   The reusable Java build/test toolchain is proven independently. Bootstrap
   SI-01 next as its first real product consumer and complete the framework skeleton.
-
 documents:
   - name: 13-SDE
     title: Java build/test toolchain
@@ -14,7 +13,7 @@ documents:
     title: SI-01 first executable requirements
     maturity: review
     completeness: 100
-  - name: 31-01-SDD-03
+  - name: 31-01-SDD-02
     title: Java component/package design
     maturity: working
     completeness: 85
@@ -129,7 +128,7 @@ activities:
     state: planned
     estimate_project_days: 0.5
     depends_on: [A03]
-    note: Based on 31-01-SDD-03
+    note: Based on 31-01-SDD-02
 
   - id: A05
     lane: application
