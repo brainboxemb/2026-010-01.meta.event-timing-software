@@ -116,6 +116,31 @@ Working rules:
 
 Circular package dependencies are not an acceptable substitute for choosing semantic ownership.
 
+## Logging dependency placement
+
+Logging follows the same library-versus-executable composition boundary.
+
+```text
+event-timing-framework.jar
+  -> slf4j-api only
+
+ event-timing-app.jar / runtime composition
+  -> selects exactly one SLF4J provider
+  -> initial provider: slf4j-jdk14
+  -> backend: java.util.logging
+```
+
+Working rules:
+
+- framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
+- the executable application chooses the provider as part of runtime composition;
+- the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to the JDK `java.util.logging` backend without introducing Logback into the baseline;
+- another executable/private consumer may select another compatible provider later without changing framework source;
+- exactly one provider should be present in a runtime composition;
+- provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
+
+This keeps logging technology replaceable at the executable boundary while giving reusable framework code one consistent facade.
+
 ## Default executable application
 
 `event-timing-app` is the first executable consumer of the framework library.
@@ -134,6 +159,7 @@ main()
   -> select/construct concrete integrations/platform implementations
   -> create reusable application/domain/core objects
   -> wire presentation endpoints
+  -> configure runtime logging provider/backend
   -> start lifecycle
   -> install shutdown handling
 ```
@@ -187,7 +213,9 @@ Useful automated rules may include:
 - wire/protocol classes stay with their presentation/integration capability;
 - semantic contracts are not moved into transport packages merely because transport code uses them;
 - public code contains no real deployment mappings or proprietary values;
-- the executable consumes `event-timing-framework` rather than copying/forking framework source.
+- the executable consumes `event-timing-framework` rather than copying/forking framework source;
+- the framework artifact does not carry a concrete SLF4J provider/backend transitively;
+- an executable runtime contains exactly one intended SLF4J provider.
 
 ## Open detailed-design decisions
 
@@ -198,4 +226,5 @@ Useful automated rules may include:
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework and private implementations;
 - which integrations eventually deserve independent artifacts;
-- whether and when a dedicated public Java API/SPI artifact becomes justified.
+- whether and when a dedicated public Java API/SPI artifact becomes justified;
+- exact field logging configuration/rotation/retention policy in the default executable.
