@@ -4,140 +4,129 @@ Status: working draft / non-authoritative
 
 Software item: **SI-01 — Headless Timing Application**
 
-This SDD proposes the initial Java/Maven component structure. Its main purpose is to keep **architectural responsibility**, **Maven modules**, and **Java packages** distinct so layering does not become ambiguous.
+This SDD defines the current working Java/Maven structure for SI-01. Its main purpose is to keep **architecture responsibilities**, **Java packages**, **Maven artifacts**, **application composition**, and **contracts** distinct so the implementation can be tested and evolved without creating artificial library boundaries too early.
 
-The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`. Transport-independent backoffice design is defined in `31-01-SDD-05-backoffice-transport-design.md`.
+The runtime/source hierarchy is defined in more detail in `31-01-SDD-04-runtime-topology-and-configuration.md`. Transport-independent backoffice behaviour is defined in `31-01-SDD-05-backoffice-transport-design.md`.
 
-## Core rule
+The earlier `timing-api / timing-core / timing-runtime / timing-adapters / timing-testkit / timing-app` proposal, and the later one-artifact-per-layer `domain / core / platform / comm / app` reactor, are both superseded by this working direction. They were useful discussion steps, but both coupled architecture vocabulary too directly to Maven publication boundaries.
 
-Use three concepts for three different jobs:
+## Core rules
 
-1. **Architecture responsibility** — what code is allowed to know and do.
-2. **Maven module** — compile-time dependency, publication and ownership boundary.
-3. **Java package** — cohesive organisation *inside* a module.
+Use different concepts for different jobs:
 
-Do not create a Maven module for every package and do not rely on package names alone to enforce architecture.
+1. **Architecture responsibility** — what code owns a concern and what it is allowed to know.
+2. **Java package** — cohesive organisation and dependency discipline inside a library/application.
+3. **Maven artifact** — a reusable library, independently consumable integration, or deployable application that has a real consumer/lifecycle reason to exist.
+4. **Application composition** — which framework/infrastructure implementations are assembled into one executable product.
+5. **Contract/port** — an explicit semantic boundary owned by the responsibility whose semantics it expresses.
+
+The central rule is:
+
+> **An architecture layer/package is not automatically a Maven artifact.**
+
+A separate Maven artifact should be introduced only when there is a concrete reason such as:
+
+- another application must consume it independently;
+- an optional integration brings a meaningful independent dependency or lifecycle;
+- deployment, ownership, public/private boundaries, or release/versioning require separation;
+- several applications need the same reusable implementation without depending on unrelated code.
+
+Do not create an artifact merely to mirror an architecture diagram.
 
 ## Initial Maven reactor
 
-Start deliberately small:
+The first structure deliberately proves only one reusable library and one executable application:
 
 ```text
-event-timing/
-├── pom.xml
-├── timing-api/          public contracts and shared cross-module models
-├── timing-core/         application/domain behaviour
-├── timing-runtime/      hosting, routing, scheduling and serialized execution
-├── timing-adapters/     public/default infrastructure adapters
-├── timing-testkit/      reusable fakes, stubs and test scenarios
-└── timing-app/          small public executable/composition example
+event-timing-framework/
+├── pom.xml                  event-timing-parent (build/aggregation metadata)
+├── framework/
+│   └── pom.xml              event-timing-framework.jar
+└── app/
+    └── pom.xml              event-timing-app.jar
 ```
 
-Split modules further only when there is a real dependency, platform, release, ownership or public/private reason.
+The root parent POM is build metadata, not a deployed product component.
 
-## `timing-api`
-
-Purpose: stable types that public and proprietary implementations are intentionally allowed to depend on.
-
-Possible packages:
+Working Maven coordinates:
 
 ```text
-...timing.api.model
-...timing.api.command
-...timing.api.query
-...timing.api.event
-...timing.api.status
-...timing.api.port
-...timing.api.extension
+groupId: io.github.brainboxemb.eventtiming
+
+parent:     event-timing-parent
+library:    event-timing-framework
+executable: event-timing-app
 ```
 
-Candidate contracts include:
+This is intentionally smaller than the architecture package model.
 
-- RFID antenna/reader control and observation ports;
-- CAN transport/device contracts;
-- display data/session contracts;
-- transport-independent backoffice semantic contracts;
-- clock/platform abstractions;
-- externally exposed status/query models;
-- extension/composition contracts.
+## Framework library
 
-Keep this module conservative. A class belongs here only because it is an intentional cross-module contract, not merely because two modules happen to use it.
+`event-timing-framework` is the reusable Java library consumed by executable applications.
 
-## `timing-core`
-
-Purpose: application/domain behaviour independent from concrete hardware, network, filesystem and UI technologies.
-
-Top-level packages should be organised by **capability**, not by vague technical categories such as one application-wide `service`, `manager`, `impl` or `util` package.
-
-Proposed capability structure:
+Its initial package root is:
 
 ```text
-...timing.core.timingsystem
-    TimingSystemInstance
-    TimingSystemInstanceId
-    TimingSystemInstanceState
-    TimingSystemHandler
-
-...timing.core.registrationasset
-    RegistrationAsset
-    RegistrationAssetId
-    AntennaId
-    AntennaBinding
-    RegistrationSourceRouter
-
-...timing.core.registrationsource
-    RegistrationSource
-    RegistrationSystemId
-    RegistrationSourceRegistry
-    RegistrationSequence
-
-...timing.core.registration
-    RegistrationService
-    RegistrationRecord
-    RegistrationLedger
-    RegistrationRepository
-
-...timing.core.readyteam
-    ReadyTeamService
-    ReadyTeamEventJournal
-    ReadyTeamEventRepository
-    ReadyTeamState
-    ReadyTeamSequence
-
-...timing.core.rfid
-    RfidService
-    TagDecryptor
-    TagFilter
-    ParticipantResolver
-
-...timing.core.start
-    StartProcedureService
-
-...timing.core.penalty
-    PenaltyService
-
-...timing.core.reference
-    ReferenceDataService
-    StartTimeRepository
-    ReserveTagRepository
-
-...timing.core.display
-    DisplayService
-    DisplayModelBuilder
-
-...timing.core.backoffice
-    BackofficeService
-    BackofficeOutbox
-    BackofficeEnvelope
-    RegistrationSourceKey
-
-...timing.core.status
-    StatusService
+io.github.brainboxemb.eventtiming
 ```
+
+with working responsibility packages:
+
+```text
+io.github.brainboxemb.eventtiming.domain
+io.github.brainboxemb.eventtiming.core
+io.github.brainboxemb.eventtiming.platform
+io.github.brainboxemb.eventtiming.comm
+```
+
+These are package/architecture responsibilities **inside one framework artifact**. They are not separate published libraries in the initial baseline.
+
+### `domain`
+
+Purpose: own reusable event-timing domain/application concepts, state, rules and services.
+
+Candidate capability-oriented packages include:
+
+```text
+...eventtiming.domain.timingsystem
+...eventtiming.domain.registrationasset
+...eventtiming.domain.registrationsource
+...eventtiming.domain.registration
+...eventtiming.domain.readyteam
+...eventtiming.domain.rfid
+...eventtiming.domain.start
+...eventtiming.domain.penalty
+...eventtiming.domain.reference
+...eventtiming.domain.display
+...eventtiming.domain.backoffice
+...eventtiming.domain.status
+```
+
+Representative reusable concepts may include:
+
+```text
+TimingSystemInstance
+RegistrationAsset
+RegistrationSource
+RegistrationSequence
+RegistrationService
+RegistrationLedger
+ReadyTeamService
+ReadyTeamState
+StartProcedureService
+PenaltyService
+ReferenceDataService
+DisplayService
+StatusService
+```
+
+A service belongs here when it implements event-timing/application behaviour rather than generic runtime mechanics.
+
+The framework domain should contain behaviour that is meaningful across applications. Event/product-specific policy can remain in a derived application or an additional private/public extension library when that policy is not generally reusable.
 
 ### Total system, registration asset and registration source
 
-These are different concepts and the Java model must make that obvious.
+These remain separate concepts:
 
 ```text
 TimingSystemInstance
@@ -152,410 +141,268 @@ TimingSystemInstance
                        source registration file
 ```
 
-A `RegistrationAsset` represents the configured physical/logical box. A `RegistrationSource` represents one ordered source stream. One asset can expose several sources, including virtual sources.
+A `RegistrationAsset` represents the configured physical/logical equipment unit. A `RegistrationSource` represents one ordered source stream. One asset can expose several sources, including virtual sources.
 
-`RegistrationSequence` therefore belongs at source scope, not at total-system, asset or global scope.
+`RegistrationSequence` therefore belongs at source scope, not at application, asset or global scope.
 
-### Registration and ready-team are deliberately separate
+### `core`
 
-These are different capabilities even though both require traceability and persistence:
+Purpose: own reusable runtime/engine mechanics around the domain.
 
-```text
-registration
-  passage / start / manual / penalty / revocation / operational registration entries
-  sequence allocated by RegistrationSource
-  registration ledger
-  local result/ranking derivation
-
-readyteam
-  team added / team removed
-  traceable operational journal
-  current ReadyTeamState projection
-  feeds current display state
-```
-
-A keypad action must therefore not create a participant/timing `RegistrationRecord` merely because it is persisted. It creates a `ReadyTeamEvent` and updates the ready-team projection.
-
-Dependencies:
+Candidate concerns include:
 
 ```text
-timing-core -> timing-api
+...eventtiming.core.execution
+...eventtiming.core.lifecycle
+...eventtiming.core.routing
+...eventtiming.core.scheduling
+...eventtiming.core.configuration
+...eventtiming.core.status
 ```
 
-`timing-core` must not reference HTTP servers, socket classes, RabbitMQ libraries, concrete CAN libraries, Raspberry Pi libraries or proprietary RFID/backoffice protocol code.
+Examples:
 
-## `timing-runtime`
+- logical serialized execution for one `TimingSystemInstance`;
+- reusable lifecycle mechanics;
+- reusable command/event routing primitives;
+- scheduling/runtime support;
+- orchestration that is independent of one concrete executable application.
 
-Purpose: host `1..X` complete `TimingSystemInstance` objects and provide non-domain execution/orchestration infrastructure.
+A class belongs in `core` because it helps reusable framework behaviour *run*, not merely because it is important.
 
-Likely packages:
+Do not automatically move all multi-system application behaviour into `core`. For example, a registry/routing policy that exists only because one executable hosts many systems can initially belong to that multi-system application. Promote it into reusable `core` only when several applications actually need it.
+
+This distinction allows both a simple single-system application and a multi-system application to use the same framework without forcing the simpler application to adopt unnecessary orchestration.
+
+### `platform`
+
+Purpose: own abstractions of the execution environment and small reusable/default facilities where appropriate.
+
+Candidate concerns include:
 
 ```text
-...timing.runtime.bootstrap
-...timing.runtime.configuration
-...timing.runtime.execution
-...timing.runtime.routing
-...timing.runtime.lifecycle
-...timing.runtime.scheduling
-...timing.runtime.status
+...eventtiming.platform.clock
+...eventtiming.platform.execution
+...eventtiming.platform.filesystem
+...eventtiming.platform.process
+...eventtiming.platform.network
+...eventtiming.platform.device
 ```
 
-Responsibilities include:
+Examples may include:
 
-- application/runtime registry;
-- constructing configured system instances/assets/sources;
-- routing commands/queries to a system instance;
-- routing antenna observations through configured asset bindings;
-- ingress queues;
-- logical `SerialExecutor` implementation;
-- scheduling heartbeat/scanner/connectivity messages;
-- runtime lifecycle;
-- runtime-wide status aggregation.
+- clock/time source abstractions;
+- backing executor/thread primitives;
+- filesystem/path abstractions where portability/testability requires them;
+- process/runtime information;
+- low-level OS/device primitives used to isolate Windows/Linux/Raspberry Pi differences.
 
-The proposed threading model is **logical serialization per `TimingSystemInstance`**, not one OS thread per system, asset, source or antenna. Multiple logical serial executors may use a small shared backing executor on Raspberry Pi Zero.
+`platform` is not a dumping ground for all technical code. HTTP, WebSocket, RabbitMQ or an event-timing device protocol remains a communication concern even though it uses platform facilities.
 
-Dependencies:
+A platform-specific implementation may later become its own library if several applications need it independently or if native/platform dependencies justify isolation. Until then it can remain within the framework/application structure being proven.
+
+### `comm`
+
+Purpose: own reusable communication semantics/contracts and communication-facing code that belongs to the generic framework.
+
+Candidate packages include:
 
 ```text
-timing-runtime -> timing-core -> timing-api
+...eventtiming.comm.http
+...eventtiming.comm.websocket
+...eventtiming.comm.socket
+...eventtiming.comm.rabbitmq
+...eventtiming.comm.rfid
+...eventtiming.comm.can
+...eventtiming.comm.display
+...eventtiming.comm.console
 ```
 
-## `timing-adapters`
+Possible concerns include:
 
-Purpose: public/default concrete implementations of ports.
+- application-control/status endpoint contracts;
+- WebSocket event/status messages;
+- socket test transport semantics;
+- backoffice communication contracts;
+- RFID/CAN/display communication contracts and reusable protocol-independent pieces.
 
-An initial single module can use capability-oriented packages:
+Protocol/wire types should stay close to their communication capability rather than being collected in one global `api` package.
+
+Concrete communication implementations do not automatically need their own artifact. A RabbitMQ implementation, for example, becomes a separate library when there is a concrete benefit such as independent reuse, dependency isolation, lifecycle separation or private/public ownership. The initial structure does not pre-create that boundary.
+
+## Contract placement
+
+Do not collect all interfaces into one generic top-level `api` module.
+
+Place a contract with the code that owns its semantics:
 
 ```text
-...timing.adapter.console
-...timing.adapter.remote
-...timing.adapter.http
-...timing.adapter.websocket
-...timing.adapter.memory
-...timing.adapter.filebackup
-...timing.adapter.stub
+domain
+  domain models/services
+  semantic domain ports/contracts
+
+core
+  runtime/orchestration contracts
+
+platform
+  execution-environment abstractions
+
+comm
+  endpoint/protocol/wire contracts
 ```
 
-External/platform-specific adapters should become separate Maven artifacts when they bring significant dependencies or lifecycle concerns, for example:
+Examples:
+
+- source-routing/domain repository port: `domain`;
+- serialized runtime submission/lifecycle contract: `core`;
+- clock abstraction: `platform`;
+- HTTP/WebSocket wire representation: `comm`.
+
+A dedicated public API/SPI artifact can be introduced later when an external Java consumer needs a stable independently versioned contract. It is not created as a placeholder.
+
+## Default executable application
+
+`event-timing-app` is the first executable consumer of the framework library.
+
+Its Java package is rooted at:
 
 ```text
-timing-adapter-backoffice-socket
-timing-adapter-rabbitmq
-timing-adapter-linux-can
-timing-adapter-mdns
+io.github.brainboxemb.eventtiming.app
 ```
 
-`timing-adapter-backoffice-socket` can stay lightweight and public for ST-2 loop/network tests. `timing-adapter-rabbitmq` is a good candidate for an early split because it introduces an external client library, connection/channel lifecycle, reconnect behaviour and Docker-based integration-test infrastructure.
-
-Production/proprietary adapters/codecs should normally live in a private repository when they contain sensitive protocols or deployment mappings.
-
-## Backoffice transport boundary
-
-The core/application side depends on semantic ports rather than transport types.
-
-Candidate public contracts:
-
-```java
-interface BackofficePublisherPort {
-    void publish(RegistrationSourceKey source, BackofficeEnvelope message);
-}
-
-interface BackofficeInboundListener {
-    void onMessage(RegistrationSourceKey source, BackofficeEnvelope message);
-}
-```
-
-Concrete adapters can implement the same boundary:
-
-```text
-StubBackofficeAdapter           ST-1
-SocketBackofficeAdapter         ST-2
-RabbitMqBackofficeAdapter       ST-3 / production-shaped
-PrivateProductionBackoffice...  when proprietary protocol details require it
-```
-
-The socket adapter owns simple test framing/session/reconnect only. It must not copy the proprietary RabbitMQ message format merely to make tests convenient.
-
-The RabbitMQ adapter owns:
-
-- one or more broker connections;
-- source-specific inbound consumers;
-- channel ownership;
-- source-specific outbound exchange/routing configuration;
-- reconnect/recovery;
-- broker status;
-- serialization/protocol implementation where public.
-
-Actual production queue/exchange/routing names and proprietary protocol mappings stay in private/external deployment configuration.
-
-## `timing-testkit`
-
-Purpose: reusable test components for framework tests, the external reference application and private integration tests.
-
-Expected contents include:
-
-```text
-DirectExecutor
-FakeClock
-InMemoryRegistrationRepository
-InMemoryReadyTeamEventRepository
-StubRfidAdapter
-StubCanAdapter
-StubDisplayV1
-StubDisplayV2Session
-StubBackofficeAdapter
-BackofficeSocketTestPeer
-ScenarioBuilder
-TopologyBuilder
-status/registration/ready-team assertions
-```
-
-Possible packages:
-
-```text
-...timing.testkit.execution
-...timing.testkit.clock
-...timing.testkit.registration
-...timing.testkit.readyteam
-...timing.testkit.rfid
-...timing.testkit.can
-...timing.testkit.display
-...timing.testkit.backoffice
-...timing.testkit.topology
-...timing.testkit.scenario
-```
-
-The test-control interface manipulates stubs/adapters and still drives the normal application path. It must not mutate domain state directly.
-
-A particularly important integration-test use case is constructing a multi-instance, multi-asset, multi-source topology to emulate complete field behaviour towards the backoffice.
-
-## `timing-app`
-
-Purpose: a small executable/composition example inside the framework repository.
-
-It should contain little or no domain logic:
+It should remain a composition/startup boundary rather than a second home for reusable framework behaviour:
 
 ```text
 main()
   -> load settings
-  -> validate topology
-  -> construct/select adapters
-  -> construct runtime
-  -> create configured TimingSystemInstances
-  -> create RegistrationAssets + antennas + RegistrationSources
-  -> select stub/socket/RabbitMQ backoffice transport
-  -> start public interfaces
+  -> select/construct concrete infrastructure
+  -> create framework domain/core objects
+  -> wire communication/platform implementations
+  -> start selected application interfaces
+  -> install shutdown handling
 ```
 
-The more important external consumer proof belongs in a **separate reference/test repository**.
+The current bootstrap application exists only to prove that a real executable can consume the separately built framework JAR and can be produced/tested through the reusable Java toolchain.
 
-## Dependency direction
+## Derived applications
 
-Conceptually:
+The framework is deliberately not tied to one fixed executable topology.
+
+Two plausible consumers are:
 
 ```text
-                    timing-api
-                 /      |       \
-                /       |        \
-        timing-core   adapters   private adapters
-             |
-        timing-runtime
-             |
-          timing-app
+single-system application
+  compose exactly one TimingSystemInstance
+  minimal routing/registry overhead
+
+multi-system application
+  compose 1..X TimingSystemInstance objects
+  application-level registry/routing/aggregate status as required
 ```
 
-Adapters implement API ports and are selected in the composition root. Core behaviour must never depend back outward on a concrete adapter.
+These are architectural examples, not modules to create now.
 
-Where an adapter only needs `timing-api`, it should not depend on `timing-core` or `timing-runtime` unnecessarily.
+A later derived application can depend on `event-timing-framework` and inject/select its own implementations, for example:
 
-## Public versus proprietary components
+```text
+derived application
+  -> event-timing-framework
+  -> optional reusable infrastructure library/libraries
+  -> product/private components where needed
+```
 
-Expected proprietary areas include candidates such as:
+This supports public reference applications, private product compositions, simulation applications and target-specific applications without forking the framework source.
 
-- production RFID antenna control;
-- production RFID protocol/decryption details;
+## Generic framework versus product/application domain
+
+Not all domain behaviour necessarily belongs in the reusable framework.
+
+Working distinction:
+
+```text
+generic event-timing behaviour
+  -> event-timing-framework/domain
+
+application/product-specific policy
+  -> derived application or dedicated extension library
+```
+
+A rule should move into the framework when it is genuinely reusable and part of the supported event-timing model. A deployment-specific mapping, one-off workflow or proprietary policy should not be generalised merely to keep all domain-looking code in one library.
+
+## Internal dependency direction
+
+Because `domain`, `core`, `platform` and `comm` initially live in one JAR, Maven does not enforce their package dependency rules. The design still needs a clear direction.
+
+Working rules:
+
+- `domain` does not depend on `core`, concrete communication implementations or application composition;
+- `domain` may depend on narrow platform contracts where those abstractions are genuinely part of deterministic domain behaviour;
+- `core` may depend on `domain` and platform abstractions;
+- `comm` translates external communication into domain/core semantics and may use platform facilities;
+- `platform` must not depend on event-timing domain behaviour;
+- application composition may depend on the complete framework public surface and selected infrastructure libraries.
+
+Circular package dependencies are not an acceptable substitute for choosing semantic ownership.
+
+Architecture tests or dependency rules can be added when real code exists; do not add an architecture-testing framework solely for the bootstrap markers.
+
+## Public/private composition
+
+Expected proprietary/private areas may include:
+
+- production RFID control/protocol details;
 - product-specific communication/protocol implementations;
 - production asset/source inventory and mappings;
-- production backoffice message schemas/codecs where sensitive.
+- production backoffice schemas/codecs where sensitive;
+- deployment-specific composition/policies.
 
-The public framework exposes only the contracts required for those components.
+The public framework should expose only the contracts needed to compose these pieces. Separate repositories do not require subclassing or dynamic plugin discovery.
 
-Example public contract:
+Prefer composition and constructor/factory injection. If true runtime plugin discovery later becomes a requirement, evaluate `ServiceLoader` or another mechanism separately.
 
-```java
-public interface RfidAntennaPort {
-    AntennaId id();
-    void powerOn();
-    void powerOff();
-    void initialise();
-    void setListener(RfidReaderListener listener);
-}
-```
+## Tests and possible future test library
 
-Private repository:
+Ordinary tests stay next to the code/application they verify.
 
-```java
-public final class ProductionRfidAntennaAdapter implements RfidAntennaPort {
-    // proprietary hardware/protocol implementation
-}
-```
+Do not create a reusable `testkit` artifact until a real second consumer needs reusable test components across artifact/repository boundaries.
 
-The public framework must not import or compile against that private implementation.
+A future test library could become justified for fake clocks, scenario/topology builders, communication test peers or shared assertions. Until then these helpers stay local.
 
-## Composition rather than subclassing
+## Future artifact splits
 
-Do not make subclassing the primary extension mechanism.
+Possible future library artifacts include, only when justified by concrete consumers:
 
-Prefer constructor injection and composition.
+- RabbitMQ communication integration;
+- Linux/Raspberry-Pi-specific platform integration;
+- public/private RFID/CAN implementations;
+- a stable Java API/SPI;
+- reusable test support.
 
-Illustrative composition with generic identities:
-
-```java
-RegistrationSource source = new RegistrationSource(
-    sourceKey,
-    externalRegistrationSystemId,
-    sequence,
-    registrationRepository);
-
-RegistrationAsset asset = new RegistrationAsset(
-    assetId,
-    antennas,
-    Arrays.asList(source),
-    sourceRouter);
-
-BackofficePublisherPort backoffice =
-    backofficeAdapterFactory.create(settings.backoffice());
-
-TimingSystemInstance instance = new TimingSystemInstance(
-    instanceId,
-    Arrays.asList(asset),
-    readyTeamState,
-    displayService,
-    clock,
-    statusService);
-```
-
-The actual constructor surface may use factories/builders to avoid large parameter lists.
-
-No large dependency-injection framework is required initially.
-
-If true runtime plugin discovery later becomes necessary, evaluate `ServiceLoader` or another plugin mechanism as a separate architecture decision. Separate repositories alone do **not** require dynamic plugin loading.
-
-## Settings and composition root
-
-Configuration must describe the runtime topology and transport selection without naming private Java classes in public source.
-
-A composition/factory layer resolves configured adapter types to actual implementations.
-
-Conceptually:
-
-```java
-interface AdapterFactoryRegistry {
-    RfidAntennaPort createRfid(String adapterType, DeviceSettings settings);
-    BackofficeTransport createBackoffice(BackofficeSettings settings);
-}
-```
-
-A public distribution can register stub/socket/RabbitMQ factories where appropriate. A private product repository can register proprietary factories/codecs during composition.
-
-The final file format and factory mechanism remain open.
-
-## External reference/test project
-
-A separate public project should consume the framework exactly like an external application.
-
-Conceptually:
-
-```text
-public framework repository
-  timing-api
-  timing-core
-  timing-runtime
-  public adapters
-  timing-testkit
-           |
-           | Maven artifacts
-           v
-public reference/test repository
-  application composition
-  configurable multi-instance topology
-  ST-1 stub application tests
-  ST-2 socket loop/network tests
-  ST-3 Docker-based RabbitMQ integration environment
-  integration scenarios
-           |
-           | same public contracts
-           v
-private product/integration repository
-  proprietary RFID adapter
-  proprietary protocols
-  real asset/source/broker mapping
-  production composition/configuration
-```
-
-The reference project should prove:
-
-- framework artifacts work outside their own reactor;
-- documentation is sufficient for an external consumer;
-- stub components can produce a complete application;
-- multiple system instances/assets/source streams can be configured;
-- the same backoffice semantics work through stub, socket and RabbitMQ transports;
-- a real RabbitMQ broker can be exercised with synthetic/public topology;
-- system IDDs can be exercised in integration tests;
-- the same extension points are usable by a private repository;
-- no framework source copy/fork is required.
-
-Illustrative repository names remain:
-
-```text
-2026-010-01.meta.event-timing-software
-2026-010-02.java.event-timing-framework
-2026-010-03.java.event-timing-reference
-<private product/integration repository>
-```
-
-## Package visibility
-
-Prefer package-private implementation classes when they are not part of a supported contract.
-
-Java 8 has no JPMS module descriptors, so discipline initially comes from:
-
-- Maven module dependencies;
-- minimal public API surface;
-- package visibility;
-- unit/integration tests;
-- optional architecture tests.
-
-A later Java 11 migration does not automatically mean JPMS should be adopted.
+The default is to keep code in the framework while learning the boundaries. Splitting later is preferred over creating speculative libraries now, provided package boundaries remain clean enough to permit extraction.
 
 ## Architecture checks
 
-Useful automated rules can eventually include:
+Useful future automated rules may include:
 
-- `timing-core` does not reference adapter packages;
-- `timing-core` does not reference socket/HTTP/RabbitMQ/CAN implementation libraries;
-- API packages do not depend on implementation packages;
-- `RegistrationSequence` exists at registration-source scope, not as one global/asset/system counter;
-- registration-asset/source topology is not inferred from adapter implementation classes;
-- public code does not contain real deployment asset/source mappings;
-- semantic backoffice code does not depend on RabbitMQ or socket implementation classes;
-- `registration` does not depend on `readyteam` merely to update a display;
-- `readyteam` does not create participant/timing registration-domain records;
-- adapters depend inward, never the reverse;
-- testkit is absent from production runtime dependencies unless an explicit demo/test composition includes it.
-
-A Java-8-compatible ArchUnit version can be evaluated later, but Maven dependency checks already enforce important boundaries.
+- domain packages do not reference app or concrete communication implementation packages;
+- platform packages do not depend on event-timing domain/core behaviour;
+- protocol/wire classes stay under communication packages;
+- semantic domain contracts are not moved into communication packages merely because transport code uses them;
+- `RegistrationSequence` remains registration-source scoped;
+- public code contains no real deployment mappings or proprietary values;
+- backoffice semantic code does not depend on a specific broker/socket implementation;
+- registration and ready-team remain separate domain capabilities;
+- the executable application depends on `event-timing-framework`, not on source-copy/forked framework code.
 
 ## Open decisions
 
-- final Maven `groupId` and artifact naming convention;
-- whether `timing-api` stays one module or is split after extension contracts stabilise;
+- exact package granularity inside each capability;
+- exact reusable boundary between single-instance core mechanics and multi-system application orchestration;
+- which low-level hardware/device concerns are platform primitives versus communication implementations;
 - final configuration file format and include/override model;
-- how configuration selects adapter implementations;
+- how applications select/inject communication/platform implementations;
 - private Maven artifact publication/consumption mechanism;
-- version alignment between framework/API and private adapters;
-- whether socket and RabbitMQ adapters are independent artifacts from their first implementation;
-- whether the production RabbitMQ codec lives in the public adapter or private integration repository;
-- where the compiled React application belongs;
-- whether public adapter implementations eventually move to independent repositories;
-- exact boundary between public reference application and private product composition.
+- version alignment between public framework and private implementations;
+- which concrete integrations eventually deserve independent artifacts;
+- whether and when a dedicated public Java API/SPI artifact becomes justified;
+- exact boundary between public reference applications, simulation applications and private product compositions.
