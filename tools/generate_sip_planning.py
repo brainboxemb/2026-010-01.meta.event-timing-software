@@ -32,6 +32,7 @@ import textwrap
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -486,14 +487,18 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
     page_h = A4_L_H_MM
 
     for page_index, group in enumerate(groups):
+        c.setFillColor(HexColor("#222222"))
+        c.setStrokeColor(HexColor("#333333"))
         c.setFont("Helvetica-Bold", 14)
         c.drawString(MARGIN_MM * mm, (page_h - 10.5) * mm, "Software Implementation Planning — roadmap")
+        c.setFillColor(HexColor("#555555"))
         c.setFont("Helvetica", 7)
         c.drawString(
             MARGIN_MM * mm,
             (page_h - 17.5) * mm,
             f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
         )
+        c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
         c.line(
             MARGIN_MM * mm,
@@ -504,6 +509,7 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
 
         for step, center_x, width in roadmap_positions(group):
             r = 3.4
+            c.setStrokeColor(HexColor("#333333"))
             c.line(center_x * mm, (page_h - (TIMELINE_Y-r)) * mm,
                    (center_x+r) * mm, (page_h-TIMELINE_Y) * mm)
             c.line((center_x+r) * mm, (page_h-TIMELINE_Y) * mm,
@@ -512,12 +518,14 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                    (center_x-r) * mm, (page_h-TIMELINE_Y) * mm)
             c.line((center_x-r) * mm, (page_h-TIMELINE_Y) * mm,
                    center_x * mm, (page_h-(TIMELINE_Y-r)) * mm)
+            c.setFillColor(HexColor("#222222"))
             c.setFont("Helvetica-Bold", 7)
             c.drawCentredString(
                 center_x * mm,
                 (page_h - TIMELINE_Y - 1.0) * mm,
                 str(step.number),
             )
+            c.setFillColor(HexColor("#555555"))
             pdf_text(
                 c,
                 center_x,
@@ -526,6 +534,7 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                 6.2,
                 bold=True,
             )
+            c.setFillColor(HexColor("#222222"))
             pdf_text(
                 c,
                 center_x,
@@ -536,10 +545,12 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
             )
 
             x = center_x - width / 2
-            for top, height, heading, text in [
-                (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", step.deliverable),
-                (DEMO_TOP, DEMO_H, "DEMONSTRATION", step.demonstration),
+            for top, height, heading, text, fill in [
+                (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", step.deliverable, "#f6f8fa"),
+                (DEMO_TOP, DEMO_H, "DEMONSTRATION", step.demonstration, "#ffffff"),
             ]:
+                c.setStrokeColor(HexColor("#6c8ebf"))
+                c.setFillColor(HexColor(fill))
                 c.roundRect(
                     x * mm,
                     (page_h - top - height) * mm,
@@ -547,10 +558,12 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                     height * mm,
                     1.6 * mm,
                     stroke=1,
-                    fill=0,
+                    fill=1,
                 )
+                c.setFillColor(HexColor("#4f81bd"))
                 c.setFont("Helvetica-Bold", 6.2)
                 c.drawString((x + 2.7) * mm, (page_h - top - 6.2) * mm, heading)
+                c.setFillColor(HexColor("#222222"))
                 pdf_text(
                     c,
                     center_x,
@@ -559,6 +572,8 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                     5.9,
                 )
 
+            c.setStrokeColor(HexColor("#999999"))
+            c.setFillColor(HexColor("#fafafa"))
             c.roundRect(
                 x * mm,
                 (page_h - DOC_TOP - DOC_H) * mm,
@@ -566,8 +581,9 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                 DOC_H * mm,
                 1.6 * mm,
                 stroke=1,
-                fill=0,
+                fill=1,
             )
+            c.setFillColor(HexColor("#555555"))
             c.setFont("Helvetica-Bold", 6.0)
             c.drawString((x + 2.7) * mm, (page_h - DOC_TOP - 6.2) * mm, "DOCUMENTS")
             for idx, document in enumerate(step.documents[:6]):
@@ -575,6 +591,9 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                 chip_w = (width - 7.0) / 2
                 chip_x = x + 2.3 + col * (chip_w + 2.3)
                 chip_y = DOC_TOP + 10.5 + row * 8.1
+                style = MATURITY[document["maturity"]]
+                c.setStrokeColor(HexColor(style["stroke"]))
+                c.setFillColor(HexColor(style["fill"]))
                 c.roundRect(
                     chip_x * mm,
                     (page_h - chip_y - 6.3) * mm,
@@ -582,8 +601,9 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                     6.3 * mm,
                     1.0 * mm,
                     stroke=1,
-                    fill=0,
+                    fill=1,
                 )
+                c.setFillColor(HexColor(style["stroke"]))
                 c.setFont("Helvetica-Bold", 4.7)
                 c.drawCentredString(
                     (chip_x + chip_w / 2) * mm,
