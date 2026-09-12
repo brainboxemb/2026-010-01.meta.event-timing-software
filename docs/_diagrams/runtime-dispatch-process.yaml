@@ -83,8 +83,8 @@ nodes:
     group: execution
     layout: {x: 1300, y: 260, w: 180, h: 125}
 
-  - id: io-execution
-    label: "I/O / scheduler execution\nblocking work stays outside state lane\ncompletion returns via dispatcher"
+  - id: io-rule
+    label: "Blocking I/O / scheduler rule\noutside the state lane\ncompletion re-enters via dispatcher"
     kind: platform
     group: execution
     layout: {x: 1300, y: 500, w: 180, h: 125}
@@ -146,7 +146,6 @@ edges:
 
   - from: serial-01
     to: state-executor
-    label: delegates execution
     dashed: true
     from_anchor: {side: right, position: 0.25}
     to_anchor: {side: left, position: 0.35}
@@ -156,7 +155,6 @@ edges:
 
   - from: serial-02
     to: state-executor
-    label: delegates execution
     dashed: true
     from_anchor: {side: right, position: 0.75}
     to_anchor: {side: left, position: 0.70}
