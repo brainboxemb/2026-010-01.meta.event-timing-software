@@ -5,6 +5,7 @@ on:
     paths:
       - 'docs/**'
       - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
       - '.github/workflows/docs-build.yml'
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'docs/**'
       - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
 
@@ -36,7 +38,9 @@ jobs:
           python-version: '3.12'
 
       - name: Generate architecture diagrams
-        run: python tools/generate_architecture_diagrams.py
+        run: |
+          python tools/generate_architecture_diagrams.py
+          python tools/generate_timing_detail_diagrams.py
 
       - name: Validate generated XML
         run: |
