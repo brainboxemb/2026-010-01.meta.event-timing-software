@@ -1,23 +1,23 @@
 diagram:
   id: system-device-network-topology
-  title: System device and network topology
+  title: System device and logical interface topology
   width: 1540
-  height: 940
-  note: System-level deployment and interface relationships; SI-01 adapter/service internals belong in the SI-01 SAD.
+  height: 900
+  note: Solid relationships show logical system interfaces between endpoints. Intermediate LAN/Wi-Fi equipment is a deployment option, not an IF-03 or IF-09 dependency.
 
 groups:
   - id: field
     label: Field timing system
     kind: layer-application
-    layout: {x: 70, y: 105, w: 650, h: 730}
-  - id: local-network
-    label: Local operator / display network
+    layout: {x: 70, y: 105, w: 650, h: 700}
+  - id: clients
+    label: Network clients
     kind: layer-presentation
-    layout: {x: 750, y: 105, w: 470, h: 730}
-  - id: external-network
-    label: External connectivity
+    layout: {x: 750, y: 105, w: 470, h: 700}
+  - id: external
+    label: External system
     kind: layer-crosscutting
-    layout: {x: 1250, y: 105, w: 250, h: 730}
+    layout: {x: 1250, y: 105, w: 250, h: 700}
 
 nodes:
   - id: si01
@@ -30,13 +30,13 @@ nodes:
     label: "RFID subsystem\nreader / antennas"
     kind: external
     group: field
-    layout: {x: 115, y: 400, w: 250, h: 85}
+    layout: {x: 115, y: 410, w: 250, h: 85}
 
   - id: can
     label: "CAN devices\nkeypad + Display V1"
     kind: external
     group: field
-    layout: {x: 410, y: 400, w: 250, h: 85}
+    layout: {x: 410, y: 410, w: 250, h: 85}
 
   - id: local-storage
     label: "Local persistent state"
@@ -44,41 +44,35 @@ nodes:
     group: field
     layout: {x: 260, y: 625, w: 280, h: 75}
 
-  - id: lan
-    label: "Local LAN / Wi-Fi router"
-    kind: external
-    group: local-network
-    layout: {x: 835, y: 180, w: 300, h: 80}
-
   - id: si02
-    label: "SI-02 Desktop GUI"
+    label: "SI-02 Desktop GUI\nIP client"
     kind: client
-    group: local-network
-    layout: {x: 790, y: 385, w: 190, h: 75}
+    group: clients
+    layout: {x: 805, y: 190, w: 350, h: 75}
 
   - id: si03
-    label: "SI-03 Web / iPad"
+    label: "SI-03 Web / iPad\nIP client"
     kind: client
-    group: local-network
-    layout: {x: 1000, y: 385, w: 190, h: 75}
+    group: clients
+    layout: {x: 805, y: 375, w: 350, h: 75}
 
   - id: display2
     label: "Smart Display V2\nIP / Wi-Fi client"
     kind: external
-    group: local-network
-    layout: {x: 875, y: 610, w: 250, h: 85}
+    group: clients
+    layout: {x: 805, y: 560, w: 350, h: 85}
 
-  - id: internet
-    label: "Internet / 4G uplink"
-    kind: external
-    group: external-network
-    layout: {x: 1275, y: 250, w: 200, h: 75}
+  - id: network-note
+    label: "Transport path may be direct / same-host / point-to-point\nor use LAN / Wi-Fi infrastructure. A router is not part of the logical interface."
+    kind: interface
+    group: clients
+    layout: {x: 785, y: 690, w: 390, h: 80}
 
   - id: backoffice
     label: "Backoffice system"
     kind: external
-    group: external-network
-    layout: {x: 1275, y: 535, w: 200, h: 80}
+    group: external
+    layout: {x: 1275, y: 345, w: 200, h: 80}
 
 edges:
   - from: rfid
@@ -99,44 +93,37 @@ edges:
     from_anchor: {side: bottom, position: 0.50}
     to_anchor: {side: top, position: 0.50}
 
-  - from: si01
-    to: lan
-    label: network services
-    from_anchor: {side: right, position: 0.35}
-    to_anchor: {side: left, position: 0.40}
-
   - from: si02
-    to: lan
+    to: si01
     label: IF-03
-    from_anchor: {side: top, position: 0.50}
-    to_anchor: {side: bottom, position: 0.25}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.25}
 
   - from: si03
-    to: lan
+    to: si01
     label: IF-03
-    from_anchor: {side: top, position: 0.50}
-    to_anchor: {side: bottom, position: 0.75}
+    route:
+      - {x: 745, y: 412.5}
+      - {x: 745, y: 227.5}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.50}
 
   - from: display2
-    to: lan
+    to: si01
     label: IF-09
-    from_anchor: {side: top, position: 0.50}
-    to_anchor: {side: bottom, position: 0.50}
-
-  - from: lan
-    to: internet
-    label: uplink
-    dashed: true
-    from_anchor: {side: right, position: 0.35}
-    to_anchor: {side: left, position: 0.50}
+    route:
+      - {x: 730, y: 602.5}
+      - {x: 730, y: 251.0}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.75}
 
   - from: si01
     to: backoffice
     label: IF-06
     dashed: true
     route:
-      - {x: 690, y: 330}
-      - {x: 1225, y: 330}
-      - {x: 1225, y: 575}
-    from_anchor: {side: right, position: 0.75}
+      - {x: 690, y: 300}
+      - {x: 1225, y: 300}
+      - {x: 1225, y: 385}
+    from_anchor: {side: right, position: 0.90}
     to_anchor: {side: left, position: 0.50}
