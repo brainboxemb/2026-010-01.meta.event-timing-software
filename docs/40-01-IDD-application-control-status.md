@@ -1,6 +1,6 @@
 # Application Control and Status Interface (IDD)
 
-Status: working draft / AP-1 first-executable slice
+Status: review candidate / AP-1 first-executable slice
 
 System interface: **IF-03 — Application Control & Status**
 
@@ -27,20 +27,127 @@ SI-01 owns the authoritative application/status state. Clients observe/query tha
 
 ## Transport baseline
 
-Current architectural direction:
+The first-executable transport contract is:
 
-- HTTP with JSON representation for request/response queries and later commands;
+- HTTP with JSON for request/response queries;
 - WebSocket for live status/event delivery;
+- API major version represented in the resource path as `/api/v1`;
 - network boundary usable when SI-01 and the client run on different hosts;
-- the same semantic application model is also represented through local console/remote-shell adapters, but those transports are not owned by this IDD.
+- the same semantic application model may also be represented through local console/remote-shell adapters, but those transports are not owned by this IDD.
 
-The first-executable contract must remain compatible with Java 8 and the mandatory Raspberry Pi Zero target, but this IDD does not select a concrete Java HTTP/WebSocket library.
+The contract must remain compatible with Java 8 and the mandatory Raspberry Pi Zero target, but this IDD does not select a concrete Java HTTP/WebSocket library.
+
+## First-executable resources
+
+```text
+GET /api/v1/version
+GET /api/v1/status
+WS  /api/v1/events
+```
+
+Only `GET` is required for the two HTTP resources in this slice. Later application commands may add other methods/resources without changing the ownership principle.
+
+## Common compatibility rules
+
+- JSON member names defined by this first slice are stable within API major version `v1`.
+- Clients shall tolerate additional/unknown JSON members so the status model can grow compatibly.
+- A breaking representation/semantic change requires a new API major path such as `/api/v2` or an explicitly documented compatible migration mechanism.
+- Unknown event types shall not corrupt client state; a client may ignore/log an event type it does not understand and can always re-query `/status`.
+- UTF-8 is used for JSON text.
+- timestamps in the public contract use ISO-8601 UTC text form.
+
+## Build/version identity
+
+The stable first-executable build identity is:
+
+```json
+{
+  "application": "timing-application",
+  "version": "<project-version>",
+  "revision": "<source-revision>",
+  "buildTime": "<ISO-8601 UTC>",
+  "apiVersion": "1"
+}
+```
+
+Field semantics:
+
+- `application` — stable application identity for SI-01;
+- `version` — project/application version from the produced build;
+- `revision` — source revision used to produce the running artifact, normally the Git commit SHA;
+- `buildTime` — build provenance timestamp according to the build/toolchain policy;
+- `apiVersion` — IF-03 major API version represented by this contract.
+
+The build/toolchain may later strengthen reproducible-build timestamp policy without changing these semantic fields.
+
+## Status snapshot
+
+The first-executable status representation is:
+
+```json
+{
+  "apiVersion": "1",
+  "build": {
+    "application": "timing-application",
+    "version": "<project-version>",
+    "revision": "<source-revision>",
+    "buildTime": "<ISO-8601 UTC>",
+    "apiVersion": "1"
+  },
+  "application": {
+    "state": "RUNNING",
+    "startedAt": "<ISO-8601 UTC>"
+  },
+  "timingSystems": [
+    {
+      "id": "<configured-instance-id>",
+      "lifecycle": "CLOSED"
+    }
+  ],
+  "problems": []
+}
+```
+
+First-executable application states are:
+
+```text
+STARTING
+RUNNING
+DEGRADED
+STOPPING
+```
+
+`DEGRADED` means the process remains capable of serving status while one or more first-executable startup/configuration problems are observable. Fatal configuration errors that prevent the HTTP service from starting may still terminate the process and are verified separately through process exit/log evidence.
+
+The first executable does not yet implement operational open/close commands. A configured minimal `TimingSystemInstance` therefore reports `CLOSED`; later SIP increments may add additional lifecycle values while preserving the field/ownership model.
+
+Problem entries use:
+
+```json
+{
+  "code": "<stable-machine-code>",
+  "severity": "WARNING|ERROR",
+  "message": "<human-readable-summary>"
+}
+```
+
+Clients must not make business decisions by parsing the human-readable `message`; `code` and structured status fields are the machine-readable contract.
 
 ## First-executable semantic operations
 
 ### IF03-OP-001 — Get build/version identity
 
-Purpose: allow a client to identify the exact SI-01 application build it is communicating with.
+HTTP mapping:
+
+```text
+GET /api/v1/version
+```
+
+Successful response:
+
+- HTTP `200`;
+- `application/json`;
+- body is the build/version identity defined above.
 
 Semantics:
 
@@ -49,33 +156,106 @@ Semantics:
 - remains stable for the lifetime of one running application build;
 - is equivalent in meaning to version identity shown by first-executable console/remote-shell views.
 
-The exact field set is an AP-1 open decision.
-
 ### IF03-OP-002 — Get current status snapshot
 
-Purpose: obtain a coherent current application status snapshot.
+HTTP mapping:
 
-For the first executable, the snapshot must be able to represent at least:
+```text
+GET /api/v1/status
+```
 
-- application/build identity or a stable reference to it;
-- process/application availability state;
-- configured timing-system instance identity/identities;
-- minimal lifecycle state for those instances;
-- observable first-executable startup/configuration degradation or errors.
+Successful response:
+
+- HTTP `200`;
+- `application/json`;
+- body is one coherent status snapshot using the schema above.
 
 Later subsystem/device/backoffice fields may extend the model without changing the ownership principle.
 
 ### IF03-OP-003 — Subscribe to status/event updates
 
-Purpose: allow a connected client to observe live status changes without polling as the only mechanism.
+WebSocket mapping:
 
-Semantics:
+```text
+/api/v1/events
+```
 
-- uses the same authoritative status model as `IF03-OP-002`;
-- does not make WebSocket delivery authoritative over queryable application state;
-- reconnect/resynchronisation must ultimately permit the client to recover a complete current state rather than relying forever on a missed event history.
+After the WebSocket connection is established SI-01 shall immediately send a complete `STATUS_SNAPSHOT` event before normal change events are relied upon.
 
-The first-executable event envelope and resynchronisation handshake remain to be finalised in AP-1.
+Event envelope:
+
+```json
+{
+  "apiVersion": "1",
+  "eventType": "STATUS_SNAPSHOT",
+  "occurredAt": "<ISO-8601 UTC>",
+  "payload": {}
+}
+```
+
+First-executable event types:
+
+```text
+STATUS_SNAPSHOT
+STATUS_CHANGED
+```
+
+For `STATUS_SNAPSHOT`, `payload` contains the complete current status representation.
+
+For `STATUS_CHANGED`, `payload` also contains a complete current status representation in the first executable. This deliberately avoids introducing partial-patch/replay semantics before they are needed. Later compatible optimisation may add more event types while `/status` remains the authoritative resynchronisation operation.
+
+WebSocket transport ordering is sufficient for first-executable events; no durable cross-connection event sequence is introduced in AP-1.
+
+## Reconnect and resynchronisation
+
+Reconnect semantics are intentionally simple:
+
+1. client reconnects to `/api/v1/events`;
+2. SI-01 sends a new complete `STATUS_SNAPSHOT` event;
+3. the client replaces its cached status with that snapshot;
+4. subsequent `STATUS_CHANGED` events are applied in WebSocket delivery order;
+5. the client may call `GET /api/v1/status` at any time to explicitly recover current authoritative state.
+
+No event replay across disconnected sessions is required by the first executable.
+
+## Error responses
+
+HTTP failures use a JSON envelope:
+
+```json
+{
+  "apiVersion": "1",
+  "error": {
+    "code": "<stable-machine-code>",
+    "message": "<human-readable-summary>"
+  }
+}
+```
+
+Initial status mapping:
+
+| HTTP status | Meaning in first executable |
+| --- | --- |
+| `400` | malformed request where applicable |
+| `404` | unknown resource |
+| `405` | unsupported HTTP method on a known resource |
+| `500` | unexpected internal interface failure |
+
+A normal application degradation represented by `/status` is not converted into HTTP `500` merely because the application reports a problem.
+
+## Network access and first-executable security policy
+
+Authentication/authorisation is explicitly **deferred** for the first executable development baseline. This is a deliberate scope decision, not an assumption that the final product is unauthenticated.
+
+Until a later security/interface increment defines authentication:
+
+- the default IF-03 listen address shall be loopback/local-only;
+- non-loopback binding must require explicit configuration;
+- remote first-executable demonstrations shall run only on a trusted development/test network;
+- deployment/prod exposure outside that controlled environment is out of scope;
+- CORS/browser-origin policy is deferred until SI-03/browser work requires it.
+
+This allows ST-1 and SI-02 development without prematurely inventing production security while preventing accidental default exposure.
 
 ## First-executable contract rules
 
@@ -83,56 +263,89 @@ The first-executable event envelope and resynchronisation handshake remain to be
 HTTP/JSON and WebSocket representations shall map to the shared SI-01 application/status semantics rather than implement independent business/status state in the transport adapter.
 
 **IF03-REQ-002 — Remote-host operation**  
-The interface shall work across a normal IP network boundary so a client can run on a workstation while SI-01 runs on another host such as a Raspberry Pi.
+The interface shall support operation across a normal IP network boundary when non-loopback access is explicitly configured, so a client can run on a workstation while SI-01 runs on another host such as a Raspberry Pi.
 
 **IF03-REQ-003 — Version query**  
-The interface shall provide an operation representing `IF03-OP-001`.
+The interface shall provide `GET /api/v1/version` representing `IF03-OP-001`.
 
 **IF03-REQ-004 — Status query**  
-The interface shall provide an operation representing `IF03-OP-002`.
+The interface shall provide `GET /api/v1/status` representing `IF03-OP-002`.
 
 **IF03-REQ-005 — Live status/event delivery**  
-The interface shall provide WebSocket-based live delivery representing `IF03-OP-003` for the first executable.
+The interface shall provide WebSocket `/api/v1/events` representing `IF03-OP-003` for the first executable.
 
 **IF03-REQ-006 — Reconnect to authoritative state**  
-A client that reconnects after missing live updates shall be able to obtain a complete current status snapshot before relying on subsequent live events.
+A client that connects/reconnects shall receive a complete current status snapshot before relying on subsequent live events.
 
 **IF03-REQ-007 — Machine-readable representation**  
 The HTTP query representation shall be machine-readable JSON suitable for SI-02/SI-03 and automated ST-1 verification.
 
 **IF03-REQ-008 — Explicit failure response**  
-Unsupported or invalid requests shall produce an explicit interface-level failure outcome rather than a successful response containing silently invalid data.
+Unsupported or invalid HTTP requests shall produce the explicit JSON failure outcome defined in this IDD rather than a successful response containing silently invalid data.
 
-The concrete HTTP status/error-body mapping remains an AP-1 open decision.
+**IF03-REQ-009 — Safe default listen scope**  
+Without explicit configuration the first-executable IF-03 service shall bind only to a local/loopback interface.
+
+**IF03-REQ-010 — Compatible extension**  
+Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
 
 ## Relationship to SI-01 SRD
-
-The following allocation is the current first-slice view:
 
 | IDD obligation | SI-01 requirement(s) |
 | --- | --- |
 | IF03-REQ-001 | SI01-REQ-022, SI01-REQ-030 |
-| IF03-REQ-002 | first-executable network boundary; SI01-REQ-031 |
+| IF03-REQ-002 | SI01-REQ-031 |
 | IF03-REQ-003 | SI01-REQ-010, SI01-REQ-011 |
 | IF03-REQ-004 | SI01-REQ-020, SI01-REQ-021, SI01-REQ-022 |
 | IF03-REQ-005/006 | SI01-REQ-023 |
-| IF03-REQ-007 | SI01-REQ-031 |
+| IF03-REQ-007/008 | SI01-REQ-031 |
+| IF03-REQ-009 | SI01-REQ-032 |
+| IF03-REQ-010 | SI01-REQ-033 |
 
-The SRD references the IDD contract instead of duplicating transport schema details.
+The SRD references this contract instead of duplicating transport schema details.
 
-## ST-1 verification intent
+## First AP-1 verification case
 
-The first executable should permit a system-test driver to run against SI-01 as a separate process and demonstrate at least:
+Verification-case identifiers use `VC-<profile>-<number>` for this baseline.
 
-1. establish network connectivity to IF-03;
-2. obtain build/version identity;
-3. obtain current status;
-4. verify at least one configured `TimingSystemInstance` is represented;
-5. observe a status/event update over WebSocket;
-6. disconnect/reconnect;
-7. obtain a fresh complete status snapshot and continue receiving live updates.
+### VC-ST1-001 — Query and resynchronise first-executable status
 
-No direct Java object access or filesystem inspection should be required for the client to validate these externally observable semantics.
+Trace target:
+
+```text
+UC-001 / UC-008
+  -> SI01-REQ-010/011/020/021/022/023/031/032/033
+  -> IF03-REQ-001..010 as applicable
+  -> SI-01 status/application boundary from SAD/SDD
+  -> VC-ST1-001
+```
+
+Procedure:
+
+1. start SI-01 as a separate process with a synthetic configuration containing at least one `TimingSystemInstance`;
+2. wait for the configured local IF-03 endpoint to become available;
+3. call `GET /api/v1/version` and verify the required identity fields are present;
+4. call `GET /api/v1/status` and verify the same build identity and configured instance identity are represented;
+5. connect to `/api/v1/events` and verify the first application message is a complete `STATUS_SNAPSHOT`;
+6. cause one supported first-executable observable status transition through normal application/process/configuration behaviour and verify a `STATUS_CHANGED` event is received;
+7. disconnect the WebSocket client;
+8. reconnect and verify a new complete `STATUS_SNAPSHOT` is received before further change events are relied upon;
+9. call `/status` once more and verify it is semantically consistent with the latest snapshot;
+10. shut the SI-01 process down through the supported controlled shutdown path.
+
+The test driver shall not mutate internal Java objects or inspect private implementation state to obtain the pass/fail result.
+
+## Remote shell scope
+
+The first executable may expose equivalent version/status semantics through a remote-shell adapter as required by the SIP, but AP-1 does **not** introduce a separate system IDD for that transport.
+
+Reason:
+
+- the public software-to-software contract needed by SI-02/SI-03/ST-1 is IF-03;
+- remote-shell technology is an implementation/support adapter concern at this stage;
+- it must reuse the shared version/status application queries and must not own a separate authoritative model.
+
+If the remote shell later becomes a stable externally consumed system interface, it should receive an appropriate IDD then.
 
 ## Deferred interface scope
 
@@ -147,23 +360,19 @@ The following IF-03 capabilities are visible in later use cases/architecture but
 - reference-data administration;
 - backoffice controls;
 - detailed diagnostics/support export;
-- authentication/role-based authorisation policy unless AP-1 determines a minimal first-executable rule is required.
+- production authentication/role-based authorisation;
+- browser CORS/origin policy beyond later SI-03 needs.
 
 They should be added when their corresponding SIP capability approaches implementation.
 
-## AP-1 open decisions
+## Remaining AP-1 implementation choices
 
-The following decisions must become concrete enough before this IDD is review-ready for SIP Step 3 implementation:
+The following are implementation/toolchain selections rather than unresolved interface semantics and may be chosen in the implementation repository/toolchain step:
 
-- HTTP base path and operation/resource paths;
-- stable JSON field names/types for build identity and first status snapshot;
-- WebSocket path;
-- event envelope/type/versioning strategy;
-- initial connection behaviour: explicit snapshot request, automatic snapshot event, or both;
-- reconnect/resynchronisation sequence;
-- error response structure and HTTP status mapping;
-- compatibility/version negotiation strategy for future client/server evolution;
-- whether a minimal authentication policy is needed in the first executable or explicitly deferred;
-- CORS/origin/network-access policy needed for later browser use versus the first SI-02/ST-1 clients.
+- concrete Java HTTP/WebSocket library;
+- concrete remote-shell library/technology;
+- concrete JSON library;
+- concrete configuration library;
+- exact JDK/Maven/toolchain provisioning.
 
-These are interface-design questions for AP-1, not implementation-library choices.
+Changing one of these libraries must not silently change the contract defined above.
