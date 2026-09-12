@@ -72,6 +72,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
+| UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
 
 ## UC-001 — Start and prepare a timing-system instance
 
@@ -136,20 +137,22 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 1. The RFID adapter captures raw tag data, antenna identity and observation time.
 2. SI-01 routes the observation to the configured `RegistrationAsset` / `TimingSystemInstance` context.
-3. Proprietary/private decoding/decryption translates the raw tag into a public semantic identity representation.
+3. Proprietary/private decoding/decryption translates the raw tag into a public semantic identity representation while retaining whether the tag is normal, reserve or test-class.
 4. Filtering/observation accumulation determines whether the observation is accepted.
 5. Reserve-tag resolution is applied when applicable using locally available reference data.
-6. Source-routing policy selects the applicable `RegistrationSource` stream(s).
-7. Each committed source record receives the next monotonic source sequence number.
-8. The record is persisted in that source's registration file/repository.
-9. Derived local state/calculations and status are updated.
-10. Outbound synchronisation is queued independently from local commit.
+6. A test-tag identity branches to the explicit test-tag behaviour in UC-019 rather than silently continuing as a normal participant registration.
+7. Source-routing policy selects the applicable `RegistrationSource` stream(s).
+8. Each committed source record receives the next monotonic source sequence number.
+9. The record is persisted in that source's registration file/repository.
+10. Derived local state/calculations and status are updated.
+11. Outbound synchronisation is queued independently from local commit.
 
 **Alternative/failure flows:**
 
 - decryption/validation fails;
 - tag is observed but filtering does not yet accept it;
 - reserve mapping is unavailable;
+- a test-tag policy does not permit the requested/observed operation;
 - source routing is ambiguous/invalid;
 - local persistence fails;
 - backoffice is unavailable after local commit.
@@ -375,6 +378,38 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 
 Production names, source IDs, schemas and credentials remain outside the public fixture.
 
+## UC-019 — Process a test RFID tag
+
+**Goal:** recognise a test-tag observation and apply deliberate test-specific behaviour without allowing the tag to masquerade as a normal or reserve participant tag.
+
+**Primary actors:** RFID subsystem and operator.
+
+**Preconditions:**
+
+- the tag has been decoded sufficiently to identify its semantic tag class;
+- the configured timing-system instance can identify that the tag is a test tag.
+
+**Main flow:**
+
+1. The RFID adapter captures the observation through the same normal ingress path used for other tags.
+2. Decoding preserves the semantic tag class as `test` rather than flattening the identity to a normal participant identity.
+3. Any common validation/filtering that also applies to test tags is performed according to the final requirements.
+4. SI-01 applies the configured/test-tag policy instead of the normal or reserve-tag path.
+5. The resulting action and operator-visible state remain explicitly distinguishable as test-tag behaviour.
+6. If any record is persisted or synchronised, its semantics remain distinguishable from a normal participant registration.
+
+**Behaviour still to define:**
+
+- whether a test tag creates a registration-stream record at all;
+- whether it uses a dedicated record type and/or source-routing rule;
+- whether it may affect elapsed-time/ranking/other derived calculations;
+- whether it is synchronised to backoffice, and if so with what semantics;
+- in which lifecycle states a test tag is accepted;
+- what an operator sees when a test tag is detected/accepted/rejected;
+- whether test-tag handling requires an explicit enable/configuration mode.
+
+This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
+
 ## Cross-cutting alternative/failure scenarios
 
 The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:
@@ -382,6 +417,7 @@ The following scenarios should be associated with applicable use cases rather th
 - RFID power/boot/heartbeat failure;
 - invalid/decryption/filtering failure;
 - missing/stale reserve-tag or start-time data;
+- test-tag detection while test-tag behaviour is disabled or not valid in the current lifecycle state;
 - CAN device disappearance;
 - passive display reset/reconnect;
 - smart-display reconnect;
@@ -389,6 +425,8 @@ The following scenarios should be associated with applicable use cases rather th
 - source persistence/backup failure;
 - process restart after committed events;
 - source sequence continuity/gap detection;
+- operating-system wall-clock correction forwards or backwards while observations are being captured;
+- local daylight-saving-time transition or other local-time ambiguity;
 - queue pressure/backpressure;
 - GUI/browser disconnect/stale state;
 - socket transport disconnect/reconnect;
@@ -420,3 +458,4 @@ This allows one operational goal to remain visible even when implementation resp
 - Which reference-data updates are automatically accepted versus requiring operator acknowledgement?
 - What exact local behaviour is required if reference data is stale but backoffice is unavailable?
 - Which source-routing cases can intentionally create records in multiple virtual/source streams from one accepted RFID event?
+- Which UC-019 test-tag behaviours are part of normal operational verification versus maintenance/service-only behaviour?
