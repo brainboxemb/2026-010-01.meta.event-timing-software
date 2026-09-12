@@ -11,37 +11,33 @@ This document also records architecture decisions as they become sufficiently co
 | ID | Status | Decision | Rationale / notes |
 | --- | --- | --- | --- |
 | ADR-001 | accepted | Use **Maven** as the Java build and dependency-management tool. | Maven is the preferred baseline because there is more existing project experience with it. Avoid introducing Gradle without a concrete need. |
-| ADR-002 | proposed | Use **Java SE 21 LTS** as the language/API/runtime baseline. | Java 21 was released in September 2023 and is a mature LTS baseline with a substantially longer useful support horizon than Java 17 while avoiding adoption of the much newer Java 25 baseline immediately. The application should target the Java SE level rather than depend on one JDK vendor. |
+| ADR-002 | proposed | Use **Java SE 11 LTS** as the language/API/runtime baseline. | The original Raspberry Pi Zero / Zero W (ARMv6) is a mandatory deployment target. Java 11 is one LTS generation newer than the legacy Java 8 application and remains available in current ARM32 hard-float builds tested on ARMv6-class hardware. Java 17+ no longer provides a clean supported path for Raspberry Pi Zero 1. |
+| ADR-003 | proposed | Use **Azul Zulu 11** as the reference runtime for Raspberry Pi Zero 1 validation, while keeping application code Java-SE-11 vendor-neutral. | Azul explicitly documents ARM32 hard-float Java 11 builds tested on ARMv6/ARMv7/ARMv8 hardware and explicitly excludes Raspberry Pi Zero 1 only for Java 17+. A single reference runtime reduces deployment ambiguity while avoiding vendor-specific application APIs. |
 
 ### Java runtime portability note
 
 The Java language/API baseline and the concrete JDK/runtime distribution are separate concerns.
 
-The intended baseline is one Java SE level for application source and bytecode, while the runtime distribution can be selected per supported platform when necessary. Development and CI can standardise on one OpenJDK distribution for reproducibility without making that distribution part of the application architecture contract.
+The intended baseline is Java SE 11 for application source and bytecode. Application code must not depend on vendor-specific JDK APIs unless explicitly justified.
 
-For Java 21, Eclipse Temurin is a suitable default candidate for normal Windows, Linux x86-64, and Linux AArch64 development/CI/runtime environments. Other Java SE 21-compatible OpenJDK distributions remain valid where platform support requires them.
+The original Raspberry Pi Zero / Zero W is a hard target constraint rather than an optional legacy platform. It uses an ARMv6-class processor, which materially constrains the usable Java runtime baseline.
 
-This matters particularly for Raspberry Pi Zero-class hardware:
+Current evidence indicates:
 
-- original Raspberry Pi Zero / Zero W hardware uses the BCM2835 with a single-core ARM1176JZF-S (ARMv6-class) processor;
-- Raspberry Pi Zero 2 W uses a quad-core 64-bit ARM Cortex-A53 (ARMv8) processor;
-- current mainstream Java 21 distributions have good AArch64 support, making the Zero 2 W a much more natural target;
-- Eclipse Temurin does not publish 32-bit ARM binaries for Java 21 and later;
-- Azul documents that its Java 17+ 32-bit ARM builds do not support the original Raspberry Pi Zero 1;
-- therefore selecting Java 17 instead of Java 21 does not provide a clean, vendor-neutral solution for original Raspberry Pi Zero / Zero W hardware;
-- if original ARMv6 Zero hardware is a mandatory target, that needs a separate explicit runtime investigation and may require a special/older runtime strategy;
-- if Raspberry Pi Zero 2 W or newer is the minimum Raspberry Pi target, Java 21 is the preferred current baseline.
+- current Azul Zulu Java 11 ARM32 hard-float builds are available for ARMv6/ARMv7-class Linux targets;
+- Azul documents that its C1 ARM32 bundles are tested on ARMv6, ARMv7, and ARMv8 hardware;
+- Azul explicitly states that Java 17+ ARM32 builds do not support Raspberry Pi Zero 1;
+- therefore Java 11 is the newest practical LTS baseline currently identified for this mandatory platform;
+- Java 8 remains a fallback compatibility option, but should not be selected unless real Zero 1 validation shows a blocking Java 11 problem.
 
-The application architecture must not depend on vendor-specific JDK APIs unless explicitly justified.
-
-ADR-002 remains `proposed` until the Java baseline and minimum Raspberry Pi target are explicitly accepted.
+For normal Windows/Linux development and CI, another Java SE 11-compatible distribution may be used, but standardising on the same vendor where practical may reduce differences. The runtime policy should be validated by actual execution on the real Zero 1 hardware before ADR-002 and ADR-003 are accepted.
 
 ## Architectural goals
 
 The current direction is a reusable Java-based waypoint runtime with the following characteristics:
 
 - headless-first operation;
-- support for Windows, Linux, and Raspberry Pi Zero-class targets;
+- support for Windows, Linux, and Raspberry Pi Zero / Zero W targets;
 - one runtime capable of hosting one to multiple logical waypoint systems;
 - multiple external control/operator clients;
 - explicit platform and device abstraction boundaries;
@@ -271,15 +267,17 @@ Before implementing the registration domain, the architecture should be validate
 5. use a logging framework;
 6. load settings through the configuration structure;
 7. add unit tests around the shared application behaviour;
-8. build and test through GitHub Actions.
+8. build and test through GitHub Actions;
+9. execute the same application on an original Raspberry Pi Zero / Zero W using the selected Java 11 runtime and record memory/startup/runtime observations.
 
 This is intentionally small but exercises the boundaries that later registration, GUI, hardware, and backoffice functionality will use.
 
 ## Open architecture questions
 
-- final acceptance of Java 21 LTS as the baseline;
-- minimum Raspberry Pi Zero generation / CPU architecture that must be supported;
-- standard development/CI JDK distribution and runtime distribution policy per platform;
+- final acceptance of Java 11 LTS as the baseline after real Raspberry Pi Zero 1 validation;
+- final acceptance of Azul Zulu 11 as the Raspberry Pi Zero 1 reference runtime;
+- standard development/CI JDK distribution policy for Windows and Linux;
+- minimum supported Raspberry Pi OS / Linux baseline;
 - module/package boundaries;
 - dependency injection or explicit composition approach;
 - API protocol and server technology;
