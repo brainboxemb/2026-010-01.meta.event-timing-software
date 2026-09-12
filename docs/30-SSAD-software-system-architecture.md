@@ -4,13 +4,16 @@ Status: working draft / non-authoritative
 
 This document defines the current software-system architecture working model for the event timing/time-registration software. It establishes software-item boundaries, system-owned interfaces, cross-cutting architectural rules, and the relationship to software-item SAD/SDD documents.
 
-The SSAD is deliberately more stable and less implementation-specific than the software-item detailed designs.
+The SSAD is deliberately more stable and less implementation-specific than the software-item detailed designs. Stable working domain facts/terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
 ## Document role
 
 The intended document hierarchy is:
 
 ```text
+system/domain source knowledge
+        |
+        v
 system requirements
         |
         +--> system-level IDDs
@@ -99,6 +102,8 @@ SI-01 also advertises/serves data to smart Display V2 over the local network.
 
 The desktop GUI and browser clients are not required for SI-01 to continue local registration/device operation.
 
+![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
+
 ## System interface catalogue
 
 This catalogue identifies system-owned boundaries before individual IDDs are created. IDs are working identifiers but should remain stable once IDDs are promoted.
@@ -122,9 +127,9 @@ System-level IDDs own interface semantics. Software-item SRDs reference applicab
 
 Generated diagrams are published on `dev/pr-<N>/docs` for active PR review and `prod/docs` after merge.
 
-![Software system overview](../../../raw/prod/docs/architecture/system-overview.svg)
+![Headless timing application component overview](../../../raw/prod/docs/assets/architecture/system-overview.svg)
 
-![Threading and unit-testability model](../../../raw/prod/docs/architecture/threading-model.svg)
+![Threading and unit-testability model](../../../raw/prod/docs/assets/architecture/threading-model.svg)
 
 The source models live in `tools/` and generate both GitHub-readable SVG and editable draw.io output.
 
@@ -154,6 +159,10 @@ The exact type/API names are software-item design details. The system-level prin
 Inside SI-01 a `TimingSystem` is the primary logical state/ordering boundary. One running SI-01 process may host `1..X` timing systems.
 
 A timing-system lifecycle state such as `OPEN`/`CLOSED` must remain distinct from subsystem health. For example, a system may be operationally `OPEN` while RFID is starting or failed; status then shows degraded capability rather than silently changing lifecycle state.
+
+The domain mapping between one `TimingSystem` and one or more `RegistrationSystemId` source streams is still an explicit open question; do not conflate those identifiers until that mapping is confirmed.
+
+![TimingSystem lifecycle and health separation](../../../raw/prod/docs/assets/architecture/timing-system-lifecycle.svg)
 
 Detailed design: `31-01-SDD-01-timing-system-design.md`.
 
@@ -238,11 +247,13 @@ The current initial direction is **typed in-memory authoritative state/repositor
 Important concepts remain distinct:
 
 1. ingress/event queue — ordering and thread ownership;
-2. registration ledger — traceable registration records;
+2. registration ledger — traceable source-scoped registration records;
 3. ready-team journal/state — traceable keypad/operator prepare/remove actions plus current ready list;
 4. reference data — start times, reserve-tag mappings and later required metadata;
 5. local backup/restore — restart/power-loss recovery;
 6. backoffice outbox/synchronisation — pending external delivery/reconciliation.
+
+Registration streams use a monotonic sequence **per `RegistrationSystemId` / source**; location is a field on the registration rather than the sequence scope. See `03-domain-baseline.md` and `31-01-SDD-02-data-and-display-design.md`.
 
 Detailed design: `31-01-SDD-02-data-and-display-design.md`.
 
@@ -253,6 +264,8 @@ Detailed design: `31-01-SDD-02-data-and-display-design.md`.
 The RFID reader/antenna is not continuously powered. It requires an explicit lifecycle with boot/initialisation and operator-controllable reinitialisation/recovery.
 
 Raw tags are encrypted and must pass decrypt/validation, filtering/accumulation and normal/reserve-tag identity resolution before they become registration candidates.
+
+![RFID reader lifecycle and recovery](../../../raw/prod/docs/assets/architecture/rfid-lifecycle.svg)
 
 ### CAN
 
@@ -280,6 +293,8 @@ RabbitMQ/backoffice session
 
 Loss of the latter two should not automatically prevent local timing/device operation when required local state/reference data is available.
 
+![Layered connectivity status](../../../raw/prod/docs/assets/architecture/connectivity-layers.svg)
+
 ## Failure and recovery model
 
 Fault handling should preserve **local authority, traceability and explicit status**. No component should silently appear healthy merely because the process remains running.
@@ -297,7 +312,7 @@ Fault handling should preserve **local authority, traceability and explicit stat
 | RabbitMQ loss | queue/reconcile pending information through outbox; explicit broker status | local operation continues where reference data is sufficient |
 | backup write failure | explicit persistence/backup fault; keep in-memory state; commitment policy still needs requirement | severity/blocking policy TBD for traceable events |
 | corrupt/missing restore data | startup/restore status must expose failure; do not silently create apparently healthy empty state | recovery/operator policy TBD |
-| process restart | restore persisted state/reference data/sequence metadata before normal operation | avoid reuse of committed sequence numbers |
+| process restart | restore persisted state/reference data/source sequence metadata before normal operation | avoid reuse of committed sequence numbers |
 | queue overload | explicit bounded/backpressure policy required; never silently discard accepted timing information | policy to be formally defined/tested |
 | desktop/browser disconnect | client shows stale/disconnected state; SI-01 continues independently | none to local authority |
 
@@ -315,7 +330,7 @@ At minimum model explicitly:
 - backup/restore state where failure affects operation;
 - start procedure once its detailed behaviour is formalised.
 
-Generated state-model diagrams are part of the architecture output.
+Generated state-model diagrams are embedded above where they explain the corresponding architecture sections.
 
 ## Platform and Java runtime
 
@@ -366,6 +381,9 @@ Detailed component design: `31-01-SDD-03-java-component-design.md`.
 The intended engineering chain is:
 
 ```text
+system/domain source
+   |
+   v
 SYS requirement
    |
    +--> IF/IDD requirement or section (where interface-related)
@@ -435,6 +453,7 @@ The first executable increment should validate lasting boundaries rather than im
 
 - exact ARMv6 Java 8 runtime/vendor/version baseline;
 - evidence threshold and timing for a possible Java 11 migration;
+- exact mapping between `TimingSystem` and `RegistrationSystemId` sources;
 - exact serialized-executor/backing-pool topology for `1..X` TimingSystems;
 - bounded queue/backpressure/overload policy;
 - HTTP/JSON/WebSocket technology compatible with Java 8 and Zero 1;
