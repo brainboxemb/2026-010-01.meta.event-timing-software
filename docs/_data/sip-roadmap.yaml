@@ -28,10 +28,10 @@ steps:
     estimate_project_days: 1
     workstream: architecture
     docs:
-      requirements: {level: outline, scope: system/domain direction; candidate requirements only}
-      idd: {level: outline, scope: interface catalogue and expected IDDs}
-      design: {level: working, scope: SSAD/SI-01 SAD architecture baseline}
-      verification: {level: working, scope: SVP strategy and planned test profiles}
+      requirements: {level: outline, scope: "system/domain direction; candidate requirements only"}
+      idd: {level: outline, scope: "interface catalogue and expected IDDs"}
+      design: {level: working, scope: "SSAD/SI-01 SAD architecture baseline"}
+      verification: {level: working, scope: "SVP strategy and planned test profiles"}
     documents:
       - {name: 10-SDP, title: Software Development Plan, maturity: review, completeness: 90}
       - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 95}
@@ -45,10 +45,10 @@ steps:
     estimate_project_days: 6
     workstream: architecture
     docs:
-      requirements: {level: review, scope: first-executable SI-01 scope needed by the framework skeleton}
-      idd: {level: review, scope: IF-03 version/status contract for the first executable}
-      design: {level: working, scope: module/package/repository structure sufficient to code}
-      verification: {level: working, scope: toolchain, build/unit checks and first executable ST-1 preparation}
+      requirements: {level: review, scope: "first-executable SI-01 scope needed by the framework skeleton"}
+      idd: {level: review, scope: "IF-03 version/status contract for the first executable"}
+      design: {level: working, scope: "module/package/repository structure sufficient to code"}
+      verification: {level: working, scope: "toolchain, build/unit checks and first executable ST-1 preparation"}
     documents:
       - {name: 13-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 20-01-SRD, title: SI-01 first executable requirements, maturity: review, completeness: 100}
@@ -60,10 +60,10 @@ steps:
     estimate_project_days: 3
     workstream: application
     docs:
-      requirements: {level: working, scope: version/status/lifecycle behaviour only}
-      idd: {level: working, scope: application-control/status API used by first executable}
-      design: {level: review, scope: SI-01 runtime/status design exercised by code}
-      verification: {level: working, scope: ST-1 plus executable behaviour evidence}
+      requirements: {level: working, scope: "version/status/lifecycle behaviour only"}
+      idd: {level: working, scope: "application-control/status API used by first executable"}
+      design: {level: review, scope: "SI-01 runtime/status design exercised by code"}
+      verification: {level: working, scope: "ST-1 plus executable behaviour evidence"}
     documents:
       - {name: 20-01-SRD, title: SI-01 first executable requirements, maturity: review, completeness: 100}
       - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
@@ -74,10 +74,10 @@ steps:
     estimate_project_days: 4
     workstream: platform
     docs:
-      requirements: {level: working, scope: target provisioning/update requirements}
-      idd: {level: outline, scope: no new product IDD required unless target tooling exposes one}
-      design: {level: review, scope: target/image/update design based on real Pi evidence}
-      verification: {level: review, scope: Pi baseline and deployment verification evidence}
+      requirements: {level: working, scope: "target provisioning/update requirements"}
+      idd: {level: outline, scope: "no new product IDD required unless target tooling exposes one"}
+      design: {level: review, scope: "target/image/update design based on real Pi evidence"}
+      verification: {level: review, scope: "Pi baseline and deployment verification evidence"}
     documents:
       - {name: 12-SDE, title: Target/deployment environment, maturity: review, completeness: 90}
       - {name: 13-SDE, title: Java runtime/toolchain policy, maturity: accepted, completeness: 100}
@@ -88,10 +88,10 @@ steps:
     estimate_project_days: 3
     workstream: client
     docs:
-      requirements: {level: working, scope: SI-02 connection/status GUI behaviour}
-      idd: {level: review, scope: application-control/status interface between SI-01 and SI-02}
-      design: {level: working, scope: SI-02 SAD sufficient for first GUI}
-      verification: {level: working, scope: local/Pi GUI interface scenarios}
+      requirements: {level: working, scope: "SI-02 connection/status GUI behaviour"}
+      idd: {level: review, scope: "application-control/status interface between SI-01 and SI-02"}
+      design: {level: working, scope: "SI-02 SAD sufficient for first GUI"}
+      verification: {level: working, scope: "local/Pi GUI interface scenarios"}
     documents:
       - {name: 20-02-SRD, title: Desktop GUI requirements, maturity: working, completeness: 60}
       - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
@@ -102,10 +102,10 @@ steps:
     estimate_project_days: 3
     workstream: test
     docs:
-      requirements: {level: working, scope: external-consumer/test-project behaviour}
-      idd: {level: review, scope: public API/SPI and lightweight socket-test interface}
-      design: {level: review, scope: public extension/composition boundaries proven externally}
-      verification: {level: review, scope: ST-1/ST-2 scenarios repeatable outside framework reactor}
+      requirements: {level: working, scope: "external-consumer/test-project behaviour"}
+      idd: {level: review, scope: "public API/SPI and lightweight socket-test interface"}
+      design: {level: review, scope: "public extension/composition boundaries proven externally"}
+      verification: {level: review, scope: "ST-1/ST-2 scenarios repeatable outside framework reactor"}
     documents:
       - {name: 13-SDE, title: Reusable Java toolchain, maturity: accepted, completeness: 100}
       - {name: 31-01-SDD-02, title: Java component/public boundaries, maturity: review, completeness: 95}
@@ -116,10 +116,10 @@ steps:
     estimate_project_days: 2
     workstream: extension
     docs:
-      requirements: {level: working, scope: private replacement capability only}
-      idd: {level: review, scope: public/private extension contracts}
-      design: {level: review, scope: composition boundary backed by private proof}
-      verification: {level: working, scope: stub/private replacement equivalence evidence}
+      requirements: {level: working, scope: "private replacement capability only"}
+      idd: {level: review, scope: "public/private extension contracts"}
+      design: {level: review, scope: "composition boundary backed by private proof"}
+      verification: {level: working, scope: "stub/private replacement equivalence evidence"}
     documents:
       - {name: 20-01-SRD, title: Extension/replacement requirements, maturity: working, completeness: 70}
       - {name: EXT-IDD, title: Public/private extension contracts, maturity: review, completeness: 80}
@@ -130,10 +130,10 @@ steps:
     estimate_project_days: 6
     workstream: domain
     docs:
-      requirements: {level: review, scope: registration, ready-team, race-data and persistence behaviour}
-      idd: {level: working, scope: only interfaces needed by timing-domain state}
-      design: {level: review, scope: SI-01 timing/data architecture matched to executable domain}
-      verification: {level: review, scope: state, sequence, restart/restore and fault evidence}
+      requirements: {level: review, scope: "registration, ready-team, race-data and persistence behaviour"}
+      idd: {level: working, scope: "only interfaces needed by timing-domain state"}
+      design: {level: review, scope: "SI-01 timing/data architecture matched to executable domain"}
+      verification: {level: review, scope: "state, sequence, restart/restore and fault evidence"}
     documents:
       - {name: 20-01-SRD, title: Timing-domain requirements, maturity: review, completeness: 90}
       - {name: 31-01-SAD, title: Timing-system architecture, maturity: review, completeness: 95}
@@ -144,10 +144,10 @@ steps:
     estimate_project_days: 4
     workstream: client
     docs:
-      requirements: {level: review, scope: SI-03 operator/browser behaviour}
-      idd: {level: review, scope: operator HTTP/WebSocket interface and UI interaction contract}
-      design: {level: review, scope: SI-03 SAD/implementation design exercised on browser/iPad}
-      verification: {level: review, scope: operator/reconnect/local-LAN scenarios}
+      requirements: {level: review, scope: "SI-03 operator/browser behaviour"}
+      idd: {level: review, scope: "operator HTTP/WebSocket interface and UI interaction contract"}
+      design: {level: review, scope: "SI-03 SAD/implementation design exercised on browser/iPad"}
+      verification: {level: review, scope: "operator/reconnect/local-LAN scenarios"}
     documents:
       - {name: 20-03-SRD, title: Web operator requirements, maturity: review, completeness: 85}
       - {name: 40-01-IDD, title: Operator HTTP/WebSocket contract, maturity: review, completeness: 100}
@@ -158,10 +158,10 @@ steps:
     estimate_project_days: 5
     workstream: test
     docs:
-      requirements: {level: review, scope: RFID/CAN/keypad/display behaviour needed for stub flows}
-      idd: {level: review, scope: RFID/CAN/display interfaces concrete against deterministic stubs}
-      design: {level: review, scope: adapter/lifecycle/recovery architecture exercised without production hardware}
-      verification: {level: review, scope: deterministic lifecycle/fault/recovery scenarios}
+      requirements: {level: review, scope: "RFID/CAN/keypad/display behaviour needed for stub flows"}
+      idd: {level: review, scope: "RFID/CAN/display interfaces concrete against deterministic stubs"}
+      design: {level: review, scope: "adapter/lifecycle/recovery architecture exercised without production hardware"}
+      verification: {level: review, scope: "deterministic lifecycle/fault/recovery scenarios"}
     documents:
       - {name: 20-01-SRD, title: RFID/CAN/display requirements, maturity: review, completeness: 90}
       - {name: RFID/CAN-IDDs, title: Device interface contracts, maturity: review, completeness: 85}
@@ -172,10 +172,10 @@ steps:
     estimate_project_days: 7
     workstream: hardware
     docs:
-      requirements: {level: accepted, scope: implemented RFID/CAN/keypad/display capability}
-      idd: {level: accepted, scope: implemented hardware/device interfaces where evidence supports acceptance}
-      design: {level: accepted, scope: implemented production-adapter architecture baseline}
-      verification: {level: review, scope: HIL evidence for representative hardware}
+      requirements: {level: accepted, scope: "implemented RFID/CAN/keypad/display capability"}
+      idd: {level: accepted, scope: "implemented hardware/device interfaces where evidence supports acceptance"}
+      design: {level: accepted, scope: "implemented production-adapter architecture baseline"}
+      verification: {level: review, scope: "HIL evidence for representative hardware"}
     documents:
       - {name: 20-01-SRD, title: Implemented hardware capability requirements, maturity: accepted, completeness: 95}
       - {name: RFID/CAN-IDDs, title: Implemented device interface contracts, maturity: accepted, completeness: 95}
@@ -186,10 +186,10 @@ steps:
     estimate_project_days: 6
     workstream: backoffice
     docs:
-      requirements: {level: accepted, scope: implemented backoffice/race-data/offline synchronisation behaviour}
-      idd: {level: accepted, scope: backoffice semantic interface; proprietary mappings remain private}
-      design: {level: accepted, scope: transport/outbox/recovery design baseline}
-      verification: {level: review, scope: ST-3 broker/outage/reconciliation evidence}
+      requirements: {level: accepted, scope: "implemented backoffice/race-data/offline synchronisation behaviour"}
+      idd: {level: accepted, scope: "backoffice semantic interface; proprietary mappings remain private"}
+      design: {level: accepted, scope: "transport/outbox/recovery design baseline"}
+      verification: {level: review, scope: "ST-3 broker/outage/reconciliation evidence"}
     documents:
       - {name: 20-01-SRD, title: Backoffice/race-data requirements, maturity: accepted, completeness: 95}
       - {name: BACKOFFICE-IDD, title: Backoffice semantic contract, maturity: accepted, completeness: 90}
@@ -200,10 +200,10 @@ steps:
     estimate_project_days: 5
     workstream: platform
     docs:
-      requirements: {level: accepted, scope: implemented operational/deployment behaviour}
-      idd: {level: accepted, scope: all interfaces required by the operational baseline}
-      design: {level: accepted, scope: implemented deployment/support design baseline}
-      verification: {level: accepted, scope: operational ST-4/HIL/update/rollback evidence baseline}
+      requirements: {level: accepted, scope: "implemented operational/deployment behaviour"}
+      idd: {level: accepted, scope: "all interfaces required by the operational baseline"}
+      design: {level: accepted, scope: "implemented deployment/support design baseline"}
+      verification: {level: accepted, scope: "operational ST-4/HIL/update/rollback evidence baseline"}
     documents:
       - {name: 12-SDE, title: Operational/deployment environment, maturity: accepted, completeness: 100}
       - {name: 20-01-SRD, title: Implemented SI-01 requirements baseline, maturity: accepted, completeness: 100}
