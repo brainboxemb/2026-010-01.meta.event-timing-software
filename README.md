@@ -19,6 +19,29 @@ The merged/default-branch documentation build is published to the generated [`pr
 
 `prod/docs` is generated publication/review output. The authored source on `main` remains the source of truth and generated files should not be hand-edited. Active pull-request builds use `dev/pr-<N>/docs`.
 
+### Local documentation tooling
+
+Repository tooling is pinned through the shared project-file dependency model. From a normal clone, initialise the exact committed tooling revisions first:
+
+```bash
+./bootstrap.sh
+```
+
+or on Windows:
+
+```powershell
+.\bootstrap.ps1
+```
+
+`project.yml` owns the managed `tool.eng-docs` revision and `tools/tool.git-project` is the committed bootstrap gitlink. After bootstrap, install the Python documentation environment from the managed checkout:
+
+```bash
+python -m pip install -r tools/requirements-docs.txt
+python -m pip install ./tools/tool.eng-docs
+```
+
+The GitHub documentation workflow follows the same path before invoking `eng-docs diagrams` and the project-specific generators. Do not replace this with an independently chosen `git+https` tool version in local setup or CI.
+
 ## Working documents
 
 - [`AGENTS.md`](AGENTS.md) — persistent guidance for coding and research agents.
