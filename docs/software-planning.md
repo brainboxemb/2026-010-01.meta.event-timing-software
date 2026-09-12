@@ -21,7 +21,8 @@ Current outputs:
 - first-class status representation;
 - configuration/settings boundary;
 - Maven as accepted build tooling;
-- Java 8 as the conservative default candidate, with Java 11 to be evaluated on original Raspberry Pi Zero / Zero W hardware before final selection;
+- Java 8 as the accepted initial application baseline for the mandatory original Raspberry Pi Zero / Zero W target;
+- Java 11 retained as a later evidence-driven upgrade candidate rather than a prerequisite for implementation;
 - first implementation sequence.
 
 Exit criteria:
@@ -29,31 +30,35 @@ Exit criteria:
 - the responsibilities of the headless runtime, application services, external interfaces, and platform/device adapters are understandable;
 - status has a clear central ownership/model direction;
 - the first headless implementation can be started without inventing architecture ad hoc inside its PR;
-- unresolved technical choices are explicitly listed rather than silently assumed;
-- Java 8 and Java 11 have a concrete comparison plan on real Raspberry Pi Zero 1 hardware;
-- the final Java baseline can be selected from evidence covering runtime support, footprint, performance, dependency compatibility, and deployment complexity.
+- Java 8 and Maven are fixed as the initial implementation baseline;
+- the need for an ARMv6-capable reference Java 8 runtime is explicitly captured;
+- unresolved technical choices are explicitly listed rather than silently assumed.
 
-### Java baseline validation
+### Java baseline policy
 
-The original Raspberry Pi Zero / Zero W is a mandatory target. The Java version must therefore be validated on that hardware before the baseline is accepted.
+The original Raspberry Pi Zero / Zero W is a mandatory target.
 
-Compare at least:
+Initial development therefore uses Java 8. The project does not wait for Java 11 validation before starting implementation.
 
-- Java 8 LTS using a maintained ARMv6-capable runtime;
-- Java 11 LTS using a maintained ARMv6-capable runtime.
-
-Use the same small representative application and measure or verify:
+The first executable should be validated on a real Zero 1 using an ARMv6-capable Java 8 runtime. Record at least:
 
 - startup time;
 - steady-state resident memory use;
 - heap behaviour under a small representative workload;
 - version/status command responsiveness;
 - JSON/API responsiveness;
-- availability of intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
-- runtime update/security availability;
-- packaging, installation, and upgrade complexity.
+- packaging, installation, and restart behaviour.
 
-Do not assume that the Raspberry Pi OS default Java package is suitable for Zero 1. The current OS package baseline and ARMv6 runtime support are separate concerns.
+Java 11 remains a planned upgrade candidate. A later migration decision should compare Java 11 with the known-working Java 8 baseline on the same hardware and representative workload. Migration should only be accepted when the evidence is strong enough to justify the additional runtime/deployment requirements.
+
+The Java 11 comparison should include:
+
+- startup and memory behaviour;
+- command/API responsiveness;
+- availability of intended logging, API, remote-shell, RabbitMQ, RFID, and CAN libraries;
+- runtime security/update availability;
+- packaging, installation, and upgrade complexity;
+- the amount of source/build change required to raise the baseline.
 
 ## Step 2 — Minimal version/status application
 
@@ -63,7 +68,7 @@ Goal: create the first executable Java application and validate the main softwar
 
 Required behaviour:
 
-- headless application starts successfully;
+- headless Java 8 application starts successfully;
 - application has an explicit version;
 - version is available through one shared application-level query/service;
 - version can be read through:
@@ -79,8 +84,7 @@ Required behaviour:
 
 Implementation choices needed before or during this step:
 
-- final Java baseline selected from Step 1 evidence;
-- reference runtime/version for Raspberry Pi Zero 1;
+- reference Java 8 runtime/version for Raspberry Pi Zero 1;
 - logging framework/facade;
 - API technology;
 - remote shell technology;
@@ -93,9 +97,25 @@ Expected verification:
 - interface-level checks showing the same version value through all three interfaces;
 - build/test evidence on GitHub Actions;
 - basic Windows and Linux execution evidence;
-- actual execution on an original Raspberry Pi Zero / Zero W using the selected runtime;
+- actual execution on an original Raspberry Pi Zero / Zero W using the selected Java 8 runtime;
 - captured startup time, steady-state memory use, and basic command/API responsiveness on the Pi Zero 1;
-- confirmation that dependencies and APIs remain compatible with the selected Java baseline.
+- confirmation that the selected initial dependencies remain Java-8-compatible.
+
+## Java 11 upgrade checkpoint
+
+Status: future / evidence-driven
+
+Goal: decide whether the established Java 8 baseline should be raised to Java 11.
+
+This is not a blocking step for the initial application or GUI work. It should be scheduled when there is a representative application and enough Zero 1 evidence to make the comparison meaningful.
+
+Possible outcomes:
+
+- retain Java 8 because Zero 1 compatibility/footprint/deployment remains more important;
+- migrate to Java 11 because the benefits outweigh the measured costs;
+- defer the decision until a later software increment provides better evidence.
+
+If Java 11 is accepted later, record that as a new/superseding architecture decision and update the build, CI, deployment, and dependency baselines deliberately.
 
 ## Step 3 — GUI status client
 
@@ -187,3 +207,4 @@ Candidate scope:
 - Treat longer integration/hardware/deployment tests as a separate pipeline concern when needed.
 - Keep system-level IDDs authoritative for interfaces; software-item requirements may reference them.
 - Keep current-step implementation details and evidence in its pull request.
+- Treat Java 8 as the working baseline until an explicit later architecture decision supersedes it.
