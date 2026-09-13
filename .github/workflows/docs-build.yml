@@ -8,6 +8,8 @@ on:
       - '.gitmodules'
       - 'bootstrap.sh'
       - 'bootstrap.ps1'
+      - 'moon.yml'
+      - '.moon/**'
       - 'tools/tool.git-project'
       - 'tools/tool.eng-docs'
       - 'tools/generate_architecture_diagrams.py'
@@ -17,8 +19,7 @@ on:
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
-      - 'tools/generate_documents.py'
-      - 'tools/compare_docs_publication.py'
+      - 'tools/run_docs_task.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -30,6 +31,8 @@ on:
       - '.gitmodules'
       - 'bootstrap.sh'
       - 'bootstrap.ps1'
+      - 'moon.yml'
+      - '.moon/**'
       - 'tools/tool.git-project'
       - 'tools/tool.eng-docs'
       - 'tools/generate_architecture_diagrams.py'
@@ -39,232 +42,126 @@ on:
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
-      - 'tools/generate_documents.py'
-      - 'tools/compare_docs_publication.py'
+      - 'tools/run_docs_task.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   documentation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      # Moon affected/cache decisions need Git history, but blobless checkout avoids
+      # downloading repository content that the task never opens.
+      - name: Checkout exact revision with Moon VCS history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          filter: blob:none
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Bootstrap project tooling
-        run: bash ./bootstrap.sh
-
-      - name: Verify project dependency state
+      - name: Bootstrap released repository and documentation tooling
+        shell: bash
         run: |
+          set -euo pipefail
+          ./bootstrap.sh
+          test "$(git -C tools/tool.git-project rev-parse HEAD)" = "d6d760845967f70bd266b3ac2b36c9d5b0edc862"
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "a15d2d259be7a88921e6c1afd7572b5acfd0fdd3"
+          grep -F 'ref: v0.2.0' project.yml
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
-          tools/tool.git-project/git-project.sh status --repo "$PWD"
+          tools/tool.git-project/moon-project.sh validate --repo "$PWD"
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install documentation dependencies
+      - name: Install documentation producer dependencies
+        shell: bash
         run: |
+          set -euo pipefail
           python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
           python -m pip install --disable-pip-version-check ./tools/tool.eng-docs
 
       - name: Validate current SDD references
+        shell: bash
         run: |
+          set -euo pipefail
           ! grep -R -n -E '31-01-SDD-02-data-and-display-design\.md|31-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
 
-      - name: Generate architecture diagrams
-        run: |
-          eng-docs diagrams \
-            --source docs/_diagrams \
-            --theme docs/_diagram-theme/default.yaml \
-            --out bld/docs/architecture
-          python tools/generate_architecture_diagrams.py
-          python tools/generate_timing_detail_diagrams.py
-          python tools/generate_data_display_diagrams.py
-          python tools/generate_system_model_diagrams.py
+      # Moon owns only the high-level execute/hydrate decision. The existing
+      # project-specific diagram/planning scripts and released eng-docs assembler
+      # remain authoritative for how their outputs are produced.
+      - name: Run or hydrate documentation task graph
+        uses: brainboxemb/tool.git-project/moon@v0.2.2
+        with:
+          task: software:docs.assemble
+          cache-namespace: event-timing-software-docs
 
-      - name: Generate SIP planning
-        run: |
-          python tools/generate_sip_planning.py
-          python tools/generate_sip_step_pdfs.py
-          python tools/generate_sip_manager_roadmap.py
-
-      - name: Validate generated diagram XML
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import xml.etree.ElementTree as ET
-
-          for path in Path('bld/docs/architecture').glob('*.drawio'):
-              ET.parse(path)
-          for path in Path('bld/docs/architecture').glob('*.svg'):
-              ET.parse(path)
-          ET.parse(Path('bld/docs/planning/sip-roadmap.svg'))
-          for path in Path('bld/docs/planning/roadmap').glob('*.svg'):
-              ET.parse(path)
-          for path in Path('bld/docs/planning/steps').glob('*.svg'):
-              ET.parse(path)
-          PY
-
-      - name: Assemble complete document set
+      - name: Verify generated output and retained producer evidence
+        shell: bash
         env:
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          eng-docs manifest \
-            --source bld/docs/architecture \
-            --out bld/docs/architecture/assets-publication.yml \
-            --producer event-timing-software.architecture-publication \
-            --source-revision "$SOURCE_SHA" \
-            --lifecycle docs \
-            --relationship producer-source \
-            --include '*.svg' \
-            --include '*.drawio' \
-            --include 'README.md'
-
-          eng-docs manifest \
-            --source bld/docs/architecture \
-            --out bld/docs/architecture/assets-raw.yml \
-            --producer event-timing-software.architecture-raw \
-            --source-revision "$SOURCE_SHA" \
-            --lifecycle docs \
-            --relationship producer-source \
-            --include '*.svg' \
-            --include '*.drawio' \
-            --include 'README.md'
-
-          eng-docs manifest \
-            --source bld/docs/planning \
-            --out bld/docs/planning/assets.yml \
-            --producer event-timing-software.planning \
-            --source-revision "$SOURCE_SHA" \
-            --lifecycle docs \
-            --relationship producer-source
-
-          eng-docs assemble \
-            --root . \
-            --config docs/assembly.yml \
-            --out bld/docs
-
-      - name: Validate generated documentation
-        run: |
+          set -euo pipefail
           test -f bld/docs/README.md
+          test -f bld/docs/source-sha.txt
           test -f bld/docs/documents/README.md
           test -f bld/docs/documents/software-document-set.md
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
           test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
           test -f bld/docs/documents/31-01-SAD-timing-application-architecture.md
-          test -f bld/docs/documents/31-01-SDD-01-data-and-display-design.md
           test -f bld/docs/documents/31-01-SDD-02-java-component-design.md
-          test -f bld/docs/documents/31-01-SDD-03-backoffice-transport-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
-          test -f bld/docs/documents/31-03-SAD-web-operator-application-architecture.md
-          grep -q '31-01-SDD-02-java-component-design.md' bld/docs/documents/architecture-book.md
-          ! grep -q '31-01-SDD-01-data-and-display-design.md' bld/docs/documents/architecture-book.md
-          ! grep -q '31-01-SDD-03-backoffice-transport-design.md' bld/docs/documents/architecture-book.md
-          test -f bld/docs/architecture/system-overview.svg
-          test -f bld/docs/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
-          test -f bld/docs/assets/architecture/layered-architecture.svg
-          test -f bld/docs/assets/architecture/layered-architecture.drawio
-          test -f bld/docs/assets/architecture/runtime-dispatch-process.svg
-          test -f bld/docs/assets/architecture/runtime-dispatch-process.drawio
-          test -f bld/docs/assets/architecture/software-item-system-overview.svg
-          test -f bld/docs/assets/architecture/runtime-registration-topology.svg
-          test -f bld/docs/assets/architecture/system-device-network-topology.svg
-          test -f bld/docs/assets/architecture/system-device-network-topology.drawio
-          test -f bld/docs/assets/architecture/system-connectivity-status.svg
-          test -f bld/docs/assets/architecture/system-connectivity-status.drawio
-          test -f bld/docs/assets/architecture/rabbitmq-source-topology.svg
-          test -f bld/docs/assets/architecture/rfid-lifecycle.svg
-          test -f bld/docs/planning/README.md
           test -f bld/docs/planning/sip-roadmap.svg
           test -s bld/docs/planning/sip-roadmap.pdf
-          test -f bld/docs/planning/roadmap/sip-roadmap-1.svg
-          test -f bld/docs/planning/roadmap/sip-roadmap-2.svg
-          test -f bld/docs/planning/roadmap/sip-roadmap-3.svg
-          test -f bld/docs/planning/roadmap/sip-roadmap-4.svg
-          test -f bld/docs/planning/steps/step-02.svg
-          test -s bld/docs/planning/steps/step-02.pdf
-          test -f bld/docs/_manifests/01-assets-publication.yml
-          test -f bld/docs/_manifests/02-assets-raw.yml
-          test -f bld/docs/_manifests/03-assets.yml
-          test "$(find bld/docs/planning/roadmap -maxdepth 1 -name 'sip-roadmap-*.svg' | wc -l)" -eq 4
-          test "$(find bld/docs/planning -type f \( -name '*a2*' -o -name '*a3*' -o -name '*review*' \) | wc -l)" -eq 0
-          ! grep -q '\.\.\.' bld/docs/planning/roadmap/sip-roadmap-*.svg
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('bld/docs/planning/steps/step-02.pdf')
-          data = path.read_bytes()
-          assert data.startswith(b'%PDF-'), 'Step 2 output is not a PDF'
-          assert b'%%EOF' in data[-2048:], 'Step 2 PDF has no EOF marker'
-          PY
+          for task in docs-diagrams docs-planning docs-assemble; do
+            test -s "bld/docs/evidence/tasks/${task}/execution.log"
+            test -s "bld/docs/evidence/tasks/${task}/execution.json"
+            grep -F '"status": "success"' "bld/docs/evidence/tasks/${task}/execution.json"
+          done
+          test -f .moon/invocations/software_docs.assemble/materialization.json
+          test -f .moon/invocations/software_docs.assemble/moon.log
+          grep -F '"source_revision": "'"$SOURCE_REVISION"'"' .moon/invocations/software_docs.assemble/materialization.json
+          grep -F '"status": "success"' .moon/invocations/software_docs.assemble/materialization.json
 
-      - name: Compare qualification output with prod/docs
+      # The cacheable tree retains producer identity. Current materialization
+      # context is added only here, after execute/hydrate, so it cannot falsify
+      # producer provenance on a later cache hit.
+      - name: Stage documentation publication
+        shell: bash
         run: |
           set -euo pipefail
-          baseline="$(mktemp -d)"
-          git fetch --no-tags origin refs/heads/prod/docs:refs/remotes/origin/prod-docs-baseline
-          git archive refs/remotes/origin/prod-docs-baseline | tar -xf - -C "$baseline"
-          python tools/compare_docs_publication.py \
-            --baseline "$baseline" \
-            --candidate bld/docs
+          staging="$RUNNER_TEMP/software-docs-publication"
+          rm -rf "$staging"
+          mkdir -p "$staging/orchestration"
+          cp -a bld/docs/. "$staging/"
+          cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
+          cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
 
-      - name: Upload generated documentation
-        uses: actions/upload-artifact@v4
+      - name: Upload prepared documentation publication
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: software-docs
-          path: bld/docs
+          name: software-docs-publication
+          path: ${{ runner.temp }}/software-docs-publication
+          if-no-files-found: error
           retention-days: 14
 
-      - name: Publish generated documentation branch
-        if: >-
-          github.event_name != 'pull_request' ||
-          github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
-              echo "ERROR: missing or invalid pull-request number" >&2
-              exit 1
-            fi
-            TARGET_BRANCH="dev/pr-${PR_NUMBER}/docs"
-          else
-            TARGET_BRANCH="prod/docs"
-          fi
-
-          publish_dir="$(mktemp -d)"
-          cp -a bld/docs/. "$publish_dir/"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global credential.helper store
-          printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
-
-          git switch --orphan generated-docs
-          git clean -fdx
-
-          cp -a "$publish_dir/." ./
-          printf '%s\n' "$SOURCE_SHA" > source-sha.txt
-
-          git add .
-          git commit -m "Publish generated documentation for ${SOURCE_SHA}"
-          git push --force origin "HEAD:${TARGET_BRANCH}"
-
-          echo "Published generated documentation to ${TARGET_BRANCH}"
+  # Publication is deliberately outside the Moon task graph: it must run for the
+  # current event even when every producer was hydrated from cache.
+  publish-documentation:
+    needs: documentation
+    permissions:
+      contents: write
+    uses: brainboxemb/tool.git-project/.github/workflows/reusable-generated-output-publish.yml@v0.2.2
+    with:
+      artifact_name: software-docs-publication
+      branch_suffix: docs
