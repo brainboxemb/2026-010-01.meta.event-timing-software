@@ -152,17 +152,18 @@ When documents disagree, prefer the more specific source for that topic. Do not 
 
 ## Pull-request-first workflow
 
-Follow the SDE. In summary:
+Follow the SDE. In summary, use one work-item number end to end:
 
-1. reserve/use a work number through an issue where appropriate;
+1. create issue `#N` to reserve the work number;
 2. create `feature/pr-N-<short-slug>` from the intended target branch;
-3. create/promote the work into a draft PR early;
-4. continue implementation on the same branch while the draft PR remains open;
-5. keep implementation detail, tests, discussion and evidence in that PR;
-6. inspect generated `dev/pr-N/...` outputs where relevant;
-7. mark ready and merge only when the scoped work and evidence are complete.
+3. make the smallest initial commit on that branch;
+4. convert that exact issue directly into draft PR `#N`;
+5. continue implementation on the same branch while the draft PR remains open;
+6. keep implementation detail, tests, discussion and evidence in that same PR;
+7. inspect generated `dev/pr-N/...` outputs where relevant;
+8. mark ready and merge only when the scoped work and evidence are complete.
 
-Do not perform normal work directly on `main`.
+Do not create a separate pull request with a new number for the same work item when issue conversion is available. Do not perform normal work directly on `main`.
 
 ## Generated output
 
