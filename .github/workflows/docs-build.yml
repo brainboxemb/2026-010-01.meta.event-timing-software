@@ -18,6 +18,7 @@ on:
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
+      - 'tools/compare_docs_publication.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -39,6 +40,7 @@ on:
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
+      - 'tools/compare_docs_publication.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -208,6 +210,16 @@ jobs:
           assert data.startswith(b'%PDF-'), 'Step 2 output is not a PDF'
           assert b'%%EOF' in data[-2048:], 'Step 2 PDF has no EOF marker'
           PY
+
+      - name: Compare qualification output with prod/docs
+        run: |
+          set -euo pipefail
+          baseline="$(mktemp -d)"
+          git fetch --no-tags origin refs/heads/prod/docs:refs/remotes/origin/prod-docs-baseline
+          git archive refs/remotes/origin/prod-docs-baseline | tar -xf - -C "$baseline"
+          python tools/compare_docs_publication.py \
+            --baseline "$baseline" \
+            --candidate bld/docs
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
