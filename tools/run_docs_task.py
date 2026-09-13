@@ -178,17 +178,30 @@ def tool_revision() -> str:
         return "unknown"
 
 
+def producer_revision(name: str) -> str:
+    path = PRODUCERS / "evidence" / name / "execution.json"
+    if not path.is_file():
+        raise RuntimeError(f"producer evidence is missing: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("status") != "success" or not data.get("source_sha"):
+        raise RuntimeError(f"producer evidence is incomplete: {path}")
+    return str(data["source_sha"])
+
+
 def prepare_assembly(log) -> None:
     architecture = PRODUCERS / "architecture"
     planning = PRODUCERS / "planning"
     if not architecture.is_dir() or not planning.is_dir():
         raise RuntimeError("documentation producer outputs are missing")
 
+    architecture_revision = producer_revision("docs-diagrams")
+    planning_revision = producer_revision("docs-planning")
+    assembly_revision = git("rev-parse", "HEAD")
     commands = [
-        ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-publication.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-publication", "--source-revision", git("rev-parse", "HEAD"), "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
-        ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-raw.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-raw", "--source-revision", git("rev-parse", "HEAD"), "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
-        ["eng-docs", "manifest", "--source", str(planning.relative_to(ROOT)), "--out", str((planning / "assets.yml").relative_to(ROOT)), "--producer", "event-timing-software.planning", "--source-revision", git("rev-parse", "HEAD"), "--lifecycle", "docs", "--relationship", "producer-source"],
-        ["eng-docs", "assemble", "--root", ".", "--config", "docs/assembly.yml", "--out", "bld/docs", "--source-repository", "brainboxemb/2026-010-01.meta.event-timing-software", "--source-revision", git("rev-parse", "HEAD")],
+        ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-publication.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-publication", "--source-revision", architecture_revision, "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
+        ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-raw.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-raw", "--source-revision", architecture_revision, "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
+        ["eng-docs", "manifest", "--source", str(planning.relative_to(ROOT)), "--out", str((planning / "assets.yml").relative_to(ROOT)), "--producer", "event-timing-software.planning", "--source-revision", planning_revision, "--lifecycle", "docs", "--relationship", "producer-source"],
+        ["eng-docs", "assemble", "--root", ".", "--config", "docs/assembly.yml", "--out", "bld/docs", "--source-repository", "brainboxemb/2026-010-01.meta.event-timing-software", "--source-revision", assembly_revision],
     ]
     for command in commands:
         run_command(command, log)
@@ -259,6 +272,7 @@ def main() -> None:
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     if kind == "assemble" and status == "success":
+        (TRANSIENT / "source-sha.txt").write_text(source_sha + "\n", encoding="utf-8")
         target = TRANSIENT / "evidence/tasks"
         target.mkdir(parents=True, exist_ok=True)
         for name in ("docs-diagrams", "docs-planning", "docs-assemble"):
