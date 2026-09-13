@@ -63,6 +63,8 @@ Before such a SIP step moves to `completed`, the project should:
 - record the closure evidence in the coordination repository;
 - only then mark the SIP step `completed` and activate the next step.
 
+A release version is consumed once its normal candidate tag has been created. If verification of the tagged revision fails, preserve the failed candidate as `vX.Y.Z-failed` on the same commit, verify that archival tag, remove the normal `vX.Y.Z` tag, and do not publish or retain it as a valid release. Record the failed version in the CHANGELOG as `FAILED DURING RELEASE BUILD`; the next release attempt advances the patch version rather than reusing the failed version. `-failed` tags are historical evidence only and must not trigger or represent normal releases.
+
 A planning/documentation step that does not produce releasable software does not need an artificial software version. Its SIP definition may instead identify an appropriate immutable documentation/planning baseline. This exception should not be used to avoid releasing software when the step has produced a meaningful software maturity level.
 
 After a software release, normal development should move to the next planned `-SNAPSHOT` version before new capability work begins. The SIP owns the concrete closure checklist and release meaning for each step. The SDE/tooling documentation owns the mechanics for release/tag-triggered builds, artifact retention and version/provenance verification.
