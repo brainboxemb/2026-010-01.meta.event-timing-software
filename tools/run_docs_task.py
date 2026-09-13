@@ -150,10 +150,10 @@ def validate_assembly(root: Path) -> dict:
         if not path.is_file():
             raise RuntimeError(f"required assembled output missing: {path}")
     architecture_book = (root / "documents/architecture-book.md").read_text(encoding="utf-8")
-    active = "**Source document:** [31-01-SDD-02-java-component-design.md](./31-01-SDD-02-java-component-design.md)"
+    active = "**Source document:** [31-01-SDD-02-java-component-design.md]"
     deferred = [
-        "**Source document:** [31-01-SDD-01-data-and-display-design.md](./31-01-SDD-01-data-and-display-design.md)",
-        "**Source document:** [31-01-SDD-03-backoffice-transport-design.md](./31-01-SDD-03-backoffice-transport-design.md)",
+        "**Source document:** [31-01-SDD-01-data-and-display-design.md]",
+        "**Source document:** [31-01-SDD-03-backoffice-transport-design.md]",
     ]
     if active not in architecture_book:
         raise RuntimeError("active SDD section missing from architecture book")
