@@ -114,8 +114,44 @@ jobs:
               ET.parse(path)
           PY
 
-      - name: Generate complete document set
-        run: python tools/generate_documents.py
+      - name: Assemble complete document set
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          eng-docs manifest \
+            --source bld/docs/architecture \
+            --out bld/docs/architecture/assets-publication.yml \
+            --producer event-timing-software.architecture-publication \
+            --source-revision "$SOURCE_SHA" \
+            --lifecycle docs \
+            --relationship producer-source \
+            --include '*.svg' \
+            --include '*.drawio' \
+            --include 'README.md'
+
+          eng-docs manifest \
+            --source bld/docs/architecture \
+            --out bld/docs/architecture/assets-raw.yml \
+            --producer event-timing-software.architecture-raw \
+            --source-revision "$SOURCE_SHA" \
+            --lifecycle docs \
+            --relationship producer-source \
+            --include '*.svg' \
+            --include '*.drawio' \
+            --include 'README.md'
+
+          eng-docs manifest \
+            --source bld/docs/planning \
+            --out bld/docs/planning/assets.yml \
+            --producer event-timing-software.planning \
+            --source-revision "$SOURCE_SHA" \
+            --lifecycle docs \
+            --relationship producer-source
+
+          eng-docs assemble \
+            --root . \
+            --config docs/assembly.yml \
+            --out bld/docs
 
       - name: Validate generated documentation
         run: |
@@ -134,6 +170,8 @@ jobs:
           grep -q '31-01-SDD-02-java-component-design.md' bld/docs/documents/architecture-book.md
           ! grep -q '31-01-SDD-01-data-and-display-design.md' bld/docs/documents/architecture-book.md
           ! grep -q '31-01-SDD-03-backoffice-transport-design.md' bld/docs/documents/architecture-book.md
+          test -f bld/docs/architecture/system-overview.svg
+          test -f bld/docs/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
@@ -157,6 +195,9 @@ jobs:
           test -f bld/docs/planning/roadmap/sip-roadmap-4.svg
           test -f bld/docs/planning/steps/step-02.svg
           test -s bld/docs/planning/steps/step-02.pdf
+          test -f bld/docs/_manifests/01-assets-publication.yml
+          test -f bld/docs/_manifests/02-assets-raw.yml
+          test -f bld/docs/_manifests/03-assets.yml
           test "$(find bld/docs/planning/roadmap -maxdepth 1 -name 'sip-roadmap-*.svg' | wc -l)" -eq 4
           test "$(find bld/docs/planning -type f \( -name '*a2*' -o -name '*a3*' -o -name '*review*' \) | wc -l)" -eq 0
           ! grep -q '\.\.\.' bld/docs/planning/roadmap/sip-roadmap-*.svg
