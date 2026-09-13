@@ -1,0 +1,135 @@
+schema_version: 1
+
+asset_manifests:
+  - path: bld/docs-producers/architecture/assets-publication.yml
+    publish_prefix: assets/architecture
+  - path: bld/docs-producers/architecture/assets-raw.yml
+    publish_prefix: architecture
+  - path: bld/docs-producers/planning/assets.yml
+    publish_prefix: planning
+
+documents:
+  - id: domain-baseline
+    source: docs/03-domain-baseline.md
+  - id: system-use-cases
+    source: docs/04-UC-system-use-cases.md
+  - id: software-development-plan
+    source: docs/10-SDP-software-development-plan.md
+  - id: software-implementation-planning
+    source: docs/11-SIP-software-implementation-planning.md
+  - id: software-development-environment
+    source: docs/12-SDE-software-development-environment.md
+  - id: java-build-test-toolchain
+    source: docs/13-SDE-java-build-test-toolchain.md
+  - id: timing-application-requirements
+    source: docs/20-01-SRD-timing-application-requirements.md
+  - id: software-system-architecture
+    source: docs/30-SSAD-software-system-architecture.md
+  - id: timing-application-architecture
+    source: docs/31-01-SAD-timing-application-architecture.md
+  - id: java-component-design
+    source: docs/31-01-SDD-02-java-component-design.md
+  - id: gui-application-architecture
+    source: docs/31-02-SAD-gui-application-architecture.md
+  - id: web-operator-architecture
+    source: docs/31-03-SAD-web-operator-application-architecture.md
+  - id: data-display-design
+    source: docs/31-01-SDD-01-data-and-display-design.md
+  - id: backoffice-transport-design
+    source: docs/31-01-SDD-03-backoffice-transport-design.md
+  - id: application-control-status
+    source: docs/40-01-IDD-application-control-status.md
+  - id: software-verification-plan
+    source: docs/50-SVP-software-verification-plan.md
+
+indexes:
+  - output: documents/README.md
+    title: Generated documents
+    sections:
+      - title: Domain context and use cases
+        items:
+          - document: domain-baseline
+          - document: system-use-cases
+      - title: Planning and development environment
+        items:
+          - document: software-development-plan
+          - document: software-implementation-planning
+          - document: software-development-environment
+          - document: java-build-test-toolchain
+          - label: Generated SIP roadmap and printable PDFs
+            target: ../planning/README.md
+      - title: Requirements
+        items:
+          - document: timing-application-requirements
+      - title: Architecture
+        items:
+          - document: software-system-architecture
+          - document: timing-application-architecture
+          - document: java-component-design
+          - document: gui-application-architecture
+          - document: web-operator-architecture
+      - title: Deferred detailed-design notes
+        items:
+          - document: data-display-design
+          - document: backoffice-transport-design
+      - title: Interfaces
+        items:
+          - document: application-control-status
+      - title: Verification
+        items:
+          - document: software-verification-plan
+      - title: Combined documents
+        items:
+          - label: Complete software engineering document set
+            target: ./software-document-set.md
+          - label: Architecture book
+            target: ./architecture-book.md
+
+  - output: README.md
+    title: Generated documentation
+    intro: This branch contains generated review/output documentation. Edit source Markdown on the source branch, not here.
+    sections:
+      - title: Contents
+        items:
+          - label: Generated document index
+            target: documents/README.md
+          - label: SIP roadmap and printable planning PDFs
+            target: planning/README.md
+          - label: Complete software engineering document set
+            target: documents/software-document-set.md
+          - label: Architecture book
+            target: documents/architecture-book.md
+          - label: Architecture assets
+            target: assets/architecture/README.md
+
+books:
+  - output: documents/architecture-book.md
+    title: Software architecture document set
+    description: Generated review/output book containing the software-system architecture, software-item architectures, and only currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
+    documents:
+      - software-system-architecture
+      - timing-application-architecture
+      - java-component-design
+      - gui-application-architecture
+      - web-operator-architecture
+
+  - output: documents/software-document-set.md
+    title: Software engineering document set
+    description: Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, deferred design notes, interfaces and verification documents. The numbered source documents on the source branch remain authoritative.
+    documents:
+      - domain-baseline
+      - system-use-cases
+      - software-development-plan
+      - software-implementation-planning
+      - software-development-environment
+      - java-build-test-toolchain
+      - timing-application-requirements
+      - software-system-architecture
+      - timing-application-architecture
+      - java-component-design
+      - gui-application-architecture
+      - web-operator-architecture
+      - data-display-design
+      - backoffice-transport-design
+      - application-control-status
+      - software-verification-plan
