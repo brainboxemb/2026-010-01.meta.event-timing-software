@@ -1,0 +1,56 @@
+tasks:
+  docs.diagrams:
+    command: 'python tools/run_docs_task.py diagrams'
+    inputs:
+      - 'docs/_diagrams/**'
+      - 'docs/_diagram-theme/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
+      - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
+      - 'tools/run_docs_task.py'
+      - 'tools/requirements-docs.txt'
+      - 'tools/tool.eng-docs/**'
+      - 'moon.yml'
+      - '.moon/workspace.yml'
+    outputs:
+      - 'bld/docs-producers/architecture/**'
+      - 'bld/docs-producers/evidence/docs-diagrams/**'
+    options:
+      cache: true
+
+  docs.planning:
+    command: 'python tools/run_docs_task.py planning'
+    inputs:
+      - 'docs/11-SIP-software-implementation-planning.md'
+      - 'docs/_data/**'
+      - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_step_pdfs.py'
+      - 'tools/generate_sip_manager_roadmap.py'
+      - 'tools/run_docs_task.py'
+      - 'tools/requirements-docs.txt'
+      - 'moon.yml'
+      - '.moon/workspace.yml'
+    outputs:
+      - 'bld/docs-producers/planning/**'
+      - 'bld/docs-producers/evidence/docs-planning/**'
+    options:
+      cache: true
+
+  docs.assemble:
+    command: 'python tools/run_docs_task.py assemble'
+    inputs:
+      - 'docs/*.md'
+      - 'docs/assembly.yml'
+      - 'tools/run_docs_task.py'
+      - 'tools/tool.eng-docs/**'
+      - 'moon.yml'
+      - '.moon/workspace.yml'
+    deps:
+      - 'docs.diagrams'
+      - 'docs.planning'
+    outputs:
+      - 'bld/docs/**'
+      - 'bld/docs-producers/evidence/docs-assemble/**'
+    options:
+      cache: true
