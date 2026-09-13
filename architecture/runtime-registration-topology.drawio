@@ -1,0 +1,106 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="runtime-registration-topology" name="Configurable runtime topology — instances, assets, sources and antennas">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1140" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="settings" value="External settings&lt;br&gt;public schema + private deployment mapping" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="65" width="360" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="SI-01 TimingApplicationRuntime&lt;br&gt;one JVM/process" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="505" y="65" width="390" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="backoffice" value="Backoffice&lt;br&gt;receives ordered source streams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="65" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="sys1" value="TimingSystemInstance system-01&lt;br&gt;serialized state boundary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="160" y="235" width="390" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="sys2" value="TimingSystemInstance system-02&lt;br&gt;serialized state boundary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="860" y="235" width="390" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="asset1" value="RegistrationAsset asset-01&lt;br&gt;physical/logical box identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="150" y="420" width="400" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="asset2" value="RegistrationAsset asset-02&lt;br&gt;physical/logical box identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="850" y="420" width="400" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ant1" value="RS-&lt;asset-key&gt;-ANT1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="30" y="610" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ant2" value="RS-&lt;asset-key&gt;-ANT2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="610" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="src1" value="RegistrationSource source-01&lt;br&gt;sequence + own file" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0e0e3;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="575" y="595" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="src2" value="RegistrationSource source-02&lt;br&gt;virtual/source mapping possible&lt;br&gt;sequence + own file" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0e0e3;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="900" y="585" width="330" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ant3" value="RS-&lt;asset-key&gt;-ANT1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="770" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="src3" value="RegistrationSource source-03&lt;br&gt;sequence + own file" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0e0e3;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="760" y="755" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="routing" value="Explicit source-routing policy&lt;br&gt;accepted observation → configured source stream(s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="820" width="390" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="privacy" value="Actual asset names + external IDs&lt;br&gt;remain private deployment data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="995" width="390" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="build topology" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="settings" target="app">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="sync/outbox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="app" target="backoffice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="app" target="sys1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="app" target="sys2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="1..X assets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="sys1" target="asset1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="1..X assets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="sys2" target="asset2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="1..X antennas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset1" target="ant1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset1" target="ant2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="1..X sources" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset1" target="src1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset1" target="src2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="1..X antennas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset2" target="ant3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="1..X sources" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="asset2" target="src3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="observation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="ant1" target="routing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="observation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="ant2" target="routing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="route" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="routing" target="src1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="route" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="routing" target="src2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="production mapping private" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="settings" target="privacy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

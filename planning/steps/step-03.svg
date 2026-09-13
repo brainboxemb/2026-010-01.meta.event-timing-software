@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210.0mm" height="297.0mm" viewBox="0 0 210.0 297.0">
+<rect width="100%" height="100%" fill="white"/>
+<text x="8.00" y="10.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="4.00" font-weight="bold" fill="#222">
+<tspan x="8.00" dy="0.00">SIP Step 3 — Minimal version/status application on development host (SI-01)</tspan>
+</text>
+<text x="8.00" y="17.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#555">
+<tspan x="8.00" dy="0.00">ACTIVE | ~3 roadmap project days | target 21 Nov 2026</tspan>
+</text>
+<text x="8.00" y="24.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="normal" fill="#555">
+<tspan x="8.00" dy="0.00">Turn the Step-2 executable shell into the first useful long-running SI-01</tspan>
+<tspan x="8.00" dy="3.24">process. One application-owned version/status model drives local, remote,</tspan>
+<tspan x="8.00" dy="3.24">HTTP and WebSocket views; external settings create a minimal...</tspan>
+</text>
+<rect x="8.0" y="34.0" width="194.0" height="19.0" rx="1.5" fill="#fafafa" stroke="#999" stroke-width="0.4"/>
+<text x="11.00" y="39.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#444">
+<tspan x="11.00" dy="0.00">DOCUMENTATION</tspan>
+</text>
+<text x="11.00" y="44.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">20-01-SRD R100 — SI-01 first executable...</tspan>
+</text>
+<text x="106.50" y="44.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="106.50" dy="0.00">40-01-IDD R100 — Application control/status...</tspan>
+</text>
+<text x="11.00" y="50.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">31-01-SAD R95 — SI-01 runtime/status...</tspan>
+</text>
+<text x="106.50" y="50.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="106.50" dy="0.00">50-SVP W90 — First executable ST-1...</tspan>
+</text>
+<rect x="8.0" y="57.00" width="194.00" height="77.10" rx="1.5" fill="#ffffff" stroke="#70ad47" stroke-width="0.45"/>
+<rect x="8.0" y="57.00" width="194.00" height="5.50" rx="1.5" fill="#edf6e9" stroke="#70ad47" stroke-width="0.35"/>
+<text x="10.50" y="61.15" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#70ad47">
+<tspan x="10.50" dy="0.00">Application / product</tspan>
+</text>
+<rect x="8.00" y="63.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#bf9000" stroke-width="0.45"/>
+<text x="9.60" y="68.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A01</tspan>
+</text>
+<rect x="54.47" y="64.80" width="16.00" height="5.0" rx="0.8" fill="#fff2cc" stroke="#bf9000" stroke-width="0.25"/>
+<text x="62.47" y="68.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#bf9000">
+<tspan x="62.47" dy="0.00">NEXT</tspan>
+</text>
+<text x="39.83" y="73.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Shared application</tspan>
+<tspan x="39.83" dy="3.60">version/status model</tspan>
+</text>
+<rect x="73.17" y="63.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="68.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A02</tspan>
+</text>
+<rect x="119.63" y="64.80" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="68.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="73.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Long-running process</tspan>
+<tspan x="105.00" dy="3.60">host + shutdown</tspan>
+</text>
+<text x="74.77" y="84.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A01</tspan>
+</text>
+<rect x="138.33" y="63.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="139.93" y="68.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">A03</tspan>
+</text>
+<rect x="184.80" y="64.80" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="192.80" y="68.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="192.80" dy="0.00">PLANNED</tspan>
+</text>
+<text x="170.17" y="73.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">TimingSystemInstance +</tspan>
+<tspan x="170.17" dy="3.60">external settings</tspan>
+</text>
+<text x="139.93" y="84.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A01,A02</tspan>
+</text>
+<rect x="8.00" y="87.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="9.60" y="92.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A04</tspan>
+</text>
+<rect x="54.47" y="88.30" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="62.47" y="91.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="62.47" dy="0.00">PLANNED</tspan>
+</text>
+<text x="39.83" y="96.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Local console / shell</tspan>
+<tspan x="39.83" dy="3.60">adapter</tspan>
+</text>
+<text x="9.60" y="107.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A02</tspan>
+</text>
+<rect x="73.17" y="87.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="92.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A05</tspan>
+</text>
+<rect x="119.63" y="88.30" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="91.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="96.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Remote terminal /</tspan>
+<tspan x="105.00" dy="3.60">shell adapter</tspan>
+</text>
+<text x="74.77" y="107.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A01,A02</tspan>
+</text>
+<rect x="138.33" y="87.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="139.93" y="92.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">A06</tspan>
+</text>
+<rect x="184.80" y="88.30" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="192.80" y="91.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="192.80" dy="0.00">PLANNED</tspan>
+</text>
+<text x="170.17" y="96.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">HTTP / JSON status</tspan>
+<tspan x="170.17" dy="3.60">adapter</tspan>
+</text>
+<text x="139.93" y="107.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A01,A02</tspan>
+</text>
+<rect x="8.00" y="110.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="9.60" y="115.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A07</tspan>
+</text>
+<rect x="54.47" y="111.80" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="62.47" y="115.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="62.47" dy="0.00">PLANNED</tspan>
+</text>
+<text x="39.83" y="120.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">WebSocket status /</tspan>
+<tspan x="39.83" dy="3.60">event stream</tspan>
+</text>
+<text x="9.60" y="131.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A02,A06</tspan>
+</text>
+<rect x="8.0" y="135.60" width="194.00" height="53.60" rx="1.5" fill="#ffffff" stroke="#8064a2" stroke-width="0.45"/>
+<rect x="8.0" y="135.60" width="194.00" height="5.50" rx="1.5" fill="#f0ebf7" stroke="#8064a2" stroke-width="0.35"/>
+<text x="10.50" y="139.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#8064a2">
+<tspan x="10.50" dy="0.00">Verification / test</tspan>
+</text>
+<rect x="8.00" y="142.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="9.60" y="147.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V01</tspan>
+</text>
+<rect x="54.47" y="143.40" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="62.47" y="146.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="62.47" dy="0.00">PLANNED</tspan>
+</text>
+<text x="39.83" y="151.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Shared behaviour unit</tspan>
+<tspan x="39.83" dy="3.60">tests</tspan>
+</text>
+<text x="9.60" y="162.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A03</tspan>
+</text>
+<rect x="73.17" y="142.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="147.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V02</tspan>
+</text>
+<rect x="119.63" y="143.40" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="146.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="151.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Adapter equivalence /</tspan>
+<tspan x="105.00" dy="3.60">state ownership checks</tspan>
+</text>
+<text x="74.77" y="162.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A04,A05,A06,A07</tspan>
+</text>
+<rect x="138.33" y="142.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="139.93" y="147.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">V03</tspan>
+</text>
+<rect x="184.80" y="143.40" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="192.80" y="146.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="192.80" dy="0.00">PLANNED</tspan>
+</text>
+<text x="170.17" y="151.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">ST-1 running-process</tspan>
+<tspan x="170.17" dy="3.60">black-box proof</tspan>
+</text>
+<text x="139.93" y="162.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A03,A04,A05,A06,A07,V01,V02</tspan>
+</text>
+<rect x="8.00" y="165.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="9.60" y="170.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V04</tspan>
+</text>
+<rect x="54.47" y="166.90" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="62.47" y="170.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="62.47" dy="0.00">PLANNED</tspan>
+</text>
+<text x="39.83" y="175.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Windows built-artifact</tspan>
+<tspan x="39.83" dy="3.60">execution proof</tspan>
+</text>
+<text x="9.60" y="186.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after V03</tspan>
+</text>
+<rect x="73.17" y="165.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="170.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V05</tspan>
+</text>
+<rect x="119.63" y="166.90" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="170.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="175.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">0.2.0 release build /</tspan>
+<tspan x="105.00" dy="3.60">identity proof</tspan>
+</text>
+<text x="74.77" y="186.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after V03,V04</tspan>
+</text>
+</svg>

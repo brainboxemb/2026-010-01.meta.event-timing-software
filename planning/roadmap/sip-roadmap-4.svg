@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297.0mm" height="210.0mm" viewBox="0 0 297.0 210.0">
+<rect width="100%" height="100%" fill="white"/>
+<text x="8.00" y="10.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="5.20" font-weight="bold" fill="#222222">
+<tspan x="8.00" dy="0.00">Software Implementation Planning — roadmap</tspan>
+</text>
+<text x="8.00" y="17.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="normal" fill="#555555">
+<tspan x="8.00" dy="0.00">Page 4/4 — Steps 13-13</tspan>
+</text>
+<line x1="8.00" y1="31.00" x2="289.00" y2="31.00" stroke="#333333" stroke-width="0.65"/>
+<polygon points="43.125,27.6 46.525,31.0 43.125,34.4 39.725,31.0" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="0.65"/>
+<text x="43.12" y="31.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="bold" fill="#7f7f7f">
+<tspan x="43.12" dy="0.00">13</tspan>
+</text>
+<text x="43.12" y="24.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="43.12" dy="0.00">~5d</tspan>
+<tspan x="43.12" dy="2.87">02 Oct 2027</tspan>
+</text>
+<text x="43.12" y="40.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#222222">
+<tspan x="43.12" dy="0.00">Step 13 — Deployment</tspan>
+<tspan x="43.12" dy="3.54">hardening and</tspan>
+<tspan x="43.12" dy="3.54">operationalisation</tspan>
+</text>
+<rect x="32.62" y="49.00" width="21.00" height="5.2" rx="1.4" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="0.3"/>
+<text x="43.12" y="52.65" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#7f7f7f">
+<tspan x="43.12" dy="0.00">PLANNED</tspan>
+</text>
+<rect x="10.50" y="56.00" width="65.25" height="42.00" rx="1.6" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="13.50" y="62.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="13.50" dy="0.00">DELIVERABLE</tspan>
+</text>
+<circle cx="14.70" cy="68.20" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="69.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Production-supportable Raspberry</tspan>
+<tspan x="16.90" dy="3.48">Pi deployment lifecycle</tspan>
+</text>
+<circle cx="14.70" cy="77.15" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="77.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Provisioning, updates, rollback</tspan>
+<tspan x="16.90" dy="3.48">and diagnostics</tspan>
+</text>
+<circle cx="14.70" cy="86.11" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="86.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Full operational ST-4 and</tspan>
+<tspan x="16.90" dy="3.48">hardware-test baseline</tspan>
+</text>
+<rect x="10.50" y="102.00" width="65.25" height="42.00" rx="1.6" fill="#ffffff" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="13.50" y="108.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="13.50" dy="0.00">DEMONSTRATION</tspan>
+</text>
+<circle cx="14.70" cy="114.20" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="115.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Provision a clean target and start</tspan>
+<tspan x="16.90" dy="3.48">the service</tspan>
+</text>
+<circle cx="14.70" cy="123.15" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="123.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Perform an update and</tspan>
+<tspan x="16.90" dy="3.48">failed-update rollback</tspan>
+</text>
+<circle cx="14.70" cy="132.11" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="132.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Produce diagnostics and run the</tspan>
+<tspan x="16.90" dy="3.48">operational scenario</tspan>
+</text>
+<rect x="10.50" y="148.00" width="65.25" height="34.00" rx="1.6" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="13.50" y="153.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="13.50" dy="0.00">DOCUMENT STATUS</tspan>
+</text>
+<rect x="12.80" y="157.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="27.36" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="27.36" dy="0.00">12-SDE A100</tspan>
+</text>
+<rect x="44.23" y="157.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="58.79" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="58.79" dy="0.00">20-01-SRD A100</tspan>
+</text>
+<rect x="12.80" y="165.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="27.36" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="27.36" dy="0.00">31-01-SAD A100</tspan>
+</text>
+<rect x="44.23" y="165.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="58.79" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="58.79" dy="0.00">50-SVP A100</tspan>
+</text>
+</svg>
