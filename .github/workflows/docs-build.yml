@@ -15,6 +15,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
@@ -35,6 +36,7 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/generate_documents.py'
       - 'tools/requirements-docs.txt'
@@ -92,6 +94,7 @@ jobs:
       - name: Generate SIP planning
         run: |
           python tools/generate_sip_planning.py
+          python tools/generate_sip_step_pdfs.py
           python tools/generate_sip_manager_roadmap.py
 
       - name: Validate generated diagram XML
@@ -153,9 +156,17 @@ jobs:
           test -f bld/docs/planning/roadmap/sip-roadmap-3.svg
           test -f bld/docs/planning/roadmap/sip-roadmap-4.svg
           test -f bld/docs/planning/steps/step-02.svg
+          test -s bld/docs/planning/steps/step-02.pdf
           test "$(find bld/docs/planning/roadmap -maxdepth 1 -name 'sip-roadmap-*.svg' | wc -l)" -eq 4
           test "$(find bld/docs/planning -type f \( -name '*a2*' -o -name '*a3*' -o -name '*review*' \) | wc -l)" -eq 0
           ! grep -q '\.\.\.' bld/docs/planning/roadmap/sip-roadmap-*.svg
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('bld/docs/planning/steps/step-02.pdf')
+          data = path.read_bytes()
+          assert data.startswith(b'%PDF-'), 'Step 2 output is not a PDF'
+          assert b'%%EOF' in data[-2048:], 'Step 2 PDF has no EOF marker'
+          PY
 
       - name: Upload generated documentation
         uses: actions/upload-artifact@v4
