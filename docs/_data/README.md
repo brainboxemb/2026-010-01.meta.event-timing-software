@@ -34,7 +34,7 @@ The same convention is intended for later declarative architecture-diagram sourc
 
 `sip-roadmap.yaml` owns working planning metadata such as estimates, cadence and compact named-document indicators used by the overview roadmap.
 
-`sip-steps/step-NN.yaml` owns the concrete planning activities shown on an A3 step board. Activities are typed by lane, kind and state; dependencies and optional effort are data rather than drawing geometry.
+`sip-steps/step-NN.yaml` owns the concrete planning activities shown on an A4 portrait step board. Activities are typed by lane, kind and state; dependencies and optional effort are data rather than drawing geometry.
 
 The Python generator parses YAML, validates it against JSON Schema, resolves layout and renders the generated outputs. Therefore changing a card position or page layout must not require changing the engineering activity itself.
 
@@ -63,17 +63,19 @@ Documentation indicators intentionally separate:
 
 Completeness is **not** a claim that the future product or entire document family is complete.
 
-The overview roadmap shows named documents compactly. Concrete engineering activities belong on the per-step A3 board.
+The overview roadmap shows named documents compactly. Concrete engineering activities belong on the per-step A4 board.
 
 ## Generated outputs
 
-The overview generator creates the programme-level roadmap. Detailed step-board data creates outputs under:
+The overview generator creates the programme-level roadmap. Detailed step-board data creates matching browser and document outputs under:
 
 ```text
 bld/docs/planning/steps/
+  step-NN.svg
+  step-NN.pdf
 ```
 
-CI validates the YAML sources before publishing generated planning output.
+The SVG and PDF use the same step-board source, activity states, document indicators and A4 portrait layout. CI validates the YAML sources before publishing generated planning output.
 
 ## Future generic tooling
 
