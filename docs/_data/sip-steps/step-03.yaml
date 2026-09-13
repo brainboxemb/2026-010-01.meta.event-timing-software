@@ -1,0 +1,109 @@
+step: 3
+title: Minimal version/status application on development host
+state: active
+summary: >-
+  Turn the Step-2 executable shell into the first useful long-running SI-01 process.
+  One application-owned version/status model drives local, remote, HTTP and WebSocket
+  views; external settings create a minimal TimingSystemInstance and ST-1 proves the
+  running process through its public interfaces.
+documents:
+  - name: 20-01-SRD
+    title: SI-01 first executable requirements
+    maturity: review
+    completeness: 100
+  - name: 40-01-IDD
+    title: Application control/status interface
+    maturity: review
+    completeness: 100
+  - name: 31-01-SAD
+    title: SI-01 runtime/status architecture
+    maturity: review
+    completeness: 95
+  - name: 50-SVP
+    title: First executable ST-1 evidence
+    maturity: working
+    completeness: 90
+
+activities:
+  - id: A01
+    lane: application
+    kind: implementation
+    title: Shared application version/status model
+    state: next
+
+  - id: A02
+    lane: application
+    kind: implementation
+    title: Long-running process host + shutdown
+    state: planned
+    depends_on: [A01]
+
+  - id: A03
+    lane: application
+    kind: implementation
+    title: TimingSystemInstance + external settings
+    state: planned
+    depends_on: [A01, A02]
+
+  - id: A04
+    lane: application
+    kind: implementation
+    title: Local console / shell adapter
+    state: planned
+    depends_on: [A01, A02]
+
+  - id: A05
+    lane: application
+    kind: implementation
+    title: Remote terminal / shell adapter
+    state: planned
+    depends_on: [A01, A02]
+
+  - id: A06
+    lane: application
+    kind: implementation
+    title: HTTP / JSON status adapter
+    state: planned
+    depends_on: [A01, A02]
+
+  - id: A07
+    lane: application
+    kind: implementation
+    title: WebSocket status / event stream
+    state: planned
+    depends_on: [A01, A02, A06]
+
+  - id: V01
+    lane: verification
+    kind: verification
+    title: Shared behaviour unit tests
+    state: planned
+    depends_on: [A01, A03]
+
+  - id: V02
+    lane: verification
+    kind: verification
+    title: Adapter equivalence / state ownership checks
+    state: planned
+    depends_on: [A04, A05, A06, A07]
+
+  - id: V03
+    lane: verification
+    kind: verification
+    title: ST-1 running-process black-box proof
+    state: planned
+    depends_on: [A03, A04, A05, A06, A07, V01, V02]
+
+  - id: V04
+    lane: verification
+    kind: verification
+    title: Windows built-artifact execution proof
+    state: planned
+    depends_on: [V03]
+
+  - id: V05
+    lane: verification
+    kind: verification
+    title: 0.2.0 release build / identity proof
+    state: planned
+    depends_on: [V03, V04]
