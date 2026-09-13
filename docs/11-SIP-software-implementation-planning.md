@@ -34,6 +34,26 @@ The demonstration is deliberately stakeholder-friendly. A manager, developer or 
 
 A demonstration does not replace verification. Automated tests, CI results, measurements and review evidence remain required where applicable.
 
+### Closing a software-producing step
+
+When an implementation step produces a meaningful software maturity level, the normal closure baseline is a **software release**. Do not mark the step complete merely because its activities are done or because a PR/main build is green.
+
+Use this closure sequence unless the step explicitly defines a different non-software baseline:
+
+1. merge the accepted implementation, documentation and verification work;
+2. verify that required build/test tooling is itself released or deliberately versioned and reproducibly consumable;
+3. prepare the product release through a normal reviewed PR, including the non-snapshot software version and dated CHANGELOG entry;
+4. verify the release candidate on the accepted `main` revision;
+5. create the matching immutable `vX.Y.Z` tag on that verified revision;
+6. run the build/test/smoke evidence again from the tagged revision itself;
+7. verify released artifacts report the expected software version, source revision and build identity;
+8. retain the release artifacts, checksums and applicable verification evidence;
+9. record the closure evidence in the coordination repository;
+10. move normal development to the next planned `-SNAPSHOT` version before new capability work starts;
+11. only then mark the SIP step `completed` and activate the next step.
+
+A planning/documentation step that produces no releasable software does not need an artificial software version. Such a step may define another immutable baseline appropriate to its deliverable. That exception must not be used to avoid a normal release when the step has produced a meaningful software baseline.
+
 ## Step 1 — Architecture baseline
 
 Status: completed
@@ -126,12 +146,13 @@ Complete the public SI-01 framework/application repository baseline and prove th
 - version/build identity source;
 - logging baseline;
 - unit-test framework;
-- initial settings/configuration structure sufficient for startup;
 - GitHub Actions build/test;
 - architecture/dependency checks where useful;
 - minimal runnable headless startup/shutdown lifecycle;
 - repository baseline from the SDE (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
 - shared `tool.git-project` / `tool.java-project` project-file bootstrap and reusable workflow conventions.
+
+Externalised application settings/configuration become active in Step 3, where a real `TimingSystemInstance` and public application interfaces exist to consume them. Step 2 does not add a placeholder configuration model solely to satisfy planning text.
 
 No production device/backoffice protocols yet.
 
@@ -168,8 +189,28 @@ run the app artifact
 - concrete device/network libraries are not required by domain/application responsibility packages unless their boundary role explicitly requires them;
 - minimal startup/shutdown is covered by automated tests where practical;
 - framework and app artifacts are produced with traceable build/version identity;
+- a readable unit-test summary is retained together with the raw Surefire evidence;
+- the released `tool.java-project` baseline is independently proven by `template.java-project` and then consumed by the product repository using the corresponding exact immutable tooling revision;
 - README explains bootstrap/build/run/test;
-- repository contains the required SDE baseline files.
+- repository contains the required SDE baseline files;
+- final Step-2 closure is release `0.1.0`, with a matching `v0.1.0` tag, independently green tag build/test/smoke evidence and verified artifact build identity.
+
+### Step-2 release closure
+
+Release `0.0.1` was used successfully as an end-to-end **release-process trial**. It proved release preparation, tag creation, independent tag verification, build identity, release artifact publication and post-release return to a snapshot version. It is not the Step-2 software baseline.
+
+Before Step 2 closes:
+
+- `tool.java-project v0.1.0` is the released Java project-tooling baseline;
+- that tooling release is self-tested from its tag and externally proven by `template.java-project`;
+- the event-timing framework consumes that released tool baseline through `project.yml` while workflow/gitlink provenance remains pinned to the exact release commit;
+- the event-timing framework is prepared as software version `0.1.0` with a dated CHANGELOG entry;
+- the accepted `0.1.0` main revision is green before tagging;
+- `v0.1.0` is created on that verified revision and the tag is independently built/tested;
+- released framework/app artifacts report version `0.1.0` and the expected tagged source revision;
+- release artifacts/checksums/evidence are retained and the closure evidence is recorded here.
+
+Only after those checks are complete does Step 2 move to `completed` and Step 3 become `active`. Normal product development then advances to the next planned snapshot version before Step-3 capability work begins.
 
 ## Step 3 — Minimal version/status application on development host (SI-01)
 
@@ -802,6 +843,7 @@ Only an explicit architecture decision with target-hardware evidence may superse
 
 - Every implementation step should end with a concrete deliverable and repeatable demonstration.
 - A successful demonstration is not by itself sufficient evidence for completion.
+- A software-producing step normally closes with a normal verified software release; do not substitute an arbitrary planning tag for a meaningful release baseline.
 - Prefer demonstrations that exercise the same public interfaces/adapters intended for normal operation instead of special demo-only bypasses.
 - Establish target-image and application-update automation early; do not let manual Pi provisioning become the normal development workflow.
 - Prefer fast application updates for ordinary SI-01 changes; rebuild/reflash complete images when OS/runtime/image-level inputs change.

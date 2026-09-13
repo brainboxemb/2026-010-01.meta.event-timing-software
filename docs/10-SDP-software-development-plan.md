@@ -43,6 +43,30 @@ Develop in small, demonstrable increments rather than attempting the complete ti
 
 Each increment should reduce a meaningful risk and end in a concrete deliverable. Detailed increment definitions and demonstrations belong in the SIP.
 
+### Release-backed completion baselines
+
+A SIP implementation step is not complete merely because its planned activities are marked done. Each completed step should leave a stable, identifiable baseline that can be reviewed and rebuilt later.
+
+When a step produces a meaningful software baseline, that closure baseline should normally be a **normal software release**, not a planning-only tag. The release should have a non-snapshot software version, a matching `vX.Y.Z` Git tag, a dated CHANGELOG entry, retained release artifacts/evidence, and a build/test run from the tagged revision itself.
+
+Before such a SIP step moves to `completed`, the project should:
+
+- merge the accepted in-scope implementation/documentation work;
+- ensure build/test tooling that forms part of the release baseline is itself released or otherwise deliberately versioned and reproducibly consumable;
+- verify the required CI and generated evidence on the accepted repository state;
+- prepare the release version and CHANGELOG through the normal reviewed workflow;
+- verify the release candidate on the accepted main branch;
+- create the matching immutable release tag on that verified revision;
+- rebuild/test the tagged revision rather than relying only on pre-merge or pre-tag evidence;
+- verify that produced artifacts report the expected software version, source revision and build identity;
+- retain the release artifacts and verification evidence;
+- record the closure evidence in the coordination repository;
+- only then mark the SIP step `completed` and activate the next step.
+
+A planning/documentation step that does not produce releasable software does not need an artificial software version. Its SIP definition may instead identify an appropriate immutable documentation/planning baseline. This exception should not be used to avoid releasing software when the step has produced a meaningful software maturity level.
+
+After a software release, normal development should move to the next planned `-SNAPSHOT` version before new capability work begins. The SIP owns the concrete closure checklist and release meaning for each step. The SDE/tooling documentation owns the mechanics for release/tag-triggered builds, artifact retention and version/provenance verification.
+
 ### Architecture before irreversible coupling
 
 Define the important system/software-item boundaries, interface ownership, public/private extension model, threading/state model and persistence direction before production implementations make those choices expensive to change.
