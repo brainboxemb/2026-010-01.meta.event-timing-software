@@ -2,29 +2,90 @@
 
 Use this document as the stable entry point when continuing the project in a new chat or agent session.
 
-## Start here
+## Copy/paste start instruction
 
-Read and inspect, in order:
+The block below is intended to be copied **as-is** into a new ChatGPT conversation. It contains the current continuation point, but the new session must verify GitHub before treating that state as current.
 
-1. `AGENTS.md`
-2. resolve the active work repository and GitHub pull-request state using the rules below
-3. `docs/02-agent-plan.md`
-4. `docs/00-brainstorm.md`
-5. `docs/03-domain-baseline.md`
-6. `docs/10-SDP-software-development-plan.md`
-7. `docs/11-SIP-software-implementation-planning.md`
-8. `docs/12-SDE-software-development-environment.md`
-9. `docs/30-SSAD-software-system-architecture.md`
-10. the relevant software-item `SRD` / `SAD` / `SDD` documents for the current topic
-11. applicable system-level `IDD` documents when they exist
-12. `docs/50-SVP-software-verification-plan.md` when verification/evidence/testability is relevant
-13. any source documents or references explicitly named by the active plan step
+```text
+Werk vanuit `brainboxemb/2026-010-01.meta.event-timing-software` als de cross-project coordination source voor het event-timing softwareproject.
 
-### Repository resolution
+Reconstrueer de actuele toestand niet uit oude chatgeschiedenis. Controleer eerst de repositories, issues, pull requests, CI/evidence en gegenereerde output op GitHub.
 
-`brainboxemb/2026-010-01.meta.event-timing-software` is the **coordination and research repository**. Start here to determine the active AP/SIP scope, but do not assume that the active implementation pull request is also in this repository.
+Lees eerst in de meta-repository:
+- `AGENTS.md`
+- `docs/01-handoff.md`
+- `docs/02-agent-plan.md`
+- `docs/00-brainstorm.md`
+- `docs/03-domain-baseline.md`
+- `docs/10-SDP-software-development-plan.md`
+- `docs/11-SIP-software-implementation-planning.md`
+- `docs/12-SDE-software-development-environment.md`
+- `docs/13-SDE-java-build-test-toolchain.md`
+- `docs/30-SSAD-software-system-architecture.md`
+- `docs/31-01-SAD-timing-application-architecture.md`
+- `docs/31-01-SDD-02-java-component-design.md`
+- `docs/50-SVP-software-verification-plan.md`
 
-Current repository map:
+Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:
+- `brainboxemb/2026-010-01.meta.event-timing-software` — coordination, planning, requirements, architecture en verification direction;
+- `brainboxemb/2026-010-02.java.event-timing-framework` — publieke SI-01 Java framework/application implementatie;
+- `brainboxemb/tool.java-project` — herbruikbare Java build/test/release tooling;
+- `brainboxemb/tool.git-project` — generieke Git/repository tooling;
+- `brainboxemb/tool.eng-docs` — engineering-documentation tooling.
+
+Controleer voor het actuele werk:
+1. open issues en open/draft PR's in meta;
+2. open issues en open/draft PR's in iedere implementation/tool repository die door de actieve stap wordt genoemd;
+3. de meest recent gemergede PR wanneer die directe predecessor-context bevat;
+4. relevante CI-runs en evidence;
+5. gegenereerde review-output onder `dev/pr-N/docs` of `dev/pr-N/bld` en de actuele `prod/docs` / `prod/bld` output wanneer die voor de stap relevant is.
+
+Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
+- SIP Step 1 is afgerond;
+- SIP Step 2 is nog actief en mag nog niet administratief worden afgesloten;
+- de framework/application `0.0.1` release-process trial is volledig uitgevoerd, inclusief tag-build, release-assets en terugkeer van `main` naar `0.1.0-SNAPSHOT`;
+- `tool.java-project v0.1.0` is als normale toolingrelease gemaakt en de tag is onafhankelijk opnieuw self-tested;
+- de volgende release-gate is een minimale externe reference consumer `template.java-project`, volgens hetzelfde principe als `template.scad-project` voor de SCAD-tooling;
+- daarna moet het event-timing framework de gereleasde `tool.java-project` baseline via het project-file model adopteren en opnieuw groen worden bewezen;
+- meta issue #28 en de bijbehorende draft PR leggen de algemene SIP-step/release-closure werkwijze vast;
+- pas na de released-toolchain gate, de resterende Step-2 exit evidence en een succesvolle productrelease `0.1.0` mag Step 2 naar `completed` en Step 3 naar `active`.
+
+Voor Java releasewerk geldt bewust:
+- Maven project version, CHANGELOG release section en Git tag moeten expliciet overeenkomen;
+- een Git tag overschrijft nooit stilzwijgend een `-SNAPSHOT` Maven-version;
+- een release is pas geaccepteerd nadat de exacte getagde revision opnieuw build/test/smoke verification heeft doorlopen;
+- een productrelease moet een herkenbare gereleasde toolingbaseline gebruiken, met daarnaast exacte immutable commit provenance voor reusable GitHub workflows;
+- `template.java-project` is bedoeld als externe conformance/reference consumer; de fixture in `tool.java-project` blijft de snelle interne toolingtest.
+
+Ga alleen verder met het huidige Step-2/prerequisite werk. Start Step 3 niet alvast, behalve wanneer een noodzakelijke correctie van het plan dat expliciet vereist.
+
+Gebruik de repository die eigenaar is van het werk:
+- cross-project afspraken/status/closure-governance in meta;
+- productimplementatie en product-test evidence in het Java framework;
+- generieke Java tooling in `tool.java-project`;
+- generieke Git tooling in `tool.git-project`.
+
+Nieuwe software-ideeën, mogelijke requirements, architectuurkeuzes en onopgeloste vragen gaan eerst naar `docs/00-brainstorm.md` wanneer ze nog niet als besluit zijn gepromoveerd. Houd de projectdocumentatie generiek en noem niet het specifieke real-world event dat de aanleiding voor het project was.
+
+Na ieder afgerond onderdeel:
+- controleer de afgesproken tests/evidence en generated output;
+- werk issue/PR beschrijving en relevante closure-evidence bij;
+- merge pas na groene evidence;
+- werk meta-status/documentatie bij wanneer een cross-project conclusie of planstatus werkelijk veranderd is;
+- houd implementatiedetails in de repository die eigenaar is van de implementatie.
+```
+
+## How to use the handoff
+
+The copy/paste block is deliberately operational. It tells a fresh session which sources to read, how to resolve repository ownership, what GitHub evidence to inspect and where the current implementation sequence is expected to continue.
+
+The **current continuation point is not a substitute for checking GitHub**. It is a recovery hint. If issues, PRs, releases or the SIP have moved on, follow the current repository state and update this handoff when the continuation point materially changes.
+
+## Repository resolution
+
+`brainboxemb/2026-010-01.meta.event-timing-software` is the coordination and research repository. A single SIP step may involve several repositories, so do not assume the active implementation pull request is in meta.
+
+Current repository ownership is approximately:
 
 ```text
 brainboxemb/2026-010-01.meta.event-timing-software
@@ -33,45 +94,32 @@ brainboxemb/2026-010-01.meta.event-timing-software
 brainboxemb/2026-010-02.java.event-timing-framework
   public SI-01 Java framework/application implementation
 
-brainboxemb/tool.eng-docs
-  reusable engineering-documentation tooling
-
 brainboxemb/tool.java-project
-  reusable Java build/test tooling
+  reusable Java project/build/test/release tooling
 
 brainboxemb/tool.git-project
   reusable Git/repository tooling
+
+brainboxemb/tool.eng-docs
+  reusable engineering-documentation tooling
 ```
 
-Resolve the active work repository as follows:
+Resolve active work by reading the SIP/AP context and then inspecting the named repositories on GitHub. The implementation PR owns detailed implementation/test evidence. Meta owns the longer-lived cross-project plan and stable software-system conclusions.
 
-1. start in this meta repository and inspect the active `AP-*` / SIP scope plus any open meta PR;
-2. identify every implementation/tool repository explicitly named by that active plan step, issue, PR description or handoff context;
-3. inspect the open/draft PR in the named implementation/tool repository before deciding what work is current;
-4. when the active work is SI-01 implementation, use `brainboxemb/2026-010-02.java.event-timing-framework` as the current public implementation repository;
-5. when the active work is the engineering-document extraction/tooling, use `brainboxemb/tool.eng-docs`;
-6. inspect `tool.java-project`, `tool.git-project`, or another supporting repository only when the active work explicitly depends on or changes it;
-7. do not infer that the newest PR in this meta repository is automatically the active implementation PR.
+## Pull-request and generated-output check
 
-A single project step may therefore have a coordination PR here and an implementation PR in another repository. The implementation PR owns detailed implementation/test evidence; the meta repository owns longer-lived cross-project coordination and software-system documentation.
+Before deciding what work is current:
 
-### Pull-request state check
+1. inspect open issues and PRs in meta;
+2. inspect open issues and PRs in every repository named by the active scope;
+3. inspect immediate predecessor PRs when they contain relevant handoff evidence;
+4. inspect CI rather than assuming a commit is proven merely because it exists;
+5. inspect generated `dev/pr-<N>/...` output when the PR produces review artifacts;
+6. inspect `prod/docs` or `prod/bld` when current main-branch output matters to the decision.
 
-Before deciding what work is current, inspect GitHub rather than relying only on Markdown documents:
+If no relevant PR is open, use the most recently completed work together with `docs/02-agent-plan.md` and the SIP to determine the next bounded piece of work.
 
-1. list the currently open pull requests in the meta repository;
-2. resolve the active implementation/tool repository using the repository-resolution rules above;
-3. list the open pull requests there and identify the open/draft PR that represents the active work, if one exists;
-4. read its description, commits/changed files, discussion, and recorded evidence relevant to the active step;
-5. also identify the most recently closed or merged pull request in the relevant repository and inspect it when it provides immediate predecessor context;
-6. inspect generated `dev/pr-<N>/...` output for the active PR when generated artifacts are part of the review;
-7. if no relevant pull request is open, use the most recently completed PR together with `docs/02-agent-plan.md` and the SIP to determine the next step and repository.
-
-Treat the relevant pull request as the detailed work/evidence record for the active step. Treat `docs/02-agent-plan.md` as the longer-lived **AP-*** coordination plan. Treat `docs/03-domain-baseline.md` as working domain knowledge/terminology rather than formal requirements. Treat the SDP/SIP as software-evolution planning, the SDE as the common development-environment/workflow definition, and the SVP as the common verification strategy. Do not assume that a branch name or an old handoff statement is current without checking GitHub state.
-
-Then continue only with the currently active `AP-*` / SIP scope unless later work is required to correct the plan itself.
-
-## Current software-item register
+## Software-item register
 
 ```text
 SI-01  Headless Timing Application
@@ -79,42 +127,31 @@ SI-02  Desktop GUI Application
 SI-03  Web Operator Application (React/browser/iPad)
 ```
 
-The software-item number is stable across that item's SRD/SAD/SDD documents. It is not a document sequence number.
+The software-item number is stable across that item's SRD/SAD/SDD documents. It is not a document sequence number. The SSAD owns the software-item/interface catalogue; system-owned interfaces are documented through IDDs where applicable.
 
-The SSAD owns the current software-item/interface catalogue. System-owned interfaces are documented through IDDs and may be referenced as applicable requirements by software-item SRDs.
+## Document roles
 
-## Reusable handoff message
+Use the sources consistently:
 
-> Work from `brainboxemb/2026-010-01.meta.event-timing-software` as the coordination and research source. Do not assume that the active implementation PR is in the meta repository.
->
-> Read `AGENTS.md`, `docs/01-handoff.md`, `docs/02-agent-plan.md`, `docs/00-brainstorm.md`, `docs/03-domain-baseline.md`, `docs/10-SDP-software-development-plan.md`, `docs/11-SIP-software-implementation-planning.md`, `docs/12-SDE-software-development-environment.md`, `docs/30-SSAD-software-system-architecture.md`, the relevant software-item design documents, and `docs/50-SVP-software-verification-plan.md` when applicable.
->
-> First inspect the meta repository's current PR/AP/SIP state. Then resolve every implementation/tool repository named by the active work and inspect its open/draft PR before deciding what is current. SI-01 public implementation lives in `brainboxemb/2026-010-02.java.event-timing-framework`; reusable engineering-document tooling lives in `brainboxemb/tool.eng-docs`. Inspect `tool.java-project`, `tool.git-project`, or another supporting repository only when the active work explicitly uses or changes it.
->
-> Read the relevant active PR description, changes, discussion and evidence. Also inspect the most recently closed/merged PR in that repository when it provides predecessor context. Inspect generated `dev/pr-N/...` output when the active PR generates review artifacts. If no relevant PR is open, use the most recently completed PR together with `docs/02-agent-plan.md` and the SIP to determine the next step and repository.
->
-> Continue with the currently active `AP-*` / SIP scope. Do not start later work unless the active step requires a correction to the plan.
->
-> Use the domain baseline for supplied domain facts/terminology, the SDP for staged software direction, the SIP for the implementation sequence, the SDE for GitHub/tooling/AI/repository workflow, and the SVP for verification strategy. Keep implementation details and evidence in the corresponding implementation PR.
->
-> New software ideas, possible requirements, architecture choices and unresolved questions must first be captured in `docs/00-brainstorm.md`. Do not present them as settled design unless they have explicitly been promoted.
->
-> Keep repository documentation generic and do not name the specific real-world event that motivated the project.
->
-> At the end of the work, update plan status/evidence and the changelog where useful. Keep detailed active-step work and evidence in the PR rather than turning long-term plans into activity logs.
+- `docs/00-brainstorm.md` — unpromoted software ideas, possible requirements, architecture options and unresolved questions;
+- `docs/03-domain-baseline.md` — supplied domain facts and terminology;
+- SDP — staged software-development governance and maturity/release direction;
+- SIP — implementation sequence, active step and step-exit expectations;
+- SDE — common development environment, repository/toolchain and workflow rules;
+- SSAD/SAD/SDD — accepted architecture/design at the appropriate level;
+- SVP — common verification strategy and evidence expectations;
+- active implementation/tool PR — detailed change/evidence record for current work.
+
+Do not turn long-lived planning documents into chronological activity logs. Record stable conclusions and current status there; keep detailed execution history in issues, PRs, CI and generated evidence.
 
 ## Session-end check
 
 Before handing off substantial work:
 
-- make sure the active PR in each repository involved contains enough description/evidence for the next session to understand the current step;
+- ensure each involved PR contains enough description and evidence for a fresh session;
 - inspect generated review output when applicable;
-- update the active `AP-*` step when its status or high-level evidence changed;
-- update the domain baseline when new domain facts/terminology are supplied or corrected;
-- update SDP/SIP only when the staged software direction itself changed;
-- update SDE only when common tooling/workflow/environment rules changed;
-- update SVP when verification strategy/evidence expectations materially change;
-- add unresolved software topics to `docs/00-brainstorm.md`;
-- add/update reference metadata when new source material was used;
+- update AP/SIP status only when the status genuinely changed;
+- update domain, SDP/SIP, SDE, architecture or SVP only when their owned information changed;
+- add unresolved software topics to the brainstorm rather than silently deciding them;
 - update `CHANGELOG.md` for notable repository changes;
-- leave the project in a state that another session can reconstruct from the meta coordination state plus the active implementation/tool PRs and sources of truth above.
+- update the copy/paste continuation point above when the next bounded piece of work materially changes.
