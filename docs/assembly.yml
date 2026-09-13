@@ -11,52 +11,36 @@ asset_manifests:
 documents:
   - id: domain-baseline
     source: docs/03-domain-baseline.md
-    output: documents/03-domain-baseline.md
   - id: system-use-cases
     source: docs/04-UC-system-use-cases.md
-    output: documents/04-UC-system-use-cases.md
   - id: software-development-plan
     source: docs/10-SDP-software-development-plan.md
-    output: documents/10-SDP-software-development-plan.md
   - id: software-implementation-planning
     source: docs/11-SIP-software-implementation-planning.md
-    output: documents/11-SIP-software-implementation-planning.md
   - id: software-development-environment
     source: docs/12-SDE-software-development-environment.md
-    output: documents/12-SDE-software-development-environment.md
   - id: java-build-test-toolchain
     source: docs/13-SDE-java-build-test-toolchain.md
-    output: documents/13-SDE-java-build-test-toolchain.md
   - id: timing-application-requirements
     source: docs/20-01-SRD-timing-application-requirements.md
-    output: documents/20-01-SRD-timing-application-requirements.md
   - id: software-system-architecture
     source: docs/30-SSAD-software-system-architecture.md
-    output: documents/30-SSAD-software-system-architecture.md
   - id: timing-application-architecture
     source: docs/31-01-SAD-timing-application-architecture.md
-    output: documents/31-01-SAD-timing-application-architecture.md
   - id: java-component-design
     source: docs/31-01-SDD-02-java-component-design.md
-    output: documents/31-01-SDD-02-java-component-design.md
   - id: gui-application-architecture
     source: docs/31-02-SAD-gui-application-architecture.md
-    output: documents/31-02-SAD-gui-application-architecture.md
   - id: web-operator-architecture
     source: docs/31-03-SAD-web-operator-application-architecture.md
-    output: documents/31-03-SAD-web-operator-application-architecture.md
   - id: data-display-design
     source: docs/31-01-SDD-01-data-and-display-design.md
-    output: documents/31-01-SDD-01-data-and-display-design.md
   - id: backoffice-transport-design
     source: docs/31-01-SDD-03-backoffice-transport-design.md
-    output: documents/31-01-SDD-03-backoffice-transport-design.md
   - id: application-control-status
     source: docs/40-01-IDD-application-control-status.md
-    output: documents/40-01-IDD-application-control-status.md
   - id: software-verification-plan
     source: docs/50-SVP-software-verification-plan.md
-    output: documents/50-SVP-software-verification-plan.md
 
 indexes:
   - output: documents/README.md
