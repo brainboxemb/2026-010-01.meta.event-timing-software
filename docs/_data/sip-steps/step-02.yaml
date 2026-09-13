@@ -4,8 +4,9 @@ state: active
 summary: >-
   SI-01 is established as the first real consumer of the reusable Java toolchain.
   Complete Step 2 by making the current framework/app skeleton demonstrably runnable:
-  build it, start it, show build identity, and shut it down cleanly. Keep
-  architecture/dependency rules as exit evidence rather than the headline demo.
+  build it, start it, show build identity, shut it down cleanly, and close the
+  accepted baseline with a verified 0.1.0 software release. Keep architecture/dependency
+  rules as exit evidence rather than the headline demo.
 documents:
   - name: 13-SDE
     title: Java build/test toolchain
@@ -125,7 +126,7 @@ activities:
     lane: application
     kind: implementation
     title: Minimal runnable app lifecycle
-    state: next
+    state: done
     estimate_project_days: 0.5
     depends_on: [A04]
 
@@ -161,5 +162,12 @@ activities:
     lane: verification
     kind: verification
     title: Architecture/dependency checks
-    state: planned
+    state: done
     depends_on: [A03]
+
+  - id: V06
+    lane: verification
+    kind: verification
+    title: 0.1.0 release build / identity proof
+    state: planned
+    depends_on: [A05, V05]
