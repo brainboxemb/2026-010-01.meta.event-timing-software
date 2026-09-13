@@ -1,12 +1,11 @@
 step: 2
 title: Framework repository skeleton
-state: active
+state: complete
 summary: >-
   SI-01 is established as the first real consumer of the reusable Java toolchain.
-  Complete Step 2 by making the current framework/app skeleton demonstrably runnable:
-  build it, start it, show build identity, shut it down cleanly, and close the
-  accepted baseline with a verified 0.1.0 software release. Keep architecture/dependency
-  rules as exit evidence rather than the headline demo.
+  The framework/app skeleton builds, tests and runs on the supported development
+  environments, reports traceable build identity, and is closed by the verified
+  0.1.0 software release.
 documents:
   - name: 13-SDE
     title: Java build/test toolchain
@@ -169,5 +168,9 @@ activities:
     lane: verification
     kind: verification
     title: 0.1.0 release build / identity proof
-    state: planned
+    state: done
     depends_on: [A05, V05]
+    note: >-
+      v0.1.0 points to release commit 3a42e5683ce97dff2ef17caf2ec543e96a54cbd9;
+      main run 67 and independent tag run 68 are green and the GitHub Release retains
+      both JARs, checksums and release evidence.
