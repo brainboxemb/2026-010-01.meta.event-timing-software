@@ -52,6 +52,8 @@ Use this closure sequence unless the step explicitly defines a different non-sof
 10. move normal development to the next planned `-SNAPSHOT` version before new capability work starts;
 11. only then mark the SIP step `completed` and activate the next step.
 
+A release version is consumed once its normal candidate tag has been created. If verification of that tagged revision fails, archive the candidate as `vX.Y.Z-failed` on the same commit, verify the archival tag, remove the normal `vX.Y.Z` tag and do not treat it as a valid release. Record the failed version in the CHANGELOG as `FAILED DURING RELEASE BUILD`; the next attempt advances the patch version rather than reusing the failed version. A `-failed` tag is historical evidence only and must never trigger or represent a normal release.
+
 A planning/documentation step that produces no releasable software does not need an artificial software version. Such a step may define another immutable baseline appropriate to its deliverable. That exception must not be used to avoid a normal release when the step has produced a meaningful software baseline.
 
 ## Step 1 — Architecture baseline
@@ -130,7 +132,7 @@ No executable product behaviour is claimed in this step.
 
 ## Step 2 — Framework repository skeleton
 
-Status: active
+Status: completed
 
 ### Goal
 
@@ -199,22 +201,23 @@ run the app artifact
 
 Release `0.0.1` was used successfully as an end-to-end **release-process trial**. It proved release preparation, tag creation, independent tag verification, build identity, release artifact publication and post-release return to a snapshot version. It is not the Step-2 software baseline.
 
-Before Step 2 closes:
+The accepted Step-2 software baseline is **release `v0.1.0`**:
 
-- `tool.java-project v0.1.0` is the released Java project-tooling baseline;
-- that tooling release is self-tested from its tag and externally proven by `template.java-project`;
-- the event-timing framework consumes that released tool baseline through `project.yml` while workflow/gitlink provenance remains pinned to the exact release commit;
-- the event-timing framework is prepared as software version `0.1.0` with a dated CHANGELOG entry;
-- the accepted `0.1.0` main revision is green before tagging;
-- `v0.1.0` is created on that verified revision and the tag is independently built/tested;
-- released framework/app artifacts report version `0.1.0` and the expected tagged source revision;
-- release artifacts/checksums/evidence are retained and the closure evidence is recorded here.
+- release commit: `3a42e5683ce97dff2ef17caf2ec543e96a54cbd9`;
+- `v0.1.0` points to that exact commit;
+- main release verification run **#67** is green and published `prod/bld` from that commit;
+- independent tag verification run **#68** is green;
+- Linux canonical build, independent Windows build and execution on Windows of the exact Linux-built application JAR are green;
+- the readable Surefire summary reports **13 tests, 0 failures, 0 errors and 0 skipped**;
+- `prod/bld` contains `event-timing-framework-0.1.0.jar` and `event-timing-app-0.1.0.jar` with traceable source identity;
+- the GitHub Release retains both JARs, SHA-256 sums and the release-evidence archive;
+- `tool.java-project v0.1.0` is the released Java project-tooling baseline and is separately proven by its own tag self-test, `template.java-project`, and the real framework consumer.
 
-Only after those checks are complete does Step 2 move to `completed` and Step 3 become `active`. Normal product development then advances to the next planned snapshot version before Step-3 capability work begins.
+This evidence satisfies the Step-2 release/identity proof. Normal development advances to `0.2.0-SNAPSHOT` before Step-3 capability work begins.
 
 ## Step 3 — Minimal version/status application on development host (SI-01)
 
-Status: not started
+Status: active
 
 ### Goal
 
@@ -268,7 +271,8 @@ A useful stakeholder statement is:
 - Windows execution from produced artifacts is repeatable;
 - Linux-host execution is smoke-tested where practical;
 - lifecycle/status architecture is not coupled to one client transport;
-- no Raspberry Pi-specific code is required to run the application behaviour.
+- no Raspberry Pi-specific code is required to run the application behaviour;
+- Step 3 closes through the release-backed completion model, with the current development line targeting `0.2.0` unless implementation evidence deliberately replans the release version.
 
 ## Step 4 — Raspberry Pi Zero image, target run and update automation
 
@@ -844,6 +848,7 @@ Only an explicit architecture decision with target-hardware evidence may superse
 - Every implementation step should end with a concrete deliverable and repeatable demonstration.
 - A successful demonstration is not by itself sufficient evidence for completion.
 - A software-producing step normally closes with a normal verified software release; do not substitute an arbitrary planning tag for a meaningful release baseline.
+- A failed tagged release candidate is archived as `vX.Y.Z-failed`, consumes that version, and the next release attempt advances the patch version.
 - Prefer demonstrations that exercise the same public interfaces/adapters intended for normal operation instead of special demo-only bypasses.
 - Establish target-image and application-update automation early; do not let manual Pi provisioning become the normal development workflow.
 - Prefer fast application updates for ordinary SI-01 changes; rebuild/reflash complete images when OS/runtime/image-level inputs change.
