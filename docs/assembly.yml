@@ -1,8 +1,10 @@
 schema_version: 1
 
 asset_manifests:
-  - path: bld/docs/architecture/assets.yml
+  - path: bld/docs/architecture/assets-publication.yml
     publish_prefix: assets/architecture
+  - path: bld/docs/architecture/assets-raw.yml
+    publish_prefix: architecture
   - path: bld/docs/planning/assets.yml
     publish_prefix: planning
 
