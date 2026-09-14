@@ -70,9 +70,10 @@ jobs:
         run: |
           set -euo pipefail
           ./bootstrap.sh
-          test "$(git -C tools/tool.git-project rev-parse HEAD)" = "d6d760845967f70bd266b3ac2b36c9d5b0edc862"
+          test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
           test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "a15d2d259be7a88921e6c1afd7572b5acfd0fdd3"
           grep -F 'ref: v0.2.0' project.yml
+          test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
 
@@ -98,7 +99,7 @@ jobs:
       # project-specific diagram/planning scripts and released eng-docs assembler
       # remain authoritative for how their outputs are produced.
       - name: Run or hydrate documentation task graph
-        uses: brainboxemb/tool.git-project/moon@v0.2.2
+        uses: brainboxemb/tool.git-project/moon@v0.2.4
         with:
           task: software:docs.assemble
           cache-namespace: event-timing-software-docs
@@ -123,15 +124,64 @@ jobs:
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/planning/sip-roadmap.svg
           test -s bld/docs/planning/sip-roadmap.pdf
-          for task in docs-diagrams docs-planning docs-assemble; do
-            test -s "bld/docs/evidence/tasks/${task}/execution.log"
-            test -s "bld/docs/evidence/tasks/${task}/execution.json"
-            grep -F '"status": "success"' "bld/docs/evidence/tasks/${task}/execution.json"
-          done
           test -f .moon/invocations/software_docs.assemble/materialization.json
           test -f .moon/invocations/software_docs.assemble/moon.log
-          grep -F '"source_revision": "'"$SOURCE_REVISION"'"' .moon/invocations/software_docs.assemble/materialization.json
-          grep -F '"status": "success"' .moon/invocations/software_docs.assemble/materialization.json
+
+          SOURCE_REVISION="$SOURCE_REVISION" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from jsonschema import Draft202012Validator
+
+          root = Path.cwd()
+          schema = json.loads(
+              (root / "tools/tool.git-project/schemas/execution-evidence.schema.json").read_text(encoding="utf-8")
+          )
+          Draft202012Validator.check_schema(schema)
+          validator = Draft202012Validator(schema)
+
+          expected = {
+              "docs-diagrams": ("docs.diagrams", "diagrams"),
+              "docs-planning": ("docs.planning", "planning"),
+              "docs-assemble": ("docs.assemble", "assemble"),
+          }
+          revisions = {}
+          for execution_id, (capability, action) in expected.items():
+              path = root / "bld/docs/evidence/executions" / execution_id / "execution.json"
+              data = json.loads(path.read_text(encoding="utf-8"))
+              validator.validate(data)
+              if data["capability"] != capability or data["action"] != action:
+                  raise SystemExit(f"execution identity mismatch: {execution_id}")
+              if data["owner"] != "brainboxemb/2026-010-01.meta.event-timing-software":
+                  raise SystemExit(f"execution owner mismatch: {execution_id}")
+              if data["owner_revision"] != data["source_revision"]:
+                  raise SystemExit(f"project-owned execution revision mismatch: {execution_id}")
+              if data["status"] != "success" or data["exit_code"] != 0:
+                  raise SystemExit(f"producer execution failed: {execution_id}")
+              if data["tool_eng_docs_sha"] != "a15d2d259be7a88921e6c1afd7572b5acfd0fdd3":
+                  raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
+              log_path = path.parent / data["log"]
+              if not log_path.is_file() or log_path.stat().st_size == 0:
+                  raise SystemExit(f"producer execution log missing: {execution_id}")
+              revisions[execution_id] = data["source_revision"]
+
+          assembled_source = (root / "bld/docs/source-sha.txt").read_text(encoding="utf-8").strip()
+          if assembled_source != revisions["docs-assemble"]:
+              raise SystemExit("assembled source SHA does not match assemble producer evidence")
+
+          materialization = json.loads(
+              (root / ".moon/invocations/software_docs.assemble/materialization.json").read_text(encoding="utf-8")
+          )
+          if materialization.get("task") != "software:docs.assemble":
+              raise SystemExit("materialization task mismatch")
+          if materialization.get("source_revision") != os.environ["SOURCE_REVISION"]:
+              raise SystemExit("current materialization revision mismatch")
+          if materialization.get("status") != "success" or materialization.get("exit_code") != 0:
+              raise SystemExit("current materialization failed")
+          if materialization.get("tool_git_project_version") != "0.2.4":
+              raise SystemExit("unexpected tool.git-project materialization version")
+          PY
 
       # The cacheable tree retains producer identity. Current materialization
       # context is added only here, after execute/hydrate, so it cannot falsify
@@ -161,7 +211,7 @@ jobs:
     needs: documentation
     permissions:
       contents: write
-    uses: brainboxemb/tool.git-project/.github/workflows/reusable-generated-output-publish.yml@v0.2.2
+    uses: brainboxemb/tool.git-project/.github/workflows/reusable-generated-output-publish.yml@v0.2.4
     with:
       artifact_name: software-docs-publication
       branch_suffix: docs

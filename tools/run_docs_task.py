@@ -9,7 +9,6 @@ evidence, then invokes released tool.eng-docs for final assembly.
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -19,12 +18,15 @@ from pathlib import Path
 ROOT = Path.cwd()
 PRODUCERS = ROOT / "bld/docs-producers"
 TRANSIENT = ROOT / "bld/docs"
+EXECUTIONS = PRODUCERS / "evidence/executions"
+OWNER = "brainboxemb/2026-010-01.meta.event-timing-software"
 
 TASKS = {
     "diagrams": {
-        "task": "docs.diagrams",
+        "capability": "docs.diagrams",
+        "action": "diagrams",
+        "execution_id": "docs-diagrams",
         "output": PRODUCERS / "architecture",
-        "evidence": PRODUCERS / "evidence/docs-diagrams",
         "commands": [
             ["eng-docs", "diagrams", "--source", "docs/_diagrams", "--theme", "docs/_diagram-theme/default.yaml", "--out", "bld/docs/architecture"],
             [sys.executable, "tools/generate_architecture_diagrams.py"],
@@ -34,9 +36,10 @@ TASKS = {
         ],
     },
     "planning": {
-        "task": "docs.planning",
+        "capability": "docs.planning",
+        "action": "planning",
+        "execution_id": "docs-planning",
         "output": PRODUCERS / "planning",
-        "evidence": PRODUCERS / "evidence/docs-planning",
         "commands": [
             [sys.executable, "tools/generate_sip_planning.py"],
             [sys.executable, "tools/generate_sip_step_pdfs.py"],
@@ -44,9 +47,10 @@ TASKS = {
         ],
     },
     "assemble": {
-        "task": "docs.assemble",
+        "capability": "docs.assemble",
+        "action": "assemble",
+        "execution_id": "docs-assemble",
         "output": TRANSIENT,
-        "evidence": PRODUCERS / "evidence/docs-assemble",
         "commands": [],
     },
 }
@@ -178,14 +182,14 @@ def tool_revision() -> str:
         return "unknown"
 
 
-def producer_revision(name: str) -> str:
-    path = PRODUCERS / "evidence" / name / "execution.json"
+def producer_revision(execution_id: str) -> str:
+    path = EXECUTIONS / execution_id / "execution.json"
     if not path.is_file():
         raise RuntimeError(f"producer evidence is missing: {path}")
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("status") != "success" or not data.get("source_sha"):
+    if data.get("status") != "success" or not data.get("source_revision"):
         raise RuntimeError(f"producer evidence is incomplete: {path}")
-    return str(data["source_sha"])
+    return str(data["source_revision"])
 
 
 def prepare_assembly(log) -> None:
@@ -201,7 +205,7 @@ def prepare_assembly(log) -> None:
         ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-publication.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-publication", "--source-revision", architecture_revision, "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
         ["eng-docs", "manifest", "--source", str(architecture.relative_to(ROOT)), "--out", str((architecture / "assets-raw.yml").relative_to(ROOT)), "--producer", "event-timing-software.architecture-raw", "--source-revision", architecture_revision, "--lifecycle", "docs", "--relationship", "producer-source", "--include", "*.svg", "--include", "*.drawio", "--include", "README.md"],
         ["eng-docs", "manifest", "--source", str(planning.relative_to(ROOT)), "--out", str((planning / "assets.yml").relative_to(ROOT)), "--producer", "event-timing-software.planning", "--source-revision", planning_revision, "--lifecycle", "docs", "--relationship", "producer-source"],
-        ["eng-docs", "assemble", "--root", ".", "--config", "docs/assembly.yml", "--out", "bld/docs", "--source-repository", "brainboxemb/2026-010-01.meta.event-timing-software", "--source-revision", assembly_revision],
+        ["eng-docs", "assemble", "--root", ".", "--config", "docs/assembly.yml", "--out", "bld/docs", "--source-repository", OWNER, "--source-revision", assembly_revision],
     ]
     for command in commands:
         run_command(command, log)
@@ -214,24 +218,27 @@ def main() -> None:
     kind = sys.argv[1]
     cfg = TASKS[kind]
     output: Path = cfg["output"]
-    evidence: Path = cfg["evidence"]
+    evidence = EXECUTIONS / cfg["execution_id"]
     remove(evidence)
     evidence.mkdir(parents=True, exist_ok=True)
     log_path = evidence / "execution.log"
     json_path = evidence / "execution.json"
 
-    source_sha = git("rev-parse", "HEAD")
-    task_hash = os.environ.get("MOON_TASK_HASH", "")
+    source_revision = git("rev-parse", "HEAD")
+    owner_revision = source_revision
+    eng_docs_revision = tool_revision()
     status = "success"
+    exit_code = 0
     error = ""
     details: dict = {}
 
     with log_path.open("w", encoding="utf-8") as log:
         for line in [
-            f"Documentation task: {cfg['task']}",
-            f"source_sha={source_sha}",
-            f"tool_eng_docs_sha={tool_revision()}",
-            f"moon_task_hash={task_hash}",
+            f"Documentation capability: {cfg['capability']}",
+            f"action={cfg['action']}",
+            f"source_revision={source_revision}",
+            f"owner_revision={owner_revision}",
+            f"tool_eng_docs_sha={eng_docs_revision}",
         ]:
             print(line)
             log.write(line + "\n")
@@ -251,20 +258,25 @@ def main() -> None:
                 prepare_assembly(log)
                 details = validate_assembly(TRANSIENT)
         except Exception as exc:  # retain useful evidence on producer failures
-            status = "failed"
+            status = "failure"
+            exit_code = 1
             error = str(exc)
             print(f"ERROR: {error}")
             log.write(f"\nERROR: {error}\n")
 
     payload = {
-        "schema": "event-timing-software.docs-task-evidence",
+        "schema": "brainboxemb.execution-evidence",
         "schema_version": 1,
-        "task": cfg["task"],
+        "capability": cfg["capability"],
+        "owner": OWNER,
+        "action": cfg["action"],
+        "source_revision": source_revision,
+        "owner_revision": owner_revision,
         "status": status,
-        "source_sha": source_sha,
-        "tool_eng_docs_sha": tool_revision(),
-        "moon_task_hash": task_hash,
+        "exit_code": exit_code,
         "log": "execution.log",
+        "domain_evidence": [],
+        "tool_eng_docs_sha": eng_docs_revision,
         "details": details,
     }
     if error:
@@ -272,11 +284,11 @@ def main() -> None:
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     if kind == "assemble" and status == "success":
-        (TRANSIENT / "source-sha.txt").write_text(source_sha + "\n", encoding="utf-8")
-        target = TRANSIENT / "evidence/tasks"
+        (TRANSIENT / "source-sha.txt").write_text(source_revision + "\n", encoding="utf-8")
+        target = TRANSIENT / "evidence/executions"
         target.mkdir(parents=True, exist_ok=True)
         for name in ("docs-diagrams", "docs-planning", "docs-assemble"):
-            source = PRODUCERS / "evidence" / name
+            source = EXECUTIONS / name
             if source.is_dir():
                 shutil.copytree(source, target / name, dirs_exist_ok=True)
 

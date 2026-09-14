@@ -17,7 +17,7 @@ jobs:
   # Preview branches are generic repository lifecycle state. Keep branch deletion
   # policy in released tool.git-project rather than duplicating it here.
   cleanup:
-    uses: brainboxemb/tool.git-project/.github/workflows/reusable-pr-preview-cleanup.yml@v0.2.2
+    uses: brainboxemb/tool.git-project/.github/workflows/reusable-pr-preview-cleanup.yml@v0.2.4
     with:
       preview_suffixes: docs
       pr_number: ${{ inputs.pr_number || github.event.pull_request.number }}

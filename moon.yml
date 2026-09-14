@@ -15,7 +15,7 @@ tasks:
       - '.moon/workspace.yml'
     outputs:
       - 'bld/docs-producers/architecture/**'
-      - 'bld/docs-producers/evidence/docs-diagrams/**'
+      - 'bld/docs-producers/evidence/executions/docs-diagrams/**'
     options:
       cache: true
 
@@ -33,7 +33,7 @@ tasks:
       - '.moon/workspace.yml'
     outputs:
       - 'bld/docs-producers/planning/**'
-      - 'bld/docs-producers/evidence/docs-planning/**'
+      - 'bld/docs-producers/evidence/executions/docs-planning/**'
     options:
       cache: true
 
@@ -51,6 +51,6 @@ tasks:
       - 'docs.planning'
     outputs:
       - 'bld/docs/**'
-      - 'bld/docs-producers/evidence/docs-assemble/**'
+      - 'bld/docs-producers/evidence/executions/docs-assemble/**'
     options:
       cache: true
