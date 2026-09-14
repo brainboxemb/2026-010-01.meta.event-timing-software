@@ -32,6 +32,8 @@ The repository is currently in its planning and research phase.
 
 ### Changed
 
+- Documentation producers now retain the released `brainboxemb.execution-evidence` v1 envelope under `evidence/executions/<execution-id>/`, while current Moon materialization evidence remains separate under `orchestration/`.
+- Documentation CI and preview cleanup now consume `tool.git-project v0.2.4`, including the released execution-evidence schema contract.
 - Refined planning-document responsibilities so SDP owns high-level strategy/risks/resources, SIP owns implementation increments/deliverables/demonstrations, SDE owns the engineering environment/workflow, and SVP owns verification strategy.
 - Changed source collection from a mandatory blocking phase to capability-driven supporting work.
 - Defined just-in-time document maturity so requirements/IDDs become concrete when their capability approaches implementation rather than all documentation being completed up front.
