@@ -1,0 +1,11 @@
+Documentation capability: docs.planning
+action=planning
+source_revision=da9aedd2d8fe305d78c71fa54c6ecc86344218dc
+owner_revision=da9aedd2d8fe305d78c71fa54c6ecc86344218dc
+tool_eng_docs_sha=a15d2d259be7a88921e6c1afd7572b5acfd0fdd3
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_sip_planning.py
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_sip_step_pdfs.py
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_sip_manager_roadmap.py

@@ -1,0 +1,320 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297.0mm" height="210.0mm" viewBox="0 0 297.0 210.0">
+<rect width="100%" height="100%" fill="white"/>
+<text x="8.00" y="10.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="5.20" font-weight="bold" fill="#222222">
+<tspan x="8.00" dy="0.00">Software Implementation Planning — roadmap</tspan>
+</text>
+<text x="8.00" y="17.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="normal" fill="#555555">
+<tspan x="8.00" dy="0.00">Page 1/4 — Steps 1-4</tspan>
+</text>
+<line x1="8.00" y1="31.00" x2="289.00" y2="31.00" stroke="#333333" stroke-width="0.65"/>
+<polygon points="43.125,27.6 46.525,31.0 43.125,34.4 39.725,31.0" fill="#e2f0d9" stroke="#548235" stroke-width="0.65"/>
+<text x="43.12" y="31.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="bold" fill="#548235">
+<tspan x="43.12" dy="0.00">1</tspan>
+</text>
+<text x="43.12" y="24.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="43.12" dy="0.00">~1d</tspan>
+<tspan x="43.12" dy="2.87">19 Sep 2026</tspan>
+</text>
+<text x="43.12" y="40.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#222222">
+<tspan x="43.12" dy="0.00">Step 1 — Architecture</tspan>
+<tspan x="43.12" dy="3.54">baseline</tspan>
+</text>
+<rect x="34.12" y="49.00" width="18.00" height="5.2" rx="1.4" fill="#e2f0d9" stroke="#548235" stroke-width="0.3"/>
+<text x="43.12" y="52.65" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#548235">
+<tspan x="43.12" dy="0.00">DONE</tspan>
+</text>
+<rect x="10.50" y="56.00" width="65.25" height="42.00" rx="1.6" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="13.50" y="62.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="13.50" dy="0.00">DELIVERABLE</tspan>
+</text>
+<circle cx="14.70" cy="68.20" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="69.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Architecture baseline for SI-01,</tspan>
+<tspan x="16.90" dy="3.48">SI-02 and SI-03</tspan>
+</text>
+<circle cx="14.70" cy="77.15" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="77.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Agreed runtime, package and</tspan>
+<tspan x="16.90" dy="3.48">interface boundaries</tspan>
+</text>
+<circle cx="14.70" cy="86.11" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="86.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Build, test and verification</tspan>
+<tspan x="16.90" dy="3.48">direction ready for coding</tspan>
+</text>
+<rect x="10.50" y="102.00" width="65.25" height="42.00" rx="1.6" fill="#ffffff" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="13.50" y="108.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="13.50" dy="0.00">DEMONSTRATION</tspan>
+</text>
+<circle cx="14.70" cy="114.20" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="115.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Walk the architecture book and key</tspan>
+<tspan x="16.90" dy="3.48">diagrams</tspan>
+</text>
+<circle cx="14.70" cy="123.15" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="123.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Show process, runtime and package</tspan>
+<tspan x="16.90" dy="3.48">boundaries</tspan>
+</text>
+<circle cx="14.70" cy="132.11" r="0.65" fill="#4f81bd"/>
+<text x="16.90" y="132.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="16.90" dy="0.00">Show public interfaces and</tspan>
+<tspan x="16.90" dy="3.48">verification layers</tspan>
+</text>
+<rect x="10.50" y="148.00" width="65.25" height="34.00" rx="1.6" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="13.50" y="153.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="13.50" dy="0.00">DOCUMENT STATUS</tspan>
+</text>
+<rect x="12.80" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="27.36" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="27.36" dy="0.00">10-SDP R90</tspan>
+</text>
+<rect x="44.23" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="58.79" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="58.79" dy="0.00">11-SIP R95</tspan>
+</text>
+<rect x="12.80" y="165.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="27.36" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="27.36" dy="0.00">12-SDE A100</tspan>
+</text>
+<rect x="44.23" y="165.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="58.79" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="58.79" dy="0.00">30-SSAD W90</tspan>
+</text>
+<rect x="12.80" y="173.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="27.36" y="177.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="27.36" dy="0.00">31-01-SAD W85</tspan>
+</text>
+<rect x="44.23" y="173.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="58.79" y="177.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="58.79" dy="0.00">50-SVP W80</tspan>
+</text>
+<polygon points="113.375,27.6 116.775,31.0 113.375,34.4 109.975,31.0" fill="#e2f0d9" stroke="#548235" stroke-width="0.65"/>
+<text x="113.38" y="31.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="bold" fill="#548235">
+<tspan x="113.38" dy="0.00">2</tspan>
+</text>
+<text x="113.38" y="24.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="113.38" dy="0.00">~6d</tspan>
+<tspan x="113.38" dy="2.87">31 Oct 2026</tspan>
+</text>
+<text x="113.38" y="40.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#222222">
+<tspan x="113.38" dy="0.00">Step 2 — Framework repository</tspan>
+<tspan x="113.38" dy="3.54">skeleton</tspan>
+</text>
+<rect x="104.38" y="49.00" width="18.00" height="5.2" rx="1.4" fill="#e2f0d9" stroke="#548235" stroke-width="0.3"/>
+<text x="113.38" y="52.65" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#548235">
+<tspan x="113.38" dy="0.00">DONE</tspan>
+</text>
+<rect x="80.75" y="56.00" width="65.25" height="42.00" rx="1.6" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="83.75" y="62.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="83.75" dy="0.00">DELIVERABLE</tspan>
+</text>
+<circle cx="84.95" cy="68.20" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="69.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Reusable framework JAR plus</tspan>
+<tspan x="87.15" dy="3.48">runnable application JAR</tspan>
+</text>
+<circle cx="84.95" cy="77.15" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="77.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Clean bootstrap, build and test on</tspan>
+<tspan x="87.15" dy="3.48">Linux and Windows</tspan>
+</text>
+<circle cx="84.95" cy="86.11" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="86.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Build identity, logging and clean</tspan>
+<tspan x="87.15" dy="3.48">application lifecycle</tspan>
+</text>
+<rect x="80.75" y="102.00" width="65.25" height="42.00" rx="1.6" fill="#ffffff" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="83.75" y="108.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="83.75" dy="0.00">DEMONSTRATION</tspan>
+</text>
+<circle cx="84.95" cy="114.20" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="115.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Restore pinned tooling from a</tspan>
+<tspan x="87.15" dy="3.48">clean checkout</tspan>
+</text>
+<circle cx="84.95" cy="123.15" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="123.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Run Maven verify and produce both</tspan>
+<tspan x="87.15" dy="3.48">artifacts</tspan>
+</text>
+<circle cx="84.95" cy="132.11" r="0.65" fill="#4f81bd"/>
+<text x="87.15" y="132.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="87.15" dy="0.00">Start the app, show its version</tspan>
+<tspan x="87.15" dy="3.48">and stop cleanly</tspan>
+</text>
+<rect x="80.75" y="148.00" width="65.25" height="34.00" rx="1.6" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="83.75" y="153.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="83.75" dy="0.00">DOCUMENT STATUS</tspan>
+</text>
+<rect x="83.05" y="157.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="97.61" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="97.61" dy="0.00">13-SDE A100</tspan>
+</text>
+<rect x="114.47" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="129.04" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="129.04" dy="0.00">20-01-SRD R100</tspan>
+</text>
+<rect x="83.05" y="165.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="97.61" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="97.61" dy="0.00">31-01-SDD-02 W85</tspan>
+</text>
+<rect x="114.47" y="165.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="129.04" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="129.04" dy="0.00">40-01-IDD R100</tspan>
+</text>
+<rect x="83.05" y="173.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="97.61" y="177.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="97.61" dy="0.00">50-SVP W85</tspan>
+</text>
+<polygon points="183.625,27.6 187.025,31.0 183.625,34.4 180.225,31.0" fill="#ddebf7" stroke="#4472c4" stroke-width="0.65"/>
+<text x="183.62" y="31.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="bold" fill="#4472c4">
+<tspan x="183.62" dy="0.00">3</tspan>
+</text>
+<text x="183.62" y="24.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="183.62" dy="0.00">~3d</tspan>
+<tspan x="183.62" dy="2.87">21 Nov 2026</tspan>
+</text>
+<text x="183.62" y="40.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#222222">
+<tspan x="183.62" dy="0.00">Step 3 — Minimal</tspan>
+<tspan x="183.62" dy="3.54">version/status application on</tspan>
+<tspan x="183.62" dy="3.54">development host (SI-01)</tspan>
+</text>
+<rect x="174.62" y="49.00" width="18.00" height="5.2" rx="1.4" fill="#ddebf7" stroke="#4472c4" stroke-width="0.3"/>
+<text x="183.62" y="52.65" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#4472c4">
+<tspan x="183.62" dy="0.00">ACTIVE</tspan>
+</text>
+<rect x="151.00" y="56.00" width="65.25" height="42.00" rx="1.6" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="154.00" y="62.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="154.00" dy="0.00">DELIVERABLE</tspan>
+</text>
+<circle cx="155.20" cy="68.20" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="69.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">Useful headless SI-01 executable</tspan>
+<tspan x="157.40" dy="3.48">for development</tspan>
+</text>
+<circle cx="155.20" cy="77.15" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="77.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">One shared application version and</tspan>
+<tspan x="157.40" dy="3.48">status model</tspan>
+</text>
+<circle cx="155.20" cy="86.11" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="86.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">Console, remote shell, HTTP and</tspan>
+<tspan x="157.40" dy="3.48">WebSocket access</tspan>
+</text>
+<rect x="151.00" y="102.00" width="65.25" height="42.00" rx="1.6" fill="#ffffff" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="154.00" y="108.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="154.00" dy="0.00">DEMONSTRATION</tspan>
+</text>
+<circle cx="155.20" cy="114.20" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="115.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">Start SI-01 on the Windows</tspan>
+<tspan x="157.40" dy="3.48">development host</tspan>
+</text>
+<circle cx="155.20" cy="123.15" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="123.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">Read the same status through all</tspan>
+<tspan x="157.40" dy="3.48">initial interfaces</tspan>
+</text>
+<circle cx="155.20" cy="132.11" r="0.65" fill="#4f81bd"/>
+<text x="157.40" y="132.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="157.40" dy="0.00">Run the first ST-1 black-box</tspan>
+<tspan x="157.40" dy="3.48">scenario</tspan>
+</text>
+<rect x="151.00" y="148.00" width="65.25" height="34.00" rx="1.6" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="154.00" y="153.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="154.00" dy="0.00">DOCUMENT STATUS</tspan>
+</text>
+<rect x="153.30" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="167.86" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="167.86" dy="0.00">20-01-SRD R100</tspan>
+</text>
+<rect x="184.73" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="199.29" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="199.29" dy="0.00">40-01-IDD R100</tspan>
+</text>
+<rect x="153.30" y="165.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="167.86" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="167.86" dy="0.00">31-01-SAD R95</tspan>
+</text>
+<rect x="184.73" y="165.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="199.29" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="199.29" dy="0.00">50-SVP W90</tspan>
+</text>
+<polygon points="253.875,27.6 257.275,31.0 253.875,34.4 250.475,31.0" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="0.65"/>
+<text x="253.88" y="31.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="bold" fill="#7f7f7f">
+<tspan x="253.88" dy="0.00">4</tspan>
+</text>
+<text x="253.88" y="24.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="253.88" dy="0.00">~4d</tspan>
+<tspan x="253.88" dy="2.87">19 Dec 2026</tspan>
+</text>
+<text x="253.88" y="40.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#222222">
+<tspan x="253.88" dy="0.00">Step 4 — Raspberry Pi Zero</tspan>
+<tspan x="253.88" dy="3.54">image, target run and update</tspan>
+<tspan x="253.88" dy="3.54">automation</tspan>
+</text>
+<rect x="243.38" y="49.00" width="21.00" height="5.2" rx="1.4" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="0.3"/>
+<text x="253.88" y="52.65" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#7f7f7f">
+<tspan x="253.88" dy="0.00">PLANNED</tspan>
+</text>
+<rect x="221.25" y="56.00" width="65.25" height="42.00" rx="1.6" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="224.25" y="62.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="224.25" dy="0.00">DELIVERABLE</tspan>
+</text>
+<circle cx="225.45" cy="68.20" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="69.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">Reproducible Raspberry Pi Zero</tspan>
+<tspan x="227.65" dy="3.48">image</tspan>
+</text>
+<circle cx="225.45" cy="77.15" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="77.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">Versioned application update</tspan>
+<tspan x="227.65" dy="3.48">without reflashing</tspan>
+</text>
+<circle cx="225.45" cy="86.11" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="86.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">First target-hardware resource</tspan>
+<tspan x="227.65" dy="3.48">baseline</tspan>
+</text>
+<rect x="221.25" y="102.00" width="65.25" height="42.00" rx="1.6" fill="#ffffff" stroke="#6c8ebf" stroke-width="0.55"/>
+<text x="224.25" y="108.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.50" font-weight="bold" fill="#4f81bd">
+<tspan x="224.25" dy="0.00">DEMONSTRATION</tspan>
+</text>
+<circle cx="225.45" cy="114.20" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="115.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">Flash the generated image and boot</tspan>
+<tspan x="227.65" dy="3.48">the target</tspan>
+</text>
+<circle cx="225.45" cy="123.15" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="123.95" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">Query application version and</tspan>
+<tspan x="227.65" dy="3.48">status remotely</tspan>
+</text>
+<circle cx="225.45" cy="132.11" r="0.65" fill="#4f81bd"/>
+<text x="227.65" y="132.91" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.85" font-weight="normal" fill="#222222">
+<tspan x="227.65" dy="0.00">Update the app and verify the</tspan>
+<tspan x="227.65" dy="3.48">restart path</tspan>
+</text>
+<rect x="221.25" y="148.00" width="65.25" height="34.00" rx="1.6" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="224.25" y="153.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.35" font-weight="bold" fill="#555555">
+<tspan x="224.25" dy="0.00">DOCUMENT STATUS</tspan>
+</text>
+<rect x="223.55" y="157.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="238.11" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="238.11" dy="0.00">12-SDE R90</tspan>
+</text>
+<rect x="254.98" y="157.00" width="29.12" height="6.3" rx="1" fill="#e2f0d9" stroke="#70ad47" stroke-width="0.3"/>
+<text x="269.54" y="161.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#70ad47">
+<tspan x="269.54" dy="0.00">13-SDE A100</tspan>
+</text>
+<rect x="223.55" y="165.00" width="29.12" height="6.3" rx="1" fill="#ddebf7" stroke="#5b9bd5" stroke-width="0.3"/>
+<text x="238.11" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#5b9bd5">
+<tspan x="238.11" dy="0.00">20-01-SRD W70</tspan>
+</text>
+<rect x="254.98" y="165.00" width="29.12" height="6.3" rx="1" fill="#fff2cc" stroke="#bf9000" stroke-width="0.3"/>
+<text x="269.54" y="169.15" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="2.05" font-weight="bold" fill="#bf9000">
+<tspan x="269.54" dy="0.00">50-SVP R90</tspan>
+</text>
+</svg>
