@@ -65,7 +65,7 @@ nodes:
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
-  subtitle: "shared command boundary • target resolution"
+  subtitle: "shared request boundary • target resolution"
   kind: application
   layout: {x: 740, y: 305, w: 430, h: 75}
 
