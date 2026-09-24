@@ -4,7 +4,7 @@ state: active
 summary: >-
   Turn the Step-2 executable shell into the first useful long-running SI-01 process.
   One application-owned version/status model drives local, remote, HTTP and WebSocket
-  views; external settings create a minimal TimingSystemInstance and ST-1 proves the
+  views; external settings create a minimal Waypoint and ST-1 proves the
   running process through its public interfaces.
 documents:
   - name: 20-01-SRD
@@ -41,7 +41,7 @@ activities:
   - id: A03
     lane: application
     kind: implementation
-    title: TimingSystemInstance + external settings
+    title: Waypoint + external settings
     state: planned
     depends_on: [A01, A02]
 
