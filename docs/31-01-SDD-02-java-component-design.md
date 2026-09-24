@@ -64,7 +64,7 @@ io.github.brainboxemb.eventtiming.application
 io.github.brainboxemb.eventtiming.domain
 io.github.brainboxemb.eventtiming.core
 io.github.brainboxemb.eventtiming.presentation
-io.github.brainboxemb.eventtiming.integration
+io.github.brainboxemb.eventtiming.io
 io.github.brainboxemb.eventtiming.infra
 io.github.brainboxemb.eventtiming.platform
 ```
@@ -99,10 +99,16 @@ preferred over an extra top-level source file until real reuse or clarity
 justifies separating it.
 
 Package placement follows the meaning of the object, not the layer that happens
-to expose it. For example, build provenance such as `BuildIdentity` belongs in
-a small `infra` package even when `CommandHandler.version()` returns it to a
-client. Do not move infrastructure values into `application` merely because
-application code uses them.
+to expose it. The architecture responsibility named `I/O` is represented by
+technical adapter packages such as `io.hardware`, `io.messaging` and
+`io.storage`.
+
+The Java package name `infra` is reserved for cross-cutting technical support,
+not for the I/O architecture responsibility. For example, build provenance such
+as `BuildIdentity` belongs in `infra` even when
+`CommandHandler.version()` returns it to a client. Do not move cross-cutting
+technical values into `application` merely because application code uses
+them.
 
 This keeps the early implementation small and allows the object model to grow
 from real use cases rather than from the diagrams alone.
@@ -126,11 +132,13 @@ domain
 core
   runtime/execution contracts
 
-integration
-  concrete external-system/device/persistence implementations
+io
+  external input/output adapters
+  e.g. hardware, messaging and storage
 
 infra
-  build/runtime provenance and other small infrastructure values
+  cross-cutting technical support
+  e.g. build/runtime provenance
 
 platform
   execution-environment abstractions
@@ -145,10 +153,10 @@ Java/package dependencies should preserve the ownership defined by the SAD.
 Working rules:
 
 - presentation depends inward on application contracts and does not own application state;
-- application owns running mutable application state and coordinates domain/core/integration contracts;
+- application owns running mutable application state and coordinates domain/core/I/O contracts;
 - domain services/rules do not depend on presentation or concrete integrations;
 - core supplies reusable runtime mechanics without becoming a second owner of application/domain behaviour;
-- concrete integrations depend inward on application/domain ports and may use platform facilities;
+- concrete I/O adapters depend inward on application/domain ports and may use platform facilities;
 - platform packages do not depend on event-timing application/domain behaviour;
 - executable composition may depend on the complete supported framework surface and selected external libraries.
 
@@ -194,7 +202,7 @@ The executable stays primarily a composition/startup boundary:
 ```text
 main()
   -> load settings
-  -> select/construct concrete integrations/platform implementations
+  -> select/construct concrete I/O/platform implementations
   -> create reusable application/domain/core objects
   -> wire presentation endpoints
   -> configure runtime logging provider/backend
@@ -230,7 +238,7 @@ These are consumer possibilities, not modules to create now.
 Expected private/product-specific areas may include:
 
 - production RFID control/protocol details;
-- product-specific integration/protocol implementations;
+- product-specific I/O/protocol implementations;
 - production asset/source inventory and mappings;
 - production backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
@@ -241,9 +249,9 @@ Prefer normal composition and constructor/factory injection. Do not introduce ru
 
 Create future artifacts only when a real boundary requires them. Candidates might eventually include:
 
-- RabbitMQ integration;
-- Linux/Raspberry-Pi platform integration;
-- public/private RFID/CAN implementations;
+- RabbitMQ/messaging I/O;
+- Linux/Raspberry-Pi platform support;
+- public/private RFID/CAN I/O implementations;
 - stable Java API/SPI;
 - reusable test support.
 
@@ -254,9 +262,9 @@ Splitting later is preferred over speculative libraries, provided package/respon
 Useful automated rules may include:
 
 - presentation packages do not own or persist application state;
-- domain services do not reference presentation or concrete integration classes;
+- domain services do not reference presentation or concrete I/O classes;
 - platform packages do not depend on event-timing application/domain behaviour;
-- wire/protocol classes stay with their presentation/integration capability;
+- wire/protocol classes stay with their presentation or I/O capability;
 - semantic contracts are not moved into transport packages merely because transport code uses them;
 - public code contains no real deployment mappings or proprietary values;
 - the executable consumes `event-timing-framework` rather than copying/forking framework source;
@@ -268,9 +276,9 @@ Useful automated rules may include:
 - exact package granularity after real application/domain classes exist;
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
-- how applications select/inject presentation/integration/platform implementations;
+- how applications select/inject presentation/I/O/platform implementations;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework and private implementations;
-- which integrations eventually deserve independent artifacts;
+- which I/O capabilities eventually deserve independent artifacts;
 - whether and when a dedicated public Java API/SPI artifact becomes justified;
 - exact field logging configuration/rotation/retention policy in the default executable.
