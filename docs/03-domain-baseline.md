@@ -35,7 +35,7 @@ Operational state such as `OPEN` / `CLOSED` belongs to the waypoint-system softw
 
 A `Stage` and a `Waypoint` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
 
-The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint. New architecture/design work should use `Waypoint`; existing implementation/API names may require a controlled follow-up when the working architecture is accepted.
+The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint. New architecture/design work should use `Waypoint`; existing implementation names may be migrated later to match this documentation-led model.
 
 ## Registration hardware and waypoint identity
 
@@ -271,7 +271,7 @@ TeamNumber = 0..999
 
 `RaceData` is the locally available participant/team/tag reference data used by one `Waypoint`.
 
-It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is waypoint-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceDataService`.
+It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is waypoint-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceData`.
 
 Stage start-time data remains a separate concern owned by `StageStartTimeRegistry`.
 
