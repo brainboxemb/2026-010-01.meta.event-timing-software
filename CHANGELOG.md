@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make the Waypoint concurrency contract concrete and reviewable: state plainly how serial execution protects mutable domain state, document concurrency edge cases, separate IF-03 wire shapes from Java class design, keep small enums with their owning object, and place build provenance such as `BuildIdentity` under infrastructure rather than application semantics.
+
 - Record first Java implementation feedback in the SI-01 SAD/SDD: keep layers logical rather than represented by marker objects, use the small shared `CommandHandler` boundary for the authoritative version query, and keep `TimingApplication.Builder` as composition-only infrastructure.
 
 ### Changed
