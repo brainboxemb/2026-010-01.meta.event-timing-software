@@ -90,107 +90,79 @@ The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 ### Presentation
 
-Presentation exposes SI-01 behaviour and current state through three deliberately distinct interface perspectives:
+Presentation owns client-facing interfaces and mapping:
 
 ```text
 Console / Remote Shell     development + service
-Desktop GUI Interface      debug / development application
+Desktop GUI Interface      debug / development
 HTTP / WebSocket           iPad / operator UI
 ```
 
-Protocol/DTO mapping belongs with these presentation boundaries rather than with domain behaviour.
-
-Presentation translates external requests into application commands/queries and application status/events into external representations. It does not own running application state.
+It converts external requests to application calls and application results to
+client representations. It does not own mutable application/domain state.
 
 ### Application
 
-Names should not repeat context already supplied by the owning package, layer or
-aggregate. Prefer concise responsibility names such as `application.Conductor`
-and `Waypoint.Journal` over `ApplicationConductor` and `WaypointJournal`
-when the removed qualifier is already unambiguous from ownership. Keep the
-qualifier only when it carries information that would otherwise be lost.
-
-
-The application layer coordinates use cases without becoming the top-level application container. Its current working decomposition is:
+The application responsibility coordinates use cases:
 
 ```text
-Application layer
-  +-- Conductor
-  |     application lifecycle/state orchestration
-  |     active Waypoint coordination
-  |
-  +-- CommandHandler
-        shared application command boundary
-        resolves application-wide versus Waypoint-scoped work
-        enters the applicable state-ownership boundary
+application/
+  Conductor
+    lifecycle and application-wide coordination
+
+  CommandHandler
+    shared client request boundary
+    resolves application-wide vs Waypoint-scoped work
 ```
 
-`Conductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
+`Conductor` coordinates application-wide lifecycle and active Waypoints.
 
-`CommandHandler` is the transport-independent application-facing request boundary used by presentation adapters. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement shared application request semantics. For state-changing commands that includes target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission and common command-result semantics. Simple application-owned read queries such as the authoritative build/version identity may use the same boundary without inventing a separate query service per adapter. Consistency-sensitive Waypoint queries still follow the serialized state-lane rules below. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
+`CommandHandler` is the shared entry point for presentation requests. It may
+serve simple application reads such as `version()`. Waypoint mutations are
+resolved to the correct `Waypoint` and then submitted to that Waypoint's serial
+executor.
 
-This is an application **responsibility**, not a requirement for one monolithic switch class. An implementation may use focused command handlers behind the shared boundary. Conversely, a handler that adds no application-level responsibility and merely forwards one call one-to-one to a domain method is not justified as an extra layer.
-
-Presentation therefore depends on the shared application command boundary rather than mutable domain internals. Once a use case is executing inside its owning application/Waypoint state boundary, normal direct Java calls between the applicable domain responsibilities are preferred; commands are not used merely to preserve a layer diagram.
-
-The application layer coordinates domain-facing I/O ports without moving transport, device, messaging or storage details into domain behaviour.
+Once code is executing for a Waypoint, normal direct Java calls are preferred;
+do not introduce commands merely to preserve a layer diagram.
 
 ### Domain
 
-The domain responsibility owns reusable timing rules, entities, processors, registries, journals and value semantics. Names should describe the responsibility rather than defaulting every capability to a generic `*Service` suffix.
-
-Current naming direction includes:
+The domain owns timing rules and Waypoint state:
 
 ```text
-TagProcessor
-StageStartTimeRegistry
-Journal
-PrepareTeamRegistry
-RaceData
-StageTiming
+Waypoint
+  UniqueID
+  LocationID
+  TagProcessor
+  StageStartTimeRegistry
+  Journal
+  PrepareTeamRegistry
+  RaceData
+  StageTiming
 ```
 
-`TagProcessor` represents the RFID/tag-observation processing responsibility. It does not own the physical RFID reader/antenna lifecycle.
+`TagProcessor` handles tag observations. `StageStartTimeRegistry` owns stage
+start references. `Journal` owns registration/history data and sequence
+semantics. `PrepareTeamRegistry` owns teams preparing at the Waypoint.
+`RaceData` contains participant/team/tag reference data. `StageTiming`
+derives running times and ranking.
 
-`StageStartTimeRegistry` owns locally available start-time reference data for the stage ending at the waypoint. It is a registry/state responsibility rather than a generic background service.
-
-`Journal` is the waypoint-oriented registration/history view. It must preserve the independent `UniqueID` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
-
-`PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
-
-`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `Waypoint` data/state model. Synchronising or loading that data from backoffice is handled by application/I/O responsibilities rather than by turning the data object itself into a generic service.
-
-`StageTiming` owns the derived stage-timing view for the waypoint, including elapsed/running times and local ranking. It is not primarily a registry; it derives timing results from waypoint registrations and stage/reference data.
-
-Representative concepts include waypoint identity/value concepts, `Stage`, `LocationID`, `UniqueID`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
-
-Hardware inventory concepts such as `RegistrationAssetId` and `AntennaId` may appear in domain/application data as origin or diagnostic context, but the physical asset/antenna hierarchy is not the domain/software decomposition.
-
-Decoded RFID identity must preserve whether a tag is normal, reserve or test-class until the applicable domain/use-case policy has been applied. A test tag is therefore not silently normalised into a normal participant identity at an adapter boundary.
-
-Product/deployment-specific policy does not automatically belong in the reusable domain model.
+Detailed domain semantics belong in `03-domain-baseline.md`.
 
 ### Core runtime support
 
-Core runtime support provides reusable execution mechanics that let application/domain behaviour run predictably, for example:
+Core contains reusable execution mechanics, not business behaviour:
 
 ```text
-serialized execution
+serial execution
 lifecycle mechanics
-state-lane admission primitives
 scheduling
-asynchronous completion mechanics
+asynchronous completion
 ```
-
-Core runtime support is not a second owner of domain behaviour or application state.
 
 ### I/O
 
-The I/O responsibility contains adapters that move data between SI-01 and the
-outside world. It is deliberately concrete: hardware, messaging and storage are
-I/O concerns rather than a generic "infrastructure layer".
-
-Typical groups are:
+I/O contains adapters that move data between SI-01 and the outside world:
 
 ```text
 io/
@@ -205,28 +177,26 @@ io/
     db/
 ```
 
-Examples include RFID and CAN access, RabbitMQ/backoffice communication,
-persistence, backup/restore and other device-facing input/output.
-
-Presentation remains a separate responsibility. HTTP, WebSocket, console and
-shell are also technically I/O, but presentation owns client-facing
-request/response semantics, DTO mapping and operator views rather than device,
-messaging or storage adapters.
-
-The name `infra` is therefore not used for this architecture responsibility.
-It remains available as a Java package name for cross-cutting technical support
-such as build/version identity, logging/configuration support and similar
-non-domain concerns when concrete code needs them.
+Presentation stays separate because it owns client-facing API/view semantics.
+I/O owns hardware, messaging and storage adapters.
 
 ### Platform
 
-Platform abstractions isolate execution-environment and low-level facilities such as clock/time source, filesystem/path primitives, executor/thread primitives, process/runtime information and network/OS facilities.
+Platform contains low-level execution-environment facilities:
 
-Platform is not a catch-all location for HTTP, RabbitMQ or device/domain protocols.
+```text
+clock / time source
+filesystem/path primitives
+executors / threads
+process/runtime information
+network / OS primitives
+```
 
 ### Cross-cutting concerns
 
-Logging, configuration, diagnostics, metrics where useful and build/version identity cross several responsibilities without becoming owners of domain/application state.
+Cross-cutting technical concerns include logging, configuration, diagnostics,
+metrics and build/version identity. In Java, `infra` is reserved for concrete
+cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
