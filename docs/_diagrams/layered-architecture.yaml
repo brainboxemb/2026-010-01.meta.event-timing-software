@@ -56,56 +56,69 @@ nodes:
   kind: presentation
   layout: {x: 795, y: 135, w: 400, h: 65}
 
-- id: timing-application
+- id: application-conductor
   group: application-layer
-  label: "TimingApplication"
-  subtitle: "command/query orchestration"
+  label: "ApplicationConductor"
+  subtitle: "lifecycle / state orchestration"
   kind: application
-  layout: {x: 400, y: 305, w: 560, h: 75}
+  layout: {x: 190, y: 305, w: 430, h: 75}
+- id: command-dispatcher
+  group: application-layer
+  label: "CommandDispatcher"
+  subtitle: "central command handling"
+  kind: application
+  layout: {x: 740, y: 305, w: 430, h: 75}
+
+- id: waypoint-root
+  group: waypoint-aggregate
+  label: "Waypoint"
+  subtitle: "UniqueID • LocationID • lifecycle/status"
+  kind: model
+  layout: {x: 355, y: 500, w: 400, h: 50}
 
 - id: tag-processor
   group: waypoint-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
-  layout: {x: 175, y: 535, w: 235, h: 60}
+  layout: {x: 175, y: 570, w: 235, h: 60}
 - id: stage-start-time-registry
   group: waypoint-aggregate
   label: "StageStartTimeRegistry"
   subtitle: "start-time reference"
   kind: service
-  layout: {x: 425, y: 535, w: 250, h: 60}
+  layout: {x: 425, y: 570, w: 250, h: 60}
 - id: waypoint-journal
   group: waypoint-aggregate
   label: "WaypointJournal"
   subtitle: "registrations • sequence/persistence"
   kind: service
-  layout: {x: 690, y: 535, w: 245, h: 60}
+  layout: {x: 690, y: 570, w: 245, h: 60}
 - id: prepare-team-registry
   group: waypoint-aggregate
   label: "PrepareTeamRegistry"
   subtitle: "teams + traceable history"
   kind: service
-  layout: {x: 175, y: 625, w: 235, h: 60}
+  layout: {x: 175, y: 650, w: 235, h: 60}
 - id: race-data
   group: waypoint-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
-  layout: {x: 425, y: 625, w: 250, h: 60}
+  layout: {x: 425, y: 650, w: 250, h: 60}
 - id: stage-timing
   group: waypoint-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
-  layout: {x: 690, y: 625, w: 245, h: 60}
+  layout: {x: 690, y: 650, w: 245, h: 60}
 
 - id: system-status-domain
   group: domain-layer
   label: "SystemStatus"
   subtitle: "application-wide status/health"
   kind: service
-  layout: {x: 995, y: 555, w: 210, h: 95}
+  layout: {x: 995, y: 570, w: 210, h: 85}
 
 - id: persistence
   group: infrastructure-layer
@@ -145,20 +158,38 @@ nodes:
 
 edges:
 - from: console-shell
-  to: timing-application
+  to: command-dispatcher
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.20}
 
 - from: desktop-gui
-  to: timing-application
+  to: command-dispatcher
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
 - from: http-websocket
-  to: timing-application
+  to: command-dispatcher
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.80}
+
+- from: command-dispatcher
+  to: waypoint-root
+  label: commands
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
+- from: application-conductor
+  to: waypoint-root
+  dashed: true
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.20}
+
+- from: application-conductor
+  to: system-status-domain
+  dashed: true
+  from_anchor: {side: bottom, position: 0.80}
+  to_anchor: {side: top, position: 0.50}
 
 - from: system-status-domain
   to: http-websocket
@@ -166,49 +197,6 @@ edges:
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
-
-- from: timing-application
-  to: tag-processor
-  from_anchor: {side: bottom, position: 0.25}
-  to_anchor: {side: top, position: 0.50}
-
-- from: timing-application
-  to: prepare-team-registry
-  from_anchor: {side: bottom, position: 0.75}
-  to_anchor: {side: top, position: 0.50}
-
-- from: timing-application
-  to: system-status-domain
-  dashed: true
-  from_anchor: {side: bottom, position: 0.90}
-  to_anchor: {side: top, position: 0.50}
-
-- from: tag-processor
-  to: waypoint-journal
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
-
-- from: race-data
-  to: tag-processor
-  dashed: true
-  from_anchor: {side: top, position: 0.20}
-  to_anchor: {side: bottom, position: 0.50}
-
-- from: stage-start-time-registry
-  to: stage-timing
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.25}
-
-- from: waypoint-journal
-  to: stage-timing
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.75}
-
-- from: race-data
-  to: stage-timing
-  dashed: true
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
 
 - from: persistence
   to: platform-primitives
