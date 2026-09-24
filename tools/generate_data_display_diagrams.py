@@ -13,7 +13,7 @@ def data_display_flow() -> Diagram:
         Node("keypad", "CAN keypad\\nadd / remove team to prepare", 410, 90, 300, 85, "external"),
         Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 760, 90, 400, 85, "external"),
 
-        Node("queue", "WaypointSystem serialized ingress", 470, 245, 500, 75, "queue"),
+        Node("queue", "Waypoint serialized ingress", 470, 245, 500, 75, "queue"),
 
         Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
         Node("start", "StageStartTimeRegistry\\nstage start-time reference", 360, 420, 300, 90, "service"),
@@ -71,9 +71,9 @@ def data_display_flow() -> Diagram:
 
 def registration_stream_identity() -> Diagram:
     nodes = [
-        Node("source_a", "UniqueID waypoint-01\\nWaypointSystem identity", 60, 110, 270, 80, "external"),
+        Node("source_a", "UniqueID waypoint-01\\nWaypoint identity", 60, 110, 270, 80, "external"),
         Node("seq_a", "waypoint-01 sequence\\n1041 → 1042 → 1043 → 1044", 390, 100, 330, 100, "queue"),
-        Node("source_b", "UniqueID waypoint-02\\nWaypointSystem identity", 60, 300, 270, 80, "external"),
+        Node("source_b", "UniqueID waypoint-02\\nWaypoint identity", 60, 300, 270, 80, "external"),
         Node("seq_b", "waypoint-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
 
         Node("record", "RegistrationRecord\\nuniqueID + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
