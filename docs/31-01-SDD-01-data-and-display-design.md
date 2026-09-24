@@ -21,7 +21,7 @@ Both need traceability and persistence, but they have different semantics and se
 
 ## Registration-source identity
 
-Every waypoint system/system has a `UniqueID`.
+Every `Waypoint` has a `UniqueID`.
 
 Known source classes are:
 
@@ -118,7 +118,7 @@ Names are illustrative; the important design is the waypoint-scoped sequence and
 
 ### Sequence allocation
 
-A sequence allocator is owned per waypoint system:
+A sequence allocator is owned per `Waypoint`:
 
 ```java
 interface RegistrationSequence {
@@ -155,7 +155,7 @@ Sequence allocation is a domain consistency mechanism, not a storage implementat
 Required direction:
 
 - never reuse a committed `(UniqueID, SequenceNumber)` after restart;
-- preserve monotonic order independently for each waypoint system;
+- preserve monotonic order independently for each `Waypoint`;
 - persist enough allocator state that restore cannot accidentally restart a source sequence;
 - expose source + sequence in synchronisation/support data;
 - support upstream gap/consistency detection;
