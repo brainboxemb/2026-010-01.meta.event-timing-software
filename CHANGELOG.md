@@ -32,7 +32,7 @@ The repository is currently in its planning and research phase.
 
 ### Changed
 
-- Clarified the SI-01 software architecture around `WaypointSystem`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `WaypointJournal`, `PrepareTeamRegistry`, `RaceData`, and `TimingCalculator`.
+- Clarified the SI-01 software architecture around `WaypointSystem`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `WaypointJournal`, `PrepareTeamRegistry`, `RaceData`, and `StageTiming`.
 - Documentation producers now retain the released `brainboxemb.execution-evidence` v1 envelope under `evidence/executions/<execution-id>/`, while current Moon materialization evidence remains separate under `orchestration/`.
 - Documentation CI and preview cleanup now consume `tool.git-project v0.2.4`, including the released execution-evidence schema contract.
 - Refined planning-document responsibilities so SDP owns high-level strategy/risks/resources, SIP owns implementation increments/deliverables/demonstrations, SDE owns the engineering environment/workflow, and SVP owns verification strategy.
