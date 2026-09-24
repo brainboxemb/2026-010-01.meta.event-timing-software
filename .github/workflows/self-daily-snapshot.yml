@@ -1,16 +1,11 @@
 name: Daily snapshot
 
-# Purpose: create an immutable lightweight daily repository snapshot tag.
+# Purpose: create an immutable lightweight daily snapshot of current main.
 # Scope: repository self-entry workflow; not a reusable workflow API.
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Git ref or commit SHA to snapshot
-        required: true
-        default: main
-        type: string
       note:
         description: Optional annotation text
         required: false
@@ -26,11 +21,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: daily-snapshot-tag
+  group: daily-snapshot
   cancel-in-progress: false
 
 jobs:
-  tag:
+  snapshot:
     runs-on: ubuntu-24.04
 
     steps:
@@ -43,40 +38,23 @@ jobs:
       - name: Create next daily snapshot tag
         shell: bash
         env:
-          DISPATCH_REF: ${{ inputs.ref }}
           DISPATCH_NOTE: ${{ inputs.note }}
         run: |
           set -euo pipefail
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            target_ref="${DISPATCH_REF}"
             note="${DISPATCH_NOTE}"
           else
             if [[ ! -f .snapshot-request ]]; then
               echo "::error::snapshot-request/** pushes must contain .snapshot-request"
               exit 1
             fi
-
-            target_ref="$(sed -n '1p' .snapshot-request | tr -d '\r')"
-            note="$(tail -n +2 .snapshot-request | tr -d '\r')"
+            note="$(cat .snapshot-request | tr -d '\r')"
           fi
 
-          if [[ -z "${target_ref}" ]]; then
-            echo "::error::Snapshot target ref/SHA is empty"
-            exit 1
-          fi
+          git fetch --force --tags origin main
 
-          git fetch --force --tags origin '+refs/heads/*:refs/remotes/origin/*'
-
-          if target_sha="$(git rev-parse --verify "${target_ref}^{commit}" 2>/dev/null)"; then
-            :
-          elif target_sha="$(git rev-parse --verify "origin/${target_ref}^{commit}" 2>/dev/null)"; then
-            :
-          else
-            echo "::error::Snapshot target '${target_ref}' does not resolve to a commit in this repository"
-            exit 1
-          fi
-
+          target_sha="$(git rev-parse origin/main)"
           day="$(TZ=Europe/Amsterdam date +%Y%m%d)"
           base="daily/${day}"
           tag="${base}"
@@ -106,8 +84,8 @@ jobs:
             echo "### Daily snapshot created"
             echo
             echo "- Tag: \`${tag}\`"
-            echo "- Requested target: \`${target_ref}\`"
             echo "- Commit: \`${target_sha}\`"
+            echo "- Branch: \`main\`"
             echo "- Date basis: \`Europe/Amsterdam\`"
             echo "- Trigger: \`${GITHUB_EVENT_NAME}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
