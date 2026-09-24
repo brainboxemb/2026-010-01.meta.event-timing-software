@@ -80,9 +80,14 @@ Field semantics:
 
 The build/toolchain may later strengthen reproducible-build timestamp policy without changing these semantic fields.
 
-## Status snapshot
+## Current status response
 
 The first-executable status representation is:
+
+> This is an external interface shape. It does not prescribe a Java class with
+> the same structure or a class named `ApplicationStatusSnapshot`. The
+> implementation may assemble this response from the application objects that
+> exist when the HTTP/status adapter is implemented.
 
 ```json
 {
@@ -156,7 +161,7 @@ Semantics:
 - remains stable for the lifetime of one running application build;
 - is equivalent in meaning to version identity shown by first-executable console/remote-shell views.
 
-### IF03-OP-002 — Get current status snapshot
+### IF03-OP-002 — Get current status
 
 HTTP mapping:
 
@@ -168,7 +173,7 @@ Successful response:
 
 - HTTP `200`;
 - `application/json`;
-- body is one coherent status snapshot using the schema above.
+- body contains the current application/Waypoint status using the schema above.
 
 Later subsystem/device/backoffice fields may extend the model without changing the ownership principle.
 
