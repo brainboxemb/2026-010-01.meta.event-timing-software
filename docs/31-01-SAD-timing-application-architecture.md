@@ -178,7 +178,7 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ```text
 TimingApplication
   +-- SystemStatus
-  +-- 1..X WaypointSystem
+  +-- 1..X Waypoint
         +-- UniqueID
         +-- LocationID
         +-- lifecycle / status
