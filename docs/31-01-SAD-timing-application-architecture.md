@@ -533,17 +533,15 @@ TimingQuery<R>
 
 The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
 
-Working rules:
+Rules:
 
-- presentation/device/integration boundaries convert external input into typed immutable application-facing messages;
-- command/integration boundaries resolve their explicit application or `Waypoint` target rather than relying on reflection/topic-based event-bus discovery or a central generic dispatcher;
-- messages crossing a Waypoint state-lane boundary carry the stable `UniqueID`/device/source/correlation context they need explicitly;
-- once executing inside the Waypoint state lane, application/domain responsibilities normally call one another directly rather than publishing another message for every method call;
-- adapter/I/O completion returns as a typed event because it crosses back into the state-ownership boundary;
-- published status/domain notifications may fan out to presentation consumers, but those consumers cannot use the notification channel to mutate authoritative state behind the command boundary;
-- RabbitMQ is an external I/O transport and is not reused as an in-process message bus.
+- use typed messages when work crosses an asynchronous or Waypoint execution boundary;
+- resolve the target explicitly; do not use a generic event bus or topic discovery;
+- once running in a Waypoint's serial executor, use normal direct Java calls;
+- submit asynchronous I/O completion back to the owning Waypoint before changing its state;
+- RabbitMQ is external I/O, not an in-process message bus.
 
-A command/query endpoint may expose a Java-8 `CompletionStage`/future-style result where asynchronous completion is useful, but the exact API shape should be selected with the first real consumers rather than building a generic messaging framework up front.
+Choose concrete command/query return types when the first real consumers need them.
 
 ## Status and diagnostics architecture
 
@@ -554,7 +552,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - application version / uptime / overall health;
 - Waypoint lifecycle;
 - registration asset/source state;
-- state-lane queue depth/high-water/overload health;
+- Waypoint queue depth/high-water/overload health;
 - RFID power/startup/protocol/heartbeat;
 - CAN/device availability;
 - persistence/backup state;
@@ -730,7 +728,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `Waypoint` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint state lane | architecture baseline selected; refine first consumer API signatures during implementation |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
@@ -783,34 +781,26 @@ Fault handling should preserve local authority, traceability and explicit status
 
 Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`.
 
-## When a separate SDD is justified
+## Detailed-design documents
 
-A separate SDD should be introduced or retained only when at least one of these is true:
+Keep this SAD as the main SI-01 technical design. Use a separate SDD only when
+implementation detail would make the SAD harder to read.
 
-- the topic has enough algorithm/state-machine/configuration detail that it obscures the architecture in this SAD;
-- several implementation alternatives need a focused design/review;
-- a component has an independently meaningful lifecycle, contract or complexity;
-- the detail is needed directly by implementation/reviewers but is not useful to a reader trying to understand SI-01 architecture as a whole.
+Current active focused SDD:
 
-Examples that may eventually justify focused SDDs include exact persistence/restore mechanics or exact RabbitMQ connection/retry/topology behaviour. Threading, messaging, logging and the main runtime topology remain SAD concerns unless their implementation becomes substantially more complex.
+```text
+31-01-SDD-02-java-component-design.md
+  Java packages, Maven artifacts and composition
+```
 
-## Detailed-design document disposition
-
-This architecture review deliberately reduced and renumbered the current SDD set. At this project stage SDD numbers are working document identifiers, so removing a document also closes the numbering gap rather than preserving obsolete sequence numbers.
-
-- `31-01-SDD-01-data-and-display-design.md`: **deferred working note**. It is excluded from the architecture book while persistence/data mechanics are still too early for a dedicated active SDD.
-- `31-01-SDD-02-java-component-design.md`: **active focused SDD** because artifact/package/composition decisions already affect the implementation repository.
-- `31-01-SDD-03-backoffice-transport-design.md`: **deferred working note**. Detailed transport design should mature just in time with backoffice implementation and is excluded from the architecture book for now.
-
-The former timing-system detailed design and runtime-topology/configuration detailed design were retired after their useful architecture was consolidated into this SAD or the domain baseline. Their historical filenames and content remain available through Git history rather than reserving gaps in the current SDD numbering.
-
-No new SDD should be created during this cleanup unless a clear separate detailed-design purpose is demonstrated.
+Persistence/data and backoffice transport notes remain deferred until their
+implementation needs focused design.
 
 ## Open architecture decisions
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 
-- state-lane queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
+- Waypoint queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
 - field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
 - embedded HTTP/WebSocket technology compatible with Java 8 and Pi Zero constraints;
 - remote-shell technology;
