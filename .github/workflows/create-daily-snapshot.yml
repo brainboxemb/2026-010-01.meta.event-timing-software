@@ -1,0 +1,80 @@
+name: Create daily snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref or commit SHA to snapshot
+        required: true
+        default: main
+        type: string
+      note:
+        description: Optional annotation text
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-snapshot-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout snapshot target
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create next daily snapshot tag
+        shell: bash
+        env:
+          SNAPSHOT_REF: ${{ inputs.ref }}
+          SNAPSHOT_NOTE: ${{ inputs.note }}
+        run: |
+          set -euo pipefail
+
+          git fetch --force --tags origin
+
+          target_sha="$(git rev-parse HEAD)"
+          day="$(TZ=Europe/Amsterdam date +%Y%m%d)"
+          base="daily/${day}"
+          tag="${base}"
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            index=1
+            while :; do
+              printf -v tag '%s-%02d' "${base}" "${index}"
+              if ! git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+                break
+              fi
+              index=$((index + 1))
+            done
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          note="${SNAPSHOT_NOTE}"
+          if [[ -z "${note}" ]]; then
+            note="Daily snapshot ${day}"
+          fi
+
+          git tag -a "${tag}" "${target_sha}" -m "${note}"
+          git push origin "refs/tags/${tag}"
+
+          {
+            echo "### Daily snapshot created"
+            echo
+            echo "- Tag: \`${tag}\`"
+            echo "- Target input: \`${SNAPSHOT_REF}\`"
+            echo "- Commit: \`${target_sha}\`"
+            echo "- Date basis: \`Europe/Amsterdam\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
