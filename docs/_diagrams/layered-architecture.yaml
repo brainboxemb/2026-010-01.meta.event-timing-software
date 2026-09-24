@@ -16,9 +16,13 @@ groups:
   kind: layer-application
   layout: {x: 120, y: 260, w: 1120, h: 230}
 - id: domain-layer
-  label: Domain layer — per-Waypoint responsibilities (1..N)
+  label: Domain layer
   kind: layer-domain
   layout: {x: 120, y: 520, w: 1120, h: 260}
+- id: waypoint-aggregate
+  label: Waypoint (1..N)
+  kind: group-secondary
+  layout: {x: 145, y: 555, w: 820, h: 205}
 - id: infrastructure-layer
   label: Infrastructure / integrations
   kind: layer-infrastructure
@@ -56,7 +60,7 @@ nodes:
   layout: {x: 625, y: 315, w: 300, h: 75}
 - id: status-management
   group: application-layer
-  label: "SystemStatus\napplication health • aggregate waypoint status"
+  label: "Status aggregation\nimmutable snapshots"
   kind: application
   layout: {x: 955, y: 315, w: 240, h: 75}
 - id: core-runtime
@@ -66,35 +70,41 @@ nodes:
   layout: {x: 625, y: 415, w: 300, h: 50}
 
 - id: tag-processor
-  group: domain-layer
-  label: "TagProcessor\nRFID/tag observation processing"
+  group: waypoint-aggregate
+  label: "TagProcessor\nRFID/tag processing"
   kind: service
-  layout: {x: 165, y: 565, w: 300, h: 65}
+  layout: {x: 175, y: 595, w: 235, h: 60}
 - id: stage-start-time-registry
-  group: domain-layer
-  label: "StageStartTimeRegistry\nstage start-time reference data"
+  group: waypoint-aggregate
+  label: "StageStartTimeRegistry\nstart-time reference"
   kind: service
-  layout: {x: 495, y: 565, w: 300, h: 65}
+  layout: {x: 425, y: 595, w: 250, h: 60}
 - id: waypoint-journal
-  group: domain-layer
-  label: "WaypointJournal\nregistrations • UniqueID sequence/persistence"
+  group: waypoint-aggregate
+  label: "WaypointJournal\nregistrations • sequence/persistence"
   kind: service
-  layout: {x: 825, y: 565, w: 300, h: 65}
+  layout: {x: 690, y: 595, w: 245, h: 60}
 - id: prepare-team-registry
-  group: domain-layer
-  label: "PrepareTeamRegistry\nteams to prepare + traceable history"
+  group: waypoint-aggregate
+  label: "PrepareTeamRegistry\nteams + traceable history"
   kind: service
-  layout: {x: 165, y: 665, w: 300, h: 65}
+  layout: {x: 175, y: 680, w: 235, h: 60}
 - id: race-data
-  group: domain-layer
-  label: "RaceData\nparticipant/team • tag/reference data"
+  group: waypoint-aggregate
+  label: "RaceData\nparticipant/team/tag reference"
   kind: service
-  layout: {x: 495, y: 665, w: 300, h: 65}
+  layout: {x: 425, y: 680, w: 250, h: 60}
 - id: stage-timing
-  group: domain-layer
-  label: "StageTiming\nrunning times + local ranking"
+  group: waypoint-aggregate
+  label: "StageTiming\nrunning times + ranking"
   kind: service
-  layout: {x: 825, y: 665, w: 300, h: 65}
+  layout: {x: 690, y: 680, w: 245, h: 60}
+
+- id: system-status-domain
+  group: domain-layer
+  label: "SystemStatus\napplication-wide status/health"
+  kind: service
+  layout: {x: 995, y: 615, w: 210, h: 95}
 
 - id: persistence
   group: infrastructure-layer
@@ -153,9 +163,16 @@ edges:
   to_anchor: {side: top, position: 0.50}
 
 - from: app-state
+  to: system-status-domain
+  dashed: true
+  from_anchor: {side: bottom, position: 0.80}
+  to_anchor: {side: top, position: 0.50}
+
+- from: system-status-domain
   to: status-management
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
+  dashed: true
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
 
 - from: core-runtime
   to: app-state
