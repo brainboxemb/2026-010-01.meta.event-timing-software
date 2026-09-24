@@ -12,14 +12,23 @@ One running headless timing application must be able to host **multiple logical 
 
 The working software/domain term is `WaypointSystem` for one such independently addressed waypoint system. A waypoint is the registration/timing point at the **end of a stage**. A `WaypointSystem` is deployed or configured for a physical event `LocationID`; the software identity of the waypoint and the physical location where it is used are separate concepts.
 
-Conceptually:
+Conceptually, one timing application owns one or more independently addressed waypoint systems:
 
 ```text
 TimingApplication
-  +-- WaypointSystem waypoint-01 -> LocationID X
-  +-- WaypointSystem waypoint-02 -> LocationID Y
-  +-- ...
+  1..X WaypointSystem
+        +-- UniqueID
+        +-- LocationID
+        +-- lifecycle / status
+        +-- TagProcessor
+        +-- StageStartTimeRegistry
+        +-- WaypointJournal
+        +-- PrepareTeamRegistry
+        +-- RaceData
+        +-- TimingCalculator
 ```
+
+`UniqueID` is the stable identity of the `WaypointSystem`; `LocationID` identifies the physical event location where that waypoint system is configured or deployed.
 
 Operational state such as `OPEN` / `CLOSED` belongs to the waypoint-system software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
 
@@ -43,7 +52,7 @@ RegistrationAssetId = asset-01
 
 Concrete production asset names remain deployment/proprietary information and stay outside this public repository.
 
-### Data-waypoint identity
+### Waypoint identity
 
 `UniqueID` is the stable software identity of a `WaypointSystem`. It is also the scope for that waypoint's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that waypoint system is configured or deployed.
 
@@ -55,7 +64,7 @@ LocationID              = X
 RegistrationAssetId     = asset-01
 ```
 
-Deployments may deliberately choose visually related hardware and data-source labels for convenience, but that is **not** an identity rule. Another producer may use an unrelated logical identity such as `waypoint-02`.
+Deployment naming may deliberately make a `RegistrationAssetId` resemble a waypoint `UniqueID` for convenience, but that is **not** an identity rule.
 
 The number of RFID antennas attached to a physical registration system does not create additional waypoint identities. One `WaypointSystem` keeps one `UniqueID`; antenna identity remains additional origin/diagnostic context.
 
