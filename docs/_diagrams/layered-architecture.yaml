@@ -62,9 +62,9 @@ nodes:
   subtitle: "lifecycle / state orchestration"
   kind: application
   layout: {x: 190, y: 305, w: 430, h: 75}
-- id: command-dispatcher
+- id: command-handler
   group: application-layer
-  label: "CommandDispatcher"
+  label: "CommandHandler"
   subtitle: "central command handling"
   kind: application
   layout: {x: 740, y: 305, w: 430, h: 75}
@@ -158,24 +158,23 @@ nodes:
 
 edges:
 - from: console-shell
-  to: command-dispatcher
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.20}
 
 - from: desktop-gui
-  to: command-dispatcher
+  to: command-handler
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
 - from: http-websocket
-  to: command-dispatcher
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.80}
 
-- from: command-dispatcher
+- from: command-handler
   to: waypoint-root
-  label: commands
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
