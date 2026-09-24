@@ -1,211 +1,89 @@
 # Repository agent guidance
 
-Persistent guidance for automated agents working in `2026-010-01.meta.event-timing-software`.
+This repository is the project-family coordination authority for the event-timing
+software project. It owns planning, requirements, architecture, interface design,
+verification strategy and cross-repository coordination. Product implementation
+belongs in the implementation repositories.
 
-## Purpose
+Before substantial work:
 
-This repository coordinates planning, research, source collection, development/verification-environment definition, and decision preparation for a reusable Java framework for event timing and time registration.
+1. read [README.md](README.md) for repository purpose/navigation;
+2. read [docs/02-agent-plan.md](docs/02-agent-plan.md) and, when continuing work,
+   [docs/01-handoff.md](docs/01-handoff.md);
+3. read the current shared BrainboxEmb agent entrypoint:
+   [brainboxemb.meta/AGENTS.md](https://github.com/brainboxemb/brainboxemb.meta/blob/main/AGENTS.md).
 
-It is a meta repository. Do not treat it as the implementation repository for the framework itself unless the project plan explicitly changes that boundary.
+The shared entrypoint owns current generic Git/commit/PR/CI working rules and
+routes to portfolio repository-tooling conventions such as GitHub Actions
+workflow naming.
 
-## Documentation boundary
+Do not inherit `AGENTS.md` from pinned tools or implementation dependencies as
+working policy for this repository. Exact pinned dependency behaviour comes from
+this repository's configuration/gitlinks/immutable workflow refs plus the pinned
+dependency's README, docs, source and tests.
 
-Keep repository documentation generic. Do not identify or name a specific real-world event that motivated the project.
+## Local project authorities
 
-This is a public repository. Do not copy live/proprietary deployment inventory into it merely because those details were supplied in a chat or private source. In particular, keep the following out of public source/documentation unless publication is explicitly approved:
+Use the numbered project documents for their specific roles:
 
-- real registration-box/asset names;
-- concrete external registration-system/source IDs and their actual mappings;
-- reserve/virtual source assignments;
-- real deployment topology/inventory;
-- proprietary protocol values/field mappings;
-- credentials, encryption keys or secrets.
+- [docs/00-brainstorm.md](docs/00-brainstorm.md) — ideas, alternatives and unresolved questions;
+- [docs/03-domain-baseline.md](docs/03-domain-baseline.md) — stable domain facts/terminology;
+- [docs/04-UC-system-use-cases.md](docs/04-UC-system-use-cases.md) — operational goals/use cases;
+- [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
+- [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
+- [docs/12-SDE-software-development-environment.md](docs/12-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
+- [docs/30-SSAD-software-system-architecture.md](docs/30-SSAD-software-system-architecture.md) — software-system architecture/item register/interfaces;
+- [docs/31-01-SAD-timing-application-architecture.md](docs/31-01-SAD-timing-application-architecture.md) — SI-01 architecture;
+- [docs/31-01-SDD-02-java-component-design.md](docs/31-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
+- [docs/31-02-SAD-gui-application-architecture.md](docs/31-02-SAD-gui-application-architecture.md) — desktop GUI architecture;
+- [docs/31-03-SAD-web-operator-application-architecture.md](docs/31-03-SAD-web-operator-application-architecture.md) — web/iPad operator architecture;
+- [docs/50-SVP-software-verification-plan.md](docs/50-SVP-software-verification-plan.md) — verification strategy/evidence model;
+- [reference/README.md](reference/README.md) — collected source-material index;
+- [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
 
-When such details are useful for architecture reasoning, capture only the reusable structural rule in the public repository and use generic placeholders such as `asset-01`, `source-01`, `system-01`, or `RS-<asset-key>-ANT1`. Actual deployment mappings belong in private repositories or external/private configuration.
+When repository/workflow/tooling conventions change, read the SDE **and** the
+current shared BrainboxEmb guidance before editing.
 
-Software ideas, possible requirements, technology choices, architecture options, and unresolved questions must first be captured in `docs/00-brainstorm.md`.
+## Documentation and architecture discipline
 
-Stable domain facts/terminology supplied by project sources or the user may be consolidated in `docs/03-domain-baseline.md`. That document is not itself a formal requirements specification; later SRDs/IDDs/designs must preserve or explicitly revise those facts. Apply the public/private boundary above when consolidating domain knowledge.
+The documentation is leading during the current architecture/brainstorm phase.
+Existing implementation/API/class names do not constrain the intended model;
+implementation migrations can follow accepted documentation.
 
-System-level operational goals and actor scenarios may be consolidated in `docs/04-UC-system-use-cases.md`. Use cases are inputs to later requirements/interfaces and verification; they are not themselves implementation design or test cases.
+New software ideas, candidate requirements, technology choices and unresolved
+architecture options start in the brainstorm unless an existing authoritative
+project document already owns the decision.
 
-Do not promote brainstorm content into authoritative requirements or architecture merely because it sounds plausible. Promotion should happen only after explicit discussion or a plan step that calls for it.
+Do not silently promote plausible brainstorm content into requirements or
+architecture. Stable domain facts/use cases/design decisions must be promoted
+deliberately into their owning documents.
 
-Working drafts such as the UC, SDP, SIP, SDE, SSAD, SAD, SDD and SVP documents may organise already-discussed direction before formal requirements/architecture exist. They must remain clearly marked as non-authoritative until explicitly promoted.
+Keep implementation detail in the implementation repository. This repository
+may define intended architecture/contracts and cross-repository evidence, but
+should not become a second implementation source tree.
 
-## Document naming and ordering
+## Public/private boundary
 
-Use the repository's numbered document families. Do not add new unnumbered software documents when an existing family applies.
+This is a public repository. Keep real/proprietary deployment identities,
+external source mappings, reserve assignments, production topology, proprietary
+protocol values, credentials, encryption keys and secrets out of public source
+and documentation.
 
-```text
-00-09  working context / brainstorm / handoff / agent coordination / domain baseline / use cases
-10-19  development planning and development environment
-20-29  requirements / SRDs
-30-39  architecture and detailed design
-40-49  software-system interface documents (IDDs)
-50-59  verification and validation planning
-```
-
-Use established abbreviations when applicable, including `UC`, `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, and `SVP`.
-
-When a software-item number is used, keep it stable across that software item's requirements/design documents.
-
-Current working software-item register:
-
-```text
-SI-01  Headless Timing Application
-SI-02  Desktop GUI Application
-SI-03  Web Operator Application
-```
-
-The agent plan uses `AP-*` identifiers so its coordination steps cannot be confused with SIP implementation steps.
-
-## Planning-document responsibilities
-
-Do not allow the SDP, SIP and SDE to drift into duplicates of each other.
-
-```text
-SDP
-  high-level development strategy
-  objectives and broad phases/workstreams
-  risks and major unknowns
-  assumptions/dependencies
-  resource/environment needs at planning level
-
-SIP
-  ordered implementation steps
-  step scope
-  concrete deliverables
-  repeatable demonstrations
-  evidence / exit criteria
-
-SDE
-  concrete engineering environment
-  repository/content layout and conventions
-  GitHub issue/branch/PR workflow
-  developer/CI/target environment conventions
-  tooling, generated-output and artifact handling
-```
-
-Verification strategy belongs in the SVP; architecture/design belongs in SSAD/SAD/SDD/IDD documents. Do not put detailed commands/tasks in the SDP merely because they belong to a future phase.
-
-## Document value rule
-
-Documentation exists to support engineering work, decisions, communication, traceability or verification. **Do not create a document merely because a document type exists in the process model.**
-
-Before creating a new persistent document, be able to answer:
-
-1. **Purpose** — what engineering question, decision or communication need does it serve?
-2. **Audience/use** — who will read or use it, and during which activity?
-3. **Boundary** — why does the content not belong in an existing document or active pull request?
-4. **Inputs/outputs** — what sources feed it and what later decisions, requirements, designs or tests consume it?
-5. **Lifecycle** — what causes it to be updated, accepted, superseded or removed?
-
-Prefer extending an existing authoritative/working document when that preserves a clear boundary. Prefer PR discussion/evidence for temporary implementation detail. Introduce a new document only when a distinct long-lived engineering concern justifies its own source of truth.
-
-A document that no longer has a useful consumer should be considered for consolidation or supersession rather than maintained indefinitely for process compliance.
-
-## Sources of truth
-
-Use these documents for their specific roles:
-
-```text
-README.md                                          repository purpose and navigation
-AGENTS.md                                          persistent agent rules
-docs/00-brainstorm.md                              ideas, candidate requirements, alternatives
-docs/01-handoff.md                                 reusable session handoff
-docs/02-agent-plan.md                              AP-* meta-project/agent work plan and progress
-docs/03-domain-baseline.md                         supplied domain facts/terminology and unresolved mappings
-docs/04-UC-system-use-cases.md                     system operational goals/use cases and alternative flows
-docs/10-SDP-software-development-plan.md           high-level strategy, broad phases, risks, resources and assumptions
-docs/11-SIP-software-implementation-planning.md    concrete implementation steps, deliverables, demos and exit evidence
-docs/12-SDE-software-development-environment.md    repositories, GitHub flow, tooling, CI/artifact and environment conventions
-docs/30-SSAD-software-system-architecture.md       software-item register, interface catalogue and system architecture
-docs/31-01-SAD-timing-application-architecture.md  SI-01 architecture
-docs/31-01-SDD-*                                   SI-01 detailed design
-docs/31-02-SAD-gui-application-architecture.md     SI-02 architecture
-docs/31-03-SAD-web-operator-application-architecture.md  SI-03 architecture
-docs/50-SVP-software-verification-plan.md          system-level verification strategy
-reference/                                         collected source material and its index
-CHANGELOG.md                                       notable repository changes
-```
-
-Future system-level IDDs in the `40-49` family own interface definitions. Software-item SRDs may reference applicable IDD obligations but should not duplicate interface definitions.
-
-When documents disagree, prefer the more specific source for that topic. Do not silently resolve material conflicts; record or surface them. A material conflict with `03-domain-baseline.md` or an established use-case goal must be made explicit rather than silently designing around it.
+Use generic placeholders when concrete deployment examples are needed. Private
+inventory/configuration stays in private/external sources.
 
 ## Working method
 
-1. Read `AGENTS.md` and `docs/02-agent-plan.md` before substantial work.
-2. Read `docs/01-handoff.md` when continuing work from another session.
-3. Check the relevant open pull request and the latest completed pull request as directed by the handoff.
-4. Read `docs/03-domain-baseline.md` when work depends on domain identifiers, registration semantics, tag/team identity, locations, or source sequencing.
-5. Read `docs/04-UC-system-use-cases.md` when work changes externally meaningful system behaviour, actor flows, failure/recovery scenarios or system-test intent.
-6. Read the SDP when work changes overall development strategy, broad phase ordering, risks, assumptions or required resources.
-7. Read the SIP when work changes concrete implementation sequencing, deliverables, demonstrations or exit criteria.
-8. Read the SDE before changing repository/workflow/tooling/environment/artifact conventions.
-9. Read the SSAD/software-item design and SVP relevant to the current work.
-10. Capture genuinely new software ideas in `docs/00-brainstorm.md` before turning them into decisions.
-11. Keep research and verification evidence traceable to its source.
-12. Update the appropriate plan when a step/phase/risk is completed, materially changed, or blocked.
-13. Keep implementation details in the future implementation repository rather than duplicating them here.
+- inspect current issues, pull requests, CI and generated evidence live; do not
+  reconstruct current state from old chat history;
+- follow the local SDE for this repository's issue/branch/PR mechanics;
+- use shared BrainboxEmb guidance for generic Git/commit/CI/tooling conventions;
+- read the relevant architecture/verification documents before changing their
+  domain;
+- update the agent plan/handoff when a substantial work-session materially
+  changes active progress;
+- inspect generated `dev/pr-N/docs` output when visual/generated behaviour is
+  part of the review question.
 
-## Pull-request-first workflow
-
-Follow the SDE. In summary, use one work-item number end to end:
-
-1. create issue `#N` to reserve the work number;
-2. create `feature/pr-N-<short-slug>` from the intended target branch;
-3. make the smallest initial commit on that branch;
-4. convert that exact issue directly into draft PR `#N`;
-5. continue implementation on the same branch while the draft PR remains open;
-6. keep implementation detail, tests, discussion and evidence in that same PR;
-7. inspect generated `dev/pr-N/...` outputs where relevant;
-8. mark ready and merge only when the scoped work and evidence are complete.
-
-Do not create a separate pull request with a new number for the same work item when issue conversion is available. Do not perform normal work directly on `main`.
-
-## Generated output
-
-Generated branches such as `dev/pr-N/docs` and `prod/docs` are build output. Do not hand-edit them as source.
-
-Use generated output as review evidence: inspect actual rendered/generated artifacts before merge where visual or generated behaviour matters.
-
-## AI development discipline
-
-AI agents use the same controlled GitHub workflow as human developers. Do not create an AI-only bypass around issues, branches, pull requests, tests or review evidence.
-
-Do not claim tests, generated output inspection or hardware verification occurred unless it actually occurred.
-
-When private/proprietary details are present in the working conversation, use them only to derive the required generic architecture/contract unless the target repository is explicitly private and those details belong there.
-
-## Document lifecycle
-
-While the project is consolidating source/domain knowledge, use cases and design documents may remain `working draft / non-authoritative`.
-
-Preferred future lifecycle:
-
-```text
-working draft
-review candidate
-accepted / authoritative
-superseded
-```
-
-Promotion is explicit. Generated review copies do not become authoritative merely because they render successfully.
-
-## Change discipline
-
-Prefer small, reviewable steps. Do not introduce implementation code, framework dependencies, or premature directory structures while the project is still in the planning/research phase unless the active plan explicitly calls for them.
-
-When collecting documents or external information:
-
-- preserve original files where appropriate;
-- add enough metadata to identify the source and relevance;
-- distinguish source facts from project interpretation;
-- avoid copying volatile facts into multiple documents;
-- avoid copying proprietary deployment identities from private sources into public repository documents.
-
-## Handoff discipline
-
-Before ending a substantial work session, update `docs/02-agent-plan.md` if progress changed and keep `docs/01-handoff.md` usable as a stable entry point for the next session. The handoff should point to sources of truth rather than attempting to duplicate the complete current state.
+Keep this file as an entrypoint/navigation layer. Durable engineering knowledge
+belongs in the owning project documents rather than being duplicated here.
