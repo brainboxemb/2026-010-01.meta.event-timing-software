@@ -59,7 +59,7 @@ def waypoint_software_decomposition() -> Diagram:
         Node("life", "Waypoint lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 370, 430, 300, 90, "service"),
         Node("start", "StageStartTimeRegistry\\nlocal stage start-time reference", 700, 430, 330, 90, "service"),
-        Node("journal", "WaypointJournal\\nregistrations + DataSourceId-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
+        Node("journal", "WaypointJournal\\nregistrations + UniqueID-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
         Node("ready", "PrepareTeamRegistry\\nteams to prepare + internal keypad history", 80, 640, 330, 100, "service"),
         Node("race", "RaceData\\nparticipant/team/tag reference data", 460, 640, 330, 100, "service"),
         Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 840, 640, 420, 100, "interface"),
@@ -96,7 +96,7 @@ def registration_hardware_topology() -> Diagram:
         Node("ant11", "Antenna ANT1", 70, 340, 260, 75, "adapter"),
         Node("ant12", "Antenna ANT2", 370, 340, 260, 75, "adapter"),
         Node("ant21", "Antenna ANT1", 900, 340, 260, 75, "adapter"),
-        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N DataSourceIds", 450, 540, 500, 100, "interface"),
+        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N UniqueIDs", 450, 540, 500, 100, "interface"),
     ]
 
     edges = [
@@ -120,11 +120,11 @@ def registration_hardware_topology() -> Diagram:
 def waypoint_hardware_mapping() -> Diagram:
     nodes = [
         Node("wp", "WaypointSystem waypoint-A", 80, 85, 330, 85, "service"),
-        Node("loc", "Location X\\nLocationId", 80, 300, 330, 85, "external"),
+        Node("loc", "Location X\\nLocationID", 80, 300, 330, 85, "external"),
         Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 530, 85, 350, 85, "external"),
-        Node("ds", "DataSourceId source-01\\nlogical ordered stream identity", 530, 300, 350, 85, "queue"),
+        Node("ds", "UniqueID waypoint-01\\nWaypointSystem identity", 530, 300, 350, 85, "queue"),
         Node("finish", "Other producer\\nseparate producer", 1000, 85, 300, 85, "external"),
-        Node("finishds", "DataSourceId source-02", 1000, 300, 300, 85, "queue"),
+        Node("finishds", "UniqueID waypoint-02", 1000, 300, 300, 85, "queue"),
         Node("config", "Deployment configuration\\nconnects identities; does not collapse them", 440, 510, 520, 105, "interface"),
     ]
 
@@ -152,18 +152,18 @@ def waypoint_hardware_mapping() -> Diagram:
 def rabbitmq_source_topology() -> Diagram:
     nodes = [
         Node("broker", "RabbitMQ broker\\nreal external service", 505, 55, 390, 85, "external"),
-        Node("inq1", "source-01 inbound queue", 90, 200, 290, 70, "queue"),
+        Node("inq1", "waypoint-01 inbound queue", 90, 200, 290, 70, "queue"),
         Node("out", "outbound exchange + routing keys", 555, 200, 300, 70, "queue"),
-        Node("inq2", "source-02 inbound queue", 1020, 200, 290, 70, "queue"),
+        Node("inq2", "waypoint-02 inbound queue", 1020, 200, 290, 70, "queue"),
 
         Node("conn", "RabbitMqConnectionManager\\ninitial preference: one shared connection", 480, 345, 440, 90, "adapter"),
-        Node("c1", "source-01 consumer\\nown channel/ownership", 80, 505, 310, 85, "adapter"),
+        Node("c1", "waypoint-01 consumer\\nown channel/ownership", 80, 505, 310, 85, "adapter"),
         Node("pub", "controlled publisher\\ndedicated channel or small pool", 545, 505, 310, 85, "adapter"),
-        Node("c2", "source-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
+        Node("c2", "waypoint-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
 
-        Node("s1", "Ordered stream source-01\\nDataSourceId-scoped application path", 80, 690, 310, 85, "service"),
+        Node("s1", "WaypointSystem waypoint-01\\nUniqueID-scoped application path", 80, 690, 310, 85, "service"),
         Node("outbox", "local durable/pending outbox\\nsource identity retained", 545, 690, 310, 85, "service"),
-        Node("s2", "Ordered stream source-02\\nDataSourceId-scoped application path", 1010, 690, 310, 85, "service"),
+        Node("s2", "WaypointSystem waypoint-02\\nUniqueID-scoped application path", 1010, 690, 310, 85, "service"),
 
         Node("split", "Possible later refinement\\nseparate consumer + publisher connections\\nonly if evidence justifies it", 500, 850, 400, 95, "interface"),
     ]
