@@ -86,7 +86,7 @@ Presentation translates external requests into application commands/queries and 
 The application responsibility owns running mutable application state and coordinates use cases. Representative concerns include:
 
 ```text
-WaypointSystem state
+Waypoint state
 registration/source ledgers and current runtime state
 commands / queries / workflows
 status management and aggregation
@@ -119,7 +119,7 @@ StageTiming
 
 `PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
 
-`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `WaypointSystem` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
+`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `Waypoint` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
 
 `StageTiming` owns the derived stage-timing view for the waypoint, including elapsed/running times and local ranking. It is not primarily a registry; it derives timing results from waypoint registrations and stage/reference data.
 
@@ -169,7 +169,7 @@ Logging, configuration, diagnostics, metrics where useful and build/version iden
 
 ## Principal runtime abstractions
 
-A `WaypointSystem` is the primary independently addressed operational/software boundary inside SI-01. One application process may host one or more waypoint systems.
+A `Waypoint` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more waypoints. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and waypoint status rather than belonging to one waypoint.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -177,7 +177,8 @@ The architecture deliberately uses **separate views** for software/domain decomp
 
 ```text
 TimingApplication
-  1..X WaypointSystem
+  +-- SystemStatus
+  +-- 1..X WaypointSystem
         +-- UniqueID
         +-- LocationID
         +-- lifecycle / status
@@ -189,7 +190,7 @@ TimingApplication
         +-- StageTiming
 ```
 
-`UniqueID` is the stable identity of the `WaypointSystem` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
+`UniqueID` is the stable identity of the `Waypoint` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
 
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/waypoint-software-decomposition.svg)
 
@@ -208,21 +209,21 @@ RegistrationAsset asset-01
 
 ![Registration hardware/deployment topology](../../../raw/prod/docs/assets/architecture/registration-hardware-topology.svg)
 
-A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not define additional `WaypointSystem` identities or `UniqueID` values.
+A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not define additional `Waypoint` identities or `UniqueID` values.
 
 ### Configuration and identity mapping
 
 Configuration connects the software and deployment identities without making them the same object:
 
 ```text
-WaypointSystem waypoint-A -> LocationID X
-WaypointSystem waypoint-A -> UniqueID waypoint-A
+Waypoint waypoint-A -> LocationID X
+Waypoint waypoint-A -> UniqueID waypoint-A
 RegistrationAsset asset-01 -> used by/configured for waypoint-A
 ```
 
 ![Waypoint, hardware and data-source configuration mapping](../../../raw/prod/docs/assets/architecture/waypoint-hardware-mapping.svg)
 
-`UniqueID` is the stable identity of a `WaypointSystem` and the scope for its sequence, persistence and synchronisation semantics. `LocationID` separately identifies where that waypoint is configured/deployed. `UniqueID` is not derived from `RegistrationAssetId`.
+`UniqueID` is the stable identity of a `Waypoint` and the scope for its sequence, persistence and synchronisation semantics. `LocationID` separately identifies where that waypoint is configured/deployed. `UniqueID` is not derived from `RegistrationAssetId`.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable waypoint state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
 
@@ -259,7 +260,7 @@ The intended processing path is:
 1. capture externally meaningful `TimingTimestamp` values immediately where timing matters;
 2. attach stable instance/device/source context;
 3. convert input into an immutable command/event;
-4. route it to the addressed `WaypointSystem`;
+4. route it to the addressed `Waypoint`;
 5. serialize state-changing handling for that instance;
 6. keep blocking hardware/network/file operations outside the serialized state path;
 7. return relevant completion/failure into the state path as commands/events when required.
@@ -288,7 +289,7 @@ The source for this process view is `docs/_diagrams/runtime-dispatch-process.yam
 
 ### Per-instance serialized state lane
 
-Every `WaypointSystem` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
+Every `Waypoint` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
 
 Required semantics:
 
@@ -683,7 +684,7 @@ Representative SI-01 deployments are:
 Production field host
   Raspberry Pi Zero / Zero W
     one SI-01 process
-      one or more configured WaypointSystem objects
+      one or more configured Waypoint objects
       local devices + local files
       optional network/backoffice connectivity
 
