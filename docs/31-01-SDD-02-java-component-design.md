@@ -53,114 +53,85 @@ The root parent POM is build/aggregation metadata, not a deployed product compon
 
 ## Package direction
 
-The SAD responsibility model is finer-grained than the current artifact model.
+The current Java structure should grow from real code, not from the architecture
+diagram.
 
-The first framework skeleton contains marker packages such as `domain`, `core`, `platform` and `comm`. Those packages proved the framework-to-application artifact boundary; they are not a commitment that every architectural responsibility maps one-to-one to those four names.
-
-As real implementation classes appear, package responsibilities may evolve toward areas such as:
+Likely top-level packages are:
 
 ```text
-io.github.brainboxemb.eventtiming.application
-io.github.brainboxemb.eventtiming.domain
-io.github.brainboxemb.eventtiming.core
-io.github.brainboxemb.eventtiming.presentation
-io.github.brainboxemb.eventtiming.io
-io.github.brainboxemb.eventtiming.infra
-io.github.brainboxemb.eventtiming.platform
+io.github.brainboxemb.eventtiming/
+  application/
+  domain/
+  core/
+  presentation/
+  io/
+    hardware/
+    messaging/
+    storage/
+  infra/
+  platform/
 ```
 
-Capability-oriented subpackages may exist beneath those responsibilities.
+These are source-organisation boundaries, not automatically Maven modules.
 
-Do not rename or split packages merely to make the source tree match an architecture diagram. Refine package layout when real classes make semantic ownership and dependency direction testable.
+Use these rules:
 
-Likewise, a logical layer/package does not require a runtime marker class merely to prove that the layer exists. The first Java implementation removed the bootstrap-only `CoreLayer`, `DomainLayer`, `CommLayer` and `PlatformLayer` markers once real application classes existed. Architecture is expressed through ownership, package/dependency direction and behaviour, not through one object per diagram box.
+- create a class only when current behaviour needs it;
+- keep small enums with the object that owns them until reuse justifies a
+  separate type;
+- do not create marker classes to represent layers;
+- place a type by what it means, not by which layer happens to call it;
+- reserve `infra` for concrete cross-cutting technical support such as
+  `BuildIdentity`;
+- use `io` for external hardware, messaging and storage adapters.
 
-### Java object model rule
-
-Do not create a Java class merely because the SAD or an IDD names a concept or
-shows a field in a response.
-
-Create an object when current behaviour needs an object with identity, state or
-a useful grouped value. Create a separate helper only when it owns behaviour or
-removes real duplication.
-
-Examples:
-
-- the IF-03 status JSON describes what a client receives; it does **not** require
-  an internal class named `ApplicationStatusSnapshot`;
-- a class such as `ApplicationStatusModel` is not required unless implemented
-  status behaviour actually needs that model;
-- a logical architecture box is not evidence that a Java class with the same
-  name must exist.
-
-For small enums, keep the enum with the object that owns its meaning when it is
-used only there. A nested enum such as `TimingApplicationLifecycle.State` is
-preferred over an extra top-level source file until real reuse or clarity
-justifies separating it.
-
-Package placement follows the meaning of the object, not the layer that happens
-to expose it. The architecture responsibility named `I/O` is represented by
-technical adapter packages such as `io.hardware`, `io.messaging` and
-`io.storage`.
-
-The Java package name `infra` is reserved for cross-cutting technical support,
-not for the I/O architecture responsibility. For example, build provenance such
-as `BuildIdentity` belongs in `infra` even when
-`CommandHandler.version()` returns it to a client. Do not move cross-cutting
-technical values into `application` merely because application code uses
-them.
-
-This keeps the early implementation small and allows the object model to grow
-from real use cases rather than from the diagrams alone.
+An IDD response shape does not require an equally shaped internal Java object.
+For example, the status JSON does not by itself require classes named
+`ApplicationStatusSnapshot` or `ApplicationStatusModel`.
 
 ## Contract placement
 
-Do not collect every interface into one generic top-level `api` package/module.
-
-Place contracts with the responsibility that owns their semantics. For example:
+Place contracts with the responsibility that owns their meaning:
 
 ```text
 presentation
-  endpoint/wire-facing contracts and DTO mapping
+  client endpoint / DTO mapping
 
 application
   commands, queries and application-level ports
 
 domain
-  domain service/model contracts and semantic domain ports
+  domain model and semantic ports
 
 core
   runtime/execution contracts
 
 io
-  external input/output adapters
-  e.g. hardware, messaging and storage
+  hardware, messaging and storage adapters
 
 infra
   cross-cutting technical support
-  e.g. build/runtime provenance
 
 platform
   execution-environment abstractions
 ```
 
-A dedicated public API/SPI artifact can be introduced later when an external Java consumer requires a stable independently versioned contract.
+Do not create one generic top-level `api` package merely to collect
+interfaces.
 
 ## Internal dependency direction
 
-Java/package dependencies should preserve the ownership defined by the SAD.
+```text
+presentation --> application
+application  --> domain / core / I/O ports
+io           --> application/domain ports + platform
+core         --> reusable runtime mechanics
+platform     --> low-level environment only
+```
 
-Working rules:
-
-- presentation depends inward on application contracts and does not own application state;
-- application owns running mutable application state and coordinates domain/core/I/O contracts;
-- domain services/rules do not depend on presentation or concrete integrations;
-- core supplies reusable runtime mechanics without becoming a second owner of application/domain behaviour;
-- concrete I/O adapters depend inward on application/domain ports and may use platform facilities;
-- platform packages do not depend on event-timing application/domain behaviour;
-- executable composition may depend on the complete supported framework surface and selected external libraries.
-
-Circular package dependencies are not an acceptable substitute for choosing semantic ownership.
+Domain code does not depend on presentation or concrete I/O adapters.
+Executable composition may depend on the complete supported framework surface
+and selected external libraries.
 
 ## Logging dependency placement
 
