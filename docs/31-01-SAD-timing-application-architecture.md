@@ -78,7 +78,7 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimeRegistry
-        +-- WaypointJournal
+        +-- Journal
         +-- PrepareTeamRegistry
         +-- RaceData
         +-- StageTiming
@@ -104,11 +104,18 @@ Presentation translates external requests into application commands/queries and 
 
 ### Application
 
+Names should not repeat context already supplied by the owning package, layer or
+aggregate. Prefer concise responsibility names such as `application.Conductor`
+and `Waypoint.Journal` over `ApplicationConductor` and `WaypointJournal`
+when the removed qualifier is already unambiguous from ownership. Keep the
+qualifier only when it carries information that would otherwise be lost.
+
+
 The application layer coordinates use cases without becoming the top-level application container. Its current working decomposition is:
 
 ```text
 Application layer
-  +-- ApplicationConductor
+  +-- Conductor
   |     application lifecycle/state orchestration
   |     active Waypoint coordination
   |
@@ -118,7 +125,7 @@ Application layer
         enters the applicable state-ownership boundary
 ```
 
-`ApplicationConductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
+`Conductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
 
 `CommandHandler` is the transport-independent application command boundary. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement command target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission or common command-result semantics. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
 
@@ -137,7 +144,7 @@ Current naming direction includes:
 ```text
 TagProcessor
 StageStartTimeRegistry
-WaypointJournal
+Journal
 PrepareTeamRegistry
 RaceData
 StageTiming
@@ -147,7 +154,7 @@ StageTiming
 
 `StageStartTimeRegistry` owns locally available start-time reference data for the stage ending at the waypoint. It is a registry/state responsibility rather than a generic background service.
 
-`WaypointJournal` is the waypoint-oriented registration/history view. It must preserve the independent `UniqueID` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
+`Journal` is the waypoint-oriented registration/history view. It must preserve the independent `UniqueID` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
 
 `PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
 
@@ -218,7 +225,7 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimeRegistry
-        +-- WaypointJournal
+        +-- Journal
         +-- PrepareTeamRegistry
         +-- RaceData
         +-- StageTiming
