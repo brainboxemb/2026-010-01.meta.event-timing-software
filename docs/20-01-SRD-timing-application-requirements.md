@@ -39,7 +39,7 @@ Identifiers in this review candidate are intended to remain stable. A later capa
 ### Process lifecycle and configuration
 
 **SI01-REQ-001 — Start from external configuration**  
-SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code.
+SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
 
 **SI01-REQ-002 — Clean process shutdown**  
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
@@ -47,7 +47,7 @@ SI-01 shall support a controlled shutdown path that terminates the first-executa
 **SI01-REQ-003 — Minimal Waypoint composition**  
 The first executable shall support configuration of at least one `Waypoint` with a stable `UniqueID` that can be represented in application status.
 
-Detailed registration assets/sources/devices are not required by this first slice.
+IF-11 defines how a configured Waypoint is referenced from presentation and I/O configuration while keeping `UniqueID`, registration-asset identity and antenna identity distinct. Detailed operational RFID behaviour remains outside this first slice.
 
 ### Build and version identity
 
@@ -132,8 +132,8 @@ These areas remain governed by the working architecture/use cases until a later 
 
 | Requirement | Current source | Interface/design allocation | Planned verification |
 | --- | --- | --- | --- |
-| SI01-REQ-001/002 | SIP framework/version-status increments | SI-01 composition/runtime | build/start/stop + ST-1 process control |
-| SI01-REQ-003 | UC-001; SSAD runtime topology | SI-01 runtime registry/configuration | `VC-ST1-001` status inspection |
+| SI01-REQ-001/002 | SIP framework/version-status increments | IF-11 + SI-01 composition/runtime | build/start/stop + ST-1 process control |
+| SI01-REQ-003 | UC-001; SSAD runtime topology | IF-11 + SI-01 runtime composition | `VC-ST1-001` status inspection |
 | SI01-REQ-010/011 | UC-008/009; SIP first executable | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
 | SI01-REQ-020/021/022 | UC-001/008/009; SSAD/SAD status model | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
 | SI01-REQ-023 | first executable live status need | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |

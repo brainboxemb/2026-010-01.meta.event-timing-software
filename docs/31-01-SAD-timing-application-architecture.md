@@ -605,30 +605,60 @@ SLF4J 2.0.x is compatible with the Java-8 baseline; the implementation repositor
 
 ## Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `40-02-IDD-application-configuration.md`.
 
-Representative structure:
+The main configuration groups are:
 
 ```text
-application
-  waypoint systems
-    location/context
-    registration assets
-      antenna/device bindings
-      registration sources
-  presentation endpoints
-  persistence locations
-  backoffice transport selection
-  platform/device adapter settings
+ApplicationConfig
+├── waypoints
+├── io
+│   ├── hardware
+│   ├── messaging
+│   └── storage
+├── presentation
+├── runtime
+└── security
 ```
 
-Working direction:
+The identity boundaries are deliberate:
 
-- load external configuration into typed validated configuration objects;
-- keep secrets/credentials out of committed configuration;
-- perform explicit application composition at startup;
-- prefer straightforward manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
-- keep configuration file syntax/library selection open until the required model is sufficiently stable.
+- a `Waypoint` owns its stable `UniqueID` and configured `LocationID`;
+- a Waypoint may reference a `RegistrationAssetId`;
+- a registration asset owns its adapter/driver selection and one or more `AntennaId` values;
+- presentation endpoints reference Waypoints explicitly; an HTTP port, tablet or shell binding is not a property of the Waypoint domain object.
+
+Deployment composition is intentionally small:
+
+```text
+base application configuration
+        +
+one platform overlay
+        +
+optional one profile overlay
+        +
+resolved secret values
+        =
+effective ApplicationConfig
+```
+
+A profile such as `simulation` changes composition by selecting simulated adapters in place of real hardware/integration adapters. It does not introduce a second domain model or simulation-specific Waypoint semantics. Platform selection and profile selection remain separate concerns; for example, Windows does not imply simulation.
+
+Startup follows three distinct responsibilities:
+
+```text
+load sources -> effective typed configuration -> validate references/settings -> compose application
+```
+
+Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings.
+
+Working rules:
+
+- keep secrets/credentials out of committed configuration and store only secret references there;
+- prefer explicit/manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
+- keep overlay rules deliberately limited rather than creating general inheritance/includes;
+- keep the concrete file syntax/library open until the first Step-3 implementation selects it;
+- create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
 
 ## Data and persistence architecture
 
@@ -709,7 +739,7 @@ application
 domain
 core
 presentation
-integration
+io
 platform
 ```
 
@@ -732,7 +762,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
-| Configuration | external typed/validated configuration | file format/library still open |
+| Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
 | HTTP/WebSocket | embedded Java-8-compatible technology | selection still open |
 | Remote shell | shared command semantics, transport technology open | selection still open |
@@ -807,7 +837,7 @@ The next useful architecture work is to resolve concrete implementation choices,
 - first concrete command/query submission/result API signatures;
 - `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;
 - wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
-- configuration format, validation library and override/secrets model;
+- concrete configuration file syntax/library and first Java configuration type boundaries;
 - persistence commit/durability/atomic-write/recovery policy;
 - reference ARMv6 Java 8 runtime/vendor/version;
 - status/health vocabulary and publication model;
