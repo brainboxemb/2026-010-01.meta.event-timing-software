@@ -225,35 +225,81 @@ Prove the public runtime/application boundary with deliberately small behaviour 
 
 Windows is the first concrete execution target for this step. Linux-host execution may also be included through CI or developer testing, but Raspberry Pi deployment is deliberately separated into Step 4.
 
+### Current implementation baseline
+
+The released Step-3 product baseline is `v0.2.1`. Normal development continues on `0.2.2-SNAPSHOT`.
+
+Current design/implementation decisions relevant to this step:
+
+- `BuildIdentity` is build provenance and remains separate from deployment configuration;
+- embedded build-property reading is executable bootstrap detail rather than a separate application service;
+- `CommandHandler` is the current transport-independent presentation/application boundary;
+- IF-03 owns the public version/status wire contract;
+- IF-11 owns deployment/application configuration;
+- internal Java types are introduced for real behaviour, not merely to mirror IF-03 response shapes;
+- reusable application/runtime behaviour is shared through composition when real reuse appears, not through a speculative `BaseApplication` hierarchy.
+
 ### Scope
 
-- one central version source;
-- central application/status model;
+- one authoritative build/version identity;
+- shared application commands/queries used by all presentation transports;
 - version/status readable through:
   1. local console/shell;
   2. remote terminal/shell;
   3. HTTP/JSON API;
 - minimal WebSocket status/event stream;
-- minimal configurable `Waypoint`;
-- transport adapters do not own application state;
+- external typed/validated application configuration according to IF-11;
+- at least one configurable `Waypoint` with a stable `UniqueID`;
+- presentation endpoints bind to configured Waypoints rather than putting ports/client knowledge in the Waypoint;
+- configuration loading, validation and application composition remain separate responsibilities;
+- the first configuration implementation introduces only types needed by the executable slice instead of materialising the complete future IF-11 tree;
+- transport adapters do not own authoritative application/domain state;
 - application handlers can run synchronously in unit tests;
-- logging and externalised settings are active;
 - first `ST-1 Application Behaviour` black-box tests through the public application interface;
 - GitHub Actions verifies fast tests;
 - repeatable Windows execution from built artifacts.
 
+IF-11 already defines ownership for later I/O hardware, messaging, storage, runtime settings, platform/profile overlays and secret references. Step 3 implements those parts only when an actual Step-3 consumer needs them.
+
+### Next bounded implementation slice
+
+Make external configuration real without prebuilding later capability models:
+
+```text
+embedded BuildIdentity
+        +
+ApplicationConfigLoader
+        |
+        +-- base application configuration
+        +-- selected platform configuration
+        +-- optional profile
+        +-- secret resolution where required
+        |
+        v
+effective ApplicationConfig
+        |
+        v
+validation
+        |
+        v
+TimingApplication composition
+```
+
+The first slice needs only enough configuration to construct at least one Waypoint and bind the first public presentation endpoint safely. Hardware, messaging, storage and broader security configuration are added when corresponding adapters/consumers become real.
+
 ### Deliverable
 
-The first useful SI-01 executable for the development environment: a headless Java application with one shared version/status model exposed through multiple interfaces and a repeatable black-box test path.
+The first useful SI-01 executable for the development environment: a headless Java application with one shared application boundary, externally configured Waypoint/presentation composition, equivalent version/status semantics across its initial interfaces and a repeatable black-box test path.
 
 ### Demonstration
 
-On a Windows development machine, start SI-01 from the built artifact and show:
+On a Windows development machine, start SI-01 from external configuration and show:
 
 ```text
+configuration  -> selected Waypoint + presentation binding
 local console  -> version + status
 remote shell   -> same version + equivalent status
-HTTP/JSON      -> same version/status model
+HTTP/JSON      -> same version/status semantics
 WebSocket      -> receive a status/event update
 ```
 
@@ -261,18 +307,21 @@ Then run the `ST-1` black-box scenario against that process.
 
 A useful stakeholder statement is:
 
-> We now have the real headless application running as a separate process and can inspect the same live state through all initial public interfaces.
+> We now have the real headless application running as a separately configured process and can inspect the same live application state through all initial public interfaces.
 
 ### Evidence / exit criteria
 
+- external configuration is parsed, validated and used for application composition rather than production/deployment values being compiled into Java source;
+- at least one configured Waypoint has a stable `UniqueID`;
+- presentation bindings reference configured Waypoints without leaking transport settings into the Waypoint domain object;
 - automated tests verify shared application behaviour rather than duplicating behaviour in each transport;
 - `ST-1` demonstrates the running process through public interfaces;
 - GitHub Actions is green;
 - Windows execution from produced artifacts is repeatable;
 - Linux-host execution is smoke-tested where practical;
-- lifecycle/status architecture is not coupled to one client transport;
+- lifecycle/status semantics are not coupled to one client transport;
 - no Raspberry Pi-specific code is required to run the application behaviour;
-- Step 3 closes through the release-backed completion model, with the current development line targeting `0.2.0` unless implementation evidence deliberately replans the release version.
+- Step 3 closes through the release-backed completion model on the next accepted `0.2.x` release after the current `0.2.2-SNAPSHOT` development line.
 
 ## Step 4 — Raspberry Pi Zero image, target run and update automation
 

@@ -259,7 +259,23 @@ At closure:
 - framework post-merge run `34697920820` is green for Linux/Windows clean bootstrap, Linux canonical reactor build, Windows compatibility reactor build, and Windows execution of the exact Linux-produced application JAR;
 - the implementation repository therefore provides a reproducible clean-checkout consumer proof for both reusable tooling layers and a stable starting point for subsequent SI-01 increments.
 
-AP-4 closes only the repository/tooling/framework-skeleton coordination goal. It does **not** by itself declare the complete SIP Step 2 capability/exit set finished. The next coordination activity should review the remaining Step-2 activities/evidence — especially the intended minimal startup/shutdown/lifecycle behaviour — before either closing SIP Step 2 or moving to the Step-3 version/status interface increment.
+AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SIP Step 2 has since closed and SIP Step 3 is active.
+
+## Current coordination focus — SIP Step 3
+
+Current stable state:
+
+- Step 2 closed with release `v0.1.0`;
+- the current published Step-3 product baseline is `v0.2.1`;
+- normal development is `0.2.2-SNAPSHOT`;
+- IF-03 owns the public application-control/status contract;
+- IF-11 owns deployment/application configuration;
+- `CommandHandler` is the current shared presentation/application boundary;
+- `BuildIdentity` remains separate from deployment configuration.
+
+The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one Waypoint plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
+
+Do not add a new AP step merely to mirror SIP Step 3. Add one only when a distinct coordination deliverable needs its own plan.
 
 ## Ongoing supporting activity — source collection
 
