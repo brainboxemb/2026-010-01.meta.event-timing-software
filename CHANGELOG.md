@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define IF-11 application configuration as the SI-01 deployment/composition contract: keep Waypoint, hardware and presentation identities separate; use base + platform + optional profile overlays; treat simulation as adapter composition; keep secrets external; and prefer framework composition over a `BaseApplication` inheritance hierarchy.
+
 - Rename the external adapter responsibility to `I/O`, organise it around hardware/messaging/storage, reserve Java `infra` for cross-cutting technical support, and shorten the active SAD/Java SDD while retaining the diagrams and copyable package/responsibility blocks.
 
 - Make the Waypoint concurrency contract concrete and reviewable: state plainly how serial execution protects mutable domain state, document concurrency edge cases, separate IF-03 wire shapes from Java class design, keep small enums with their owning object, and place build provenance such as `BuildIdentity` under cross-cutting `infra` rather than application semantics.

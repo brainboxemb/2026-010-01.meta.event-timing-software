@@ -119,6 +119,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | IP path; direct or LAN/Wi-Fi deployment | Synchronised display/domain data | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed Waypoints, I/O assets, presentation bindings and runtime composition inputs | `40-02-IDD-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 
@@ -144,6 +145,9 @@ The principal device/interface relationships are a **software-system concern** b
 Representative relationships are:
 
 ```text
+Deployment/configuration source
+  +-- IF-11 --> SI-01
+
 Field host
   SI-01 Headless Timing Application
     |

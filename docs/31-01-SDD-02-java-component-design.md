@@ -172,16 +172,18 @@ The executable stays primarily a composition/startup boundary:
 
 ```text
 main()
-  -> load settings
-  -> select/construct concrete I/O/platform implementations
+  -> obtain embedded BuildIdentity
+  -> load effective ApplicationConfig
+  -> validate configuration
+  -> select/construct concrete presentation/I/O/platform implementations
   -> create reusable application/domain/core objects
-  -> wire presentation endpoints
-  -> configure runtime logging provider/backend
   -> start lifecycle
   -> install shutdown handling
 ```
 
-Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`.
+`BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11.
+
+Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable framework application/runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
 The current executable uses a small nested composition helper:
 
@@ -189,7 +191,9 @@ The current executable uses a small nested composition helper:
 TimingApplication.builder(buildIdentity).build()
 ```
 
-This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. The first shared presentation/application boundary is similarly small: `CommandHandler.version()` returns the authoritative `BuildIdentity` used by local/remote clients.
+This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. A future `ApplicationConfigLoader` becomes a separate component only when Step 3 has real configuration sources/merge/validation behaviour to own; the design does not require speculative loader/config classes before then.
+
+The first shared presentation/application boundary is similarly small: `CommandHandler.version()` returns the authoritative `BuildIdentity` used by local/remote clients.
 
 ## Derived consumers
 
@@ -214,7 +218,7 @@ Expected private/product-specific areas may include:
 - production backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
-Prefer normal composition and constructor/factory injection. Do not introduce runtime plugin discovery unless a real requirement appears.
+Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model or runtime plugin discovery unless a real requirement appears.
 
 ## Possible future artifacts
 
