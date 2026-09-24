@@ -127,7 +127,7 @@ Application layer
 
 `Conductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
 
-`CommandHandler` is the transport-independent application command boundary. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement command target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission or common command-result semantics. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
+`CommandHandler` is the transport-independent application-facing request boundary used by presentation adapters. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement shared application request semantics. For state-changing commands that includes target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission and common command-result semantics. Simple application-owned read queries such as the authoritative build/version identity may use the same boundary without inventing a separate query service per adapter. Consistency-sensitive Waypoint queries still follow the serialized state-lane rules below. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
 
 This is an application **responsibility**, not a requirement for one monolithic switch class. An implementation may use focused command handlers behind the shared boundary. Conversely, a handler that adds no application-level responsibility and merely forwards one call one-to-one to a domain method is not justified as an extra layer.
 
@@ -272,7 +272,7 @@ Stable domain facts behind these views are maintained in `03-domain-baseline.md`
 
 ## Command, query and event model
 
-All presentation transports should converge on one shared application model.
+All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `CommandHandler.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
 
 ```text
 local console -------+

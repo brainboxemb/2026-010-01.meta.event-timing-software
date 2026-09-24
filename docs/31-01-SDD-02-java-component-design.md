@@ -72,6 +72,8 @@ Capability-oriented subpackages may exist beneath those responsibilities.
 
 Do not rename or split packages merely to make the source tree match an architecture diagram. Refine package layout when real classes make semantic ownership and dependency direction testable.
 
+Likewise, a logical layer/package does not require a runtime marker class merely to prove that the layer exists. The first Java implementation removed the bootstrap-only `CoreLayer`, `DomainLayer`, `CommLayer` and `PlatformLayer` markers once real application classes existed. Architecture is expressed through ownership, package/dependency direction and behaviour, not through one object per diagram box.
+
 ## Contract placement
 
 Do not collect every interface into one generic top-level `api` package/module.
@@ -165,6 +167,14 @@ main()
 ```
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`.
+
+The current executable uses a small nested composition helper:
+
+```java
+TimingApplication.builder(buildIdentity).build()
+```
+
+This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. The first shared presentation/application boundary is similarly small: `CommandHandler.version()` returns the authoritative `BuildIdentity` used by local/remote clients.
 
 ## Derived consumers
 
