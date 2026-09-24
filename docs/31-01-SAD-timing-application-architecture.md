@@ -63,7 +63,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and integrations are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
+`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and I/O adapters are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -133,7 +133,7 @@ This is an application **responsibility**, not a requirement for one monolithic 
 
 Presentation therefore depends on the shared application command boundary rather than mutable domain internals. Once a use case is executing inside its owning application/Waypoint state boundary, normal direct Java calls between the applicable domain responsibilities are preferred; commands are not used merely to preserve a layer diagram.
 
-The application layer coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
+The application layer coordinates domain-facing I/O ports without moving transport, device, messaging or storage details into domain behaviour.
 
 ### Domain
 
@@ -158,7 +158,7 @@ StageTiming
 
 `PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
 
-`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `Waypoint` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
+`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `Waypoint` data/state model. Synchronising or loading that data from backoffice is handled by application/I/O responsibilities rather than by turning the data object itself into a generic service.
 
 `StageTiming` owns the derived stage-timing view for the waypoint, including elapsed/running times and local ranking. It is not primarily a registry; it derives timing results from waypoint registrations and stage/reference data.
 
@@ -184,17 +184,39 @@ asynchronous completion mechanics
 
 Core runtime support is not a second owner of domain behaviour or application state.
 
-### Infrastructure / integration
+### I/O
 
-Integration implementations connect SI-01 to external systems/devices and persistence mechanisms, including:
+The I/O responsibility contains adapters that move data between SI-01 and the
+outside world. It is deliberately concrete: hardware, messaging and storage are
+I/O concerns rather than a generic "infrastructure layer".
+
+Typical groups are:
 
 ```text
-persistence / file backup and restore
-backoffice socket / RabbitMQ integration
-RFID integration
-CAN integration
-display integration
+io/
+  hardware/
+    can/
+    rfid/
+  messaging/
+    rabbitmq/
+    backoffice/
+  storage/
+    file/
+    db/
 ```
+
+Examples include RFID and CAN access, RabbitMQ/backoffice communication,
+persistence, backup/restore and other device-facing input/output.
+
+Presentation remains a separate responsibility. HTTP, WebSocket, console and
+shell are also technically I/O, but presentation owns client-facing
+request/response semantics, DTO mapping and operator views rather than device,
+messaging or storage adapters.
+
+The name `infra` is therefore not used for this architecture responsibility.
+It remains available as a Java package name for cross-cutting technical support
+such as build/version identity, logging/configuration support and similar
+non-domain concerns when concrete code needs them.
 
 ### Platform
 
@@ -286,7 +308,7 @@ Working rules:
 - commands request state changes;
 - queries read current state/snapshots without becoming alternate owners of state;
 - events report facts/results that have occurred;
-- external protocol DTOs are mapped at the presentation/integration boundary rather than used as the internal domain model;
+- external protocol DTOs are mapped at the presentation/I/O boundary rather than used as the internal domain model;
 - messages crossing thread/process boundaries should be immutable where practical;
 - a generic event-bus framework is **not** assumed to be necessary.
 
@@ -549,7 +571,7 @@ Working rules:
 - once executing inside the Waypoint state lane, application/domain responsibilities normally call one another directly rather than publishing another message for every method call;
 - adapter/I/O completion returns as a typed event because it crosses back into the state-ownership boundary;
 - published status/domain notifications may fan out to presentation consumers, but those consumers cannot use the notification channel to mutate authoritative state behind the command boundary;
-- RabbitMQ is an external integration transport and is not reused as an in-process message bus.
+- RabbitMQ is an external I/O transport and is not reused as an in-process message bus.
 
 A command/query endpoint may expose a Java-8 `CompletionStage`/future-style result where asynchronous completion is useful, but the exact API shape should be selected with the first real consumers rather than building a generic messaging framework up front.
 
