@@ -72,7 +72,7 @@ jobs:
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
           test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "dd15acb88e2e42a4913aa9d3b86b1cd811e4aa46"
-          grep -F 'ref: v0.2.0' project.yml
+          grep -F 'ref: v0.2.1' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
