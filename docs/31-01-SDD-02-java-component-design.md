@@ -65,6 +65,7 @@ io.github.brainboxemb.eventtiming.domain
 io.github.brainboxemb.eventtiming.core
 io.github.brainboxemb.eventtiming.presentation
 io.github.brainboxemb.eventtiming.integration
+io.github.brainboxemb.eventtiming.infra
 io.github.brainboxemb.eventtiming.platform
 ```
 
@@ -97,6 +98,12 @@ used only there. A nested enum such as `TimingApplicationLifecycle.State` is
 preferred over an extra top-level source file until real reuse or clarity
 justifies separating it.
 
+Package placement follows the meaning of the object, not the layer that happens
+to expose it. For example, build provenance such as `BuildIdentity` belongs in
+a small `infra` package even when `CommandHandler.version()` returns it to a
+client. Do not move infrastructure values into `application` merely because
+application code uses them.
+
 This keeps the early implementation small and allows the object model to grow
 from real use cases rather than from the diagrams alone.
 
@@ -121,6 +128,9 @@ core
 
 integration
   concrete external-system/device/persistence implementations
+
+infra
+  build/runtime provenance and other small infrastructure values
 
 platform
   execution-environment abstractions
