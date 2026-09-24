@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Record first Java implementation feedback in the SI-01 SAD/SDD: keep layers logical rather than represented by marker objects, use the small shared `CommandHandler` boundary for the authoritative version query, and keep `TimingApplication.Builder` as composition-only infrastructure.
+
 ### Changed
 
 - Aligned SI-01 command and execution architecture around a transport-independent `CommandHandler`, explicit per-`Waypoint` state-lane ownership, and boundary-owned target resolution; removed the separate `TimingSystemDispatcher` architecture component and remaining current-design `TimingSystemInstance` terminology.
