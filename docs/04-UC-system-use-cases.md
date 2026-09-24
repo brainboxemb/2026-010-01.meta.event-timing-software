@@ -68,7 +68,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
 | UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
 | UC-014 | Run multiple waypoint systems in one process | Test/operator tooling | Run several independently addressed waypoint systems and source streams in one SI-01 process. |
-| UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-instance/source behaviour without real production hardware or private deployment identities. |
+| UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-Waypoint/source behaviour without real production hardware or private deployment identities. |
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
@@ -318,7 +318,7 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 
 ## UC-015 — Simulate a complete field toward backoffice
 
-**Goal:** exercise realistic multi-instance/multi-source behaviour from one test application.
+**Goal:** exercise realistic multi-Waypoint/multi-source behaviour from one test application.
 
 **Primary actor:** automated/system test tooling.
 
