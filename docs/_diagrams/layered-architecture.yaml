@@ -8,110 +8,142 @@ diagram:
 
 groups:
 - id: presentation-layer
-  label: Presentation / external application interfaces
+  label: Presentation / external interfaces
   kind: layer-presentation
   layout: {x: 120, y: 85, w: 1120, h: 145}
 - id: application-layer
-  label: Application layer — running state and orchestration
+  label: Application layer
   kind: layer-application
-  layout: {x: 120, y: 260, w: 1120, h: 230}
+  layout: {x: 120, y: 260, w: 1120, h: 155}
 - id: domain-layer
-  label: Domain layer — reusable services, rules and model
+  label: Domain layer
   kind: layer-domain
-  layout: {x: 120, y: 520, w: 1120, h: 260}
+  layout: {x: 120, y: 445, w: 1120, h: 300}
+- id: waypoint-aggregate
+  label: Waypoint (1..N)
+  kind: model
+  layout: {x: 145, y: 485, w: 820, h: 235}
 - id: infrastructure-layer
   label: Infrastructure / integrations
   kind: layer-infrastructure
-  layout: {x: 120, y: 810, w: 1120, h: 165}
+  layout: {x: 120, y: 775, w: 1120, h: 165}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 120, y: 1005, w: 1120, h: 100}
+  layout: {x: 120, y: 970, w: 1120, h: 100}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
   layout: {x: 1270, y: 85, w: 230, h: 1020}
 
 nodes:
-- id: command-interfaces
+- id: console-shell
   group: presentation-layer
-  label: "Command / query interfaces\nHTTP / JSON • console • remote shell"
+  label: "Console / Remote Shell"
+  subtitle: "development + service"
   kind: presentation
-  layout: {x: 165, y: 135, w: 500, h: 65}
-- id: status-interface
+  layout: {x: 165, y: 135, w: 300, h: 65}
+- id: desktop-gui
   group: presentation-layer
-  label: "Status / event interface\nWebSocket"
+  label: "Desktop GUI Interface"
+  subtitle: "debug / development application"
   kind: presentation
-  layout: {x: 895, y: 135, w: 300, h: 65}
+  layout: {x: 505, y: 135, w: 250, h: 65}
+- id: http-websocket
+  group: presentation-layer
+  label: "HTTP / WebSocket"
+  subtitle: "iPad / operator UI"
+  kind: presentation
+  layout: {x: 795, y: 135, w: 400, h: 65}
 
-- id: app-command-query
+- id: application-conductor
   group: application-layer
-  label: "Commands / queries / workflows\nvalidate intent • coordinate use cases"
+  label: "ApplicationConductor"
+  subtitle: "lifecycle / state orchestration"
   kind: application
-  layout: {x: 235, y: 315, w: 360, h: 75}
-- id: app-state
+  layout: {x: 190, y: 305, w: 430, h: 75}
+- id: command-dispatcher
   group: application-layer
-  label: "Application state\nTimingSystemInstance • ledgers • runtime state"
+  label: "CommandDispatcher"
+  subtitle: "central command handling"
   kind: application
-  layout: {x: 625, y: 315, w: 300, h: 75}
-- id: status-management
-  group: application-layer
-  label: "Status management\naggregate state • immutable snapshots"
-  kind: application
-  layout: {x: 955, y: 315, w: 240, h: 75}
-- id: core-runtime
-  group: application-layer
-  label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
-  kind: runtime
-  layout: {x: 625, y: 415, w: 300, h: 50}
+  layout: {x: 740, y: 305, w: 430, h: 75}
 
-- id: registration-service
-  group: domain-layer
-  label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
-  kind: service
-  layout: {x: 165, y: 580, w: 300, h: 90}
-- id: start-time-service
-  group: domain-layer
-  label: "StartTimeService\nstart-time rules • updates • lookup"
-  kind: service
-  layout: {x: 495, y: 580, w: 300, h: 90}
-- id: ready-team-service
-  group: domain-layer
-  label: "ReadyTeamService\nready-team behaviour and ledger semantics"
-  kind: service
-  layout: {x: 825, y: 580, w: 300, h: 90}
-- id: race-data-service
-  group: domain-layer
-  label: "RaceDataService\nparticipant/team • tag/reference lookup • reserve-tag mapping"
-  kind: service
-  layout: {x: 165, y: 695, w: 300, h: 55}
-- id: domain-model
-  group: domain-layer
-  label: "Domain model + rules\nregistrations • source sequence • start-time • ready-team • race/reference values"
+- id: waypoint-root
+  group: waypoint-aggregate
+  label: "Waypoint"
+  subtitle: "UniqueID • LocationID • lifecycle/status"
   kind: model
-  layout: {x: 495, y: 695, w: 630, h: 55}
+  layout: {x: 355, y: 500, w: 400, h: 50}
+
+- id: tag-processor
+  group: waypoint-aggregate
+  label: "TagProcessor"
+  subtitle: "RFID/tag processing"
+  kind: service
+  layout: {x: 175, y: 570, w: 235, h: 60}
+- id: stage-start-time-registry
+  group: waypoint-aggregate
+  label: "StageStartTimeRegistry"
+  subtitle: "start-time reference"
+  kind: service
+  layout: {x: 425, y: 570, w: 250, h: 60}
+- id: waypoint-journal
+  group: waypoint-aggregate
+  label: "WaypointJournal"
+  subtitle: "registrations • sequence/persistence"
+  kind: service
+  layout: {x: 690, y: 570, w: 245, h: 60}
+- id: prepare-team-registry
+  group: waypoint-aggregate
+  label: "PrepareTeamRegistry"
+  subtitle: "teams + traceable history"
+  kind: service
+  layout: {x: 175, y: 650, w: 235, h: 60}
+- id: race-data
+  group: waypoint-aggregate
+  label: "RaceData"
+  subtitle: "participant/team/tag reference"
+  kind: service
+  layout: {x: 425, y: 650, w: 250, h: 60}
+- id: stage-timing
+  group: waypoint-aggregate
+  label: "StageTiming"
+  subtitle: "running times + ranking"
+  kind: service
+  layout: {x: 690, y: 650, w: 245, h: 60}
+
+- id: system-status-domain
+  group: domain-layer
+  label: "SystemStatus"
+  subtitle: "application-wide status/health"
+  kind: service
+  layout: {x: 995, y: 570, w: 210, h: 85}
 
 - id: persistence
   group: infrastructure-layer
-  label: "Persistence / file storage\nrepository + backup / restore implementations"
+  label: "Persistence / file storage"
+  subtitle: "repository + backup / restore implementations"
   kind: storage
-  layout: {x: 165, y: 860, w: 300, h: 75}
+  layout: {x: 165, y: 825, w: 300, h: 75}
 - id: backoffice
   group: infrastructure-layer
-  label: "Backoffice integration\nsocket / RabbitMQ • race/start-time synchronisation"
+  label: "Backoffice integration"
+  subtitle: "socket / RabbitMQ • race/start-time synchronisation"
   kind: integration
-  layout: {x: 495, y: 860, w: 300, h: 75}
+  layout: {x: 495, y: 825, w: 300, h: 75}
 - id: device-integration
   group: infrastructure-layer
-  label: "Device integrations\nRFID • CAN • display"
+  label: "Device integrations"
+  subtitle: "RFID • CAN • display"
   kind: integration
-  layout: {x: 825, y: 860, w: 300, h: 75}
+  layout: {x: 825, y: 825, w: 300, h: 75}
 
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout: {x: 240, y: 1035, w: 880, h: 45}
+  layout: {x: 240, y: 1000, w: 880, h: 45}
 
 - id: crosscutting-concerns
   group: crosscutting-layer
@@ -125,63 +157,46 @@ nodes:
   layout: {x: 1300, y: 970, w: 170, h: 70}
 
 edges:
-- from: command-interfaces
-  to: app-command-query
+- from: console-shell
+  to: command-dispatcher
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.20}
+
+- from: desktop-gui
+  to: command-dispatcher
+  dashed: true
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
-- from: status-management
-  to: status-interface
+- from: http-websocket
+  to: command-dispatcher
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.80}
+
+- from: command-dispatcher
+  to: waypoint-root
+  label: commands
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
+- from: application-conductor
+  to: waypoint-root
+  dashed: true
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.20}
+
+- from: application-conductor
+  to: system-status-domain
+  dashed: true
+  from_anchor: {side: bottom, position: 0.80}
+  to_anchor: {side: top, position: 0.50}
+
+- from: system-status-domain
+  to: http-websocket
   label: status/events
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
-
-- from: app-command-query
-  to: registration-service
-  from_anchor: {side: bottom, position: 0.222222}
-  to_anchor: {side: top, position: 0.50}
-
-- from: app-command-query
-  to: start-time-service
-  from_anchor: {side: bottom, position: 0.847222}
-  to_anchor: {side: top, position: 0.15}
-
-- from: app-state
-  to: status-management
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
-
-- from: core-runtime
-  to: app-state
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
-
-- from: registration-service
-  to: start-time-service
-  from_anchor: {side: right, position: 0.48}
-  to_anchor: {side: left, position: 0.48}
-
-- from: registration-service
-  to: race-data-service
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-
-- from: start-time-service
-  to: domain-model
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.238095}
-
-- from: ready-team-service
-  to: domain-model
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.761905}
-
-- from: race-data-service
-  to: domain-model
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
 
 - from: persistence
   to: platform-primitives

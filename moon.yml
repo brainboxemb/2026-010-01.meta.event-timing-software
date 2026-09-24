@@ -29,6 +29,7 @@ tasks:
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/requirements-docs.txt'
+      - 'tools/tool.eng-docs/**'
       - 'moon.yml'
       - '.moon/workspace.yml'
     outputs:

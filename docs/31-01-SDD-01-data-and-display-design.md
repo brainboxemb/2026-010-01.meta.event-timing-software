@@ -15,13 +15,13 @@ Domain identifiers and known ranges are captured in `03-domain-baseline.md`. Thi
 Two information flows must not be conflated:
 
 1. **registration stream/ledger** — timing and operational entries that are synchronised as an ordered source stream;
-2. **ready-team journal/state** — keypad/operator actions that prepare/remove teams and drive current display state.
+2. **prepare-team registry history/state** — keypad/operator actions that prepare/remove teams and drive current display state.
 
 Both need traceability and persistence, but they have different semantics and sequence scopes.
 
 ## Registration-source identity
 
-Every registration source/system has a `RegistrationSystemId`.
+Every waypoint system/system has a `UniqueID`.
 
 Known source classes are:
 
@@ -34,12 +34,12 @@ virtual registration systems  exist; exact identifier representation TBD
 Every physical location has:
 
 ```text
-LocationId = 1..25
+LocationID = 1..25
 ```
 
 A registration entry is associated with both its source and its location.
 
-The exact mapping between the architecture concept `TimingSystem` and domain concept `RegistrationSystemId` still needs confirmation. Code should not rely on those being identical until that mapping is explicitly decided.
+`Waypoint` identity, `LocationID`, hardware `RegistrationAssetId` and logical `UniqueID` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
 
 ## Registration ledger
 
@@ -62,14 +62,14 @@ Records are historical facts and are not silently overwritten when corrected or 
 
 ## Registration sequence and stable record key
 
-The registration sequence is **monotonically increasing per `RegistrationSystemId` / source**.
+The registration sequence is **monotonically increasing per `UniqueID` / waypoint**.
 
 It is not scoped by location and it is not one global sequence across all registration systems.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (RegistrationSystemId, SequenceNumber)
+RegistrationRecordKey = (UniqueID, SequenceNumber)
 ```
 
 Example:
@@ -90,15 +90,15 @@ If the source is later associated with another location, the source sequence doe
 
 A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
 
-![Registration traceability — sequence per source](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
+![Registration traceability — sequence per waypoint](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
 
 ### Illustrative record model
 
 ```java
 final class RegistrationRecord {
-    private RegistrationSystemId registrationSystemId;
+    private UniqueID uniqueID;
     private long sequenceNumber;
-    private LocationId locationId;
+    private LocationID locationId;
     private RegistrationType type;
     private Instant observedAt;
     private Instant createdAt;
@@ -109,20 +109,20 @@ final class RegistrationRecord {
 }
 
 final class RegistrationRecordKey {
-    private RegistrationSystemId registrationSystemId;
+    private UniqueID uniqueID;
     private long sequenceNumber;
 }
 ```
 
-Names are illustrative; the important design is the source-scoped sequence and explicit location association.
+Names are illustrative; the important design is the waypoint-scoped sequence and explicit location association.
 
 ### Sequence allocation
 
-A sequence allocator is owned per registration source:
+A sequence allocator is owned per waypoint system:
 
 ```java
 interface RegistrationSequence {
-    long next(RegistrationSystemId sourceId);
+    long next(UniqueID waypointId);
 }
 ```
 
@@ -130,8 +130,8 @@ Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    RegistrationSystemId source = candidate.registrationSystemId();
-    long sequence = registrationSequence.next(source);
+    UniqueID waypoint = candidate.uniqueID();
+    long sequence = registrationSequence.next(waypoint);
 
     RegistrationRecord record = registrationFactory.create(
         source,
@@ -146,7 +146,7 @@ void acceptRegistration(RegistrationCandidate candidate) {
 }
 ```
 
-The serialized application path is a natural place to allocate/order records, but the exact relationship between executor ownership and multiple `RegistrationSystemId` streams remains part of the `TimingSystem` mapping decision.
+The serialized waypoint application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `UniqueID`.
 
 ## Sequence persistence and synchronisation
 
@@ -154,8 +154,8 @@ Sequence allocation is a domain consistency mechanism, not a storage implementat
 
 Required direction:
 
-- never reuse a committed `(RegistrationSystemId, SequenceNumber)` after restart;
-- preserve monotonic order independently for each registration source;
+- never reuse a committed `(UniqueID, SequenceNumber)` after restart;
+- preserve monotonic order independently for each waypoint system;
 - persist enough allocator state that restore cannot accidentally restart a source sequence;
 - expose source + sequence in synchronisation/support data;
 - support upstream gap/consistency detection;
@@ -171,52 +171,52 @@ registration.nextSequence.R1 = ...   # exact reserve identifier form TBD
 
 Whether sequence gaps are allowed is still a formal requirement question. **No reuse and monotonicity** are already known; contiguity across failed/aborted persistence still needs definition.
 
-## Ready-team journal and current state
+## Prepare-team registry
 
-Keypad input has a different purpose. It indicates which teams should be prepared/ready for local operation/display. A keypad action is not itself a passage/start/penalty registration.
+Keypad input indicates which teams should prepare at the waypoint/exchange point. A keypad action is not itself a passage/start/penalty registration.
 
 The keypad can:
 
 ```text
-add team to ready list
-remove team from ready list
+add team to prepare registry
+remove team from prepare registry
 ```
 
-Those actions still need to be stored so operational history is traceable and state can be recovered.
+Those actions must remain traceable so operator history is auditable and the registry can be recovered after restart.
 
 Conceptually:
 
 ```text
-ReadyTeamJournal
-  501  TEAM_ADDED     123
-  502  TEAM_ADDED     456
-  503  TEAM_REMOVED   123
-          |
-          | apply/replay
-          v
-ReadyTeamState
-  [456]
+PrepareTeamRegistry
+  current teams to prepare: [456]
+
+  internal traceable history:
+    501  TEAM_ADDED     123
+    502  TEAM_ADDED     456
+    503  TEAM_REMOVED   123
 ```
 
-This provides:
+The registry owns both:
 
-- **journal/history** — what keypad/operator did and in what order;
-- **current state** — which teams are currently ready.
+- **current state** — which teams must currently prepare at the waypoint/exchange point;
+- **traceable history** — the keypad/operator add/remove mutations needed for audit and restore.
 
-Illustrative record:
+The history is an internal persistence/state aspect of the registry, not a separate architecture component.
+
+Illustrative internal history record:
 
 ```java
-final class ReadyTeamEvent {
+final class PrepareTeamEvent {
     private long sequenceNumber;
-    private TimingSystemId timingSystemId;
-    private ReadyTeamEventType type; // ADDED / REMOVED
+    private WaypointId waypointId;
+    private PrepareTeamEventType type; // ADDED / REMOVED
     private TeamNumber teamNumber;
     private Instant createdAt;
-    private InputSource source;       // keypad / UI / API / test
+    private InputSource source;         // keypad / UI / API / test
 }
 ```
 
-The ready-team sequence is a separate design question from the registration-source sequence. It may use its own journal sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `RegistrationSystemId` registration sequence unless requirements explicitly make a ready-team action a registration-stream entry.
+The prepare-team history sequence is a separate design question from the `UniqueID`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `UniqueID` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
 
 ## Team and tag identities
 
@@ -248,16 +248,15 @@ The initial implementation direction is:
 ```text
 live application
     |
-    +-- RegistrationRepository      source-ordered history in memory
+    +-- WaypointJournal             source-ordered registration/history in memory
     +-- RegistrationState           current/derived registration views
     |
-    +-- ReadyTeamEventRepository    keypad/operator history in memory
-    +-- ReadyTeamState              current ready-team queue/list
+    +-- PrepareTeamRegistry   current teams-to-prepare + traceable mutation history
     |
-    +-- StartTimeRepository         backoffice reference data in memory
-    +-- ReserveTagRepository        backoffice reference data in memory
+    +-- StageStartTimeRegistry      stage start-time reference data in memory
+    +-- RaceData                    participant/team/tag reference data in memory
     |
-    +-- RegistrationSequenceState   next sequence per RegistrationSystemId
+    +-- RegistrationSequenceState   next sequence per UniqueID
     |
     +-- simple file backup / restore
 ```
@@ -267,22 +266,19 @@ The application operates on typed in-memory structures rather than repeatedly pa
 Possible interfaces:
 
 ```java
-interface RegistrationRepository {
+interface WaypointJournal {
     void append(RegistrationRecord record);
     List<RegistrationRecord> snapshot();
 }
 
-interface ReadyTeamEventRepository {
-    void append(ReadyTeamEvent event);
-    List<ReadyTeamEvent> snapshot();
-}
-
-interface ReadyTeamState {
-    void apply(ReadyTeamEvent event);
+interface PrepareTeamRegistry {
+    void add(TeamNumber team, InputSource source, Instant createdAt);
+    void remove(TeamNumber team, InputSource source, Instant createdAt);
     List<TeamNumber> currentTeams();
+    List<PrepareTeamEvent> history();
 }
 
-interface StartTimeRepository {
+interface StageStartTimeRegistry {
     void replace(StartTimeSnapshot snapshot);
     StartTime find(TeamNumber teamNumber);
     StartTimeSnapshot snapshot();
@@ -308,7 +304,7 @@ Status should eventually expose at least:
 backup state
 last successful backup time
 last restore result
-last registration sequence per source
+last registration sequence per waypoint
 last ready-team sequence
 last reference-data synchronisation time/version
 ```
@@ -324,7 +320,7 @@ start process
 load configuration
    |
    v
-load trace journals / snapshots / source sequence metadata
+load trace journals / snapshots / waypoint sequence metadata
    |
    v
 reconstruct in-memory repositories and derived state
@@ -345,10 +341,7 @@ connect/synchronise with backoffice when available
 For ready teams, restoration can restore a snapshot or replay the journal:
 
 ```java
-ReadyTeamState readyTeams = new InMemoryReadyTeamState();
-for (ReadyTeamEvent event : readyTeamEvents.snapshot()) {
-    readyTeams.apply(event);
-}
+PrepareTeamRegistry prepareTeams = restorePrepareTeamRegistry(backup.prepareTeamRegistry());
 ```
 
 A missing/corrupt backup or inconsistent sequence metadata must result in explicit status rather than silently looking healthy.
@@ -402,7 +395,7 @@ The same pattern applies to reserve-tag conversion data. Full-snapshot versus de
 
 ## Keypad behaviour
 
-The CAN keypad can both add and remove team numbers from ready-team state.
+The CAN keypad can both add and remove team numbers from prepare-team registry.
 
 Possible incoming messages:
 
@@ -411,38 +404,32 @@ KeypadTeamAddRequested(teamNumber)
 KeypadTeamRemoveRequested(teamNumber)
 ```
 
-Both enter the normal serialized state-change path. The handler creates a traceable `ReadyTeamEvent`, stores it, applies it to current state and then rebuilds/publishes display data.
+Both enter the normal serialized state-change path. The handler mutates `PrepareTeamRegistry`; the registry records the traceable mutation and updates its current set atomically from the application/domain point of view. The handler then rebuilds/publishes display data.
 
 ```java
 void handle(KeypadTeamAddRequested command) {
-    ReadyTeamEvent event = new ReadyTeamEvent(
-        readyTeamSequence.next(),
-        timingSystemId,
-        ADDED,
+    prepareTeams.add(
         command.getTeamNumber(),
-        clock.instant(),
-        KEYPAD);
+        KEYPAD,
+        clock.instant());
 
-    readyTeamEvents.append(event);
-    readyTeams.apply(event);
-    backupCoordinator.readyTeamsChanged(readyTeamEvents.snapshot());
-    displayService.readyTeamsChanged(readyTeams.currentTeams());
+    backupCoordinator.prepareTeamsChanged(prepareTeams);
+    displayService.prepareTeamsChanged(prepareTeams.currentTeams());
 }
 ```
 
 Removing a team follows the same path with `REMOVED`.
 
-The application, not the keypad, remains authoritative for current ready-team state. Duplicate-add, remove-not-present, ordering and capacity behaviour need explicit requirements.
+The application, not the keypad, remains authoritative for current prepare-team registry. Duplicate-add, remove-not-present, ordering and capacity behaviour need explicit requirements.
 
 ## Display model
 
 Display data is derived from **current state**, not by forwarding keypad history directly.
 
 ```text
-ReadyTeamJournal          StartTimeRepository
+PrepareTeamRegistry         StageStartTimeRegistry
       |                          |
-      v                          |
-ReadyTeamState ------------------+
+      +--------------------------+
       |                          |
       +----> DisplayModelBuilder <+
                     |
@@ -459,7 +446,7 @@ A conceptual model might contain:
 
 ```java
 final class DisplayModel {
-    private List<TeamDisplayData> readyTeams;
+    private List<TeamDisplayData> prepareTeams;
     private Instant generatedAt;
     private long revision;
 }
@@ -478,7 +465,7 @@ Fields are illustrative. The display IDD will ultimately define the system contr
 
 Display V1 is relatively passive and must be actively driven by the timing application.
 
-V1 does not reconstruct add/remove history. The application derives the **current ready-team list** and writes the appropriate complete/current display state.
+V1 does not reconstruct add/remove history. The application derives the **current prepare-team list** and writes the appropriate complete/current display state.
 
 ```java
 void refreshV1() {
@@ -489,10 +476,10 @@ void refreshV1() {
 
 Implications:
 
-- `TEAM_ADDED` updates `ReadyTeamState`, then triggers a refreshed current list;
-- `TEAM_REMOVED` updates `ReadyTeamState`, then triggers a refreshed current list;
+- `TEAM_ADDED` updates `PrepareTeamRegistry`, then triggers a refreshed current list;
+- `TEAM_REMOVED` updates `PrepareTeamRegistry`, then triggers a refreshed current list;
 - after discovery/reconnect/reset, send a full refresh from current state;
-- a V1 reset does not destroy application ready-team state;
+- a V1 reset does not destroy application prepare-team registry;
 - status distinguishes discovered/reachable/last successfully updated.
 
 ## Display V2 — smart Wi-Fi display
@@ -533,10 +520,8 @@ RFID/manual/start/penalty/system-open
 keypad/UI prepare/remove team
           |
           v
-  ReadyTeamJournal
-          |
-          v
-    ReadyTeamState
+    PrepareTeamRegistry
+      current state + internal history
           |
           +--> V1 current list
           +--> V2 synchronised data
@@ -573,11 +558,11 @@ Temporary identifiers only; these are not yet formal requirements.
 
 ### Registration identity and traceability
 
-- **CAND-REG-001** — Each registration system/source shall have a stable `RegistrationSystemId`.
-- **CAND-REG-002** — Each physical location shall have a unique `LocationId` in the known domain range `1..25`.
-- **CAND-REG-003** — Each committed registration entry shall contain both `RegistrationSystemId` and `LocationId`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `RegistrationSystemId`.
-- **CAND-REG-005** — The stable registration record identity shall include `RegistrationSystemId` and sequence number so upstream systems can order records and detect gaps per source.
+- **CAND-REG-001** — Each registration system/source shall have a stable `UniqueID`.
+- **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
+- **CAND-REG-003** — Each committed registration entry shall contain both `UniqueID` and `LocationID`.
+- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `UniqueID`.
+- **CAND-REG-005** — The stable registration record identity shall include `UniqueID` and sequence number so upstream systems can order records and detect gaps per waypoint.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
 - **CAND-REG-007** — Opening a location/waypoint shall create a traceable registration-stream entry.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
@@ -599,15 +584,15 @@ Temporary identifiers only; these are not yet formal requirements.
 
 ### Ready-team/keypad data
 
-- **CAND-READY-001** — The system shall maintain ready-team state logically separate from timing/registration records.
-- **CAND-READY-002** — Adding or removing a team from ready-team state shall create a traceable persisted ready-team event.
+- **CAND-READY-001** — The system shall maintain prepare-team registry logically separate from timing/registration records.
+- **CAND-READY-002** — Adding or removing a team from prepare-team registry shall create a traceable persisted ready-team event.
 - **CAND-READY-003** — Ready-team events shall be processed through the normal controlled state-change path.
-- **CAND-READY-004** — Ready-team state shall be recoverable after application restart from locally persisted information.
+- **CAND-READY-004** — Prepare-team registry state shall be recoverable after application restart from locally persisted information.
 - **CAND-READY-005** — The keypad shall be able to request both addition and removal of a team number.
 
 ### Displays
 
-- **CAND-DISP-004** — The application shall derive display data from current timing/reference/ready-team state rather than requiring displays to reconstruct operational event history.
+- **CAND-DISP-004** — The application shall derive display data from current timing/reference/prepare-team registry rather than requiring displays to reconstruct operational event history.
 - **CAND-DISP-005** — Display V1 shall be actively controlled by the application and shall receive current ready-team display state/list after relevant changes or reconnect.
 - **CAND-DISP-006** — Display V2 shall consume synchronised timing/ready-team/reference data from the application and shall own local presentation/rendering behaviour.
 - **CAND-DISP-007** — When Display V2 connects or reconnects, the application shall be able to provide a complete current data snapshot independent of previously delivered incremental updates.
@@ -617,7 +602,7 @@ Temporary identifiers only; these are not yet formal requirements.
 
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
-- Is one architecture `TimingSystem` exactly one `RegistrationSystemId`, or can a TimingSystem host/coordinate multiple registration sources?
+- Is each physical producer configured with exactly one `UniqueID`, and how are reserve/virtual waypoint systems associated with registration hardware?
 - At what value does a new source sequence start?
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
@@ -634,6 +619,6 @@ Temporary identifiers only; these are not yet formal requirements.
 - What should happen on duplicate add or removal of a team that is not ready?
 - Is ready-team ordering significant and, if so, is it insertion order, start-time order, or another rule?
 - How many teams can be ready concurrently?
-- Should a successful start/passage automatically affect the ready-team list, or must that always be an explicit action?
+- Should a successful start/passage automatically affect the prepare-team list, or must that always be an explicit action?
 - Does V1 retain any useful state across reconnect/power interruption or must every connection be treated as blank/unknown?
 - What exact data fields does V2 need, and which presentation decisions belong exclusively inside V2?

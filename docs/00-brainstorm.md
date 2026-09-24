@@ -69,6 +69,27 @@ Topics that need later requirements and design work:
 
 None of these points yet defines the final timing algorithm or RFID hardware contract.
 
+## Waypoint software versus registration hardware terminology
+
+Issue/PR #40 clarified a terminology problem in the earlier architecture sketches: software/domain decomposition, hardware/deployment decomposition and logical data-source identity had been drawn as though they were one ownership tree.
+
+Working direction discussed and promoted in PR #40:
+
+- `Waypoint` is the software/domain system operated for one waypoint;
+- a waypoint is at the end of a `Stage`;
+- a `Waypoint` is deployed/configured at a `LocationID`;
+- `RegistrationAssetId` identifies a physical registration hardware asset such as `asset-01`;
+- a physical registration system can have one or more antennas;
+- `UniqueID` is the logical ordered-stream identity configured for a producing system, for example `asset-01` using `source-01`; another producer may use an unrelated identity such as `source-02`;
+- similar-looking hardware and data-source labels are a deployment convenience, not an identity rule;
+- the current team-preparation capability is better expressed as one `PrepareTeamRegistry`: it owns both the current teams that must prepare at the waypoint/exchange point and the traceable keypad/operator add/remove history needed for audit/restore; that log is internal registry state rather than a separate architecture component;
+- `RaceData` is the waypoint-scoped participant/team/tag reference data used by a `Waypoint`; synchronising/loading that data is an application/integration concern rather than a reason to call the data object `RaceDataService`;
+- generic `*Service` names should be replaced by responsibility-specific names when the responsibility is actually data/state, a processor, registry, journal or coordinator.
+
+The architecture should therefore maintain separate software/domain, hardware/deployment and configuration/identity-mapping views rather than nesting registration assets and antennas inside the waypoint software component tree.
+
+This topic is being promoted into the working domain/SI-01 architecture in PR #40; implementation/API renames remain a controlled follow-up rather than being silently performed from brainstorm content.
+
 ## Headless control and management interfaces
 
 The headless application should expose multiple ways to inspect and control the running system.

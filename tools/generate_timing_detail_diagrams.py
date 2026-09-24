@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate detailed timing-system architecture diagrams.
+"""Generate detailed waypoint-system architecture diagrams.
 
 This script reuses the remaining legacy SVG/draw.io renderer from
 `generate_architecture_diagrams.py` and adds timing-domain specific views.
@@ -15,7 +15,7 @@ import argparse
 from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, render_svg
 
 
-def timing_system_internals() -> Diagram:
+def waypoint_system_internals() -> Diagram:
     nodes = [
         Node("operator", "Operator commands\\nconsole • API • web UI", 40, 90, 260, 80, "client"),
         Node("rfid", "RFID observations", 340, 90, 220, 80, "external"),
@@ -23,18 +23,21 @@ def timing_system_internals() -> Diagram:
         Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
         Node("backoffice", "Backoffice input\\nrace/reference data", 1140, 90, 230, 80, "external"),
 
-        Node("messages", "Immutable TimingSystemMessage\\nsource timestamp + system id", 390, 230, 610, 90, "interface"),
-        Node("queue", "Per-TimingSystem ingress queue", 505, 370, 380, 75, "queue"),
+        Node("messages", "Immutable WaypointMessage\\nsource timestamp + waypoint id", 390, 230, 610, 90, "interface"),
+        Node("queue", "Per-Waypoint ingress queue", 505, 370, 380, 75, "queue"),
         Node("serial", "Logical SerialExecutor\\none writer / ordered state changes", 445, 505, 500, 90, "core"),
 
-        Node("coordinator", "TimingSystem coordinator\\nlifecycle + routing", 120, 675, 310, 90, "service"),
-        Node("registration", "Registration service\\npassage • start • manual • penalty", 465, 675, 370, 90, "service"),
-        Node("status", "Status service\\nimmutable snapshots", 870, 675, 280, 90, "service"),
-        Node("race_data", "Race data + local calculations\\nparticipants/teams • reserve tags • start-related lookup", 1185, 665, 330, 110, "service"),
+        Node("coordinator", "Waypoint coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
+        Node("tag", "TagProcessor\\nRFID/tag observation processing", 320, 675, 280, 90, "service"),
+        Node("journal", "WaypointJournal\\nregistration/history", 620, 675, 280, 90, "service"),
+        Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 920, 675, 330, 90, "service"),
+        Node("status", "Waypoint status\\nimmutable snapshots", 1270, 675, 260, 90, "service"),
 
-        Node("store", "RegistrationStore\\ndurable local records", 330, 865, 300, 85, "port"),
-        Node("outbox", "Backoffice outbox\\npending committed data", 670, 865, 300, 85, "queue"),
-        Node("events", "UI / WebSocket events\\nstatus + registrations", 1010, 865, 300, 85, "interface"),
+        Node("race_data", "RaceData\\nparticipants • teams • tag references", 180, 850, 330, 90, "service"),
+        Node("start_times", "StageStartTimeRegistry\\nlocal stage start-time reference", 540, 850, 340, 90, "service"),
+        Node("store", "RegistrationStore\\ndurable local records", 910, 850, 280, 90, "port"),
+        Node("outbox", "Backoffice outbox\\npending committed data", 1220, 850, 280, 90, "queue"),
+        Node("events", "UI / WebSocket events\\nstatus + registrations + prepare teams", 585, 1015, 410, 90, "interface"),
     ]
 
     edges = [
@@ -46,22 +49,27 @@ def timing_system_internals() -> Diagram:
         Edge("messages", "queue"),
         Edge("queue", "serial"),
         Edge("serial", "coordinator"),
-        Edge("serial", "registration"),
+        Edge("serial", "tag"),
+        Edge("serial", "journal"),
+        Edge("serial", "prepare"),
         Edge("serial", "status"),
-        Edge("serial", "race_data"),
-        Edge("registration", "store", "append"),
-        Edge("registration", "outbox", "after commit"),
-        Edge("registration", "events"),
+        Edge("race_data", "tag", "identity lookup", True),
+        Edge("race_data", "journal", "reference lookup", True),
+        Edge("start_times", "journal", "start-time lookup", True),
+        Edge("tag", "journal", "accepted observation"),
+        Edge("journal", "store", "append"),
+        Edge("journal", "outbox", "after commit"),
+        Edge("journal", "events"),
+        Edge("prepare", "events"),
         Edge("status", "events"),
-        Edge("race_data", "registration", "lookup", True),
         Edge("coordinator", "status"),
     ]
 
     return Diagram(
-        "timing-system-internals",
-        "TimingSystem internals — ordered ingress, services and persistence",
+        "waypoint-system-internals",
+        "Waypoint internals — ordered ingress and domain responsibilities",
         1580,
-        1020,
+        1160,
         nodes,
         edges,
     )
@@ -110,7 +118,7 @@ def rfid_pipeline() -> Diagram:
 
 def generate(out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
-    diagrams = [timing_system_internals(), rfid_pipeline()]
+    diagrams = [waypoint_system_internals(), rfid_pipeline()]
 
     for diagram in diagrams:
         render_svg(diagram, out_dir / (diagram.name + ".svg"))
@@ -118,7 +126,7 @@ def generate(out_dir: Path):
 
     readme = out_dir / "README.md"
     with readme.open("a", encoding="utf-8") as handle:
-        handle.write("\n## Timing-system detail views\n\n")
+        handle.write("\n## Waypoint-system detail views\n\n")
         for diagram in diagrams:
             handle.write("### " + diagram.title + "\n\n")
             handle.write("![" + diagram.title + "](./" + diagram.name + ".svg)\n\n")
