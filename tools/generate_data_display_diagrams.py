@@ -18,7 +18,7 @@ def data_display_flow() -> Diagram:
         Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
         Node("start", "StageStartTimeRegistry\\nstage start-time reference", 360, 420, 300, 90, "service"),
         Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 690, 420, 330, 90, "service"),
-        Node("journal", "WaypointJournal\\nregistrations + DataSourceId ordering", 1050, 420, 330, 90, "service"),
+        Node("journal", "WaypointJournal\\nregistrations + UniqueID ordering", 1050, 420, 330, 90, "service"),
 
         Node("calculator", "TimingCalculator\\nelapsed time + local ranking", 345, 610, 310, 90, "service"),
         Node("display_model", "DisplayModel\\nrevisioned data snapshot", 715, 610, 300, 90, "core"),
@@ -51,7 +51,7 @@ def data_display_flow() -> Diagram:
         Edge("race", "backup", "snapshot", True),
         Edge("start", "backup", "snapshot", True),
         Edge("prepare", "backup", "state + history", True),
-        Edge("journal", "backup", "records + DataSourceId sequence", True),
+        Edge("journal", "backup", "records + UniqueID sequence", True),
 
         Edge("display_model", "v1"),
         Edge("display_model", "v2"),
@@ -71,23 +71,23 @@ def data_display_flow() -> Diagram:
 
 def registration_stream_identity() -> Diagram:
     nodes = [
-        Node("source_a", "DataSourceId source-01\\nlogical stream identity", 60, 110, 270, 80, "external"),
-        Node("seq_a", "source-01 sequence\\n1041 → 1042 → 1043 → 1044", 390, 100, 330, 100, "queue"),
-        Node("source_b", "DataSourceId source-02\\nlogical stream identity", 60, 300, 270, 80, "external"),
-        Node("seq_b", "source-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
+        Node("source_a", "UniqueID waypoint-01\\nWaypointSystem identity", 60, 110, 270, 80, "external"),
+        Node("seq_a", "waypoint-01 sequence\\n1041 → 1042 → 1043 → 1044", 390, 100, 330, 100, "queue"),
+        Node("source_b", "UniqueID waypoint-02\\nWaypointSystem identity", 60, 300, 270, 80, "external"),
+        Node("seq_b", "waypoint-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
 
-        Node("record", "RegistrationRecord\\ndataSourceId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
-        Node("key", "Stable key\\n(DataSourceId, SequenceNumber)", 820, 380, 380, 85, "service"),
-        Node("location", "LocationId 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
-        Node("upstream", "Backoffice / higher-level system\\nchecks order + detects per-source gaps", 820, 560, 390, 100, "external"),
+        Node("record", "RegistrationRecord\\nuniqueID + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
+        Node("key", "Stable key\\n(UniqueID, SequenceNumber)", 820, 380, 380, 85, "service"),
+        Node("location", "LocationID 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
+        Node("upstream", "Backoffice / higher-level system\\nchecks order + detects per-waypoint gaps", 820, 560, 390, 100, "external"),
         Node("gap", "Example gap\\nA: 1041, 1042, 1044 → 1043 missing", 820, 735, 390, 85, "queue"),
     ]
 
     edges = [
         Edge("source_a", "seq_a"),
         Edge("source_b", "seq_b"),
-        Edge("seq_a", "record", "next(A)"),
-        Edge("seq_b", "record", "next(B)"),
+        Edge("seq_a", "record", "next(waypoint A)"),
+        Edge("seq_b", "record", "next(waypoint B)"),
         Edge("location", "record", "associated location"),
         Edge("record", "key"),
         Edge("record", "upstream", "synchronise"),
@@ -96,7 +96,7 @@ def registration_stream_identity() -> Diagram:
 
     return Diagram(
         "registration-stream-identity",
-        "Registration traceability — monotonic sequence per DataSourceId",
+        "Registration traceability — monotonic sequence per UniqueID",
         1320,
         880,
         nodes,
