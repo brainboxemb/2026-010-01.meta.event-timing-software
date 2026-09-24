@@ -23,12 +23,14 @@ steps:
 
   "3":
     deliverable:
-      - Useful headless SI-01 executable for development
-      - One shared application version and status model
+      - Useful externally configured headless SI-01 executable for development
+      - Shared application boundary with one authoritative build/status semantics
+      - Application configuration binds a minimal Waypoint to presentation endpoints
       - Console, remote shell, HTTP and WebSocket access
     demonstration:
-      - Start SI-01 on the Windows development host
-      - Read the same status through all initial interfaces
+      - Start SI-01 on Windows from external application configuration
+      - Show the configured Waypoint and presentation binding
+      - Read equivalent version/status semantics through all initial interfaces
       - Run the first ST-1 black-box scenario
 
   "4":
