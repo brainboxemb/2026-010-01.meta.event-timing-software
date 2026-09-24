@@ -109,7 +109,8 @@ edges:
     to_anchor: {side: left, position: 0.75}
     route:
       - {x: 420, y: 582}
-      - {x: 420, y: 444}
+      - {x: 825, y: 582}
+      - {x: 825, y: 444}
 
   - from: waypoint-01
     to: snapshots
