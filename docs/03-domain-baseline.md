@@ -208,7 +208,7 @@ Important intended properties:
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
 - moving/changing location must not implicitly reset the waypoint sequence;
-- multiple sources inside one asset or total system keep independent sequence streams;
+- multiple `Waypoint` streams in one application keep independent sequence streams;
 - the exact rules for allowed gaps, wraparound and sequence persistence still need formal requirements.
 
 ## Per-source persistence
@@ -331,7 +331,7 @@ A single SI-01 application must be capable of running enough configured `Waypoin
 
 For this use case:
 
-- each total system instance remains separately addressable;
+- each configured `Waypoint` remains separately addressable by its `UniqueID`;
 - each configured producer uses its configured waypoint identity/identities according to the deployment mapping;
 - each `UniqueID` retains its configured logical identity and independent sequence stream;
 - antennas/devices may be stubbed or simulated through the normal adapter contracts;
@@ -354,7 +354,7 @@ Keep the following outside the public repository unless deliberately approved fo
 - proprietary protocol field values;
 - encryption keys or secrets.
 
-Public examples should use names such as `asset-01`, `waypoint-01`, `system-01`, and `RS-<asset-key>-ANT1`.
+Public examples should use names such as `asset-01`, `waypoint-01`, and `RS-<asset-key>-ANT1`.
 
 ## Traceability implications
 
