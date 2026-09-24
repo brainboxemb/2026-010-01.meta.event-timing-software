@@ -20,7 +20,7 @@ def data_display_flow() -> Diagram:
         Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 690, 420, 330, 90, "service"),
         Node("journal", "WaypointJournal\\nregistrations + UniqueID ordering", 1050, 420, 330, 90, "service"),
 
-        Node("calculator", "TimingCalculator\\nelapsed time + local ranking", 345, 610, 310, 90, "service"),
+        Node("calculator", "StageTiming\\nelapsed time + local ranking", 345, 610, 310, 90, "service"),
         Node("display_model", "DisplayModel\\nrevisioned data snapshot", 715, 610, 300, 90, "core"),
         Node("backup", "Simple file backup / restore\\nwaypoint state + sequence recovery", 1080, 610, 360, 90, "adapter"),
 
