@@ -63,38 +63,65 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
+`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and integrations are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
+
+The compact software/domain ownership model is intentionally also kept as copyable text:
+
+```text
+TimingApplication
+  |
+  +-- SystemStatus
+  |
+  +-- 1..N Waypoint
+        +-- UniqueID
+        +-- LocationID
+        +-- lifecycle / status
+        +-- TagProcessor
+        +-- StageStartTimeRegistry
+        +-- WaypointJournal
+        +-- PrepareTeamRegistry
+        +-- RaceData
+        +-- StageTiming
+```
+
 ![SI-01 layered architecture](../../../raw/prod/docs/assets/architecture/layered-architecture.svg)
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 ### Presentation
 
-Presentation exposes SI-01 behaviour and current state to external clients through concerns such as:
+Presentation exposes SI-01 behaviour and current state through three deliberately distinct interface perspectives:
 
 ```text
-HTTP / JSON
-WebSocket
-local console
-remote shell
-protocol/DTO mapping for those interfaces
+Console / Remote Shell     development + service
+Desktop GUI Interface      debug / development application
+HTTP / WebSocket           iPad / operator UI
 ```
+
+Protocol/DTO mapping belongs with these presentation boundaries rather than with domain behaviour.
 
 Presentation translates external requests into application commands/queries and application status/events into external representations. It does not own running application state.
 
 ### Application
 
-The application responsibility owns running mutable application state and coordinates use cases. Representative concerns include:
+The application layer coordinates use cases without becoming the top-level application container. Its current working decomposition is:
 
 ```text
-Waypoint state
-registration/source ledgers and current runtime state
-commands / queries / workflows
-status management and aggregation
-immutable status snapshots
-single-system or multi-system application coordination
+Application layer
+  +-- ApplicationStateCoordinator
+  |     application lifecycle/state orchestration
+  |     active Waypoint coordination
+  |
+  +-- CommandDispatcher
+        central command intake and dispatch
+        routes commands to the appropriate application/domain responsibility
 ```
 
-The application responsibility invokes domain services and coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
+`ApplicationStateCoordinator` coordinates application-wide mutable runtime/lifecycle state. The name deliberately avoids `Controller`, which could be confused with a presentation/MVC controller.
+
+`CommandDispatcher` is the central command-handling boundary. It accepts commands translated by presentation interfaces and dispatches them to the appropriate application/domain responsibility. It is not a transport endpoint and does not own domain behaviour.
+
+The application layer coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
 
 ### Domain
 
@@ -177,8 +204,10 @@ The architecture deliberately uses **separate views** for software/domain decomp
 
 ```text
 TimingApplication
+  |
   +-- SystemStatus
-  +-- 1..X Waypoint
+  |
+  +-- 1..N Waypoint
         +-- UniqueID
         +-- LocationID
         +-- lifecycle / status
@@ -194,7 +223,7 @@ TimingApplication
 
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/waypoint-software-decomposition.svg)
 
-The exact Java class/package boundaries may evolve as implementation evidence appears, but the waypoint system is the semantic owner of the operational waypoint state. The physical registration asset is not a child component of this software tree.
+The exact Java class/package boundaries may evolve as implementation evidence appears, but the `Waypoint` aggregate is the semantic owner of the operational waypoint state. The physical registration asset is not a child component of this software tree.
 
 ### Hardware/deployment decomposition
 
