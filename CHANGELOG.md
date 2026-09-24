@@ -26,13 +26,13 @@ The repository is currently in its planning and research phase.
 - Layered system-test profiles from application black-box testing through socket-loop, RabbitMQ and target/HIL testing.
 - Generated software documentation workflow producing GitHub-readable Markdown, SVG and editable draw.io output.
 - Pull-request generated documentation on `dev/pr-<N>/docs` and merged/default-branch documentation on `prod/docs`.
-- Generated architecture/state/data diagrams including software-item boundaries, threading, WaypointSystem lifecycle, registration-hardware topology, configuration mapping, RFID lifecycle, connectivity layers, source-sequence traceability and V1/V2 display/data flow.
+- Generated architecture/state/data diagrams including software-item boundaries, threading, Waypoint lifecycle, registration-hardware topology, configuration mapping, RFID lifecycle, connectivity layers, source-sequence traceability and V1/V2 display/data flow.
 - Generated SIP roadmap with project-day estimates, calendar projection, scope-aware documentation maturity, editable SVG/draw.io output and printable A3 tiled/A2 vector PDFs.
 - Reference-material index and collection area, including an illustrative layered embedded architecture reference.
 
 ### Changed
 
-- Clarified the SI-01 software architecture around `WaypointSystem`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `WaypointJournal`, `PrepareTeamRegistry`, `RaceData`, and `StageTiming`.
+- Clarified the SI-01 software architecture around `Waypoint`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `WaypointJournal`, `PrepareTeamRegistry`, `RaceData`, and `StageTiming`.
 - Documentation producers now retain the released `brainboxemb.execution-evidence` v1 envelope under `evidence/executions/<execution-id>/`, while current Moon materialization evidence remains separate under `orchestration/`.
 - Documentation CI and preview cleanup now consume `tool.git-project v0.2.4`, including the released execution-evidence schema contract.
 - Refined planning-document responsibilities so SDP owns high-level strategy/risks/resources, SIP owns implementation increments/deliverables/demonstrations, SDE owns the engineering environment/workflow, and SVP owns verification strategy.
