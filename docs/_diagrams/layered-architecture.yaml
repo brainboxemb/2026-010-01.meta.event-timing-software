@@ -42,9 +42,9 @@ nodes:
   label: "Console / Remote Shell\ndevelopment + service"
   kind: presentation
   layout: {x: 165, y: 135, w: 300, h: 65}
-- id: debug-interface
+- id: desktop-gui
   group: presentation-layer
-  label: "Debug Interface\ndevelopment"
+  label: "Desktop GUI Interface\ndebug / development application"
   kind: presentation
   layout: {x: 505, y: 135, w: 250, h: 65}
 - id: http-websocket
@@ -135,7 +135,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.20}
 
-- from: debug-interface
+- from: desktop-gui
   to: timing-application
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
