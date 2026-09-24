@@ -21,7 +21,7 @@ Both need traceability and persistence, but they have different semantics and se
 
 ## Registration-source identity
 
-Every data source/system has a `DataSourceId`.
+Every waypoint system/system has a `UniqueID`.
 
 Known source classes are:
 
@@ -34,12 +34,12 @@ virtual registration systems  exist; exact identifier representation TBD
 Every physical location has:
 
 ```text
-LocationId = 1..25
+LocationID = 1..25
 ```
 
 A registration entry is associated with both its source and its location.
 
-`WaypointSystem` identity, `LocationId`, hardware `RegistrationAssetId` and logical `DataSourceId` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
+`WaypointSystem` identity, `LocationID`, hardware `RegistrationAssetId` and logical `UniqueID` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
 
 ## Registration ledger
 
@@ -62,14 +62,14 @@ Records are historical facts and are not silently overwritten when corrected or 
 
 ## Registration sequence and stable record key
 
-The registration sequence is **monotonically increasing per `DataSourceId` / source**.
+The registration sequence is **monotonically increasing per `UniqueID` / waypoint**.
 
 It is not scoped by location and it is not one global sequence across all registration systems.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (DataSourceId, SequenceNumber)
+RegistrationRecordKey = (UniqueID, SequenceNumber)
 ```
 
 Example:
@@ -90,15 +90,15 @@ If the source is later associated with another location, the source sequence doe
 
 A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
 
-![Registration traceability — sequence per source](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
+![Registration traceability — sequence per waypoint](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
 
 ### Illustrative record model
 
 ```java
 final class RegistrationRecord {
-    private DataSourceId dataSourceId;
+    private UniqueID uniqueID;
     private long sequenceNumber;
-    private LocationId locationId;
+    private LocationID locationId;
     private RegistrationType type;
     private Instant observedAt;
     private Instant createdAt;
@@ -109,20 +109,20 @@ final class RegistrationRecord {
 }
 
 final class RegistrationRecordKey {
-    private DataSourceId dataSourceId;
+    private UniqueID uniqueID;
     private long sequenceNumber;
 }
 ```
 
-Names are illustrative; the important design is the source-scoped sequence and explicit location association.
+Names are illustrative; the important design is the waypoint-scoped sequence and explicit location association.
 
 ### Sequence allocation
 
-A sequence allocator is owned per data source:
+A sequence allocator is owned per waypoint system:
 
 ```java
 interface RegistrationSequence {
-    long next(DataSourceId sourceId);
+    long next(UniqueID waypointId);
 }
 ```
 
@@ -130,8 +130,8 @@ Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    DataSourceId source = candidate.dataSourceId();
-    long sequence = registrationSequence.next(source);
+    UniqueID waypoint = candidate.uniqueID();
+    long sequence = registrationSequence.next(waypoint);
 
     RegistrationRecord record = registrationFactory.create(
         source,
@@ -146,7 +146,7 @@ void acceptRegistration(RegistrationCandidate candidate) {
 }
 ```
 
-The serialized waypoint application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `DataSourceId`.
+The serialized waypoint application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `UniqueID`.
 
 ## Sequence persistence and synchronisation
 
@@ -154,8 +154,8 @@ Sequence allocation is a domain consistency mechanism, not a storage implementat
 
 Required direction:
 
-- never reuse a committed `(DataSourceId, SequenceNumber)` after restart;
-- preserve monotonic order independently for each data source;
+- never reuse a committed `(UniqueID, SequenceNumber)` after restart;
+- preserve monotonic order independently for each waypoint system;
 - persist enough allocator state that restore cannot accidentally restart a source sequence;
 - expose source + sequence in synchronisation/support data;
 - support upstream gap/consistency detection;
@@ -216,7 +216,7 @@ final class PrepareTeamEvent {
 }
 ```
 
-The prepare-team history sequence is a separate design question from the `DataSourceId`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `DataSourceId` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
+The prepare-team history sequence is a separate design question from the `UniqueID`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `UniqueID` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
 
 ## Team and tag identities
 
@@ -256,7 +256,7 @@ live application
     +-- StageStartTimeRegistry      stage start-time reference data in memory
     +-- RaceData                    participant/team/tag reference data in memory
     |
-    +-- RegistrationSequenceState   next sequence per DataSourceId
+    +-- RegistrationSequenceState   next sequence per UniqueID
     |
     +-- simple file backup / restore
 ```
@@ -304,7 +304,7 @@ Status should eventually expose at least:
 backup state
 last successful backup time
 last restore result
-last registration sequence per source
+last registration sequence per waypoint
 last ready-team sequence
 last reference-data synchronisation time/version
 ```
@@ -320,7 +320,7 @@ start process
 load configuration
    |
    v
-load trace journals / snapshots / source sequence metadata
+load trace journals / snapshots / waypoint sequence metadata
    |
    v
 reconstruct in-memory repositories and derived state
@@ -558,11 +558,11 @@ Temporary identifiers only; these are not yet formal requirements.
 
 ### Registration identity and traceability
 
-- **CAND-REG-001** — Each registration system/source shall have a stable `DataSourceId`.
-- **CAND-REG-002** — Each physical location shall have a unique `LocationId` in the known domain range `1..25`.
-- **CAND-REG-003** — Each committed registration entry shall contain both `DataSourceId` and `LocationId`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `DataSourceId`.
-- **CAND-REG-005** — The stable registration record identity shall include `DataSourceId` and sequence number so upstream systems can order records and detect gaps per source.
+- **CAND-REG-001** — Each registration system/source shall have a stable `UniqueID`.
+- **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
+- **CAND-REG-003** — Each committed registration entry shall contain both `UniqueID` and `LocationID`.
+- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `UniqueID`.
+- **CAND-REG-005** — The stable registration record identity shall include `UniqueID` and sequence number so upstream systems can order records and detect gaps per waypoint.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
 - **CAND-REG-007** — Opening a location/waypoint shall create a traceable registration-stream entry.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
@@ -602,7 +602,7 @@ Temporary identifiers only; these are not yet formal requirements.
 
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
-- Is each physical producer configured with exactly one `DataSourceId`, and how are reserve/virtual data sources associated with physical or software producers?
+- Is each physical producer configured with exactly one `UniqueID`, and how are reserve/virtual waypoint systems associated with registration hardware?
 - At what value does a new source sequence start?
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
