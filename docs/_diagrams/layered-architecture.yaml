@@ -58,7 +58,7 @@ nodes:
 
 - id: application-conductor
   group: application-layer
-  label: "ApplicationConductor"
+  label: "Conductor"
   subtitle: "lifecycle / state orchestration"
   kind: application
   layout: {x: 190, y: 305, w: 430, h: 75}
@@ -90,7 +90,7 @@ nodes:
   layout: {x: 425, y: 570, w: 250, h: 60}
 - id: waypoint-journal
   group: waypoint-aggregate
-  label: "WaypointJournal"
+  label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
   layout: {x: 690, y: 570, w: 245, h: 60}
