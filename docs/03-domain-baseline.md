@@ -8,15 +8,16 @@ Concrete production asset names, external registration-system IDs, source mappin
 
 ## Waypoint systems, stages and locations
 
-One running headless timing application must be able to host **multiple logical waypoint systems** at the same time.
+One running headless timing application must be able to host **multiple logical waypoints** at the same time.
 
-The working software/domain term is `WaypointSystem` for one such independently addressed waypoint system. A waypoint is the registration/timing point at the **end of a stage**. A `WaypointSystem` is deployed or configured for a physical event `LocationID`; the software identity of the waypoint and the physical location where it is used are separate concepts.
+The working software/domain term is `Waypoint` for one independently addressed logical timing aggregate at the **end of a stage**. A `Waypoint` is deployed or configured for a physical event `LocationID`; the software identity of the waypoint and the physical location where it is used are separate concepts.
 
-Conceptually, one timing application owns one or more independently addressed waypoint systems:
+Conceptually, one timing application owns one or more independently addressed waypoints:
 
 ```text
 TimingApplication
-  1..X WaypointSystem
+  +-- SystemStatus
+  +-- 1..X Waypoint
         +-- UniqueID
         +-- LocationID
         +-- lifecycle / status
@@ -28,13 +29,13 @@ TimingApplication
         +-- StageTiming
 ```
 
-`UniqueID` is the stable identity of the `WaypointSystem`; `LocationID` identifies the physical event location where that waypoint system is configured or deployed.
+`UniqueID` is the stable identity of the `Waypoint`; `LocationID` identifies the physical event location where that waypoint is configured or deployed.
 
 Operational state such as `OPEN` / `CLOSED` belongs to the waypoint-system software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
 
-A `Stage` and a `WaypointSystem` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
+A `Stage` and a `Waypoint` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
 
-The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint system. New architecture/design work should use `WaypointSystem`; existing implementation/API names may require a controlled follow-up when the working architecture is accepted.
+The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint. New architecture/design work should use `Waypoint`; existing implementation/API names may require a controlled follow-up when the working architecture is accepted.
 
 ## Registration hardware and waypoint identity
 
@@ -54,24 +55,24 @@ Concrete production asset names remain deployment/proprietary information and st
 
 ### Waypoint identity
 
-`UniqueID` is the stable software identity of a `WaypointSystem`. It is also the scope for that waypoint's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that waypoint system is configured or deployed.
+`UniqueID` is the stable software identity of a `Waypoint`. It is also the scope for that waypoint's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that waypoint is configured or deployed.
 
 A physical registration system can be configured with a logical waypoint identity, for example:
 
 ```text
-WaypointSystem UniqueID = waypoint-01
+Waypoint UniqueID = waypoint-01
 LocationID              = X
 RegistrationAssetId     = asset-01
 ```
 
 Deployment naming may deliberately make a `RegistrationAssetId` resemble a waypoint `UniqueID` for convenience, but that is **not** an identity rule.
 
-The number of RFID antennas attached to a physical registration system does not create additional waypoint identities. One `WaypointSystem` keeps one `UniqueID`; antenna identity remains additional origin/diagnostic context.
+The number of RFID antennas attached to a physical registration system does not create additional waypoint identities. One `Waypoint` keeps one `UniqueID`; antenna identity remains additional origin/diagnostic context.
 
 Known structural rules:
 
 - `RegistrationAssetId` identifies hardware/inventory;
-- `UniqueID` identifies the logical waypoint system;
+- `UniqueID` identifies the logical waypoint;
 - every `UniqueID`-scoped waypoint owns its own monotonic registration sequence and waypoint-specific persistence/synchronisation state;
 - reserve and virtual waypoint identities/identities exist, but their exact relationship to physical producers remains a separate mapping question;
 - concrete production asset names, data-source IDs and mappings are deployment/proprietary information.
@@ -89,7 +90,7 @@ RegistrationAsset asset-01
   +-- configured UniqueID waypoint-01
 ```
 
-The antennas are hardware/device inputs of that registration system. They are not child software components of a `WaypointSystem` and they are not separate waypoint systems merely because there are multiple antennas.
+The antennas are hardware/device inputs of that registration system. They are not child software components of a `Waypoint` and they are not separate waypoints merely because there are multiple antennas.
 
 An RFID observation must retain enough hardware context for diagnostics and processing, including the antenna identity where relevant. The resulting committed registration/data record uses the configured `UniqueID` for stream identity and ordering.
 
@@ -117,7 +118,7 @@ Do not express the complete system as one parent/child tree. The software/domain
 
 ```text
 TimingApplication
-  1..X WaypointSystem
+  1..X Waypoint
         waypoint identity
         configured LocationID
         lifecycle/state
@@ -127,7 +128,7 @@ TimingApplication
         status
 ```
 
-The exact component/class boundaries remain design work, but the waypoint system is the software/domain aggregate being operated.
+The exact component/class boundaries remain design work, but the waypoint is the software/domain aggregate being operated.
 
 ### Hardware/deployment view
 
@@ -145,8 +146,8 @@ This view describes physical/configured equipment. It must not be used as the so
 Configuration connects those views and assigns waypoint identities, for example:
 
 ```text
-WaypointSystem waypoint-A -> LocationID X
-WaypointSystem waypoint-A -> UniqueID waypoint-A
+Waypoint waypoint-A -> LocationID X
+Waypoint waypoint-A -> UniqueID waypoint-A
 RegistrationAsset asset-01 -> used by/configured for waypoint-A
 ```
 
@@ -162,7 +163,7 @@ Each physical event location has a unique numeric identifier:
 LocationID = 1..25
 ```
 
-A `WaypointSystem` is configured/deployed at a location, while its software identity remains separate from that location identity.
+A `Waypoint` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
 A registration record is associated with both:
 
@@ -171,7 +172,7 @@ UniqueID
 LocationID
 ```
 
-This lets a logical waypoint system preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
+This lets a logical waypoint preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
 
 ## Registration sequence
 
@@ -268,7 +269,7 @@ TeamNumber = 0..999
 
 ## Race data
 
-`RaceData` is the locally available participant/team/tag reference data used by one `WaypointSystem`.
+`RaceData` is the locally available participant/team/tag reference data used by one `Waypoint`.
 
 It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is waypoint-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceDataService`.
 
@@ -319,7 +320,7 @@ They support local calculations such as elapsed time and ranking without requiri
 
 ## Full-field simulation
 
-A single SI-01 application must be capable of running enough configured `WaypointSystem` objects to represent the complete field behaviour required for backoffice integration testing.
+A single SI-01 application must be capable of running enough configured `Waypoint` objects to represent the complete field behaviour required for backoffice integration testing.
 
 For this use case:
 
@@ -371,12 +372,12 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 
 ## Open domain questions
 
-- Can a `WaypointSystem` change `LocationID` during one operational session, or is location fixed until the waypoint system is closed/reconfigured?
-- Is a physical producing registration system always configured with exactly one `UniqueID`, and how are reserve/virtual waypoint systems associated with physical or software producers?
-- Does sequence numbering start at a defined value for a new waypoint system?
+- Can a `Waypoint` change `LocationID` during one operational session, or is location fixed until the waypoint is closed/reconfigured?
+- Is a physical producing registration system always configured with exactly one `UniqueID`, and how are reserve/virtual waypoints associated with physical or software producers?
+- Does sequence numbering start at a defined value for a new waypoint?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
 - Which operational events besides `OPEN` must be part of a waypoint registration stream (for example close/reinitialisation/configuration changes)?
 - What exact data must an `OPEN` registration entry contain?
-- Are normal, reserve and virtual waypoint systems treated identically by backoffice synchronisation once their waypoint identity is known?
+- Are normal, reserve and virtual waypoints treated identically by backoffice synchronisation once their waypoint identity is known?
 - What exact operational behaviour is required for test tags, and which parts deliberately differ from normal and reserve tags?
