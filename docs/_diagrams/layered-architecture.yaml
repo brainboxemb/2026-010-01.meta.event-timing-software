@@ -39,76 +39,90 @@ groups:
 nodes:
 - id: console-shell
   group: presentation-layer
-  label: "Console / Remote Shell\ndevelopment + service"
+  label: "Console / Remote Shell"
+  subtitle: "development + service"
   kind: presentation
   layout: {x: 165, y: 135, w: 300, h: 65}
 - id: desktop-gui
   group: presentation-layer
-  label: "Desktop GUI Interface\ndebug / development application"
+  label: "Desktop GUI Interface"
+  subtitle: "debug / development application"
   kind: presentation
   layout: {x: 505, y: 135, w: 250, h: 65}
 - id: http-websocket
   group: presentation-layer
-  label: "HTTP / WebSocket\niPad / operator UI"
+  label: "HTTP / WebSocket"
+  subtitle: "iPad / operator UI"
   kind: presentation
   layout: {x: 795, y: 135, w: 400, h: 65}
 
 - id: timing-application
   group: application-layer
-  label: "TimingApplication\ncommand/query orchestration"
+  label: "TimingApplication"
+  subtitle: "command/query orchestration"
   kind: application
   layout: {x: 400, y: 305, w: 560, h: 75}
 
 - id: tag-processor
   group: waypoint-aggregate
-  label: "TagProcessor\nRFID/tag processing"
+  label: "TagProcessor"
+  subtitle: "RFID/tag processing"
   kind: service
   layout: {x: 175, y: 535, w: 235, h: 60}
 - id: stage-start-time-registry
   group: waypoint-aggregate
-  label: "StageStartTimeRegistry\nstart-time reference"
+  label: "StageStartTimeRegistry"
+  subtitle: "start-time reference"
   kind: service
   layout: {x: 425, y: 535, w: 250, h: 60}
 - id: waypoint-journal
   group: waypoint-aggregate
-  label: "WaypointJournal\nregistrations • sequence/persistence"
+  label: "WaypointJournal"
+  subtitle: "registrations • sequence/persistence"
   kind: service
   layout: {x: 690, y: 535, w: 245, h: 60}
 - id: prepare-team-registry
   group: waypoint-aggregate
-  label: "PrepareTeamRegistry\nteams + traceable history"
+  label: "PrepareTeamRegistry"
+  subtitle: "teams + traceable history"
   kind: service
   layout: {x: 175, y: 625, w: 235, h: 60}
 - id: race-data
   group: waypoint-aggregate
-  label: "RaceData\nparticipant/team/tag reference"
+  label: "RaceData"
+  subtitle: "participant/team/tag reference"
   kind: service
   layout: {x: 425, y: 625, w: 250, h: 60}
 - id: stage-timing
   group: waypoint-aggregate
-  label: "StageTiming\nrunning times + ranking"
+  label: "StageTiming"
+  subtitle: "running times + ranking"
   kind: service
   layout: {x: 690, y: 625, w: 245, h: 60}
 
 - id: system-status-domain
   group: domain-layer
-  label: "SystemStatus\napplication-wide status/health"
+  label: "SystemStatus"
+  subtitle: "application-wide status/health"
   kind: service
   layout: {x: 995, y: 555, w: 210, h: 95}
 
 - id: persistence
   group: infrastructure-layer
-  label: "Persistence / file storage\nrepository + backup / restore implementations"
+  label: "Persistence / file storage"
+  subtitle: "repository + backup / restore implementations"
   kind: storage
   layout: {x: 165, y: 825, w: 300, h: 75}
 - id: backoffice
   group: infrastructure-layer
-  label: "Backoffice integration\nsocket / RabbitMQ • race/start-time synchronisation"
+  label: "Backoffice integration"
+  subtitle: "socket / RabbitMQ • race/start-time synchronisation"
   kind: integration
   layout: {x: 495, y: 825, w: 300, h: 75}
 - id: device-integration
   group: infrastructure-layer
-  label: "Device integrations\nRFID • CAN • display"
+  label: "Device integrations"
+  subtitle: "RFID • CAN • display"
   kind: integration
   layout: {x: 825, y: 825, w: 300, h: 75}
 
