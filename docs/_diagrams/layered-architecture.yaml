@@ -8,7 +8,7 @@ diagram:
 
 groups:
 - id: presentation-layer
-  label: Presentation / external application interfaces
+  label: Presentation / external interfaces
   kind: layer-presentation
   layout: {x: 120, y: 85, w: 1120, h: 145}
 - id: application-layer
@@ -37,16 +37,21 @@ groups:
   layout: {x: 1270, y: 85, w: 230, h: 1020}
 
 nodes:
-- id: command-interfaces
+- id: console-shell
   group: presentation-layer
-  label: "Command / query interfaces\nHTTP / JSON • console • remote shell"
+  label: "Console / Remote Shell\ndevelopment + service"
   kind: presentation
-  layout: {x: 165, y: 135, w: 500, h: 65}
-- id: status-interface
+  layout: {x: 165, y: 135, w: 300, h: 65}
+- id: debug-interface
   group: presentation-layer
-  label: "Status / event interface\nWebSocket"
+  label: "Debug Interface\ndevelopment"
   kind: presentation
-  layout: {x: 895, y: 135, w: 300, h: 65}
+  layout: {x: 505, y: 135, w: 250, h: 65}
+- id: http-websocket
+  group: presentation-layer
+  label: "HTTP / WebSocket\niPad / operator UI"
+  kind: presentation
+  layout: {x: 795, y: 135, w: 400, h: 65}
 
 - id: timing-application
   group: application-layer
@@ -125,13 +130,24 @@ nodes:
   layout: {x: 1300, y: 970, w: 170, h: 70}
 
 edges:
-- from: command-interfaces
+- from: console-shell
   to: timing-application
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.35}
+  to_anchor: {side: top, position: 0.20}
+
+- from: debug-interface
+  to: timing-application
+  dashed: true
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
+- from: http-websocket
+  to: timing-application
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.80}
 
 - from: system-status-domain
-  to: status-interface
+  to: http-websocket
   label: status/events
   dashed: true
   from_anchor: {side: top, position: 0.50}
