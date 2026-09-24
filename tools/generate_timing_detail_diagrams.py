@@ -23,11 +23,11 @@ def waypoint_system_internals() -> Diagram:
         Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
         Node("backoffice", "Backoffice input\\nrace/reference data", 1140, 90, 230, 80, "external"),
 
-        Node("messages", "Immutable WaypointSystemMessage\\nsource timestamp + waypoint id", 390, 230, 610, 90, "interface"),
-        Node("queue", "Per-WaypointSystem ingress queue", 505, 370, 380, 75, "queue"),
+        Node("messages", "Immutable WaypointMessage\\nsource timestamp + waypoint id", 390, 230, 610, 90, "interface"),
+        Node("queue", "Per-Waypoint ingress queue", 505, 370, 380, 75, "queue"),
         Node("serial", "Logical SerialExecutor\\none writer / ordered state changes", 445, 505, 500, 90, "core"),
 
-        Node("coordinator", "WaypointSystem coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
+        Node("coordinator", "Waypoint coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 320, 675, 280, 90, "service"),
         Node("journal", "WaypointJournal\\nregistration/history", 620, 675, 280, 90, "service"),
         Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 920, 675, 330, 90, "service"),
@@ -67,7 +67,7 @@ def waypoint_system_internals() -> Diagram:
 
     return Diagram(
         "waypoint-system-internals",
-        "WaypointSystem internals — ordered ingress and domain responsibilities",
+        "Waypoint internals — ordered ingress and domain responsibilities",
         1580,
         1160,
         nodes,
