@@ -1,10 +1,10 @@
 diagram:
   id: runtime-dispatch-process
-  title: SI-01 runtime ingress — Waypoint state ownership
+  title: SI-01 runtime ingress — Waypoint serial execution
   width: 1580
   height: 930
-  description: Process view of concurrent ingress, boundary-owned target resolution and per-Waypoint serialized state ownership.
-  note: Messages are used at asynchronous/ownership boundaries. Direct Java calls remain normal inside an executing Waypoint state lane.
+  description: Process view of concurrent ingress, target resolution and per-Waypoint serial execution.
+  note: External work is submitted to the owning Waypoint serial executor. Once running there, normal direct Java calls are used.
 
 groups:
   - id: ingress
@@ -42,28 +42,22 @@ nodes:
     layout: {x: 100, y: 540, w: 250, h: 85}
 
   - id: command-handler
-    label: "CommandHandler\nshared application command boundary • target resolution"
+    label: "CommandHandler\nshared application request boundary • target resolution"
     kind: application
     group: runtime
     layout: {x: 520, y: 165, w: 610, h: 90}
 
   - id: waypoint-01
-    label: "Waypoint waypoint-01\nserialized state lane • bounded FIFO\napplication/domain handlers"
+    label: "Waypoint waypoint-01\nserial executor • bounded FIFO\nnormal application/domain calls"
     kind: model
     group: runtime
     layout: {x: 505, y: 365, w: 300, h: 105}
 
   - id: waypoint-02
-    label: "Waypoint waypoint-02\nserialized state lane • bounded FIFO\napplication/domain handlers"
+    label: "Waypoint waypoint-02\nserial executor • bounded FIFO\nnormal application/domain calls"
     kind: model
     group: runtime
     layout: {x: 845, y: 365, w: 300, h: 105}
-
-  - id: snapshots
-    label: "Immutable published snapshots\nstatus / presentation reads"
-    kind: application
-    group: runtime
-    layout: {x: 675, y: 675, w: 300, h: 70}
 
   - id: state-executor
     label: "Shared state ExecutorService\n1 worker in constrained profile\nconfigurable >1 for independent Waypoints"
@@ -72,7 +66,7 @@ nodes:
     layout: {x: 1300, y: 260, w: 180, h: 125}
 
   - id: io-rule
-    label: "Blocking I/O / scheduler rule\noutside the state lane\ncompletion returns to owning Waypoint"
+    label: "Blocking I/O / scheduler rule\noutside Waypoint serial execution\ncompletion is submitted back"
     kind: platform
     group: execution
     layout: {x: 1300, y: 500, w: 180, h: 125}
@@ -111,20 +105,6 @@ edges:
       - {x: 420, y: 582}
       - {x: 825, y: 582}
       - {x: 825, y: 444}
-
-  - from: waypoint-01
-    to: snapshots
-    label: publish
-    dashed: true
-    from_anchor: {side: bottom, position: 0.65}
-    to_anchor: {side: top, position: 0.30}
-
-  - from: waypoint-02
-    to: snapshots
-    label: publish
-    dashed: true
-    from_anchor: {side: bottom, position: 0.35}
-    to_anchor: {side: top, position: 0.70}
 
   - from: waypoint-01
     to: state-executor

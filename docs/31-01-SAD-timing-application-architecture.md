@@ -294,148 +294,176 @@ The initial architecture uses explicit typed routing because the flow is easier 
 
 ## Process view: threading and concurrency
 
-External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID, CAN, RabbitMQ, timers and network sessions. Those threads must not directly mutate authoritative waypoint-system state.
+The domain model is intentionally kept simple. Code working on one `Waypoint`
+should be able to behave as if it is single-threaded.
 
-The intended processing path is:
+That guarantee is provided by the application around the domain code. Domain
+objects are not expected to add locks everywhere to protect themselves from
+normal application callbacks.
 
-1. capture externally meaningful `TimingTimestamp` values immediately where timing matters;
-2. attach stable Waypoint/device/source context;
-3. convert external input into an immutable application-facing command/event where it crosses an asynchronous or ownership boundary;
-4. resolve the target at the boundary that already owns that knowledge:
-   - the application command boundary resolves operator commands to application-wide or `Waypoint`-scoped work;
-   - configured integration adapters associate device observations with their `Waypoint`;
-   - scheduled work is registered against its owning application or `Waypoint` responsibility;
-5. submit Waypoint-scoped state-changing work to the addressed `Waypoint` state lane;
-6. serialize mutable Waypoint handling there;
-7. keep blocking hardware/network/file operations outside the serialized state path;
-8. return relevant completion/failure into the owning state path when required.
+### The rule for one Waypoint
 
-There is deliberately **no separate `TimingSystemDispatcher` architecture component**. Target resolution is part of the application/integration boundary that already understands the command, configured device/source or scheduled responsibility; serialized execution is owned by the addressed `Waypoint`.
+For each `Waypoint`:
+
+1. any code that changes its mutable state is submitted to that Waypoint's
+   serial executor;
+2. that executor runs at most one accepted task for that Waypoint at a time;
+3. once a task is running there, normal direct Java calls are used between the
+   Waypoint's domain objects;
+4. a second task for the same Waypoint waits until the first one has finished;
+5. another Waypoint may run at the same time.
+
+In short:
+
+```text
+RFID callback ----+
+operator command -+--> Waypoint A serial executor --> normal domain calls
+timer callback ---+
+
+other input ------+--> Waypoint B serial executor --> normal domain calls
+```
+
+The serial executor does not need a dedicated thread. It may use a shared
+`ExecutorService`. The important rule is that two tasks for the same Waypoint
+must never execute at the same time.
+
+The initial constrained composition may use one shared worker. A desktop or
+simulation composition may use more workers so different Waypoints can run in
+parallel.
+
+### Where input enters
+
+External libraries may call SI-01 from their own threads. Examples are HTTP,
+WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
+
+Those callback threads must not change mutable Waypoint state directly.
+
+The caller first determines which Waypoint owns the work:
+
+- `CommandHandler` resolves operator/client requests that name a Waypoint;
+- a configured device adapter already knows which Waypoint owns its device;
+- a scheduled task keeps the Waypoint it was registered for.
+
+The work is then submitted to that Waypoint's serial executor.
+
+There is no separate central `TimingSystemDispatcher`. A second generic router
+would add another layer without owning useful behaviour.
 
 ```text
 operator endpoint
       |
       v
- CommandHandler --------------------+
-      |                             |
-      v                             v
-Waypoint A state lane        Waypoint B state lane
-      ^                             ^
-      |                             |
-device / integration callbacks and scheduled work
-resolve their configured/owning Waypoint before submission
-      \                             /
-       +---- shared backing ExecutorService ----+
+ CommandHandler ---------------------+
+      |                              |
+      v                              v
+Waypoint A serial executor    Waypoint B serial executor
+      ^                              ^
+      |                              |
+device callbacks / timers know their owning Waypoint
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
 
-The source for this process view is `docs/_diagrams/runtime-dispatch-process.yaml`. Boxes show state/execution ownership and arrows show the principal command, ingress, execution and published-snapshot relationships rather than a complete call graph.
+The source for this process view is
+`docs/_diagrams/runtime-dispatch-process.yaml`.
 
-### Per-Waypoint serialized state lane
+### Reads
 
-Every `Waypoint` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
+A read does not automatically need the Waypoint serial executor.
 
-Required semantics:
+Use the simplest rule that preserves correctness:
 
-- work accepted for one `Waypoint` executes in FIFO enqueue order;
-- at most one state-changing handler for a `Waypoint` is active at a time;
-- the serial executor does **not** own a dedicated operating-system thread;
-- each serial executor delegates runnable work to a shared backing `ExecutorService`;
-- different Waypoints may execute concurrently when the backing executor has more than one worker;
-- increasing backing parallelism must never allow two state handlers of the same `Waypoint` to overlap.
+- application data that does not depend on mutable Waypoint state, such as the
+  build/version identity, may be read directly;
+- a read that must see an exact combination of mutable Waypoint values is run
+  through that Waypoint's serial executor;
+- presentation code must not gain write access to domain state just because it
+  can read it.
 
-The design follows the standard `Executor` composition pattern rather than introducing an actor/reactive framework. The constrained field profile should start with one backing state worker; larger development/integration compositions may configure more workers after measurement. This allows the same logical model to run conservatively on a Pi Zero and with parallel independent Waypoints on a desktop test host.
+The HTTP/status representation may later be built from values returned by the
+application. The architecture does not require a Java class called
+`ApplicationStatusSnapshot`, `ApplicationStatusModel` or any other specific
+status helper merely to satisfy this rule.
 
-A direct/synchronous executor remains a supported test composition so handlers can be exercised deterministically without real threads.
+### Blocking I/O
 
-### Target resolution and ingress ownership
+Do not block the Waypoint serial executor on network, device or slow file I/O.
 
-There is no generic central dispatcher that every producer must traverse.
-
-Ingress rules:
-
-- operator/presentation commands enter through the shared application `CommandHandler`, which resolves application-wide versus Waypoint-scoped work and, for a Waypoint command, the target `UniqueID`;
-- device/integration adapters use their configuration/source association to submit observations/completions to the owning `Waypoint`; they do not rediscover ownership through a second generic router;
-- scheduler registration retains the application/Waypoint target required when the scheduled callback later submits work;
-- all Waypoint-scoped mutation enters through the addressed Waypoint's state-lane admission boundary before mutable domain state is touched;
-- adapter callbacks do the minimum synchronous work needed to capture timestamp/context and validate framing;
-- callback threads must not call mutable domain/application state directly;
-- device/source ordering guarantees provided by an adapter must be preserved before state-lane admission;
-- no generic routing component sorts work by wall-clock timestamp;
-- when multiple producer threads concurrently submit to the same Waypoint, its state lane processes the order in which submissions are accepted into that lane;
-- source sequence numbers are assigned according to domain/source commit semantics, not inferred from callback thread identity or timestamp ordering.
-
-### Snapshot reads and consistency-sensitive queries
-
-Not every read needs to occupy the serialized state lane.
-
-The application should publish immutable current-state/status snapshots that can be read safely by presentation/status consumers without mutating the instance. A lightweight atomic publication mechanism may be used for the current snapshot.
-
-Queries that require a state-consistent calculation against mutable authoritative Waypoint state enter the same serialized lane as state-changing work. The API must make the difference between a potentially slightly stale published snapshot and a consistency-sensitive query explicit rather than hiding it behind one generic getter.
-
-### Blocking I/O and asynchronous completion
-
-Blocking file, network and device operations must not run while holding the per-instance state lane.
-
-The preferred pattern is:
+A normal flow is:
 
 ```text
-serialized state handler
-      |
-      +--> request adapter / I/O work
-                |
-                v
-       I/O executor / external callback
-                |
-                v
-       typed completion/failure event
-                |
-                +--> owning Waypoint state lane
+Waypoint task
+   |
+   +--> request I/O
+            |
+            v
+      I/O executor / external library
+            |
+            v
+      completion/failure
+            |
+            +--> submit follow-up task to the owning Waypoint
 ```
 
-If a use case requires durable I/O completion before a domain transition is considered committed, the application state represents that pending/commit boundary explicitly and finishes the transition when the completion message returns. The exact persistence commit protocol remains a persistence-design decision; blocking the state lane on file/network latency is not the default mechanism.
+If a domain transition depends on successful I/O, represent that pending state
+explicitly and finish the transition when the completion comes back. Do not keep
+the Waypoint blocked while waiting for the external operation.
 
-Scheduled timers follow the same ownership rule: scheduler callbacks submit typed work to the owning application/Waypoint boundary rather than mutating Waypoint state directly.
+### Queue and failure behaviour
 
-### Queue bounds, overload and failure containment
+The queue in front of a Waypoint must be bounded in field use.
 
-An unbounded ingress queue is not an acceptable field default on the constrained target.
-
-Working rules:
-
-- each Waypoint state lane has a bounded/configurable pending-work capacity;
-- queue saturation must never silently discard a command, observation or completion;
-- rejected/overloaded submissions produce explicit diagnostics/status/counters and a visible failure path to the calling adapter/interface;
-- an adapter may apply protocol-specific backpressure or its own bounded buffering where the external protocol supports it, but that policy remains outside the generic state-lane mechanism;
+- accepted tasks are processed in submission order;
+- a full queue is an explicit failure, never a silent drop;
+- one task throwing an exception must not permanently stop later accepted work;
 - queue depth/high-water information should be observable for diagnostics;
-- one handler exception must not permanently stall the serial executor; handler failure is contained/reported and scheduling of subsequent accepted work continues unless the application deliberately transitions the Waypoint to a failed/stopped state.
+- exact queue sizes remain a configuration/verification decision.
 
-Exact capacities and the final overload reaction for timing-critical device ingress require workload evidence. They are configuration/verification decisions, not permission to use an unbounded queue meanwhile.
+### Shutdown
 
-### Lifecycle and shutdown
+Normal shutdown follows the same ownership rules:
 
-Normal shutdown should preserve executor ownership explicitly:
+1. stop accepting new client/device input;
+2. stop or quiesce adapters;
+3. allow already accepted Waypoint work to finish within a configured timeout;
+4. finish required persistence/outbox work;
+5. stop scheduler/I/O/state executors;
+6. report failure if graceful shutdown cannot finish in time.
 
-1. stop accepting new external/operator ingress;
-2. stop or quiesce device/network adapters;
-3. allow accepted Waypoint-lane work to drain within a configured timeout;
-4. complete required persistence/outbox shutdown handling;
-5. shut down scheduler/I/O executors and the shared state executor;
-6. expose failure if the bounded graceful-shutdown window cannot complete.
+### Architecture review cases
+
+The concurrency design is reviewed against concrete cases rather than by adding
+placeholder classes:
+
+| Case | Required behaviour |
+| --- | --- |
+| Two commands arrive at the same Waypoint together | one runs, then the other; they never overlap |
+| Commands arrive at two different Waypoints | they may run concurrently |
+| RFID callback arrives while an operator command changes the same Waypoint | callback work waits in the same Waypoint queue |
+| Timer fires while that Waypoint is busy | timer work is queued for the same Waypoint |
+| A handler throws | failure is reported; later accepted tasks can still run |
+| Waypoint queue is full | submission fails visibly; work is not silently dropped |
+| Blocking network/file/device operation is needed | I/O runs outside the Waypoint serial executor |
+| I/O completion comes back on another thread | completion is submitted back to the owning Waypoint before changing state |
+| A query needs an exact view of several mutable Waypoint values | query runs in that Waypoint serial executor |
+| A client asks for application build/version | read directly; no Waypoint executor is involved |
+| Shutdown starts with queued work | new ingress stops and accepted work gets a bounded chance to finish |
+| Domain code calls another domain object while already inside the Waypoint task | use a normal direct Java call; do not send another command merely to preserve layers |
+
+These cases are the basis for implementation tests of the serial-execution
+mechanism and its callers.
 
 ### Concurrency technology baseline
 
-The selected baseline is:
+The selected baseline is deliberately small:
 
-- JDK `java.util.concurrent` (`Executor`, `ExecutorService`, `ThreadPoolExecutor`, `ScheduledExecutorService`, futures where justified);
-- a small explicit project-owned `SerialExecutor` abstraction per waypoint system;
-- one shared configurable state backing executor;
-- separate I/O/scheduler execution where blocking or delayed work requires it;
-- no Akka/reactive-stream/event-bus framework in the initial architecture;
-- controllable/direct executors in unit tests.
-
-Do not use convenience executor factories that hide unbounded queues where a bounded field queue is required; construct/configure the relevant executor explicitly.
+- JDK `java.util.concurrent`;
+- one small project-owned serial-executor implementation per Waypoint;
+- one shared configurable backing `ExecutorService`;
+- separate I/O/scheduler execution when needed;
+- direct/controllable executors in unit tests;
+- no actor, reactive-stream or generic event-bus framework unless a later
+  measured need justifies one.
 
 ## Time and clock architecture
 
@@ -543,7 +571,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - network/backoffice connectivity;
 - inbound/outbound synchronisation state.
 
-Status snapshots exposed to consumers should be immutable from the consumer perspective.
+Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
 Logging records diagnostic/history information; status represents current operational state. One must not be used as a substitute for the other.
 

@@ -65,6 +65,7 @@ io.github.brainboxemb.eventtiming.domain
 io.github.brainboxemb.eventtiming.core
 io.github.brainboxemb.eventtiming.presentation
 io.github.brainboxemb.eventtiming.integration
+io.github.brainboxemb.eventtiming.infra
 io.github.brainboxemb.eventtiming.platform
 ```
 
@@ -73,6 +74,38 @@ Capability-oriented subpackages may exist beneath those responsibilities.
 Do not rename or split packages merely to make the source tree match an architecture diagram. Refine package layout when real classes make semantic ownership and dependency direction testable.
 
 Likewise, a logical layer/package does not require a runtime marker class merely to prove that the layer exists. The first Java implementation removed the bootstrap-only `CoreLayer`, `DomainLayer`, `CommLayer` and `PlatformLayer` markers once real application classes existed. Architecture is expressed through ownership, package/dependency direction and behaviour, not through one object per diagram box.
+
+### Java object model rule
+
+Do not create a Java class merely because the SAD or an IDD names a concept or
+shows a field in a response.
+
+Create an object when current behaviour needs an object with identity, state or
+a useful grouped value. Create a separate helper only when it owns behaviour or
+removes real duplication.
+
+Examples:
+
+- the IF-03 status JSON describes what a client receives; it does **not** require
+  an internal class named `ApplicationStatusSnapshot`;
+- a class such as `ApplicationStatusModel` is not required unless implemented
+  status behaviour actually needs that model;
+- a logical architecture box is not evidence that a Java class with the same
+  name must exist.
+
+For small enums, keep the enum with the object that owns its meaning when it is
+used only there. A nested enum such as `TimingApplicationLifecycle.State` is
+preferred over an extra top-level source file until real reuse or clarity
+justifies separating it.
+
+Package placement follows the meaning of the object, not the layer that happens
+to expose it. For example, build provenance such as `BuildIdentity` belongs in
+a small `infra` package even when `CommandHandler.version()` returns it to a
+client. Do not move infrastructure values into `application` merely because
+application code uses them.
+
+This keeps the early implementation small and allows the object model to grow
+from real use cases rather than from the diagrams alone.
 
 ## Contract placement
 
@@ -95,6 +128,9 @@ core
 
 integration
   concrete external-system/device/persistence implementations
+
+infra
+  build/runtime provenance and other small infrastructure values
 
 platform
   execution-environment abstractions
