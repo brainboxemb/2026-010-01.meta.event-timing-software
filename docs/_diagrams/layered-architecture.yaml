@@ -21,7 +21,7 @@ groups:
   layout: {x: 120, y: 445, w: 1120, h: 300}
 - id: waypoint-aggregate
   label: Waypoint (1..N)
-  kind: group-secondary
+  kind: model
   layout: {x: 145, y: 485, w: 820, h: 235}
 - id: infrastructure-layer
   label: Infrastructure / integrations
