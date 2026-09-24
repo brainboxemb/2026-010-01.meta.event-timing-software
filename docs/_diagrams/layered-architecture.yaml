@@ -16,7 +16,7 @@ groups:
   kind: layer-application
   layout: {x: 120, y: 260, w: 1120, h: 230}
 - id: domain-layer
-  label: Domain layer — reusable services, rules and model
+  label: Domain layer — per-Waypoint responsibilities (1..N)
   kind: layer-domain
   layout: {x: 120, y: 520, w: 1120, h: 260}
 - id: infrastructure-layer
@@ -51,12 +51,12 @@ nodes:
   layout: {x: 235, y: 315, w: 360, h: 75}
 - id: app-state
   group: application-layer
-  label: "WaypointSystem state\nUniqueID • LocationID • lifecycle/status"
+  label: "1..N Waypoint aggregates\nUniqueID • LocationID • lifecycle/status"
   kind: application
   layout: {x: 625, y: 315, w: 300, h: 75}
 - id: status-management
   group: application-layer
-  label: "Status management\naggregate state • immutable snapshots"
+  label: "SystemStatus\napplication health • aggregate waypoint status"
   kind: application
   layout: {x: 955, y: 315, w: 240, h: 75}
 - id: core-runtime
