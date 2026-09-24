@@ -108,7 +108,7 @@ StageStartTimeRegistry
 WaypointJournal
 PrepareTeamRegistry
 RaceData
-TimingCalculator
+StageTiming
 ```
 
 `TagProcessor` represents the RFID/tag-observation processing responsibility. It does not own the physical RFID reader/antenna lifecycle.
@@ -121,7 +121,7 @@ TimingCalculator
 
 `RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `WaypointSystem` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
 
-`TimingCalculator` performs derived timing calculations such as elapsed time and local ranking from waypoint state/reference data; the name describes the calculation responsibility directly without a generic `Service` suffix.
+`StageTiming` owns the derived stage-timing view for the waypoint, including elapsed/running times and local ranking. It is not primarily a registry; it derives timing results from waypoint registrations and stage/reference data.
 
 Representative concepts include waypoint identity/value concepts, `Stage`, `LocationID`, `UniqueID`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
 
@@ -186,7 +186,7 @@ TimingApplication
         +-- WaypointJournal
         +-- PrepareTeamRegistry
         +-- RaceData
-        +-- TimingCalculator
+        +-- StageTiming
 ```
 
 `UniqueID` is the stable identity of the `WaypointSystem` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
