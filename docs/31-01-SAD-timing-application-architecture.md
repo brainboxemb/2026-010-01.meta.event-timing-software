@@ -108,7 +108,7 @@ The application layer coordinates use cases without becoming the top-level appli
 
 ```text
 Application layer
-  +-- ApplicationStateCoordinator
+  +-- ApplicationConductor
   |     application lifecycle/state orchestration
   |     active Waypoint coordination
   |
@@ -117,7 +117,7 @@ Application layer
         routes commands to the appropriate application/domain responsibility
 ```
 
-`ApplicationStateCoordinator` coordinates application-wide mutable runtime/lifecycle state. The name deliberately avoids `Controller`, which could be confused with a presentation/MVC controller.
+`ApplicationConductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
 
 `CommandDispatcher` is the central command-handling boundary. It accepts commands translated by presentation interfaces and dispatches them to the appropriate application/domain responsibility. It is not a transport endpoint and does not own domain behaviour.
 
