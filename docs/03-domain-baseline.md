@@ -25,7 +25,7 @@ TimingApplication
         +-- WaypointJournal
         +-- PrepareTeamRegistry
         +-- RaceData
-        +-- TimingCalculator
+        +-- StageTiming
 ```
 
 `UniqueID` is the stable identity of the `WaypointSystem`; `LocationID` identifies the physical event location where that waypoint system is configured or deployed.
