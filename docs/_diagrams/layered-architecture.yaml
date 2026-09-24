@@ -23,8 +23,8 @@ groups:
   label: Waypoint (1..N)
   kind: model
   layout: {x: 145, y: 485, w: 820, h: 235}
-- id: infrastructure-layer
-  label: Infrastructure / integrations
+- id: io-layer
+  label: I/O adapters
   kind: layer-infrastructure
   layout: {x: 120, y: 775, w: 1120, h: 165}
 - id: platform-layer
@@ -65,7 +65,7 @@ nodes:
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
-  subtitle: "shared command boundary • target resolution"
+  subtitle: "shared request boundary • target resolution"
   kind: application
   layout: {x: 740, y: 305, w: 430, h: 75}
 
@@ -120,21 +120,21 @@ nodes:
   kind: service
   layout: {x: 995, y: 570, w: 210, h: 85}
 
-- id: persistence
-  group: infrastructure-layer
-  label: "Persistence / file storage"
-  subtitle: "repository + backup / restore implementations"
+- id: storage-io
+  group: io-layer
+  label: "Storage"
+  subtitle: "file / DB • backup / restore"
   kind: storage
   layout: {x: 165, y: 825, w: 300, h: 75}
-- id: backoffice
-  group: infrastructure-layer
-  label: "Backoffice integration"
-  subtitle: "socket / RabbitMQ • race/start-time synchronisation"
+- id: messaging-io
+  group: io-layer
+  label: "Messaging"
+  subtitle: "RabbitMQ / backoffice"
   kind: integration
   layout: {x: 495, y: 825, w: 300, h: 75}
-- id: device-integration
-  group: infrastructure-layer
-  label: "Device integrations"
+- id: hardware-io
+  group: io-layer
+  label: "Hardware"
   subtitle: "RFID • CAN • display"
   kind: integration
   layout: {x: 825, y: 825, w: 300, h: 75}
@@ -197,17 +197,17 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
-- from: persistence
+- from: storage-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.085227}
 
-- from: backoffice
+- from: messaging-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.460227}
 
-- from: device-integration
+- from: hardware-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.835227}

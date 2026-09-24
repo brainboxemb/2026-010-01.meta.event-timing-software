@@ -63,7 +63,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and integrations are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
+`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and I/O adapters are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -90,121 +90,113 @@ The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 ### Presentation
 
-Presentation exposes SI-01 behaviour and current state through three deliberately distinct interface perspectives:
+Presentation owns client-facing interfaces and mapping:
 
 ```text
 Console / Remote Shell     development + service
-Desktop GUI Interface      debug / development application
+Desktop GUI Interface      debug / development
 HTTP / WebSocket           iPad / operator UI
 ```
 
-Protocol/DTO mapping belongs with these presentation boundaries rather than with domain behaviour.
-
-Presentation translates external requests into application commands/queries and application status/events into external representations. It does not own running application state.
+It converts external requests to application calls and application results to
+client representations. It does not own mutable application/domain state.
 
 ### Application
 
-Names should not repeat context already supplied by the owning package, layer or
-aggregate. Prefer concise responsibility names such as `application.Conductor`
-and `Waypoint.Journal` over `ApplicationConductor` and `WaypointJournal`
-when the removed qualifier is already unambiguous from ownership. Keep the
-qualifier only when it carries information that would otherwise be lost.
-
-
-The application layer coordinates use cases without becoming the top-level application container. Its current working decomposition is:
+The application responsibility coordinates use cases:
 
 ```text
-Application layer
-  +-- Conductor
-  |     application lifecycle/state orchestration
-  |     active Waypoint coordination
-  |
-  +-- CommandHandler
-        shared application command boundary
-        resolves application-wide versus Waypoint-scoped work
-        enters the applicable state-ownership boundary
+application/
+  Conductor
+    lifecycle and application-wide coordination
+
+  CommandHandler
+    shared client request boundary
+    resolves application-wide vs Waypoint-scoped work
 ```
 
-`Conductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
+`Conductor` coordinates application-wide lifecycle and active Waypoints.
 
-`CommandHandler` is the transport-independent application-facing request boundary used by presentation adapters. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement shared application request semantics. For state-changing commands that includes target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission and common command-result semantics. Simple application-owned read queries such as the authoritative build/version identity may use the same boundary without inventing a separate query service per adapter. Consistency-sensitive Waypoint queries still follow the serialized state-lane rules below. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
+`CommandHandler` is the shared entry point for presentation requests. It may
+serve simple application reads such as `version()`. Waypoint mutations are
+resolved to the correct `Waypoint` and then submitted to that Waypoint's serial
+executor.
 
-This is an application **responsibility**, not a requirement for one monolithic switch class. An implementation may use focused command handlers behind the shared boundary. Conversely, a handler that adds no application-level responsibility and merely forwards one call one-to-one to a domain method is not justified as an extra layer.
-
-Presentation therefore depends on the shared application command boundary rather than mutable domain internals. Once a use case is executing inside its owning application/Waypoint state boundary, normal direct Java calls between the applicable domain responsibilities are preferred; commands are not used merely to preserve a layer diagram.
-
-The application layer coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
+Once code is executing for a Waypoint, normal direct Java calls are preferred;
+do not introduce commands merely to preserve a layer diagram.
 
 ### Domain
 
-The domain responsibility owns reusable timing rules, entities, processors, registries, journals and value semantics. Names should describe the responsibility rather than defaulting every capability to a generic `*Service` suffix.
-
-Current naming direction includes:
+The domain owns timing rules and Waypoint state:
 
 ```text
-TagProcessor
-StageStartTimeRegistry
-Journal
-PrepareTeamRegistry
-RaceData
-StageTiming
+Waypoint
+  UniqueID
+  LocationID
+  TagProcessor
+  StageStartTimeRegistry
+  Journal
+  PrepareTeamRegistry
+  RaceData
+  StageTiming
 ```
 
-`TagProcessor` represents the RFID/tag-observation processing responsibility. It does not own the physical RFID reader/antenna lifecycle.
+`TagProcessor` handles tag observations. `StageStartTimeRegistry` owns stage
+start references. `Journal` owns registration/history data and sequence
+semantics. `PrepareTeamRegistry` owns teams preparing at the Waypoint.
+`RaceData` contains participant/team/tag reference data. `StageTiming`
+derives running times and ranking.
 
-`StageStartTimeRegistry` owns locally available start-time reference data for the stage ending at the waypoint. It is a registry/state responsibility rather than a generic background service.
-
-`Journal` is the waypoint-oriented registration/history view. It must preserve the independent `UniqueID` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
-
-`PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
-
-`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `Waypoint` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
-
-`StageTiming` owns the derived stage-timing view for the waypoint, including elapsed/running times and local ranking. It is not primarily a registry; it derives timing results from waypoint registrations and stage/reference data.
-
-Representative concepts include waypoint identity/value concepts, `Stage`, `LocationID`, `UniqueID`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
-
-Hardware inventory concepts such as `RegistrationAssetId` and `AntennaId` may appear in domain/application data as origin or diagnostic context, but the physical asset/antenna hierarchy is not the domain/software decomposition.
-
-Decoded RFID identity must preserve whether a tag is normal, reserve or test-class until the applicable domain/use-case policy has been applied. A test tag is therefore not silently normalised into a normal participant identity at an adapter boundary.
-
-Product/deployment-specific policy does not automatically belong in the reusable domain model.
+Detailed domain semantics belong in `03-domain-baseline.md`.
 
 ### Core runtime support
 
-Core runtime support provides reusable execution mechanics that let application/domain behaviour run predictably, for example:
+Core contains reusable execution mechanics, not business behaviour:
 
 ```text
-serialized execution
+serial execution
 lifecycle mechanics
-state-lane admission primitives
 scheduling
-asynchronous completion mechanics
+asynchronous completion
 ```
 
-Core runtime support is not a second owner of domain behaviour or application state.
+### I/O
 
-### Infrastructure / integration
-
-Integration implementations connect SI-01 to external systems/devices and persistence mechanisms, including:
+I/O contains adapters that move data between SI-01 and the outside world:
 
 ```text
-persistence / file backup and restore
-backoffice socket / RabbitMQ integration
-RFID integration
-CAN integration
-display integration
+io/
+  hardware/
+    can/
+    rfid/
+  messaging/
+    rabbitmq/
+    backoffice/
+  storage/
+    file/
+    db/
 ```
+
+Presentation stays separate because it owns client-facing API/view semantics.
+I/O owns hardware, messaging and storage adapters.
 
 ### Platform
 
-Platform abstractions isolate execution-environment and low-level facilities such as clock/time source, filesystem/path primitives, executor/thread primitives, process/runtime information and network/OS facilities.
+Platform contains low-level execution-environment facilities:
 
-Platform is not a catch-all location for HTTP, RabbitMQ or device/domain protocols.
+```text
+clock / time source
+filesystem/path primitives
+executors / threads
+process/runtime information
+network / OS primitives
+```
 
 ### Cross-cutting concerns
 
-Logging, configuration, diagnostics, metrics where useful and build/version identity cross several responsibilities without becoming owners of domain/application state.
+Cross-cutting technical concerns include logging, configuration, diagnostics,
+metrics and build/version identity. In Java, `infra` is reserved for concrete
+cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
@@ -286,7 +278,7 @@ Working rules:
 - commands request state changes;
 - queries read current state/snapshots without becoming alternate owners of state;
 - events report facts/results that have occurred;
-- external protocol DTOs are mapped at the presentation/integration boundary rather than used as the internal domain model;
+- external protocol DTOs are mapped at the presentation/I/O boundary rather than used as the internal domain model;
 - messages crossing thread/process boundaries should be immutable where practical;
 - a generic event-bus framework is **not** assumed to be necessary.
 
@@ -541,17 +533,15 @@ TimingQuery<R>
 
 The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
 
-Working rules:
+Rules:
 
-- presentation/device/integration boundaries convert external input into typed immutable application-facing messages;
-- command/integration boundaries resolve their explicit application or `Waypoint` target rather than relying on reflection/topic-based event-bus discovery or a central generic dispatcher;
-- messages crossing a Waypoint state-lane boundary carry the stable `UniqueID`/device/source/correlation context they need explicitly;
-- once executing inside the Waypoint state lane, application/domain responsibilities normally call one another directly rather than publishing another message for every method call;
-- adapter/I/O completion returns as a typed event because it crosses back into the state-ownership boundary;
-- published status/domain notifications may fan out to presentation consumers, but those consumers cannot use the notification channel to mutate authoritative state behind the command boundary;
-- RabbitMQ is an external integration transport and is not reused as an in-process message bus.
+- use typed messages when work crosses an asynchronous or Waypoint execution boundary;
+- resolve the target explicitly; do not use a generic event bus or topic discovery;
+- once running in a Waypoint's serial executor, use normal direct Java calls;
+- submit asynchronous I/O completion back to the owning Waypoint before changing its state;
+- RabbitMQ is external I/O, not an in-process message bus.
 
-A command/query endpoint may expose a Java-8 `CompletionStage`/future-style result where asynchronous completion is useful, but the exact API shape should be selected with the first real consumers rather than building a generic messaging framework up front.
+Choose concrete command/query return types when the first real consumers need them.
 
 ## Status and diagnostics architecture
 
@@ -562,7 +552,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - application version / uptime / overall health;
 - Waypoint lifecycle;
 - registration asset/source state;
-- state-lane queue depth/high-water/overload health;
+- Waypoint queue depth/high-water/overload health;
 - RFID power/startup/protocol/heartbeat;
 - CAN/device availability;
 - persistence/backup state;
@@ -738,7 +728,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `Waypoint` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint state lane | architecture baseline selected; refine first consumer API signatures during implementation |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
@@ -791,34 +781,26 @@ Fault handling should preserve local authority, traceability and explicit status
 
 Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`.
 
-## When a separate SDD is justified
+## Detailed-design documents
 
-A separate SDD should be introduced or retained only when at least one of these is true:
+Keep this SAD as the main SI-01 technical design. Use a separate SDD only when
+implementation detail would make the SAD harder to read.
 
-- the topic has enough algorithm/state-machine/configuration detail that it obscures the architecture in this SAD;
-- several implementation alternatives need a focused design/review;
-- a component has an independently meaningful lifecycle, contract or complexity;
-- the detail is needed directly by implementation/reviewers but is not useful to a reader trying to understand SI-01 architecture as a whole.
+Current active focused SDD:
 
-Examples that may eventually justify focused SDDs include exact persistence/restore mechanics or exact RabbitMQ connection/retry/topology behaviour. Threading, messaging, logging and the main runtime topology remain SAD concerns unless their implementation becomes substantially more complex.
+```text
+31-01-SDD-02-java-component-design.md
+  Java packages, Maven artifacts and composition
+```
 
-## Detailed-design document disposition
-
-This architecture review deliberately reduced and renumbered the current SDD set. At this project stage SDD numbers are working document identifiers, so removing a document also closes the numbering gap rather than preserving obsolete sequence numbers.
-
-- `31-01-SDD-01-data-and-display-design.md`: **deferred working note**. It is excluded from the architecture book while persistence/data mechanics are still too early for a dedicated active SDD.
-- `31-01-SDD-02-java-component-design.md`: **active focused SDD** because artifact/package/composition decisions already affect the implementation repository.
-- `31-01-SDD-03-backoffice-transport-design.md`: **deferred working note**. Detailed transport design should mature just in time with backoffice implementation and is excluded from the architecture book for now.
-
-The former timing-system detailed design and runtime-topology/configuration detailed design were retired after their useful architecture was consolidated into this SAD or the domain baseline. Their historical filenames and content remain available through Git history rather than reserving gaps in the current SDD numbering.
-
-No new SDD should be created during this cleanup unless a clear separate detailed-design purpose is demonstrated.
+Persistence/data and backoffice transport notes remain deferred until their
+implementation needs focused design.
 
 ## Open architecture decisions
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 
-- state-lane queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
+- Waypoint queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
 - field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
 - embedded HTTP/WebSocket technology compatible with Java 8 and Pi Zero constraints;
 - remote-shell technology;
