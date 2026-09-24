@@ -51,7 +51,7 @@ nodes:
   layout: {x: 235, y: 315, w: 360, h: 75}
 - id: app-state
   group: application-layer
-  label: "Application state\nTimingSystemInstance • ledgers • runtime state"
+  label: "WaypointSystem state\nUniqueID • LocationID • lifecycle/status"
   kind: application
   layout: {x: 625, y: 315, w: 300, h: 75}
 - id: status-management
@@ -65,31 +65,36 @@ nodes:
   kind: runtime
   layout: {x: 625, y: 415, w: 300, h: 50}
 
-- id: registration-service
+- id: tag-processor
   group: domain-layer
-  label: "RegistrationService\nregistration flow • source sequencing\npasses start procedure to StartTimeService"
+  label: "TagProcessor\nRFID/tag observation processing"
   kind: service
-  layout: {x: 165, y: 580, w: 300, h: 90}
-- id: start-time-service
+  layout: {x: 165, y: 565, w: 300, h: 65}
+- id: stage-start-time-registry
   group: domain-layer
-  label: "StartTimeService\nstart-time rules • updates • lookup"
+  label: "StageStartTimeRegistry\nstage start-time reference data"
   kind: service
-  layout: {x: 495, y: 580, w: 300, h: 90}
-- id: ready-team-service
+  layout: {x: 495, y: 565, w: 300, h: 65}
+- id: waypoint-journal
   group: domain-layer
-  label: "ReadyTeamService\nready-team behaviour and ledger semantics"
+  label: "WaypointJournal\nregistrations • UniqueID sequence/persistence"
   kind: service
-  layout: {x: 825, y: 580, w: 300, h: 90}
-- id: race-data-service
+  layout: {x: 825, y: 565, w: 300, h: 65}
+- id: prepare-team-registry
   group: domain-layer
-  label: "RaceDataService\nparticipant/team • tag/reference lookup • reserve-tag mapping"
+  label: "PrepareTeamRegistry\nteams to prepare + traceable history"
   kind: service
-  layout: {x: 165, y: 695, w: 300, h: 55}
-- id: domain-model
+  layout: {x: 165, y: 665, w: 300, h: 65}
+- id: race-data
   group: domain-layer
-  label: "Domain model + rules\nregistrations • source sequence • start-time • ready-team • race/reference values"
-  kind: model
-  layout: {x: 495, y: 695, w: 630, h: 55}
+  label: "RaceData\nparticipant/team • tag/reference data"
+  kind: service
+  layout: {x: 495, y: 665, w: 300, h: 65}
+- id: stage-timing
+  group: domain-layer
+  label: "StageTiming\nrunning times + local ranking"
+  kind: service
+  layout: {x: 825, y: 665, w: 300, h: 65}
 
 - id: persistence
   group: infrastructure-layer
@@ -138,14 +143,14 @@ edges:
   to_anchor: {side: bottom, position: 0.60}
 
 - from: app-command-query
-  to: registration-service
-  from_anchor: {side: bottom, position: 0.222222}
+  to: tag-processor
+  from_anchor: {side: bottom, position: 0.20}
   to_anchor: {side: top, position: 0.50}
 
 - from: app-command-query
-  to: start-time-service
-  from_anchor: {side: bottom, position: 0.847222}
-  to_anchor: {side: top, position: 0.15}
+  to: prepare-team-registry
+  from_anchor: {side: bottom, position: 0.80}
+  to_anchor: {side: top, position: 0.50}
 
 - from: app-state
   to: status-management
@@ -158,28 +163,30 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.50}
 
-- from: registration-service
-  to: start-time-service
-  from_anchor: {side: right, position: 0.48}
-  to_anchor: {side: left, position: 0.48}
+- from: tag-processor
+  to: waypoint-journal
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
 
-- from: registration-service
-  to: race-data-service
+- from: race-data
+  to: tag-processor
+  dashed: true
+  from_anchor: {side: top, position: 0.20}
+  to_anchor: {side: bottom, position: 0.50}
+
+- from: stage-start-time-registry
+  to: stage-timing
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.25}
 
-- from: start-time-service
-  to: domain-model
+- from: waypoint-journal
+  to: stage-timing
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.238095}
+  to_anchor: {side: top, position: 0.75}
 
-- from: ready-team-service
-  to: domain-model
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.761905}
-
-- from: race-data-service
-  to: domain-model
+- from: race-data
+  to: stage-timing
+  dashed: true
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: left, position: 0.50}
 
