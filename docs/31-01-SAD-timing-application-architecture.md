@@ -176,18 +176,20 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ### Software/domain decomposition
 
 ```text
-TimingApplicationRuntime
-    |
-    +-- WaypointSystem waypoint-A
-    |      +-- lifecycle / status
-    |      +-- TagProcessor
-    |      +-- StageStartTimeRegistry
-    |      +-- WaypointJournal
-    |      +-- logical UniqueID/sequence semantics
-    |
-    +-- WaypointSystem waypoint-B
-           +-- ...
+TimingApplication
+  1..X WaypointSystem
+        +-- UniqueID
+        +-- LocationID
+        +-- lifecycle / status
+        +-- TagProcessor
+        +-- StageStartTimeRegistry
+        +-- WaypointJournal
+        +-- PrepareTeamRegistry
+        +-- RaceData
+        +-- TimingCalculator
 ```
+
+`UniqueID` is the stable identity of the `WaypointSystem` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
 
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/waypoint-software-decomposition.svg)
 
@@ -206,7 +208,7 @@ RegistrationAsset asset-01
 
 ![Registration hardware/deployment topology](../../../raw/prod/docs/assets/architecture/registration-hardware-topology.svg)
 
-A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not by itself define the number of logical data-source streams.
+A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not define additional `WaypointSystem` identities or `UniqueID` values.
 
 ### Configuration and identity mapping
 
