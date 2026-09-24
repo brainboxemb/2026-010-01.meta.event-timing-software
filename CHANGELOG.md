@@ -6,6 +6,10 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+### Changed
+
+- Route project agent guidance through `brainboxemb.meta/AGENTS.md`, make dependency-owner AGENTS explicitly non-inherited, and keep event-timing-specific documentation/privacy boundaries local.
+
 ### Added
 
 - Initial repository purpose and navigation.
