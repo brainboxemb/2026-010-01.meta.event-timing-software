@@ -115,7 +115,7 @@ TimingCalculator
 
 `StageStartTimeRegistry` owns locally available start-time reference data for the stage ending at the waypoint. It is a registry/state responsibility rather than a generic background service.
 
-`WaypointJournal` is the waypoint-oriented registration/history view. It must preserve the independent `DataSourceId` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
+`WaypointJournal` is the waypoint-oriented registration/history view. It must preserve the independent `UniqueID` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
 
 `PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
 
@@ -123,7 +123,7 @@ TimingCalculator
 
 `TimingCalculator` performs derived timing calculations such as elapsed time and local ranking from waypoint state/reference data; the name describes the calculation responsibility directly without a generic `Service` suffix.
 
-Representative concepts include waypoint identity/value concepts, `Stage`, `LocationId`, `DataSourceId`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
+Representative concepts include waypoint identity/value concepts, `Stage`, `LocationID`, `UniqueID`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
 
 Hardware inventory concepts such as `RegistrationAssetId` and `AntennaId` may appear in domain/application data as origin or diagnostic context, but the physical asset/antenna hierarchy is not the domain/software decomposition.
 
@@ -183,7 +183,7 @@ TimingApplicationRuntime
     |      +-- TagProcessor
     |      +-- StageStartTimeRegistry
     |      +-- WaypointJournal
-    |      +-- logical DataSourceId/sequence semantics
+    |      +-- logical UniqueID/sequence semantics
     |
     +-- WaypointSystem waypoint-B
            +-- ...
@@ -213,14 +213,14 @@ A `RegistrationAsset` represents physical/configured equipment identity. One reg
 Configuration connects the software and deployment identities without making them the same object:
 
 ```text
-WaypointSystem waypoint-A -> LocationId X
-RegistrationAsset asset-01     -> DataSourceId source-01
-Another producer            -> DataSourceId source-02
+WaypointSystem waypoint-A -> LocationID X
+WaypointSystem waypoint-A -> UniqueID waypoint-A
+RegistrationAsset asset-01 -> used by/configured for waypoint-A
 ```
 
 ![Waypoint, hardware and data-source configuration mapping](../../../raw/prod/docs/assets/architecture/waypoint-hardware-mapping.svg)
 
-`DataSourceId` is the logical ordered-stream identity and the scope for sequence, persistence and synchronisation semantics; the architecture does not require a separate `DataSource` component merely to hold that identity. It is not derived from `RegistrationAssetId`, even when deployment naming deliberately makes the two look similar.
+`UniqueID` is the stable identity of a `WaypointSystem` and the scope for its sequence, persistence and synchronisation semantics. `LocationID` separately identifies where that waypoint is configured/deployed. `UniqueID` is not derived from `RegistrationAssetId`.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable waypoint state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
 
@@ -423,7 +423,7 @@ monotonic time source
   timeout / retry / filtering windows
   process-local only
 
-DataSourceId + SequenceNumber
+UniqueID + SequenceNumber
   stable stream ordering / gap detection
 ```
 
@@ -576,7 +576,7 @@ Keep these concepts distinct:
 6. local backup/restore — restart/power-loss recovery;
 7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
-Registration identity remains source-scoped; the current stable conceptual key is `(DataSourceId, SequenceNumber)`.
+Registration identity remains waypoint-scoped; the current stable conceptual key is `(UniqueID, SequenceNumber)`.
 
 Persistence durability semantics, file format, atomic-write strategy and corruption/recovery rules remain open decisions and may justify a focused data/persistence SDD only when implementation reaches that complexity.
 
