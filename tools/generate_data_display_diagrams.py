@@ -9,49 +9,50 @@ from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, r
 
 def data_display_flow() -> Diagram:
     nodes = [
-        Node("backoffice", "Backoffice\\nstart times + reserve-tag data", 40, 90, 300, 85, "external"),
-        Node("keypad", "CAN keypad\\nadd / remove team", 390, 90, 240, 85, "external"),
-        Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 690, 90, 360, 85, "external"),
+        Node("backoffice", "Backoffice\\nrace data + stage start times", 40, 90, 320, 85, "external"),
+        Node("keypad", "CAN keypad\\nadd / remove team to prepare", 410, 90, 300, 85, "external"),
+        Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 760, 90, 400, 85, "external"),
 
-        Node("queue", "TimingSystem serialized ingress", 390, 245, 370, 75, "queue"),
-        Node("reference", "ReferenceDataService", 40, 410, 250, 75, "service"),
-        Node("ready", "ReadyTeamService", 350, 410, 250, 75, "service"),
-        Node("registration_service", "RegistrationService", 660, 410, 250, 75, "service"),
-        Node("calculation", "TimingCalculationService\\nelapsed time + local ranking", 970, 395, 310, 100, "service"),
+        Node("queue", "WaypointSystem serialized ingress", 470, 245, 500, 75, "queue"),
 
-        Node("start_repo", "StartTimeRepository\\nin-memory", 20, 590, 250, 85, "core"),
-        Node("reserve_repo", "ReserveTagRepository\\nin-memory", 300, 590, 250, 85, "core"),
-        Node("ready_state", "ReadyTeamState\\nin-memory", 580, 590, 230, 85, "core"),
-        Node("reg_repo", "RegistrationLedger\\nin-memory", 840, 590, 270, 85, "core"),
-        Node("display_model", "DisplayModel\\nrevisioned data snapshot", 1140, 590, 300, 85, "core"),
+        Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
+        Node("start", "StageStartTimeRegistry\\nstage start-time reference", 360, 420, 300, 90, "service"),
+        Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 690, 420, 330, 90, "service"),
+        Node("journal", "WaypointJournal\\nregistrations + DataSourceId ordering", 1050, 420, 330, 90, "service"),
 
-        Node("backup", "Simple file backup / restore\\nsequence + state recovery", 280, 775, 350, 90, "adapter"),
-        Node("v1", "Display V1 adapter\\nactively sends CAN display state", 850, 765, 330, 100, "adapter"),
-        Node("v2", "Display V2 session\\nsynchronises data snapshot/model", 1230, 765, 330, 100, "adapter"),
+        Node("calculator", "TimingCalculator\\nelapsed time + local ranking", 345, 610, 310, 90, "service"),
+        Node("display_model", "DisplayModel\\nrevisioned data snapshot", 715, 610, 300, 90, "core"),
+        Node("backup", "Simple file backup / restore\\nwaypoint state + sequence recovery", 1080, 610, 360, 90, "adapter"),
 
-        Node("display1", "Passive CAN LED display", 830, 930, 300, 75, "external"),
-        Node("display2", "Smart Wi-Fi display\\nlocal presentation logic", 1240, 920, 310, 90, "external"),
+        Node("v1", "Display V1 adapter\\nactively sends CAN display state", 640, 800, 330, 100, "adapter"),
+        Node("v2", "Display V2 session\\nsynchronises data snapshot/model", 1040, 800, 330, 100, "adapter"),
+
+        Node("display1", "Passive CAN LED display", 640, 965, 300, 75, "external"),
+        Node("display2", "Smart Wi-Fi display\\nlocal presentation logic", 1050, 955, 310, 90, "external"),
     ]
 
     edges = [
-        Edge("backoffice", "queue", "sync update"),
-        Edge("keypad", "queue", "add/remove"),
-        Edge("registration", "queue"),
-        Edge("queue", "reference"),
-        Edge("queue", "ready"),
-        Edge("queue", "registration_service"),
-        Edge("reference", "start_repo"),
-        Edge("reference", "reserve_repo"),
-        Edge("ready", "ready_state"),
-        Edge("registration_service", "reg_repo"),
-        Edge("start_repo", "calculation"),
-        Edge("reg_repo", "calculation"),
-        Edge("ready_state", "display_model"),
-        Edge("calculation", "display_model"),
-        Edge("start_repo", "backup", "snapshot", True),
-        Edge("reserve_repo", "backup", "snapshot", True),
-        Edge("ready_state", "backup", "snapshot/journal", True),
-        Edge("reg_repo", "backup", "ledger + source sequences", True),
+        Edge("backoffice", "queue", "sync/update"),
+        Edge("keypad", "queue", "prepare-team mutation"),
+        Edge("registration", "queue", "registration command/observation"),
+
+        Edge("queue", "race"),
+        Edge("queue", "start"),
+        Edge("queue", "prepare"),
+        Edge("queue", "journal"),
+
+        Edge("race", "calculator", "reference data"),
+        Edge("start", "calculator", "start-time data"),
+        Edge("journal", "calculator", "registration data"),
+
+        Edge("prepare", "display_model"),
+        Edge("calculator", "display_model"),
+
+        Edge("race", "backup", "snapshot", True),
+        Edge("start", "backup", "snapshot", True),
+        Edge("prepare", "backup", "state + history", True),
+        Edge("journal", "backup", "records + DataSourceId sequence", True),
+
         Edge("display_model", "v1"),
         Edge("display_model", "v2"),
         Edge("v1", "display1", "active CAN commands"),
@@ -60,9 +61,9 @@ def data_display_flow() -> Diagram:
 
     return Diagram(
         "data-display-flow",
-        "In-memory data, backup and V1/V2 display behaviour",
-        1600,
-        1060,
+        "Waypoint data, backup and V1/V2 display behaviour",
+        1500,
+        1080,
         nodes,
         edges,
     )
@@ -70,13 +71,13 @@ def data_display_flow() -> Diagram:
 
 def registration_stream_identity() -> Diagram:
     nodes = [
-        Node("source_a", "RegistrationSystem A\\nsource identity", 60, 110, 270, 80, "external"),
-        Node("seq_a", "Source A sequence\\n1041 → 1042 → 1043 → 1044", 390, 100, 330, 100, "queue"),
-        Node("source_b", "RegistrationSystem B\\nsource identity", 60, 300, 270, 80, "external"),
-        Node("seq_b", "Source B sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
+        Node("source_a", "DataSourceId source-01\\nlogical stream identity", 60, 110, 270, 80, "external"),
+        Node("seq_a", "source-01 sequence\\n1041 → 1042 → 1043 → 1044", 390, 100, 330, 100, "queue"),
+        Node("source_b", "DataSourceId source-02\\nlogical stream identity", 60, 300, 270, 80, "external"),
+        Node("seq_b", "source-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
 
-        Node("record", "RegistrationRecord\\nsourceId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
-        Node("key", "Stable key\\n(RegistrationSystemId, SequenceNumber)", 820, 380, 380, 85, "service"),
+        Node("record", "RegistrationRecord\\ndataSourceId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
+        Node("key", "Stable key\\n(DataSourceId, SequenceNumber)", 820, 380, 380, 85, "service"),
         Node("location", "LocationId 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
         Node("upstream", "Backoffice / higher-level system\\nchecks order + detects per-source gaps", 820, 560, 390, 100, "external"),
         Node("gap", "Example gap\\nA: 1041, 1042, 1044 → 1043 missing", 820, 735, 390, 85, "queue"),
@@ -95,7 +96,7 @@ def registration_stream_identity() -> Diagram:
 
     return Diagram(
         "registration-stream-identity",
-        "Registration traceability — monotonic sequence per registration source",
+        "Registration traceability — monotonic sequence per DataSourceId",
         1320,
         880,
         nodes,

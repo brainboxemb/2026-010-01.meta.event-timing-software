@@ -30,7 +30,7 @@ SI-01 architecture is driven by these concerns:
 - run on the original Raspberry Pi Zero / Zero W as a mandatory constrained target;
 - remain usable on Linux/Windows development and test hosts;
 - keep authoritative timing/domain state local to SI-01;
-- support one or more logical timing-system instances without state leakage;
+- support one or more logical waypoint systems without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
@@ -47,11 +47,11 @@ The existing use cases in `04-UC-system-use-cases.md` are the scenario source. T
 Representative architecture-validation scenarios include:
 
 1. start SI-01, load configuration, expose version/status and shut down cleanly;
-2. accept an operator command through local or network presentation and route it to the correct logical timing-system instance;
+2. accept an operator command through local or network presentation and route it to the correct logical waypoint system;
 3. accept a device observation from an external callback without allowing that callback thread to mutate authoritative application state directly;
 4. persist accepted operational state and recover it after restart;
 5. continue local operation while a GUI/browser or backoffice connection is unavailable;
-6. host several timing-system instances in a development/simulation composition without state leakage;
+6. host several waypoint systems in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
 
@@ -86,7 +86,7 @@ Presentation translates external requests into application commands/queries and 
 The application responsibility owns running mutable application state and coordinates use cases. Representative concerns include:
 
 ```text
-TimingSystemInstance state
+WaypointSystem state
 registration/source ledgers and current runtime state
 commands / queries / workflows
 status management and aggregation
@@ -98,18 +98,34 @@ The application responsibility invokes domain services and coordinates persisten
 
 ### Domain
 
-The domain responsibility owns reusable timing rules, services, entities and value semantics. Representative services currently include:
+The domain responsibility owns reusable timing rules, entities, processors, registries, journals and value semantics. Names should describe the responsibility rather than defaulting every capability to a generic `*Service` suffix.
+
+Current naming direction includes:
 
 ```text
-RegistrationService
-StartTimeService
-ReadyTeamService
-RaceDataService
+TagProcessor
+StageStartTimeRegistry
+WaypointJournal
+PrepareTeamRegistry
+RaceData
+TimingCalculator
 ```
 
-`RaceDataService` is specifically the domain capability for race/event data in the sporting-event sense: participant/team data, tag-reference lookup and reserve-tag mapping semantics. It is deliberately not named `EventDataService`, because software events are a separate architecture concept. Start-time state remains owned by `StartTimeService`, ready-team state by `ReadyTeamService`, and registrations by `RegistrationService`.
+`TagProcessor` represents the RFID/tag-observation processing responsibility. It does not own the physical RFID reader/antenna lifecycle.
 
-Representative concepts include timing-system identity/value concepts, `RegistrationAsset`, `RegistrationSource`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
+`StageStartTimeRegistry` owns locally available start-time reference data for the stage ending at the waypoint. It is a registry/state responsibility rather than a generic background service.
+
+`WaypointJournal` is the waypoint-oriented registration/history view. It must preserve the independent `DataSourceId` sequence/persistence semantics of committed data rather than turning several logical streams into one untraceable sequence.
+
+`PrepareTeamRegistry` keeps track of the teams that must prepare at the waypoint/exchange point, based on keypad/operator input. The registry also owns the traceable add/remove history needed for audit and restore; that history is an internal persistence/state concern of the registry, not a separate architecture component. Application command handlers coordinate registry mutation + display refresh; there is no separate generic `ReadyTeamService` responsibility merely to wrap those operations.
+
+`RaceData` is waypoint-scoped participant/team/tag reference data, including reserve-tag mapping semantics where applicable. It belongs to the `WaypointSystem` data/state model. Synchronising or loading that data from backoffice is handled by application/integration responsibilities rather than by turning the data object itself into a generic service.
+
+`TimingCalculator` performs derived timing calculations such as elapsed time and local ranking from waypoint state/reference data; the name describes the calculation responsibility directly without a generic `Service` suffix.
+
+Representative concepts include waypoint identity/value concepts, `Stage`, `LocationId`, `DataSourceId`, registration observations/results, `TimingTimestamp`, start-time values, ready-team values, tag-class values and race/participant/tag-reference values.
+
+Hardware inventory concepts such as `RegistrationAssetId` and `AntennaId` may appear in domain/application data as origin or diagnostic context, but the physical asset/antenna hierarchy is not the domain/software decomposition.
 
 Decoded RFID identity must preserve whether a tag is normal, reserve or test-class until the applicable domain/use-case policy has been applied. A test tag is therefore not silently normalised into a normal participant identity at an adapter boundary.
 
@@ -153,29 +169,62 @@ Logging, configuration, diagnostics, metrics where useful and build/version iden
 
 ## Principal runtime abstractions
 
-A `TimingSystemInstance` is the primary logical isolation and ordering boundary inside SI-01. One application process may host one or more independently addressed instances.
+A `WaypointSystem` is the primary independently addressed operational/software boundary inside SI-01. One application process may host one or more waypoint systems.
+
+The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
+
+### Software/domain decomposition
 
 ```text
 TimingApplicationRuntime
     |
-    +-- TimingSystemInstance system-01
-    |      +-- 1..X RegistrationAsset
-    |              +-- 1..X antenna/device bindings
-    |              +-- 1..X RegistrationSource
+    +-- WaypointSystem waypoint-A
+    |      +-- lifecycle / status
+    |      +-- TagProcessor
+    |      +-- StageStartTimeRegistry
+    |      +-- WaypointJournal
+    |      +-- logical DataSourceId/sequence semantics
     |
-    +-- TimingSystemInstance system-02
+    +-- WaypointSystem waypoint-B
            +-- ...
 ```
 
-A `RegistrationAsset` represents a configured physical/logical equipment unit. A `RegistrationSource` represents one ordered registration stream with a stable external/domain source identity, monotonic source sequence and source-specific registration state.
+![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/waypoint-software-decomposition.svg)
 
-Source routing occurs after asset/device resolution; an antenna identity is therefore not assumed to be identical to one registration-source identity.
+The exact Java class/package boundaries may evolve as implementation evidence appears, but the waypoint system is the semantic owner of the operational waypoint state. The physical registration asset is not a child component of this software tree.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable timing-system state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
+### Hardware/deployment decomposition
 
-![SI-01 configurable runtime topology](../../../raw/prod/docs/assets/architecture/runtime-registration-topology.svg)
+A physical registration system is described separately:
 
-Stable domain facts behind this topology are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
+```text
+RegistrationAsset asset-01
+    +-- Antenna ANT1
+    +-- Antenna ANT2
+    +-- ...
+```
+
+![Registration hardware/deployment topology](../../../raw/prod/docs/assets/architecture/registration-hardware-topology.svg)
+
+A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not by itself define the number of logical data-source streams.
+
+### Configuration and identity mapping
+
+Configuration connects the software and deployment identities without making them the same object:
+
+```text
+WaypointSystem waypoint-A -> LocationId X
+RegistrationAsset asset-01     -> DataSourceId source-01
+Another producer            -> DataSourceId source-02
+```
+
+![Waypoint, hardware and data-source configuration mapping](../../../raw/prod/docs/assets/architecture/waypoint-hardware-mapping.svg)
+
+`DataSourceId` is the logical ordered-stream identity and the scope for sequence, persistence and synchronisation semantics; the architecture does not require a separate `DataSource` component merely to hold that identity. It is not derived from `RegistrationAssetId`, even when deployment naming deliberately makes the two look similar.
+
+Runtime-wide infrastructure may be shared where that does not leak mutable waypoint state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
+
+Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
 
 ## Command, query and event model
 
@@ -201,14 +250,14 @@ The initial architecture uses explicit typed routing because the flow is easier 
 
 ## Process view: threading and concurrency
 
-External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID, CAN, RabbitMQ, timers and network sessions. Those threads must not directly mutate authoritative timing-system state.
+External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID, CAN, RabbitMQ, timers and network sessions. Those threads must not directly mutate authoritative waypoint-system state.
 
 The intended processing path is:
 
 1. capture externally meaningful `TimingTimestamp` values immediately where timing matters;
 2. attach stable instance/device/source context;
 3. convert input into an immutable command/event;
-4. route it to the addressed `TimingSystemInstance`;
+4. route it to the addressed `WaypointSystem`;
 5. serialize state-changing handling for that instance;
 6. keep blocking hardware/network/file operations outside the serialized state path;
 7. return relevant completion/failure into the state path as commands/events when required.
@@ -237,7 +286,7 @@ The source for this process view is `docs/_diagrams/runtime-dispatch-process.yam
 
 ### Per-instance serialized state lane
 
-Every `TimingSystemInstance` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
+Every `WaypointSystem` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
 
 Required semantics:
 
@@ -245,7 +294,7 @@ Required semantics:
 - at most one state-changing handler for an instance is active at a time;
 - the serial executor does **not** own a dedicated operating-system thread;
 - each serial executor delegates runnable work to a shared backing `ExecutorService`;
-- different timing-system instances may execute concurrently when the backing executor has more than one worker;
+- different waypoint systems may execute concurrently when the backing executor has more than one worker;
 - increasing backing parallelism must never allow two state handlers of the same instance to overlap.
 
 The design follows the standard `Executor` composition pattern rather than introducing an actor/reactive framework. The constrained field profile should start with one backing state worker; larger development/integration compositions may configure more workers after measurement. This allows the same logical model to run conservatively on a Pi Zero and with parallel independent instances on a desktop test host.
@@ -330,7 +379,7 @@ Normal shutdown should preserve executor ownership explicitly:
 The selected baseline is:
 
 - JDK `java.util.concurrent` (`Executor`, `ExecutorService`, `ThreadPoolExecutor`, `ScheduledExecutorService`, futures where justified);
-- a small explicit project-owned `SerialExecutor` abstraction per timing-system instance;
+- a small explicit project-owned `SerialExecutor` abstraction per waypoint system;
 - one shared configurable state backing executor;
 - separate I/O/scheduler execution where blocking or delayed work requires it;
 - no Akka/reactive-stream/event-bus framework in the initial architecture;
@@ -374,8 +423,8 @@ monotonic time source
   timeout / retry / filtering windows
   process-local only
 
-RegistrationSource SequenceNumber
-  stable source ordering / gap detection
+DataSourceId + SequenceNumber
+  stable stream ordering / gap detection
 ```
 
 A source sequence is not derived from a timestamp. Two registrations may have equal timestamps, and a wall-clock correction may even make a later observation carry an earlier absolute timestamp; source ordering must remain recoverable from source sequence semantics.
@@ -479,7 +528,7 @@ Working decisions:
 - another executable/private consumer may choose a different compatible provider without changing framework/domain source;
 - log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
-- stable timing-system/source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
+- stable waypoint/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
 - logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state.
 
 The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.
@@ -494,7 +543,7 @@ Representative structure:
 
 ```text
 application
-  timing-system instances
+  waypoint systems
     location/context
     registration assets
       antenna/device bindings
@@ -521,13 +570,13 @@ Keep these concepts distinct:
 
 1. ingress/ordering — concurrency ownership;
 2. registration ledger/source sequence — traceable domain/operational history;
-3. ready-team journal/current projection — separate operational capability;
+3. prepare-team registry — current teams-to-prepare plus internal traceable history;
 4. race/reference data — locally available participant/team/tag-reference input received from external sources;
 5. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
 6. local backup/restore — restart/power-loss recovery;
 7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
-Registration identity remains source-scoped; the current stable conceptual key is `(RegistrationSystemId, SequenceNumber)`.
+Registration identity remains source-scoped; the current stable conceptual key is `(DataSourceId, SequenceNumber)`.
 
 Persistence durability semantics, file format, atomic-write strategy and corruption/recovery rules remain open decisions and may justify a focused data/persistence SDD only when implementation reaches that complexity.
 
@@ -632,7 +681,7 @@ Representative SI-01 deployments are:
 Production field host
   Raspberry Pi Zero / Zero W
     one SI-01 process
-      one or more configured TimingSystemInstance objects
+      one or more configured WaypointSystem objects
       local devices + local files
       optional network/backoffice connectivity
 

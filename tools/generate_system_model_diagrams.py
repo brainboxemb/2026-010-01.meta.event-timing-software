@@ -13,7 +13,7 @@ def software_item_overview() -> Diagram:
         Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
         Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
         Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..X TimingSystemInstances", 500, 490, 450, 100, "core"),
+        Node("timing", "SI-01 Headless Timing Application\\n1..X WaypointSystems", 500, 490, 450, 100, "core"),
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
@@ -50,54 +50,100 @@ def software_item_overview() -> Diagram:
     )
 
 
-def runtime_topology() -> Diagram:
+def waypoint_software_decomposition() -> Diagram:
     nodes = [
-        Node("settings", "External settings\\npublic schema + private deployment mapping", 40, 65, 360, 90, "interface"),
-        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 65, 390, 90, "core"),
-        Node("backoffice", "Backoffice\\nreceives ordered source streams", 1000, 65, 330, 90, "external"),
+        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 55, 390, 90, "core"),
+        Node("wp1", "WaypointSystem waypoint-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
+        Node("wp2", "WaypointSystem waypoint-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
 
-        Node("sys1", "TimingSystemInstance system-01\\nserialized state boundary", 160, 235, 390, 90, "service"),
-        Node("sys2", "TimingSystemInstance system-02\\nserialized state boundary", 860, 235, 390, 90, "service"),
-
-        Node("asset1", "RegistrationAsset asset-01\\nphysical/logical box identity", 150, 420, 400, 90, "service"),
-        Node("asset2", "RegistrationAsset asset-02\\nphysical/logical box identity", 850, 420, 400, 90, "service"),
-
-        Node("ant1", "RS-<asset-key>-ANT1", 30, 610, 250, 70, "external"),
-        Node("ant2", "RS-<asset-key>-ANT2", 300, 610, 250, 70, "external"),
-        Node("src1", "RegistrationSource source-01\\nsequence + own file", 575, 595, 300, 100, "queue"),
-        Node("src2", "RegistrationSource source-02\\nvirtual/source mapping possible\\nsequence + own file", 900, 585, 330, 120, "queue"),
-        Node("ant3", "RS-<asset-key>-ANT1", 1110, 770, 250, 70, "external"),
-        Node("src3", "RegistrationSource source-03\\nsequence + own file", 760, 755, 300, 100, "queue"),
-
-        Node("routing", "Explicit source-routing policy\\naccepted observation → configured source stream(s)", 300, 820, 390, 100, "interface"),
-        Node("privacy", "Actual asset names + external IDs\\nremain private deployment data", 300, 995, 390, 85, "external"),
+        Node("life", "Waypoint lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
+        Node("tag", "TagProcessor\\nRFID/tag observation processing", 370, 430, 300, 90, "service"),
+        Node("start", "StageStartTimeRegistry\\nlocal stage start-time reference", 700, 430, 330, 90, "service"),
+        Node("journal", "WaypointJournal\\nregistrations + DataSourceId-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
+        Node("ready", "PrepareTeamRegistry\\nteams to prepare + internal keypad history", 80, 640, 330, 100, "service"),
+        Node("race", "RaceData\\nparticipant/team/tag reference data", 460, 640, 330, 100, "service"),
+        Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 840, 640, 420, 100, "interface"),
     ]
 
     edges = [
-        Edge("settings", "app", "build topology", True),
-        Edge("app", "backoffice", "sync/outbox", True),
-        Edge("app", "sys1"),
-        Edge("app", "sys2"),
-        Edge("sys1", "asset1", "1..X assets"),
-        Edge("sys2", "asset2", "1..X assets"),
-        Edge("asset1", "ant1", "1..X antennas"),
-        Edge("asset1", "ant2"),
-        Edge("asset1", "src1", "1..X sources"),
-        Edge("asset1", "src2"),
-        Edge("asset2", "ant3", "1..X antennas"),
-        Edge("asset2", "src3", "1..X sources"),
-        Edge("ant1", "routing", "observation", True),
-        Edge("ant2", "routing", "observation", True),
-        Edge("routing", "src1", "route", True),
-        Edge("routing", "src2", "route", True),
-        Edge("settings", "privacy", "production mapping private", True),
+        Edge("app", "wp1", "hosts 1..X"),
+        Edge("app", "wp2"),
+        Edge("wp1", "life"),
+        Edge("wp1", "tag"),
+        Edge("wp1", "start"),
+        Edge("wp1", "journal"),
+        Edge("wp1", "ready"),
+        Edge("wp1", "race"),
+        Edge("app", "shared"),
+        Edge("wp1", "shared", "uses shared facilities", True),
+        Edge("wp2", "shared", "uses shared facilities", True),
     ]
 
     return Diagram(
-        "runtime-registration-topology",
-        "Configurable runtime topology — instances, assets, sources and antennas",
+        "waypoint-software-decomposition",
+        "SI-01 software/domain decomposition — waypoint systems and responsibilities",
         1400,
-        1140,
+        830,
+        nodes,
+        edges,
+    )
+
+
+def registration_hardware_topology() -> Diagram:
+    nodes = [
+        Node("asset1", "RegistrationAsset asset-01\\nphysical/inventory identity", 180, 100, 420, 100, "external"),
+        Node("asset2", "RegistrationAsset asset-02\\nphysical/inventory identity", 820, 100, 420, 100, "external"),
+        Node("ant11", "Antenna ANT1", 70, 340, 260, 75, "adapter"),
+        Node("ant12", "Antenna ANT2", 370, 340, 260, 75, "adapter"),
+        Node("ant21", "Antenna ANT1", 900, 340, 260, 75, "adapter"),
+        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N DataSourceIds", 450, 540, 500, 100, "interface"),
+    ]
+
+    edges = [
+        Edge("asset1", "ant11", "1..N antennas"),
+        Edge("asset1", "ant12"),
+        Edge("asset2", "ant21", "1..N antennas"),
+        Edge("asset1", "note", "separate from software decomposition", True),
+        Edge("asset2", "note", "separate from software decomposition", True),
+    ]
+
+    return Diagram(
+        "registration-hardware-topology",
+        "Registration hardware/deployment topology — assets and antennas",
+        1400,
+        720,
+        nodes,
+        edges,
+    )
+
+
+def waypoint_hardware_mapping() -> Diagram:
+    nodes = [
+        Node("wp", "WaypointSystem waypoint-A", 80, 85, 330, 85, "service"),
+        Node("loc", "Location X\\nLocationId", 80, 300, 330, 85, "external"),
+        Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 530, 85, 350, 85, "external"),
+        Node("ds", "DataSourceId source-01\\nlogical ordered stream identity", 530, 300, 350, 85, "queue"),
+        Node("finish", "Other producer\\nseparate producer", 1000, 85, 300, 85, "external"),
+        Node("finishds", "DataSourceId source-02", 1000, 300, 300, 85, "queue"),
+        Node("config", "Deployment configuration\\nconnects identities; does not collapse them", 440, 510, 520, 105, "interface"),
+    ]
+
+    edges = [
+        Edge("wp", "loc", "deployed/configured at"),
+        Edge("asset", "ds", "configured logical data identity"),
+        Edge("finish", "finishds", "configured logical data identity"),
+        Edge("config", "wp", "mapping", True),
+        Edge("config", "asset", "mapping", True),
+        Edge("config", "ds", "mapping", True),
+        Edge("config", "finish", "mapping", True),
+        Edge("config", "finishds", "mapping", True),
+    ]
+
+    return Diagram(
+        "waypoint-hardware-mapping",
+        "Configuration mapping — waypoint, location, hardware and data-source identities",
+        1400,
+        700,
         nodes,
         edges,
     )
@@ -115,9 +161,9 @@ def rabbitmq_source_topology() -> Diagram:
         Node("pub", "controlled publisher\\ndedicated channel or small pool", 545, 505, 310, 85, "adapter"),
         Node("c2", "source-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
 
-        Node("s1", "RegistrationSource source-01\\nserialized application path", 80, 690, 310, 85, "service"),
+        Node("s1", "Ordered stream source-01\\nDataSourceId-scoped application path", 80, 690, 310, 85, "service"),
         Node("outbox", "local durable/pending outbox\\nsource identity retained", 545, 690, 310, 85, "service"),
-        Node("s2", "RegistrationSource source-02\\nserialized application path", 1010, 690, 310, 85, "service"),
+        Node("s2", "Ordered stream source-02\\nDataSourceId-scoped application path", 1010, 690, 310, 85, "service"),
 
         Node("split", "Possible later refinement\\nseparate consumer + publisher connections\\nonly if evidence justifies it", 500, 850, 400, 95, "interface"),
     ]
@@ -151,12 +197,12 @@ def rabbitmq_source_topology() -> Diagram:
     )
 
 
-def timing_system_lifecycle() -> Diagram:
+def waypoint_system_lifecycle() -> Diagram:
     nodes = [
-        Node("closed", "CLOSED\\nnot accepting normal timing operation", 170, 210, 330, 90, "core"),
-        Node("open", "OPEN\\nlocal timing operation enabled", 770, 210, 330, 90, "core"),
-        Node("health", "Subsystem health is orthogonal\\nHEALTHY • DEGRADED • ERROR states do not silently change OPEN/CLOSED", 355, 440, 560, 110, "service"),
-        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> system instance remains OPEN but status is degraded", 355, 650, 560, 95, "interface"),
+        Node("closed", "CLOSED\\nnot accepting normal waypoint timing operation", 170, 210, 330, 90, "core"),
+        Node("open", "OPEN\\nwaypoint timing operation enabled", 770, 210, 330, 90, "core"),
+        Node("health", "Subsystem health is orthogonal\\nHEALTHY • DEGRADED • ERROR do not silently change OPEN/CLOSED", 355, 440, 560, 110, "service"),
+        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> waypoint remains OPEN while status is degraded", 355, 650, 560, 95, "interface"),
     ]
     edges = [
         Edge("closed", "open", "Open command"),
@@ -166,8 +212,8 @@ def timing_system_lifecycle() -> Diagram:
         Edge("health", "example"),
     ]
     return Diagram(
-        "timing-system-lifecycle",
-        "TimingSystemInstance lifecycle — operational lifecycle and health are separate",
+        "waypoint-system-lifecycle",
+        "WaypointSystem lifecycle — operational lifecycle and health are separate",
         1280,
         820,
         nodes,
@@ -239,9 +285,11 @@ def generate(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     diagrams = [
         software_item_overview(),
-        runtime_topology(),
+        waypoint_software_decomposition(),
+        registration_hardware_topology(),
+        waypoint_hardware_mapping(),
         rabbitmq_source_topology(),
-        timing_system_lifecycle(),
+        waypoint_system_lifecycle(),
         rfid_lifecycle(),
         connectivity_layers(),
     ]

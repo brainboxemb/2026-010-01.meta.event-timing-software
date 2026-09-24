@@ -6,84 +6,82 @@ This document captures stable domain facts and terminology supplied during the i
 
 Concrete production asset names, external registration-system IDs, source mappings and deployment inventories are intentionally **not** recorded in this public repository. They are deployment/proprietary information. Public documents describe the structure and semantics using generic identifiers only.
 
-## Runtime and total system instances
+## Waypoint systems, stages and locations
 
-One running headless timing application must be able to host **multiple complete logical system instances** at the same time.
+One running headless timing application must be able to host **multiple logical waypoint systems** at the same time.
 
-The working software term is `TimingSystemInstance` for one such complete logical system.
-
-This is required for both normal composition flexibility and test/simulation use. In particular, one application should be able to simulate the behaviour of a complete field of multiple system instances towards the backoffice.
+The working software/domain term is `WaypointSystem` for one such independently addressed waypoint system. A waypoint is the registration/timing point at the **end of a stage**. A `WaypointSystem` is deployed or configured for a physical event `LocationId`; the software identity of the waypoint and the physical location where it is used are separate concepts.
 
 Conceptually:
 
 ```text
 TimingApplication
-  +-- TimingSystemInstance 1
-  +-- TimingSystemInstance 2
-  +-- TimingSystemInstance 3
+  +-- WaypointSystem waypoint-01 -> LocationId X
+  +-- WaypointSystem waypoint-02 -> LocationId Y
   +-- ...
 ```
 
-A `TimingSystemInstance` is not the same thing as a physical registration asset or a registration source.
+Operational state such as `OPEN` / `CLOSED` belongs to the waypoint-system software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
 
-## Registration assets and registration sources
+A `Stage` and a `WaypointSystem` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
 
-The domain contains two separate identities that must not be conflated.
+The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint system. New architecture/design work should use `WaypointSystem`; existing implementation/API names may require a controlled follow-up when the working architecture is accepted.
+
+## Registration hardware and data-source identity
+
+Hardware/deployment identity and logical data identity are separate namespaces.
 
 ### Registration asset
 
-A `RegistrationAsset` represents the real/configured registration box or logical equipment asset.
+A `RegistrationAsset` represents the physical/configured registration hardware unit for inventory, configuration, diagnostics and optional physical labelling.
 
-An asset has a stable configured identity/name for inventory, status, configuration and optional physical labelling. The concrete production asset names are deployment/proprietary information and stay outside this public repository.
+For example, a physical unit may have an asset identity such as:
 
-A `TimingSystemInstance` can contain one or more registration assets.
+```text
+RegistrationAssetId = asset-01
+```
 
-### Registration source
+Concrete production asset names remain deployment/proprietary information and stay outside this public repository.
 
-A `RegistrationSource` represents one ordered registration stream towards storage/backoffice semantics.
+### Data-source identity
 
-Each source has an external/domain system identifier. `RegistrationSystemId` remains the working name for that external/source identifier where it appears in records and protocol contracts.
+`DataSourceId` is the logical/software identity assigned to an ordered registration/data stream produced by a configured registration system. It is an identity and sequence/persistence scope; this baseline does **not** require a separate first-class `DataSource` software component.
 
-Important structural rules:
+A physical registration system can be configured with a logical data-source identity, for example:
 
-- one registration asset can expose one or more registration sources;
-- some sources can be virtual rather than corresponding one-to-one with a physical box;
-- reserve and normal source classes exist;
-- the exact production names, IDs, ranges and mappings are proprietary/deployment data and are not documented here;
-- every source owns its own monotonic registration sequence and source-specific registration persistence.
+```text
+RegistrationAssetId = asset-01
+DataSourceId        = source-01
+```
+
+Deployments may deliberately choose visually related hardware and data-source labels for convenience, but that is **not** an identity rule. Another producer may use an unrelated logical identity such as `source-02`.
+
+The number of RFID antennas attached to a physical registration system does not by itself create additional data-source identities. A unit with one or two antennas may still produce the same configured `DataSourceId`; antenna identity remains additional origin/diagnostic context.
+
+Known structural rules:
+
+- `RegistrationAssetId` identifies hardware/inventory;
+- `DataSourceId` identifies the logical ordered data stream;
+- every `DataSourceId`-scoped stream owns its own monotonic registration sequence and source-specific persistence/synchronisation state;
+- reserve and virtual data-source identities/streams exist, but their exact relationship to physical producers remains a separate mapping question;
+- concrete production asset names, data-source IDs and mappings are deployment/proprietary information.
+
+## Registration hardware and antenna topology
+
+A physical registration asset can have **one or more RFID antennas**.
 
 Conceptually:
 
 ```text
-TimingSystemInstance
-  +-- RegistrationAsset asset-01
-  |     +-- RegistrationSource source-01
-  |     +-- RegistrationSource source-02   # may be virtual
-  |
-  +-- RegistrationAsset asset-02
-        +-- RegistrationSource source-03
+RegistrationAsset asset-01
+  +-- Antenna ANT1
+  +-- Antenna ANT2
+  +-- configured DataSourceId source-01
 ```
 
-This separation allows a real asset name to remain useful for operations without forcing that name to equal the external registration-system identifier.
+The antennas are hardware/device inputs of that registration system. They are not child software components of a `WaypointSystem` and they are not separate data sources merely because there are multiple antennas.
 
-## RFID antenna ownership and routing
-
-A registration asset can have **one or more RFID antennas**.
-
-Conceptually:
-
-```text
-TimingSystemInstance
-  +-- RegistrationAsset asset-01
-        +-- Antenna RS-<asset-key>-ANT1
-        +-- Antenna RS-<asset-key>-ANT2
-        +-- RegistrationSource source-01
-        +-- RegistrationSource source-02
-```
-
-An RFID observation must retain enough antenna/asset context for the software to route an accepted observation to the correct registration-source stream or streams.
-
-The antenna therefore belongs primarily to the **asset**, not inherently to one source. Source selection/routing is a configurable/domain policy because one asset can expose multiple registration sources.
+An RFID observation must retain enough hardware context for diagnostics and processing, including the antenna identity where relevant. The resulting committed registration/data record uses the configured `DataSourceId` for stream identity and ordering.
 
 The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
 
@@ -101,29 +99,52 @@ Use an explicit numeric suffix even when an asset currently has only one antenna
 
 A future physical label may use the same `AntennaId`. The real `<asset-key>` values used in production remain deployment data and should not be copied into this public repository.
 
-## Configurable topology
+## Separate software, hardware and configuration views
 
-The relationship between application instances, registration assets, registration sources and antennas should be externally configurable through settings rather than hard-coded in application source.
+Do not express the complete system as one parent/child tree. The software/domain decomposition, hardware/deployment decomposition and configuration/identity mapping answer different questions.
 
-The configuration needs to be able to describe at least:
+### Software/domain view
 
 ```text
 TimingApplication
-  1..X TimingSystemInstance
-    1..X RegistrationAsset
-      1..X Antenna
-      1..X RegistrationSource
-        external RegistrationSystemId mapping
-        source-specific sequence/persistence
+  1..X WaypointSystem
+        waypoint identity
+        configured LocationId
+        lifecycle/state
+        tag/RFID processing
+        stage start-time reference data
+        registration/journal behaviour
+        status
 ```
 
-The concrete configuration file format is not yet selected.
+The exact component/class boundaries remain design work, but the waypoint system is the software/domain aggregate being operated.
 
-Production configuration may contain proprietary asset names/source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples must use placeholder identities.
+### Hardware/deployment view
 
-The same topology mechanism should support both real hardware adapters and stub/simulated adapters so a single application can model multiple total systems for integration/backoffice testing.
+```text
+RegistrationAsset asset-01
+  +-- Antenna 1
+  +-- Antenna 2
+  +-- ...
+```
 
-## Locations
+This view describes physical/configured equipment. It must not be used as the software component hierarchy.
+
+### Configuration/identity mapping
+
+Configuration connects those views and assigns logical stream identities, for example:
+
+```text
+WaypointSystem waypoint-A -> LocationId X
+RegistrationAsset asset-01     -> DataSourceId source-01
+Another producer            -> DataSourceId source-02
+```
+
+The concrete configuration file format is not yet selected. Production configuration may contain proprietary asset names/data-source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples use placeholders.
+
+The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the waypoint-domain model.
+
+## Location and record context
 
 Each physical event location has a unique numeric identifier:
 
@@ -131,23 +152,25 @@ Each physical event location has a unique numeric identifier:
 LocationId = 1..25
 ```
 
+A `WaypointSystem` is configured/deployed at a location, while its software identity remains separate from that location identity.
+
 A registration record is associated with both:
 
 ```text
-RegistrationSystemId
+DataSourceId
 LocationId
 ```
 
-The exact configuration ownership of `LocationId` still needs to be made explicit. A likely model is that the containing `TimingSystemInstance` provides the normal location context, while every persisted registration still carries the location explicitly for traceability and synchronisation.
+This lets a logical data source preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
 
 ## Registration sequence
 
-Every registration stream has a monotonically increasing sequence number **per registration source**.
+Every registration stream has a monotonically increasing sequence number scoped by **`DataSourceId`**.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (RegistrationSystemId, SequenceNumber)
+RegistrationRecordKey = (DataSourceId, SequenceNumber)
 ```
 
 The `LocationId`, `RegistrationAssetId` and `AntennaId` may provide useful context, but none of them changes the sequence scope.
@@ -163,7 +186,7 @@ This allows receiving/upstream systems to reason about stream consistency indepe
 
 Important intended properties:
 
-- the number is monotonic per registration source;
+- the number is monotonic per `DataSourceId`-scoped stream;
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
 - moving/changing location must not implicitly reset the source sequence;
@@ -172,19 +195,19 @@ Important intended properties:
 
 ## Per-source persistence
 
-Each registration source has its **own registration file**.
+Each `DataSourceId`-scoped registration stream has its **own registration file**.
 
-The active application model may remain in memory, but registration persistence/recovery must preserve the source boundary so one source stream and its sequence state can be recovered and synchronised independently.
+The active application model may remain in memory, but registration persistence/recovery must preserve the source boundary so one `DataSourceId`-scoped stream and its sequence state can be recovered and synchronised independently.
 
 Conceptually:
 
 ```text
-RegistrationSource source-01
+DataSourceId source-01
   in-memory ledger/state
   source-specific sequence
   source-specific registration file
 
-RegistrationSource source-02
+DataSourceId source-02
   in-memory ledger/state
   source-specific sequence
   source-specific registration file
@@ -204,7 +227,7 @@ A working minimal envelope is therefore conceptually:
 
 ```text
 RegistrationRecord
-  registrationSystemId
+  dataSourceId
   locationId
   sequenceNumber
   recordType
@@ -232,6 +255,14 @@ The decoded participant/team identity contains a team number in the range:
 ```text
 TeamNumber = 0..999
 ```
+
+## Race data
+
+`RaceData` is the locally available participant/team/tag reference data used by one `WaypointSystem`.
+
+It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is waypoint-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceDataService`.
+
+Stage start-time data remains a separate concern owned by `StageStartTimeRegistry`.
 
 ## RFID tag identity structure
 
@@ -278,13 +309,13 @@ They support local calculations such as elapsed time and ranking without requiri
 
 ## Full-field simulation
 
-A single SI-01 application must be capable of running enough configured `TimingSystemInstance` objects to represent the complete field behaviour required for backoffice integration testing.
+A single SI-01 application must be capable of running enough configured `WaypointSystem` objects to represent the complete field behaviour required for backoffice integration testing.
 
 For this use case:
 
 - each total system instance remains separately addressable;
-- each configured registration asset can expose one or more source streams;
-- each source retains its configured external/source-like identity and independent sequence stream;
+- each configured producer uses its configured data-source identity/identities according to the deployment mapping;
+- each `DataSourceId` retains its configured logical identity and independent sequence stream;
 - antennas/devices may be stubbed or simulated through the normal adapter contracts;
 - registrations still follow the same normal queue, source-sequence, persistence and backoffice paths as production data;
 - simulation must not require a special bypass around the application/domain model;
@@ -330,12 +361,12 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 
 ## Open domain questions
 
-- Does each `TimingSystemInstance` always correspond to exactly one `LocationId`, or are there valid cases where one instance contains multiple location contexts?
-- How is an accepted RFID observation routed when one registration asset exposes multiple registration sources: one selected source, several streams, or a policy determined by operation/configuration?
-- Does sequence numbering start at a defined value for a new registration source?
+- Can a `WaypointSystem` change `LocationId` during one operational session, or is location fixed until the waypoint system is closed/reconfigured?
+- Is a physical producing registration system always configured with exactly one `DataSourceId`, and how are reserve/virtual data sources associated with physical or software producers?
+- Does sequence numbering start at a defined value for a new data source?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
 - Which operational events besides `OPEN` must be part of a registration stream (for example close/reinitialisation/configuration changes)?
 - What exact data must an `OPEN` registration entry contain?
-- Are normal, reserve and virtual registration sources treated identically by backoffice synchronisation once their source identity is known?
+- Are normal, reserve and virtual data sources treated identically by backoffice synchronisation once their source identity is known?
 - What exact operational behaviour is required for test tags, and which parts deliberately differ from normal and reserve tags?
