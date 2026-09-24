@@ -206,7 +206,7 @@ The architecture must support constrained field deployment and normal Linux/Wind
 The SI-01 SAD owns, among other things:
 
 - layered application responsibilities;
-- `WaypointSystem` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
+- `Waypoint` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
 - threading/concurrency and internal messaging;
 - status architecture and lifecycle handling;
 - persistence and restore strategy;
