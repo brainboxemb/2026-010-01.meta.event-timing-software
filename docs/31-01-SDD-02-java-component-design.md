@@ -74,6 +74,32 @@ Do not rename or split packages merely to make the source tree match an architec
 
 Likewise, a logical layer/package does not require a runtime marker class merely to prove that the layer exists. The first Java implementation removed the bootstrap-only `CoreLayer`, `DomainLayer`, `CommLayer` and `PlatformLayer` markers once real application classes existed. Architecture is expressed through ownership, package/dependency direction and behaviour, not through one object per diagram box.
 
+### Java object model rule
+
+Do not create a Java class merely because the SAD or an IDD names a concept or
+shows a field in a response.
+
+Create an object when current behaviour needs an object with identity, state or
+a useful grouped value. Create a separate helper only when it owns behaviour or
+removes real duplication.
+
+Examples:
+
+- the IF-03 status JSON describes what a client receives; it does **not** require
+  an internal class named `ApplicationStatusSnapshot`;
+- a class such as `ApplicationStatusModel` is not required unless implemented
+  status behaviour actually needs that model;
+- a logical architecture box is not evidence that a Java class with the same
+  name must exist.
+
+For small enums, keep the enum with the object that owns its meaning when it is
+used only there. A nested enum such as `TimingApplicationLifecycle.State` is
+preferred over an extra top-level source file until real reuse or clarity
+justifies separating it.
+
+This keeps the early implementation small and allows the object model to grow
+from real use cases rather than from the diagrams alone.
+
 ## Contract placement
 
 Do not collect every interface into one generic top-level `api` package/module.
