@@ -3,9 +3,10 @@ title: Minimal version/status application on development host
 state: active
 summary: >-
   Turn the Step-2 executable shell into the first useful long-running SI-01 process.
-  One application-owned version/status model drives local, remote, HTTP and WebSocket
-  views; external settings create a minimal Waypoint and ST-1 proves the
-  running process through its public interfaces.
+  The shared application boundary and build identity are established. The next slice
+  makes Application Configuration (IF-11) real for a minimal Waypoint and presentation
+  binding, after which local, remote, HTTP and WebSocket views converge on the same
+  application semantics and ST-1 proves the running process.
 documents:
   - name: 20-01-SRD
     title: SI-01 first executable requirements
@@ -15,8 +16,12 @@ documents:
     title: Application control/status interface
     maturity: review
     completeness: 100
+  - name: 40-02-IDD
+    title: Application configuration interface
+    maturity: review
+    completeness: 100
   - name: 31-01-SAD
-    title: SI-01 runtime/status architecture
+    title: SI-01 application/configuration architecture
     maturity: review
     completeness: 95
   - name: 50-SVP
@@ -28,57 +33,63 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    title: Shared application version/status model
-    state: next
+    title: Shared application boundary + build identity
+    state: done
+    note: >-
+      CommandHandler is the current shared application-facing boundary and BuildIdentity
+      remains build provenance rather than deployment configuration.
 
   - id: A02
     lane: application
     kind: implementation
-    title: Long-running process host + shutdown
-    state: planned
+    title: Application configuration + minimal Waypoint
+    state: next
     depends_on: [A01]
+    note: >-
+      Implement only the configuration types required to load/validate an effective
+      ApplicationConfig and compose one Waypoint plus its first presentation binding.
 
   - id: A03
     lane: application
     kind: implementation
-    title: Waypoint + external settings
+    title: Long-running process host + shutdown
     state: planned
-    depends_on: [A01, A02]
+    depends_on: [A02]
 
   - id: A04
     lane: application
     kind: implementation
     title: Local console / shell adapter
     state: planned
-    depends_on: [A01, A02]
+    depends_on: [A01, A03]
 
   - id: A05
     lane: application
     kind: implementation
     title: Remote terminal / shell adapter
     state: planned
-    depends_on: [A01, A02]
+    depends_on: [A01, A03]
 
   - id: A06
     lane: application
     kind: implementation
     title: HTTP / JSON status adapter
     state: planned
-    depends_on: [A01, A02]
+    depends_on: [A01, A02, A03]
 
   - id: A07
     lane: application
     kind: implementation
     title: WebSocket status / event stream
     state: planned
-    depends_on: [A01, A02, A06]
+    depends_on: [A01, A03, A06]
 
   - id: V01
     lane: verification
     kind: verification
-    title: Shared behaviour unit tests
+    title: Shared behaviour + configuration unit tests
     state: planned
-    depends_on: [A01, A03]
+    depends_on: [A01, A02]
 
   - id: V02
     lane: verification
@@ -92,7 +103,7 @@ activities:
     kind: verification
     title: ST-1 running-process black-box proof
     state: planned
-    depends_on: [A03, A04, A05, A06, A07, V01, V02]
+    depends_on: [A02, A04, A05, A06, A07, V01, V02]
 
   - id: V04
     lane: verification
@@ -104,6 +115,9 @@ activities:
   - id: V05
     lane: verification
     kind: verification
-    title: 0.2.0 release build / identity proof
+    title: Step-3 0.2.x release / identity proof
     state: planned
     depends_on: [V03, V04]
+    note: >-
+      v0.2.1 is the current published Step-3 baseline; normal development continues
+      on 0.2.2-SNAPSHOT and Step 3 closes on the next accepted 0.2.x release.

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refresh Step-3 planning and handoff around the current `v0.2.1` / `0.2.2-SNAPSHOT` baseline and IF-11 configuration work, while leaving the already-correct roadmap status (`Step 3: active`) unchanged.
+
 - Define IF-11 application configuration as the SI-01 deployment/composition contract: keep Waypoint, hardware and presentation identities separate; use base + platform + optional profile overlays; treat simulation as adapter composition; keep secrets external; and prefer framework composition over a `BaseApplication` inheritance hierarchy.
 
 - Rename the external adapter responsibility to `I/O`, organise it around hardware/messaging/storage, reserve Java `infra` for cross-cutting technical support, and shorten the active SAD/Java SDD while retaining the diagrams and copyable package/responsibility blocks.

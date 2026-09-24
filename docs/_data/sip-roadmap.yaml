@@ -60,13 +60,14 @@ steps:
     estimate_project_days: 3
     workstream: application
     docs:
-      requirements: {level: working, scope: "version/status/lifecycle behaviour only"}
-      idd: {level: working, scope: "application-control/status API used by first executable"}
-      design: {level: review, scope: "SI-01 runtime/status design exercised by code"}
-      verification: {level: working, scope: "ST-1 plus executable behaviour evidence"}
+      requirements: {level: working, scope: "version/status/lifecycle plus first external configuration behaviour"}
+      idd: {level: review, scope: "application control/status and application configuration contracts"}
+      design: {level: review, scope: "SI-01 application/configuration composition exercised by code"}
+      verification: {level: working, scope: "configuration/component evidence plus ST-1 executable behaviour"}
     documents:
       - {name: 20-01-SRD, title: SI-01 first executable requirements, maturity: review, completeness: 100}
       - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
+      - {name: 40-02-IDD, title: Application configuration interface, maturity: review, completeness: 100}
       - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 95}
       - {name: 50-SVP, title: First executable ST-1 evidence, maturity: working, completeness: 90}
 

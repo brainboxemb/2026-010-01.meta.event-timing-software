@@ -21,9 +21,12 @@ Lees eerst in de meta-repository:
 - `docs/11-SIP-software-implementation-planning.md`
 - `docs/12-SDE-software-development-environment.md`
 - `docs/13-SDE-java-build-test-toolchain.md`
+- `docs/20-01-SRD-timing-application-requirements.md`
 - `docs/30-SSAD-software-system-architecture.md`
 - `docs/31-01-SAD-timing-application-architecture.md`
 - `docs/31-01-SDD-02-java-component-design.md`
+- `docs/40-01-IDD-application-control-status.md`
+- `docs/40-02-IDD-application-configuration.md`
 - `docs/50-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:
@@ -41,14 +44,19 @@ Controleer voor het actuele werk:
 5. gegenereerde review-output onder `dev/pr-N/docs` of `dev/pr-N/bld` en de actuele `prod/docs` / `prod/bld` output wanneer die voor de stap relevant is.
 
 Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
-- SIP Step 1 is afgerond;
-- SIP Step 2 is nog actief en mag nog niet administratief worden afgesloten;
-- de framework/application `0.0.1` release-process trial is volledig uitgevoerd, inclusief tag-build, release-assets en terugkeer van `main` naar `0.1.0-SNAPSHOT`;
-- `tool.java-project v0.1.0` is als normale toolingrelease gemaakt en de tag is onafhankelijk opnieuw self-tested;
-- de volgende release-gate is een minimale externe reference consumer `template.java-project`, volgens hetzelfde principe als `template.scad-project` voor de SCAD-tooling;
-- daarna moet het event-timing framework de gereleasde `tool.java-project` baseline via het project-file model adopteren en opnieuw groen worden bewezen;
-- meta issue #28 en de bijbehorende draft PR leggen de algemene SIP-step/release-closure werkwijze vast;
-- pas na de released-toolchain gate, de resterende Step-2 exit evidence en een succesvolle productrelease `0.1.0` mag Step 2 naar `completed` en Step 3 naar `active`.
+- SIP Step 1 en Step 2 zijn afgerond; SIP Step 3 is actief;
+- de geaccepteerde Step-2 releasebaseline is `v0.1.0`;
+- de huidige gepubliceerde Step-3 productbaseline is `v0.2.1`;
+- normale ontwikkeling loopt op `0.2.2-SNAPSHOT`;
+- IF-03 definieert application-control/status;
+- IF-11 definieert deployment/application-configuratie, inclusief Waypoint-, I/O-, presentation-, runtime/security-ownership, platform/profile overlays en secret references;
+- presentation endpoints verwijzen naar Waypoints; een Waypoint kent geen HTTP-poort of tablet;
+- `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
+- `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
+- maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
+- deel herbruikbare application/runtime-functionaliteit via composition wanneer echte reuse dat rechtvaardigt; introduceer geen `BaseApplication` inheritance-hiërarchie zonder concrete noodzaak;
+- de eerstvolgende bounded Step-3 slice is external configuration echt maken: concrete configuratierepresentatie/library kiezen, een minimale `ApplicationConfig` laden/mergen/valideren en daarmee ten minste één Waypoint plus de eerste presentation binding samenstellen;
+- implementeer alleen configuratietypes die die slice daadwerkelijk nodig heeft.
 
 Voor Java releasewerk geldt bewust:
 - Maven project version, CHANGELOG release section en Git tag moeten expliciet overeenkomen;
@@ -57,7 +65,7 @@ Voor Java releasewerk geldt bewust:
 - een productrelease moet een herkenbare gereleasde toolingbaseline gebruiken, met daarnaast exacte immutable commit provenance voor reusable GitHub workflows;
 - `template.java-project` is bedoeld als externe conformance/reference consumer; de fixture in `tool.java-project` blijft de snelle interne toolingtest.
 
-Ga alleen verder met het huidige Step-2/prerequisite werk. Start Step 3 niet alvast, behalve wanneer een noodzakelijke correctie van het plan dat expliciet vereist.
+Ga verder vanuit de actieve SIP Step 3. Bepaal de eerstvolgende bounded implementation slice uit de actuele SIP, IF-03/IF-11, open issues/PR's en de Java-repository; bouw geen later capabilitymodel vooruit zonder een actuele consumer.
 
 Gebruik de repository die eigenaar is van het werk:
 - cross-project afspraken/status/closure-governance in meta;
