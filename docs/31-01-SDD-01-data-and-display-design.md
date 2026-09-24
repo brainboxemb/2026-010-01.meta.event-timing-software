@@ -208,7 +208,7 @@ Illustrative internal history record:
 ```java
 final class PrepareTeamEvent {
     private long sequenceNumber;
-    private WaypointSystemId waypointSystemId;
+    private WaypointId waypointId;
     private PrepareTeamEventType type; // ADDED / REMOVED
     private TeamNumber teamNumber;
     private Instant createdAt;
