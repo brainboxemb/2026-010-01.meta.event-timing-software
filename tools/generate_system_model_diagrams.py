@@ -13,7 +13,7 @@ def software_item_overview() -> Diagram:
         Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
         Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
         Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..X WaypointSystems", 500, 490, 450, 100, "core"),
+        Node("timing", "SI-01 Headless Timing Application\\n1..X Waypoints", 500, 490, 450, 100, "core"),
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
@@ -53,8 +53,8 @@ def software_item_overview() -> Diagram:
 def waypoint_software_decomposition() -> Diagram:
     nodes = [
         Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 55, 390, 90, "core"),
-        Node("wp1", "WaypointSystem waypoint-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
-        Node("wp2", "WaypointSystem waypoint-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
+        Node("wp1", "Waypoint waypoint-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
+        Node("wp2", "Waypoint waypoint-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
 
         Node("life", "Waypoint lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 370, 430, 300, 90, "service"),
@@ -119,10 +119,10 @@ def registration_hardware_topology() -> Diagram:
 
 def waypoint_hardware_mapping() -> Diagram:
     nodes = [
-        Node("wp", "WaypointSystem waypoint-A", 80, 85, 330, 85, "service"),
+        Node("wp", "Waypoint waypoint-A", 80, 85, 330, 85, "service"),
         Node("loc", "Location X\\nLocationID", 80, 300, 330, 85, "external"),
         Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 530, 85, 350, 85, "external"),
-        Node("ds", "UniqueID waypoint-01\\nWaypointSystem identity", 530, 300, 350, 85, "queue"),
+        Node("ds", "UniqueID waypoint-01\\nWaypoint identity", 530, 300, 350, 85, "queue"),
         Node("finish", "Other producer\\nseparate producer", 1000, 85, 300, 85, "external"),
         Node("finishds", "UniqueID waypoint-02", 1000, 300, 300, 85, "queue"),
         Node("config", "Deployment configuration\\nconnects identities; does not collapse them", 440, 510, 520, 105, "interface"),
@@ -161,9 +161,9 @@ def rabbitmq_source_topology() -> Diagram:
         Node("pub", "controlled publisher\\ndedicated channel or small pool", 545, 505, 310, 85, "adapter"),
         Node("c2", "waypoint-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
 
-        Node("s1", "WaypointSystem waypoint-01\\nUniqueID-scoped application path", 80, 690, 310, 85, "service"),
+        Node("s1", "Waypoint waypoint-01\\nUniqueID-scoped application path", 80, 690, 310, 85, "service"),
         Node("outbox", "local durable/pending outbox\\nsource identity retained", 545, 690, 310, 85, "service"),
-        Node("s2", "WaypointSystem waypoint-02\\nUniqueID-scoped application path", 1010, 690, 310, 85, "service"),
+        Node("s2", "Waypoint waypoint-02\\nUniqueID-scoped application path", 1010, 690, 310, 85, "service"),
 
         Node("split", "Possible later refinement\\nseparate consumer + publisher connections\\nonly if evidence justifies it", 500, 850, 400, 95, "interface"),
     ]
@@ -213,7 +213,7 @@ def waypoint_system_lifecycle() -> Diagram:
     ]
     return Diagram(
         "waypoint-system-lifecycle",
-        "WaypointSystem lifecycle — operational lifecycle and health are separate",
+        "Waypoint lifecycle — operational lifecycle and health are separate",
         1280,
         820,
         nodes,
