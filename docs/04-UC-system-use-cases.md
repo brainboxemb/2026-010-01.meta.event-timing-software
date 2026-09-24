@@ -452,7 +452,7 @@ This allows one operational goal to remain visible even when implementation resp
 - What exact preconditions are required before a waypoint system may be opened?
 - Which subsystem failures should block `OPEN`, and which should only mark the instance degraded?
 - Which operational events besides `OPEN` must become registration-stream records?
-- Can a waypoint system change location during one operational session, or is `LocationId` fixed until the waypoint is closed/reconfigured?
+- Can a waypoint change location during one operational session, or is `LocationID` fixed until the waypoint is closed/reconfigured?
 - What operator roles/authorisation distinctions will exist for local, desktop and web clients?
 - Which reference-data updates are automatically accepted versus requiring operator acknowledgement?
 - What exact local behaviour is required if reference data is stale but backoffice is unavailable?
