@@ -12,25 +12,25 @@ groups:
   kind: layer-presentation
   layout: {x: 120, y: 85, w: 1120, h: 145}
 - id: application-layer
-  label: Application layer — running state and orchestration
+  label: Application layer
   kind: layer-application
-  layout: {x: 120, y: 260, w: 1120, h: 230}
+  layout: {x: 120, y: 260, w: 1120, h: 155}
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 120, y: 520, w: 1120, h: 260}
+  layout: {x: 120, y: 445, w: 1120, h: 300}
 - id: waypoint-aggregate
   label: Waypoint (1..N)
   kind: group-secondary
-  layout: {x: 145, y: 555, w: 820, h: 205}
+  layout: {x: 145, y: 485, w: 820, h: 235}
 - id: infrastructure-layer
   label: Infrastructure / integrations
   kind: layer-infrastructure
-  layout: {x: 120, y: 810, w: 1120, h: 165}
+  layout: {x: 120, y: 775, w: 1120, h: 165}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 120, y: 1005, w: 1120, h: 100}
+  layout: {x: 120, y: 970, w: 1120, h: 100}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
@@ -48,85 +48,70 @@ nodes:
   kind: presentation
   layout: {x: 895, y: 135, w: 300, h: 65}
 
-- id: app-command-query
+- id: timing-application
   group: application-layer
-  label: "Commands / queries / workflows\nvalidate intent • coordinate use cases"
+  label: "TimingApplication\ncommand/query orchestration"
   kind: application
-  layout: {x: 235, y: 315, w: 360, h: 75}
-- id: app-state
-  group: application-layer
-  label: "1..N Waypoint aggregates\nUniqueID • LocationID • lifecycle/status"
-  kind: application
-  layout: {x: 625, y: 315, w: 300, h: 75}
-- id: status-management
-  group: application-layer
-  label: "Status aggregation\nimmutable snapshots"
-  kind: application
-  layout: {x: 955, y: 315, w: 240, h: 75}
-- id: core-runtime
-  group: application-layer
-  label: "Core runtime support\nserialized execution • lifecycle • routing • scheduling"
-  kind: runtime
-  layout: {x: 625, y: 415, w: 300, h: 50}
+  layout: {x: 400, y: 305, w: 560, h: 75}
 
 - id: tag-processor
   group: waypoint-aggregate
   label: "TagProcessor\nRFID/tag processing"
   kind: service
-  layout: {x: 175, y: 595, w: 235, h: 60}
+  layout: {x: 175, y: 535, w: 235, h: 60}
 - id: stage-start-time-registry
   group: waypoint-aggregate
   label: "StageStartTimeRegistry\nstart-time reference"
   kind: service
-  layout: {x: 425, y: 595, w: 250, h: 60}
+  layout: {x: 425, y: 535, w: 250, h: 60}
 - id: waypoint-journal
   group: waypoint-aggregate
   label: "WaypointJournal\nregistrations • sequence/persistence"
   kind: service
-  layout: {x: 690, y: 595, w: 245, h: 60}
+  layout: {x: 690, y: 535, w: 245, h: 60}
 - id: prepare-team-registry
   group: waypoint-aggregate
   label: "PrepareTeamRegistry\nteams + traceable history"
   kind: service
-  layout: {x: 175, y: 680, w: 235, h: 60}
+  layout: {x: 175, y: 625, w: 235, h: 60}
 - id: race-data
   group: waypoint-aggregate
   label: "RaceData\nparticipant/team/tag reference"
   kind: service
-  layout: {x: 425, y: 680, w: 250, h: 60}
+  layout: {x: 425, y: 625, w: 250, h: 60}
 - id: stage-timing
   group: waypoint-aggregate
   label: "StageTiming\nrunning times + ranking"
   kind: service
-  layout: {x: 690, y: 680, w: 245, h: 60}
+  layout: {x: 690, y: 625, w: 245, h: 60}
 
 - id: system-status-domain
   group: domain-layer
   label: "SystemStatus\napplication-wide status/health"
   kind: service
-  layout: {x: 995, y: 615, w: 210, h: 95}
+  layout: {x: 995, y: 555, w: 210, h: 95}
 
 - id: persistence
   group: infrastructure-layer
   label: "Persistence / file storage\nrepository + backup / restore implementations"
   kind: storage
-  layout: {x: 165, y: 860, w: 300, h: 75}
+  layout: {x: 165, y: 825, w: 300, h: 75}
 - id: backoffice
   group: infrastructure-layer
   label: "Backoffice integration\nsocket / RabbitMQ • race/start-time synchronisation"
   kind: integration
-  layout: {x: 495, y: 860, w: 300, h: 75}
+  layout: {x: 495, y: 825, w: 300, h: 75}
 - id: device-integration
   group: infrastructure-layer
   label: "Device integrations\nRFID • CAN • display"
   kind: integration
-  layout: {x: 825, y: 860, w: 300, h: 75}
+  layout: {x: 825, y: 825, w: 300, h: 75}
 
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout: {x: 240, y: 1035, w: 880, h: 45}
+  layout: {x: 240, y: 1000, w: 880, h: 45}
 
 - id: crosscutting-concerns
   group: crosscutting-layer
@@ -141,44 +126,32 @@ nodes:
 
 edges:
 - from: command-interfaces
-  to: app-command-query
+  to: timing-application
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.35}
 
-- from: status-management
+- from: system-status-domain
   to: status-interface
   label: status/events
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
-- from: app-command-query
+- from: timing-application
   to: tag-processor
-  from_anchor: {side: bottom, position: 0.20}
+  from_anchor: {side: bottom, position: 0.25}
   to_anchor: {side: top, position: 0.50}
 
-- from: app-command-query
+- from: timing-application
   to: prepare-team-registry
-  from_anchor: {side: bottom, position: 0.80}
+  from_anchor: {side: bottom, position: 0.75}
   to_anchor: {side: top, position: 0.50}
 
-- from: app-state
+- from: timing-application
   to: system-status-domain
   dashed: true
-  from_anchor: {side: bottom, position: 0.80}
+  from_anchor: {side: bottom, position: 0.90}
   to_anchor: {side: top, position: 0.50}
-
-- from: system-status-domain
-  to: status-management
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
-
-- from: core-runtime
-  to: app-state
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
 
 - from: tag-processor
   to: waypoint-journal
