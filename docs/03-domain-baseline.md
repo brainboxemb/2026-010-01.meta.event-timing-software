@@ -16,8 +16,10 @@ Conceptually, one timing application owns one or more independently addressed wa
 
 ```text
 TimingApplication
+  |
   +-- SystemStatus
-  +-- 1..X Waypoint
+  |
+  +-- 1..N Waypoint
         +-- UniqueID
         +-- LocationID
         +-- lifecycle / status
@@ -31,7 +33,7 @@ TimingApplication
 
 `UniqueID` is the stable identity of the `Waypoint`; `LocationID` identifies the physical event location where that waypoint is configured or deployed.
 
-Operational state such as `OPEN` / `CLOSED` belongs to the waypoint-system software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
+Operational state such as `OPEN` / `CLOSED` belongs to the Waypoint software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
 
 A `Stage` and a `Waypoint` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
 
@@ -118,14 +120,19 @@ Do not express the complete system as one parent/child tree. The software/domain
 
 ```text
 TimingApplication
-  1..X Waypoint
-        waypoint identity
-        configured LocationID
-        lifecycle/state
-        tag/RFID processing
-        stage start-time reference data
-        registration/journal behaviour
-        status
+  |
+  +-- SystemStatus
+  |
+  +-- 1..N Waypoint
+        +-- UniqueID
+        +-- LocationID
+        +-- lifecycle / status
+        +-- TagProcessor
+        +-- StageStartTimeRegistry
+        +-- WaypointJournal
+        +-- PrepareTeamRegistry
+        +-- RaceData
+        +-- StageTiming
 ```
 
 The exact component/class boundaries remain design work, but the waypoint is the software/domain aggregate being operated.
