@@ -39,7 +39,7 @@ LocationID = 1..25
 
 A registration entry is associated with both its source and its location.
 
-`WaypointSystem` identity, `LocationID`, hardware `RegistrationAssetId` and logical `UniqueID` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
+`Waypoint` identity, `LocationID`, hardware `RegistrationAssetId` and logical `UniqueID` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
 
 ## Registration ledger
 
