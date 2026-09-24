@@ -27,7 +27,7 @@ The development effort should produce a reusable software system that:
 - supports reliable event timing and time registration;
 - runs on the mandatory original Raspberry Pi Zero / Zero W target;
 - separates the headless timing runtime from desktop and browser/iPad presentation clients;
-- supports multiple logical timing-system instances in one application process;
+- supports multiple logical `Waypoint` aggregates in one application process;
 - supports configurable registration assets, registration sources and device mappings;
 - remains locally useful when external/backoffice connectivity is unavailable;
 - keeps traceable registration data and recovery state;
@@ -251,7 +251,7 @@ The following risks/unknowns should remain visible at SDP level because they can
 | Offline/reconnect behaviour may become complex across persistence and backoffice synchronisation. | Separate local authority/outbox/transport semantics and test disconnect/recovery progressively. |
 | Real RFID filtering/decryption/hardware behaviour may differ from simulations. | Keep production adapters replaceable and add HIL evidence once hardware is available. |
 | Backoffice/RabbitMQ protocol details may constrain public interfaces. | Keep semantic backoffice ports transport-independent and isolate proprietary protocol mapping. |
-| Full-field simulation may stress the runtime differently from normal Pi deployment. | Support configurable multi-instance/source simulations and measure scaling independently from target topology. |
+| Full-field simulation may stress the runtime differently from normal Pi deployment. | Support configurable multi-Waypoint/source simulations and measure scaling independently from target topology. |
 | A single development PC + Pi Zero may be insufficient for repeatable integration/HIL tests. | Evaluate a separate integration host as test infrastructure needs become concrete. |
 | One-day-per-week cadence may create context-switching overhead and stretch difficult investigations. | Keep increments demonstrable and reforecast project-day estimates when learning/integration evidence changes uncertainty. |
 | AI-assisted development can create large/fast changes that are difficult to review. | Require the same PR-first workflow, tests, generated evidence and source-of-truth discipline for AI work. |

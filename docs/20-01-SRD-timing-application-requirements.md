@@ -44,8 +44,8 @@ SI-01 shall start using externally supplied configuration rather than requiring 
 **SI01-REQ-002 — Clean process shutdown**  
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
 
-**SI01-REQ-003 — Minimal timing-system composition**  
-The first executable shall support configuration of at least one `TimingSystemInstance` with a stable instance identifier that can be represented in application status.
+**SI01-REQ-003 — Minimal Waypoint composition**  
+The first executable shall support configuration of at least one `Waypoint` with a stable `UniqueID` that can be represented in application status.
 
 Detailed registration assets/sources/devices are not required by this first slice.
 
@@ -69,8 +69,8 @@ The first-executable status shall expose enough information to determine at leas
 
 - application/build identity;
 - application state;
-- configured `TimingSystemInstance` identity/identities;
-- the current minimal lifecycle state represented for those instances;
+- configured `Waypoint` `UniqueID` value(s);
+- the current minimal lifecycle state represented for those Waypoints;
 - explicit degraded/error information for first-executable configuration/startup failures that remain observable while the process can continue serving status.
 
 The concrete IF-03 schema is defined by `40-01-IDD-application-control-status.md`.
@@ -104,8 +104,8 @@ The first executable is not yet an operational timing implementation.
 Therefore:
 
 - application state may move through `STARTING`, `RUNNING`, `DEGRADED` and `STOPPING` according to IF-03;
-- at least one configured minimal `TimingSystemInstance` is represented;
-- that instance reports lifecycle `CLOSED` in this slice;
+- at least one configured minimal `Waypoint` is represented;
+- that Waypoint reports lifecycle `CLOSED` in this slice;
 - operational open/close commands and resulting registration-stream events remain deferred to the later domain increment.
 
 This prevents the first version/status executable from inventing partial operational semantics merely to make a demo look more complete.

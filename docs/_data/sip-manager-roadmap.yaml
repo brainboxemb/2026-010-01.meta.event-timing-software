@@ -58,7 +58,7 @@ steps:
       - Repeatable ST-1 and ST-2 synthetic scenarios
     demonstration:
       - Build and run from the reference repository only
-      - Start a synthetic timing-system composition
+      - Start a synthetic Waypoint composition
       - Exercise the socket simulator and reconnect flow
 
   "7":

@@ -254,7 +254,7 @@ The reasoning is that an architecture layer/package and a Maven publication boun
 
 This leaves room for later extraction of infrastructure such as RabbitMQ/platform/device support without creating those libraries before their consumers exist.
 
-The reusable framework should also permit several executable compositions. Examples include a deliberately single-system application and a multi-system/simulation application. Multi-instance registry/routing should remain application-level until it proves generically reusable across applications.
+The reusable framework should also permit several executable compositions. Examples include a deliberately single-Waypoint application and a multi-Waypoint/simulation application. Waypoint lookup and state-lane admission should remain application/runtime responsibilities until implementation evidence justifies a different reusable boundary.
 
 Likewise, reusable event-timing domain behaviour can belong in the framework while one product/application can add specific domain policy through its own composition or extension library.
 

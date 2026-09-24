@@ -1,10 +1,10 @@
 diagram:
   id: runtime-dispatch-process
-  title: SI-01 runtime dispatch — process and state ownership
+  title: SI-01 runtime ingress — Waypoint state ownership
   width: 1580
   height: 930
-  description: Process view of concurrent ingress, explicit instance routing and serialized state ownership.
-  note: Messages are used at asynchronous/ownership boundaries. Direct Java calls remain normal inside a serialized instance handler.
+  description: Process view of concurrent ingress, boundary-owned target resolution and per-Waypoint serialized state ownership.
+  note: Messages are used at asynchronous/ownership boundaries. Direct Java calls remain normal inside an executing Waypoint state lane.
 
 groups:
   - id: ingress
@@ -13,7 +13,7 @@ groups:
     layout: {x: 60, y: 110, w: 330, h: 690}
 
   - id: runtime
-    label: Application/runtime ownership
+    label: Application / Waypoint ownership
     kind: layer-application
     layout: {x: 430, y: 110, w: 790, h: 690}
 
@@ -36,40 +36,28 @@ nodes:
     layout: {x: 100, y: 365, w: 250, h: 85}
 
   - id: timer-ingress
-    label: "Scheduled triggers\ntimer callback only submits work"
+    label: "Scheduled triggers\ncallback submits to owning target"
     kind: platform
     group: ingress
     layout: {x: 100, y: 540, w: 250, h: 85}
 
-  - id: dispatcher
-    label: "TimingSystemDispatcher\nresolve instance • accept typed immutable message"
+  - id: command-handler
+    label: "CommandHandler\nshared application command boundary • target resolution"
     kind: application
     group: runtime
-    layout: {x: 520, y: 175, w: 610, h: 90}
+    layout: {x: 520, y: 165, w: 610, h: 90}
 
-  - id: serial-01
-    label: "SerialExecutor — system-01\nbounded FIFO • one active handler"
-    kind: runtime
-    group: runtime
-    layout: {x: 505, y: 365, w: 300, h: 85}
-
-  - id: serial-02
-    label: "SerialExecutor — system-02\nbounded FIFO • one active handler"
-    kind: runtime
-    group: runtime
-    layout: {x: 845, y: 365, w: 300, h: 85}
-
-  - id: state-01
-    label: "TimingSystemInstance state — system-01\napplication/domain handlers"
+  - id: waypoint-01
+    label: "Waypoint waypoint-01\nserialized state lane • bounded FIFO\napplication/domain handlers"
     kind: model
     group: runtime
-    layout: {x: 505, y: 520, w: 300, h: 85}
+    layout: {x: 505, y: 365, w: 300, h: 105}
 
-  - id: state-02
-    label: "TimingSystemInstance state — system-02\napplication/domain handlers"
+  - id: waypoint-02
+    label: "Waypoint waypoint-02\nserialized state lane • bounded FIFO\napplication/domain handlers"
     kind: model
     group: runtime
-    layout: {x: 845, y: 520, w: 300, h: 85}
+    layout: {x: 845, y: 365, w: 300, h: 105}
 
   - id: snapshots
     label: "Immutable published snapshots\nstatus / presentation reads"
@@ -78,86 +66,87 @@ nodes:
     layout: {x: 675, y: 675, w: 300, h: 70}
 
   - id: state-executor
-    label: "Shared state ExecutorService\n1 worker in constrained profile\nconfigurable >1 for independent instances"
+    label: "Shared state ExecutorService\n1 worker in constrained profile\nconfigurable >1 for independent Waypoints"
     kind: platform
     group: execution
     layout: {x: 1300, y: 260, w: 180, h: 125}
 
   - id: io-rule
-    label: "Blocking I/O / scheduler rule\noutside the state lane\ncompletion re-enters via dispatcher"
+    label: "Blocking I/O / scheduler rule\noutside the state lane\ncompletion returns to owning Waypoint"
     kind: platform
     group: execution
     layout: {x: 1300, y: 500, w: 180, h: 125}
 
 edges:
   - from: operator-ingress
-    to: dispatcher
-    label: command/query
-    from_anchor: {side: right, position: 0.50}
-    to_anchor: {side: left, position: 0.25}
-
-  - from: device-ingress
-    to: dispatcher
-    label: observation/event
+    to: command-handler
+    label: transport-neutral command
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}
 
-  - from: timer-ingress
-    to: dispatcher
-    label: scheduled event
-    from_anchor: {side: right, position: 0.50}
-    to_anchor: {side: left, position: 0.75}
-
-  - from: dispatcher
-    to: serial-01
-    label: route system-01
+  - from: command-handler
+    to: waypoint-01
+    label: target waypoint-01
     from_anchor: {side: bottom, position: 0.28}
     to_anchor: {side: top, position: 0.50}
 
-  - from: dispatcher
-    to: serial-02
-    label: route system-02
+  - from: command-handler
+    to: waypoint-02
+    label: target waypoint-02
     from_anchor: {side: bottom, position: 0.72}
     to_anchor: {side: top, position: 0.50}
 
-  - from: serial-01
-    to: state-01
-    from_anchor: {side: bottom, position: 0.50}
-    to_anchor: {side: top, position: 0.50}
+  - from: device-ingress
+    to: waypoint-01
+    label: configured target
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.45}
 
-  - from: serial-02
-    to: state-02
-    from_anchor: {side: bottom, position: 0.50}
-    to_anchor: {side: top, position: 0.50}
+  - from: timer-ingress
+    to: waypoint-02
+    label: owning target
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.75}
+    route:
+      - {x: 420, y: 582}
+      - {x: 825, y: 582}
+      - {x: 825, y: 444}
 
-  - from: state-01
+  - from: waypoint-01
     to: snapshots
     label: publish
     dashed: true
     from_anchor: {side: bottom, position: 0.65}
     to_anchor: {side: top, position: 0.30}
 
-  - from: state-02
+  - from: waypoint-02
     to: snapshots
     label: publish
     dashed: true
     from_anchor: {side: bottom, position: 0.35}
     to_anchor: {side: top, position: 0.70}
 
-  - from: serial-01
+  - from: waypoint-01
     to: state-executor
     dashed: true
     from_anchor: {side: right, position: 0.25}
     to_anchor: {side: left, position: 0.35}
     route:
-      - {x: 1190, y: 386}
+      - {x: 1190, y: 391}
       - {x: 1190, y: 304}
 
-  - from: serial-02
+  - from: waypoint-02
     to: state-executor
     dashed: true
     from_anchor: {side: right, position: 0.75}
     to_anchor: {side: left, position: 0.70}
     route:
-      - {x: 1215, y: 429}
+      - {x: 1215, y: 444}
       - {x: 1215, y: 348}
+
+  - from: io-rule
+    to: waypoint-02
+    label: completion / failure
+    dashed: true
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.75}

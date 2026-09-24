@@ -136,7 +136,7 @@ steps:
       verification: {level: review, scope: "state, sequence, restart/restore and fault evidence"}
     documents:
       - {name: 20-01-SRD, title: Timing-domain requirements, maturity: review, completeness: 90}
-      - {name: 31-01-SAD, title: Timing-system architecture, maturity: review, completeness: 95}
+      - {name: 31-01-SAD, title: Waypoint architecture, maturity: review, completeness: 95}
       - {name: 31-01-SDD-01, title: Data/display detailed design where still needed, maturity: review, completeness: 90}
       - {name: 50-SVP, title: State/sequence/restart evidence, maturity: review, completeness: 90}
 

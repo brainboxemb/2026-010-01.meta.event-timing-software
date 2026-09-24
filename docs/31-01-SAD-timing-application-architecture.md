@@ -112,14 +112,19 @@ Application layer
   |     application lifecycle/state orchestration
   |     active Waypoint coordination
   |
-  +-- CommandDispatcher
-        central command intake and dispatch
-        routes commands to the appropriate application/domain responsibility
+  +-- CommandHandler
+        shared application command boundary
+        resolves application-wide versus Waypoint-scoped work
+        enters the applicable state-ownership boundary
 ```
 
 `ApplicationConductor` coordinates application-wide mutable runtime/lifecycle state and the active waypoint composition. It orchestrates application flow without becoming the owner of waypoint domain behaviour.
 
-`CommandDispatcher` is the central command-handling boundary. It accepts commands translated by presentation interfaces and dispatches them to the appropriate application/domain responsibility. It is not a transport endpoint and does not own domain behaviour.
+`CommandHandler` is the transport-independent application command boundary. It exists because SI-01 has several presentation adapters and may host multiple `Waypoint` aggregates: console, shell, HTTP and later GUI clients must not each reimplement command target resolution, application-level preconditions, Waypoint lookup by `UniqueID`, state-lane admission or common command-result semantics. Application-wide commands are coordinated with the applicable application responsibility; Waypoint-scoped mutations enter the addressed Waypoint's serialized state boundary before mutable domain state is touched.
+
+This is an application **responsibility**, not a requirement for one monolithic switch class. An implementation may use focused command handlers behind the shared boundary. Conversely, a handler that adds no application-level responsibility and merely forwards one call one-to-one to a domain method is not justified as an extra layer.
+
+Presentation therefore depends on the shared application command boundary rather than mutable domain internals. Once a use case is executing inside its owning application/Waypoint state boundary, normal direct Java calls between the applicable domain responsibilities are preferred; commands are not used merely to preserve a layer diagram.
 
 The application layer coordinates persistence/integration ports without moving transport/protocol details into domain behaviour.
 
@@ -165,9 +170,9 @@ Core runtime support provides reusable execution mechanics that let application/
 ```text
 serialized execution
 lifecycle mechanics
-routing primitives
+state-lane admission primitives
 scheduling
-command/event dispatch mechanics
+asynchronous completion mechanics
 ```
 
 Core runtime support is not a second owner of domain behaviour or application state.
@@ -287,65 +292,71 @@ External libraries may create callbacks/threads for HTTP/WebSocket, shell, RFID,
 The intended processing path is:
 
 1. capture externally meaningful `TimingTimestamp` values immediately where timing matters;
-2. attach stable instance/device/source context;
-3. convert input into an immutable command/event;
-4. route it to the addressed `Waypoint`;
-5. serialize state-changing handling for that instance;
-6. keep blocking hardware/network/file operations outside the serialized state path;
-7. return relevant completion/failure into the state path as commands/events when required.
+2. attach stable Waypoint/device/source context;
+3. convert external input into an immutable application-facing command/event where it crosses an asynchronous or ownership boundary;
+4. resolve the target at the boundary that already owns that knowledge:
+   - the application command boundary resolves operator commands to application-wide or `Waypoint`-scoped work;
+   - configured integration adapters associate device observations with their `Waypoint`;
+   - scheduled work is registered against its owning application or `Waypoint` responsibility;
+5. submit Waypoint-scoped state-changing work to the addressed `Waypoint` state lane;
+6. serialize mutable Waypoint handling there;
+7. keep blocking hardware/network/file operations outside the serialized state path;
+8. return relevant completion/failure into the owning state path when required.
+
+There is deliberately **no separate `TimingSystemDispatcher` architecture component**. Target resolution is part of the application/integration boundary that already understands the command, configured device/source or scheduled responsibility; serialized execution is owned by the addressed `Waypoint`.
 
 ```text
-adapter callbacks / operator endpoints / timers
-                    |
-                    v
-        immutable ingress message
-                    |
-                    v
-         TimingSystemDispatcher
-             /              \
-            v                v
- SerialExecutor A      SerialExecutor B
-    system-01             system-02
-            \                /
-             \              /
-              v            v
-          shared backing ExecutorService
+operator endpoint
+      |
+      v
+ CommandHandler --------------------+
+      |                             |
+      v                             v
+Waypoint A state lane        Waypoint B state lane
+      ^                             ^
+      |                             |
+device / integration callbacks and scheduled work
+resolve their configured/owning Waypoint before submission
+      \                             /
+       +---- shared backing ExecutorService ----+
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
 
-The source for this process view is `docs/_diagrams/runtime-dispatch-process.yaml`. Boxes show state/execution ownership and arrows show the principal dispatch, execution and published-snapshot relationships rather than a complete call graph.
+The source for this process view is `docs/_diagrams/runtime-dispatch-process.yaml`. Boxes show state/execution ownership and arrows show the principal command, ingress, execution and published-snapshot relationships rather than a complete call graph.
 
-### Per-instance serialized state lane
+### Per-Waypoint serialized state lane
 
 Every `Waypoint` owns one logical serialized state lane implemented by a small project-owned `SerialExecutor` abstraction.
 
 Required semantics:
 
-- messages accepted for one instance execute in FIFO enqueue order;
-- at most one state-changing handler for an instance is active at a time;
+- work accepted for one `Waypoint` executes in FIFO enqueue order;
+- at most one state-changing handler for a `Waypoint` is active at a time;
 - the serial executor does **not** own a dedicated operating-system thread;
 - each serial executor delegates runnable work to a shared backing `ExecutorService`;
-- different waypoint systems may execute concurrently when the backing executor has more than one worker;
-- increasing backing parallelism must never allow two state handlers of the same instance to overlap.
+- different Waypoints may execute concurrently when the backing executor has more than one worker;
+- increasing backing parallelism must never allow two state handlers of the same `Waypoint` to overlap.
 
-The design follows the standard `Executor` composition pattern rather than introducing an actor/reactive framework. The constrained field profile should start with one backing state worker; larger development/integration compositions may configure more workers after measurement. This allows the same logical model to run conservatively on a Pi Zero and with parallel independent instances on a desktop test host.
+The design follows the standard `Executor` composition pattern rather than introducing an actor/reactive framework. The constrained field profile should start with one backing state worker; larger development/integration compositions may configure more workers after measurement. This allows the same logical model to run conservatively on a Pi Zero and with parallel independent Waypoints on a desktop test host.
 
 A direct/synchronous executor remains a supported test composition so handlers can be exercised deterministically without real threads.
 
-### Dispatcher and ingress ownership
+### Target resolution and ingress ownership
 
-A `TimingSystemDispatcher` is the application/runtime routing boundary from externally concurrent producers to per-instance state lanes.
-
-The dispatcher resolves a stable timing-system identity to the applicable serial executor and submits the typed message. It does not implement domain rules itself.
+There is no generic central dispatcher that every producer must traverse.
 
 Ingress rules:
 
+- operator/presentation commands enter through the shared application `CommandHandler`, which resolves application-wide versus Waypoint-scoped work and, for a Waypoint command, the target `UniqueID`;
+- device/integration adapters use their configuration/source association to submit observations/completions to the owning `Waypoint`; they do not rediscover ownership through a second generic router;
+- scheduler registration retains the application/Waypoint target required when the scheduled callback later submits work;
+- all Waypoint-scoped mutation enters through the addressed Waypoint's state-lane admission boundary before mutable domain state is touched;
 - adapter callbacks do the minimum synchronous work needed to capture timestamp/context and validate framing;
 - callback threads must not call mutable domain/application state directly;
-- device/source ordering guarantees provided by an adapter must be preserved before dispatch;
-- the dispatcher does not sort messages by wall-clock timestamp;
-- when multiple producer threads concurrently submit to the same instance, the state lane processes the order in which submissions are accepted into that lane;
+- device/source ordering guarantees provided by an adapter must be preserved before state-lane admission;
+- no generic routing component sorts work by wall-clock timestamp;
+- when multiple producer threads concurrently submit to the same Waypoint, its state lane processes the order in which submissions are accepted into that lane;
 - source sequence numbers are assigned according to domain/source commit semantics, not inferred from callback thread identity or timestamp ordering.
 
 ### Snapshot reads and consistency-sensitive queries
@@ -354,7 +365,7 @@ Not every read needs to occupy the serialized state lane.
 
 The application should publish immutable current-state/status snapshots that can be read safely by presentation/status consumers without mutating the instance. A lightweight atomic publication mechanism may be used for the current snapshot.
 
-Queries that require a state-consistent calculation against mutable authoritative state enter the same serialized lane as state-changing work. The API must make the difference between a potentially slightly stale published snapshot and a consistency-sensitive query explicit rather than hiding it behind one generic getter.
+Queries that require a state-consistent calculation against mutable authoritative Waypoint state enter the same serialized lane as state-changing work. The API must make the difference between a potentially slightly stale published snapshot and a consistency-sensitive query explicit rather than hiding it behind one generic getter.
 
 ### Blocking I/O and asynchronous completion
 
@@ -373,12 +384,12 @@ serialized state handler
                 v
        typed completion/failure event
                 |
-                +--> dispatcher --> same instance state lane
+                +--> owning Waypoint state lane
 ```
 
 If a use case requires durable I/O completion before a domain transition is considered committed, the application state represents that pending/commit boundary explicitly and finishes the transition when the completion message returns. The exact persistence commit protocol remains a persistence-design decision; blocking the state lane on file/network latency is not the default mechanism.
 
-Scheduled timers follow the same ownership rule: scheduler callbacks submit typed messages to the instance rather than mutating instance state directly.
+Scheduled timers follow the same ownership rule: scheduler callbacks submit typed work to the owning application/Waypoint boundary rather than mutating Waypoint state directly.
 
 ### Queue bounds, overload and failure containment
 
@@ -386,12 +397,12 @@ An unbounded ingress queue is not an acceptable field default on the constrained
 
 Working rules:
 
-- each instance state lane has a bounded/configurable pending-work capacity;
+- each Waypoint state lane has a bounded/configurable pending-work capacity;
 - queue saturation must never silently discard a command, observation or completion;
 - rejected/overloaded submissions produce explicit diagnostics/status/counters and a visible failure path to the calling adapter/interface;
-- an adapter may apply protocol-specific backpressure or its own bounded buffering where the external protocol supports it, but that policy remains outside the generic dispatcher;
+- an adapter may apply protocol-specific backpressure or its own bounded buffering where the external protocol supports it, but that policy remains outside the generic state-lane mechanism;
 - queue depth/high-water information should be observable for diagnostics;
-- one handler exception must not permanently stall the serial executor; handler failure is contained/reported and scheduling of subsequent accepted work continues unless the application deliberately transitions the instance to a failed/stopped state.
+- one handler exception must not permanently stall the serial executor; handler failure is contained/reported and scheduling of subsequent accepted work continues unless the application deliberately transitions the Waypoint to a failed/stopped state.
 
 Exact capacities and the final overload reaction for timing-critical device ingress require workload evidence. They are configuration/verification decisions, not permission to use an unbounded queue meanwhile.
 
@@ -401,7 +412,7 @@ Normal shutdown should preserve executor ownership explicitly:
 
 1. stop accepting new external/operator ingress;
 2. stop or quiesce device/network adapters;
-3. allow accepted instance-lane work to drain within a configured timeout;
+3. allow accepted Waypoint-lane work to drain within a configured timeout;
 4. complete required persistence/outbox shutdown handling;
 5. shut down scheduler/I/O executors and the shared state executor;
 6. expose failure if the bounded graceful-shutdown window cannot complete.
@@ -490,7 +501,7 @@ TimingEvent
   report an observation, fact, adapter completion or failure
 
 TimingQuery<R>
-  request a consistency-sensitive result from authoritative instance state
+  request a consistency-sensitive result from authoritative Waypoint state
 ```
 
 The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
@@ -498,9 +509,9 @@ The exact Java interface/generic signatures remain implementation detail, but th
 Working rules:
 
 - presentation/device/integration boundaries convert external input into typed immutable application-facing messages;
-- `TimingSystemDispatcher` performs explicit instance routing rather than reflection/topic-based event-bus discovery;
-- messages crossing the state-lane boundary carry the stable instance/device/source/correlation context they need explicitly;
-- once executing inside the instance state lane, application/domain services normally call one another directly rather than publishing another message for every method call;
+- command/integration boundaries resolve their explicit application or `Waypoint` target rather than relying on reflection/topic-based event-bus discovery or a central generic dispatcher;
+- messages crossing a Waypoint state-lane boundary carry the stable `UniqueID`/device/source/correlation context they need explicitly;
+- once executing inside the Waypoint state lane, application/domain responsibilities normally call one another directly rather than publishing another message for every method call;
 - adapter/I/O completion returns as a typed event because it crosses back into the state-ownership boundary;
 - published status/domain notifications may fan out to presentation consumers, but those consumers cannot use the notification channel to mutate authoritative state behind the command boundary;
 - RabbitMQ is an external integration transport and is not reused as an in-process message bus.
@@ -514,7 +525,7 @@ Status is a first-class current-state model and is distinct from logging.
 Status should allow presentation and diagnostics to observe application, timing-system and subsystem health without parsing log text. Representative areas include:
 
 - application version / uptime / overall health;
-- timing-system lifecycle;
+- Waypoint lifecycle;
 - registration asset/source state;
 - state-lane queue depth/high-water/overload health;
 - RFID power/startup/protocol/heartbeat;
@@ -691,8 +702,8 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | --- | --- | --- |
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
-| Concurrency | one project-owned `SerialExecutor` per instance over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit `TimingSystemDispatcher`; direct calls inside state lane | architecture baseline selected; refine first consumer API signatures during implementation |
+| Concurrency | one project-owned `SerialExecutor` per `Waypoint` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint state lane | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
@@ -721,7 +732,7 @@ Development/test host
   Linux or Windows
     same SI-01 framework/application behaviour
     real or stub adapters
-    may host larger multi-instance simulation topology
+    may host larger multi-Waypoint simulation topology
 ```
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of SI-01 relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
@@ -734,7 +745,7 @@ Testability is an architecture property. Application/domain code should where pr
 - receive absolute time through an injectable abstraction;
 - receive duration/timeout measurements through a controllable monotonic abstraction where needed;
 - include tests that step the wall clock forwards/backwards and cross representative DST/local-time transitions;
-- exercise `SerialExecutor` ordering, same-instance non-overlap, cross-instance parallelism and bounded-queue rejection deterministically;
+- exercise `SerialExecutor` ordering, same-Waypoint non-overlap, cross-Waypoint parallelism and bounded-queue rejection deterministically;
 - depend on semantic ports rather than concrete device/network libraries;
 - keep protocol parsing in adapters;
 - use deterministic handlers that can run synchronously in unit tests;

@@ -98,9 +98,9 @@ The first-executable status representation is:
     "state": "RUNNING",
     "startedAt": "<ISO-8601 UTC>"
   },
-  "timingSystems": [
+  "waypoints": [
     {
-      "id": "<configured-instance-id>",
+      "uniqueId": "<configured-waypoint-id>",
       "lifecycle": "CLOSED"
     }
   ],
@@ -119,7 +119,7 @@ STOPPING
 
 `DEGRADED` means the process remains capable of serving status while one or more first-executable startup/configuration problems are observable. Fatal configuration errors that prevent the HTTP service from starting may still terminate the process and are verified separately through process exit/log evidence.
 
-The first executable does not yet implement operational open/close commands. A configured minimal `TimingSystemInstance` therefore reports `CLOSED`; later SIP increments may add additional lifecycle values while preserving the field/ownership model.
+The first executable does not yet implement operational open/close commands. A configured minimal `Waypoint` therefore reports `CLOSED`; later SIP increments may add additional lifecycle values while preserving the field/ownership model.
 
 Problem entries use:
 
@@ -322,10 +322,10 @@ UC-001 / UC-008
 
 Procedure:
 
-1. start SI-01 as a separate process with a synthetic configuration containing at least one `TimingSystemInstance`;
+1. start SI-01 as a separate process with a synthetic configuration containing at least one configured `Waypoint`;
 2. wait for the configured local IF-03 endpoint to become available;
 3. call `GET /api/v1/version` and verify the required identity fields are present;
-4. call `GET /api/v1/status` and verify the same build identity and configured instance identity are represented;
+4. call `GET /api/v1/status` and verify the same build identity and configured Waypoint `UniqueID` is represented;
 5. connect to `/api/v1/events` and verify the first application message is a complete `STATUS_SNAPSHOT`;
 6. cause one supported first-executable observable status transition through normal application/process/configuration behaviour and verify a `STATUS_CHANGED` event is received;
 7. disconnect the WebSocket client;
@@ -351,7 +351,7 @@ If the remote shell later becomes a stable externally consumed system interface,
 
 The following IF-03 capabilities are visible in later use cases/architecture but intentionally outside this AP-1 baseline:
 
-- open/close timing-system commands;
+- open/close Waypoint commands;
 - start procedure;
 - RFID power/reinitialisation commands;
 - ready-team add/remove;

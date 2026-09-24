@@ -8,6 +8,7 @@ The repository is currently in its planning and research phase.
 
 ### Changed
 
+- Aligned SI-01 command and execution architecture around a transport-independent `CommandHandler`, explicit per-`Waypoint` state-lane ownership, and boundary-owned target resolution; removed the separate `TimingSystemDispatcher` architecture component and remaining current-design `TimingSystemInstance` terminology.
 - Route project agent guidance through `brainboxemb.meta/AGENTS.md`, make dependency-owner AGENTS explicitly non-inherited, and keep event-timing-specific documentation/privacy boundaries local.
 
 ### Added

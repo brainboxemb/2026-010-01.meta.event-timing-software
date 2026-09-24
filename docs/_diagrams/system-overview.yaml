@@ -20,7 +20,7 @@ nodes:
   - {id: gateway, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
   - {id: backoffice_port, label: "BackofficePort", kind: port, layout: {x: 1190, y: 395, w: 220, h: 70}}
-  - {id: runtime, label: "SI-01 runtime / orchestration\n1..X logical TimingSystems", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
+  - {id: runtime, label: "SI-01 runtime / orchestration\n1..N Waypoints", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
   - {id: status, label: "Status service\nimmutable snapshots", kind: service, layout: {x: 545, y: 555, w: 280, h: 95}}
   - {id: domain, label: "Timing/domain capabilities\nregistration • ready-team • reference data", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
   - {id: memory, label: "Typed in-memory state/repositories\nauthoritative runtime state", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}

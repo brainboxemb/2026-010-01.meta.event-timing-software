@@ -127,7 +127,7 @@ Candidate scenarios:
 - CAN scanner + keypad + Display V1 stub/real hardware;
 - backoffice disconnect/reconnect with local outbox;
 - restart/restore followed by synchronisation;
-- multiple `TimingSystemInstance` objects, assets and source streams in one runtime;
+- multiple `Waypoint` objects, assets and source streams in one runtime;
 - full-field simulation using synthetic identities against the same normal backoffice path.
 
 ### V5 — Hardware-in-the-loop verification
@@ -158,7 +158,7 @@ Measure at least:
 - idle CPU usage;
 - representative active CPU usage;
 - application/thread count;
-- timing-system queue backlog/latency under representative input;
+- Waypoint state-lane backlog/latency under representative input;
 - registration-source count and source-scaling overhead;
 - socket/RabbitMQ connection count and resource cost where enabled;
 - RabbitMQ channel/consumer count and their resource cost;
@@ -203,11 +203,11 @@ Characteristics:
 Typical cases:
 
 - start application and query version/status;
-- open/close a timing-system instance through the public interface;
+- open/close a `Waypoint` through the public interface;
 - inject stub RFID observations and verify registrations/status;
 - add/remove ready-team values and verify display model/state;
 - start procedure commands;
-- verify several configured system instances/sources behave independently;
+- verify several configured Waypoints/sources behave independently;
 - verify backup/restore and application restart at the observable interface level.
 
 This is intended to become the **primary fast system-level regression layer**.
@@ -246,7 +246,7 @@ Typical cases:
 - reconnect and resume;
 - outbound registrations observed by the simulator;
 - inbound reference/control data delivered to the correct source/application path;
-- full-field multi-instance simulation without broker infrastructure.
+- full-field multi-Waypoint simulation without broker infrastructure.
 
 ### ST-3 — RabbitMQ integration profile
 
@@ -323,7 +323,7 @@ heap settings / observed heap use
 thread count
 idle CPU
 representative workload CPU
-configured TimingSystemInstance / asset / source counts
+configured Waypoint / asset / source counts
 socket/RabbitMQ connection counts when enabled
 RabbitMQ channel/consumer counts when enabled
 version/status request latency
