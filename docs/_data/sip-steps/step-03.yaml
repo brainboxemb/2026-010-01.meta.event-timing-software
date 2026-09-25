@@ -14,6 +14,9 @@ demonstration:
 planning_changes:
   - date: '2026-09-25'
     change: >-
+      A07 uses a separate Java-8 WebSocket listener and no synthetic status transition.
+  - date: '2026-09-25'
+    change: >-
       A06 completed HTTP/JSON status plus the independent JavaFX development client.
   - date: '2026-09-25'
     change: >-
@@ -132,6 +135,10 @@ activities:
     title: WebSocket status / event stream
     state: active
     depends_on: [A01, A03, A06]
+    note: >-
+      Keep the A06 JDK HTTP listener and add a dedicated Java-WebSocket listener.
+      Send STATUS_SNAPSHOT on connect/reconnect; emit STATUS_CHANGED only for real
+      shared-status changes and do not invent a transition in Step 3.
 
   - id: A08
     lane: application
@@ -167,6 +174,10 @@ activities:
     title: ST-1 application behaviour black-box test
     state: planned
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
+    note: >-
+      Step-3 black-box coverage verifies WebSocket snapshot/reconnect. A real
+      STATUS_CHANGED black-box case is added with the first public status-changing
+      capability rather than mutating internal state only for the test.
 
   - id: V04
     lane: verification
