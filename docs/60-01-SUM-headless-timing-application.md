@@ -28,7 +28,7 @@ current development row may change until it is promoted to a normal software rel
 | Software baseline | Java | Maven | Maven Wrapper | tool.git-project | tool.java-project | Windows / IDE status | Runtime/configuration |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **v0.2.1** | Temurin 8.0.504+1 / Java SE 8 | 3.9.16 | 3.3.4 | v0.2.8 | v0.3.2 | Windows is the primary development host; NetBeans version is not pinned for this release | Short-lived executable baseline; no external application configuration required |
-| **0.2.2-SNAPSHOT** — current development line, not a release | Temurin 8.0.504+1 / Java SE 8 | 3.9.16 | 3.3.4 | v0.2.8 | v0.3.2 | Windows/NetBeans A04 acceptance in progress; record the verified NetBeans version before the next release | External `application.yml`; configured TimingNode; long-running process with graceful Ctrl+C/OS shutdown |
+| **0.2.2-SNAPSHOT** — current development line, not a release | Temurin 8.0.504+1 / Java SE 8 | 3.9.16 | 3.3.4 | v0.2.8 | v0.3.2 | Windows/NetBeans A04 acceptance completed; record the verified NetBeans version before the next release | External `application.yml`; configured TimingNode; long-running process with graceful Ctrl+C/OS shutdown |
 
 Exact immutable tooling commits are recorded in the implementation repository's
 `docs/tooling-baseline.md`.
@@ -75,9 +75,9 @@ workflow. **Run Project** prepares the current reactor and starts the configured
 `app/` executable with `config/application.yml`; **Debug Project** uses the same
 configured application path and adds the NetBeans JPDA debugger.
 
-The exact NetBeans version is not yet a released compatibility requirement. A04 keeps a
-user-facing Windows/NetBeans acceptance check; the version used for that accepted check
-should be recorded in this manual before the next software release.
+The A04 Windows/NetBeans acceptance check has been completed. The exact NetBeans
+version is not yet a released compatibility requirement; record the verified version
+in this manual before the next software release.
 
 ## 5. Application configuration
 
@@ -147,7 +147,7 @@ not embedded because they change per execution and are not required to identify 
 
 ## 8. Local console
 
-The local console is Step-3 A04 work. Its intended command set is:
+The local console is implemented on the current 0.2.2-SNAPSHOT development line. Its command set is:
 
 ```text
 help
@@ -157,9 +157,9 @@ quit
 exit
 ```
 
-Do not list the local console as a released v0.2.1 capability. The command behaviour,
-NetBeans run path and user-facing Windows acceptance must be completed before this
-section is promoted into the next released compatibility row.
+Do not list the local console as a released v0.2.1 capability. The command behaviour
+and Windows/NetBeans development-host acceptance are complete on the current
+0.2.2-SNAPSHOT line and can be promoted with the next accepted release.
 
 The later remote terminal/shell uses the same application command behaviour through a
 different transport; console and remote shell are separate presentation interfaces.
