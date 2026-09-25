@@ -38,9 +38,8 @@ steps:
   "3":
     deliverable:
       - Headless SI-01 starts from external configuration
-      - One shared source for version and application status
+      - Shared version/status plus retained runtime logging
       - Console, remote shell, HTTP and WebSocket show the same state
-      - Runtime logging is retained to file
     demonstration:
       - Start SI-01 on Windows from external configuration
       - Show the configured TimingNode, version/status and runtime log file
