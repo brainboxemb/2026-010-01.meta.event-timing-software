@@ -244,7 +244,7 @@ Current design/implementation decisions relevant to this step:
 - one authoritative build/version identity;
 - shared application commands/queries used by all presentation transports;
 - version/status readable through:
-  1. local console/shell;
+  1. local console;
   2. remote terminal/shell;
   3. HTTP/JSON API;
 - minimal WebSocket status/event stream;
@@ -266,7 +266,7 @@ IF-11 already defines ownership for later I/O hardware, messaging, storage, runt
 Add the first local presentation adapter without creating separate application behaviour:
 
 ```text
-local console / debug shell
+local console
         |
         +-- help
         +-- version
@@ -277,9 +277,10 @@ local console / debug shell
 shared application boundary
 ```
 
-The console owns command parsing and text formatting only. `version` and `status`
-reuse the same application semantics intended for later transports; `quit` / `exit`
-request the existing graceful application shutdown path.
+The console owns the local text interaction, command parsing and formatting. `version`
+and `status` reuse the shared application semantics. A05 later exposes the same text
+commands through a remote terminal/shell connection rather than inventing a second command set.
+`quit` / `exit` request the existing graceful application shutdown path.
 
 A04 acceptance includes a user-facing Windows check from a clean checkout: bootstrap,
 build, start SI-01 with `application.yml`, run `help`, `version`, `status`, then
