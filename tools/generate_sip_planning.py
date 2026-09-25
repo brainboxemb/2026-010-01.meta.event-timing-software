@@ -615,6 +615,10 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
     c.save()
 
 
+def step_demo_id(step_number: int) -> str:
+    return f"SIP-STP{step_number:02d}-DEMO"
+
+
 def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
     grouped: Dict[str, List[dict]] = {}
     for activity in board["activities"]:
@@ -682,10 +686,44 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         fill="#555",
     )
 
-    docs = board["documents"]
-    docs_top = 34.0
-    docs_h = 25.0 if len(docs) > 4 else 19.0
+    demo = board.get("demonstration")
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
+    if demo:
+        demo_top = 34.0
+        demo_h = 27.0
+        parts.append(
+            f'<rect x="{MARGIN_MM}" y="{demo_top}" width="{usable_w}" height="{demo_h}" '
+            'rx="1.5" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.45"/>'
+        )
+        svg_text(
+            parts,
+            MARGIN_MM + 3,
+            demo_top + 5.5,
+            [f"END DEMO · {step_demo_id(step.number)}"],
+            2.55,
+            anchor="start",
+            weight="bold",
+            fill="#4f81bd",
+        )
+        cursor = demo_top + 10.5
+        for bullet in demo["bullets"]:
+            lines = wrap(bullet, 71, 2)
+            svg_text(
+                parts,
+                MARGIN_MM + 4,
+                cursor,
+                ["• " + lines[0]] + ["  " + line for line in lines[1:]],
+                2.2,
+                anchor="start",
+                fill="#333",
+            )
+            cursor += len(lines) * 2.65 + 0.9
+        docs_top = demo_top + demo_h + 4.0
+    else:
+        docs_top = 34.0
+
+    docs = board["documents"]
+    docs_h = 25.0 if len(docs) > 4 else 19.0
     parts.append(
         f'<rect x="{MARGIN_MM}" y="{docs_top}" width="{usable_w}" height="{docs_h}" '
         'rx="1.5" fill="#fafafa" stroke="#999" stroke-width="0.4"/>'

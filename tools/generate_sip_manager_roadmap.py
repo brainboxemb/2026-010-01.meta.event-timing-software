@@ -34,6 +34,10 @@ MARGIN = base.MARGIN_MM
 PAGE_COUNT = base.ROADMAP_PAGE_COUNT
 STEPS_PER_PAGE = base.ROADMAP_STEPS_PER_PAGE
 TIMELINE_Y = 31.0
+TERMS_W = 34.0
+TERMS_GAP = 2.5
+TERMS_TOP = 22.0
+TERMS_H = 160.0
 
 DELIVERABLE_TOP = 56.0
 DELIVERABLE_H = 42.0
@@ -52,6 +56,31 @@ STATUS_STYLE = {
     "active": ("ACTIVE", "#ddebf7", "#4472c4"),
     "planned": ("PLANNED", "#f2f2f2", "#7f7f7f"),
 }
+
+
+def demo_id(step_number: int) -> str:
+    return f"SIP-STP{step_number:02d}-DEMO"
+
+
+def manager_positions(
+    group: List[base.Step], page_index: int, page_x: float = 0.0
+) -> List[Tuple[base.Step, float, float]]:
+    usable = PAGE_W - 2 * MARGIN
+    left = page_x + MARGIN
+    if page_index == 0:
+        left += TERMS_W + TERMS_GAP
+        usable -= TERMS_W + TERMS_GAP
+    cell = usable / STEPS_PER_PAGE
+    return [
+        (step, left + cell * (index + 0.5), cell - 5.0)
+        for index, step in enumerate(group)
+    ]
+
+
+def timeline_start(page_index: int, page_x: float) -> float:
+    if page_index == 0:
+        return page_x + MARGIN + TERMS_W + TERMS_GAP
+    return page_x + MARGIN
 
 
 def manager_state(step_number: int, active_step: int) -> str:
@@ -139,6 +168,51 @@ def svg_bullets(
         cursor += len(lines) * BODY_FONT_MM * 1.22 + BODY_BULLET_GAP
 
 
+def svg_terms(parts: List[str], page_x: float, terms: List[dict]) -> None:
+    x = page_x + MARGIN
+    parts.append(
+        f'<rect x="{x:.2f}" y="{TERMS_TOP:.2f}" width="{TERMS_W:.2f}" height="{TERMS_H:.2f}" '
+        'rx="1.6" fill="#f8f9fa" stroke="#999999" stroke-width="0.4"/>'
+    )
+    svg_text(
+        parts,
+        x + 3.0,
+        TERMS_TOP + 6.2,
+        ["TERMS"],
+        2.5,
+        weight="bold",
+        fill="#555555",
+    )
+    cursor = TERMS_TOP + 13.0
+    for item in terms:
+        svg_text(
+            parts,
+            x + 3.0,
+            cursor,
+            [item["term"]],
+            2.25,
+            weight="bold",
+            fill="#333333",
+        )
+        meaning = textwrap.wrap(
+            item["meaning"],
+            width=22,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        if len(meaning) > 3:
+            raise SystemExit(f"Roadmap term does not fit: {item['term']}")
+        svg_text(
+            parts,
+            x + 3.0,
+            cursor + 3.4,
+            meaning,
+            1.95,
+            fill="#555555",
+        )
+        cursor += 5.2 + len(meaning) * 2.45 + 2.7
+
+
 def svg_status_badge(parts: List[str], center_x: float, y: float, state: str) -> None:
     label, fill, stroke = STATUS_STYLE[state]
     width = 18.0 if state != "planned" else 21.0
@@ -163,6 +237,7 @@ def append_svg_page(
     parts: List[str],
     group: List[base.Step],
     summaries: Dict[str, dict],
+    terms: List[dict],
     active_step: int,
     page_index: int,
     page_x: float,
@@ -192,12 +267,15 @@ def append_svg_page(
         fill="#555555",
     )
     parts.append(
-        f'<line x1="{page_x + MARGIN:.2f}" y1="{TIMELINE_Y:.2f}" '
+        f'<line x1="{timeline_start(page_index, page_x):.2f}" y1="{TIMELINE_Y:.2f}" '
         f'x2="{page_x + PAGE_W - MARGIN:.2f}" y2="{TIMELINE_Y:.2f}" '
         'stroke="#333333" stroke-width="0.65"/>'
     )
 
-    for step, center_x, width in base.roadmap_positions(group, page_x):
+    if page_index == 0:
+        svg_terms(parts, page_x, terms)
+
+    for step, center_x, width in manager_positions(group, page_index, page_x):
         radius = 3.4
         state = manager_state(step.number, active_step)
         _, state_fill, state_stroke = STATUS_STYLE[state]
@@ -252,7 +330,7 @@ def append_svg_page(
         summary = summaries[str(step.number)]
         for top, height, heading, bullets, fill in (
             (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", summary["deliverable"], "#f6f8fa"),
-            (DEMO_TOP, DEMO_H, "DEMONSTRATION", summary["demonstration"], "#ffffff"),
+            (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", summary["demonstration"], "#ffffff"),
         ):
             parts.append(
                 f'<rect x="{x:.2f}" y="{top:.2f}" width="{width:.2f}" height="{height:.2f}" '
@@ -320,6 +398,7 @@ def render_svgs(
             parts,
             group,
             manager["steps"],
+            manager["terms"],
             active_step,
             page_index,
             page_index * PAGE_W,
@@ -338,6 +417,7 @@ def render_svgs(
             page_parts,
             group,
             manager["steps"],
+            manager["terms"],
             active_step,
             page_index,
             0.0,
@@ -407,13 +487,52 @@ def render_pdf(
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
         c.line(
-            MARGIN * mm,
+            timeline_start(page_index, 0.0) * mm,
             (page_h - TIMELINE_Y) * mm,
             (PAGE_W - MARGIN) * mm,
             (page_h - TIMELINE_Y) * mm,
         )
 
-        for step, center_x, width in base.roadmap_positions(group):
+        if page_index == 0:
+            x = MARGIN
+            c.setStrokeColor(HexColor("#999999"))
+            c.setFillColor(HexColor("#f8f9fa"))
+            c.roundRect(
+                x * mm,
+                (page_h - TERMS_TOP - TERMS_H) * mm,
+                TERMS_W * mm,
+                TERMS_H * mm,
+                1.6 * mm,
+                stroke=1,
+                fill=1,
+            )
+            c.setFillColor(HexColor("#555555"))
+            c.setFont("Helvetica-Bold", 7.0)
+            c.drawString((x + 3.0) * mm, (page_h - TERMS_TOP - 6.2) * mm, "TERMS")
+            cursor = TERMS_TOP + 13.0
+            for item in manager["terms"]:
+                c.setFillColor(HexColor("#333333"))
+                c.setFont("Helvetica-Bold", 6.4)
+                c.drawString((x + 3.0) * mm, (page_h - cursor) * mm, item["term"])
+                meaning = textwrap.wrap(
+                    item["meaning"],
+                    width=22,
+                    break_long_words=False,
+                    break_on_hyphens=False,
+                )
+                if len(meaning) > 3:
+                    raise SystemExit(f"Roadmap term does not fit: {item['term']}")
+                c.setFillColor(HexColor("#555555"))
+                c.setFont("Helvetica", 5.5)
+                for line_index, line in enumerate(meaning):
+                    c.drawString(
+                        (x + 3.0) * mm,
+                        (page_h - cursor - 3.4 - line_index * 2.45) * mm,
+                        line,
+                    )
+                cursor += 5.2 + len(meaning) * 2.45 + 2.7
+
+        for step, center_x, width in manager_positions(group, page_index):
             state = manager_state(step.number, active_step)
             _, state_fill, state_stroke = STATUS_STYLE[state]
             r = 3.4
@@ -463,7 +582,7 @@ def render_pdf(
             summary = manager["steps"][str(step.number)]
             for top, height, heading, bullets, fill in (
                 (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", summary["deliverable"], "#f6f8fa"),
-                (DEMO_TOP, DEMO_H, "DEMONSTRATION", summary["demonstration"], "#ffffff"),
+                (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", summary["demonstration"], "#ffffff"),
             ):
                 c.setStrokeColor(HexColor("#6c8ebf"))
                 c.setFillColor(HexColor(fill))

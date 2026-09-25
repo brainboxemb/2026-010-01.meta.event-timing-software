@@ -1,5 +1,19 @@
 status: manager-facing presentation summary
 
+terms:
+  - term: SI-01
+    meaning: Headless Timing Application
+  - term: SI-02
+    meaning: Desktop GUI Application
+  - term: SI-03
+    meaning: Web Operator Application
+  - term: TimingNode
+    meaning: Logical timing unit with its own identity and state
+  - term: ST-1
+    meaning: Application behaviour system-test profile
+  - term: SIP-STPxx-DEMO
+    meaning: Single end-of-step demonstration from the implementation plan
+
 steps:
   "1":
     deliverable:
@@ -23,13 +37,13 @@ steps:
 
   "3":
     deliverable:
-      - Externally configured headless SI-01 for development
-      - Shared application boundary and build/status semantics
-      - Console, remote shell, HTTP and WebSocket access
+      - Headless SI-01 starts from external configuration
+      - One shared source for version and application status
+      - Console, remote shell, HTTP and WebSocket show the same state
     demonstration:
-      - Start SI-01 on Windows from application configuration
-      - Show the configured TimingNode and presentation binding
-      - Read equivalent state and run the first ST-1 scenario
+      - Start SI-01 on Windows from external configuration
+      - Show the configured TimingNode and current version/status
+      - Read the same version/status through all four interfaces
 
   "4":
     deliverable:

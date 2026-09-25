@@ -30,6 +30,7 @@ from generate_sip_planning import (
     load_yaml,
     parse_sip,
     step_card_meta,
+    step_demo_id,
     validate_data,
     wrap,
 )
@@ -122,10 +123,51 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         color="#555555",
     )
 
-    docs = board["documents"]
-    docs_top = 34.0
-    docs_h = 25.0 if len(docs) > 4 else 19.0
+    demo = board.get("demonstration")
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
+    if demo:
+        demo_top = 34.0
+        demo_h = 27.0
+        rounded_rect_top(
+            c,
+            MARGIN_MM,
+            demo_top,
+            usable_w,
+            demo_h,
+            1.5,
+            fill="#f6f8fa",
+            stroke="#6c8ebf",
+            line_width=0.45,
+        )
+        draw_text_top(
+            c,
+            MARGIN_MM + 3,
+            demo_top + 5.5,
+            [f"END DEMO · {step_demo_id(step.number)}"],
+            2.55,
+            bold=True,
+            anchor="start",
+            color="#4f81bd",
+        )
+        cursor = demo_top + 10.5
+        for bullet in demo["bullets"]:
+            lines = wrap(bullet, 71, 2)
+            draw_text_top(
+                c,
+                MARGIN_MM + 4,
+                cursor,
+                ["• " + lines[0]] + ["  " + line for line in lines[1:]],
+                2.2,
+                anchor="start",
+                color="#333333",
+            )
+            cursor += len(lines) * 2.65 + 0.9
+        docs_top = demo_top + demo_h + 4.0
+    else:
+        docs_top = 34.0
+
+    docs = board["documents"]
+    docs_h = 25.0 if len(docs) > 4 else 19.0
     rounded_rect_top(
         c,
         MARGIN_MM,

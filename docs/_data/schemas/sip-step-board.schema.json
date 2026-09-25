@@ -4,50 +4,116 @@
   "title": "SIP step board",
   "type": "object",
   "additionalProperties": false,
-  "required": ["step", "title", "state", "documents", "activities"],
+  "required": [
+    "step",
+    "title",
+    "state",
+    "documents",
+    "activities"
+  ],
   "properties": {
-    "step": {"type": "integer", "minimum": 1},
-    "title": {"type": "string", "minLength": 1},
+    "step": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
     "state": {
       "type": "string",
-      "enum": ["planned", "active", "blocked", "complete"]
+      "enum": [
+        "planned",
+        "active",
+        "blocked",
+        "complete"
+      ]
     },
-    "summary": {"type": "string"},
+    "summary": {
+      "type": "string"
+    },
     "documents": {
       "type": "array",
-      "items": {"$ref": "#/$defs/document"},
+      "items": {
+        "$ref": "#/$defs/document"
+      },
       "uniqueItems": true
     },
     "activities": {
       "type": "array",
       "minItems": 1,
-      "items": {"$ref": "#/$defs/activity"}
+      "items": {
+        "$ref": "#/$defs/activity"
+      }
+    },
+    "demonstration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bullets"
+      ],
+      "properties": {
+        "bullets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
+          }
+        }
+      }
     }
   },
   "$defs": {
     "document": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "title", "maturity", "completeness"],
+      "required": [
+        "name",
+        "title",
+        "maturity",
+        "completeness"
+      ],
       "properties": {
-        "name": {"type": "string", "minLength": 1},
-        "title": {"type": "string", "minLength": 1},
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
         "maturity": {
           "type": "string",
-          "enum": ["outline", "working", "review", "accepted"]
+          "enum": [
+            "outline",
+            "working",
+            "review",
+            "accepted"
+          ]
         },
         "completeness": {
           "type": "integer",
           "minimum": 0,
           "maximum": 100
         },
-        "note": {"type": "string"}
+        "note": {
+          "type": "string"
+        }
       }
     },
     "activity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "lane", "kind", "title", "state"],
+      "required": [
+        "id",
+        "lane",
+        "kind",
+        "title",
+        "state"
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -55,16 +121,39 @@
         },
         "lane": {
           "type": "string",
-          "enum": ["tooling", "application", "verification", "platform", "documentation"]
+          "enum": [
+            "tooling",
+            "application",
+            "verification",
+            "platform",
+            "documentation"
+          ]
         },
         "kind": {
           "type": "string",
-          "enum": ["decision", "setup", "implementation", "verification", "documentation", "integration"]
+          "enum": [
+            "decision",
+            "setup",
+            "implementation",
+            "verification",
+            "documentation",
+            "integration"
+          ]
         },
-        "title": {"type": "string", "minLength": 1},
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
         "state": {
           "type": "string",
-          "enum": ["done", "next", "active", "planned", "blocked", "deferred"]
+          "enum": [
+            "done",
+            "next",
+            "active",
+            "planned",
+            "blocked",
+            "deferred"
+          ]
         },
         "estimate_project_days": {
           "type": "number",
@@ -72,10 +161,14 @@
         },
         "depends_on": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "uniqueItems": true
         },
-        "note": {"type": "string"}
+        "note": {
+          "type": "string"
+        }
       }
     }
   }
