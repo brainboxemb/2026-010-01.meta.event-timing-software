@@ -42,7 +42,7 @@ nodes:
     layout: {x: 100, y: 540, w: 250, h: 85}
 
   - id: command-handler
-    label: "CommandHandler\npresentation request boundary • TimingNode target"
+    label: "CommandHandler\npresentation commands / queries"
     kind: application
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}

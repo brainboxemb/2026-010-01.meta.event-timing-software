@@ -161,8 +161,8 @@ def rabbitmq_source_topology() -> Diagram:
         Node("broker1", "RabbitMQ broker A", 95, 70, 300, 75, "external"),
         Node("broker2", "RabbitMQ broker B", 1005, 70, 300, 75, "external"),
 
-        Node("conn1", "RabbitMqConnector connector-01\\nConnectionManager owns connection/channels", 55, 250, 380, 100, "adapter"),
-        Node("conn2", "RabbitMqConnector connector-02\\nConnectionManager owns connection/channels", 965, 250, 380, 100, "adapter"),
+        Node("conn1", "RabbitMqBackofficeConnector connector-01\\nowns connection/channels internally", 55, 250, 380, 100, "adapter"),
+        Node("conn2", "RabbitMqBackofficeConnector connector-02\\nowns connection/channels internally", 965, 250, 380, 100, "adapter"),
 
         Node("router", "BackofficeRouter\\nTimingNode bindings + external names", 500, 410, 400, 100, "interface"),
 
@@ -188,7 +188,7 @@ def rabbitmq_source_topology() -> Diagram:
 
     return Diagram(
         "rabbitmq-source-topology",
-        "RabbitMQ — connector managers with explicit TimingNode routing",
+        "RabbitMQ — BackofficeConnector implementations with TimingNode routing",
         1400,
         960,
         nodes,

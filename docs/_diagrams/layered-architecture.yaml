@@ -24,7 +24,7 @@ groups:
   kind: model
   layout: {x: 145, y: 485, w: 820, h: 235}
 - id: io-layer
-  label: I/O adapters / resource managers
+  label: I/O adapters
   kind: layer-infrastructure
   layout: {x: 120, y: 775, w: 1120, h: 165}
 - id: platform-layer
@@ -147,7 +147,7 @@ nodes:
 - id: backoffice-io
   group: io-layer
   label: "Backoffice connectors"
-  subtitle: "0..N • manager / connector • RabbitMQ / socket"
+  subtitle: "0..N • RabbitMQ / socket / ..."
   kind: integration
   layout: {x: 685, y: 825, w: 300, h: 75}
 - id: other-device-io

@@ -111,8 +111,7 @@ application/
     lifecycle and application-wide coordination
 
   CommandHandler
-    shared presentation request boundary
-    resolves application-wide vs TimingNode-scoped client work
+    shared presentation command/query boundary
 
   RegistrationRouter
     maps registration origin (RegistrationAssetId, AntennaId)
@@ -130,8 +129,9 @@ resolved to the correct `TimingNode` and then submitted to that TimingNode's ser
 executor.
 
 The routers above are application responsibilities because they own configured
-target mapping/fan-out. Device/connection managers stay in I/O because they own
-external resources and lifecycle.
+mapping/fan-out. Concrete I/O adapters/connectors own their external device or
+transport resources internally. A separate manager component is not part of the
+architecture unless later implementation evidence justifies one.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce commands merely to preserve a layer diagram. The router names
@@ -180,12 +180,12 @@ I/O contains adapters that move data between SI-01 and the outside world:
 ```text
 io/
   registration/
-    0..N RegistrationAsset adapters/managers
+    0..N RegistrationAsset adapters
     1..N antennas per asset
   backoffice/
-    0..N connector adapters/managers
-    rabbitmq/
-    socket/
+    BackofficeConnector (0..N instances)
+      RabbitMqBackofficeConnector
+      SocketBackofficeConnector
   devices/
     can/
     display/
@@ -195,9 +195,9 @@ io/
 ```
 
 Presentation stays separate because it owns client-facing API/view semantics.
-I/O owns external resources and transport/device lifecycle. It does not own
-TimingNode target mapping: registration observations and backoffice connector
-bindings are handed to the application routers above it.
+I/O owns external resources and transport/device lifecycle inside concrete
+adapters/connectors. It does not own TimingNode mapping: registration observations
+and backoffice connector bindings are handed to the application routers above it.
 
 ### Platform
 
@@ -289,9 +289,9 @@ BackofficeRouter
 
 `BackofficeRouter` maps connector-specific inbound/outbound bindings to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
 
-Use **router** for mapping/fan-out and **manager** for resource/lifecycle ownership. A RabbitMQ connection manager, for example, owns connections/channels for one connector; it does not decide domain identity.
+Use **router** for mapping/fan-out. A concrete connector/adapter owns its own transport/device resources and lifecycle internally; do not introduce a separate manager abstraction without a demonstrated implementation need.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, connector managers, configuration loading and network monitoring.
+Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
 Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
 
@@ -365,7 +365,7 @@ Those callback threads must not change mutable TimingNode state directly.
 
 The application boundary determines which TimingNode(s) receive the work:
 
-- `CommandHandler` resolves operator/client requests that name a TimingNode;
+- `CommandHandler` handles presentation commands/queries that address a TimingNode;
 - `RegistrationRouter` maps the hardware origin `(RegistrationAssetId, AntennaId)`
   to 1..N TimingNodes;
 - `BackofficeRouter` maps connector-specific bindings/names to 1..N TimingNodes;
