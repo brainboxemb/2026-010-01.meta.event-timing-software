@@ -6,42 +6,42 @@ This document captures stable domain facts and terminology supplied during the i
 
 Concrete production asset names, external registration-system IDs, source mappings and deployment inventories are intentionally **not** recorded in this public repository. They are deployment/proprietary information. Public documents describe the structure and semantics using generic identifiers only.
 
-## Waypoint systems, stages and locations
+## TimingNodes, stages and locations
 
-One running headless timing application must be able to host **multiple logical waypoints** at the same time.
+One running headless timing application must be able to host **multiple logical timingNodes** at the same time.
 
-The working software/domain term is `Waypoint` for one independently addressed logical timing aggregate at the **end of a stage**. A `Waypoint` is deployed or configured for a physical event `LocationID`; the software identity of the waypoint and the physical location where it is used are separate concepts.
+The working software/domain term is `TimingNode` for one independently addressed logical timing aggregate at the **end of a stage**. A `TimingNode` is deployed or configured for a physical event `LocationID`; the software identity of the timing node and the physical location where it is used are separate concepts.
 
-Conceptually, one timing application owns one or more independently addressed waypoints:
+Conceptually, one timing application owns one or more independently addressed timingNodes:
 
 ```text
 TimingApplication
   |
   +-- SystemStatus
   |
-  +-- 1..N Waypoint
-        +-- UniqueID
+  +-- 1..N TimingNode
+        +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimeRegistry
-        +-- WaypointJournal
+        +-- TimingNodeJournal
         +-- PrepareTeamRegistry
         +-- RaceData
         +-- StageTiming
 ```
 
-`UniqueID` is the stable identity of the `Waypoint`; `LocationID` identifies the physical event location where that waypoint is configured or deployed.
+`TimingNodeId` is the stable identity of the `TimingNode`; `LocationID` identifies the physical event location where that timing node is configured or deployed.
 
-Operational state such as `OPEN` / `CLOSED` belongs to the Waypoint software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the waypoint.
+Operational state such as `OPEN` / `CLOSED` belongs to the TimingNode software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the timing node.
 
-A `Stage` and a `Waypoint` are related but distinct concepts: a stage ends at a waypoint. Stage-specific reference data such as start-time data may therefore be consumed by the waypoint software without making the stage itself a hardware or runtime container.
+A `Stage` and a `TimingNode` are related but distinct concepts: a stage ends at a timing node. Stage-specific reference data such as start-time data may therefore be consumed by the timing node software without making the stage itself a hardware or runtime container.
 
-The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a waypoint. New architecture/design work should use `Waypoint`; existing implementation names may be migrated later to match this documentation-led model.
+The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a timing node. New architecture/design work should use `TimingNode`; existing implementation names may be migrated later to match this documentation-led model.
 
-## Registration hardware and waypoint identity
+## Registration hardware and timing node identity
 
-Hardware/deployment identity, waypoint software identity and physical location identity are separate namespaces.
+Hardware/deployment identity, timing node software identity and physical location identity are separate namespaces.
 
 ### Registration asset
 
@@ -55,28 +55,28 @@ RegistrationAssetId = asset-01
 
 Concrete production asset names remain deployment/proprietary information and stay outside this public repository.
 
-### Waypoint identity
+### TimingNode identity
 
-`UniqueID` is the stable software identity of a `Waypoint`. It is also the scope for that waypoint's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that waypoint is configured or deployed.
+`TimingNodeId` is the stable software identity of a `TimingNode`. It is also the scope for that timing node's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that timing node is configured or deployed.
 
-A physical registration system can be configured with a logical waypoint identity, for example:
+A physical registration system can be configured with a logical timing node identity, for example:
 
 ```text
-Waypoint UniqueID = waypoint-01
+TimingNode TimingNodeId = timing-node-01
 LocationID              = X
 RegistrationAssetId     = asset-01
 ```
 
-Deployment naming may deliberately make a `RegistrationAssetId` resemble a waypoint `UniqueID` for convenience, but that is **not** an identity rule.
+Deployment naming may deliberately make a `RegistrationAssetId` resemble a timing node `TimingNodeId` for convenience, but that is **not** an identity rule.
 
-The number of RFID antennas attached to a physical registration system does not create additional waypoint identities. One `Waypoint` keeps one `UniqueID`; antenna identity remains additional origin/diagnostic context.
+The number of RFID antennas attached to a physical registration system does not create additional timing node identities. One `TimingNode` keeps one `TimingNodeId`; antenna identity remains additional origin/diagnostic context.
 
 Known structural rules:
 
 - `RegistrationAssetId` identifies hardware/inventory;
-- `UniqueID` identifies the logical waypoint;
-- every `UniqueID`-scoped waypoint owns its own monotonic registration sequence and waypoint-specific persistence/synchronisation state;
-- reserve and virtual waypoint identities/identities exist, but their exact relationship to physical producers remains a separate mapping question;
+- `TimingNodeId` identifies the logical timing node;
+- every `TimingNodeId`-scoped timing node owns its own monotonic registration sequence and TimingNode-specific persistence/synchronisation state;
+- reserve and virtual timing node identities/identities exist, but their exact relationship to physical producers remains a separate mapping question;
 - concrete production asset names, data-source IDs and mappings are deployment/proprietary information.
 
 ## Registration hardware and antenna topology
@@ -89,12 +89,12 @@ Conceptually:
 RegistrationAsset asset-01
   +-- Antenna ANT1
   +-- Antenna ANT2
-  +-- configured UniqueID waypoint-01
+  +-- configured TimingNodeId timing-node-01
 ```
 
-The antennas are hardware/device inputs of that registration system. They are not child software components of a `Waypoint` and they are not separate waypoints merely because there are multiple antennas.
+The antennas are hardware/device inputs of that registration system. They are not child software components of a `TimingNode` and they are not separate timingNodes merely because there are multiple antennas.
 
-An RFID observation must retain enough hardware context for diagnostics and processing, including the antenna identity where relevant. The resulting committed registration/data record uses the configured `UniqueID` for stream identity and ordering.
+An RFID observation must retain enough hardware context for diagnostics and processing, including the antenna identity where relevant. The resulting committed registration/data record uses the configured `TimingNodeId` for stream identity and ordering.
 
 The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
 
@@ -123,19 +123,19 @@ TimingApplication
   |
   +-- SystemStatus
   |
-  +-- 1..N Waypoint
-        +-- UniqueID
+  +-- 1..N TimingNode
+        +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimeRegistry
-        +-- WaypointJournal
+        +-- TimingNodeJournal
         +-- PrepareTeamRegistry
         +-- RaceData
         +-- StageTiming
 ```
 
-The exact component/class boundaries remain design work, but the waypoint is the software/domain aggregate being operated.
+The exact component/class boundaries remain design work, but the timing node is the software/domain aggregate being operated.
 
 ### Hardware/deployment view
 
@@ -150,17 +150,17 @@ This view describes physical/configured equipment. It must not be used as the so
 
 ### Configuration/identity mapping
 
-Configuration connects those views and assigns waypoint identities, for example:
+Configuration connects those views and assigns timing node identities, for example:
 
 ```text
-Waypoint waypoint-A -> LocationID X
-Waypoint waypoint-A -> UniqueID waypoint-A
-RegistrationAsset asset-01 -> used by/configured for waypoint-A
+TimingNode timing-node-A -> LocationID X
+TimingNode timing-node-A -> TimingNodeId timing-node-A
+RegistrationAsset asset-01 -> used by/configured for timing-node-A
 ```
 
 The concrete configuration file format is not yet selected. Production configuration may contain proprietary asset names/data-source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples use placeholders.
 
-The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the waypoint-domain model.
+The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the timing node-domain model.
 
 ## Location and record context
 
@@ -170,25 +170,25 @@ Each physical event location has a unique numeric identifier:
 LocationID = 1..25
 ```
 
-A `Waypoint` is configured/deployed at a location, while its software identity remains separate from that location identity.
+A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
 A registration record is associated with both:
 
 ```text
-UniqueID
+TimingNodeId
 LocationID
 ```
 
-This lets a logical waypoint preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
+This lets a logical timing node preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
 
 ## Registration sequence
 
-Every waypoint registration stream has a monotonically increasing sequence number scoped by **`UniqueID`**.
+Every timing node registration stream has a monotonically increasing sequence number scoped by **`TimingNodeId`**.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (UniqueID, SequenceNumber)
+RegistrationRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
 The `LocationID`, `RegistrationAssetId` and `AntennaId` may provide useful context, but none of them changes the sequence scope.
@@ -196,39 +196,39 @@ The `LocationID`, `RegistrationAssetId` and `AntennaId` may provide useful conte
 Generic example:
 
 ```text
-waypoint-01:  1041, 1042, 1043, 1044, ...
-waypoint-02:   551,  552,  553, ...
+timing-node-01:  1041, 1042, 1043, 1044, ...
+timing-node-02:   551,  552,  553, ...
 ```
 
 This allows receiving/upstream systems to reason about stream consistency independently for every source. For example, receiving `1041`, `1042`, `1044` from one source makes a missing `1043` detectable.
 
 Important intended properties:
 
-- the number is monotonic per `UniqueID`-scoped stream;
+- the number is monotonic per `TimingNodeId`-scoped stream;
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
-- moving/changing location must not implicitly reset the waypoint sequence;
-- multiple `Waypoint` streams in one application keep independent sequence streams;
+- moving/changing location must not implicitly reset the timing node sequence;
+- multiple `TimingNode` streams in one application keep independent sequence streams;
 - the exact rules for allowed gaps, wraparound and sequence persistence still need formal requirements.
 
 ## Per-source persistence
 
-Each `UniqueID`-scoped waypoint registration stream has its **own registration file**.
+Each `TimingNodeId`-scoped timing node registration stream has its **own registration file**.
 
-The active application model may remain in memory, but registration persistence/recovery must preserve the waypoint boundary so one `UniqueID`-scoped stream and its sequence state can be recovered and synchronised independently.
+The active application model may remain in memory, but registration persistence/recovery must preserve the timing node boundary so one `TimingNodeId`-scoped stream and its sequence state can be recovered and synchronised independently.
 
 Conceptually:
 
 ```text
-UniqueID waypoint-01
+TimingNodeId timing-node-01
   in-memory ledger/state
-  waypoint-specific sequence
-  waypoint-specific registration file
+  TimingNode-specific sequence
+  TimingNode-specific registration file
 
-UniqueID waypoint-02
+TimingNodeId timing-node-02
   in-memory ledger/state
-  waypoint-specific sequence
-  waypoint-specific registration file
+  TimingNode-specific sequence
+  TimingNode-specific registration file
 ```
 
 The exact file names, external IDs and deployment mappings are configuration/private data. The file format, append/snapshot policy, atomicity and durability rules still need detailed design and formal requirements.
@@ -239,13 +239,13 @@ A registration entry is not limited to participant RFID passage data. Operationa
 
 Known example:
 
-- opening a location/waypoint is itself a registration entry.
+- opening a location/timing node is itself a registration entry.
 
 A working minimal envelope is therefore conceptually:
 
 ```text
 RegistrationRecord
-  uniqueID
+  timingNodeId
   locationId
   sequenceNumber
   recordType
@@ -262,7 +262,7 @@ Recorded event time and start-time data need one unambiguous absolute-time meani
 
 The working dedicated software value name is `TimingTimestamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. Local time-zone and daylight-saving conversion are presentation/configuration concerns unless a future business rule explicitly depends on a local civil time.
 
-A timestamp is **not** the source-ordering mechanism. Registration waypoint sequence numbers remain the stable ordering/consistency mechanism even if an operating-system wall clock is corrected forwards or backwards.
+A timestamp is **not** the source-ordering mechanism. Registration timing node sequence numbers remain the stable ordering/consistency mechanism even if an operating-system wall clock is corrected forwards or backwards.
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
@@ -276,9 +276,9 @@ TeamNumber = 0..999
 
 ## Race data
 
-`RaceData` is the locally available participant/team/tag reference data used by one `Waypoint`.
+`RaceData` is the locally available participant/team/tag reference data used by one `TimingNode`.
 
-It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is waypoint-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceData`.
+It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is TimingNode-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceData`.
 
 Stage start-time data remains a separate concern owned by `StageStartTimeRegistry`.
 
@@ -327,13 +327,13 @@ They support local calculations such as elapsed time and ranking without requiri
 
 ## Full-field simulation
 
-A single SI-01 application must be capable of running enough configured `Waypoint` objects to represent the complete field behaviour required for backoffice integration testing.
+A single SI-01 application must be capable of running enough configured `TimingNode` objects to represent the complete field behaviour required for backoffice integration testing.
 
 For this use case:
 
-- each configured `Waypoint` remains separately addressable by its `UniqueID`;
-- each configured producer uses its configured waypoint identity/identities according to the deployment mapping;
-- each `UniqueID` retains its configured logical identity and independent sequence stream;
+- each configured `TimingNode` remains separately addressable by its `TimingNodeId`;
+- each configured producer uses its configured timing node identity/identities according to the deployment mapping;
+- each `TimingNodeId` retains its configured logical identity and independent sequence stream;
 - antennas/devices may be stubbed or simulated through the normal adapter contracts;
 - registrations still follow the same normal queue, source-sequence, persistence and backoffice paths as production data;
 - simulation must not require a special bypass around the application/domain model;
@@ -354,16 +354,16 @@ Keep the following outside the public repository unless deliberately approved fo
 - proprietary protocol field values;
 - encryption keys or secrets.
 
-Public examples should use names such as `asset-01`, `waypoint-01`, and `RS-<asset-key>-ANT1`.
+Public examples should use names such as `asset-01`, `timing-node-01`, and `RS-<asset-key>-ANT1`.
 
 ## Traceability implications
 
-The combination of waypoint identity and monotonically increasing sequence is a domain-level consistency mechanism, not merely an implementation convenience.
+The combination of timing node identity and monotonically increasing sequence is a domain-level consistency mechanism, not merely an implementation convenience.
 
 Later requirements/design must therefore preserve at least:
 
 ```text
-waypoint identity
+timing node identity
 sequence order
 registration-asset context where useful
 containing total-system context
@@ -371,7 +371,7 @@ location association
 antenna context where relevant
 record type/payload
 record time
-waypoint-specific persistence/recovery without sequence reuse
+TimingNode-specific persistence/recovery without sequence reuse
 synchronisation/gap detection
 ```
 
@@ -379,12 +379,12 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 
 ## Open domain questions
 
-- Can a `Waypoint` change `LocationID` during one operational session, or is location fixed until the waypoint is closed/reconfigured?
-- Is a physical producing registration system always configured with exactly one `UniqueID`, and how are reserve/virtual waypoints associated with physical or software producers?
-- Does sequence numbering start at a defined value for a new waypoint?
+- Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
+- Is a physical producing registration system always configured with exactly one `TimingNodeId`, and how are reserve/virtual timingNodes associated with physical or software producers?
+- Does sequence numbering start at a defined value for a new timing node?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
-- Which operational events besides `OPEN` must be part of a waypoint registration stream (for example close/reinitialisation/configuration changes)?
+- Which operational events besides `OPEN` must be part of a timing node registration stream (for example close/reinitialisation/configuration changes)?
 - What exact data must an `OPEN` registration entry contain?
-- Are normal, reserve and virtual waypoints treated identically by backoffice synchronisation once their waypoint identity is known?
+- Are normal, reserve and virtual timingNodes treated identically by backoffice synchronisation once their timing node identity is known?
 - What exact operational behaviour is required for test tags, and which parts deliberately differ from normal and reserve tags?

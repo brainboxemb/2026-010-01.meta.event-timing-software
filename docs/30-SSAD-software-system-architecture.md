@@ -119,7 +119,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | IP path; direct or LAN/Wi-Fi deployment | Synchronised display/domain data | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
-| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed Waypoints, I/O assets, presentation bindings and runtime composition inputs | `40-02-IDD-application-configuration.md` |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `40-02-IDD-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 
@@ -210,7 +210,7 @@ The architecture must support constrained field deployment and normal Linux/Wind
 The SI-01 SAD owns, among other things:
 
 - layered application responsibilities;
-- `Waypoint` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
+- `TimingNode` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
 - threading/concurrency and internal messaging;
 - status architecture and lifecycle handling;
 - persistence and restore strategy;
