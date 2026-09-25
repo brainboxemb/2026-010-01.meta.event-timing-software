@@ -89,10 +89,15 @@ baseline.
 ### Current 0.2.2-SNAPSHOT development line
 
 The current development application uses one external YAML file. The implemented slice
-contains one TimingNode identity:
+contains one TimingNode identity and the optional A05 remote-terminal listener:
 
 ```yaml
 timingNodeId: timing-node-01
+
+presentation:
+  remoteShell:
+    bindAddress: 127.0.0.1
+    port: 8023
 ```
 
 A synthetic development example is stored as:
@@ -161,10 +166,22 @@ Do not list the local console as a released v0.2.1 capability. The command behav
 and Windows/NetBeans development-host acceptance are complete on the current
 0.2.2-SNAPSHOT line and can be promoted with the next accepted release.
 
-The later remote terminal/shell uses the same application command behaviour through a
-different transport; console and remote shell are separate presentation interfaces.
+## 9. Remote terminal
 
-## 9. Troubleshooting
+The current A05 development slice can expose the same text commands over a simple
+line-oriented TCP connection. It uses the configured `presentation.remoteShell`
+address and port.
+
+This endpoint is not an SSH or Telnet protocol implementation. The first baseline
+serves one active remote terminal session at a time; disconnecting ends only that
+session and a later client may reconnect. `quit` / `exit` retain the local-console
+meaning and request graceful SI-01 shutdown.
+
+The committed example binds only to `127.0.0.1`. No authentication or encryption is
+provided by this A05 development/service slice, so non-loopback exposure must be an
+explicit controlled test/deployment choice.
+
+## 10. Troubleshooting
 
 ### Build uses the wrong Java version
 
@@ -189,7 +206,7 @@ First verify the same revision with `.\mvnw.cmd verify`. Record the NetBeans/JDK
 version used when the difference is investigated. A release compatibility claim should
 only be added after that combination is verified.
 
-## 10. Release maintenance
+## 11. Release maintenance
 
 Before a normal SI-01 software release is accepted:
 
