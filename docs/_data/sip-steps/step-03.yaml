@@ -9,7 +9,7 @@ summary: >-
 demonstration:
   bullets:
     - Start the Headless Timing Application on Windows from external configuration.
-    - Show the configured TimingNode and current version/status.
+    - Show the configured TimingNode, current version/status and runtime log file.
     - Read the same version/status through console, remote shell, HTTP and WebSocket.
 documents:
   - name: 20-01-SRD
@@ -57,7 +57,7 @@ activities:
     lane: application
     kind: implementation
     title: Run until shutdown + graceful stop
-    state: active
+    state: done
     depends_on: [A02]
     note: >-
       Keep the configured application running until the OS/JVM requests shutdown.
@@ -67,9 +67,13 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    title: Local console / shell adapter
-    state: planned
+    title: Local console / debug shell
+    state: active
     depends_on: [A01, A03]
+    note: >-
+      Provide local version/status commands through the shared CommandHandler plus
+      quit/exit for a graceful local stop. Keep console parsing in the presentation
+      adapter; A04 does not create separate application semantics.
 
   - id: A05
     lane: application
@@ -92,6 +96,17 @@ activities:
     state: planned
     depends_on: [A01, A03, A06]
 
+  - id: A08
+    lane: application
+    kind: implementation
+    title: Runtime file logging
+    state: planned
+    depends_on: [A03]
+    note: >-
+      Write runtime logs to file with configurable level and basic rotation/retention.
+      Keep the backend open to additional diagnostic sinks; a live debug-UI stream is
+      a later presentation consumer, not application status.
+
   - id: V01
     lane: verification
     kind: verification
@@ -111,7 +126,7 @@ activities:
     kind: verification
     title: ST-1 application behaviour black-box test
     state: planned
-    depends_on: [A02, A04, A05, A06, A07, V01, V02]
+    depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
 
   - id: V04
     lane: verification
