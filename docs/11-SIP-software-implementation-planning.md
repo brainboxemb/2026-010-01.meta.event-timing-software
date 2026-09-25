@@ -263,29 +263,27 @@ IF-11 already defines ownership for later I/O hardware, messaging, storage, runt
 
 ### Next bounded implementation slice
 
-Make external configuration real without prebuilding later capability models:
+Add the first local presentation adapter without creating separate application behaviour:
 
 ```text
-embedded BuildIdentity
-        +
-ApplicationConfigLoader
+local console / debug shell
         |
-        +-- base application configuration
-        +-- selected platform configuration
-        +-- optional profile
-        +-- secret resolution where required
+        +-- help
+        +-- version
+        +-- status
+        +-- quit / exit
         |
         v
-effective ApplicationConfig
-        |
-        v
-validation
-        |
-        v
-TimingApplication composition
+shared application boundary
 ```
 
-The first slice needs only enough configuration to construct at least one TimingNode and bind the first public presentation endpoint safely. Hardware, messaging, storage and broader security configuration are added when corresponding adapters/consumers become real.
+The console owns command parsing and text formatting only. `version` and `status`
+reuse the same application semantics intended for later transports; `quit` / `exit`
+request the existing graceful application shutdown path.
+
+A04 acceptance includes a user-facing Windows check from a clean checkout: bootstrap,
+build, start SI-01 with `application.yml`, run `help`, `version`, `status`, then
+`quit` and verify the process stops cleanly.
 
 ### Deliverable
 

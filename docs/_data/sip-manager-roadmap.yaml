@@ -38,11 +38,11 @@ steps:
   "3":
     deliverable:
       - Headless SI-01 starts from external configuration
-      - One shared source for version and application status
+      - Shared version/status plus retained runtime logging
       - Console, remote shell, HTTP and WebSocket show the same state
     demonstration:
       - Start SI-01 on Windows from external configuration
-      - Show the configured TimingNode and current version/status
+      - Show TimingNode, version/status and log file
       - Read the same version/status through all four interfaces
 
   "4":

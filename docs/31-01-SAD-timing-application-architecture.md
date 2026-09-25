@@ -603,6 +603,10 @@ provider selected by executable composition
                          |
                          v
                   java.util.logging
+                     |
+                     +-- console handler
+                     +-- file handler
+                     +-- future live diagnostic handler
 ```
 
 Working decisions:
@@ -616,7 +620,10 @@ Working decisions:
 - log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
 - stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
-- logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state.
+- logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state;
+- the selected backend may publish the same log records to multiple handlers/sinks;
+- the initial operational sink is file logging; a later diagnostic/debug presentation may add a live sink without changing framework logging calls;
+- a live diagnostic sink is a support/presentation stream and must not become a substitute for the structured application-status model.
 
 The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.
 
