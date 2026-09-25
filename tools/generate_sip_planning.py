@@ -620,8 +620,13 @@ def step_demo_id(step_number: int) -> str:
 
 
 def planning_change_lines(change: dict) -> List[str]:
-    lines = wrap(change["change"], 66, 2)
-    if len(lines) > 2:
+    lines = textwrap.wrap(
+        change["change"],
+        width=70,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    if not lines or len(lines) > 3:
         raise SystemExit(
             f"Planning change does not fit a step card: {change['change']!r}"
         )
