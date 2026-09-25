@@ -14,9 +14,6 @@ demonstration:
 planning_changes:
   - date: '2026-09-25'
     change: >-
-      A07 uses a separate Java-8 WebSocket listener and no synthetic status transition.
-  - date: '2026-09-25'
-    change: >-
       A06 completed HTTP/JSON status plus the independent JavaFX development client.
   - date: '2026-09-25'
     change: >-
