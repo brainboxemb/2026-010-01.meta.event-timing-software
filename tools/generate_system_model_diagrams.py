@@ -91,7 +91,7 @@ def timing_node_software_decomposition() -> Diagram:
 
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("ant_router", "AntennaRouter\\n1..N Antenna", 90, 150, 330, 90, "interface"),
+        Node("ant_router", "AntennaRouter\\n0..N Antenna", 90, 150, 330, 90, "interface"),
         Node("ant1", "Antenna ANT1\\nAntennaId", 90, 330, 300, 80, "adapter"),
         Node("ant2", "Antenna ANT2\\nAntennaId", 90, 500, 300, 80, "adapter"),
 

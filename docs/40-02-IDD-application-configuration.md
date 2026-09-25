@@ -89,7 +89,7 @@ io
         timingNodes: [timing-node-02]
 ```
 
-`AntennaRouter` owns 1..N configured antennas. `AntennaId` is distinct from
+`AntennaRouter` owns 0..N configured antennas. `AntennaId` is distinct from
 `TimingNodeId`. One antenna may intentionally route to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 

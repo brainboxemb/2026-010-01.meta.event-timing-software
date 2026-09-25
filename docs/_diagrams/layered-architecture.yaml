@@ -27,6 +27,14 @@ groups:
   label: I/O
   kind: layer-infrastructure
   layout: {x: 120, y: 775, w: 1120, h: 165}
+- id: antenna-router
+  label: AntennaRouter
+  kind: integration
+  layout: {x: 385, y: 815, w: 280, h: 105}
+- id: backoffice-router
+  label: BackofficeRouter
+  kind: integration
+  layout: {x: 685, y: 815, w: 300, h: 105}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
@@ -126,18 +134,17 @@ nodes:
   subtitle: "file / DB • backup / restore"
   kind: storage
   layout: {x: 145, y: 825, w: 220, h: 75}
-- id: antenna-router
-  group: io-layer
-  label: "AntennaRouter"
-  subtitle: "1..N Antenna"
+- id: antenna-collection
+  group: antenna-router
+  label: "0..N Antenna"
   kind: integration
-  layout: {x: 385, y: 825, w: 280, h: 75}
-- id: backoffice-router
-  group: io-layer
-  label: "BackofficeRouter"
-  subtitle: "0..N BackofficeConnector"
+  layout: {x: 405, y: 855, w: 240, h: 45}
+- id: backoffice-connectors
+  group: backoffice-router
+  label: "0..N BackofficeConnector"
+  subtitle: "RabbitMQ"
   kind: integration
-  layout: {x: 685, y: 825, w: 300, h: 75}
+  layout: {x: 705, y: 850, w: 260, h: 55}
 - id: devices-io
   group: io-layer
   label: "Devices"
@@ -202,12 +209,12 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
-- from: antenna-router
+- from: antenna-collection
   to: timing-node-root
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.42}
 
-- from: backoffice-router
+- from: backoffice-connectors
   to: timing-node-root
   dashed: true
   from_anchor: {side: top, position: 0.50}
@@ -218,12 +225,12 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.05}
 
-- from: antenna-router
+- from: antenna-collection
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
 
-- from: backoffice-router
+- from: backoffice-connectors
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}

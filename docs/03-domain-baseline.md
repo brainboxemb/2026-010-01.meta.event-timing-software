@@ -52,7 +52,7 @@ The I/O boundary owns antenna configuration and routing:
 
 ```text
 AntennaRouter
-  +-- 1..N Antenna
+  +-- 0..N Antenna
         +-- AntennaId
         +-- driver / device configuration
 
@@ -73,7 +73,7 @@ Known structural rules:
 
 - `TimingNodeId` identifies the logical TimingNode;
 - `AntennaId` identifies a configured antenna within the application;
-- `AntennaRouter` owns 1..N antennas and their fan-out mappings;
+- `AntennaRouter` owns 0..N antennas and their fan-out mappings;
 - every TimingNode owns its own monotonic registration sequence and
   TimingNode-specific persistence/synchronisation state;
 - reserve and virtual TimingNodes may share a physical antenna through routing;
@@ -126,7 +126,7 @@ the software/domain aggregate being operated.
 
 ```text
 AntennaRouter
-  +-- 1..N Antenna
+  +-- 0..N Antenna
   +-- each Antenna -> 1..N TimingNode
 
 BackofficeRouter

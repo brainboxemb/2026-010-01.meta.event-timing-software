@@ -168,7 +168,7 @@ I/O contains adapters that move data between SI-01 and the outside world:
 ```text
 io/
   AntennaRouter
-    1..N Antenna
+    0..N Antenna
   BackofficeRouter
     0..N BackofficeConnector
       RabbitMqBackofficeConnector
@@ -184,7 +184,7 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes.
 
-`AntennaRouter` owns 1..N configured `Antenna` instances and routes each
+`AntennaRouter` owns 0..N configured `Antenna` instances and routes each
 antenna's observations to 1..N TimingNodes. `BackofficeRouter` owns 0..N
 `BackofficeConnector` instances and maps their bindings to/from TimingNodes.
 Concrete antennas/connectors own their protocol/device resources internally.
@@ -244,7 +244,7 @@ The active software/configuration model uses the configured antenna directly:
 
 ```text
 AntennaRouter
-    +-- 1..N Antenna
+    +-- 0..N Antenna
 ```
 
 An `Antenna` is an I/O source with its own `AntennaId` and concrete
@@ -260,7 +260,7 @@ Configuration connects identities without collapsing them:
 
 ```text
 AntennaRouter
-    +-- 1..N Antenna
+    +-- 0..N Antenna
     +-- each Antenna -> 1..N TimingNodeId
 
 BackofficeRouter
@@ -650,7 +650,7 @@ ApplicationConfig
 The identity boundaries are deliberate:
 
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
-- `AntennaRouter` owns 1..N configured antennas; each antenna has its own `AntennaId` and may route to 1..N `TimingNodeId` targets;
+- `AntennaRouter` owns 0..N configured antennas; each antenna has its own `AntennaId` and may route to 1..N `TimingNodeId` targets;
 - `BackofficeRouter` owns 0..N connectors, each with 1..N TimingNode bindings;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
