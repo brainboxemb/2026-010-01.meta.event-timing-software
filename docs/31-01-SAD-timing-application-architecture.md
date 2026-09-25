@@ -640,7 +640,6 @@ ApplicationConfig
 The identity boundaries are deliberate:
 
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
-- a TimingNode may reference a `RegistrationAssetId`;
 - a registration asset owns its adapter/driver selection and 1..N `AntennaId` values where antenna inputs apply;
 - registration routing maps an asset/antenna origin to 1..N `TimingNodeId` targets;
 - backoffice configuration may define 0..N connectors, each with 1..N TimingNode bindings;

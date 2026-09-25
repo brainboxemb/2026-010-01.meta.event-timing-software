@@ -62,14 +62,12 @@ timingNodes
   timing-node-01
     timingNodeId
     locationId
-    registrationAsset
 ```
 
 Rules:
 
 - `TimingNodeId` identifies the logical TimingNode;
 - `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
-- a TimingNode may reference a configured registration asset by `RegistrationAssetId`;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode.
 
 ### I/O
