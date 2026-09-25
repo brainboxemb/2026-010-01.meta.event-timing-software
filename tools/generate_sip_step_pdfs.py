@@ -127,7 +127,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
     if demo:
         demo_top = 34.0
-        demo_h = 20.0
+        demo_h = 27.0
         rounded_rect_top(
             c,
             MARGIN_MM,
