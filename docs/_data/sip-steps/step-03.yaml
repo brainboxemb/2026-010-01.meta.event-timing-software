@@ -14,9 +14,7 @@ demonstration:
 planning_changes:
   - date: '2026-09-25'
     change: >-
-      A06 completed the HTTP/JSON status adapter with real loopback HTTP verification
-      plus a separate Java 17/JavaFX development test client for manual IF-03 inspection
-      and the existing A05 remote shell; the test client is not SI-02.
+      A06 completed HTTP/JSON status plus the independent JavaFX development client.
   - date: '2026-09-25'
     change: >-
       Build provenance was redefined to omit buildTime and embed revision,
@@ -132,7 +130,7 @@ activities:
     lane: application
     kind: implementation
     title: WebSocket status / event stream
-    state: planned
+    state: active
     depends_on: [A01, A03, A06]
 
   - id: A08
