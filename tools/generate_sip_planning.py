@@ -690,7 +690,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
     if demo:
         demo_top = 34.0
-        demo_h = 20.0
+        demo_h = 27.0
         parts.append(
             f'<rect x="{MARGIN_MM}" y="{demo_top}" width="{usable_w}" height="{demo_h}" '
             'rx="1.5" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.45"/>'
