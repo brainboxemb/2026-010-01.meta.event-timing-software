@@ -366,9 +366,14 @@ Expected mechanisms include:
 
 - in-process/direct fakes for unit/component work;
 - executable SI-01 plus external test driver for application/system testing;
+- small manual test clients where they materially improve developer inspection of a public interface;
 - lightweight native socket simulator for network-loop tests;
 - Docker/Compose service fixtures for RabbitMQ-specific integration;
 - real Pi Zero / hardware environment for target/HIL testing.
+
+A manual test client may use a different desktop runtime/toolchain from the constrained
+SI-01 target when that boundary is explicit. It must still consume the public interface
+rather than internal SI-01 classes.
 
 Do not make Docker a prerequisite for fast tests that do not need an external service.
 
