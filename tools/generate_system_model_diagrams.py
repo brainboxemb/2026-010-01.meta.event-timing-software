@@ -89,69 +89,38 @@ def timing_node_software_decomposition() -> Diagram:
     )
 
 
-def registration_hardware_topology() -> Diagram:
-    nodes = [
-        Node("asset1", "RegistrationAsset asset-01\\nphysical/inventory identity", 180, 100, 420, 100, "external"),
-        Node("asset2", "RegistrationAsset asset-02\\nphysical/inventory identity", 820, 100, 420, 100, "external"),
-        Node("ant11", "Antenna ANT1", 70, 340, 260, 75, "adapter"),
-        Node("ant12", "Antenna ANT2", 370, 340, 260, 75, "adapter"),
-        Node("ant21", "Antenna ANT1", 900, 340, 260, 75, "adapter"),
-        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N TimingNodeIds", 450, 540, 500, 100, "interface"),
-    ]
-
-    edges = [
-        Edge("asset1", "ant11", "1..N antennas"),
-        Edge("asset1", "ant12"),
-        Edge("asset2", "ant21", "1..N antennas"),
-        Edge("asset1", "note", "separate from software decomposition", True),
-        Edge("asset2", "note", "separate from software decomposition", True),
-    ]
-
-    return Diagram(
-        "registration-hardware-topology",
-        "Registration hardware/deployment topology — assets and antennas",
-        1400,
-        720,
-        nodes,
-        edges,
-    )
-
-
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 65, 80, 310, 85, "external"),
-        Node("antenna", "Antenna ANT1\\nAntennaId", 85, 230, 270, 80, "adapter"),
-        Node("reg_router", "RegistrationRouter\\nconfigured fan-out", 455, 180, 330, 95, "interface"),
+        Node("ant_router", "AntennaRouter\\n1..N Antenna", 90, 150, 330, 90, "interface"),
+        Node("ant1", "Antenna ANT1\\nAntennaId", 90, 330, 300, 80, "adapter"),
+        Node("ant2", "Antenna ANT2\\nAntennaId", 90, 500, 300, 80, "adapter"),
 
-        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId", 930, 80, 350, 90, "service"),
-        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId", 930, 260, 350, 90, "service"),
-        Node("loc_a", "Location X\\nLocationID", 1060, 420, 220, 75, "external"),
+        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId", 910, 130, 350, 90, "service"),
+        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId", 910, 350, 350, 90, "service"),
+        Node("loc_a", "Location X\\nLocationID", 980, 540, 220, 75, "external"),
 
-        Node("bo_router", "BackofficeRouter\\nconnector bindings / names", 505, 540, 350, 95, "interface"),
-        Node("conn1", "BackofficeConnector 01\\nRabbitMQ / credentials A", 70, 500, 330, 90, "adapter"),
-        Node("conn2", "BackofficeConnector 02\\nRabbitMQ / credentials B", 70, 660, 330, 90, "adapter"),
-        Node("note", "Router = mapping / fan-out\\nManager = resource + lifecycle ownership", 900, 620, 390, 100, "interface"),
+        Node("bo_router", "BackofficeRouter\\n0..N BackofficeConnector", 480, 650, 380, 90, "interface"),
+        Node("conn1", "BackofficeConnector 01\\nRabbitMQ", 80, 700, 300, 80, "adapter"),
+        Node("conn2", "BackofficeConnector 02\\nRabbitMQ", 1010, 700, 300, 80, "adapter"),
     ]
 
     edges = [
-        Edge("asset", "antenna", "owns 1..N antennas"),
-        Edge("antenna", "reg_router", "observation origin"),
-        Edge("reg_router", "node_a", "route 1..N"),
-        Edge("reg_router", "node_b"),
-        Edge("node_a", "loc_a", "configured at"),
-
-        Edge("conn1", "bo_router", "1..N bindings"),
-        Edge("conn2", "bo_router", "1..N bindings"),
-        Edge("bo_router", "node_a", "inbound / outbound"),
-        Edge("bo_router", "node_b", "inbound / outbound"),
-        Edge("bo_router", "note", "separate responsibilities", True),
+        Edge("ant_router", "ant1"),
+        Edge("ant_router", "ant2"),
+        Edge("ant_router", "node_a"),
+        Edge("ant_router", "node_b"),
+        Edge("node_a", "loc_a"),
+        Edge("conn1", "bo_router"),
+        Edge("conn2", "bo_router"),
+        Edge("bo_router", "node_a"),
+        Edge("bo_router", "node_b"),
     ]
 
     return Diagram(
         "timing-node-routing-mapping",
-        "Configuration routing — hardware, TimingNodes and backoffice connectors",
+        "TimingNode I/O routing — antennas and backoffice connectors",
         1400,
-        820,
+        900,
         nodes,
         edges,
     )
@@ -284,7 +253,6 @@ def generate(out_dir: Path) -> None:
     diagrams = [
         software_item_overview(),
         timing_node_software_decomposition(),
-        registration_hardware_topology(),
         timing_node_routing_mapping(),
         rabbitmq_source_topology(),
         timing_node_lifecycle(),
