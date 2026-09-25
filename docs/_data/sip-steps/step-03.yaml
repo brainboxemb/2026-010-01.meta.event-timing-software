@@ -14,6 +14,10 @@ demonstration:
 planning_changes:
   - date: '2026-09-25'
     change: >-
+      Build provenance was redefined to omit buildTime and embed revision,
+      sourceRef, buildOrigin and dirty-state for self-identifying artifacts.
+  - date: '2026-09-25'
+    change: >-
       A02 was narrowed to one external application.yml producing one TimingNodeId
       and one TimingNode; presentation configuration was deferred.
   - date: '2026-09-25'
