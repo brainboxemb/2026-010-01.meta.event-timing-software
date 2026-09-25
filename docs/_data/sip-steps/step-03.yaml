@@ -2,10 +2,9 @@ step: 3
 title: Minimal version/status application on development host
 state: active
 summary: >-
-  Turn the Step-2 executable into a useful long-running Headless Timing Application.
-  Step 3 adds external configuration, one configured TimingNode, and console, remote
-  shell, HTTP and WebSocket access to the same version/status state. ST-1 verifies
-  application behaviour separately from the end-of-step demonstration.
+  Build the first long-running Headless Timing Application from external configuration.
+  One TimingNode is configured. Console, remote shell, HTTP and WebSocket expose the
+  same version/status.
 
 demonstration:
   bullets:
