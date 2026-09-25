@@ -24,9 +24,9 @@ TimingApplication
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
-        +-- StageStartTimeRegistry
+        +-- StageStartTimes
         +-- TimingNodeJournal
-        +-- PrepareTeamRegistry
+        +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
 ```
@@ -111,9 +111,9 @@ TimingApplication
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
-        +-- StageStartTimeRegistry
+        +-- StageStartTimes
         +-- TimingNodeJournal
-        +-- PrepareTeamRegistry
+        +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
 ```
@@ -252,7 +252,7 @@ TeamNumber = 0..999
 
 It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is TimingNode-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceData`.
 
-Stage start-time data remains a separate concern owned by `StageStartTimeRegistry`.
+Stage start-time data remains a separate concern owned by `StageStartTimes`.
 
 ## RFID tag identity structure
 
