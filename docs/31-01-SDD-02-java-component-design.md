@@ -210,9 +210,25 @@ The current executable uses a small nested composition helper:
 TimingApplication.builder(buildIdentity).build()
 ```
 
-This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. A future `ApplicationConfigLoader` becomes a separate component only when Step 3 has real configuration sources/merge/validation behaviour to own; the design does not require speculative loader/config classes before then.
+This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. `ApplicationConfigLoader` now owns the implemented Step-3 YAML parsing/validation, while `ApplicationConfig` and the currently real presentation config types remain executable-composition inputs rather than domain objects.
 
-The first shared presentation/application boundary is similarly small: `CommandHandler.version()` returns the authoritative `BuildIdentity` used by local/remote clients.
+The A04/A05 text presentation implementation is deliberately split by responsibility:
+
+```text
+presentation.console.LocalConsole
+        |
+        v
+presentation.terminal.TerminalSession   shared command parsing/formatting
+        ^
+        |
+presentation.shell.RemoteShellServer    line-oriented TCP transport
+```
+
+Both transports call the same `CommandHandler` and shutdown callback. The remote
+transport does not own an alternate command/status model. The first shared
+presentation/application boundary remains small: `CommandHandler.version()` and
+`CommandHandler.status()` return the authoritative application values used by both
+local and remote clients.
 
 ## Derived consumers
 

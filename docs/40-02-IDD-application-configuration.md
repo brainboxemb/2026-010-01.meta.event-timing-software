@@ -157,6 +157,20 @@ HTTP :8082 -> timing-node-02
 
 A TimingNode therefore does not need to know that a tablet, HTTP listener, shell or later GUI/API endpoint exists. Additional presentation adapters may bind differently without changing the TimingNode domain configuration.
 
+The first implemented A05 remote-terminal slice uses this concrete subset:
+
+```yaml
+presentation:
+  remoteShell:
+    bindAddress: 127.0.0.1
+    port: 8023
+```
+
+`remoteShell` is optional. When present, `bindAddress` and `port` are required.
+The committed development example uses loopback; binding to another interface is an
+explicit deployment choice. These settings configure the presentation listener and do
+not become TimingNode fields.
+
 ### Runtime
 
 Runtime configuration contains process/executor/queue settings that affect application execution but are not domain identity.
