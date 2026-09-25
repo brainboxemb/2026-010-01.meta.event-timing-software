@@ -263,28 +263,27 @@ IF-11 already defines ownership for later I/O hardware, messaging, storage, runt
 
 ### Next bounded implementation slice
 
-Add the first local presentation adapter without creating separate application behaviour:
+Implement A06 as the first machine-readable network view of the shared application state:
 
 ```text
-local console
-        |
-        +-- help
-        +-- version
-        +-- status
-        +-- quit / exit
-        |
-        v
-shared application boundary
+automated HTTP test ----+
+                        |
+JavaFX test client -----+--> GET /api/v1/version
+                        +--> GET /api/v1/status
+                                   |
+                                   v
+                         SI-01 shared application state
 ```
 
-The console owns the local text interaction, command parsing and formatting. `version`
-and `status` reuse the shared application semantics. A05 later exposes the same text
-commands through a remote terminal/shell connection rather than inventing a second command set.
-`quit` / `exit` request the existing graceful application shutdown path.
+SI-01 owns the HTTP/JSON adapter and IF-03 mapping. Automated tests exercise the
+adapter over a real loopback HTTP connection.
 
-A04 acceptance includes a user-facing Windows/NetBeans check: open the repository as
-a Maven project, build it, run SI-01 with `application.yml`, execute `help`,
-`version`, `status`, then `quit`, and verify the process stops cleanly.
+A small JavaFX test client is added as development/test support so the same interface
+can also be inspected manually. It is not SI-02 and contains no SI-01 implementation
+dependency; it consumes IF-03 exactly as another external client would. The desktop
+test client may use a newer Java runtime than SI-01 because it is not deployed to the
+Pi target. Its first slice shows parsed version/status fields plus the raw JSON response.
+A07 may later extend the same tool with WebSocket event inspection.
 
 ### Deliverable
 
