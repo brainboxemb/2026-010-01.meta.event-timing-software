@@ -71,9 +71,10 @@ activities:
     state: active
     depends_on: [A01, A03]
     note: >-
-      Provide local version/status commands through the shared CommandHandler plus
+      Provide help, version and status through the shared application boundary plus
       quit/exit for a graceful local stop. Keep console parsing in the presentation
-      adapter; A04 does not create separate application semantics.
+      adapter. Acceptance includes a clean Windows checkout/build and an interactive
+      help -> version -> status -> quit session.
 
   - id: A05
     lane: application
