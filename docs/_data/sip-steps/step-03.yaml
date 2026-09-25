@@ -4,7 +4,7 @@ state: active
 summary: >-
   Turn the Step-2 executable shell into the first useful long-running SI-01 process.
   The shared application boundary and build identity are established. The next slice
-  makes Application Configuration (IF-11) real for a minimal Waypoint and presentation
+  makes Application Configuration (IF-11) real for a minimal TimingNode and presentation
   binding, after which local, remote, HTTP and WebSocket views converge on the same
   application semantics and ST-1 proves the running process.
 documents:
@@ -42,12 +42,12 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    title: Application configuration + minimal Waypoint
+    title: Application configuration + minimal TimingNode
     state: next
     depends_on: [A01]
     note: >-
       Implement only the configuration types required to load/validate an effective
-      ApplicationConfig and compose one Waypoint plus its first presentation binding.
+      ApplicationConfig and compose one TimingNode plus its first presentation binding.
 
   - id: A03
     lane: application

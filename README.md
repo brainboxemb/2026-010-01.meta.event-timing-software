@@ -63,7 +63,7 @@ The GitHub documentation workflow follows the same path before invoking `eng-doc
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
 - [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
 - [`docs/40-01-IDD-application-control-status.md`](docs/40-01-IDD-application-control-status.md) — AP-1 working IF-03 application-control/status contract for the first executable slice.
-- [`docs/40-02-IDD-application-configuration.md`](docs/40-02-IDD-application-configuration.md) — SI-01 deployment/configuration contract for Waypoints, I/O assets, presentation bindings, platform/profile overlays and secret references.
+- [`docs/40-02-IDD-application-configuration.md`](docs/40-02-IDD-application-configuration.md) — SI-01 deployment/configuration contract for TimingNodes, I/O assets, presentation bindings, platform/profile overlays and secret references.
 - [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model including Pi Zero/resource and fault-injection verification.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
