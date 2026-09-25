@@ -8,9 +8,7 @@ The repository is currently in its planning and research phase.
 
 - Simplify the active I/O model: `AntennaRouter` owns 1..N `Antenna` instances, `BackofficeRouter` owns 0..N `BackofficeConnector` instances, both live in I/O, and the former `RegistrationAsset` / `RegistrationRouter` layer is removed from the software/configuration model.
 
-- Clarify the main layered architecture around `RegistrationRouter`, `BackofficeRouter`, 1..N antennas per registration asset and 0..N `BackofficeConnector` instances; keep RabbitMQ as a concrete connector implementation and avoid introducing a separate manager abstraction without evidence.
-
-- Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; make registration and backoffice routing explicit so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors with connector-specific TimingNode bindings.
+- Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; keep `AntennaRouter` and `BackofficeRouter` in I/O so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors.
 
 - Refresh Step-3 planning and handoff around the current `v0.2.1` / `0.2.2-SNAPSHOT` baseline and IF-11 configuration work, while leaving the already-correct roadmap status (`Step 3: active`) unchanged.
 
