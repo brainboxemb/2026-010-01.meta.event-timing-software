@@ -59,15 +59,27 @@ nodes:
 - id: application-conductor
   group: application-layer
   label: "Conductor"
-  subtitle: "lifecycle / state orchestration"
+  subtitle: "lifecycle / application-wide coordination"
   kind: application
-  layout: {x: 190, y: 305, w: 430, h: 75}
+  layout: {x: 145, y: 305, w: 230, h: 75}
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
-  subtitle: "shared request boundary • target resolution"
+  subtitle: "presentation request boundary"
   kind: application
-  layout: {x: 740, y: 305, w: 430, h: 75}
+  layout: {x: 395, y: 305, w: 260, h: 75}
+- id: registration-router
+  group: application-layer
+  label: "RegistrationRouter"
+  subtitle: "asset + antenna origin → 1..N TimingNodes"
+  kind: application
+  layout: {x: 675, y: 305, w: 260, h: 75}
+- id: backoffice-router
+  group: application-layer
+  label: "BackofficeRouter"
+  subtitle: "0..N connectors ↔ TimingNode bindings"
+  kind: application
+  layout: {x: 955, y: 305, w: 260, h: 75}
 
 - id: timing-node-root
   group: timing-node-aggregate
@@ -125,19 +137,25 @@ nodes:
   label: "Storage"
   subtitle: "file / DB • backup / restore"
   kind: storage
-  layout: {x: 165, y: 825, w: 300, h: 75}
-- id: messaging-io
+  layout: {x: 145, y: 825, w: 220, h: 75}
+- id: registration-io
   group: io-layer
-  label: "Messaging"
-  subtitle: "RabbitMQ / backoffice"
+  label: "Registration adapters"
+  subtitle: "0..N assets • 1..N antennas / asset"
   kind: integration
-  layout: {x: 495, y: 825, w: 300, h: 75}
-- id: hardware-io
+  layout: {x: 385, y: 825, w: 280, h: 75}
+- id: backoffice-io
   group: io-layer
-  label: "Hardware"
-  subtitle: "RFID • CAN • display"
+  label: "Backoffice connectors"
+  subtitle: "0..N • RabbitMQ / socket / ..."
   kind: integration
-  layout: {x: 825, y: 825, w: 300, h: 75}
+  layout: {x: 685, y: 825, w: 300, h: 75}
+- id: other-device-io
+  group: io-layer
+  label: "Other device adapters"
+  subtitle: "CAN • display"
+  kind: integration
+  layout: {x: 1005, y: 825, w: 215, h: 75}
 
 - id: platform-primitives
   group: platform-layer
@@ -176,13 +194,26 @@ edges:
 - from: command-handler
   to: timing-node-root
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.25}
+
+- from: registration-router
+  to: timing-node-root
+  label: route 1..N
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.65}
+
+- from: backoffice-router
+  to: timing-node-root
+  label: bind 1..N
+  dashed: true
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: right, position: 0.25}
 
 - from: application-conductor
   to: timing-node-root
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.20}
+  to_anchor: {side: top, position: 0.10}
 
 - from: application-conductor
   to: system-status-domain
@@ -196,17 +227,34 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
+- from: registration-io
+  to: registration-router
+  label: observations
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
+
+- from: backoffice-io
+  to: backoffice-router
+  label: transport I/O
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
+
 - from: storage-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.085227}
+  to_anchor: {side: top, position: 0.05}
 
-- from: messaging-io
+- from: registration-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.460227}
+  to_anchor: {side: top, position: 0.35}
 
-- from: hardware-io
+- from: backoffice-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.835227}
+  to_anchor: {side: top, position: 0.65}
+
+- from: other-device-io
+  to: platform-primitives
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.92}

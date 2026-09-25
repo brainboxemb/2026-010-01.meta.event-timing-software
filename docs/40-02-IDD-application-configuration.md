@@ -94,7 +94,7 @@ io
 
 `RegistrationAssetId` and `AntennaId` are distinct from `TimingNodeId`. A registration asset has 1..N antennas where antenna inputs apply. One antenna may intentionally route to 1..N TimingNodes; this fan-out does not merge their state or sequence streams.
 
-The `RegistrationRouter` owns this mapping. Hardware adapter/connection managers own device lifecycle/resources but do not decide which TimingNode owns an observation.
+The `RegistrationRouter` owns this mapping. Concrete hardware adapters own device resources/lifecycle but do not decide which TimingNode receives an observation.
 
 ### Backoffice connectors and routing
 
@@ -122,7 +122,7 @@ io
 
 A connector may bind 1..N TimingNodes and one TimingNode may be bound to more than one connector. `externalName` is connector/backoffice-facing configuration and does not replace the stable internal `TimingNodeId`.
 
-`BackofficeRouter` resolves these bindings. Connector managers own transport resources such as RabbitMQ connections/channels; routers own identity mapping and fan-out.
+`BackofficeRouter` resolves these bindings. Concrete connector implementations own transport resources such as RabbitMQ connections/channels; routers own identity mapping and fan-out.
 
 Storage settings remain under I/O because they configure external persistence adapters.
 

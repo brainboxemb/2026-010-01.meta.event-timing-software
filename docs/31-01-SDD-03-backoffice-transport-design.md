@@ -181,26 +181,28 @@ RabbitMqSourceMessagingConfig
 
 If production uses the default exchange or a direct-to-queue convention, the implementation can represent that through the same outbound-endpoint abstraction.
 
-### RabbitMQ connector and connection topology
+### RabbitMQ connector topology
 
-The application may compose 0..N backoffice connectors. A RabbitMQ connector owns one configured broker/session boundary. A connector/connection manager owns transport lifecycle and resources; `BackofficeRouter` owns TimingNode mapping.
+The application may compose 0..N `BackofficeConnector` instances. RabbitMQ is one concrete connector implementation:
 
 ```text
 application
   BackofficeRouter
         |
-        +-- RabbitMqConnector connector-01
-        |     +-- RabbitMqConnectionManager
-        |     +-- 1..N TimingNode/source bindings
+        +-- BackofficeConnector connector-01
+        |     -> RabbitMqBackofficeConnector
+        |     -> 1..N TimingNode/source bindings
         |
-        +-- RabbitMqConnector connector-02
-              +-- RabbitMqConnectionManager
-              +-- 1..N TimingNode/source bindings
+        +-- BackofficeConnector connector-02
+              -> RabbitMqBackofficeConnector
+              -> 1..N TimingNode/source bindings
 ```
+
+A `RabbitMqBackofficeConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
 
 One connector may multiplex several source-specific queues/channels over one physical broker connection. Separate connectors may use different brokers, credentials or routing domains. A TimingNode may intentionally participate in more than one connector.
 
-Within one connector, separate consumer and publisher connections remain an implementation option when fault isolation, channel/thread ownership, broker-client behaviour or measured Pi Zero evidence justifies it. That refinement must not change the semantic source interface.
+Within one connector, separate consumer and publisher connections remain an implementation option when fault isolation, channel/thread ownership, broker-client behaviour or measured Pi Zero evidence justifies it. That refinement must not change the semantic connector boundary.
 
 ### RabbitMQ threading
 
@@ -455,14 +457,14 @@ Temporary identifiers only.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
 - **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
-- **CAND-BO-017** — Backoffice routing/fan-out shall be separate from connector/connection lifecycle ownership.
+- **CAND-BO-017** — Backoffice routing/fan-out shall remain separate from concrete connector transport/resource handling.
 
 ## Open questions
 
 - What exact semantic messages belong in the public backoffice IDD?
 - What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
 - Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
-- Within one RabbitMQ connector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
+- Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the framework artifact?
 - What is the production acknowledgement/reconciliation protocol?

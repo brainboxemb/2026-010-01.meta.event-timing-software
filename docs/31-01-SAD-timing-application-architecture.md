@@ -111,19 +111,32 @@ application/
     lifecycle and application-wide coordination
 
   CommandHandler
-    shared client request boundary
-    resolves application-wide vs TimingNode-scoped work
+    shared presentation command/query boundary
+
+  RegistrationRouter
+    maps registration origin (RegistrationAssetId, AntennaId)
+    to 1..N TimingNode targets
+
+  BackofficeRouter
+    maps 0..N connector bindings to/from TimingNodes
 ```
 
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 `CommandHandler` is the shared entry point for presentation requests. It may
-serve simple application reads such as `version()`. TimingNode mutations are
-resolved to the correct `TimingNode` and then submitted to that TimingNode's serial
-executor.
+serve simple application reads such as `version()`. When a presentation command
+or query names a `TimingNodeId`, the application looks up that `TimingNode` and
+submits state-changing work to its serial executor.
+
+The routers above are application responsibilities because they own configured
+mapping/fan-out. Concrete I/O adapters/connectors own their external device or
+transport resources internally. A separate manager component is not part of the
+architecture unless later implementation evidence justifies one.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce commands merely to preserve a layer diagram.
+do not introduce commands merely to preserve a layer diagram. The router names
+describe real responsibilities; they do not require separate Java classes until
+the implementation has enough behaviour to justify them.
 
 ### Domain
 
@@ -166,19 +179,25 @@ I/O contains adapters that move data between SI-01 and the outside world:
 
 ```text
 io/
-  hardware/
+  registration/
+    0..N RegistrationAsset adapters
+    1..N antennas per asset
+  backoffice/
+    BackofficeConnector (0..N instances)
+      RabbitMqBackofficeConnector
+      SocketBackofficeConnector
+  devices/
     can/
-    rfid/
-  messaging/
-    rabbitmq/
-    backoffice/
+    display/
   storage/
     file/
     db/
 ```
 
 Presentation stays separate because it owns client-facing API/view semantics.
-I/O owns hardware, messaging and storage adapters.
+I/O owns external resources and transport/device lifecycle inside concrete
+adapters/connectors. It does not own TimingNode mapping: registration observations
+and backoffice connector bindings are handed to the application routers above it.
 
 ### Platform
 
@@ -270,9 +289,9 @@ BackofficeRouter
 
 `BackofficeRouter` maps connector-specific inbound/outbound bindings to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
 
-Use **router** for mapping/fan-out and **manager** for resource/lifecycle ownership. A RabbitMQ connection manager, for example, owns connections/channels for one connector; it does not decide domain identity.
+Use **router** for mapping/fan-out. A concrete connector/adapter owns its own transport/device resources and lifecycle internally; do not introduce a separate manager abstraction without a demonstrated implementation need.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, connector managers, configuration loading and network monitoring.
+Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
 Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
 
@@ -344,16 +363,21 @@ WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
 
 Those callback threads must not change mutable TimingNode state directly.
 
-The caller first determines which TimingNode owns the work:
+The application boundary determines which TimingNode(s) receive the work:
 
-- `CommandHandler` resolves operator/client requests that name a TimingNode;
-- a configured device adapter already knows which TimingNode owns its device;
-- a scheduled task keeps the TimingNode it was registered for.
+- `CommandHandler` handles presentation commands/queries that address a TimingNode;
+- `RegistrationRouter` maps the hardware origin `(RegistrationAssetId, AntennaId)`
+  to 1..N TimingNodes;
+- `BackofficeRouter` maps connector-specific bindings/names to 1..N TimingNodes;
+- a scheduled task keeps the TimingNode target it was registered for.
 
-The work is then submitted to that TimingNode's serial executor.
+Each resolved target is then submitted to that TimingNode's serial executor.
+When one observation fans out to two TimingNodes, both receive their own queued
+work and keep independent TimingNode-scoped state/sequence semantics.
 
-There is no separate central `TimingSystemDispatcher`. A second generic router
-would add another layer without owning useful behaviour.
+There is no central generic `TimingSystemDispatcher`. The two routers above are
+specific boundary responsibilities with real mapping ownership; they are not a
+generic message bus or all-purpose mediator.
 
 ```text
 operator endpoint
@@ -365,7 +389,7 @@ operator endpoint
 TimingNode A serial executor    TimingNode B serial executor
       ^                              ^
       |                              |
-device callbacks / timers know their owning TimingNode
+RegistrationRouter / BackofficeRouter / timers resolve targets
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
@@ -776,7 +800,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
