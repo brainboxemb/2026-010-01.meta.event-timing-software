@@ -81,9 +81,28 @@ Use these rules:
   separate type;
 - do not create marker classes to represent layers;
 - place a type by what it means, not by which layer happens to call it;
+- use capability-oriented subpackages when a domain concept has a main object plus
+  closely related value/supporting types; keep that small group together rather
+  than introducing generic `helper`, `model` or single-type `identity`
+  subpackages;
+- split a capability package further only when multiple cohesive sub-capabilities
+  exist in real code;
 - reserve `infra` for concrete cross-cutting technical support such as
   `BuildIdentity`;
 - use `io` for external hardware, messaging and storage adapters.
+
+For example, the first TimingNode implementation is grouped as:
+
+```text
+domain/
+  timing/
+    TimingNode.java
+    TimingNodeId.java
+```
+
+If this capability later grows into several cohesive areas, deeper packages such
+as `timing/registration` or `timing/stage` may become useful. Do not create
+those packages before the corresponding code exists.
 
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
