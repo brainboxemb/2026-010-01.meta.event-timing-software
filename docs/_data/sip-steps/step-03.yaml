@@ -46,7 +46,7 @@ documents:
     maturity: review
     completeness: 100
   - name: 40-01-IDD
-    title: Application control/status interface
+    title: Remote API interface
     maturity: review
     completeness: 100
   - name: 40-02-IDD

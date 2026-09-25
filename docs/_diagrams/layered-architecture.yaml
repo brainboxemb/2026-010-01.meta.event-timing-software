@@ -37,24 +37,30 @@ groups:
   layout: {x: 1270, y: 85, w: 230, h: 1020}
 
 nodes:
-- id: console-shell
+- id: local-console
   group: presentation-layer
-  label: "Console / Remote Shell"
-  subtitle: "development + service"
+  label: "Console"
+  subtitle: "local text interface"
   kind: presentation
-  layout: {x: 165, y: 135, w: 300, h: 65}
-- id: desktop-gui
+  layout: {x: 150, y: 135, w: 220, h: 65}
+- id: remote-shell
   group: presentation-layer
-  label: "Desktop GUI Interface"
-  subtitle: "debug / development application"
+  label: "Remote Shell"
+  subtitle: "remote text interface"
   kind: presentation
-  layout: {x: 505, y: 135, w: 250, h: 65}
-- id: http-websocket
+  layout: {x: 390, y: 135, w: 220, h: 65}
+- id: remote-api
   group: presentation-layer
-  label: "HTTP / WebSocket"
-  subtitle: "iPad / operator UI"
+  label: "Remote API"
+  subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
-  layout: {x: 795, y: 135, w: 400, h: 65}
+  layout: {x: 630, y: 135, w: 300, h: 65}
+- id: web-interface
+  group: presentation-layer
+  label: "Web"
+  subtitle: "future browser / iPad interface"
+  kind: presentation
+  layout: {x: 950, y: 135, w: 260, h: 65}
 
 - id: application-conductor
   group: application-layer
@@ -162,21 +168,26 @@ nodes:
   layout: {x: 1300, y: 970, w: 170, h: 70}
 
 edges:
-- from: console-shell
+- from: local-console
   to: command-handler
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.20}
+  to_anchor: {side: top, position: 0.10}
 
-- from: desktop-gui
+- from: remote-shell
+  to: command-handler
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.35}
+
+- from: remote-api
+  to: command-handler
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.65}
+
+- from: web-interface
   to: command-handler
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-
-- from: http-websocket
-  to: command-handler
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.80}
+  to_anchor: {side: top, position: 0.90}
 
 - from: command-handler
   to: timing-node-root
@@ -196,7 +207,7 @@ edges:
   to_anchor: {side: top, position: 0.50}
 
 - from: system-status-domain
-  to: http-websocket
+  to: remote-api
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}

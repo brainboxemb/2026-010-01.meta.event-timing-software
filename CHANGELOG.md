@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Reframe IF-03 as the general Remote API, organise SI-01 presentation by functional interface first (`remoteapi`, console, shell, future Web) and nest A06/A07 HTTP/WebSocket configuration under `presentation.remoteApi`.
+
 - Select Java-WebSocket 1.6.0 for A07 on a dedicated Java-8 listener, require snapshot-on-connect/reconnect, and defer black-box `STATUS_CHANGED` verification until a real public status transition exists.
 
 - Align IF-03 first-executable `/status` with TimingNode-owned status by removing the redundant application lifecycle/start-time fields, and document the Java 17 development test client baseline.

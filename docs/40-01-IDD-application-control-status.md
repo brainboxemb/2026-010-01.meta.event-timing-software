@@ -1,24 +1,26 @@
-# Application Control and Status Interface (IDD)
+# Remote API Interface (IDD)
 
 Status: review candidate / AP-1 first-executable slice
 
-System interface: **IF-03 — Application Control & Status**
+System interface: **IF-03 — Remote API**
 
 ## Purpose
 
-This Interface Design/Description Document owns the system-level software-to-software contract between SI-01 and network clients such as SI-02, SI-03 and automated ST-1 test tooling.
+This Interface Design/Description Document owns the general programmable remote contract between SI-01 and clients such as SI-02, engineering/service tools and automated ST-1 black-box/integration tooling.
 
-For AP-1 it defines only the first-executable subset needed to expose build/version identity, current status and status-change events. Later operator commands and domain data are deliberately deferred until their SIP increments require them.
+For AP-1 it defines only the first-executable subset needed to expose build/version identity, current status and status-change events. The interface is intentionally broader than "status": later supported remote control, test and diagnostic operations may extend IF-03 when their SIP increments require them.
+
+The browser/iPad Web presentation is a separate functional interface. It may reuse HTTP/WebSocket technologies and the same application semantics, but its pages, user-facing endpoints and live messages are not defined merely by being part of IF-03.
 
 ## Parties
 
 ```text
 client side
-  SI-02 Desktop GUI
-  SI-03 Web Operator Application
-  ST-1 / integration test driver
+  SI-02 / engineering remote client
+  headless ST-1 / integration test driver
+  other supported remote tooling
         |
-        | IF-03
+        | IF-03 Remote API
         v
 SI-01 Headless Timing Application
 ```
@@ -354,7 +356,7 @@ The first executable may expose equivalent version/status semantics through a re
 
 Reason:
 
-- the public software-to-software contract needed by SI-02/SI-03/ST-1 is IF-03;
+- the public programmable contract needed by SI-02, engineering tooling and ST-1 is IF-03;
 - remote-shell technology is an implementation/support adapter concern at this stage;
 - it must reuse the shared version/status application queries and must not own a separate authoritative model.
 

@@ -132,48 +132,43 @@ Storage settings remain under I/O because they configure external persistence.
 
 ### Presentation
 
-Presentation configuration binds client-facing endpoints to application targets.
+Presentation configuration follows the same function-first ownership as the presentation architecture. Transport configuration is nested under the functional interface that owns it.
 
-Representative structure:
+Representative direction:
 
 ```text
 presentation
-  endpoint-01
-    type: http
-    timingNode: timing-node-01
-    port: 8081
-  endpoint-02
-    type: http
-    timingNode: timing-node-02
-    port: 8082
+  remoteApi
+    http
+    webSocket
+  remoteShell
+  web              future browser/iPad interface
 ```
 
-The binding direction is:
+A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell, tablet or later GUI endpoint exists. Presentation interfaces map their requests to the application boundary.
 
-```text
-HTTP :8081 -> timing-node-01
-HTTP :8082 -> timing-node-02
-```
-
-A TimingNode therefore does not need to know that a tablet, HTTP listener, shell or later GUI/API endpoint exists. Additional presentation adapters may bind differently without changing the TimingNode domain configuration.
-
-The currently implemented A05/A06 presentation subset is:
+The currently implemented A05-A07 subset is:
 
 ```yaml
 presentation:
   remoteShell:
     bindAddress: 127.0.0.1
     port: 8023
-  http:
-    bindAddress: 127.0.0.1
-    port: 8081
+  remoteApi:
+    http:
+      bindAddress: 127.0.0.1
+      port: 8081
+    webSocket:
+      bindAddress: 127.0.0.1
+      port: 8082
 ```
 
-`remoteShell` and `http` are independently optional. When either endpoint is present,
-its `bindAddress` and `port` are required. The committed development example uses
-loopback for both listeners; binding to another interface is an explicit deployment
-choice. These settings configure presentation listeners and do not become TimingNode
-fields.
+`remoteShell` and `remoteApi` are independently optional. Within `remoteApi`, HTTP
+and WebSocket listeners are independently optional; when present, each requires its
+`bindAddress` and `port`. The committed development example uses loopback for all
+listeners. A future `presentation.web` section may define its own HTTP/WebSocket
+settings without competing with the Remote API namespace. These settings configure
+presentation listeners and do not become TimingNode fields.
 
 ### Runtime
 
