@@ -2,11 +2,16 @@ step: 3
 title: Minimal version/status application on development host
 state: active
 summary: >-
-  Turn the Step-2 executable shell into the first useful long-running SI-01 process.
-  The shared application boundary and build identity are established. The next slice
-  makes Application Configuration (IF-11) real for a minimal TimingNode and presentation
-  binding, after which local, remote, HTTP and WebSocket views converge on the same
-  application semantics and ST-1 proves the running process.
+  Turn the Step-2 executable into a useful long-running Headless Timing Application.
+  Step 3 adds external configuration, one configured TimingNode, and console, remote
+  shell, HTTP and WebSocket access to the same version/status state. ST-1 verifies
+  application behaviour separately from the end-of-step demonstration.
+
+demonstration:
+  bullets:
+    - Start the Headless Timing Application on Windows from external configuration.
+    - Show the configured TimingNode and current version/status.
+    - Read the same version/status through console, remote shell, HTTP and WebSocket.
 documents:
   - name: 20-01-SRD
     title: SI-01 first executable requirements
@@ -46,8 +51,8 @@ activities:
     state: next
     depends_on: [A01]
     note: >-
-      Implement only the configuration types required to load/validate an effective
-      ApplicationConfig and compose one TimingNode plus its first presentation binding.
+      Load one external application.yml, validate its TimingNodeId and compose one
+      TimingNode. Presentation settings, multiple TimingNodes and overlays stay out of A02.
 
   - id: A03
     lane: application
@@ -101,7 +106,7 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: ST-1 running-process black-box proof
+    title: ST-1 application behaviour black-box test
     state: planned
     depends_on: [A02, A04, A05, A06, A07, V01, V02]
 
