@@ -3,7 +3,7 @@ diagram:
   title: SI-01 runtime ingress — TimingNode serial execution
   width: 1580
   height: 930
-  description: Process view of concurrent ingress, target resolution and per-TimingNode serial execution.
+  description: Process view of concurrent ingress, explicit TimingNode routing and per-TimingNode serial execution.
   note: External work is submitted to the owning TimingNode serial executor. Once running there, normal direct Java calls are used.
 
 groups:

@@ -124,9 +124,9 @@ application/
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 `CommandHandler` is the shared entry point for presentation requests. It may
-serve simple application reads such as `version()`. TimingNode mutations are
-resolved to the correct `TimingNode` and then submitted to that TimingNode's serial
-executor.
+serve simple application reads such as `version()`. When a presentation command
+or query names a `TimingNodeId`, the application looks up that `TimingNode` and
+submits state-changing work to its serial executor.
 
 The routers above are application responsibilities because they own configured
 mapping/fan-out. Concrete I/O adapters/connectors own their external device or
@@ -800,7 +800,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
