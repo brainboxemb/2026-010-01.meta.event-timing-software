@@ -268,14 +268,19 @@ Java 17/JavaFX development client can inspect that interface plus the existing A
 remote shell.
 
 The next bounded implementation slice is A07: add the first WebSocket status/event
-stream from the same shared TimingNode status authority. The JavaFX development client
-may be extended with WebSocket inspection so the live stream can be inspected manually
-without creating SI-02 yet.
+stream from the same shared TimingNode status authority. SI-01 keeps the A06 JDK HTTP
+listener and adds a dedicated configured WebSocket listener using Java-WebSocket 1.6.0.
+The JavaFX development client uses Java 17's built-in WebSocket client for manual
+inspection.
+
+A07 sends a complete STATUS_SNAPSHOT on connect/reconnect and supports STATUS_CHANGED
+broadcasts for real authoritative status changes. The current Step-3 TimingNode remains
+CLOSED and has no public open/close command, so no artificial status transition is added
+just to produce an event.
 
 The separate full-process ST-1 black-box automation remains verification activity V03.
-It is intentionally deferred until A07, A08 and the adapter-equivalence work are
-available, so A06 does not create a second temporary test application solely for one
-transport.
+It verifies snapshot/reconnect behaviour in Step 3; end-to-end STATUS_CHANGED verification
+joins the first later slice that exposes a real public status-changing capability.
 
 ### Deliverable
 

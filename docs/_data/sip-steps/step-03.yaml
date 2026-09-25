@@ -132,6 +132,8 @@ activities:
     title: WebSocket status / event stream
     state: active
     depends_on: [A01, A03, A06]
+    note: >-
+      Dedicated Java-WebSocket listener; snapshot on connect, changes only for real state changes.
 
   - id: A08
     lane: application
@@ -167,6 +169,8 @@ activities:
     title: ST-1 application behaviour black-box test
     state: planned
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
+    note: >-
+      Verify snapshot/reconnect now; verify STATUS_CHANGED with the first real public state change.
 
   - id: V04
     lane: verification

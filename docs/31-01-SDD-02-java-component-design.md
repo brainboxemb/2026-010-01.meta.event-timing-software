@@ -242,6 +242,23 @@ CommandHandler.version() / status()
 The HTTP adapter explicitly maps shared application values to IF-03 JSON; wire response
 shape is not used as the internal Java object model.
 
+A07 adds a separate WebSocket presentation adapter on its own configured listener:
+
+```text
+presentation.websocket.WebSocketStatusServer
+        |
+        +-- WS /api/v1/events
+        +-- STATUS_SNAPSHOT on connect/reconnect
+        +-- STATUS_CHANGED only for real status changes
+        |
+        v
+CommandHandler.status()
+```
+
+The first implementation uses `Java-WebSocket 1.6.0` in the reusable framework. It
+keeps the accepted A06 JDK HTTP server unchanged rather than replacing both transports
+with a larger combined stack.
+
 Manual inspection is provided by an independent development tool:
 
 ```text
@@ -252,7 +269,8 @@ test-client/
   TestClientFxApplication    JavaFX development view
           |
           +-- ApplicationControlClient  HTTP/JSON client
-          +-- RemoteShellClient         A05 raw TCP shell client
+          +-- StatusWebSocketClient      Java 17 WebSocket client
+          +-- RemoteShellClient          A05 raw TCP shell client
           |
           v
         SI-01

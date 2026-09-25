@@ -794,7 +794,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
 | HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; verify target footprint before broader use |
-| WebSocket | embedded Java-8-compatible technology | selection remains open until A07 |
+| WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
@@ -862,7 +862,6 @@ The next useful architecture work is to resolve concrete implementation choices,
 
 - TimingNode queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
 - field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
-- embedded HTTP/WebSocket technology compatible with Java 8 and Pi Zero constraints;
 - remote-shell technology;
 - first concrete command/query submission/result API signatures;
 - `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;

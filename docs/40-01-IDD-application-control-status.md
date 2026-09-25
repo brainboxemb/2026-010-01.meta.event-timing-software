@@ -35,7 +35,7 @@ The first-executable transport contract is:
 - network boundary usable when SI-01 and the client run on different hosts;
 - the same semantic application model may also be represented through local console/remote-shell adapters, but those transports are not owned by this IDD.
 
-The contract must remain compatible with Java 8 and the mandatory Raspberry Pi Zero target, but this IDD does not select a concrete Java HTTP/WebSocket library.
+The contract must remain compatible with Java 8 and the mandatory Raspberry Pi Zero target. HTTP and WebSocket may use separate configured listeners/ports in the first executable; the resource paths and semantics remain one IF-03 contract.
 
 ## First-executable resources
 
@@ -190,6 +190,8 @@ WebSocket mapping:
 /api/v1/events
 ```
 
+The first executable may expose this path on a dedicated configured WebSocket listener rather than the A06 HTTP listener. Clients therefore configure the WebSocket endpoint independently while the path and payload semantics remain stable.
+
 After the WebSocket connection is established SI-01 shall immediately send a complete `STATUS_SNAPSHOT` event before normal change events are relied upon.
 
 Event envelope:
@@ -212,7 +214,7 @@ STATUS_CHANGED
 
 For `STATUS_SNAPSHOT`, `payload` contains the complete current status representation.
 
-For `STATUS_CHANGED`, `payload` also contains a complete current status representation in the first executable. This deliberately avoids introducing partial-patch/replay semantics before they are needed. Later compatible optimisation may add more event types while `/status` remains the authoritative resynchronisation operation.
+For `STATUS_CHANGED`, `payload` also contains a complete current status representation in the first executable. SI-01 emits this event only after an actual authoritative status change; it shall not manufacture periodic or duplicate changes merely to exercise the transport. This deliberately avoids introducing partial-patch/replay semantics before they are needed. Later compatible optimisation may add more event types while `/status` remains the authoritative resynchronisation operation.
 
 WebSocket transport ordering is sufficient for first-executable events; no durable cross-connection event sequence is introduced in AP-1.
 
@@ -337,11 +339,12 @@ Procedure:
 3. call `GET /api/v1/version` and verify the required identity fields are present;
 4. call `GET /api/v1/status` and verify the same build identity and configured TimingNode `TimingNodeId` is represented;
 5. connect to `/api/v1/events` and verify the first application message is a complete `STATUS_SNAPSHOT`;
-6. cause one supported first-executable observable status transition through normal application/process/configuration behaviour and verify a `STATUS_CHANGED` event is received;
-7. disconnect the WebSocket client;
-8. reconnect and verify a new complete `STATUS_SNAPSHOT` is received before further change events are relied upon;
-9. call `/status` once more and verify it is semantically consistent with the latest snapshot;
-10. shut the SI-01 process down through the supported controlled shutdown path.
+6. disconnect the WebSocket client;
+7. reconnect and verify a new complete `STATUS_SNAPSHOT` is received before further change events are relied upon;
+8. call `/status` once more and verify it is semantically consistent with the latest snapshot;
+9. shut the SI-01 process down through the supported controlled shutdown path.
+
+A07 separately verifies the `STATUS_CHANGED` broadcast path at adapter level. End-to-end black-box verification of a real `STATUS_CHANGED` event is added when a supported public capability can actually change the authoritative status. The test driver shall not fabricate or directly mutate status solely to satisfy that event case.
 
 The test driver shall not mutate internal Java objects or inspect private implementation state to obtain the pass/fail result.
 
