@@ -3,15 +3,22 @@
 Status: working release-oriented user manual  
 Software item: **SI-01 — Headless Timing Application**
 
-## 1. Purpose and applicability
+## 1. Purpose, audience and applicability
+
+This is a **technical software user manual**, not an end-user/operator manual for the
+timing system.
+
+Its intended audience is developers, integrators, testers and operations/support
+engineers who need to obtain, build, configure, start, stop or diagnose SI-01. It does
+not describe timing-event workflows for an operator or other product end user.
 
 This manual records how an identified SI-01 software release is obtained, built,
 configured, started and stopped. It also records the compatible development/runtime
 baseline needed to reproduce that release.
 
 The detailed development-environment documents remain authoritative for how tooling is
-managed. This manual answers the release/user question: **which combination belongs
-with this software version, and how do I use it?**
+managed. This manual answers the technical release/user question: **which combination
+belongs with this software version, and how do I run or work with it?**
 
 A released row in the compatibility matrix is immutable historical guidance. The
 current development row may change until it is promoted to a normal software release.
