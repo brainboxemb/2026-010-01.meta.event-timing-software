@@ -64,6 +64,16 @@ io.github.brainboxemb.eventtiming/
   domain/
   core/
   presentation/
+    interfaces/
+      remoteapi/
+        http/
+        websocket/
+        messages/
+      console/
+      shell/
+      web/              only when implemented
+    common/
+      terminal/
   io/
     hardware/
     messaging/
@@ -71,6 +81,8 @@ io.github.brainboxemb.eventtiming/
   infra/
   platform/
 ```
+
+Presentation subpackages are organised by **functional interface first**. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. `presentation.common` is only for behaviour shared by more than one presentation interface.
 
 These are source-organisation boundaries, not automatically Maven modules.
 
@@ -114,7 +126,7 @@ Place contracts with the responsibility that owns their meaning:
 
 ```text
 presentation
-  client endpoint / DTO mapping
+  functional client interfaces / transport mapping / wire messages
 
 application
   commands, queries and application-level ports
@@ -212,52 +224,64 @@ TimingApplication.builder(buildIdentity).build()
 
 This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. `ApplicationConfigLoader` now owns the implemented Step-3 YAML parsing/validation, while `ApplicationConfig` and the currently real presentation config types remain executable-composition inputs rather than domain objects.
 
-The A04/A05 text presentation implementation is deliberately split by responsibility:
+The implemented presentation structure is:
 
 ```text
-presentation.console.LocalConsole
-        |
-        v
-presentation.terminal.TerminalSession   shared command parsing/formatting
-        ^
-        |
-presentation.shell.RemoteShellServer    line-oriented TCP transport
+presentation/
+  interfaces/
+    console/
+      LocalConsole
+    shell/
+      RemoteShellServer
+    remoteapi/
+      http/
+        RemoteApiHttpServer
+      websocket/
+        RemoteApiWebSocketServer
+      messages/
+        RemoteApiMessageWriter
+  common/
+    terminal/
+      TerminalSession
 ```
 
-Both text transports call the same `CommandHandler` and shutdown callback. The remote
-transport does not own an alternate command/status model.
+Console and remote shell are separate presentation interfaces. They share only the
+line-oriented command-session behaviour in `presentation.common.terminal`; both call
+the same `CommandHandler` and shutdown callback.
 
-A06 adds a separate machine-readable presentation adapter:
+A06/A07 are the first slice of the functional **Remote API**:
 
 ```text
-presentation.http.HttpStatusServer
-        |
-        +-- GET /api/v1/version
-        +-- GET /api/v1/status
-        |
-        v
-CommandHandler.version() / status()
+RemoteApiHttpServer
+  +-- GET /api/v1/version
+  +-- GET /api/v1/status
+            \
+             +--> CommandHandler.version() / status()
+            /
+RemoteApiWebSocketServer
+  +-- WS /api/v1/events
+  +-- STATUS_SNAPSHOT on connect/reconnect
+  +-- STATUS_CHANGED only for real status changes
 ```
 
-The HTTP adapter explicitly maps shared application values to IF-03 JSON; wire response
-shape is not used as the internal Java object model.
+`RemoteApiMessageWriter` owns the IF-03 wire/JSON representation shared by the Remote
+API HTTP and WebSocket transports. It is not application/control logic and therefore
+does not live in the application layer or in global presentation common code.
 
-A07 adds a separate WebSocket presentation adapter on its own configured listener:
+The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
+framework and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
+both transports with a larger combined stack.
+
+A future browser/iPad **Web** presentation interface is intentionally separate:
 
 ```text
-presentation.websocket.WebSocketStatusServer
-        |
-        +-- WS /api/v1/events
-        +-- STATUS_SNAPSHOT on connect/reconnect
-        +-- STATUS_CHANGED only for real status changes
-        |
-        v
-CommandHandler.status()
+presentation/interfaces/web/
+  http/          pages + web-specific endpoints
+  websocket/     web-client live channel
+  messages/      web-specific representations
 ```
 
-The first implementation uses `Java-WebSocket 1.6.0` in the reusable framework. It
-keeps the accepted A06 JDK HTTP server unchanged rather than replacing both transports
-with a larger combined stack.
+Those packages are created only when the Web capability is implemented.
 
 Manual inspection is provided by an independent development tool:
 

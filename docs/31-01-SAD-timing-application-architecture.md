@@ -90,16 +90,29 @@ The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 ### Presentation
 
-Presentation owns client-facing interfaces and mapping:
+Presentation owns client-facing interfaces and their external representations. Its structure is **functional interface first, transport second**:
 
 ```text
-Console / Remote Shell     development + service
-Desktop GUI Interface      debug / development
-HTTP / WebSocket           iPad / operator UI
+presentation/
+  interfaces/
+    remoteapi/
+      http/
+      websocket/
+      messages/
+    console/
+    shell/
+    web/              future browser/iPad interface
+  common/
+    terminal/         behaviour genuinely shared by console + shell
 ```
 
-It converts external requests to application calls and application results to
-client representations. It does not own mutable application/domain state.
+The **Remote API** is the general programmable SI-01 interface for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
+
+The future **Web** interface is separate even though it may also use HTTP and WebSocket. It owns the browser/iPad pages, user-specific endpoints and live messages. Console and remote shell likewise remain separate presentation interfaces; sharing a terminal session does not make them one interface.
+
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+
+Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
 ### Application
 
@@ -282,10 +295,11 @@ Stable domain facts behind these views are maintained in `03-domain-baseline.md`
 All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `CommandHandler.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
 
 ```text
-local console -------+
-remote shell --------+
-HTTP/JSON -----------+--> typed command/query boundary --> application runtime
-WebSocket <-----------+<---------------------------------------------+
+local console ----------------+
+remote shell -----------------+
+Remote API HTTP/JSON ---------+--> typed command/query boundary --> application runtime
+Remote API WebSocket <---------+<--------------------------------------------+
+future Web interface ----------+
 ```
 
 Working rules:
@@ -768,11 +782,19 @@ application
 domain
 core
 presentation
+  interfaces
+    remoteapi
+    console
+    shell
+    web          when implemented
+  common
 io
 platform
 ```
 
-Do not rename/split packages simply to make the source tree mirror the architecture picture. Package structure should become more explicit as real classes make ownership and dependency rules enforceable.
+Within presentation, functional interfaces own their transport-specific subpackages. A future Web interface may therefore have its own `web/http` and `web/websocket` alongside `remoteapi/http` and `remoteapi/websocket`.
+
+Do not create future packages merely to mirror the architecture picture. Package structure becomes explicit only as real classes make ownership and dependency rules enforceable.
 
 ### Public/private extension model
 
@@ -793,8 +815,8 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
-| HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; verify target footprint before broader use |
-| WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
+| Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
+| Remote API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |

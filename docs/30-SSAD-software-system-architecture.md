@@ -93,7 +93,7 @@ SI-02 is an IP network client of SI-01. It presents operator status and control 
 
 ### SI-01 ↔ SI-03
 
-SI-03 is a browser-based IP client. SI-01 exposes the system-defined control/status/event interface required by the browser application. As with SI-02, the interface is defined between endpoints rather than through a particular router topology.
+SI-03 is a browser-based IP client. SI-01 keeps its browser-facing **Web** presentation boundary separate from the general-purpose IF-03 Remote API because the Web interface owns browser/iPad pages, user-facing HTTP endpoints and its own live WebSocket semantics. Both may reuse the same application behaviour internally, but transport reuse does not make them one functional interface. The exact system-interface allocation for the future Web boundary is completed before SI-03 implementation.
 
 ### SI-01 ↔ backoffice
 
@@ -111,7 +111,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Application Control & Status** | SI-02/SI-03 ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | Network command/query/status/event boundary | `40-01-IDD-application-control-status.md` candidate |
+| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `40-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-05 Web Operator HMI** | Operator ↔ SI-03 | browser/iPad | Browser screens, controls and feedback | Web HMI IDD candidate |
 | **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
@@ -159,7 +159,7 @@ SI-02 Desktop GUI
   +-- IF-03 over available IP path --> SI-01
 
 SI-03 Web Operator Application
-  +-- IF-03 over available IP path --> SI-01
+  +-- future Web presentation interface over available IP path --> SI-01
 
 Smart Display V2
   +-- IF-09 over available IP path --> SI-01
