@@ -106,7 +106,7 @@ activities:
     lane: application
     kind: implementation
     title: Remote terminal / shell adapter
-    state: active
+    state: done
     depends_on: [A01, A03, A04]
     note: >-
       Expose the same text-command semantics as the local console through a remote
