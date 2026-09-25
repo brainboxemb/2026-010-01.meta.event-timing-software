@@ -187,15 +187,13 @@ The application may compose 0..N `BackofficeConnector` instances. RabbitMQ is on
 
 ```text
 application
-  BackofficeRouter
-        |
-        +-- BackofficeConnector connector-01
-        |     -> RabbitMqBackofficeConnector
-        |     -> 1..N TimingNode/source bindings
-        |
-        +-- BackofficeConnector connector-02
-              -> RabbitMqBackofficeConnector
-              -> 1..N TimingNode/source bindings
+  +-- BackofficeConnector connector-01
+  |     -> RabbitMqBackofficeConnector
+  |     -> 1..N TimingNode/source bindings
+  |
+  +-- BackofficeConnector connector-02
+        -> RabbitMqBackofficeConnector
+        -> 1..N TimingNode/source bindings
 ```
 
 A `RabbitMqBackofficeConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
@@ -215,7 +213,7 @@ RabbitMQ consumer callback
 source-aware BackofficeInboundMessage
       |
       v
-BackofficeRouter resolves TimingNodeId / RegistrationSource
+Backoffice binding resolution selects TimingNodeId / RegistrationSource
       |
       v
 serialized framework/domain boundary
@@ -240,23 +238,19 @@ backoffice:
         - timingNode: timing-node-01
           externalName: ${PRIVATE_TIMING_NODE_NAME}
 
-timingNodes:
-  - timingNodeId: timing-node-01
-    registrationAssets:
-      - id: asset-01
-        sources:
-          - key: source-01
-            externalId: ${PRIVATE_SOURCE_ID_01}
-            messaging:
-              inboundQueue: ${PRIVATE_SOURCE_01_IN_QUEUE}
-              outboundExchange: ${PRIVATE_SOURCE_01_OUT_EXCHANGE}
-              outboundRoutingKey: ${PRIVATE_SOURCE_01_OUT_KEY}
-          - key: source-02
-            externalId: ${PRIVATE_SOURCE_ID_02}
-            messaging:
-              inboundQueue: ${PRIVATE_SOURCE_02_IN_QUEUE}
-              outboundExchange: ${PRIVATE_SOURCE_02_OUT_EXCHANGE}
-              outboundRoutingKey: ${PRIVATE_SOURCE_02_OUT_KEY}
+      sources:
+        - key: source-01
+          externalId: ${PRIVATE_SOURCE_ID_01}
+          timingNode: timing-node-01
+          inboundQueue: ${PRIVATE_SOURCE_01_IN_QUEUE}
+          outboundExchange: ${PRIVATE_SOURCE_01_OUT_EXCHANGE}
+          outboundRoutingKey: ${PRIVATE_SOURCE_01_OUT_KEY}
+        - key: source-02
+          externalId: ${PRIVATE_SOURCE_ID_02}
+          timingNode: timing-node-02
+          inboundQueue: ${PRIVATE_SOURCE_02_IN_QUEUE}
+          outboundExchange: ${PRIVATE_SOURCE_02_OUT_EXCHANGE}
+          outboundRoutingKey: ${PRIVATE_SOURCE_02_OUT_KEY}
 ```
 
 For two configured sources, two inbound consumers exist even if they share one physical RabbitMQ connection.

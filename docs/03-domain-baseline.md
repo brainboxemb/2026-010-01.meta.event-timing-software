@@ -39,88 +39,65 @@ A `Stage` and a `TimingNode` are related but distinct concepts: a stage ends at 
 
 The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a timing node. New architecture/design work should use `TimingNode`; existing implementation names may be migrated later to match this documentation-led model.
 
-## Registration hardware and timing node identity
+## Antenna and TimingNode identity
 
-Hardware/deployment identity, timing node software identity and physical location identity are separate namespaces.
+`TimingNodeId`, `AntennaId` and `LocationID` are separate namespaces.
 
-### Registration asset
+`TimingNodeId` is the stable software identity of a `TimingNode`. It scopes
+that TimingNode's registration sequence, persistence and synchronisation
+semantics. `LocationID` separately identifies the event location where the
+TimingNode is configured or deployed.
 
-A `RegistrationAsset` represents the physical/configured registration hardware unit for inventory, configuration, diagnostics and optional physical labelling.
-
-For example, a physical unit may have an asset identity such as:
-
-```text
-RegistrationAssetId = asset-01
-```
-
-Concrete production asset names remain deployment/proprietary information and stay outside this public repository.
-
-### TimingNode identity
-
-`TimingNodeId` is the stable software identity of a `TimingNode`. It is also the scope for that timing node's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that timing node is configured or deployed.
-
-A physical registration system supplies hardware observations that are routed to logical TimingNodes by configuration. The identities remain independent, for example:
+The I/O boundary owns antenna configuration and mapping:
 
 ```text
-RegistrationAssetId = asset-01
-AntennaId           = ANT1
-        |
-        v
-RegistrationRouter
-        +--> TimingNodeId timing-node-01
-        +--> TimingNodeId timing-node-02
+Antenna (0..N)
+  +-- AntennaId
+  +-- driver / device configuration
+
+each Antenna
+        -> 1..N TimingNodeId
 ```
 
-Deployment naming may deliberately make a `RegistrationAssetId` resemble a `TimingNodeId` for convenience, but that is **not** an identity rule.
+An `Antenna` is the configured registration input. Reader/protocol/device
+details belong to the concrete antenna implementation/configuration and are not
+separate software identities unless implementation evidence later requires that
+distinction.
 
-The number of RFID antennas does not create TimingNode identities. Conversely, one antenna may intentionally feed more than one TimingNode. Each target TimingNode keeps its own `TimingNodeId`, sequence and state; antenna identity remains origin/diagnostic context.
+One antenna may intentionally feed more than one TimingNode. Each target
+TimingNode keeps its own `TimingNodeId`, sequence and state; `AntennaId`
+remains source/diagnostic context.
 
 Known structural rules:
 
-- `RegistrationAssetId` identifies hardware/inventory;
-- `TimingNodeId` identifies the logical timing node;
-- every `TimingNodeId`-scoped timing node owns its own monotonic registration sequence and TimingNode-specific persistence/synchronisation state;
-- reserve and virtual timing node identities/identities exist, but their exact relationship to physical producers remains a separate mapping question;
-- concrete production asset names, data-source IDs and mappings are deployment/proprietary information.
-
-## Registration hardware and antenna topology
-
-A physical registration asset can have **one or more RFID antennas**.
-
-Conceptually:
-
-```text
-RegistrationAsset asset-01
-  +-- 1..N Antenna
-
-Antenna ANT1
-  -> RegistrationRouter
-       -> 1..N TimingNodeId
-```
-
-The antennas are hardware/device inputs of that registration system. They are not child software components of a `TimingNode`, and the routing cardinality is independent from the number of antennas.
-
-An RFID observation must retain enough hardware context for diagnostics and processing, including `RegistrationAssetId` and `AntennaId` where relevant. If routing fans one accepted observation out to multiple TimingNodes, each target creates/processes its own TimingNode-scoped result while preserving the original hardware origin as context.
-
-The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
+- `TimingNodeId` identifies the logical TimingNode;
+- `AntennaId` identifies a configured antenna within the application;
+- the application may compose 0..N antennas; configuration maps each `AntennaId` to its TimingNode targets;
+- every TimingNode owns its own monotonic registration sequence and
+  TimingNode-specific persistence/synchronisation state;
+- reserve and virtual TimingNodes may share a physical antenna through routing;
+- concrete production antenna/device settings remain deployment information.
 
 ### Antenna identifiers
 
-The current antennas are not necessarily physically labelled. The software nevertheless needs a stable configuration identity for each antenna.
+The software needs a stable configuration identity for every antenna.
 
-Preferred public naming template:
+Public examples use simple synthetic names:
 
 ```text
-RS-<asset-key>-ANT<n>
+ANT1
+ANT2
+ANT3
 ```
 
-Use an explicit numeric suffix even when an asset currently has only one antenna, so adding a second antenna does not require renaming the first.
+A future physical label may use the same `AntennaId`. Production antenna names
+and device settings remain deployment data and should not be copied into this
+public repository.
 
-A future physical label may use the same `AntennaId`. The real `<asset-key>` values used in production remain deployment data and should not be copied into this public repository.
+## Separate software, I/O and configuration views
 
-## Separate software, hardware and configuration views
-
-Do not express the complete system as one parent/child tree. The software/domain decomposition, hardware/deployment decomposition and configuration/identity mapping answer different questions.
+Do not express the complete system as one parent/child tree. The software/domain
+decomposition and I/O/configuration routing answer different questions.
 
 ### Software/domain view
 
@@ -141,36 +118,21 @@ TimingApplication
         +-- StageTiming
 ```
 
-The exact component/class boundaries remain design work, but the timing node is the software/domain aggregate being operated.
+The exact component/class boundaries remain design work, but the TimingNode is
+the software/domain aggregate being operated.
 
-### Hardware/deployment view
-
-```text
-RegistrationAsset asset-01
-  +-- Antenna 1
-  +-- Antenna 2
-  +-- ...
-```
-
-This view describes physical/configured equipment. It must not be used as the software component hierarchy.
-
-### Configuration/identity mapping
-
-Configuration connects those views and defines routing, for example:
+### I/O routing view
 
 ```text
-TimingNode timing-node-A -> TimingNodeId timing-node-A
-TimingNode timing-node-A -> LocationID X
+Antenna (0..N)
+  +-- each Antenna -> 1..N TimingNode
 
-RegistrationAsset asset-01 / ANT1
-    -> RegistrationRouter
-    -> timing-node-A
-    -> timing-node-B
+BackofficeConnector (0..N)
+  +-- bindings <-> 1..N TimingNode
 ```
 
-The concrete configuration file format is not yet selected. Production configuration may contain proprietary asset names/data-source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples use placeholders.
-
-The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the TimingNode domain model.
+The same routing model supports real and simulated I/O without changing the
+TimingNode domain model.
 
 ## Location and record context
 
@@ -201,7 +163,7 @@ Conceptually:
 RegistrationRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
-The `LocationID`, `RegistrationAssetId` and `AntennaId` may provide useful context, but none of them changes the sequence scope.
+The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope.
 
 Generic example:
 
@@ -357,14 +319,13 @@ This repository can document structural facts and generic ranges required for re
 
 Keep the following outside the public repository unless deliberately approved for publication:
 
-- actual registration-box/asset names;
-- concrete external registration-system/source IDs and their real mappings;
+- concrete antenna/device IDs and their real mappings;
 - exact virtual/reserve-source assignments;
-- exact production topology/inventory;
+- exact production antenna/device topology;
 - proprietary protocol field values;
 - encryption keys or secrets.
 
-Public examples should use names such as `asset-01`, `timing-node-01`, and `RS-<asset-key>-ANT1`.
+Public examples should use names such as `timing-node-01`, `ANT1`, and `connector-01`.
 
 ## Traceability implications
 

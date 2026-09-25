@@ -39,7 +39,7 @@ LocationID = 1..25
 
 A registration entry is associated with both its source and its location.
 
-`TimingNode` identity, `LocationID`, hardware `RegistrationAssetId` and logical `TimingNodeId` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
+`TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
 
 ## Registration ledger
 

@@ -29,11 +29,11 @@ nodes:
     group: ingress
     layout: {x: 100, y: 190, w: 250, h: 85}
 
-  - id: device-ingress
-    label: "Device / integration callbacks\nRFID • CAN • backoffice"
+  - id: io-mapping
+    label: "I/O mappings\nAntenna • BackofficeConnector"
     kind: integration
     group: ingress
-    layout: {x: 100, y: 365, w: 250, h: 85}
+    layout: {x: 85, y: 345, w: 280, h: 120}
 
   - id: timer-ingress
     label: "Scheduled triggers\ncallback submits to owning target"
@@ -46,12 +46,6 @@ nodes:
     kind: application
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}
-
-  - id: io-router
-    label: "I/O routing\nRegistrationRouter • BackofficeRouter\norigin / binding → 1..N TimingNode targets"
-    kind: application
-    group: runtime
-    layout: {x: 520, y: 260, w: 610, h: 90}
 
   - id: timing-node-01
     label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nnormal application/domain calls"
@@ -80,42 +74,31 @@ nodes:
 edges:
   - from: operator-ingress
     to: command-handler
-    label: transport-neutral command
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}
 
   - from: command-handler
     to: timing-node-01
-    label: target timing-node-01
     from_anchor: {side: bottom, position: 0.28}
     to_anchor: {side: top, position: 0.50}
 
   - from: command-handler
     to: timing-node-02
-    label: target timing-node-02
     from_anchor: {side: bottom, position: 0.72}
     to_anchor: {side: top, position: 0.50}
 
-  - from: device-ingress
-    to: io-router
-    label: origin / connector binding
-    from_anchor: {side: right, position: 0.50}
-    to_anchor: {side: left, position: 0.50}
-
-  - from: io-router
+  - from: io-mapping
     to: timing-node-01
-    label: fan-out 1..N
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
-  - from: io-router
+  - from: io-mapping
     to: timing-node-02
     from_anchor: {side: bottom, position: 0.70}
     to_anchor: {side: top, position: 0.50}
 
   - from: timer-ingress
     to: timing-node-02
-    label: owning target
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.75}
     route:
@@ -143,7 +126,6 @@ edges:
 
   - from: io-rule
     to: timing-node-02
-    label: completion / failure
     dashed: true
     from_anchor: {side: left, position: 0.50}
     to_anchor: {side: right, position: 0.75}
