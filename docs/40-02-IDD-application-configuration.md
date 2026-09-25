@@ -72,37 +72,38 @@ Rules:
 
 ### I/O
 
-I/O configuration selects concrete external adapters and their deployment settings.
+I/O configuration selects concrete external I/O implementations and their
+TimingNode mappings.
 
-Representative hardware and routing structure:
+Representative antenna configuration:
 
 ```text
 io
-  hardware
-    registrationAssets
-      asset-01
-        driver/type
-        antennas
-          ANT1
-          ANT2
-
-  registrationRouting
-    - asset: asset-01
-      antenna: ANT1
-      timingNodes: [timing-node-01, timing-node-02]
+  antennaRouter
+    antennas
+      ANT1
+        type: rfid
+        timingNodes: [timing-node-01, timing-node-02]
+      ANT2
+        type: rfid
+        timingNodes: [timing-node-02]
 ```
 
-`RegistrationAssetId` and `AntennaId` are distinct from `TimingNodeId`. A registration asset has 1..N antennas where antenna inputs apply. One antenna may intentionally route to 1..N TimingNodes; this fan-out does not merge their state or sequence streams.
+`AntennaRouter` owns 1..N configured antennas. `AntennaId` is distinct from
+`TimingNodeId`. One antenna may intentionally route to 1..N TimingNodes; this
+fan-out does not merge their state or sequence streams.
 
-The `RegistrationRouter` owns this mapping. Concrete hardware adapters own device resources/lifecycle but do not decide which TimingNode receives an observation.
+Concrete antenna configuration owns its driver/protocol/device settings. A
+separate registration-asset identity is not part of the active software
+configuration model.
 
 ### Backoffice connectors and routing
 
-A deployment may configure 0..N backoffice connectors:
+A deployment may configure 0..N backoffice connectors under one router:
 
 ```text
 io
-  backoffice
+  backofficeRouter
     connectors
       connector-01
         type: rabbitmq
@@ -120,11 +121,15 @@ io
             externalName: NODE-A
 ```
 
-A connector may bind 1..N TimingNodes and one TimingNode may be bound to more than one connector. `externalName` is connector/backoffice-facing configuration and does not replace the stable internal `TimingNodeId`.
+`BackofficeRouter` owns the connector collection and binding mapping. A
+connector may bind 1..N TimingNodes and one TimingNode may be bound to more than
+one connector. `externalName` is connector/backoffice-facing configuration and
+does not replace the stable internal `TimingNodeId`.
 
-`BackofficeRouter` resolves these bindings. Concrete connector implementations own transport resources such as RabbitMQ connections/channels; routers own identity mapping and fan-out.
+Concrete connector implementations own transport resources such as RabbitMQ
+connections/channels internally.
 
-Storage settings remain under I/O because they configure external persistence adapters.
+Storage settings remain under I/O because they configure external persistence.
 
 ### Presentation
 
@@ -236,9 +241,8 @@ Validation includes, where applicable:
 
 - duplicate `TimingNodeId` values;
 - references to unknown TimingNodes;
-- references to unknown registration assets or antennas;
-- invalid/duplicate antenna identities within their defined scope;
-- empty or invalid registration-routing targets;
+- invalid/duplicate `AntennaId` values;
+- empty or invalid antenna-routing targets;
 - duplicate/conflicting backoffice connector identifiers or bindings;
 - connector bindings that reference unknown TimingNodes;
 - conflicting presentation bind address/port combinations;

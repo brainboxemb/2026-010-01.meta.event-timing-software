@@ -24,7 +24,7 @@ groups:
   kind: model
   layout: {x: 145, y: 485, w: 820, h: 235}
 - id: io-layer
-  label: I/O adapters
+  label: I/O
   kind: layer-infrastructure
   layout: {x: 120, y: 775, w: 1120, h: 165}
 - id: platform-layer
@@ -61,25 +61,13 @@ nodes:
   label: "Conductor"
   subtitle: "lifecycle / application-wide coordination"
   kind: application
-  layout: {x: 145, y: 305, w: 230, h: 75}
+  layout: {x: 250, y: 305, w: 360, h: 75}
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
-  subtitle: "presentation request boundary"
+  subtitle: "presentation commands / queries"
   kind: application
-  layout: {x: 395, y: 305, w: 260, h: 75}
-- id: registration-router
-  group: application-layer
-  label: "RegistrationRouter"
-  subtitle: "asset + antenna origin → 1..N TimingNodes"
-  kind: application
-  layout: {x: 675, y: 305, w: 260, h: 75}
-- id: backoffice-router
-  group: application-layer
-  label: "BackofficeRouter"
-  subtitle: "0..N connectors ↔ TimingNode bindings"
-  kind: application
-  layout: {x: 955, y: 305, w: 260, h: 75}
+  layout: {x: 750, y: 305, w: 360, h: 75}
 
 - id: timing-node-root
   group: timing-node-aggregate
@@ -138,21 +126,21 @@ nodes:
   subtitle: "file / DB • backup / restore"
   kind: storage
   layout: {x: 145, y: 825, w: 220, h: 75}
-- id: registration-io
+- id: antenna-router
   group: io-layer
-  label: "Registration adapters"
-  subtitle: "0..N assets • 1..N antennas / asset"
+  label: "AntennaRouter"
+  subtitle: "1..N Antenna • fan-out to TimingNodes"
   kind: integration
   layout: {x: 385, y: 825, w: 280, h: 75}
-- id: backoffice-io
+- id: backoffice-router
   group: io-layer
-  label: "Backoffice connectors"
-  subtitle: "0..N • RabbitMQ / socket / ..."
+  label: "BackofficeRouter"
+  subtitle: "0..N BackofficeConnector • TimingNode bindings"
   kind: integration
   layout: {x: 685, y: 825, w: 300, h: 75}
-- id: other-device-io
+- id: devices-io
   group: io-layer
-  label: "Other device adapters"
+  label: "Devices"
   subtitle: "CAN • display"
   kind: integration
   layout: {x: 1005, y: 825, w: 215, h: 75}
@@ -196,19 +184,6 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.25}
 
-- from: registration-router
-  to: timing-node-root
-  label: route 1..N
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.65}
-
-- from: backoffice-router
-  to: timing-node-root
-  label: bind 1..N
-  dashed: true
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: right, position: 0.25}
-
 - from: application-conductor
   to: timing-node-root
   dashed: true
@@ -227,34 +202,35 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
-- from: registration-io
-  to: registration-router
-  label: observations
+- from: antenna-router
+  to: timing-node-root
+  label: route 1..N
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: bottom, position: 0.42}
 
-- from: backoffice-io
-  to: backoffice-router
-  label: transport I/O
+- from: backoffice-router
+  to: timing-node-root
+  label: bind 1..N
+  dashed: true
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: bottom, position: 0.78}
 
 - from: storage-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.05}
 
-- from: registration-io
+- from: antenna-router
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
 
-- from: backoffice-io
+- from: backoffice-router
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}
 
-- from: other-device-io
+- from: devices-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.92}
