@@ -67,7 +67,7 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    title: Local console / debug shell
+    title: Local console
     state: active
     depends_on: [A01, A03]
     note: >-
@@ -81,7 +81,10 @@ activities:
     kind: implementation
     title: Remote terminal / shell adapter
     state: planned
-    depends_on: [A01, A03]
+    depends_on: [A01, A03, A04]
+    note: >-
+      Expose the same text-command semantics as the local console through a remote
+      terminal connection. The transport changes; application command behaviour does not.
 
   - id: A06
     lane: application
