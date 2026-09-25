@@ -81,7 +81,7 @@ Define enough software-system/component architecture to start the framework repo
 - Maven as accepted build tooling;
 - Java 8 as accepted initial baseline for the mandatory original Raspberry Pi Zero target;
 - Java 11 as a later evidence-driven upgrade candidate;
-- `Waypoint` as the independently addressed logical operational/domain aggregate;
+- `TimingNode` as the independently addressed logical operational/domain aggregate;
 - registration assets and registration sources as separate concepts;
 - serialized execution/threading direction;
 - first-class status model;
@@ -105,7 +105,7 @@ This package is sufficient to create the first implementation repository without
 Walk through the generated `dev/pr-<N>/docs` documentation and demonstrate, using the diagrams and documents, that a reviewer can answer at least:
 
 1. What are SI-01, SI-02 and SI-03?
-2. How can one SI-01 process host multiple independently addressed Waypoints?
+2. How can one SI-01 process host multiple independently addressed TimingNodes?
 3. How do registration assets, registration sources and antennas relate?
 4. Where are mutable state and threading controlled?
 5. How can public stubs and private production implementations use the same contracts?
@@ -154,7 +154,7 @@ Complete the public SI-01 framework/application repository baseline and prove th
 - repository baseline from the SDE (`README.md`, `AGENTS.md`, `CHANGELOG.md`);
 - shared `tool.git-project` / `tool.java-project` project-file bootstrap and reusable workflow conventions.
 
-Externalised application settings/configuration become active in Step 3, where a real configured `Waypoint` and public application interfaces exist to consume them. Step 2 does not add a placeholder configuration model solely to satisfy planning text.
+Externalised application settings/configuration become active in Step 3, where a real configured `TimingNode` and public application interfaces exist to consume them. Step 2 does not add a placeholder configuration model solely to satisfy planning text.
 
 No production device/backoffice protocols yet.
 
@@ -249,8 +249,8 @@ Current design/implementation decisions relevant to this step:
   3. HTTP/JSON API;
 - minimal WebSocket status/event stream;
 - external typed/validated application configuration according to IF-11;
-- at least one configurable `Waypoint` with a stable `UniqueID`;
-- presentation endpoints bind to configured Waypoints rather than putting ports/client knowledge in the Waypoint;
+- at least one configurable `TimingNode` with a stable `TimingNodeId`;
+- presentation endpoints bind to configured TimingNodes rather than putting ports/client knowledge in the TimingNode;
 - configuration loading, validation and application composition remain separate responsibilities;
 - the first configuration implementation introduces only types needed by the executable slice instead of materialising the complete future IF-11 tree;
 - transport adapters do not own authoritative application/domain state;
@@ -285,18 +285,18 @@ validation
 TimingApplication composition
 ```
 
-The first slice needs only enough configuration to construct at least one Waypoint and bind the first public presentation endpoint safely. Hardware, messaging, storage and broader security configuration are added when corresponding adapters/consumers become real.
+The first slice needs only enough configuration to construct at least one TimingNode and bind the first public presentation endpoint safely. Hardware, messaging, storage and broader security configuration are added when corresponding adapters/consumers become real.
 
 ### Deliverable
 
-The first useful SI-01 executable for the development environment: a headless Java application with one shared application boundary, externally configured Waypoint/presentation composition, equivalent version/status semantics across its initial interfaces and a repeatable black-box test path.
+The first useful SI-01 executable for the development environment: a headless Java application with one shared application boundary, externally configured TimingNode/presentation composition, equivalent version/status semantics across its initial interfaces and a repeatable black-box test path.
 
 ### Demonstration
 
 On a Windows development machine, start SI-01 from external configuration and show:
 
 ```text
-configuration  -> selected Waypoint + presentation binding
+configuration  -> selected TimingNode + presentation binding
 local console  -> version + status
 remote shell   -> same version + equivalent status
 HTTP/JSON      -> same version/status semantics
@@ -312,8 +312,8 @@ A useful stakeholder statement is:
 ### Evidence / exit criteria
 
 - external configuration is parsed, validated and used for application composition rather than production/deployment values being compiled into Java source;
-- at least one configured Waypoint has a stable `UniqueID`;
-- presentation bindings reference configured Waypoints without leaking transport settings into the Waypoint domain object;
+- at least one configured TimingNode has a stable `TimingNodeId`;
+- presentation bindings reference configured TimingNodes without leaking transport settings into the TimingNode domain object;
 - automated tests verify shared application behaviour rather than duplicating behaviour in each transport;
 - `ST-1` demonstrates the running process through public interfaces;
 - GitHub Actions is green;
@@ -425,7 +425,7 @@ Prove a separate software item can consume the system-defined application contro
 - connect/disconnect;
 - configure/select SI-01 endpoint;
 - display application version;
-- display application, Waypoint and subsystem status;
+- display application, TimingNode and subsystem status;
 - show disconnected/stale state;
 - no direct dependency on internal SI-01 runtime classes or filesystem;
 - verify local development connection and remote Pi connection.
@@ -471,7 +471,7 @@ Create a separate public consumer/template project that builds against framework
 - console/remote/API/WebSocket system tests;
 - `ST-1 Application Behaviour` scenarios;
 - lightweight `ST-2 Socket Loop` transport and backoffice simulator;
-- configurable multiple Waypoints/assets/sources;
+- configurable multiple TimingNodes/assets/sources;
 - fault injection through stubs/test-control;
 - documentation proving external consumer setup;
 - CI that builds without relying on framework-reactor internals.
@@ -491,7 +491,7 @@ From the reference project only:
 5. configure at least two synthetic registration sources;
 6. exchange source-aware messages over the socket boundary;
 7. disconnect/reconnect the simulator and show status/recovery;
-8. optionally scale the configuration to several `Waypoint` objects.
+8. optionally scale the configuration to several `TimingNode` objects.
 
 ### Evidence / exit criteria
 
@@ -541,7 +541,7 @@ Demonstrate that the higher-level application behaviour and test interface remai
 - public verification remains meaningful without exposing proprietary protocol details;
 - private identifiers/protocol data do not leak into public repository fixtures.
 
-## Step 8 — Waypoint data/state foundation (SI-01)
+## Step 8 — TimingNode data/state foundation (SI-01)
 
 Status: not started
 
@@ -599,8 +599,8 @@ A locally complete, deterministic timing-domain core that can maintain registrat
 
 Using only synthetic data and public/test interfaces:
 
-1. start the application with one configured `Waypoint` and at least two synthetic registration sources;
-2. open the `Waypoint` and show the traceable open record;
+1. start the application with one configured `TimingNode` and at least two synthetic registration sources;
+2. open the `TimingNode` and show the traceable open record;
 3. create registrations on both sources and show independent source sequences;
 4. add and remove ready-team numbers and show current state plus history;
 5. load synthetic start-time/reference data and show a local derived timing/ranking result;
@@ -630,7 +630,7 @@ Provide the React-based operational client over the existing HTTP/WebSocket syst
 
 - SI-01 serves the compiled React bundle;
 - show registrations/status;
-- open/close `Waypoint`;
+- open/close `TimingNode`;
 - start procedure control;
 - show/manage ready-team state;
 - later manual registrations/penalties where authorised;
@@ -651,7 +651,7 @@ On an iPad/browser connected to the local network:
 
 1. navigate to SI-01 and download the React application;
 2. view current application/system status and registrations;
-3. open/close a `Waypoint`;
+3. open/close a `TimingNode`;
 4. perform a start-procedure command;
 5. add/remove ready-team entries where in scope;
 6. observe live WebSocket updates;

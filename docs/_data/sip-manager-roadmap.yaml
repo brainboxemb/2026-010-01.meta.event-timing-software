@@ -28,7 +28,7 @@ steps:
       - Console, remote shell, HTTP and WebSocket access
     demonstration:
       - Start SI-01 on Windows from application configuration
-      - Show the configured Waypoint and presentation binding
+      - Show the configured TimingNode and presentation binding
       - Read equivalent state and run the first ST-1 scenario
 
   "4":
@@ -58,7 +58,7 @@ steps:
       - Repeatable ST-1 and ST-2 synthetic scenarios
     demonstration:
       - Build and run from the reference repository only
-      - Start a synthetic Waypoint composition
+      - Start a synthetic TimingNode composition
       - Exercise the socket simulator and reconnect flow
 
   "7":

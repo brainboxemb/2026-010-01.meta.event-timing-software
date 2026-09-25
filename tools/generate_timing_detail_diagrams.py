@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate detailed waypoint-system architecture diagrams.
+"""Generate detailed TimingNode architecture diagrams.
 
 This script reuses the remaining legacy SVG/draw.io renderer from
 `generate_architecture_diagrams.py` and adds timing-domain specific views.
@@ -15,7 +15,7 @@ import argparse
 from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, render_svg
 
 
-def waypoint_system_internals() -> Diagram:
+def timing_node_internals() -> Diagram:
     nodes = [
         Node("operator", "Operator commands\\nconsole • API • web UI", 40, 90, 260, 80, "client"),
         Node("rfid", "RFID observations", 340, 90, 220, 80, "external"),
@@ -23,15 +23,15 @@ def waypoint_system_internals() -> Diagram:
         Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
         Node("backoffice", "Backoffice input\\nrace/reference data", 1140, 90, 230, 80, "external"),
 
-        Node("messages", "Immutable WaypointMessage\\nsource timestamp + waypoint id", 390, 230, 610, 90, "interface"),
-        Node("queue", "Per-Waypoint ingress queue", 505, 370, 380, 75, "queue"),
+        Node("messages", "Immutable TimingNodeMessage\\nsource timestamp + TimingNodeId", 390, 230, 610, 90, "interface"),
+        Node("queue", "Per-TimingNode ingress queue", 505, 370, 380, 75, "queue"),
         Node("serial", "Logical SerialExecutor\\none writer / ordered state changes", 445, 505, 500, 90, "core"),
 
-        Node("coordinator", "Waypoint coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
+        Node("coordinator", "TimingNode coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 320, 675, 280, 90, "service"),
-        Node("journal", "WaypointJournal\\nregistration/history", 620, 675, 280, 90, "service"),
+        Node("journal", "TimingNodeJournal\\nregistration/history", 620, 675, 280, 90, "service"),
         Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 920, 675, 330, 90, "service"),
-        Node("status", "Waypoint status\\nimmutable snapshots", 1270, 675, 260, 90, "service"),
+        Node("status", "TimingNode status\\nimmutable snapshots", 1270, 675, 260, 90, "service"),
 
         Node("race_data", "RaceData\\nparticipants • teams • tag references", 180, 850, 330, 90, "service"),
         Node("start_times", "StageStartTimeRegistry\\nlocal stage start-time reference", 540, 850, 340, 90, "service"),
@@ -66,8 +66,8 @@ def waypoint_system_internals() -> Diagram:
     ]
 
     return Diagram(
-        "waypoint-system-internals",
-        "Waypoint internals — ordered ingress and domain responsibilities",
+        "timing-node-internals",
+        "TimingNode internals — ordered ingress and domain responsibilities",
         1580,
         1160,
         nodes,
@@ -118,7 +118,7 @@ def rfid_pipeline() -> Diagram:
 
 def generate(out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
-    diagrams = [waypoint_system_internals(), rfid_pipeline()]
+    diagrams = [timing_node_internals(), rfid_pipeline()]
 
     for diagram in diagrams:
         render_svg(diagram, out_dir / (diagram.name + ".svg"))
@@ -126,7 +126,7 @@ def generate(out_dir: Path):
 
     readme = out_dir / "README.md"
     with readme.open("a", encoding="utf-8") as handle:
-        handle.write("\n## Waypoint-system detail views\n\n")
+        handle.write("\n## TimingNode-system detail views\n\n")
         for diagram in diagrams:
             handle.write("### " + diagram.title + "\n\n")
             handle.write("![" + diagram.title + "](./" + diagram.name + ".svg)\n\n")

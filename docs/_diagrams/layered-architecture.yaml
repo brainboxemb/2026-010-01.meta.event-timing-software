@@ -19,8 +19,8 @@ groups:
   label: Domain layer
   kind: layer-domain
   layout: {x: 120, y: 445, w: 1120, h: 300}
-- id: waypoint-aggregate
-  label: Waypoint (1..N)
+- id: timing-node-aggregate
+  label: TimingNode (1..N)
   kind: model
   layout: {x: 145, y: 485, w: 820, h: 235}
 - id: io-layer
@@ -69,45 +69,45 @@ nodes:
   kind: application
   layout: {x: 740, y: 305, w: 430, h: 75}
 
-- id: waypoint-root
-  group: waypoint-aggregate
-  label: "Waypoint"
-  subtitle: "UniqueID • LocationID • lifecycle/status"
+- id: timing-node-root
+  group: timing-node-aggregate
+  label: "TimingNode"
+  subtitle: "TimingNodeId • LocationID • lifecycle/status"
   kind: model
   layout: {x: 355, y: 500, w: 400, h: 50}
 
 - id: tag-processor
-  group: waypoint-aggregate
+  group: timing-node-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
   layout: {x: 175, y: 570, w: 235, h: 60}
 - id: stage-start-time-registry
-  group: waypoint-aggregate
+  group: timing-node-aggregate
   label: "StageStartTimeRegistry"
   subtitle: "start-time reference"
   kind: service
   layout: {x: 425, y: 570, w: 250, h: 60}
-- id: waypoint-journal
-  group: waypoint-aggregate
+- id: timing-node-journal
+  group: timing-node-aggregate
   label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
   layout: {x: 690, y: 570, w: 245, h: 60}
 - id: prepare-team-registry
-  group: waypoint-aggregate
+  group: timing-node-aggregate
   label: "PrepareTeamRegistry"
   subtitle: "teams + traceable history"
   kind: service
   layout: {x: 175, y: 650, w: 235, h: 60}
 - id: race-data
-  group: waypoint-aggregate
+  group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
   layout: {x: 425, y: 650, w: 250, h: 60}
 - id: stage-timing
-  group: waypoint-aggregate
+  group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
@@ -174,12 +174,12 @@ edges:
   to_anchor: {side: top, position: 0.80}
 
 - from: command-handler
-  to: waypoint-root
+  to: timing-node-root
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
 - from: application-conductor
-  to: waypoint-root
+  to: timing-node-root
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.20}
@@ -192,7 +192,6 @@ edges:
 
 - from: system-status-domain
   to: http-websocket
-  label: status/events
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}

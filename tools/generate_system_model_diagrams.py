@@ -13,7 +13,7 @@ def software_item_overview() -> Diagram:
         Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
         Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
         Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..X Waypoints", 500, 490, 450, 100, "core"),
+        Node("timing", "SI-01 Headless Timing Application\\n1..N TimingNodes", 500, 490, 450, 100, "core"),
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
@@ -50,16 +50,16 @@ def software_item_overview() -> Diagram:
     )
 
 
-def waypoint_software_decomposition() -> Diagram:
+def timing_node_software_decomposition() -> Diagram:
     nodes = [
         Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 55, 390, 90, "core"),
-        Node("wp1", "Waypoint waypoint-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
-        Node("wp2", "Waypoint waypoint-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
+        Node("wp1", "TimingNode timing-node-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
+        Node("wp2", "TimingNode timing-node-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
 
-        Node("life", "Waypoint lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
+        Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 370, 430, 300, 90, "service"),
         Node("start", "StageStartTimeRegistry\\nlocal stage start-time reference", 700, 430, 330, 90, "service"),
-        Node("journal", "WaypointJournal\\nregistrations + UniqueID-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
+        Node("journal", "TimingNodeJournal\\nregistrations + TimingNodeId-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
         Node("ready", "PrepareTeamRegistry\\nteams to prepare + internal keypad history", 80, 640, 330, 100, "service"),
         Node("race", "RaceData\\nparticipant/team/tag reference data", 460, 640, 330, 100, "service"),
         Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 840, 640, 420, 100, "interface"),
@@ -80,8 +80,8 @@ def waypoint_software_decomposition() -> Diagram:
     ]
 
     return Diagram(
-        "waypoint-software-decomposition",
-        "SI-01 software/domain decomposition — waypoint systems and responsibilities",
+        "timing-node-software-decomposition",
+        "SI-01 software/domain decomposition — TimingNodes and responsibilities",
         1400,
         830,
         nodes,
@@ -96,7 +96,7 @@ def registration_hardware_topology() -> Diagram:
         Node("ant11", "Antenna ANT1", 70, 340, 260, 75, "adapter"),
         Node("ant12", "Antenna ANT2", 370, 340, 260, 75, "adapter"),
         Node("ant21", "Antenna ANT1", 900, 340, 260, 75, "adapter"),
-        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N UniqueIDs", 450, 540, 500, 100, "interface"),
+        Node("note", "Hardware topology only\\n1..N antennas do not imply 1..N TimingNodeIds", 450, 540, 500, 100, "interface"),
     ]
 
     edges = [
@@ -117,92 +117,90 @@ def registration_hardware_topology() -> Diagram:
     )
 
 
-def waypoint_hardware_mapping() -> Diagram:
+def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("wp", "Waypoint waypoint-A", 80, 85, 330, 85, "service"),
-        Node("loc", "Location X\\nLocationID", 80, 300, 330, 85, "external"),
-        Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 530, 85, 350, 85, "external"),
-        Node("ds", "UniqueID waypoint-01\\nWaypoint identity", 530, 300, 350, 85, "queue"),
-        Node("finish", "Other producer\\nseparate producer", 1000, 85, 300, 85, "external"),
-        Node("finishds", "UniqueID waypoint-02", 1000, 300, 300, 85, "queue"),
-        Node("config", "Deployment configuration\\nconnects identities; does not collapse them", 440, 510, 520, 105, "interface"),
+        Node("asset", "RegistrationAsset asset-01\\nphysical hardware", 65, 80, 310, 85, "external"),
+        Node("antenna", "Antenna ANT1\\nAntennaId", 85, 230, 270, 80, "adapter"),
+        Node("reg_router", "RegistrationRouter\\nconfigured fan-out", 455, 180, 330, 95, "interface"),
+
+        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId", 930, 80, 350, 90, "service"),
+        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId", 930, 260, 350, 90, "service"),
+        Node("loc_a", "Location X\\nLocationID", 1060, 420, 220, 75, "external"),
+
+        Node("bo_router", "BackofficeRouter\\nconnector bindings / names", 505, 540, 350, 95, "interface"),
+        Node("conn1", "BackofficeConnector 01\\nRabbitMQ / credentials A", 70, 500, 330, 90, "adapter"),
+        Node("conn2", "BackofficeConnector 02\\nRabbitMQ / credentials B", 70, 660, 330, 90, "adapter"),
+        Node("note", "Router = mapping / fan-out\\nManager = resource + lifecycle ownership", 900, 620, 390, 100, "interface"),
     ]
 
     edges = [
-        Edge("wp", "loc", "deployed/configured at"),
-        Edge("asset", "ds", "configured logical data identity"),
-        Edge("finish", "finishds", "configured logical data identity"),
-        Edge("config", "wp", "mapping", True),
-        Edge("config", "asset", "mapping", True),
-        Edge("config", "ds", "mapping", True),
-        Edge("config", "finish", "mapping", True),
-        Edge("config", "finishds", "mapping", True),
+        Edge("asset", "antenna", "owns 1..N antennas"),
+        Edge("antenna", "reg_router", "observation origin"),
+        Edge("reg_router", "node_a", "route 1..N"),
+        Edge("reg_router", "node_b"),
+        Edge("node_a", "loc_a", "configured at"),
+
+        Edge("conn1", "bo_router", "1..N bindings"),
+        Edge("conn2", "bo_router", "1..N bindings"),
+        Edge("bo_router", "node_a", "inbound / outbound"),
+        Edge("bo_router", "node_b", "inbound / outbound"),
+        Edge("bo_router", "note", "separate responsibilities", True),
     ]
 
     return Diagram(
-        "waypoint-hardware-mapping",
-        "Configuration mapping — waypoint, location, hardware and data-source identities",
+        "timing-node-routing-mapping",
+        "Configuration routing — hardware, TimingNodes and backoffice connectors",
         1400,
-        700,
+        820,
         nodes,
         edges,
     )
 
-
 def rabbitmq_source_topology() -> Diagram:
     nodes = [
-        Node("broker", "RabbitMQ broker\\nreal external service", 505, 55, 390, 85, "external"),
-        Node("inq1", "waypoint-01 inbound queue", 90, 200, 290, 70, "queue"),
-        Node("out", "outbound exchange + routing keys", 555, 200, 300, 70, "queue"),
-        Node("inq2", "waypoint-02 inbound queue", 1020, 200, 290, 70, "queue"),
+        Node("broker1", "RabbitMQ broker A", 95, 70, 300, 75, "external"),
+        Node("broker2", "RabbitMQ broker B", 1005, 70, 300, 75, "external"),
 
-        Node("conn", "RabbitMqConnectionManager\\ninitial preference: one shared connection", 480, 345, 440, 90, "adapter"),
-        Node("c1", "waypoint-01 consumer\\nown channel/ownership", 80, 505, 310, 85, "adapter"),
-        Node("pub", "controlled publisher\\ndedicated channel or small pool", 545, 505, 310, 85, "adapter"),
-        Node("c2", "waypoint-02 consumer\\nown channel/ownership", 1010, 505, 310, 85, "adapter"),
+        Node("conn1", "RabbitMqConnector connector-01\\nConnectionManager owns connection/channels", 55, 250, 380, 100, "adapter"),
+        Node("conn2", "RabbitMqConnector connector-02\\nConnectionManager owns connection/channels", 965, 250, 380, 100, "adapter"),
 
-        Node("s1", "Waypoint waypoint-01\\nUniqueID-scoped application path", 80, 690, 310, 85, "service"),
-        Node("outbox", "local durable/pending outbox\\nsource identity retained", 545, 690, 310, 85, "service"),
-        Node("s2", "Waypoint waypoint-02\\nUniqueID-scoped application path", 1010, 690, 310, 85, "service"),
+        Node("router", "BackofficeRouter\\nTimingNode bindings + external names", 500, 410, 400, 100, "interface"),
 
-        Node("split", "Possible later refinement\\nseparate consumer + publisher connections\\nonly if evidence justifies it", 500, 850, 400, 95, "interface"),
+        Node("node1", "TimingNode timing-node-01\\nTimingNodeId-scoped application path", 95, 620, 340, 90, "service"),
+        Node("node2", "TimingNode timing-node-02\\nTimingNodeId-scoped application path", 965, 620, 340, 90, "service"),
+        Node("outbox", "local durable/pending outbox\\nTimingNodeId retained", 525, 620, 350, 90, "service"),
+
+        Node("note", "0..N connectors per application\\n1..N TimingNode bindings per connector\\none TimingNode may use multiple connectors", 455, 790, 490, 105, "interface"),
     ]
 
     edges = [
-        Edge("broker", "inq1", "broker resource"),
-        Edge("broker", "out", "broker resource"),
-        Edge("broker", "inq2", "broker resource"),
-        Edge("conn", "broker", "shared TCP connection", True),
-        Edge("conn", "c1", "channel"),
-        Edge("conn", "pub", "channel(s)"),
-        Edge("conn", "c2", "channel"),
-        Edge("inq1", "c1", "deliver", True),
-        Edge("inq2", "c2", "deliver", True),
-        Edge("c1", "s1", "enqueue inbound"),
-        Edge("c2", "s2", "enqueue inbound"),
-        Edge("s1", "outbox", "committed outbound"),
-        Edge("s2", "outbox", "committed outbound"),
-        Edge("outbox", "pub", "publish pending"),
-        Edge("pub", "out", "exchange + routing key", True),
-        Edge("split", "conn", "implementation option", True),
+        Edge("broker1", "conn1", "transport"),
+        Edge("broker2", "conn2", "transport"),
+        Edge("conn1", "router", "inbound / outbound"),
+        Edge("conn2", "router", "inbound / outbound"),
+        Edge("router", "node1", "route / bind"),
+        Edge("router", "node2", "route / bind"),
+        Edge("node1", "outbox", "committed outbound"),
+        Edge("node2", "outbox", "committed outbound"),
+        Edge("outbox", "router", "publish pending"),
+        Edge("router", "note", "configured multiplicity", True),
     ]
 
     return Diagram(
         "rabbitmq-source-topology",
-        "RabbitMQ — shared connection with per-source consumers and controlled publishing",
+        "RabbitMQ — connector managers with explicit TimingNode routing",
         1400,
-        1010,
+        960,
         nodes,
         edges,
     )
 
-
-def waypoint_system_lifecycle() -> Diagram:
+def timing_node_lifecycle() -> Diagram:
     nodes = [
-        Node("closed", "CLOSED\\nnot accepting normal waypoint timing operation", 170, 210, 330, 90, "core"),
-        Node("open", "OPEN\\nwaypoint timing operation enabled", 770, 210, 330, 90, "core"),
+        Node("closed", "CLOSED\\nnot accepting normal TimingNode operation", 170, 210, 330, 90, "core"),
+        Node("open", "OPEN\\nTimingNode operation enabled", 770, 210, 330, 90, "core"),
         Node("health", "Subsystem health is orthogonal\\nHEALTHY • DEGRADED • ERROR do not silently change OPEN/CLOSED", 355, 440, 560, 110, "service"),
-        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> waypoint remains OPEN while status is degraded", 355, 650, 560, 95, "interface"),
+        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> TimingNode remains OPEN while health is degraded", 355, 650, 560, 95, "interface"),
     ]
     edges = [
         Edge("closed", "open", "Open command"),
@@ -212,8 +210,8 @@ def waypoint_system_lifecycle() -> Diagram:
         Edge("health", "example"),
     ]
     return Diagram(
-        "waypoint-system-lifecycle",
-        "Waypoint lifecycle — operational lifecycle and health are separate",
+        "timing-node-lifecycle",
+        "TimingNode lifecycle — operational lifecycle and health are separate",
         1280,
         820,
         nodes,
@@ -285,11 +283,11 @@ def generate(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     diagrams = [
         software_item_overview(),
-        waypoint_software_decomposition(),
+        timing_node_software_decomposition(),
         registration_hardware_topology(),
-        waypoint_hardware_mapping(),
+        timing_node_routing_mapping(),
         rabbitmq_source_topology(),
-        waypoint_system_lifecycle(),
+        timing_node_lifecycle(),
         rfid_lifecycle(),
         connectivity_layers(),
     ]

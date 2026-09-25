@@ -49,13 +49,13 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - de huidige gepubliceerde Step-3 productbaseline is `v0.2.1`;
 - normale ontwikkeling loopt op `0.2.2-SNAPSHOT`;
 - IF-03 definieert application-control/status;
-- IF-11 definieert deployment/application-configuratie, inclusief Waypoint-, I/O-, presentation-, runtime/security-ownership, platform/profile overlays en secret references;
-- presentation endpoints verwijzen naar Waypoints; een Waypoint kent geen HTTP-poort of tablet;
+- IF-11 definieert deployment/application-configuratie, inclusief TimingNode-, I/O-, presentation-, runtime/security-ownership, platform/profile overlays en secret references;
+- presentation endpoints verwijzen naar TimingNodes; een TimingNode kent geen HTTP-poort of tablet;
 - `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
 - `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
 - maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
 - deel herbruikbare application/runtime-functionaliteit via composition wanneer echte reuse dat rechtvaardigt; introduceer geen `BaseApplication` inheritance-hiërarchie zonder concrete noodzaak;
-- de eerstvolgende bounded Step-3 slice is external configuration echt maken: concrete configuratierepresentatie/library kiezen, een minimale `ApplicationConfig` laden/mergen/valideren en daarmee ten minste één Waypoint plus de eerste presentation binding samenstellen;
+- de eerstvolgende bounded Step-3 slice is external configuration echt maken: concrete configuratierepresentatie/library kiezen, een minimale `ApplicationConfig` laden/mergen/valideren en daarmee ten minste één TimingNode plus de eerste presentation binding samenstellen;
 - implementeer alleen configuratietypes die die slice daadwerkelijk nodig heeft.
 
 Voor Java releasewerk geldt bewust:

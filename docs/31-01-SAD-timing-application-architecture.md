@@ -30,7 +30,7 @@ SI-01 architecture is driven by these concerns:
 - run on the original Raspberry Pi Zero / Zero W as a mandatory constrained target;
 - remain usable on Linux/Windows development and test hosts;
 - keep authoritative timing/domain state local to SI-01;
-- support one or more logical waypoint systems without state leakage;
+- support one or more logical TimingNodes without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
@@ -47,11 +47,11 @@ The existing use cases in `04-UC-system-use-cases.md` are the scenario source. T
 Representative architecture-validation scenarios include:
 
 1. start SI-01, load configuration, expose version/status and shut down cleanly;
-2. accept an operator command through local or network presentation and route it to the correct logical waypoint system;
+2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to mutate authoritative application state directly;
 4. persist accepted operational state and recover it after restart;
 5. continue local operation while a GUI/browser or backoffice connection is unavailable;
-6. host several waypoint systems in a development/simulation composition without state leakage;
+6. host several TimingNodes in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
 
@@ -72,8 +72,8 @@ TimingApplication
   |
   +-- SystemStatus
   |
-  +-- 1..N Waypoint
-        +-- UniqueID
+  +-- 1..N TimingNode
+        +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
@@ -112,26 +112,26 @@ application/
 
   CommandHandler
     shared client request boundary
-    resolves application-wide vs Waypoint-scoped work
+    resolves application-wide vs TimingNode-scoped work
 ```
 
-`Conductor` coordinates application-wide lifecycle and active Waypoints.
+`Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 `CommandHandler` is the shared entry point for presentation requests. It may
-serve simple application reads such as `version()`. Waypoint mutations are
-resolved to the correct `Waypoint` and then submitted to that Waypoint's serial
+serve simple application reads such as `version()`. TimingNode mutations are
+resolved to the correct `TimingNode` and then submitted to that TimingNode's serial
 executor.
 
-Once code is executing for a Waypoint, normal direct Java calls are preferred;
+Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce commands merely to preserve a layer diagram.
 
 ### Domain
 
-The domain owns timing rules and Waypoint state:
+The domain owns timing rules and TimingNode state:
 
 ```text
-Waypoint
-  UniqueID
+TimingNode
+  TimingNodeId
   LocationID
   TagProcessor
   StageStartTimeRegistry
@@ -143,7 +143,7 @@ Waypoint
 
 `TagProcessor` handles tag observations. `StageStartTimeRegistry` owns stage
 start references. `Journal` owns registration/history data and sequence
-semantics. `PrepareTeamRegistry` owns teams preparing at the Waypoint.
+semantics. `PrepareTeamRegistry` owns teams preparing at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
 derives running times and ranking.
 
@@ -200,7 +200,7 @@ cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
-A `Waypoint` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more waypoints. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and waypoint status rather than belonging to one waypoint.
+A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -211,8 +211,8 @@ TimingApplication
   |
   +-- SystemStatus
   |
-  +-- 1..N Waypoint
-        +-- UniqueID
+  +-- 1..N TimingNode
+        +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
@@ -223,11 +223,11 @@ TimingApplication
         +-- StageTiming
 ```
 
-`UniqueID` is the stable identity of the `Waypoint` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
+`TimingNodeId` is the stable identity of the `TimingNode` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
 
-![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/waypoint-software-decomposition.svg)
+![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
 
-The exact Java class/package boundaries may evolve as implementation evidence appears, but the `Waypoint` aggregate is the semantic owner of the operational waypoint state. The physical registration asset is not a child component of this software tree.
+The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational TimingNode state. The physical registration asset is not a child component of this software tree.
 
 ### Hardware/deployment decomposition
 
@@ -235,30 +235,44 @@ A physical registration system is described separately:
 
 ```text
 RegistrationAsset asset-01
-    +-- Antenna ANT1
-    +-- Antenna ANT2
-    +-- ...
+    +-- 1..N Antenna
 ```
 
 ![Registration hardware/deployment topology](../../../raw/prod/docs/assets/architecture/registration-hardware-topology.svg)
 
-A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not define additional `Waypoint` identities or `UniqueID` values.
+A `RegistrationAsset` represents physical/configured equipment identity. An antenna is an input origin, not a child of a `TimingNode`. One antenna may intentionally feed one or more TimingNodes through configured routing.
 
-### Configuration and identity mapping
+### Configuration, routing and identity mapping
 
-Configuration connects the software and deployment identities without making them the same object:
+Configuration connects identities without collapsing them:
 
 ```text
-Waypoint waypoint-A -> LocationID X
-Waypoint waypoint-A -> UniqueID waypoint-A
-RegistrationAsset asset-01 -> used by/configured for waypoint-A
+RegistrationAsset + Antenna
+        |
+        v
+RegistrationRouter
+        |
+        +--> 1..N TimingNodeId
+
+0..N BackofficeConnector
+        |
+        v
+BackofficeRouter
+        |
+        +<--> 1..N TimingNodeId
 ```
 
-![Waypoint, hardware and data-source configuration mapping](../../../raw/prod/docs/assets/architecture/waypoint-hardware-mapping.svg)
+![TimingNode, hardware and backoffice routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
 
-`UniqueID` is the stable identity of a `Waypoint` and the scope for its sequence, persistence and synchronisation semantics. `LocationID` separately identifies where that waypoint is configured/deployed. `UniqueID` is not derived from `RegistrationAssetId`.
+`TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID`, `RegistrationAssetId` and `AntennaId` are separate namespaces.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable waypoint state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
+`RegistrationRouter` maps accepted hardware observations such as `(RegistrationAssetId, AntennaId)` to one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original hardware origin remains available as context.
+
+`BackofficeRouter` maps connector-specific inbound/outbound bindings to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
+
+Use **router** for mapping/fan-out and **manager** for resource/lifecycle ownership. A RabbitMQ connection manager, for example, owns connections/channels for one connector; it does not decide domain identity.
+
+Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, connector managers, configuration loading and network monitoring.
 
 Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
 
@@ -270,7 +284,7 @@ All presentation transports should converge on one shared application model. The
 local console -------+
 remote shell --------+
 HTTP/JSON -----------+--> typed command/query boundary --> application runtime
-WebSocket <-----------+<-- typed status/events -------------------+
+WebSocket <-----------+<---------------------------------------------+
 ```
 
 Working rules:
@@ -286,41 +300,41 @@ The initial architecture uses explicit typed routing because the flow is easier 
 
 ## Process view: threading and concurrency
 
-The domain model is intentionally kept simple. Code working on one `Waypoint`
+The domain model is intentionally kept simple. Code working on one `TimingNode`
 should be able to behave as if it is single-threaded.
 
 That guarantee is provided by the application around the domain code. Domain
 objects are not expected to add locks everywhere to protect themselves from
 normal application callbacks.
 
-### The rule for one Waypoint
+### The rule for one TimingNode
 
-For each `Waypoint`:
+For each `TimingNode`:
 
-1. any code that changes its mutable state is submitted to that Waypoint's
+1. any code that changes its mutable state is submitted to that TimingNode's
    serial executor;
-2. that executor runs at most one accepted task for that Waypoint at a time;
+2. that executor runs at most one accepted task for that TimingNode at a time;
 3. once a task is running there, normal direct Java calls are used between the
-   Waypoint's domain objects;
-4. a second task for the same Waypoint waits until the first one has finished;
-5. another Waypoint may run at the same time.
+   TimingNode's domain objects;
+4. a second task for the same TimingNode waits until the first one has finished;
+5. another TimingNode may run at the same time.
 
 In short:
 
 ```text
 RFID callback ----+
-operator command -+--> Waypoint A serial executor --> normal domain calls
+operator command -+--> TimingNode A serial executor --> normal domain calls
 timer callback ---+
 
-other input ------+--> Waypoint B serial executor --> normal domain calls
+other input ------+--> TimingNode B serial executor --> normal domain calls
 ```
 
 The serial executor does not need a dedicated thread. It may use a shared
-`ExecutorService`. The important rule is that two tasks for the same Waypoint
+`ExecutorService`. The important rule is that two tasks for the same TimingNode
 must never execute at the same time.
 
 The initial constrained composition may use one shared worker. A desktop or
-simulation composition may use more workers so different Waypoints can run in
+simulation composition may use more workers so different TimingNodes can run in
 parallel.
 
 ### Where input enters
@@ -328,15 +342,15 @@ parallel.
 External libraries may call SI-01 from their own threads. Examples are HTTP,
 WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
 
-Those callback threads must not change mutable Waypoint state directly.
+Those callback threads must not change mutable TimingNode state directly.
 
-The caller first determines which Waypoint owns the work:
+The caller first determines which TimingNode owns the work:
 
-- `CommandHandler` resolves operator/client requests that name a Waypoint;
-- a configured device adapter already knows which Waypoint owns its device;
-- a scheduled task keeps the Waypoint it was registered for.
+- `CommandHandler` resolves operator/client requests that name a TimingNode;
+- a configured device adapter already knows which TimingNode owns its device;
+- a scheduled task keeps the TimingNode it was registered for.
 
-The work is then submitted to that Waypoint's serial executor.
+The work is then submitted to that TimingNode's serial executor.
 
 There is no separate central `TimingSystemDispatcher`. A second generic router
 would add another layer without owning useful behaviour.
@@ -348,10 +362,10 @@ operator endpoint
  CommandHandler ---------------------+
       |                              |
       v                              v
-Waypoint A serial executor    Waypoint B serial executor
+TimingNode A serial executor    TimingNode B serial executor
       ^                              ^
       |                              |
-device callbacks / timers know their owning Waypoint
+device callbacks / timers know their owning TimingNode
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
@@ -361,14 +375,14 @@ The source for this process view is
 
 ### Reads
 
-A read does not automatically need the Waypoint serial executor.
+A read does not automatically need the TimingNode serial executor.
 
 Use the simplest rule that preserves correctness:
 
-- application data that does not depend on mutable Waypoint state, such as the
+- application data that does not depend on mutable TimingNode state, such as the
   build/version identity, may be read directly;
-- a read that must see an exact combination of mutable Waypoint values is run
-  through that Waypoint's serial executor;
+- a read that must see an exact combination of mutable TimingNode values is run
+  through that TimingNode's serial executor;
 - presentation code must not gain write access to domain state just because it
   can read it.
 
@@ -379,12 +393,12 @@ status helper merely to satisfy this rule.
 
 ### Blocking I/O
 
-Do not block the Waypoint serial executor on network, device or slow file I/O.
+Do not block the TimingNode serial executor on network, device or slow file I/O.
 
 A normal flow is:
 
 ```text
-Waypoint task
+TimingNode task
    |
    +--> request I/O
             |
@@ -394,16 +408,16 @@ Waypoint task
             v
       completion/failure
             |
-            +--> submit follow-up task to the owning Waypoint
+            +--> submit follow-up task to the owning TimingNode
 ```
 
 If a domain transition depends on successful I/O, represent that pending state
 explicitly and finish the transition when the completion comes back. Do not keep
-the Waypoint blocked while waiting for the external operation.
+the TimingNode blocked while waiting for the external operation.
 
 ### Queue and failure behaviour
 
-The queue in front of a Waypoint must be bounded in field use.
+The queue in front of a TimingNode must be bounded in field use.
 
 - accepted tasks are processed in submission order;
 - a full queue is an explicit failure, never a silent drop;
@@ -417,7 +431,7 @@ Normal shutdown follows the same ownership rules:
 
 1. stop accepting new client/device input;
 2. stop or quiesce adapters;
-3. allow already accepted Waypoint work to finish within a configured timeout;
+3. allow already accepted TimingNode work to finish within a configured timeout;
 4. finish required persistence/outbox work;
 5. stop scheduler/I/O/state executors;
 6. report failure if graceful shutdown cannot finish in time.
@@ -429,18 +443,18 @@ placeholder classes:
 
 | Case | Required behaviour |
 | --- | --- |
-| Two commands arrive at the same Waypoint together | one runs, then the other; they never overlap |
-| Commands arrive at two different Waypoints | they may run concurrently |
-| RFID callback arrives while an operator command changes the same Waypoint | callback work waits in the same Waypoint queue |
-| Timer fires while that Waypoint is busy | timer work is queued for the same Waypoint |
+| Two commands arrive at the same TimingNode together | one runs, then the other; they never overlap |
+| Commands arrive at two different TimingNodes | they may run concurrently |
+| RFID callback arrives while an operator command changes the same TimingNode | callback work waits in the same TimingNode queue |
+| Timer fires while that TimingNode is busy | timer work is queued for the same TimingNode |
 | A handler throws | failure is reported; later accepted tasks can still run |
-| Waypoint queue is full | submission fails visibly; work is not silently dropped |
-| Blocking network/file/device operation is needed | I/O runs outside the Waypoint serial executor |
-| I/O completion comes back on another thread | completion is submitted back to the owning Waypoint before changing state |
-| A query needs an exact view of several mutable Waypoint values | query runs in that Waypoint serial executor |
-| A client asks for application build/version | read directly; no Waypoint executor is involved |
+| TimingNode queue is full | submission fails visibly; work is not silently dropped |
+| Blocking network/file/device operation is needed | I/O runs outside the TimingNode serial executor |
+| I/O completion comes back on another thread | completion is submitted back to the owning TimingNode before changing state |
+| A query needs an exact view of several mutable TimingNode values | query runs in that TimingNode serial executor |
+| A client asks for application build/version | read directly; no TimingNode executor is involved |
 | Shutdown starts with queued work | new ingress stops and accepted work gets a bounded chance to finish |
-| Domain code calls another domain object while already inside the Waypoint task | use a normal direct Java call; do not send another command merely to preserve layers |
+| Domain code calls another domain object while already inside the TimingNode task | use a normal direct Java call; do not send another command merely to preserve layers |
 
 These cases are the basis for implementation tests of the serial-execution
 mechanism and its callers.
@@ -450,7 +464,7 @@ mechanism and its callers.
 The selected baseline is deliberately small:
 
 - JDK `java.util.concurrent`;
-- one small project-owned serial-executor implementation per Waypoint;
+- one small project-owned serial-executor implementation per TimingNode;
 - one shared configurable backing `ExecutorService`;
 - separate I/O/scheduler execution when needed;
 - direct/controllable executors in unit tests;
@@ -493,7 +507,7 @@ monotonic time source
   timeout / retry / filtering windows
   process-local only
 
-UniqueID + SequenceNumber
+TimingNodeId + SequenceNumber
   stable stream ordering / gap detection
 ```
 
@@ -528,17 +542,17 @@ TimingEvent
   report an observation, fact, adapter completion or failure
 
 TimingQuery<R>
-  request a consistency-sensitive result from authoritative Waypoint state
+  request a consistency-sensitive result from authoritative TimingNode state
 ```
 
 The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
 
 Rules:
 
-- use typed messages when work crosses an asynchronous or Waypoint execution boundary;
+- use typed messages when work crosses an asynchronous or TimingNode execution boundary;
 - resolve the target explicitly; do not use a generic event bus or topic discovery;
-- once running in a Waypoint's serial executor, use normal direct Java calls;
-- submit asynchronous I/O completion back to the owning Waypoint before changing its state;
+- once running in a TimingNode's serial executor, use normal direct Java calls;
+- submit asynchronous I/O completion back to the owning TimingNode before changing its state;
 - RabbitMQ is external I/O, not an in-process message bus.
 
 Choose concrete command/query return types when the first real consumers need them.
@@ -550,9 +564,9 @@ Status is a first-class current-state model and is distinct from logging.
 Status should allow presentation and diagnostics to observe application, timing-system and subsystem health without parsing log text. Representative areas include:
 
 - application version / uptime / overall health;
-- Waypoint lifecycle;
+- TimingNode lifecycle;
 - registration asset/source state;
-- Waypoint queue depth/high-water/overload health;
+- TimingNode queue depth/high-water/overload health;
 - RFID power/startup/protocol/heartbeat;
 - CAN/device availability;
 - persistence/backup state;
@@ -596,7 +610,7 @@ Working decisions:
 - another executable/private consumer may choose a different compatible provider without changing framework/domain source;
 - log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
-- stable waypoint/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
+- stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
 - logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state.
 
 The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.
@@ -611,10 +625,12 @@ The main configuration groups are:
 
 ```text
 ApplicationConfig
-├── waypoints
+├── timingNodes
 ├── io
 │   ├── hardware
-│   ├── messaging
+│   ├── registrationRouting
+│   ├── backoffice
+│   │   └── 0..N connectors
 │   └── storage
 ├── presentation
 ├── runtime
@@ -623,10 +639,12 @@ ApplicationConfig
 
 The identity boundaries are deliberate:
 
-- a `Waypoint` owns its stable `UniqueID` and configured `LocationID`;
-- a Waypoint may reference a `RegistrationAssetId`;
-- a registration asset owns its adapter/driver selection and one or more `AntennaId` values;
-- presentation endpoints reference Waypoints explicitly; an HTTP port, tablet or shell binding is not a property of the Waypoint domain object.
+- a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
+- a registration asset owns its adapter/driver selection and 1..N `AntennaId` values where antenna inputs apply;
+- registration routing maps an asset/antenna origin to 1..N `TimingNodeId` targets;
+- backoffice configuration may define 0..N connectors, each with 1..N TimingNode bindings;
+- connector-specific external names/routing identities do not replace `TimingNodeId`;
+- presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
 Deployment composition is intentionally small:
 
@@ -642,7 +660,7 @@ resolved secret values
 effective ApplicationConfig
 ```
 
-A profile such as `simulation` changes composition by selecting simulated adapters in place of real hardware/integration adapters. It does not introduce a second domain model or simulation-specific Waypoint semantics. Platform selection and profile selection remain separate concerns; for example, Windows does not imply simulation.
+A profile such as `simulation` changes composition by selecting simulated adapters in place of real hardware/integration adapters. It does not introduce a second domain model or simulation-specific TimingNode semantics. Platform selection and profile selection remain separate concerns; for example, Windows does not imply simulation.
 
 Startup follows three distinct responsibilities:
 
@@ -674,7 +692,7 @@ Keep these concepts distinct:
 6. local backup/restore — restart/power-loss recovery;
 7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
 
-Registration identity remains waypoint-scoped; the current stable conceptual key is `(UniqueID, SequenceNumber)`.
+Registration identity remains TimingNode-scoped; the current stable conceptual key is `(TimingNodeId, SequenceNumber)`.
 
 Persistence durability semantics, file format, atomic-write strategy and corruption/recovery rules remain open decisions and may justify a focused data/persistence SDD only when implementation reaches that complexity.
 
@@ -684,7 +702,7 @@ The **external device and network topology is owned by the SSAD**, because RFID/
 
 ### Backoffice
 
-RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports and local synchronisation/outbox behaviour.
+RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports, explicit TimingNode routing/bindings and local synchronisation/outbox behaviour. A process may compose 0..N backoffice connectors; RabbitMQ is one connector type.
 
 ```text
 application/domain
@@ -757,8 +775,8 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | --- | --- | --- |
 | Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
 | Build | Maven | accepted |
-| Concurrency | one project-owned `SerialExecutor` per `Waypoint` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a Waypoint task | architecture baseline selected; refine first consumer API signatures during implementation |
+| Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit target resolution at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
@@ -779,7 +797,7 @@ Representative SI-01 deployments are:
 Production field host
   Raspberry Pi Zero / Zero W
     one SI-01 process
-      one or more configured Waypoint objects
+      one or more configured TimingNode objects
       local devices + local files
       optional network/backoffice connectivity
 
@@ -787,7 +805,7 @@ Development/test host
   Linux or Windows
     same SI-01 framework/application behaviour
     real or stub adapters
-    may host larger multi-Waypoint simulation topology
+    may host larger multi-TimingNode simulation topology
 ```
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of SI-01 relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
@@ -800,7 +818,7 @@ Testability is an architecture property. Application/domain code should where pr
 - receive absolute time through an injectable abstraction;
 - receive duration/timeout measurements through a controllable monotonic abstraction where needed;
 - include tests that step the wall clock forwards/backwards and cross representative DST/local-time transitions;
-- exercise `SerialExecutor` ordering, same-Waypoint non-overlap, cross-Waypoint parallelism and bounded-queue rejection deterministically;
+- exercise `SerialExecutor` ordering, same-TimingNode non-overlap, cross-TimingNode parallelism and bounded-queue rejection deterministically;
 - depend on semantic ports rather than concrete device/network libraries;
 - keep protocol parsing in adapters;
 - use deterministic handlers that can run synchronously in unit tests;
@@ -830,7 +848,7 @@ implementation needs focused design.
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 
-- Waypoint queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
+- TimingNode queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
 - field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
 - embedded HTTP/WebSocket technology compatible with Java 8 and Pi Zero constraints;
 - remote-shell technology;

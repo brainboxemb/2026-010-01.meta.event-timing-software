@@ -273,7 +273,7 @@ Current stable state:
 - `CommandHandler` is the current shared presentation/application boundary;
 - `BuildIdentity` remains separate from deployment configuration.
 
-The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one Waypoint plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
+The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one TimingNode plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
 
 Do not add a new AP step merely to mirror SIP Step 3. Add one only when a distinct coordination deliverable needs its own plan.
 
