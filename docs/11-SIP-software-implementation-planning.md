@@ -250,7 +250,7 @@ Current design/implementation decisions relevant to this step:
 - minimal WebSocket status/event stream;
 - external typed/validated application configuration according to IF-11;
 - at least one configurable `TimingNode` with a stable `TimingNodeId`;
-- presentation endpoints bind to configured TimingNodes rather than putting ports/client knowledge in the TimingNode;
+- presentation adapters use configured TimingNode state through application composition rather than putting ports/client knowledge in the TimingNode;
 - configuration loading, validation and application composition remain separate responsibilities;
 - the first configuration implementation introduces only types needed by the executable slice instead of materialising the complete future IF-11 tree;
 - transport adapters do not own authoritative application/domain state;
@@ -282,20 +282,20 @@ and `status` reuse the shared application semantics. A05 later exposes the same 
 commands through a remote terminal/shell connection rather than inventing a second command set.
 `quit` / `exit` request the existing graceful application shutdown path.
 
-A04 acceptance includes a user-facing Windows check from a clean checkout: bootstrap,
-build, start SI-01 with `application.yml`, run `help`, `version`, `status`, then
-`quit` and verify the process stops cleanly.
+A04 acceptance includes a user-facing Windows/NetBeans check: open the repository as
+a Maven project, build it, run SI-01 with `application.yml`, execute `help`,
+`version`, `status`, then `quit`, and verify the process stops cleanly.
 
 ### Deliverable
 
-The first useful SI-01 executable for the development environment: a headless Java application with one shared application boundary, externally configured TimingNode/presentation composition, equivalent version/status semantics across its initial interfaces and a repeatable black-box test path.
+The first useful SI-01 executable for the development environment: a headless Java application with one shared application boundary, an externally configured TimingNode, separate presentation adapters with equivalent version/status behaviour, runtime file logging and a repeatable black-box test path.
 
 ### Demonstration
 
 On a Windows development machine, start SI-01 from external configuration and show:
 
 ```text
-configuration  -> selected TimingNode + presentation binding
+configuration  -> TimingNodeId -> configured TimingNode
 local console  -> version + status
 remote shell   -> same version + equivalent status
 HTTP/JSON      -> same version/status semantics
@@ -312,7 +312,7 @@ A useful stakeholder statement is:
 
 - external configuration is parsed, validated and used for application composition rather than production/deployment values being compiled into Java source;
 - at least one configured TimingNode has a stable `TimingNodeId`;
-- presentation bindings reference configured TimingNodes without leaking transport settings into the TimingNode domain object;
+- presentation adapters obtain application/TimingNode state through the shared application boundary without leaking transport settings into the TimingNode domain object;
 - automated tests verify shared application behaviour rather than duplicating behaviour in each transport;
 - `ST-1` demonstrates the running process through public interfaces;
 - GitHub Actions is green;
