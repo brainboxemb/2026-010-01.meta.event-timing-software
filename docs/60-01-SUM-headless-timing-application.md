@@ -70,11 +70,14 @@ for the normal project build.
 Open the repository root as a Maven project and select a Java 8 JDK matching the
 release compatibility row.
 
-The project currently relies on normal Maven project metadata rather than committed
-NetBeans-specific project files. The exact NetBeans version/run workflow is not yet a
-released compatibility requirement. A04 adds a user-facing Windows/NetBeans acceptance
-check; the version used for that accepted check should be recorded in this manual
-before the next software release.
+The repository contains a committed root `nbactions.xml` for the SI-01 development
+workflow. **Run Project** prepares the current reactor and starts the configured
+`app/` executable with `config/application.yml`; **Debug Project** uses the same
+configured application path and adds the NetBeans JPDA debugger.
+
+The exact NetBeans version is not yet a released compatibility requirement. A04 keeps a
+user-facing Windows/NetBeans acceptance check; the version used for that accepted check
+should be recorded in this manual before the next software release.
 
 ## 5. Application configuration
 
