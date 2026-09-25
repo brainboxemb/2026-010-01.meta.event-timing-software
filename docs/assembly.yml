@@ -41,6 +41,8 @@ documents:
     source: docs/40-01-IDD-application-control-status.md
   - id: software-verification-plan
     source: docs/50-SVP-software-verification-plan.md
+  - id: timing-application-user-manual
+    source: docs/60-01-SUM-headless-timing-application.md
 
 indexes:
   - output: documents/README.md
@@ -78,6 +80,9 @@ indexes:
       - title: Verification
         items:
           - document: software-verification-plan
+      - title: User manuals
+        items:
+          - document: timing-application-user-manual
       - title: Combined documents
         items:
           - label: Complete software engineering document set
@@ -133,3 +138,4 @@ books:
       - backoffice-transport-design
       - application-control-status
       - software-verification-plan
+      - timing-application-user-manual
