@@ -40,7 +40,9 @@ ApplicationConfig
 ├── timingNodes
 ├── io
 │   ├── hardware
-│   ├── messaging
+│   ├── registrationRouting
+│   ├── backoffice
+│   │   └── connectors
 │   └── storage
 ├── presentation
 ├── runtime
@@ -74,7 +76,7 @@ Rules:
 
 I/O configuration selects concrete external adapters and their deployment settings.
 
-Representative hardware structure:
+Representative hardware and routing structure:
 
 ```text
 io
@@ -85,11 +87,46 @@ io
         antennas
           ANT1
           ANT2
+
+  registrationRouting
+    - asset: asset-01
+      antenna: ANT1
+      timingNodes: [timing-node-01, timing-node-02]
 ```
 
-`RegistrationAssetId` and `AntennaId` are distinct from TimingNode `TimingNodeId`. Antenna count does not create extra TimingNode identities.
+`RegistrationAssetId` and `AntennaId` are distinct from `TimingNodeId`. A registration asset has 1..N antennas where antenna inputs apply. One antenna may intentionally route to 1..N TimingNodes; this fan-out does not merge their state or sequence streams.
 
-Messaging and storage settings live under the same I/O responsibility because they select/configure external communication or persistence adapters.
+The `RegistrationRouter` owns this mapping. Hardware adapter/connection managers own device lifecycle/resources but do not decide which TimingNode owns an observation.
+
+### Backoffice connectors and routing
+
+A deployment may configure 0..N backoffice connectors:
+
+```text
+io
+  backoffice
+    connectors
+      connector-01
+        type: rabbitmq
+        credentials: rabbitmq-main
+        bindings
+          - timingNode: timing-node-01
+            externalName: START
+          - timingNode: timing-node-02
+            externalName: FINISH
+      connector-02
+        type: rabbitmq
+        credentials: rabbitmq-secondary
+        bindings
+          - timingNode: timing-node-01
+            externalName: NODE-A
+```
+
+A connector may bind 1..N TimingNodes and one TimingNode may be bound to more than one connector. `externalName` is connector/backoffice-facing configuration and does not replace the stable internal `TimingNodeId`.
+
+`BackofficeRouter` resolves these bindings. Connector managers own transport resources such as RabbitMQ connections/channels; routers own identity mapping and fan-out.
+
+Storage settings remain under I/O because they configure external persistence adapters.
 
 ### Presentation
 
@@ -101,11 +138,11 @@ Representative structure:
 presentation
   endpoint-01
     type: http
-    timing node: timing-node-01
+    timingNode: timing-node-01
     port: 8081
   endpoint-02
     type: http
-    timing node: timing-node-02
+    timingNode: timing-node-02
     port: 8082
 ```
 
@@ -199,10 +236,13 @@ SI-01 validates the complete effective configuration before normal application c
 
 Validation includes, where applicable:
 
-- duplicate TimingNode `TimingNodeId` values;
+- duplicate `TimingNodeId` values;
 - references to unknown TimingNodes;
-- references to unknown registration assets;
+- references to unknown registration assets or antennas;
 - invalid/duplicate antenna identities within their defined scope;
+- empty or invalid registration-routing targets;
+- duplicate/conflicting backoffice connector identifiers or bindings;
+- connector bindings that reference unknown TimingNodes;
 - conflicting presentation bind address/port combinations;
 - unsupported adapter/driver types;
 - missing required secret references or unresolved required secret values;

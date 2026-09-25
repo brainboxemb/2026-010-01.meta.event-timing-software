@@ -200,7 +200,7 @@ cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
-A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more timingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and timing node status rather than belonging to one timing node.
+A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one timing node.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -225,9 +225,9 @@ TimingApplication
 
 `TimingNodeId` is the stable identity of the `TimingNode` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
 
-![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing node-software-decomposition.svg)
+![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
 
-The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational timing node state. The physical registration asset is not a child component of this software tree.
+The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational TimingNode state. The physical registration asset is not a child component of this software tree.
 
 ### Hardware/deployment decomposition
 
@@ -235,30 +235,44 @@ A physical registration system is described separately:
 
 ```text
 RegistrationAsset asset-01
-    +-- Antenna ANT1
-    +-- Antenna ANT2
-    +-- ...
+    +-- 1..N Antenna
 ```
 
 ![Registration hardware/deployment topology](../../../raw/prod/docs/assets/architecture/registration-hardware-topology.svg)
 
-A `RegistrationAsset` represents physical/configured equipment identity. One registration system may have one or more antennas. The antenna count does not define additional `TimingNode` identities or `TimingNodeId` values.
+A `RegistrationAsset` represents physical/configured equipment identity. An antenna is an input origin, not a child of a `TimingNode`. One antenna may intentionally feed one or more TimingNodes through configured routing.
 
-### Configuration and identity mapping
+### Configuration, routing and identity mapping
 
-Configuration connects the software and deployment identities without making them the same object:
+Configuration connects identities without collapsing them:
 
 ```text
-TimingNode timing-node-A -> LocationID X
-TimingNode timing-node-A -> TimingNodeId timing-node-A
-RegistrationAsset asset-01 -> used by/configured for timing-node-A
+RegistrationAsset + Antenna
+        |
+        v
+RegistrationRouter
+        |
+        +--> 1..N TimingNodeId
+
+0..N BackofficeConnector
+        |
+        v
+BackofficeRouter
+        |
+        +<--> 1..N TimingNodeId
 ```
 
-![TimingNode, hardware and data-source configuration mapping](../../../raw/prod/docs/assets/architecture/timing node-hardware-mapping.svg)
+![TimingNode, hardware and backoffice routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
 
-`TimingNodeId` is the stable identity of a `TimingNode` and the scope for its sequence, persistence and synchronisation semantics. `LocationID` separately identifies where that timing node is configured/deployed. `TimingNodeId` is not derived from `RegistrationAssetId`.
+`TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID`, `RegistrationAssetId` and `AntennaId` are separate namespaces.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable timing node state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, backoffice connection infrastructure, configuration loading and network monitoring.
+`RegistrationRouter` maps accepted hardware observations such as `(RegistrationAssetId, AntennaId)` to one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original hardware origin remains available as context.
+
+`BackofficeRouter` maps connector-specific inbound/outbound bindings to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
+
+Use **router** for mapping/fan-out and **manager** for resource/lifecycle ownership. A RabbitMQ connection manager, for example, owns connections/channels for one connector; it does not decide domain identity.
+
+Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, connector managers, configuration loading and network monitoring.
 
 Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
 
@@ -270,7 +284,7 @@ All presentation transports should converge on one shared application model. The
 local console -------+
 remote shell --------+
 HTTP/JSON -----------+--> typed command/query boundary --> application runtime
-WebSocket <-----------+<-- typed status/events -------------------+
+WebSocket <-----------+<---------------------------------------------+
 ```
 
 Working rules:
@@ -614,7 +628,9 @@ ApplicationConfig
 ├── timingNodes
 ├── io
 │   ├── hardware
-│   ├── messaging
+│   ├── registrationRouting
+│   ├── backoffice
+│   │   └── 0..N connectors
 │   └── storage
 ├── presentation
 ├── runtime
@@ -625,7 +641,10 @@ The identity boundaries are deliberate:
 
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
 - a TimingNode may reference a `RegistrationAssetId`;
-- a registration asset owns its adapter/driver selection and one or more `AntennaId` values;
+- a registration asset owns its adapter/driver selection and 1..N `AntennaId` values where antenna inputs apply;
+- registration routing maps an asset/antenna origin to 1..N `TimingNodeId` targets;
+- backoffice configuration may define 0..N connectors, each with 1..N TimingNode bindings;
+- connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
 Deployment composition is intentionally small:
@@ -684,7 +703,7 @@ The **external device and network topology is owned by the SSAD**, because RFID/
 
 ### Backoffice
 
-RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports and local synchronisation/outbox behaviour.
+RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports, explicit TimingNode routing/bindings and local synchronisation/outbox behaviour. A process may compose 0..N backoffice connectors; RabbitMQ is one connector type.
 
 ```text
 application/domain

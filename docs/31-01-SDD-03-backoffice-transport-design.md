@@ -181,24 +181,26 @@ RabbitMqSourceMessagingConfig
 
 If production uses the default exchange or a direct-to-queue convention, the implementation can represent that through the same outbound-endpoint abstraction.
 
-### RabbitMQ connection topology
+### RabbitMQ connector and connection topology
 
-The preferred initial architecture is one RabbitMQ connection manager per executable process using that transport:
+The application may compose 0..N backoffice connectors. A RabbitMQ connector owns one configured broker/session boundary. A connector/connection manager owns transport lifecycle and resources; `BackofficeRouter` owns TimingNode mapping.
 
 ```text
 application
-  RabbitMqConnectionManager
+  BackofficeRouter
         |
-        +-- source-01 inbound consumer/channel
-        +-- source-02 inbound consumer/channel
-        +-- ...
+        +-- RabbitMqConnector connector-01
+        |     +-- RabbitMqConnectionManager
+        |     +-- 1..N TimingNode/source bindings
         |
-        +-- controlled outbound publisher/channel(s)
+        +-- RabbitMqConnector connector-02
+              +-- RabbitMqConnectionManager
+              +-- 1..N TimingNode/source bindings
 ```
 
-Several source-specific queues can therefore be consumed over one physical broker connection.
+One connector may multiplex several source-specific queues/channels over one physical broker connection. Separate connectors may use different brokers, credentials or routing domains. A TimingNode may intentionally participate in more than one connector.
 
-A later implementation may use separate consumer and publisher connections if fault-isolation, channel/thread ownership, broker-client behaviour or measured Pi Zero evidence justifies it. That refinement must not change the semantic source interface.
+Within one connector, separate consumer and publisher connections remain an implementation option when fault isolation, channel/thread ownership, broker-client behaviour or measured Pi Zero evidence justifies it. That refinement must not change the semantic source interface.
 
 ### RabbitMQ threading
 
@@ -211,7 +213,7 @@ RabbitMQ consumer callback
 source-aware BackofficeInboundMessage
       |
       v
-resolve TimingNode TimingNodeId / RegistrationSource
+BackofficeRouter resolves TimingNodeId / RegistrationSource
       |
       v
 serialized framework/domain boundary
@@ -225,12 +227,16 @@ Pseudo-configuration only:
 
 ```yaml
 backoffice:
-  transport: rabbitmq
-  rabbitmq:
-    host: ${BROKER_HOST}
-    port: ${BROKER_PORT}
-    virtualHost: ${BROKER_VHOST}
-    credentials: external-secret-reference
+  connectors:
+    - id: connector-01
+      type: rabbitmq
+      host: ${BROKER_HOST}
+      port: ${BROKER_PORT}
+      virtualHost: ${BROKER_VHOST}
+      credentials: external-secret-reference
+      bindings:
+        - timingNode: timing-node-01
+          externalName: ${PRIVATE_TIMING_NODE_NAME}
 
 timingNodes:
   - timingNodeId: timing-node-01
