@@ -6,19 +6,21 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; make registration and backoffice routing explicit so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors with connector-specific TimingNode bindings.
+
 - Refresh Step-3 planning and handoff around the current `v0.2.1` / `0.2.2-SNAPSHOT` baseline and IF-11 configuration work, while leaving the already-correct roadmap status (`Step 3: active`) unchanged.
 
-- Define IF-11 application configuration as the SI-01 deployment/composition contract: keep Waypoint, hardware and presentation identities separate; use base + platform + optional profile overlays; treat simulation as adapter composition; keep secrets external; and prefer framework composition over a `BaseApplication` inheritance hierarchy.
+- Define IF-11 application configuration as the SI-01 deployment/composition contract: keep TimingNode, hardware and presentation identities separate; use base + platform + optional profile overlays; treat simulation as adapter composition; keep secrets external; and prefer framework composition over a `BaseApplication` inheritance hierarchy.
 
 - Rename the external adapter responsibility to `I/O`, organise it around hardware/messaging/storage, reserve Java `infra` for cross-cutting technical support, and shorten the active SAD/Java SDD while retaining the diagrams and copyable package/responsibility blocks.
 
-- Make the Waypoint concurrency contract concrete and reviewable: state plainly how serial execution protects mutable domain state, document concurrency edge cases, separate IF-03 wire shapes from Java class design, keep small enums with their owning object, and place build provenance such as `BuildIdentity` under cross-cutting `infra` rather than application semantics.
+- Make the TimingNode concurrency contract concrete and reviewable: state plainly how serial execution protects mutable domain state, document concurrency edge cases, separate IF-03 wire shapes from Java class design, keep small enums with their owning object, and place build provenance such as `BuildIdentity` under cross-cutting `infra` rather than application semantics.
 
 - Record first Java implementation feedback in the SI-01 SAD/SDD: keep layers logical rather than represented by marker objects, use the small shared `CommandHandler` boundary for the authoritative version query, and keep `TimingApplication.Builder` as composition-only infrastructure.
 
 ### Changed
 
-- Aligned SI-01 command and execution architecture around a transport-independent `CommandHandler`, explicit per-`Waypoint` state-lane ownership, and boundary-owned target resolution; removed the separate `TimingSystemDispatcher` architecture component and remaining current-design `TimingSystemInstance` terminology.
+- Aligned SI-01 command and execution architecture around a transport-independent `CommandHandler`, explicit per-`TimingNode` state-lane ownership, and boundary-owned target resolution; removed the separate `TimingSystemDispatcher` architecture component and remaining current-design `TimingSystemInstance` terminology.
 - Route project agent guidance through `brainboxemb.meta/AGENTS.md`, make dependency-owner AGENTS explicitly non-inherited, and keep event-timing-specific documentation/privacy boundaries local.
 
 ### Added
@@ -34,20 +36,20 @@ The repository is currently in its planning and research phase.
 - Initial Software System Architecture Document (SSAD) with system-interface catalogue, status, threading/testability, fault/recovery, connectivity, resource-baseline and public/private extension direction.
 - Software-item architecture and detailed-design documents for the timing application, desktop GUI, web operator application, TimingSystem internals, data/display behaviour, Java/Maven component structure, runtime topology/configuration and transport-independent backoffice design.
 - Initial Software Verification Plan (SVP) covering unit, component, interface, integration, hardware-in-the-loop, fault-injection and Raspberry Pi Zero resource evidence.
-- Waypoint systems, registration hardware/assets, data-source identities and antennas as distinct configurable concepts, with software/domain, hardware/deployment and configuration/mapping views kept separate.
+- TimingNode systems, registration hardware/assets, data-source identities and antennas as distinct configurable concepts, with software/domain, hardware/deployment and configuration/mapping views kept separate.
 - Registration/data-source and prepare-team models as separate traceable capabilities; registration records use a monotonic sequence per data source.
 - In-memory authoritative state with simple file backup/restore as the initial persistence direction.
 - Transport-independent backoffice boundary with lightweight socket-loop and RabbitMQ integration directions.
 - Layered system-test profiles from application black-box testing through socket-loop, RabbitMQ and target/HIL testing.
 - Generated software documentation workflow producing GitHub-readable Markdown, SVG and editable draw.io output.
 - Pull-request generated documentation on `dev/pr-<N>/docs` and merged/default-branch documentation on `prod/docs`.
-- Generated architecture/state/data diagrams including software-item boundaries, threading, Waypoint lifecycle, registration-hardware topology, configuration mapping, RFID lifecycle, connectivity layers, source-sequence traceability and V1/V2 display/data flow.
+- Generated architecture/state/data diagrams including software-item boundaries, threading, TimingNode lifecycle, registration-hardware topology, configuration mapping, RFID lifecycle, connectivity layers, source-sequence traceability and V1/V2 display/data flow.
 - Generated SIP roadmap with project-day estimates, calendar projection, scope-aware documentation maturity, editable SVG/draw.io output and printable A3 tiled/A2 vector PDFs.
 - Reference-material index and collection area, including an illustrative layered embedded architecture reference.
 
 ### Changed
 
-- Clarified the SI-01 software architecture around `Waypoint`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `WaypointJournal`, `PrepareTeamRegistry`, `RaceData`, and `StageTiming`.
+- Clarified the SI-01 software architecture around `TimingNode`, separating software/domain decomposition from registration hardware/deployment topology and configuration/data-source identity mapping; refined responsibility names including `TagProcessor`, `StageStartTimeRegistry`, `TimingNodeJournal`, `PrepareTeamRegistry`, `RaceData`, and `StageTiming`.
 - Documentation producers now retain the released `brainboxemb.execution-evidence` v1 envelope under `evidence/executions/<execution-id>/`, while current Moon materialization evidence remains separate under `orchestration/`.
 - Documentation CI and preview cleanup now consume `tool.git-project v0.2.4`, including the released execution-evidence schema contract.
 - Refined planning-document responsibilities so SDP owns high-level strategy/risks/resources, SIP owns implementation increments/deliverables/demonstrations, SDE owns the engineering environment/workflow, and SVP owns verification strategy.

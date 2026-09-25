@@ -62,7 +62,7 @@ Concrete production asset names remain deployment/proprietary information and st
 A physical registration system can be configured with a logical timing node identity, for example:
 
 ```text
-TimingNode TimingNodeId = timing-node-01
+TimingNodeId = timing-node-01
 LocationID              = X
 RegistrationAssetId     = asset-01
 ```
@@ -160,7 +160,7 @@ RegistrationAsset asset-01 -> used by/configured for timing-node-A
 
 The concrete configuration file format is not yet selected. Production configuration may contain proprietary asset names/data-source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples use placeholders.
 
-The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the timing node-domain model.
+The same mapping mechanism should support real hardware adapters and stub/simulated adapters without changing the TimingNode domain model.
 
 ## Location and record context
 

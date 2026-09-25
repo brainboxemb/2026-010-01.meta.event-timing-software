@@ -81,7 +81,7 @@ def timing_node_software_decomposition() -> Diagram:
 
     return Diagram(
         "timing-node-software-decomposition",
-        "SI-01 software/domain decomposition — timing node systems and responsibilities",
+        "SI-01 software/domain decomposition — TimingNodes and responsibilities",
         1400,
         830,
         nodes,
@@ -197,10 +197,10 @@ def rabbitmq_source_topology() -> Diagram:
 
 def timing_node_lifecycle() -> Diagram:
     nodes = [
-        Node("closed", "CLOSED\\nnot accepting normal timing node timing operation", 170, 210, 330, 90, "core"),
-        Node("open", "OPEN\\ntiming node timing operation enabled", 770, 210, 330, 90, "core"),
+        Node("closed", "CLOSED\\nnot accepting normal TimingNode operation", 170, 210, 330, 90, "core"),
+        Node("open", "OPEN\\nTimingNode operation enabled", 770, 210, 330, 90, "core"),
         Node("health", "Subsystem health is orthogonal\\nHEALTHY • DEGRADED • ERROR do not silently change OPEN/CLOSED", 355, 440, 560, 110, "service"),
-        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> timing node remains OPEN while status is degraded", 355, 650, 560, 95, "interface"),
+        Node("example", "Example: OPEN + RFID INITIALISING/ERROR\\n=> TimingNode remains OPEN while health is degraded", 355, 650, 560, 95, "interface"),
     ]
     edges = [
         Edge("closed", "open", "Open command"),

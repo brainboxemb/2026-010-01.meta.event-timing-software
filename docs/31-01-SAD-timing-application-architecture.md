@@ -200,7 +200,7 @@ cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
-A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one timing node.
+A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -610,7 +610,7 @@ Working decisions:
 - another executable/private consumer may choose a different compatible provider without changing framework/domain source;
 - log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
-- stable timing node/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
+- stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
 - logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state.
 
 The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.

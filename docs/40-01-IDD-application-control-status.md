@@ -105,7 +105,7 @@ The first-executable status representation is:
   },
   "timingNodes": [
     {
-      "timingNodeId": "<configured-timing node-id>",
+      "timingNodeId": "<configured-timing-node-id>",
       "lifecycle": "CLOSED"
     }
   ],
