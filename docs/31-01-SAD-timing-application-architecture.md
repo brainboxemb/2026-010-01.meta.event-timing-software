@@ -77,9 +77,9 @@ TimingApplication
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
-        +-- StageStartTimeRegistry
+        +-- StageStartTimes
         +-- Journal
-        +-- PrepareTeamRegistry
+        +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
 ```
@@ -148,16 +148,16 @@ TimingNode
   TimingNodeId
   LocationID
   TagProcessor
-  StageStartTimeRegistry
+  StageStartTimes
   Journal
-  PrepareTeamRegistry
+  NextUpTeams
   RaceData
   StageTiming
 ```
 
-`TagProcessor` handles tag observations. `StageStartTimeRegistry` owns stage
-start references. `Journal` owns registration/history data and sequence
-semantics. `PrepareTeamRegistry` owns teams preparing at the TimingNode.
+`TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `Journal` owns
+registration/history data and sequence semantics. `NextUpTeams` owns the teams
+expected next at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
 derives running times and ranking.
 
@@ -236,9 +236,9 @@ TimingApplication
         +-- LocationID
         +-- lifecycle / status
         +-- TagProcessor
-        +-- StageStartTimeRegistry
+        +-- StageStartTimes
         +-- Journal
-        +-- PrepareTeamRegistry
+        +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
 ```

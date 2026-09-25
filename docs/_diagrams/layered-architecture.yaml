@@ -88,9 +88,9 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   layout: {x: 175, y: 570, w: 235, h: 60}
-- id: stage-start-time-registry
+- id: stage-start-times
   group: timing-node-aggregate
-  label: "StageStartTimeRegistry"
+  label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   layout: {x: 425, y: 570, w: 250, h: 60}
@@ -100,10 +100,10 @@ nodes:
   subtitle: "registrations • sequence/persistence"
   kind: service
   layout: {x: 690, y: 570, w: 245, h: 60}
-- id: prepare-team-registry
+- id: next-up-teams
   group: timing-node-aggregate
-  label: "PrepareTeamRegistry"
-  subtitle: "teams + traceable history"
+  label: "NextUpTeams"
+  subtitle: "teams expected next"
   kind: service
   layout: {x: 175, y: 650, w: 235, h: 60}
 - id: race-data
