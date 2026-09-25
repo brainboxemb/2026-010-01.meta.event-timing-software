@@ -47,7 +47,7 @@ activities:
     lane: application
     kind: implementation
     title: Application configuration + minimal TimingNode
-    state: active
+    state: done
     depends_on: [A01]
     note: >-
       Load one external application.yml, validate its TimingNodeId and compose one
@@ -56,9 +56,13 @@ activities:
   - id: A03
     lane: application
     kind: implementation
-    title: Long-running process host + shutdown
-    state: planned
+    title: Run until shutdown + graceful stop
+    state: active
     depends_on: [A02]
+    note: >-
+      Keep the configured application running until the OS/JVM requests shutdown.
+      Ctrl+C or service/process stop uses the normal close path. Interactive
+      console commands such as quit or Ctrl+Q belong to A04.
 
   - id: A04
     lane: application
