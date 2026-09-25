@@ -79,18 +79,17 @@ Representative antenna configuration:
 
 ```text
 io
-  antennaRouter
-    antennas
-      ANT1
-        type: rfid
-        timingNodes: [timing-node-01, timing-node-02]
-      ANT2
-        type: rfid
-        timingNodes: [timing-node-02]
+  antennas
+    ANT1
+      type: rfid
+      timingNodes: [timing-node-01, timing-node-02]
+    ANT2
+      type: rfid
+      timingNodes: [timing-node-02]
 ```
 
-`AntennaRouter` owns 0..N configured antennas. `AntennaId` is distinct from
-`TimingNodeId`. One antenna may intentionally route to 1..N TimingNodes; this
+I/O configuration may define 0..N antennas. `AntennaId` is distinct from
+`TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
 Concrete antenna configuration owns its driver/protocol/device settings. A
@@ -99,11 +98,11 @@ configuration model.
 
 ### Backoffice connectors and routing
 
-A deployment may configure 0..N backoffice connectors under one router:
+A deployment may configure 0..N backoffice connectors:
 
 ```text
 io
-  backofficeRouter
+  backoffice
     connectors
       connector-01
         type: rabbitmq
@@ -121,7 +120,7 @@ io
             externalName: NODE-A
 ```
 
-`BackofficeRouter` owns the connector collection and binding mapping. A
+Backoffice configuration owns the connector collection and binding mapping. A
 connector may bind 1..N TimingNodes and one TimingNode may be bound to more than
 one connector. `externalName` is connector/backoffice-facing configuration and
 does not replace the stable internal `TimingNodeId`.

@@ -48,15 +48,14 @@ that TimingNode's registration sequence, persistence and synchronisation
 semantics. `LocationID` separately identifies the event location where the
 TimingNode is configured or deployed.
 
-The I/O boundary owns antenna configuration and routing:
+The I/O boundary owns antenna configuration and mapping:
 
 ```text
-AntennaRouter
-  +-- 0..N Antenna
-        +-- AntennaId
-        +-- driver / device configuration
+Antenna (0..N)
+  +-- AntennaId
+  +-- driver / device configuration
 
-  each Antenna
+each Antenna
         -> 1..N TimingNodeId
 ```
 
@@ -73,7 +72,7 @@ Known structural rules:
 
 - `TimingNodeId` identifies the logical TimingNode;
 - `AntennaId` identifies a configured antenna within the application;
-- `AntennaRouter` owns 0..N antennas and their fan-out mappings;
+- the application may compose 0..N antennas; configuration maps each `AntennaId` to its TimingNode targets;
 - every TimingNode owns its own monotonic registration sequence and
   TimingNode-specific persistence/synchronisation state;
 - reserve and virtual TimingNodes may share a physical antenna through routing;
@@ -125,13 +124,11 @@ the software/domain aggregate being operated.
 ### I/O routing view
 
 ```text
-AntennaRouter
-  +-- 0..N Antenna
+Antenna (0..N)
   +-- each Antenna -> 1..N TimingNode
 
-BackofficeRouter
-  +-- 0..N BackofficeConnector
-  +-- connector bindings <-> 1..N TimingNode
+BackofficeConnector (0..N)
+  +-- bindings <-> 1..N TimingNode
 ```
 
 The same routing model supports real and simulated I/O without changing the

@@ -187,15 +187,13 @@ The application may compose 0..N `BackofficeConnector` instances. RabbitMQ is on
 
 ```text
 application
-  BackofficeRouter
-        |
-        +-- BackofficeConnector connector-01
-        |     -> RabbitMqBackofficeConnector
-        |     -> 1..N TimingNode/source bindings
-        |
-        +-- BackofficeConnector connector-02
-              -> RabbitMqBackofficeConnector
-              -> 1..N TimingNode/source bindings
+  +-- BackofficeConnector connector-01
+  |     -> RabbitMqBackofficeConnector
+  |     -> 1..N TimingNode/source bindings
+  |
+  +-- BackofficeConnector connector-02
+        -> RabbitMqBackofficeConnector
+        -> 1..N TimingNode/source bindings
 ```
 
 A `RabbitMqBackofficeConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
@@ -215,7 +213,7 @@ RabbitMQ consumer callback
 source-aware BackofficeInboundMessage
       |
       v
-BackofficeRouter resolves TimingNodeId / RegistrationSource
+Backoffice binding resolution selects TimingNodeId / RegistrationSource
       |
       v
 serialized framework/domain boundary

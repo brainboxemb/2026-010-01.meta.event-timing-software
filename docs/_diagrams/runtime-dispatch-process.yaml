@@ -29,8 +29,8 @@ nodes:
     group: ingress
     layout: {x: 100, y: 190, w: 250, h: 85}
 
-  - id: io-router
-    label: "I/O routers\nAntennaRouter • BackofficeRouter"
+  - id: io-mapping
+    label: "I/O mappings\nAntenna • BackofficeConnector"
     kind: integration
     group: ingress
     layout: {x: 85, y: 345, w: 280, h: 120}
@@ -87,12 +87,12 @@ edges:
     from_anchor: {side: bottom, position: 0.72}
     to_anchor: {side: top, position: 0.50}
 
-  - from: io-router
+  - from: io-mapping
     to: timing-node-01
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
-  - from: io-router
+  - from: io-mapping
     to: timing-node-02
     from_anchor: {side: bottom, position: 0.70}
     to_anchor: {side: top, position: 0.50}

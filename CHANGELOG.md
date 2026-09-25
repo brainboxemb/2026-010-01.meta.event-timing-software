@@ -6,9 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Simplify the active I/O model: `AntennaRouter` owns 0..N `Antenna` instances, `BackofficeRouter` owns 0..N `BackofficeConnector` instances, both live in I/O, and the former `RegistrationAsset` / `RegistrationRouter` layer is removed from the software/configuration model.
+- Simplify the active I/O model: SI-01 composes 0..N `Antenna` instances and 0..N `BackofficeConnector` instances directly in I/O; their TimingNode routing/binding is configuration rather than a separate router component, and the former `RegistrationAsset` / `RegistrationRouter` layer is removed from the software/configuration model.
 
-- Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; keep `AntennaRouter` and `BackofficeRouter` in I/O so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors.
+- Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; keep antenna and backoffice-connector mappings in I/O so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors.
 
 - Refresh Step-3 planning and handoff around the current `v0.2.1` / `0.2.2-SNAPSHOT` baseline and IF-11 configuration work, while leaving the already-correct roadmap status (`Step 3: active`) unchanged.
 

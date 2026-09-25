@@ -91,34 +91,30 @@ def timing_node_software_decomposition() -> Diagram:
 
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("ant_router", "AntennaRouter\\n0..N Antenna", 90, 150, 330, 90, "interface"),
-        Node("ant1", "Antenna ANT1\\nAntennaId", 90, 330, 300, 80, "adapter"),
-        Node("ant2", "Antenna ANT2\\nAntennaId", 90, 500, 300, 80, "adapter"),
+        Node("ant1", "Antenna ANT1\\nAntennaId", 90, 180, 300, 80, "adapter"),
+        Node("ant2", "Antenna ANT2\\nAntennaId", 90, 390, 300, 80, "adapter"),
 
         Node("node_a", "TimingNode timing-node-A\\nTimingNodeId", 910, 130, 350, 90, "service"),
         Node("node_b", "TimingNode timing-node-B\\nTimingNodeId", 910, 350, 350, 90, "service"),
         Node("loc_a", "Location X\\nLocationID", 980, 540, 220, 75, "external"),
 
-        Node("bo_router", "BackofficeRouter\\n0..N BackofficeConnector", 480, 650, 380, 90, "interface"),
-        Node("conn1", "BackofficeConnector 01\\nRabbitMQ", 80, 700, 300, 80, "adapter"),
-        Node("conn2", "BackofficeConnector 02\\nRabbitMQ", 1010, 700, 300, 80, "adapter"),
+        Node("conn1", "BackofficeConnector 01\\nRabbitMQ", 80, 680, 300, 80, "adapter"),
+        Node("conn2", "BackofficeConnector 02\\nRabbitMQ", 1010, 680, 300, 80, "adapter"),
     ]
 
     edges = [
-        Edge("ant_router", "ant1"),
-        Edge("ant_router", "ant2"),
-        Edge("ant_router", "node_a"),
-        Edge("ant_router", "node_b"),
+        Edge("ant1", "node_a"),
+        Edge("ant1", "node_b"),
+        Edge("ant2", "node_b"),
         Edge("node_a", "loc_a"),
-        Edge("conn1", "bo_router"),
-        Edge("conn2", "bo_router"),
-        Edge("bo_router", "node_a"),
-        Edge("bo_router", "node_b"),
+        Edge("conn1", "node_a"),
+        Edge("conn1", "node_b"),
+        Edge("conn2", "node_a"),
     ]
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingNode I/O routing — antennas and backoffice connectors",
+        "TimingNode I/O mapping — antennas and backoffice connectors",
         1400,
         900,
         nodes,
@@ -133,7 +129,7 @@ def rabbitmq_source_topology() -> Diagram:
         Node("conn1", "RabbitMqBackofficeConnector connector-01\\nowns connection/channels internally", 55, 250, 380, 100, "adapter"),
         Node("conn2", "RabbitMqBackofficeConnector connector-02\\nowns connection/channels internally", 965, 250, 380, 100, "adapter"),
 
-        Node("router", "BackofficeRouter\\nTimingNode bindings + external names", 500, 410, 400, 100, "interface"),
+        Node("bindings", "Backoffice bindings\\nTimingNodeId + external names", 500, 410, 400, 100, "interface"),
 
         Node("node1", "TimingNode timing-node-01\\nTimingNodeId-scoped application path", 95, 620, 340, 90, "service"),
         Node("node2", "TimingNode timing-node-02\\nTimingNodeId-scoped application path", 965, 620, 340, 90, "service"),
@@ -145,14 +141,14 @@ def rabbitmq_source_topology() -> Diagram:
     edges = [
         Edge("broker1", "conn1", "transport"),
         Edge("broker2", "conn2", "transport"),
-        Edge("conn1", "router", "inbound / outbound"),
-        Edge("conn2", "router", "inbound / outbound"),
-        Edge("router", "node1", "route / bind"),
-        Edge("router", "node2", "route / bind"),
+        Edge("conn1", "bindings", "inbound / outbound"),
+        Edge("conn2", "bindings", "inbound / outbound"),
+        Edge("bindings", "node1", "route / bind"),
+        Edge("bindings", "node2", "route / bind"),
         Edge("node1", "outbox", "committed outbound"),
         Edge("node2", "outbox", "committed outbound"),
-        Edge("outbox", "router", "publish pending"),
-        Edge("router", "note", "configured multiplicity", True),
+        Edge("outbox", "bindings", "publish pending"),
+        Edge("bindings", "note", "configured multiplicity", True),
     ]
 
     return Diagram(

@@ -122,9 +122,9 @@ or query names a `TimingNodeId`, the application looks up that `TimingNode` and
 submits state-changing work to its serial executor.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce commands merely to preserve a layer diagram. The router names
-describe real responsibilities; they do not require separate Java classes until
-the implementation has enough behaviour to justify them.
+do not introduce commands merely to preserve a layer diagram. I/O routing and
+binding are configuration/composition responsibilities; they do not imply
+separate router classes unless implementation behaviour later justifies them.
 
 ### Domain
 
@@ -167,12 +167,10 @@ I/O contains adapters that move data between SI-01 and the outside world:
 
 ```text
 io/
-  AntennaRouter
-    0..N Antenna
-  BackofficeRouter
-    0..N BackofficeConnector
-      RabbitMqBackofficeConnector
-      SocketBackofficeConnector
+  Antenna (0..N)
+  BackofficeConnector (0..N)
+    RabbitMqBackofficeConnector
+    SocketBackofficeConnector
   Devices
     CAN
     Display
@@ -184,9 +182,9 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes.
 
-`AntennaRouter` owns 0..N configured `Antenna` instances and routes each
-antenna's observations to 1..N TimingNodes. `BackofficeRouter` owns 0..N
-`BackofficeConnector` instances and maps their bindings to/from TimingNodes.
+SI-01 may compose 0..N configured `Antenna` instances and 0..N
+`BackofficeConnector` instances. Antenna mappings route observations to 1..N
+TimingNodes; connector bindings map inbound/outbound data to/from TimingNodes.
 Concrete antennas/connectors own their protocol/device resources internally.
 
 ### Platform
@@ -243,8 +241,7 @@ The exact Java class/package boundaries may evolve as implementation evidence ap
 The active software/configuration model uses the configured antenna directly:
 
 ```text
-AntennaRouter
-    +-- 0..N Antenna
+Antenna (0..N)
 ```
 
 An `Antenna` is an I/O source with its own `AntennaId` and concrete
@@ -259,24 +256,22 @@ One antenna may intentionally feed one or more TimingNodes.
 Configuration connects identities without collapsing them:
 
 ```text
-AntennaRouter
-    +-- 0..N Antenna
+Antenna (0..N)
     +-- each Antenna -> 1..N TimingNodeId
 
-BackofficeRouter
-    +-- 0..N BackofficeConnector
-    +-- connector bindings <-> 1..N TimingNodeId
+BackofficeConnector (0..N)
+    +-- bindings <-> 1..N TimingNodeId
 ```
 
 ![TimingNode, hardware and backoffice routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
 
 `TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
 
-`AntennaRouter` owns the configured antennas and maps each `AntennaId` to one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
+Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
 
-`BackofficeRouter` maps connector-specific inbound/outbound bindings to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
+Configured backoffice bindings map connector-specific inbound/outbound data to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
 
-The routers are part of the I/O boundary. They own their configured collections and mapping/fan-out; concrete `Antenna` and `BackofficeConnector` implementations own their protocol/device resources internally.
+These mappings belong to the I/O composition/configuration boundary; they do not require a separate router object. Concrete `Antenna` and `BackofficeConnector` implementations own their protocol/device resources internally.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
@@ -353,8 +348,8 @@ Those callback threads must not change mutable TimingNode state directly.
 The application boundary determines which TimingNode(s) receive the work:
 
 - `CommandHandler` handles presentation commands/queries that address a TimingNode;
-- `AntennaRouter` maps an `AntennaId` to 1..N TimingNodes;
-- `BackofficeRouter` maps connector-specific bindings/names to 1..N TimingNodes;
+- configured antenna mappings map an `AntennaId` to 1..N TimingNodes;
+- configured connector bindings/names map a `BackofficeConnector` to 1..N TimingNodes;
 - a scheduled task keeps the TimingNode target it was registered for.
 
 Each resolved target is then submitted to that TimingNode's serial executor.
@@ -375,7 +370,7 @@ operator endpoint
 TimingNode A serial executor    TimingNode B serial executor
       ^                              ^
       |                              |
-AntennaRouter / BackofficeRouter / timers resolve targets
+I/O mappings / timers resolve targets
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
@@ -650,8 +645,8 @@ ApplicationConfig
 The identity boundaries are deliberate:
 
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
-- `AntennaRouter` owns 0..N configured antennas; each antenna has its own `AntennaId` and may route to 1..N `TimingNodeId` targets;
-- `BackofficeRouter` owns 0..N connectors, each with 1..N TimingNode bindings;
+- the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
+- the application may compose 0..N backoffice connectors, each with 1..N TimingNode bindings;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
