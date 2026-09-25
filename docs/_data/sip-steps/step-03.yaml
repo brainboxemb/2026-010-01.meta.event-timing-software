@@ -136,9 +136,7 @@ activities:
     state: active
     depends_on: [A01, A03, A06]
     note: >-
-      Keep the A06 JDK HTTP listener and add a dedicated Java-WebSocket listener.
-      Send STATUS_SNAPSHOT on connect/reconnect; emit STATUS_CHANGED only for real
-      shared-status changes and do not invent a transition in Step 3.
+      Dedicated Java-WebSocket listener; snapshot on connect, changes only for real state changes.
 
   - id: A08
     lane: application
@@ -175,9 +173,7 @@ activities:
     state: planned
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
     note: >-
-      Step-3 black-box coverage verifies WebSocket snapshot/reconnect. A real
-      STATUS_CHANGED black-box case is added with the first public status-changing
-      capability rather than mutating internal state only for the test.
+      Verify snapshot/reconnect now; verify STATUS_CHANGED with the first real public state change.
 
   - id: V04
     lane: verification
