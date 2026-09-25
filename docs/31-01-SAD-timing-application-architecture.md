@@ -794,7 +794,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
 | HTTP/WebSocket | embedded Java-8-compatible technology | selection still open |
-| Remote shell | shared command semantics, transport technology open | selection still open |
+| Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
 
