@@ -47,7 +47,7 @@ activities:
     lane: application
     kind: implementation
     title: Application configuration + minimal TimingNode
-    state: next
+    state: active
     depends_on: [A01]
     note: >-
       Load one external application.yml, validate its TimingNodeId and compose one
