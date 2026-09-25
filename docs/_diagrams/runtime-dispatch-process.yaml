@@ -4,7 +4,7 @@ diagram:
   width: 1580
   height: 930
   description: Process view of concurrent ingress, explicit TimingNode routing and per-TimingNode serial execution.
-  note: External work is submitted to the owning TimingNode serial executor. Once running there, normal direct Java calls are used.
+  note: External work is submitted to each resolved TimingNode serial executor. Once running there, normal direct Java calls are used.
 
 groups:
   - id: ingress
@@ -104,7 +104,7 @@ edges:
 
   - from: io-router
     to: timing-node-01
-    label: target 1..N
+    label: fan-out 1..N
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
