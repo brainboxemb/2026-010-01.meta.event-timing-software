@@ -29,7 +29,7 @@ documents:
     maturity: review
     completeness: 95
   - name: 50-SVP
-    title: First executable ST-1 evidence
+    title: Verification strategy + ST-1 profile
     maturity: working
     completeness: 90
 
@@ -72,9 +72,9 @@ activities:
     depends_on: [A01, A03]
     note: >-
       Provide help, version and status through the shared application boundary plus
-      quit/exit for a graceful local stop. Keep console parsing in the presentation
-      adapter. Acceptance includes a clean Windows checkout/build and an interactive
-      help -> version -> status -> quit session.
+      quit/exit for a graceful local stop. Acceptance includes opening the Maven project
+      in NetBeans on Windows, building/running with application.yml, then exercising
+      help -> version -> status -> quit.
 
   - id: A05
     lane: application
@@ -115,8 +115,11 @@ activities:
     lane: verification
     kind: verification
     title: Shared behaviour + configuration unit tests
-    state: planned
+    state: done
     depends_on: [A01, A02]
+    note: >-
+      Shared application-boundary, configuration and TimingNode identity behaviour is
+      covered by the canonical Maven unit-test suite. Later activities extend that suite.
 
   - id: V02
     lane: verification
@@ -135,9 +138,12 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    title: Windows built-artifact execution proof
-    state: planned
-    depends_on: [V03]
+    title: Windows development-host execution proof
+    state: active
+    depends_on: [A03]
+    note: >-
+      Combine automated Windows execution of the canonical built artifact with a
+      user-facing NetBeans open/build/run/console check on Windows.
 
   - id: V05
     lane: verification
