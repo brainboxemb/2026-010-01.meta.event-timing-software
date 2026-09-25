@@ -59,17 +59,21 @@ Concrete production asset names remain deployment/proprietary information and st
 
 `TimingNodeId` is the stable software identity of a `TimingNode`. It is also the scope for that timing node's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the physical event location where that timing node is configured or deployed.
 
-A physical registration system can be configured with a logical timing node identity, for example:
+A physical registration system supplies hardware observations that are routed to logical TimingNodes by configuration. The identities remain independent, for example:
 
 ```text
-TimingNodeId = timing-node-01
-LocationID              = X
-RegistrationAssetId     = asset-01
+RegistrationAssetId = asset-01
+AntennaId           = ANT1
+        |
+        v
+RegistrationRouter
+        +--> TimingNodeId timing-node-01
+        +--> TimingNodeId timing-node-02
 ```
 
-Deployment naming may deliberately make a `RegistrationAssetId` resemble a timing node `TimingNodeId` for convenience, but that is **not** an identity rule.
+Deployment naming may deliberately make a `RegistrationAssetId` resemble a `TimingNodeId` for convenience, but that is **not** an identity rule.
 
-The number of RFID antennas attached to a physical registration system does not create additional timing node identities. One `TimingNode` keeps one `TimingNodeId`; antenna identity remains additional origin/diagnostic context.
+The number of RFID antennas does not create TimingNode identities. Conversely, one antenna may intentionally feed more than one TimingNode. Each target TimingNode keeps its own `TimingNodeId`, sequence and state; antenna identity remains origin/diagnostic context.
 
 Known structural rules:
 
@@ -87,14 +91,16 @@ Conceptually:
 
 ```text
 RegistrationAsset asset-01
-  +-- Antenna ANT1
-  +-- Antenna ANT2
-  +-- configured TimingNodeId timing-node-01
+  +-- 1..N Antenna
+
+Antenna ANT1
+  -> RegistrationRouter
+       -> 1..N TimingNodeId
 ```
 
-The antennas are hardware/device inputs of that registration system. They are not child software components of a `TimingNode` and they are not separate timingNodes merely because there are multiple antennas.
+The antennas are hardware/device inputs of that registration system. They are not child software components of a `TimingNode`, and the routing cardinality is independent from the number of antennas.
 
-An RFID observation must retain enough hardware context for diagnostics and processing, including the antenna identity where relevant. The resulting committed registration/data record uses the configured `TimingNodeId` for stream identity and ordering.
+An RFID observation must retain enough hardware context for diagnostics and processing, including `RegistrationAssetId` and `AntennaId` where relevant. If routing fans one accepted observation out to multiple TimingNodes, each target creates/processes its own TimingNode-scoped result while preserving the original hardware origin as context.
 
 The exact hardware distinction between reader, antenna, power controller and protocol endpoint remains implementation-specific and still needs to be documented for the selected production hardware.
 
@@ -150,12 +156,16 @@ This view describes physical/configured equipment. It must not be used as the so
 
 ### Configuration/identity mapping
 
-Configuration connects those views and assigns timing node identities, for example:
+Configuration connects those views and defines routing, for example:
 
 ```text
-TimingNode timing-node-A -> LocationID X
 TimingNode timing-node-A -> TimingNodeId timing-node-A
-RegistrationAsset asset-01 -> used by/configured for timing-node-A
+TimingNode timing-node-A -> LocationID X
+
+RegistrationAsset asset-01 / ANT1
+    -> RegistrationRouter
+    -> timing-node-A
+    -> timing-node-B
 ```
 
 The concrete configuration file format is not yet selected. Production configuration may contain proprietary asset names/data-source IDs and therefore can live in a private deployment/integration repository or external deployment configuration. Public examples use placeholders.
@@ -380,7 +390,7 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 ## Open domain questions
 
 - Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
-- Is a physical producing registration system always configured with exactly one `TimingNodeId`, and how are reserve/virtual timingNodes associated with physical or software producers?
+- How are reserve/virtual TimingNodes represented in registration-routing rules when they share a physical producer with normal TimingNodes?
 - Does sequence numbering start at a defined value for a new timing node?
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?

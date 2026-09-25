@@ -312,7 +312,7 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 
 1. Settings describe several independently addressed `TimingNode` objects and their location/timing node identity mappings.
 2. Each instance receives its own logical serialized state boundary.
-3. Deployment configuration independently maps physical producer/asset identities to the applicable logical `TimingNodeId` identities without making those hardware objects children of the `TimingNode` software model.
+3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
 4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
 5. Public interfaces can address each instance explicitly.
 

@@ -452,13 +452,17 @@ Temporary identifiers only.
 - **CAND-BO-011** — Reconnection shall restore configured source communication and resume pending outbound synchronisation.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — A disposable RabbitMQ broker shall be available for automated ST-3 integration tests.
+- **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
+- **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
+- **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
+- **CAND-BO-017** — Backoffice routing/fan-out shall be separate from connector/connection lifecycle ownership.
 
 ## Open questions
 
 - What exact semantic messages belong in the public backoffice IDD?
 - What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
 - Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
-- Is one RabbitMQ connection sufficient in production, or should consumer and publisher traffic use separate connections?
+- Within one RabbitMQ connector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the framework artifact?
 - What is the production acknowledgement/reconciliation protocol?
