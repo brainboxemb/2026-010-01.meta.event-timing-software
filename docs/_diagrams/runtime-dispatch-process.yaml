@@ -30,7 +30,7 @@ nodes:
     layout: {x: 100, y: 190, w: 250, h: 85}
 
   - id: io-router
-    label: "I/O routers\nAntennaRouter • BackofficeRouter\n1..N Antenna • 0..N BackofficeConnector"
+    label: "I/O routers\nAntennaRouter • BackofficeRouter"
     kind: integration
     group: ingress
     layout: {x: 85, y: 345, w: 280, h: 120}
@@ -74,25 +74,21 @@ nodes:
 edges:
   - from: operator-ingress
     to: command-handler
-    label: transport-neutral command
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}
 
   - from: command-handler
     to: timing-node-01
-    label: target timing-node-01
     from_anchor: {side: bottom, position: 0.28}
     to_anchor: {side: top, position: 0.50}
 
   - from: command-handler
     to: timing-node-02
-    label: target timing-node-02
     from_anchor: {side: bottom, position: 0.72}
     to_anchor: {side: top, position: 0.50}
 
   - from: io-router
     to: timing-node-01
-    label: fan-out 1..N
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
@@ -103,7 +99,6 @@ edges:
 
   - from: timer-ingress
     to: timing-node-02
-    label: owning target
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.75}
     route:
@@ -131,7 +126,6 @@ edges:
 
   - from: io-rule
     to: timing-node-02
-    label: completion / failure
     dashed: true
     from_anchor: {side: left, position: 0.50}
     to_anchor: {side: right, position: 0.75}

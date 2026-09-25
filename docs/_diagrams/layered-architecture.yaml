@@ -129,13 +129,13 @@ nodes:
 - id: antenna-router
   group: io-layer
   label: "AntennaRouter"
-  subtitle: "1..N Antenna • fan-out to TimingNodes"
+  subtitle: "1..N Antenna"
   kind: integration
   layout: {x: 385, y: 825, w: 280, h: 75}
 - id: backoffice-router
   group: io-layer
   label: "BackofficeRouter"
-  subtitle: "0..N BackofficeConnector • TimingNode bindings"
+  subtitle: "0..N BackofficeConnector"
   kind: integration
   layout: {x: 685, y: 825, w: 300, h: 75}
 - id: devices-io
@@ -204,13 +204,11 @@ edges:
 
 - from: antenna-router
   to: timing-node-root
-  label: route 1..N
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.42}
 
 - from: backoffice-router
   to: timing-node-root
-  label: bind 1..N
   dashed: true
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.78}
