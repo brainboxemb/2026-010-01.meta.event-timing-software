@@ -89,7 +89,7 @@ baseline.
 ### Current 0.2.2-SNAPSHOT development line
 
 The current development application uses one external YAML file. The implemented slice
-contains one TimingNode identity and the optional A05 remote-terminal listener:
+contains one TimingNode identity plus optional remote-terminal and HTTP listeners:
 
 ```yaml
 timingNodeId: timing-node-01
@@ -98,6 +98,9 @@ presentation:
   remoteShell:
     bindAddress: 127.0.0.1
     port: 8023
+  http:
+    bindAddress: 127.0.0.1
+    port: 8081
 ```
 
 A synthetic development example is stored as:
@@ -181,7 +184,37 @@ The committed example binds only to `127.0.0.1`. No authentication or encryption
 provided by this A05 development/service slice, so non-loopback exposure must be an
 explicit controlled test/deployment choice.
 
-## 10. Troubleshooting
+## 10. HTTP / JSON
+
+The A06 development line exposes the first IF-03 request/response resources on the
+configured HTTP listener:
+
+```text
+GET /api/v1/version
+GET /api/v1/status
+```
+
+The committed development configuration binds this listener to
+`127.0.0.1:8081`. Responses are UTF-8 JSON and follow IF-03. The listener is
+loopback-only in the example so remote exposure remains an explicit deployment choice.
+
+## 11. JavaFX test client
+
+A small desktop test client is available under `test-client/` for manual IF-03
+inspection. It is engineering support rather than SI-02 and is deliberately outside
+the Java-8 SI-01 Maven reactor.
+
+Use a JDK 21 environment and run:
+
+```powershell
+.\mvnw.cmd -f test-client\pom.xml javafx:run
+```
+
+The default endpoint is `http://127.0.0.1:8081`. **Get Version** and **Get Status**
+show selected parsed fields together with the raw JSON response. SI-01 itself continues
+to use the Java-8 runtime/toolchain documented above.
+
+## 12. Troubleshooting
 
 ### Build uses the wrong Java version
 
@@ -206,7 +239,7 @@ First verify the same revision with `.\mvnw.cmd verify`. Record the NetBeans/JDK
 version used when the difference is investigated. A release compatibility claim should
 only be added after that combination is verified.
 
-## 11. Release maintenance
+## 13. Release maintenance
 
 Before a normal SI-01 software release is accepted:
 
