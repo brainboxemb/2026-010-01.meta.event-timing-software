@@ -125,7 +125,24 @@ The configured application remains running. On a normal Windows/Linux foreground
 terminal, **Ctrl+C** or the normal OS/JVM shutdown route closes the application through
 its graceful lifecycle.
 
-## 7. Local console
+## 7. Build provenance
+
+A built SI-01 artifact identifies itself without requiring a sidecar text/JSON file. The embedded
+provenance includes application/version, exact Git revision, source ref, build origin and dirty-state.
+
+Typical development output is expected to distinguish, for example:
+
+```text
+revision=c715455...
+sourceRef=feature/pr-52-a04-local-console
+buildOrigin=local
+dirty=false
+```
+
+CI-built artifacts use a CI ref/origin instead. Wall-clock build time, CI run id and actor/user are
+not embedded because they change per execution and are not required to identify the source context.
+
+## 8. Local console
 
 The local console is Step-3 A04 work. Its intended command set is:
 
@@ -144,7 +161,7 @@ section is promoted into the next released compatibility row.
 The later remote terminal/shell uses the same application command behaviour through a
 different transport; console and remote shell are separate presentation interfaces.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 ### Build uses the wrong Java version
 
@@ -169,7 +186,7 @@ First verify the same revision with `.\mvnw.cmd verify`. Record the NetBeans/JDK
 version used when the difference is investigated. A release compatibility claim should
 only be added after that combination is verified.
 
-## 9. Release maintenance
+## 10. Release maintenance
 
 Before a normal SI-01 software release is accepted:
 
