@@ -31,7 +31,9 @@ import generate_sip_planning as base
 PAGE_W = base.A4_L_W_MM
 PAGE_H = base.A4_L_H_MM
 MARGIN = base.MARGIN_MM
-PAGE_COUNT = base.ROADMAP_PAGE_COUNT
+STEP_PAGE_COUNT = base.ROADMAP_PAGE_COUNT
+TOTAL_PAGE_COUNT = STEP_PAGE_COUNT + 1
+CHANGE_PAGE_INDEX = STEP_PAGE_COUNT
 STEPS_PER_PAGE = base.ROADMAP_STEPS_PER_PAGE
 TIMELINE_Y = 31.0
 TERMS_W = 34.0
@@ -262,7 +264,7 @@ def append_svg_page(
         parts,
         page_x + MARGIN,
         17.5,
-        [f"Page {page_index + 1}/{PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
+        [f"Page {page_index + 1}/{TOTAL_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
         2.5,
         fill="#555555",
     )
@@ -382,12 +384,181 @@ def append_svg_page(
             )
 
 
+def planning_change_text(change: dict) -> List[str]:
+    lines = textwrap.wrap(
+        change["change"],
+        width=68,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    if not lines or len(lines) > 3:
+        raise SystemExit(
+            f"Manager planning change does not fit: {change['change']!r}"
+        )
+    return lines
+
+
+def collect_planning_changes(boards: Dict[int, dict]) -> List[dict]:
+    changes: List[dict] = []
+    for step_number, board in sorted(boards.items()):
+        for item in board.get("planning_changes", []):
+            changes.append(
+                {
+                    "step": step_number,
+                    "date": item["date"],
+                    "change": item["change"],
+                }
+            )
+    changes.sort(key=lambda item: (item["date"], item["step"]), reverse=True)
+    return changes
+
+
+def append_svg_changes_page(
+    parts: List[str], changes: List[dict], page_x: float, *, standalone: bool
+) -> None:
+    if not standalone:
+        parts.append(
+            f'<rect x="{page_x:.2f}" y="0" width="{PAGE_W:.2f}" height="{PAGE_H:.2f}" '
+            'fill="none" stroke="#d0d0d0" stroke-width="0.35"/>'
+        )
+    svg_text(
+        parts,
+        page_x + MARGIN,
+        10.5,
+        ["Software Implementation Planning — planning changes"],
+        5.2,
+        weight="bold",
+    )
+    svg_text(
+        parts,
+        page_x + MARGIN,
+        17.5,
+        [f"Page {TOTAL_PAGE_COUNT}/{TOTAL_PAGE_COUNT} — material roadmap changes only"],
+        2.5,
+        fill="#555555",
+    )
+    svg_text(
+        parts,
+        page_x + MARGIN,
+        25.0,
+        [
+            "New activities, major scope redefinitions and meaningful sequencing/acceptance changes.",
+            "Normal status progress and wording edits are deliberately omitted.",
+        ],
+        2.5,
+        fill="#555555",
+    )
+
+    cols = 2
+    gap = 5.0
+    card_w = (PAGE_W - 2 * MARGIN - gap) / cols
+    card_h = 27.0
+    top = 38.0
+    for index, change in enumerate(changes):
+        row, col = divmod(index, cols)
+        x = page_x + MARGIN + col * (card_w + gap)
+        y = top + row * (card_h + 4.0)
+        if y + card_h > PAGE_H - MARGIN:
+            raise SystemExit("Planning changes no longer fit on one roadmap page")
+        parts.append(
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_w:.2f}" height="{card_h:.2f}" '
+            'rx="1.5" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>'
+        )
+        svg_text(
+            parts,
+            x + 3.0,
+            y + 6.0,
+            [f"{change['date']} · Step {change['step']}"],
+            2.45,
+            weight="bold",
+            fill="#4f81bd",
+        )
+        svg_text(
+            parts,
+            x + 3.0,
+            y + 12.0,
+            planning_change_text(change),
+            2.45,
+            fill="#333333",
+        )
+
+
+def append_pdf_changes_page(c: canvas.Canvas, changes: List[dict]) -> None:
+    page_h = PAGE_H
+    c.setFillColor(HexColor("#222222"))
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(
+        MARGIN * mm,
+        (page_h - 10.5) * mm,
+        "Software Implementation Planning — planning changes",
+    )
+    c.setFillColor(HexColor("#555555"))
+    c.setFont("Helvetica", 7)
+    c.drawString(
+        MARGIN * mm,
+        (page_h - 17.5) * mm,
+        f"Page {TOTAL_PAGE_COUNT}/{TOTAL_PAGE_COUNT} — material roadmap changes only",
+    )
+    c.drawString(
+        MARGIN * mm,
+        (page_h - 25.0) * mm,
+        "New activities, major scope redefinitions and meaningful sequencing/acceptance changes.",
+    )
+    c.drawString(
+        MARGIN * mm,
+        (page_h - 28.5) * mm,
+        "Normal status progress and wording edits are deliberately omitted.",
+    )
+
+    cols = 2
+    gap = 5.0
+    card_w = (PAGE_W - 2 * MARGIN - gap) / cols
+    card_h = 27.0
+    top = 38.0
+    for index, change in enumerate(changes):
+        row, col = divmod(index, cols)
+        x = MARGIN + col * (card_w + gap)
+        y = top + row * (card_h + 4.0)
+        if y + card_h > PAGE_H - MARGIN:
+            raise SystemExit("Planning changes no longer fit on one roadmap page")
+        c.setFillColor(HexColor("#fafafa"))
+        c.setStrokeColor(HexColor("#999999"))
+        c.roundRect(
+            x * mm,
+            (page_h - y - card_h) * mm,
+            card_w * mm,
+            card_h * mm,
+            1.5 * mm,
+            stroke=1,
+            fill=1,
+        )
+        c.setFillColor(HexColor("#4f81bd"))
+        c.setFont("Helvetica-Bold", 7.0)
+        c.drawString(
+            (x + 3.0) * mm,
+            (page_h - y - 6.0) * mm,
+            f"{change['date']} · Step {change['step']}",
+        )
+        c.setFillColor(HexColor("#333333"))
+        c.setFont("Helvetica", 6.9)
+        for line_index, line in enumerate(planning_change_text(change)):
+            c.drawString(
+                (x + 3.0) * mm,
+                (page_h - y - 12.0 - line_index * 3.3) * mm,
+                line,
+            )
+
+
 def render_svgs(
-    groups: List[List[base.Step]], manager: dict, active_step: int, out_dir: Path
+    groups: List[List[base.Step]],
+    manager: dict,
+    active_step: int,
+    changes: List[dict],
+    out_dir: Path,
 ) -> None:
     page_dir = out_dir / "roadmap"
     page_dir.mkdir(parents=True, exist_ok=True)
-    panorama_w = PAGE_W * PAGE_COUNT
+    panorama_w = PAGE_W * TOTAL_PAGE_COUNT
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{panorama_w}mm" height="{PAGE_H}mm" '
         f'viewBox="0 0 {panorama_w} {PAGE_H}">',
@@ -404,6 +575,12 @@ def render_svgs(
             page_index * PAGE_W,
             standalone=False,
         )
+    append_svg_changes_page(
+        parts,
+        changes,
+        CHANGE_PAGE_INDEX * PAGE_W,
+        standalone=False,
+    )
     parts.append("</svg>")
     (out_dir / "sip-roadmap.svg").write_text("\n".join(parts), encoding="utf-8")
 
@@ -427,6 +604,17 @@ def render_svgs(
         (page_dir / f"sip-roadmap-{page_index + 1}.svg").write_text(
             "\n".join(page_parts), encoding="utf-8"
         )
+
+    change_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_W}mm" height="{PAGE_H}mm" '
+        f'viewBox="0 0 {PAGE_W} {PAGE_H}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+    ]
+    append_svg_changes_page(change_parts, changes, 0.0, standalone=True)
+    change_parts.append("</svg>")
+    (page_dir / f"sip-roadmap-{TOTAL_PAGE_COUNT}.svg").write_text(
+        "\n".join(change_parts), encoding="utf-8"
+    )
 
 
 def pdf_bullets(
@@ -469,7 +657,11 @@ def pdf_status_badge(
 
 
 def render_pdf(
-    groups: List[List[base.Step]], manager: dict, active_step: int, path: Path
+    groups: List[List[base.Step]],
+    manager: dict,
+    active_step: int,
+    changes: List[dict],
+    path: Path,
 ) -> None:
     c = canvas.Canvas(str(path), pagesize=landscape(A4))
     page_h = PAGE_H
@@ -482,7 +674,7 @@ def render_pdf(
         c.drawString(
             MARGIN * mm,
             (page_h - 17.5) * mm,
-            f"Page {page_index + 1}/{PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
+            f"Page {page_index + 1}/{TOTAL_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
         )
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
@@ -639,7 +831,29 @@ def render_pdf(
                     base.compact_doc_label(document),
                 )
         c.showPage()
+
+    append_pdf_changes_page(c, changes)
+    c.showPage()
     c.save()
+
+
+def update_planning_readme(out_dir: Path) -> None:
+    path = out_dir / "README.md"
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    text = text.replace(
+        "Roadmap PDF](./sip-roadmap.pdf) — four A4-landscape pages.",
+        "Roadmap PDF](./sip-roadmap.pdf) — four step pages plus one planning-changes page.",
+    )
+    marker = f"- [Roadmap page {STEP_PAGE_COUNT}](./roadmap/sip-roadmap-{STEP_PAGE_COUNT}.svg)"
+    addition = (
+        marker
+        + "\n"
+        + f"- [Planning changes](./roadmap/sip-roadmap-{TOTAL_PAGE_COUNT}.svg)"
+    )
+    text = text.replace(marker, addition)
+    path.write_text(text, encoding="utf-8")
 
 
 def main() -> None:
@@ -662,13 +876,19 @@ def main() -> None:
     steps = base.parse_sip(Path(args.sip), plan)
     validate_manager_steps(steps, manager)
     groups = base.roadmap_groups(steps)
+    boards = base.load_step_boards(
+        data_dir,
+        base.load_json(data_dir / "schemas" / "sip-step-board.schema.json"),
+    )
+    changes = collect_planning_changes(boards)
     active_step = int(plan.get("active_step", 1))
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
 
-    render_svgs(groups, manager, active_step, out_dir)
-    render_pdf(groups, manager, active_step, out_dir / "sip-roadmap.pdf")
+    render_svgs(groups, manager, active_step, changes, out_dir)
+    render_pdf(groups, manager, active_step, changes, out_dir / "sip-roadmap.pdf")
+    update_planning_readme(out_dir)
 
 
 if __name__ == "__main__":

@@ -29,6 +29,8 @@ from generate_sip_planning import (
     load_step_boards,
     load_yaml,
     parse_sip,
+    planning_change_lines,
+    planning_changes_height,
     step_card_meta,
     step_demo_id,
     validate_data,
@@ -214,9 +216,12 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
     y = docs_top + docs_h + 4.0
     card_w = (usable_w - STEP_CARD_GAP * (STEP_CARD_COLS - 1)) / STEP_CARD_COLS
     lanes = activities_by_lane(board)
+    changes = board.get("planning_changes", [])
+    changes_h = planning_changes_height(changes)
     total_h = sum(lane_height(len(items)) for _, items in lanes)
     total_h += STEP_LANE_GAP * max(0, len(lanes) - 1)
-    available_h = A4_P_H_MM - y - 4.0
+    reserved_changes_h = changes_h + (2.5 if changes else 0.0)
+    available_h = A4_P_H_MM - y - 4.0 - reserved_changes_h
     if total_h > available_h:
         raise SystemExit(
             f"Step {step.number} A4 PDF board does not fit: needs {total_h:.1f} mm, "
@@ -329,6 +334,53 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
                 )
 
         y += height + STEP_LANE_GAP
+
+    if changes:
+        change_top = y + 1.0
+        rounded_rect_top(
+            c,
+            MARGIN_MM,
+            change_top,
+            usable_w,
+            changes_h,
+            1.5,
+            fill="#fafafa",
+            stroke="#999999",
+            line_width=0.4,
+        )
+        draw_text_top(
+            c,
+            MARGIN_MM + 3,
+            change_top + 5.4,
+            ["PLANNING CHANGES"],
+            2.55,
+            bold=True,
+            anchor="start",
+            color="#555555",
+        )
+        cursor = change_top + 10.0
+        for change in changes:
+            lines = planning_change_lines(change)
+            draw_text_top(
+                c,
+                MARGIN_MM + 4,
+                cursor,
+                [change["date"]],
+                2.0,
+                bold=True,
+                anchor="start",
+                color="#6c8ebf",
+            )
+            draw_text_top(
+                c,
+                MARGIN_MM + 24,
+                cursor,
+                lines,
+                2.15,
+                anchor="start",
+                color="#333333",
+            )
+            cursor += max(5.4, len(lines) * 2.6 + 0.9)
 
     c.showPage()
     c.save()

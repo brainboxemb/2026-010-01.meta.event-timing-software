@@ -64,6 +64,29 @@
           }
         }
       }
+    },
+    "planning_changes": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date",
+          "change"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "change": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 180
+          }
+        }
+      }
     }
   },
   "$defs": {

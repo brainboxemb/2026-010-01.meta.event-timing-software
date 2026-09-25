@@ -619,6 +619,29 @@ def step_demo_id(step_number: int) -> str:
     return f"SIP-STP{step_number:02d}-DEMO"
 
 
+def planning_change_lines(change: dict) -> List[str]:
+    lines = textwrap.wrap(
+        change["change"],
+        width=70,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    if not lines or len(lines) > 3:
+        raise SystemExit(
+            f"Planning change does not fit a step card: {change['change']!r}"
+        )
+    return lines
+
+
+def planning_changes_height(changes: List[dict]) -> float:
+    if not changes:
+        return 0.0
+    body = 0.0
+    for change in changes:
+        body += max(5.4, len(planning_change_lines(change)) * 2.6 + 0.9)
+    return 8.5 + body + 2.0
+
+
 def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
     grouped: Dict[str, List[dict]] = {}
     for activity in board["activities"]:
@@ -762,9 +785,12 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
     y = docs_top + docs_h + 4.0
     card_w = (usable_w - STEP_CARD_GAP * (STEP_CARD_COLS - 1)) / STEP_CARD_COLS
     lanes = activities_by_lane(board)
+    changes = board.get("planning_changes", [])
+    changes_h = planning_changes_height(changes)
     total_h = sum(lane_height(len(items)) for _, items in lanes)
     total_h += STEP_LANE_GAP * max(0, len(lanes) - 1)
-    available_h = A4_P_H_MM - y - 4.0
+    reserved_changes_h = changes_h + (2.5 if changes else 0.0)
+    available_h = A4_P_H_MM - y - 4.0 - reserved_changes_h
     if total_h > available_h:
         raise SystemExit(
             f"Step {step.number} A4 board does not fit: needs {total_h:.1f} mm, "
@@ -850,6 +876,47 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
                     fill="#555",
                 )
         y += height + STEP_LANE_GAP
+
+    if changes:
+        change_top = y + 1.0
+        parts.append(
+            f'<rect x="{MARGIN_MM}" y="{change_top:.2f}" width="{usable_w:.2f}" '
+            f'height="{changes_h:.2f}" rx="1.5" fill="#fafafa" '
+            'stroke="#999999" stroke-width="0.4"/>'
+        )
+        svg_text(
+            parts,
+            MARGIN_MM + 3,
+            change_top + 5.4,
+            ["PLANNING CHANGES"],
+            2.55,
+            anchor="start",
+            weight="bold",
+            fill="#555555",
+        )
+        cursor = change_top + 10.0
+        for change in changes:
+            lines = planning_change_lines(change)
+            svg_text(
+                parts,
+                MARGIN_MM + 4,
+                cursor,
+                [change["date"]],
+                2.0,
+                anchor="start",
+                weight="bold",
+                fill="#6c8ebf",
+            )
+            svg_text(
+                parts,
+                MARGIN_MM + 24,
+                cursor,
+                lines,
+                2.15,
+                anchor="start",
+                fill="#333333",
+            )
+            cursor += max(5.4, len(lines) * 2.6 + 0.9)
 
     parts.append("</svg>")
     path.write_text("\n".join(parts), encoding="utf-8")
