@@ -60,6 +60,7 @@ Before such a SIP step moves to `completed`, the project should:
 - rebuild/test the tagged revision rather than relying only on pre-merge or pre-tag evidence;
 - verify that produced artifacts report the expected software version, source revision and build identity;
 - retain the release artifacts and verification evidence;
+- update the applicable Software User Manual (SUM), including its release compatibility matrix and user-visible build/run/configuration guidance;
 - record the closure evidence in the coordination repository;
 - only then mark the SIP step `completed` and activate the next step.
 

@@ -65,6 +65,7 @@ The GitHub documentation workflow follows the same path before invoking `eng-doc
 - [`docs/40-01-IDD-application-control-status.md`](docs/40-01-IDD-application-control-status.md) — AP-1 working IF-03 application-control/status contract for the first executable slice.
 - [`docs/40-02-IDD-application-configuration.md`](docs/40-02-IDD-application-configuration.md) — SI-01 deployment/configuration contract for TimingNodes, I/O assets, presentation bindings, platform/profile overlays and secret references.
 - [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model including Pi Zero/resource and fault-injection verification.
+- [`docs/60-01-SUM-headless-timing-application.md`](docs/60-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual with build/run instructions and compatibility matrix.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
 
@@ -83,7 +84,8 @@ Software documents use numeric prefixes so GitHub presents them predictably. Est
 - `SAD` — Software Architecture Document;
 - `SDD` — Software Detailed Design;
 - `IDD` — Interface Design/Description Document;
-- `SVP` — Software Verification Plan.
+- `SVP` — Software Verification Plan;
+- `SUM` — Software User Manual.
 
 Current top-level document families:
 
@@ -94,6 +96,7 @@ Current top-level document families:
 30-39  architecture and detailed design
 40-49  software-system interface documents (IDDs)
 50-59  verification and validation planning
+60-69  software user / operator manuals
 ```
 
 ### Software-item numbering
@@ -121,6 +124,8 @@ Examples:
 
 31-02-SAD-...                 architecture for software item 02
 31-03-SAD-...                 architecture for software item 03
+
+60-01-SUM-...                 release/user manual for software item 01
 ```
 
 The software-item number therefore does not change merely because another SDD is added. During the current working-draft phase, retiring an SDD also compacts the SDD sequence so the current document set does not retain obsolete numbering gaps. Historical names remain available through Git history.
@@ -138,6 +143,7 @@ The project intentionally separates:
 - **system requirements / SSAD / IDDs** — software-system-level behaviour, architecture and interfaces;
 - **software-item SRD / SAD / SDD** — requirements, architecture and detailed design for each software item;
 - **SVP** — verification strategy, levels/test profiles and evidence model;
+- **SUM** — release/user view: compatible runtime/tool baselines plus install, configuration, run/stop and troubleshooting guidance for a software item;
 - **agent plan (`AP-*`)** — coordination steps for work performed in this meta repository and across agent/chat sessions.
 
 The SDP should not duplicate the detailed SIP sequence, and the SDE should not become a second development plan. Detailed implementation evidence for an active software step should live primarily in that step's pull request.
