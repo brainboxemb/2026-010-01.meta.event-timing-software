@@ -168,7 +168,7 @@ and Windows/NetBeans development-host acceptance are complete on the current
 
 ## 9. Remote terminal
 
-The current A05 development slice can expose the same text commands over a simple
+The current 0.2.2-SNAPSHOT line exposes the same text commands over a simple
 line-oriented TCP connection. It uses the configured `presentation.remoteShell`
 address and port.
 
