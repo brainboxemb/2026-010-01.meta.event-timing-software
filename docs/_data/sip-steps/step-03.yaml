@@ -12,23 +12,23 @@ demonstration:
     - Show the configured TimingNode, current version/status and runtime log file.
     - Read the same version/status through console, remote shell, HTTP and WebSocket.
 planning_changes:
-  - date: 2026-09-25
+  - date: '2026-09-25'
     change: >-
       A02 was narrowed to one external application.yml producing one TimingNodeId
       and one TimingNode; presentation configuration was deferred.
-  - date: 2026-09-25
+  - date: '2026-09-25'
     change: >-
       A03 was clarified as run until shutdown plus graceful stop; interactive
       console control moved to A04.
-  - date: 2026-09-25
+  - date: '2026-09-25'
     change: >-
       A04 and A05 were separated into local console and remote terminal/shell;
       both use the same application command behaviour.
-  - date: 2026-09-25
+  - date: '2026-09-25'
     change: >-
       A08 Runtime file logging was added to Step 3, with live debug logging kept
       as a later diagnostic presentation consumer.
-  - date: 2026-09-25
+  - date: '2026-09-25'
     change: >-
       Verification progress was refreshed: V01 is complete and V04 now covers
       Windows development-host proof including user/NetBeans acceptance.
