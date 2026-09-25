@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align IF-03 first-executable `/status` with TimingNode-owned status by removing the redundant application lifecycle/start-time fields, and document the Java 17 development test client baseline.
+
 - Simplify the active I/O model: SI-01 composes 0..N `Antenna` instances and 0..N `BackofficeConnector` instances directly in I/O; their TimingNode routing/binding is configuration rather than a separate router component, and the former `RegistrationAsset` / `RegistrationRouter` layer is removed from the software/configuration model.
 
 - Rename the primary logical timing aggregate from `Waypoint` to `TimingNode` and its stable identity from `UniqueID` to `TimingNodeId`; keep antenna and backoffice-connector mappings in I/O so one antenna may feed 1..N TimingNodes and one application may compose 0..N backoffice connectors.

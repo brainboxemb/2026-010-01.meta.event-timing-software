@@ -246,24 +246,28 @@ Manual inspection is provided by an independent development tool:
 
 ```text
 test-client/
-  TestClientApplication      JavaFX view
+  TestClientApplication      plain Java launcher
           |
           v
-  ApplicationControlClient  HTTP/JSON client
+  TestClientFxApplication    JavaFX development view
+          |
+          +-- ApplicationControlClient  HTTP/JSON client
+          +-- RemoteShellClient         A05 raw TCP shell client
           |
           v
-        IF-03
+        SI-01
 ```
 
-`test-client/` is a standalone Java-21 Maven project, not a module in the Java-8
+`test-client/` is a standalone Java-17 Maven project, not a module in the Java-8
 SI-01 reactor. It has no dependency on `event-timing-framework` or
 `event-timing-app`; this preserves the external-client boundary and makes later
 extraction to a dedicated repository straightforward if the tool grows. It is
 engineering support rather than SI-02.
 
 The shared presentation/application boundary remains small:
-`CommandHandler.version()` and `CommandHandler.status()` return the authoritative
-application values used by all current presentation adapters.
+`CommandHandler.version()` returns authoritative build identity and
+`CommandHandler.status()` returns the current TimingNode status used by the
+current presentation adapters.
 
 ## Derived consumers
 
