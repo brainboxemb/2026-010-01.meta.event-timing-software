@@ -42,7 +42,7 @@ steps:
       - Console, remote shell, HTTP and WebSocket show the same state
     demonstration:
       - Start SI-01 on Windows from external configuration
-      - Show the configured TimingNode, version/status and runtime log file
+      - Show TimingNode, version/status and log file
       - Read the same version/status through all four interfaces
 
   "4":
