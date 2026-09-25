@@ -212,6 +212,11 @@ Typical cases:
 
 This is intended to become the **primary fast system-level regression layer**.
 
+A manual development/test client may consume the same public interface for human
+inspection, but it does not replace automated ST-1 evidence. The current A06 direction
+uses a small JavaFX client for manual version/status inspection while automated tests
+continue to own pass/fail verification.
+
 ### ST-2 — Socket loop/network profile
 
 Purpose: add a real process/network communication boundary for the backoffice while remaining lightweight.
