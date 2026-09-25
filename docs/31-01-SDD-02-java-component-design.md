@@ -224,11 +224,46 @@ presentation.terminal.TerminalSession   shared command parsing/formatting
 presentation.shell.RemoteShellServer    line-oriented TCP transport
 ```
 
-Both transports call the same `CommandHandler` and shutdown callback. The remote
-transport does not own an alternate command/status model. The first shared
-presentation/application boundary remains small: `CommandHandler.version()` and
-`CommandHandler.status()` return the authoritative application values used by both
-local and remote clients.
+Both text transports call the same `CommandHandler` and shutdown callback. The remote
+transport does not own an alternate command/status model.
+
+A06 adds a separate machine-readable presentation adapter:
+
+```text
+presentation.http.HttpStatusServer
+        |
+        +-- GET /api/v1/version
+        +-- GET /api/v1/status
+        |
+        v
+CommandHandler.version() / status()
+```
+
+The HTTP adapter explicitly maps shared application values to IF-03 JSON; wire response
+shape is not used as the internal Java object model.
+
+Manual inspection is provided by an independent development tool:
+
+```text
+test-client/
+  TestClientApplication      JavaFX view
+          |
+          v
+  ApplicationControlClient  HTTP/JSON client
+          |
+          v
+        IF-03
+```
+
+`test-client/` is a standalone Java-21 Maven project, not a module in the Java-8
+SI-01 reactor. It has no dependency on `event-timing-framework` or
+`event-timing-app`; this preserves the external-client boundary and makes later
+extraction to a dedicated repository straightforward if the tool grows. It is
+engineering support rather than SI-02.
+
+The shared presentation/application boundary remains small:
+`CommandHandler.version()` and `CommandHandler.status()` return the authoritative
+application values used by all current presentation adapters.
 
 ## Derived consumers
 

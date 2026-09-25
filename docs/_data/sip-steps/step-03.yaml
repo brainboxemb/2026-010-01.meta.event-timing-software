@@ -14,6 +14,10 @@ demonstration:
 planning_changes:
   - date: '2026-09-25'
     change: >-
+      A06 adds automated HTTP verification plus a separate JavaFX test client
+      for manual IF-03 inspection; the test client is not SI-02.
+  - date: '2026-09-25'
+    change: >-
       Build provenance was redefined to omit buildTime and embed revision,
       sourceRef, buildOrigin and dirty-state for self-identifying artifacts.
   - date: '2026-09-25'
@@ -116,8 +120,12 @@ activities:
     lane: application
     kind: implementation
     title: HTTP / JSON status adapter
-    state: planned
+    state: active
     depends_on: [A01, A02, A03]
+    note: >-
+      Implement IF-03 GET /api/v1/version and GET /api/v1/status, verify them
+      over real HTTP, and provide a small independent JavaFX test client for
+      manual development-host inspection. The test client is not SI-02.
 
   - id: A07
     lane: application
