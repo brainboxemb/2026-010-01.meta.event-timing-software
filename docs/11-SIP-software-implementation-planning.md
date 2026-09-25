@@ -263,27 +263,19 @@ IF-11 already defines ownership for later I/O hardware, messaging, storage, runt
 
 ### Next bounded implementation slice
 
-Implement A06 as the first machine-readable network view of the shared application state:
+A06 is complete: SI-01 exposes IF-03 version/status over real HTTP and the independent
+Java 17/JavaFX development client can inspect that interface plus the existing A05
+remote shell.
 
-```text
-automated HTTP test ----+
-                        |
-JavaFX test client -----+--> GET /api/v1/version
-                        +--> GET /api/v1/status
-                                   |
-                                   v
-                         SI-01 shared application state
-```
+The next bounded implementation slice is A07: add the first WebSocket status/event
+stream from the same shared TimingNode status authority. The JavaFX development client
+may be extended with WebSocket inspection so the live stream can be inspected manually
+without creating SI-02 yet.
 
-SI-01 owns the HTTP/JSON adapter and IF-03 mapping. Automated tests exercise the
-adapter over a real loopback HTTP connection.
-
-A small JavaFX test client is added as development/test support so the same interface
-can also be inspected manually. It is not SI-02 and contains no SI-01 implementation
-dependency; it consumes IF-03 exactly as another external client would. The desktop
-test client may use a newer Java runtime than SI-01 because it is not deployed to the
-Pi target. Its first slice shows parsed version/status fields plus the raw JSON response.
-A07 may later extend the same tool with WebSocket event inspection.
+The separate full-process ST-1 black-box automation remains verification activity V03.
+It is intentionally deferred until A07, A08 and the adapter-equivalence work are
+available, so A06 does not create a second temporary test application solely for one
+transport.
 
 ### Deliverable
 

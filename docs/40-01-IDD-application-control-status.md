@@ -23,7 +23,7 @@ client side
 SI-01 Headless Timing Application
 ```
 
-SI-01 owns the authoritative application/status state. Clients observe/query that state and later submit permitted commands; they do not become authoritative merely by caching a response.
+SI-01 owns the authoritative TimingNode/status state. Clients observe/query that state and later submit permitted commands; they do not become authoritative merely by caching a response.
 
 ## Transport baseline
 
@@ -110,10 +110,6 @@ The first-executable status representation is:
     "dirty": false,
     "apiVersion": "1"
   },
-  "application": {
-    "state": "RUNNING",
-    "startedAt": "<ISO-8601 UTC>"
-  },
   "timingNodes": [
     {
       "timingNodeId": "<configured-timing-node-id>",
@@ -124,18 +120,16 @@ The first-executable status representation is:
 }
 ```
 
-First-executable application states are:
+The first executable does not expose a separate application lifecycle state in
+`/status`. A successful query already establishes that the IF-03 service is
+running; startup/shutdown process lifecycle remains an internal/runtime concern
+for this slice. Observable operational status is owned by the configured
+`TimingNode` objects and by structured problem entries.
 
-```text
-STARTING
-RUNNING
-DEGRADED
-STOPPING
-```
-
-`DEGRADED` means the process remains capable of serving status while one or more first-executable startup/configuration problems are observable. Fatal configuration errors that prevent the HTTP service from starting may still terminate the process and are verified separately through process exit/log evidence.
-
-The first executable does not yet implement operational open/close commands. A configured minimal `TimingNode` therefore reports `CLOSED`; later SIP increments may add additional lifecycle values while preserving the field/ownership model.
+The first executable does not yet implement operational open/close commands. A
+configured minimal `TimingNode` therefore reports `CLOSED`; later SIP
+increments may add additional lifecycle values while preserving the
+field/ownership model.
 
 Problem entries use:
 
@@ -184,7 +178,7 @@ Successful response:
 
 - HTTP `200`;
 - `application/json`;
-- body contains the current application/TimingNode status using the schema above.
+- body contains the current TimingNode status using the schema above.
 
 Later subsystem/device/backoffice fields may extend the model without changing the ownership principle.
 
@@ -257,7 +251,7 @@ Initial status mapping:
 | `405` | unsupported HTTP method on a known resource |
 | `500` | unexpected internal interface failure |
 
-A normal application degradation represented by `/status` is not converted into HTTP `500` merely because the application reports a problem.
+A normal reported problem represented by `/status` is not converted into HTTP `500` merely because a problem entry is present.
 
 ## Network access and first-executable security policy
 
