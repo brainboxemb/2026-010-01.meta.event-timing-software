@@ -65,7 +65,9 @@ The stable first-executable build identity is:
   "application": "timing-application",
   "version": "<project-version>",
   "revision": "<source-revision>",
-  "buildTime": "<ISO-8601 UTC>",
+  "sourceRef": "<branch-tag-or-ref>",
+  "buildOrigin": "local|github-actions",
+  "dirty": false,
   "apiVersion": "1"
 }
 ```
@@ -74,11 +76,18 @@ Field semantics:
 
 - `application` — stable application identity for SI-01;
 - `version` — project/application version from the produced build;
-- `revision` — source revision used to produce the running artifact, normally the Git commit SHA;
-- `buildTime` — build provenance timestamp according to the build/toolchain policy;
+- `revision` — exact source revision used to produce the running artifact, normally the Git commit SHA;
+- `sourceRef` — source branch, tag or CI ref associated with the build;
+- `buildOrigin` — stable build-environment class such as `local` or `github-actions`;
+- `dirty` — whether uncommitted source changes were present when the artifact was built;
 - `apiVersion` — IF-03 major API version represented by this contract.
 
-The build/toolchain may later strengthen reproducible-build timestamp policy without changing these semantic fields.
+The embedded identity deliberately excludes wall-clock build time, CI run/build number,
+actor/user and other per-run metadata. Those values would make otherwise identical build
+inputs produce different artifacts merely because a build was repeated. `revision` remains the
+exact source authority; `sourceRef` and `buildOrigin` provide the human diagnostic context
+needed when testing an artifact. A `dirty=true` local build is explicitly not fully described
+by its commit SHA alone.
 
 ## Current status response
 
@@ -96,7 +105,9 @@ The first-executable status representation is:
     "application": "timing-application",
     "version": "<project-version>",
     "revision": "<source-revision>",
-    "buildTime": "<ISO-8601 UTC>",
+    "sourceRef": "<branch-tag-or-ref>",
+    "buildOrigin": "local|github-actions",
+    "dirty": false,
     "apiVersion": "1"
   },
   "application": {
