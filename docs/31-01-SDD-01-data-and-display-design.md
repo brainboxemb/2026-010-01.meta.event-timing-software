@@ -21,7 +21,7 @@ Both need traceability and persistence, but they have different semantics and se
 
 ## Registration-source identity
 
-Every `Waypoint` has a `UniqueID`.
+Every `TimingNode` has a `TimingNodeId`.
 
 Known source classes are:
 
@@ -39,7 +39,7 @@ LocationID = 1..25
 
 A registration entry is associated with both its source and its location.
 
-`Waypoint` identity, `LocationID`, hardware `RegistrationAssetId` and logical `UniqueID` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
+`TimingNode` identity, `LocationID`, hardware `RegistrationAssetId` and logical `TimingNodeId` are separate namespaces. Deployment configuration relates them; code must not infer one identity from another.
 
 ## Registration ledger
 
@@ -54,7 +54,7 @@ PENALTY
 PENALTY_REVOKED
 ```
 
-`SYSTEM_OPEN` is explicitly part of the registration stream: opening a location/waypoint is not merely a transient status change; it produces a synchronisable traceable entry.
+`SYSTEM_OPEN` is explicitly part of the registration stream: opening a location/timing node is not merely a transient status change; it produces a synchronisable traceable entry.
 
 Additional operational record types may be added only when domain requirements justify them.
 
@@ -62,14 +62,14 @@ Records are historical facts and are not silently overwritten when corrected or 
 
 ## Registration sequence and stable record key
 
-The registration sequence is **monotonically increasing per `UniqueID` / waypoint**.
+The registration sequence is **monotonically increasing per `TimingNodeId` / timing node**.
 
 It is not scoped by location and it is not one global sequence across all registration systems.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (UniqueID, SequenceNumber)
+RegistrationRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
 Example:
@@ -90,13 +90,13 @@ If the source is later associated with another location, the source sequence doe
 
 A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
 
-![Registration traceability — sequence per waypoint](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
+![Registration traceability — sequence per timing node](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
 
 ### Illustrative record model
 
 ```java
 final class RegistrationRecord {
-    private UniqueID uniqueID;
+    private TimingNodeId timingNodeId;
     private long sequenceNumber;
     private LocationID locationId;
     private RegistrationType type;
@@ -109,20 +109,20 @@ final class RegistrationRecord {
 }
 
 final class RegistrationRecordKey {
-    private UniqueID uniqueID;
+    private TimingNodeId timingNodeId;
     private long sequenceNumber;
 }
 ```
 
-Names are illustrative; the important design is the waypoint-scoped sequence and explicit location association.
+Names are illustrative; the important design is the TimingNode-scoped sequence and explicit location association.
 
 ### Sequence allocation
 
-A sequence allocator is owned per `Waypoint`:
+A sequence allocator is owned per `TimingNode`:
 
 ```java
 interface RegistrationSequence {
-    long next(UniqueID waypointId);
+    long next(TimingNodeId timingNodeId);
 }
 ```
 
@@ -130,8 +130,8 @@ Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    UniqueID waypoint = candidate.uniqueID();
-    long sequence = registrationSequence.next(waypoint);
+    TimingNodeId timing node = candidate.timingNodeId();
+    long sequence = registrationSequence.next(timing node);
 
     RegistrationRecord record = registrationFactory.create(
         source,
@@ -146,7 +146,7 @@ void acceptRegistration(RegistrationCandidate candidate) {
 }
 ```
 
-The serialized waypoint application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `UniqueID`.
+The serialized timing node application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `TimingNodeId`.
 
 ## Sequence persistence and synchronisation
 
@@ -154,8 +154,8 @@ Sequence allocation is a domain consistency mechanism, not a storage implementat
 
 Required direction:
 
-- never reuse a committed `(UniqueID, SequenceNumber)` after restart;
-- preserve monotonic order independently for each `Waypoint`;
+- never reuse a committed `(TimingNodeId, SequenceNumber)` after restart;
+- preserve monotonic order independently for each `TimingNode`;
 - persist enough allocator state that restore cannot accidentally restart a source sequence;
 - expose source + sequence in synchronisation/support data;
 - support upstream gap/consistency detection;
@@ -173,7 +173,7 @@ Whether sequence gaps are allowed is still a formal requirement question. **No r
 
 ## Prepare-team registry
 
-Keypad input indicates which teams should prepare at the waypoint/exchange point. A keypad action is not itself a passage/start/penalty registration.
+Keypad input indicates which teams should prepare at the timing node/exchange point. A keypad action is not itself a passage/start/penalty registration.
 
 The keypad can:
 
@@ -198,7 +198,7 @@ PrepareTeamRegistry
 
 The registry owns both:
 
-- **current state** — which teams must currently prepare at the waypoint/exchange point;
+- **current state** — which teams must currently prepare at the timing node/exchange point;
 - **traceable history** — the keypad/operator add/remove mutations needed for audit and restore.
 
 The history is an internal persistence/state aspect of the registry, not a separate architecture component.
@@ -208,7 +208,7 @@ Illustrative internal history record:
 ```java
 final class PrepareTeamEvent {
     private long sequenceNumber;
-    private WaypointId waypointId;
+    private TimingNodeId timingNodeId;
     private PrepareTeamEventType type; // ADDED / REMOVED
     private TeamNumber teamNumber;
     private Instant createdAt;
@@ -216,7 +216,7 @@ final class PrepareTeamEvent {
 }
 ```
 
-The prepare-team history sequence is a separate design question from the `UniqueID`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `UniqueID` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
+The prepare-team history sequence is a separate design question from the `TimingNodeId`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `TimingNodeId` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
 
 ## Team and tag identities
 
@@ -248,7 +248,7 @@ The initial implementation direction is:
 ```text
 live application
     |
-    +-- WaypointJournal             source-ordered registration/history in memory
+    +-- TimingNodeJournal             source-ordered registration/history in memory
     +-- RegistrationState           current/derived registration views
     |
     +-- PrepareTeamRegistry   current teams-to-prepare + traceable mutation history
@@ -256,7 +256,7 @@ live application
     +-- StageStartTimeRegistry      stage start-time reference data in memory
     +-- RaceData                    participant/team/tag reference data in memory
     |
-    +-- RegistrationSequenceState   next sequence per UniqueID
+    +-- RegistrationSequenceState   next sequence per TimingNodeId
     |
     +-- simple file backup / restore
 ```
@@ -266,7 +266,7 @@ The application operates on typed in-memory structures rather than repeatedly pa
 Possible interfaces:
 
 ```java
-interface WaypointJournal {
+interface TimingNodeJournal {
     void append(RegistrationRecord record);
     List<RegistrationRecord> snapshot();
 }
@@ -304,7 +304,7 @@ Status should eventually expose at least:
 backup state
 last successful backup time
 last restore result
-last registration sequence per waypoint
+last registration sequence per timing node
 last ready-team sequence
 last reference-data synchronisation time/version
 ```
@@ -320,7 +320,7 @@ start process
 load configuration
    |
    v
-load trace journals / snapshots / waypoint sequence metadata
+load trace journals / snapshots / timing node sequence metadata
    |
    v
 reconstruct in-memory repositories and derived state
@@ -558,13 +558,13 @@ Temporary identifiers only; these are not yet formal requirements.
 
 ### Registration identity and traceability
 
-- **CAND-REG-001** — Each registration system/source shall have a stable `UniqueID`.
+- **CAND-REG-001** — Each registration system/source shall have a stable `TimingNodeId`.
 - **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
-- **CAND-REG-003** — Each committed registration entry shall contain both `UniqueID` and `LocationID`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `UniqueID`.
-- **CAND-REG-005** — The stable registration record identity shall include `UniqueID` and sequence number so upstream systems can order records and detect gaps per waypoint.
+- **CAND-REG-003** — Each committed registration entry shall contain both `TimingNodeId` and `LocationID`.
+- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`.
+- **CAND-REG-005** — The stable registration record identity shall include `TimingNodeId` and sequence number so upstream systems can order records and detect gaps per timing node.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
-- **CAND-REG-007** — Opening a location/waypoint shall create a traceable registration-stream entry.
+- **CAND-REG-007** — Opening a location/timing node shall create a traceable registration-stream entry.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
 
 ### Tag/team identity
@@ -602,7 +602,7 @@ Temporary identifiers only; these are not yet formal requirements.
 
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
-- Is each physical producer configured with exactly one `UniqueID`, and how are reserve/virtual waypoint systems associated with registration hardware?
+- Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
 - At what value does a new source sequence start?
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?

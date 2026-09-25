@@ -154,7 +154,7 @@ Candidate scenarios include:
 - observe outbound source messages at the simulator;
 - drop the socket and verify status/reconnect behaviour;
 - reconnect and continue without changing committed registration-sequence identity;
-- exercise one or multiple `Waypoint`/asset/source combinations according to the selected executable topology.
+- exercise one or multiple `TimingNode`/asset/source combinations according to the selected executable topology.
 
 ## RabbitMQ transport
 
@@ -211,7 +211,7 @@ RabbitMQ consumer callback
 source-aware BackofficeInboundMessage
       |
       v
-resolve Waypoint UniqueID / RegistrationSource
+resolve TimingNode TimingNodeId / RegistrationSource
       |
       v
 serialized framework/domain boundary
@@ -232,8 +232,8 @@ backoffice:
     virtualHost: ${BROKER_VHOST}
     credentials: external-secret-reference
 
-waypoints:
-  - uniqueId: waypoint-01
+timingNodes:
+  - timingNodeId: timing-node-01
     registrationAssets:
       - id: asset-01
         sources:

@@ -6,7 +6,7 @@ System interface: **IF-11 — Application Configuration**
 
 ## Purpose
 
-This Interface Design/Description Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies Waypoints, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
+This Interface Design/Description Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
 
 It deliberately does **not** define domain behaviour, a Java class hierarchy, a specific YAML library or production secret values.
 
@@ -37,7 +37,7 @@ The logical configuration root is:
 
 ```text
 ApplicationConfig
-├── waypoints
+├── timingNodes
 ├── io
 │   ├── hardware
 │   ├── messaging
@@ -49,26 +49,26 @@ ApplicationConfig
 
 The structure is a contract for configuration ownership. It does not require one Java POJO for every node before a running slice needs it.
 
-### Waypoints
+### TimingNodes
 
-Each configured Waypoint has its own stable identity and deployment context.
+Each configured TimingNode has its own stable identity and deployment context.
 
 Representative fields:
 
 ```text
-waypoints
-  waypoint-01
-    uniqueId
+timingNodes
+  timing-node-01
+    timingNodeId
     locationId
     registrationAsset
 ```
 
 Rules:
 
-- `UniqueID` identifies the logical Waypoint;
-- `LocationID` identifies the configured physical/event location and is not derived from `UniqueID`;
-- a Waypoint may reference a configured registration asset by `RegistrationAssetId`;
-- presentation transport settings such as HTTP ports do not belong to the Waypoint.
+- `TimingNodeId` identifies the logical TimingNode;
+- `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
+- a TimingNode may reference a configured registration asset by `RegistrationAssetId`;
+- presentation transport settings such as HTTP ports do not belong to the TimingNode.
 
 ### I/O
 
@@ -87,7 +87,7 @@ io
           ANT2
 ```
 
-`RegistrationAssetId` and `AntennaId` are distinct from Waypoint `UniqueID`. Antenna count does not create extra Waypoint identities.
+`RegistrationAssetId` and `AntennaId` are distinct from TimingNode `TimingNodeId`. Antenna count does not create extra TimingNode identities.
 
 Messaging and storage settings live under the same I/O responsibility because they select/configure external communication or persistence adapters.
 
@@ -101,22 +101,22 @@ Representative structure:
 presentation
   endpoint-01
     type: http
-    waypoint: waypoint-01
+    timing node: timing-node-01
     port: 8081
   endpoint-02
     type: http
-    waypoint: waypoint-02
+    timing node: timing-node-02
     port: 8082
 ```
 
 The binding direction is:
 
 ```text
-HTTP :8081 -> waypoint-01
-HTTP :8082 -> waypoint-02
+HTTP :8081 -> timing-node-01
+HTTP :8082 -> timing-node-02
 ```
 
-A Waypoint therefore does not need to know that a tablet, HTTP listener, shell or later GUI/API endpoint exists. Additional presentation adapters may bind differently without changing the Waypoint domain configuration.
+A TimingNode therefore does not need to know that a tablet, HTTP listener, shell or later GUI/API endpoint exists. Additional presentation adapters may bind differently without changing the TimingNode domain configuration.
 
 ### Runtime
 
@@ -187,11 +187,11 @@ Windows does not imply simulation.
 A simulation profile replaces concrete adapters while preserving the same application/domain model:
 
 ```text
-production: Waypoint -> real RFID adapter
-simulation: Waypoint -> simulated RFID adapter
+production: TimingNode -> real RFID adapter
+simulation: TimingNode -> simulated RFID adapter
 ```
 
-The same Waypoint identities, application commands and domain behaviour remain in use.
+The same TimingNode identities, application commands and domain behaviour remain in use.
 
 ## Validation
 
@@ -199,8 +199,8 @@ SI-01 validates the complete effective configuration before normal application c
 
 Validation includes, where applicable:
 
-- duplicate Waypoint `UniqueID` values;
-- references to unknown Waypoints;
+- duplicate TimingNode `TimingNodeId` values;
+- references to unknown TimingNodes;
 - references to unknown registration assets;
 - invalid/duplicate antenna identities within their defined scope;
 - conflicting presentation bind address/port combinations;
@@ -241,7 +241,7 @@ The first implementation should introduce only the configuration objects and fie
 At minimum, Step 3 needs enough configuration to:
 
 - start from external configuration;
-- construct at least one configured Waypoint with a stable `UniqueID`;
+- construct at least one configured TimingNode with a stable `TimingNodeId`;
 - bind the first IF-03 presentation endpoint safely;
 - report configuration/startup failures through the first executable behaviour.
 
@@ -252,7 +252,7 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 | IF-11 concern | SI-01 requirement / architecture |
 | --- | --- |
 | external effective configuration | SI01-REQ-001 |
-| configured Waypoint identity | SI01-REQ-003 |
+| configured TimingNode identity | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
 | deployment/composition separation | SI-01 SAD configuration/composition architecture |
 | Java composition/type growth | SI-01 Java component SDD |
