@@ -111,8 +111,15 @@ application/
     lifecycle and application-wide coordination
 
   CommandHandler
-    shared client request boundary
-    resolves application-wide vs TimingNode-scoped work
+    shared presentation request boundary
+    resolves application-wide vs TimingNode-scoped client work
+
+  RegistrationRouter
+    maps registration origin (RegistrationAssetId, AntennaId)
+    to 1..N TimingNode targets
+
+  BackofficeRouter
+    maps 0..N connector bindings to/from TimingNodes
 ```
 
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
@@ -122,8 +129,14 @@ serve simple application reads such as `version()`. TimingNode mutations are
 resolved to the correct `TimingNode` and then submitted to that TimingNode's serial
 executor.
 
+The routers above are application responsibilities because they own configured
+target mapping/fan-out. Device/connection managers stay in I/O because they own
+external resources and lifecycle.
+
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce commands merely to preserve a layer diagram.
+do not introduce commands merely to preserve a layer diagram. The router names
+describe real responsibilities; they do not require separate Java classes until
+the implementation has enough behaviour to justify them.
 
 ### Domain
 
@@ -166,19 +179,25 @@ I/O contains adapters that move data between SI-01 and the outside world:
 
 ```text
 io/
-  hardware/
-    can/
-    rfid/
-  messaging/
+  registration/
+    0..N RegistrationAsset adapters/managers
+    1..N antennas per asset
+  backoffice/
+    0..N connector adapters/managers
     rabbitmq/
-    backoffice/
+    socket/
+  devices/
+    can/
+    display/
   storage/
     file/
     db/
 ```
 
 Presentation stays separate because it owns client-facing API/view semantics.
-I/O owns hardware, messaging and storage adapters.
+I/O owns external resources and transport/device lifecycle. It does not own
+TimingNode target mapping: registration observations and backoffice connector
+bindings are handed to the application routers above it.
 
 ### Platform
 
@@ -344,16 +363,21 @@ WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
 
 Those callback threads must not change mutable TimingNode state directly.
 
-The caller first determines which TimingNode owns the work:
+The application boundary determines which TimingNode(s) receive the work:
 
 - `CommandHandler` resolves operator/client requests that name a TimingNode;
-- a configured device adapter already knows which TimingNode owns its device;
-- a scheduled task keeps the TimingNode it was registered for.
+- `RegistrationRouter` maps the hardware origin `(RegistrationAssetId, AntennaId)`
+  to 1..N TimingNodes;
+- `BackofficeRouter` maps connector-specific bindings/names to 1..N TimingNodes;
+- a scheduled task keeps the TimingNode target it was registered for.
 
-The work is then submitted to that TimingNode's serial executor.
+Each resolved target is then submitted to that TimingNode's serial executor.
+When one observation fans out to two TimingNodes, both receive their own queued
+work and keep independent TimingNode-scoped state/sequence semantics.
 
-There is no separate central `TimingSystemDispatcher`. A second generic router
-would add another layer without owning useful behaviour.
+There is no central generic `TimingSystemDispatcher`. The two routers above are
+specific boundary responsibilities with real mapping ownership; they are not a
+generic message bus or all-purpose mediator.
 
 ```text
 operator endpoint
@@ -365,7 +389,7 @@ operator endpoint
 TimingNode A serial executor    TimingNode B serial executor
       ^                              ^
       |                              |
-device callbacks / timers know their owning TimingNode
+RegistrationRouter / BackofficeRouter / timers resolve targets
 ```
 
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
