@@ -793,7 +793,8 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
-| HTTP/WebSocket | embedded Java-8-compatible technology | selection still open |
+| HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; verify target footprint before broader use |
+| WebSocket | embedded Java-8-compatible technology | selection remains open until A07 |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
