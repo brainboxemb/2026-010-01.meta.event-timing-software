@@ -5,7 +5,9 @@ The normal documentation build deliberately does not call this script. It render
 from the committed snapshot in docs/_data/sip-roadmap.yaml.
 
 This tool combines commit activity from both event-timing project repositories
-into one chronological timeline before grouping work sessions.
+into one chronological timeline. Each commit contributes a 30-minute activity
+window (15 minutes before and after the commit); overlapping windows are merged
+before the total is converted to 8-hour project days.
 """
 
 from __future__ import annotations
@@ -104,7 +106,7 @@ def day_start(value: date) -> datetime:
     return datetime.combine(value, time.min, tzinfo=timezone.utc)
 
 
-def day_end_exclusive(value: date) -> datetime:
+def day_end_inclusive(value: date) -> datetime:
     return datetime.combine(value, time.max, tzinfo=timezone.utc)
 
 
@@ -216,14 +218,106 @@ def update_plan_snapshot(path: Path, through: date, project_days: float) -> None
 
     body = actuals_match.group("body")
     body = re.sub(
-        r'(?m)^(  through_date:\s*)".*?"\s*$',
-        rf'\1"{through.isoformat()}"',
+        r'(?m)^(  through_date:\s*)".*?"\s*
+    updated = text[: actuals_match.start("body")] + body + text[actuals_match.end("body") :]
+    path.write_text(updated, encoding="utf-8")
+
+
+def print_report(
+    repositories: tuple[str, ...],
+    start: date,
+    through: date,
+    activities: list[Activity],
+    blocks: list[ActivityBlock],
+) -> float:
+    total_hours = sum(block.hours for block in blocks)
+    project_days = total_hours / PROJECT_DAY_HOURS
+
+    print("SIP actual-effort planning indication")
+    print(f"Range:        {start.isoformat()} through {through.isoformat()}")
+    print(f"Repositories: {', '.join(repositories)}")
+    print(f"Commits:      {len(activities)} merged-PR commits")
+    print(f"Window:       {ACTIVITY_WINDOW_MINUTES:g} min per commit (±{ACTIVITY_WINDOW_MINUTES / 2:g} min)")
+    print(f"Blocks:       {len(blocks)} merged activity windows")
+    print(f"Hours:        {total_hours:.2f}")
+    print(f"Project days: {project_days:.2f} ({PROJECT_DAY_HOURS:g} h/day)")
+    print()
+    print("Activity blocks:")
+    for index, block in enumerate(blocks, start=1):
+        repo_names = sorted({item.repository.rsplit("/", 1)[-1] for item in block.activities})
+        print(
+            f"  {index:02d}  {block.start.isoformat()} -> {block.end.isoformat()}  "
+            f"{block.hours:5.2f} h  {len(block.activities):3d} commits  "
+            f"[{', '.join(repo_names)}]"
+        )
+    return project_days
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Calculate the SIP actual-effort snapshot from merged PR commits."
+    )
+    parser.add_argument(
+        "--plan",
+        type=Path,
+        default=DEFAULT_PLAN,
+        help=f"Roadmap YAML (default: {DEFAULT_PLAN})",
+    )
+    parser.add_argument(
+        "--through",
+        type=date.fromisoformat,
+        default=date.today(),
+        help="Inclusive snapshot date in YYYY-MM-DD form (default: today)",
+    )
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Update actuals.through_date and estimated_project_days in the roadmap YAML.",
+    )
+    args = parser.parse_args()
+
+    plan = yaml.safe_load(args.plan.read_text(encoding="utf-8"))
+    start = date.fromisoformat(str(plan["start_date"]))
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    client = GitHubClient(token)
+
+    start_dt = day_start(start)
+    through_dt = day_end_inclusive(args.through)
+    activities = collect_activities(
+        client,
+        PROJECT_REPOSITORIES,
+        start_dt,
+        through_dt,
+    )
+    blocks = merge_activity_windows(activities)
+    project_days = print_report(
+        PROJECT_REPOSITORIES,
+        start,
+        args.through,
+        activities,
+        blocks,
+    )
+
+    if args.update:
+        rounded = round(project_days, 1)
+        update_plan_snapshot(args.plan, args.through, rounded)
+        print()
+        print(
+            f"Updated {args.plan}: through_date={args.through.isoformat()}, "
+            f"estimated_project_days={rounded:.1f}"
+        )
+
+
+if __name__ == "__main__":
+    main()
+,
+        lambda match: f'{match.group(1)}"{through.isoformat()}"',
         body,
         count=1,
     )
     body = re.sub(
         r"(?m)^(  estimated_project_days:\s*).*$",
-        rf"\1{project_days:.1f}",
+        lambda match: f"{match.group(1)}{project_days:.1f}",
         body,
         count=1,
     )
