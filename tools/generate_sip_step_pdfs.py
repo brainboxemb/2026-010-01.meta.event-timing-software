@@ -107,7 +107,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         MARGIN_MM,
         17.0,
         [
-            f"{board['state'].upper()} | ~{step.estimate_days} roadmap project days | "
+            f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
             f"target {step.target_date.strftime('%d %b %Y')}"
         ],
         2.9,
@@ -119,13 +119,13 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         c,
         MARGIN_MM,
         24.0,
-        wrap(board.get("summary", ""), 75, 3),
+        wrap(step.goal, 75, 3),
         2.7,
         anchor="start",
         color="#555555",
     )
 
-    demo = board.get("demonstration")
+    demo = step.demo_bullets
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
     if demo:
         demo_top = 34.0
@@ -152,7 +152,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
             color="#4f81bd",
         )
         cursor = demo_top + 10.5
-        for bullet in demo["bullets"]:
+        for bullet in demo:
             lines = wrap(bullet, 71, 2)
             draw_text_top(
                 c,
@@ -168,7 +168,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
     else:
         docs_top = 34.0
 
-    docs = board["documents"]
+    docs = step.documents
     docs_h = 25.0 if len(docs) > 4 else 19.0
     rounded_rect_top(
         c,
