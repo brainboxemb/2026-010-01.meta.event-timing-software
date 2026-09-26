@@ -1,0 +1,179 @@
+name: Refresh SIP actuals
+
+# Purpose: recalculate the SIP actual-effort planning snapshot from merged-PR
+# commit activity across the meta and implementation repositories.
+# The normal documentation build remains deterministic and reads only the
+# committed snapshot in docs/_data/sip-roadmap.yaml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      through_date:
+        description: Inclusive snapshot date (YYYY-MM-DD); empty uses today in Europe/Amsterdam
+        required: false
+        default: ''
+        type: string
+      update_snapshot:
+        description: Create a draft PR when the rounded snapshot changes
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sip-actuals-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Validate update credential
+        if: ${{ inputs.update_snapshot }}
+        shell: bash
+        env:
+          SNAPSHOT_TOKEN: ${{ secrets.SNAPSHOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SNAPSHOT_TOKEN}" ]]; then
+            echo "::error::Repository secret SNAPSHOT_TOKEN is required when update_snapshot is enabled."
+            echo "::error::The token needs Contents write and Pull requests write permission."
+            exit 1
+          fi
+
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.SNAPSHOT_TOKEN || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install calculator dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check PyYAML==6.0.2
+
+      - name: Resolve snapshot date
+        id: snapshot-date
+        shell: bash
+        env:
+          REQUESTED_DATE: ${{ inputs.through_date }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${REQUESTED_DATE}" ]]; then
+            through_date="${REQUESTED_DATE}"
+          else
+            through_date="$(TZ=Europe/Amsterdam date +%F)"
+          fi
+
+          python - "${through_date}" <<'PY'
+          from datetime import date
+          import sys
+          date.fromisoformat(sys.argv[1])
+          PY
+
+          echo "through_date=${through_date}" >> "${GITHUB_OUTPUT}"
+
+      - name: Calculate SIP actual effort
+        id: calculate
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          THROUGH_DATE: ${{ steps.snapshot-date.outputs.through_date }}
+          UPDATE_SNAPSHOT: ${{ inputs.update_snapshot }}
+        run: |
+          set -euo pipefail
+
+          args=(--through "${THROUGH_DATE}")
+          if [[ "${UPDATE_SNAPSHOT}" == "true" ]]; then
+            args+=(--update)
+          fi
+
+          python tools/calculate_sip_actuals.py "${args[@]}" | tee "${RUNNER_TEMP}/sip-actuals.txt"
+
+          {
+            echo "### SIP actual-effort refresh"
+            echo
+            echo '```text'
+            cat "${RUNNER_TEMP}/sip-actuals.txt"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if git diff --quiet -- docs/_data/sip-roadmap.yaml; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Validate updated planning source
+        if: ${{ inputs.update_snapshot && steps.calculate.outputs.changed == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
+          python tools/generate_sip_planning.py --out "${RUNNER_TEMP}/planning-validation"
+          test -s "${RUNNER_TEMP}/planning-validation/sip-roadmap.pdf"
+
+      - name: Create draft update pull request
+        if: ${{ inputs.update_snapshot && steps.calculate.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.SNAPSHOT_TOKEN }}
+          THROUGH_DATE: ${{ steps.snapshot-date.outputs.through_date }}
+        run: |
+          set -euo pipefail
+
+          branch="automation/sip-actuals-${THROUGH_DATE//-/}-${GITHUB_RUN_ID}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git add docs/_data/sip-roadmap.yaml
+          git commit -m "planning: refresh SIP actuals through ${THROUGH_DATE}"
+          git push origin "${branch}"
+
+          report="${RUNNER_TEMP}/sip-actuals.txt"
+          body="${RUNNER_TEMP}/sip-actuals-pr.md"
+          {
+            echo "Automated refresh of the SIP actual-effort planning snapshot through **${THROUGH_DATE}**."
+            echo
+            echo "The calculation combines merged-PR commit activity from the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlap across both repositories, and divides the resulting hours by 8."
+            echo
+            echo '```text'
+            cat "${report}"
+            echo '```'
+            echo
+            echo "This is a planning indication, not time registration."
+          } > "${body}"
+
+          pr_url="$(gh pr create \
+            --repo "${GITHUB_REPOSITORY}" \
+            --base main \
+            --head "${branch}" \
+            --draft \
+            --title "Planning: refresh SIP actuals through ${THROUGH_DATE}" \
+            --body-file "${body}")"
+
+          {
+            echo
+            echo "### Draft PR created"
+            echo
+            echo "${pr_url}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report unchanged snapshot
+        if: ${{ inputs.update_snapshot && steps.calculate.outputs.changed != 'true' }}
+        shell: bash
+        run: |
+          echo >> "${GITHUB_STEP_SUMMARY}"
+          echo "Snapshot already matches the rounded calculation; no PR was created." >> "${GITHUB_STEP_SUMMARY}"
