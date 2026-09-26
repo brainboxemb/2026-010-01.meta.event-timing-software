@@ -11,7 +11,7 @@ Sources:
 Generated output:
 - planning/sip-roadmap.svg: one continuous roadmap;
 - planning/sip-roadmap.pdf: the same roadmap as A4-landscape pages;
-- planning/roadmap/sip-roadmap-1.svg .. -4.svg: separate A4 pages;
+- planning/roadmap/sip-roadmap-1.svg .. -3.svg: separate A4 pages;
 - planning/steps/step-NN.svg: A4-portrait detailed step boards.
 
 All outputs are presentations of the same planning sources.
@@ -200,6 +200,21 @@ def sip_status(body: str, step_number: int) -> str:
     return aliases[raw]
 
 
+def planning_basis_text(steps: List[Step], plan: dict) -> str:
+    total_days = sum(step.estimate_days for step in steps)
+    cadence = float(plan["cadence_project_days_per_week"])
+    reserve = float(plan.get("planning_reserve_fraction", 0.0))
+    cadence_text = (
+        f"{cadence:g} day/week"
+        if cadence == 1.0
+        else f"{cadence:g} days/week"
+    )
+    return (
+        f"Basis: {total_days} focused implementation days · "
+        f"~{cadence_text} · +{reserve * 100:g}% planning reserve"
+    )
+
+
 def parse_sip(path: Path, plan: dict) -> List[Step]:
     text = path.read_text(encoding="utf-8")
     heading_re = re.compile(r"^## Step (\d+)\s+[—-]\s+(.+?)\s*$", re.M)
@@ -354,7 +369,10 @@ def append_roadmap_svg_page(
         parts,
         title_x,
         17.5,
-        [f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
+        [
+            f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
+            f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+        ],
         2.5,
         anchor="start",
         fill="#555",
@@ -479,7 +497,9 @@ def append_roadmap_svg_page(
             )
 
 
-def render_roadmap_svgs(groups: List[List[Step]], out_dir: Path) -> None:
+def render_roadmap_svgs(
+    groups: List[List[Step]], planning_basis: str, out_dir: Path
+) -> None:
     page_dir = out_dir / "roadmap"
     page_dir.mkdir(parents=True, exist_ok=True)
 
@@ -530,7 +550,9 @@ def pdf_text(
             c.drawString(x * mm, y_pos * mm, str(line))
 
 
-def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
+def render_roadmap_pdf(
+    groups: List[List[Step]], planning_basis: str, path: Path
+) -> None:
     c = canvas.Canvas(str(path), pagesize=landscape(A4))
     page_w = A4_L_W_MM
     page_h = A4_L_H_MM
@@ -545,7 +567,10 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
         c.drawString(
             MARGIN_MM * mm,
             (page_h - 17.5) * mm,
-            f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
+            (
+                f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
+                f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+            ),
         )
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
@@ -1010,6 +1035,7 @@ def main() -> None:
     )
     steps = parse_sip(Path(args.sip), plan)
     groups = roadmap_groups(steps)
+    planning_basis = planning_basis_text(steps, plan)
 
     boards = load_step_boards(
         data_dir,
@@ -1025,8 +1051,8 @@ def main() -> None:
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
     (out_dir / "steps").mkdir(parents=True, exist_ok=True)
 
-    render_roadmap_svgs(groups, out_dir)
-    render_roadmap_pdf(groups, out_dir / "sip-roadmap.pdf")
+    render_roadmap_svgs(groups, planning_basis, out_dir)
+    render_roadmap_pdf(groups, planning_basis, out_dir / "sip-roadmap.pdf")
 
     for number, board in sorted(boards.items()):
         render_step_svg(
