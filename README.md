@@ -45,15 +45,20 @@ The GitHub documentation workflow follows the same path before invoking `eng-doc
 
 ### Refresh the SIP actual-effort snapshot
 
-The committed roadmap snapshot stays deterministic and is not recalculated during the documentation build. To inspect the current planning indication from Git activity across both event-timing repositories, run:
+The committed roadmap snapshot stays deterministic and is not recalculated during the documentation build.
+
+The normal project workflow is GitHub-native: run **Actions → Refresh SIP actuals → Run workflow**. By default the workflow uses the current date in `Europe/Amsterdam`, recalculates the planning indication across both event-timing repositories, validates the updated planning source and creates a **draft pull request** only when the rounded snapshot changes. A different inclusive snapshot date can be supplied as `YYYY-MM-DD`, and update creation can be disabled for a report-only run.
+
+The update flow uses repository secret `SNAPSHOT_TOKEN`, shared with the daily-snapshot automation. For SIP actuals it needs **Contents: write** and **Pull requests: write** permission. The calculation itself uses normal read-only GitHub API access.
+
+For local development/debugging, the same calculation can be run directly:
 
 ```bash
 python tools/calculate_sip_actuals.py --through YYYY-MM-DD
+python tools/calculate_sip_actuals.py --through YYYY-MM-DD --update
 ```
 
-The calculator uses commits from merged pull requests in the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlapping windows across both repositories, and divides the resulting hours by 8. To write the rounded result back to `docs/_data/sip-roadmap.yaml`, add `--update`.
-
-Set `GITHUB_TOKEN` or `GH_TOKEN` when needed to avoid unauthenticated GitHub API rate limits. The result is a planning indication, not time registration.
+The calculator uses commits from merged pull requests in the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlapping windows across both repositories, and divides the resulting hours by 8. The result is a planning indication, not time registration.
 
 ## Working documents
 
