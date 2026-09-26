@@ -11,9 +11,9 @@ into one chronological timeline before grouping work sessions.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable
 import argparse
 import json
 import os
@@ -30,8 +30,7 @@ PROJECT_REPOSITORIES = (
     "brainboxemb/2026-010-02.java.event-timing-framework",
 )
 DEFAULT_PLAN = Path("docs/_data/sip-roadmap.yaml")
-SESSION_GAP_MINUTES = 90
-SINGLE_COMMIT_MINUTES = 15
+ACTIVITY_WINDOW_MINUTES = 30
 PROJECT_DAY_HOURS = 8.0
 
 
@@ -44,11 +43,14 @@ class Activity:
 
 
 @dataclass(frozen=True)
-class Session:
+class ActivityBlock:
     start: datetime
     end: datetime
     activities: tuple[Activity, ...]
-    hours: float
+
+    @property
+    def hours(self) -> float:
+        return (self.end - self.start).total_seconds() / 3600.0
 
 
 class GitHubClient:
@@ -174,37 +176,36 @@ def collect_activities(
     return sorted(unique.values(), key=lambda item: item.timestamp)
 
 
-def group_sessions(activities: Iterable[Activity]) -> list[Session]:
+def merge_activity_windows(activities: Iterable[Activity]) -> list[ActivityBlock]:
     ordered = list(activities)
     if not ordered:
         return []
 
-    gap_seconds = SESSION_GAP_MINUTES * 60
-    groups: List[list[Activity]] = [[ordered[0]]]
-    for activity in ordered[1:]:
-        previous = groups[-1][-1]
-        if (activity.timestamp - previous.timestamp).total_seconds() > gap_seconds:
-            groups.append([activity])
-        else:
-            groups[-1].append(activity)
+    half_window = timedelta(minutes=ACTIVITY_WINDOW_MINUTES / 2.0)
+    blocks: list[ActivityBlock] = []
 
-    sessions: list[Session] = []
-    for group in groups:
-        start = group[0].timestamp
-        end = group[-1].timestamp
-        if len(group) == 1:
-            hours = SINGLE_COMMIT_MINUTES / 60.0
-        else:
-            hours = (end - start).total_seconds() / 3600.0
-        sessions.append(
-            Session(
-                start=start,
-                end=end,
-                activities=tuple(group),
-                hours=hours,
+    for activity in ordered:
+        window_start = activity.timestamp - half_window
+        window_end = activity.timestamp + half_window
+
+        if not blocks or window_start > blocks[-1].end:
+            blocks.append(
+                ActivityBlock(
+                    start=window_start,
+                    end=window_end,
+                    activities=(activity,),
+                )
             )
+            continue
+
+        previous = blocks[-1]
+        blocks[-1] = ActivityBlock(
+            start=previous.start,
+            end=max(previous.end, window_end),
+            activities=previous.activities + (activity,),
         )
-    return sessions
+
+    return blocks
 
 
 def update_plan_snapshot(path: Path, through: date, project_days: float) -> None:
@@ -235,25 +236,26 @@ def print_report(
     start: date,
     through: date,
     activities: list[Activity],
-    sessions: list[Session],
+    blocks: list[ActivityBlock],
 ) -> float:
-    total_hours = sum(session.hours for session in sessions)
+    total_hours = sum(block.hours for block in blocks)
     project_days = total_hours / PROJECT_DAY_HOURS
 
     print("SIP actual-effort planning indication")
     print(f"Range:        {start.isoformat()} through {through.isoformat()}")
     print(f"Repositories: {', '.join(repositories)}")
     print(f"Commits:      {len(activities)} merged-PR commits")
-    print(f"Sessions:     {len(sessions)}")
+    print(f"Window:       {ACTIVITY_WINDOW_MINUTES:g} min per commit (±{ACTIVITY_WINDOW_MINUTES / 2:g} min)")
+    print(f"Blocks:       {len(blocks)} merged activity windows")
     print(f"Hours:        {total_hours:.2f}")
     print(f"Project days: {project_days:.2f} ({PROJECT_DAY_HOURS:g} h/day)")
     print()
-    print("Sessions:")
-    for index, session in enumerate(sessions, start=1):
-        repo_names = sorted({item.repository.rsplit("/", 1)[-1] for item in session.activities})
+    print("Activity blocks:")
+    for index, block in enumerate(blocks, start=1):
+        repo_names = sorted({item.repository.rsplit("/", 1)[-1] for item in block.activities})
         print(
-            f"  {index:02d}  {session.start.isoformat()} -> {session.end.isoformat()}  "
-            f"{session.hours:5.2f} h  {len(session.activities):3d} commits  "
+            f"  {index:02d}  {block.start.isoformat()} -> {block.end.isoformat()}  "
+            f"{block.hours:5.2f} h  {len(block.activities):3d} commits  "
             f"[{', '.join(repo_names)}]"
         )
     return project_days
@@ -295,13 +297,13 @@ def main() -> None:
         start_dt,
         through_dt,
     )
-    sessions = group_sessions(activities)
+    blocks = merge_activity_windows(activities)
     project_days = print_report(
         PROJECT_REPOSITORIES,
         start,
         args.through,
         activities,
-        sessions,
+        blocks,
     )
 
     if args.update:
