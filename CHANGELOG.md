@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Make SIP actual-effort planning reproducible with a two-repository merged-PR commit-window calculator; use 30-minute overlapping activity windows and refresh the 26 September snapshot to about 38.2 hours / 4.8 project days.
+- Make SIP actual-effort planning reproducible with a two-repository merged-PR commit-window calculator; use 30-minute overlapping activity windows, refresh the 26 September snapshot to about 38.2 hours / 4.8 project days, and add a manually dispatched GitHub Action that can create a draft snapshot-update PR.
 
 - Rework the SIP into a software-first 11-step roadmap: restore the planning horizon to 55 estimated project days before reserve, add a target-hardware/platform study before procurement, split platform study from target bring-up, defer real devices until after domain/simulation/GUI/backoffice work, apply planning reserve to forecast months, and keep planning-change history only on per-step detail boards.
 
