@@ -258,7 +258,7 @@ def append_svg_page(
         parts,
         page_x + MARGIN,
         17.5,
-        [f"Page {page_index + 1}/{TOTAL_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
+        [f"Page {page_index + 1}/{STEP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
         2.5,
         fill="#555555",
     )
@@ -297,7 +297,7 @@ def append_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", step.target_date.strftime("%d %b %Y")],
+            [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
             2.35,
             anchor="middle",
             weight="bold",
@@ -426,7 +426,7 @@ def append_svg_changes_page(
         parts,
         page_x + MARGIN,
         17.5,
-        [f"Page {TOTAL_PAGE_COUNT}/{TOTAL_PAGE_COUNT} — material roadmap changes only"],
+        [f"Page {STEP_PAGE_COUNT}/{STEP_PAGE_COUNT} — material roadmap changes only"],
         2.5,
         fill="#555555",
     )
@@ -490,7 +490,7 @@ def append_pdf_changes_page(c: canvas.Canvas, changes: List[dict]) -> None:
     c.drawString(
         MARGIN * mm,
         (page_h - 17.5) * mm,
-        f"Page {TOTAL_PAGE_COUNT}/{TOTAL_PAGE_COUNT} — material roadmap changes only",
+        f"Page {STEP_PAGE_COUNT}/{STEP_PAGE_COUNT} — material roadmap changes only",
     )
     c.drawString(
         MARGIN * mm,
@@ -643,7 +643,7 @@ def render_pdf(
         c.drawString(
             MARGIN * mm,
             (page_h - 17.5) * mm,
-            f"Page {page_index + 1}/{TOTAL_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
+            f"Page {page_index + 1}/{STEP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
         )
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
