@@ -6,11 +6,13 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct speculative planning/documentation: keep SI-02 as the planned real GUI with technology open, classify the current JavaFX client as manual engineering test tooling, remove SI-03/iPad as a committed product item, treat a web client only as optional Remote API test tooling, and make Raspberry Pi performance/resource concerns measurement-driven rather than assumed.
+
 - Simplify the SDP into a lighter high-level development-direction document; move detailed release mechanics, calendar planning and step execution back to the SDE/SIP where they belong.
 
 - Improve architecture readability by using software-item names before SI labels in running prose and replacing unnecessary `authoritative`/in-memory repository wording with direct state-ownership language.
 
-- Reframe IF-03 as the general Remote API, organise SI-01 presentation by functional interface first (`remoteapi`, console, shell, future Web) and nest A06/A07 HTTP/WebSocket configuration under `presentation.remoteApi`.
+- Reframe IF-03 as the general Remote API, organise SI-01 presentation by functional interface first (`remoteapi`, console, shell) and nest A06/A07 HTTP/WebSocket configuration under `presentation.remoteApi`.
 
 - Select Java-WebSocket 1.6.0 for A07 on a dedicated Java-8 listener, require snapshot-on-connect/reconnect, and defer black-box `STATUS_CHANGED` verification until a real public status transition exists.
 
@@ -44,13 +46,13 @@ The repository is currently in its planning and research phase.
 - Domain baseline covering registration-system identities, locations, source-scoped monotonic registration sequences, team/tag identity and locally synchronised reference data.
 - System use-case catalogue linking operational intent to later requirements/interfaces and verification.
 - Software Development Plan (SDP), Software Implementation Planning (SIP), and Software Development Environment (SDE).
-- Software-item register for the headless timing application, desktop GUI, and React/browser/iPad operator application.
+- Software-item register for the headless timing application and planned desktop GUI application.
 - Initial Software System Architecture Document (SSAD) with system-interface catalogue, status, threading/testability, fault/recovery, connectivity, resource-baseline and public/private extension direction.
-- Software-item architecture and detailed-design documents for the timing application, desktop GUI, web operator application, TimingSystem internals, data/display behaviour, Java/Maven component structure, runtime topology/configuration and transport-independent backoffice design.
-- Initial Software Verification Plan (SVP) covering unit, component, interface, integration, hardware-in-the-loop, fault-injection and Raspberry Pi Zero resource evidence.
+- Software-item architecture and detailed-design documents for the timing application and desktop GUI, plus focused data/display, Java/Maven component, runtime/configuration and backoffice design notes.
+- Initial Software Verification Plan (SVP) covering unit, component, interface, integration, hardware-in-the-loop, fault-injection and target-runtime observations.
 - TimingNode systems, registration hardware/assets, data-source identities and antennas as distinct configurable concepts, with software/domain, hardware/deployment and configuration/mapping views kept separate.
 - Registration/data-source and prepare-team models as separate traceable capabilities; registration records use a monotonic sequence per data source.
-- In-memory authoritative state with simple file backup/restore as the initial persistence direction.
+- In-memory application/domain state with simple file backup/restore as the initial persistence direction.
 - Transport-independent backoffice boundary with lightweight socket-loop and RabbitMQ integration directions.
 - Layered system-test profiles from application black-box testing through socket-loop, RabbitMQ and target/HIL testing.
 - Generated software documentation workflow producing GitHub-readable Markdown, SVG and editable draw.io output.

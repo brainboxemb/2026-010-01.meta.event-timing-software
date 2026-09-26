@@ -31,8 +31,6 @@ documents:
     source: docs/31-01-SDD-02-java-component-design.md
   - id: gui-application-architecture
     source: docs/31-02-SAD-gui-application-architecture.md
-  - id: web-operator-architecture
-    source: docs/31-03-SAD-web-operator-application-architecture.md
   - id: data-display-design
     source: docs/31-01-SDD-01-data-and-display-design.md
   - id: backoffice-transport-design

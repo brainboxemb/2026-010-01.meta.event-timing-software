@@ -36,7 +36,6 @@ Use the numbered project documents for their specific roles:
 - [docs/31-01-SAD-timing-application-architecture.md](docs/31-01-SAD-timing-application-architecture.md) — SI-01 architecture;
 - [docs/31-01-SDD-02-java-component-design.md](docs/31-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
 - [docs/31-02-SAD-gui-application-architecture.md](docs/31-02-SAD-gui-application-architecture.md) — desktop GUI architecture;
-- [docs/31-03-SAD-web-operator-application-architecture.md](docs/31-03-SAD-web-operator-application-architecture.md) — web/iPad operator architecture;
 - [docs/50-SVP-software-verification-plan.md](docs/50-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
@@ -66,7 +65,7 @@ should not become a second implementation source tree.
 
 In running architecture text, prefer the readable software-item name first and keep the
 formal identifier after it, for example **Headless Timing Application** (SI-01),
-**Desktop GUI Application** (SI-02) and **Web Operator Application** (SI-03).
+**Desktop GUI Application** (SI-02). The current JavaFX client is engineering test tooling, not SI-02; an optional web test client is not a separate software item.
 Use bare SI identifiers mainly in compact tables, diagrams, filenames and other formal
 references.
 
