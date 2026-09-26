@@ -10,8 +10,8 @@ groups: []
 nodes:
   - {id: console, label: "Local console", kind: client, layout: {x: 40, y: 90, w: 190, h: 70}}
   - {id: remote, label: "Remote terminal", kind: client, layout: {x: 250, y: 90, w: 190, h: 70}}
-  - {id: desktop, label: "SI-02 Desktop GUI", kind: client, layout: {x: 460, y: 90, w: 210, h: 70}}
-  - {id: ipad, label: "SI-03 Web / iPad\nReact application", kind: client, layout: {x: 700, y: 75, w: 230, h: 100}}
+  - {id: desktop, label: "Desktop GUI Application (SI-02)", kind: client, layout: {x: 460, y: 90, w: 210, h: 70}}
+  - {id: ipad, label: "Web Operator Application (SI-03)\nWeb / iPad", kind: client, layout: {x: 700, y: 75, w: 230, h: 100}}
   - {id: backoffice, label: "Backoffice", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
   - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
   - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
@@ -20,10 +20,10 @@ nodes:
   - {id: gateway, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
   - {id: backoffice_port, label: "BackofficePort", kind: port, layout: {x: 1190, y: 395, w: 220, h: 70}}
-  - {id: runtime, label: "SI-01 runtime / orchestration\n1..N TimingNodes", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
+  - {id: runtime, label: "Headless Timing Application (SI-01)\nruntime / 1..N TimingNodes", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
   - {id: status, label: "Status service\nimmutable snapshots", kind: service, layout: {x: 545, y: 555, w: 280, h: 95}}
   - {id: domain, label: "Timing/domain capabilities\nregistration • ready-team • reference data", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
-  - {id: memory, label: "Typed in-memory state/repositories\nauthoritative runtime state", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}
+  - {id: memory, label: "Application / domain state\nkept in memory at runtime", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}
   - {id: device_ports, label: "RFID + CAN + Display ports", kind: port, layout: {x: 575, y: 750, w: 300, h: 80}}
   - {id: platform_ports, label: "Clock + Settings + Platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
   - {id: backup, label: "Simple file backup / restore", kind: adapter, layout: {x: 200, y: 900, w: 290, h: 70}}

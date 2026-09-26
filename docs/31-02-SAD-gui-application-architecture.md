@@ -2,9 +2,9 @@
 
 Status: working draft / non-authoritative
 
-Software item: **02 — Desktop GUI Application**
+Software item: **Desktop GUI Application** (SI-02)
 
-This Software Architecture Document describes the initial architecture direction for the desktop operator GUI. The GUI is a separate software item from the headless timing application and communicates with it through system-defined network interfaces.
+This Software Architecture Document describes the initial architecture direction for the desktop operator GUI. The GUI is a separate software item from the **Headless Timing Application** (SI-01) and communicates with it through system-defined network interfaces.
 
 ## Purpose
 
@@ -66,7 +66,7 @@ As system requirements and IDDs mature, the GUI may add:
 - ready-team overview/control;
 - device/network/backoffice status and diagnostics.
 
-These operations remain authoritative in the headless timing application. The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
+These operations are handled by the **Headless Timing Application** (SI-01). The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
 
 ## GUI IDD as system input
 
@@ -83,11 +83,11 @@ A system-level GUI IDD can define items such as:
 - terminology and identifiers;
 - interaction flows for open/close/start/RFID recovery and later registration operations.
 
-The future **SRD for software item 02** can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
+The future SRD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
 
 ## Software-to-software interface IDD
 
-A separate system-level IDD should define the communication interface between software item 02 and software item 01.
+A separate system-level IDD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Headless Timing Application** (SI-01).
 
 Current direction:
 
@@ -140,7 +140,7 @@ The fake client should be able to produce version/status changes, disconnects, s
 - desktop GUI toolkit/framework;
 - packaging/distribution model;
 - HTTP/WebSocket client library compatible with the selected GUI runtime;
-- whether the GUI uses the same Java baseline as software item 01 or can use a newer runtime;
+- whether the GUI uses the same Java baseline as the **Headless Timing Application** (SI-01) or can use a newer runtime;
 - configuration storage for known endpoints;
 - authentication/credential storage;
 - update mechanism.

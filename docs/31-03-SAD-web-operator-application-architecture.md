@@ -2,18 +2,18 @@
 
 Status: working draft / non-authoritative
 
-Software item: **03 — Web Operator Application**
+Software item: **Web Operator Application** (SI-03)
 
-This Software Architecture Document describes the React-based browser/iPad operator application as a separate software item. The application is delivered by the headless Timing Application over HTTP but executes in the browser and communicates with the timing system only through system-defined interfaces.
+This Software Architecture Document describes the React-based browser/iPad **Web Operator Application** (SI-03) as a separate software item. The application is delivered by the **Headless Timing Application** (SI-01) over HTTP but executes in the browser and communicates with the timing system only through system-defined interfaces.
 
 ## Responsibility
 
-Software item 03 provides a browser-based operational user interface for a timing system.
+The **Web Operator Application** (SI-03) provides a browser-based operational user interface for a timing system.
 
 Expected responsibilities include:
 
 - load and run in a modern browser/iPad Safari environment;
-- connect to software item 01 over HTTP/WebSocket;
+- connect to the **Headless Timing Application** (SI-01) over HTTP/WebSocket;
 - show application/timing-system/subsystem status;
 - show registration data and relevant local timing information;
 - open and close a logical timing system when authorised;
@@ -22,11 +22,11 @@ Expected responsibilities include:
 - later support manual registration and penalty operations where authorised;
 - make disconnected/stale state visible to the operator.
 
-It does **not** own authoritative registration or timing-domain state.
+Registration and timing-domain state remain in the **Headless Timing Application** (SI-01).
 
 ## Deployment model
 
-The compiled React application is intended to be served as static content by software item 01:
+The compiled React application is intended to be served as static content by the **Headless Timing Application** (SI-01):
 
 ```text
 Timing Application (SI-01)
@@ -42,7 +42,7 @@ Web Operator Application (SI-03)
 Timing Application (SI-01)
 ```
 
-Serving the bundle from SI-01 simplifies local deployment and ensures the browser can reach the same endpoint even when the wider internet/backoffice is unavailable.
+Serving the bundle from the **Headless Timing Application** (SI-01) simplifies local deployment and ensures the browser can reach the same endpoint even when the wider internet/backoffice is unavailable.
 
 The exact JavaScript/React build toolchain and browser-support baseline remain open.
 
@@ -64,11 +64,11 @@ WebSocket is the current direction for:
 - ready-team/data updates;
 - connection/staleness indication.
 
-The browser must not bypass SI-01 by accessing its files or internal Java classes directly.
+The browser must not bypass the **Headless Timing Application** (SI-01) by accessing its files or internal Java classes directly.
 
 ## State ownership
 
-The web application may maintain presentation/cache state, but SI-01 remains authoritative.
+The web application may maintain presentation/cache state, but the current timing state remains in the **Headless Timing Application** (SI-01).
 
 On connect/reconnect the web application should be able to obtain a complete current state/snapshot before applying subsequent live updates.
 
@@ -84,7 +84,7 @@ This is especially important after:
 
 The browser client itself is not required to become a second autonomous timing system.
 
-When its connection to SI-01 is lost it should:
+When its connection to the Headless Timing Application is lost it should:
 
 - clearly show disconnected/stale state;
 - stop presenting cached operational data as current without indication;
@@ -97,7 +97,7 @@ The timing application may continue local RFID/CAN/registration operation while 
 
 Authentication, authorisation and transport security need system-level requirements/IDD definition.
 
-The web application should not contain long-lived secrets that are inappropriate for browser delivery. Operator permissions should be enforced by SI-01 rather than trusted only to disabled/hidden UI controls.
+The web application should not contain long-lived secrets that are inappropriate for browser delivery. Operator permissions should be enforced by the **Headless Timing Application** (SI-01) rather than trusted only to disabled/hidden UI controls.
 
 ## Relationship to system IDDs and SRD
 
@@ -109,7 +109,7 @@ A future software-item requirements document is expected under the software-item
 
 Likely system-level interface inputs include:
 
-- application control/status interface IDD between SI-03 and SI-01;
+- application interface IDD between the **Web Operator Application** (SI-03) and **Headless Timing Application** (SI-01);
 - WebSocket/live-event portions of that interface;
 - operator/HMI IDD describing required information and operator actions.
 
@@ -119,13 +119,13 @@ The SRD should reference those system-owned interface obligations rather than du
 
 Early verification should prove at least:
 
-- bundle can be served by SI-01;
+- bundle can be served by the **Headless Timing Application** (SI-01);
 - application can load on a normal desktop browser and representative iPad/Safari environment;
-- version/status can be displayed from SI-01;
+- version/status can be displayed from the Headless Timing Application;
 - disconnect/stale state is visible;
 - reconnect obtains a complete fresh state before normal live updates resume;
 - commands use the system interface and receive explicit success/failure responses;
-- browser operation does not require live backoffice/internet connectivity when SI-01 remains locally reachable.
+- browser operation does not require live backoffice/internet connectivity while the Headless Timing Application remains locally reachable.
 
 ## Open architecture questions
 
@@ -135,6 +135,6 @@ Early verification should prove at least:
 - HTTP/API technology and resource model;
 - WebSocket event envelope and revision/sequence semantics;
 - whether desktop and browser clients share generated client models or only the system IDD;
-- how static assets are versioned/cached across SI-01 upgrades;
+- how static assets are versioned/cached across Headless Timing Application upgrades;
 - whether the web application is built in the framework/reference repository or a dedicated repository;
 - detailed operator screen/navigation design.

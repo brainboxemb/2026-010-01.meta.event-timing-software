@@ -2,9 +2,9 @@
 
 Status: working draft / non-authoritative
 
-Software item: **SI-01 — Headless Timing Application**
+Software item: **Headless Timing Application** (SI-01)
 
-This Software Architecture Document describes the architecture of software item 01: the headless Java timing application. It sits below `30-SSAD-software-system-architecture.md` and is the primary technical design document for SI-01 at the current project stage.
+This Software Architecture Document describes the **Headless Timing Application** (SI-01). It sits below `30-SSAD-software-system-architecture.md` and is the primary technical design document for this application at the current project stage.
 
 The SAD is expected to contain concrete architecture decisions such as threading, concurrency, internal messaging, framework/library choices, logging, configuration, persistence, composition and integration structure. A separate SDD is created only when a topic genuinely needs implementation detail that would make this SAD harder to use.
 
@@ -25,11 +25,11 @@ At this stage the intended bias is **towards one coherent SAD rather than early 
 
 ## Architecture drivers
 
-SI-01 architecture is driven by these concerns:
+The **Headless Timing Application** (SI-01) architecture is driven by these concerns:
 
 - run on the original Raspberry Pi Zero / Zero W as a mandatory constrained target;
 - remain usable on Linux/Windows development and test hosts;
-- keep authoritative timing/domain state local to SI-01;
+- keep timing/domain state in the application;
 - support one or more logical TimingNodes without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
@@ -46,9 +46,9 @@ The existing use cases in `04-UC-system-use-cases.md` are the scenario source. T
 
 Representative architecture-validation scenarios include:
 
-1. start SI-01, load configuration, expose version/status and shut down cleanly;
+1. start the **Headless Timing Application** (SI-01), load configuration, expose version/status and shut down cleanly;
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
-3. accept a device observation from an external callback without allowing that callback thread to mutate authoritative application state directly;
+3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
 5. continue local operation while a GUI/browser or backoffice connection is unavailable;
 6. host several TimingNodes in a development/simulation composition without state leakage;
@@ -108,7 +108,7 @@ presentation/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
-The **Remote API** is the general programmable SI-01 interface for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
+The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
 
 The future **Web** interface is separate even though it may also use HTTP and WebSocket. It owns the browser/iPad pages, user-specific endpoints and live messages. Console and remote shell likewise remain separate presentation interfaces; sharing a terminal session does not make them one interface.
 
@@ -178,7 +178,7 @@ asynchronous completion
 
 ### I/O
 
-I/O contains adapters that move data between SI-01 and the outside world:
+I/O contains adapters that move data between the application and the outside world:
 
 ```text
 io/
@@ -197,7 +197,7 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes.
 
-SI-01 may compose 0..N configured `Antenna` instances and 0..N
+The **Headless Timing Application** (SI-01) may compose 0..N configured `Antenna` instances and 0..N
 `BackofficeConnector` instances. Antenna mappings route observations to 1..N
 TimingNodes; connector bindings map inbound/outbound data to/from TimingNodes.
 Concrete antennas/connectors own their protocol/device resources internally.
@@ -222,7 +222,7 @@ cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
 
 ## Principal runtime abstractions
 
-A `TimingNode` is the primary independently addressed operational/domain aggregate inside SI-01. One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
+A `TimingNode` is the primary independently addressed operational/domain aggregate inside the **Headless Timing Application** (SI-01). One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -360,7 +360,7 @@ parallel.
 
 ### Where input enters
 
-External libraries may call SI-01 from their own threads. Examples are HTTP,
+External libraries may call the application from their own threads. Examples are HTTP,
 WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
 
 Those callback threads must not change mutable TimingNode state directly.
@@ -504,7 +504,7 @@ Time is an explicit architecture concern rather than an incidental use of `Date`
 
 ### `TimingTimestamp` value
 
-SI-01 uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
+The **Headless Timing Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
 
 Working semantics:
 
@@ -546,9 +546,9 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted as authority | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
-| clock offset/drift differs between SI-01 and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
+| clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
 
 Daylight-saving time by itself does **not** change UTC/absolute time; the ambiguity appears when a local civil time is treated as if it were an absolute timestamp. Conversely, using an absolute `TimingTimestamp` does not make the operating-system clock monotonic: a wall-clock correction can still cause newly captured absolute timestamps to move backwards.
@@ -569,7 +569,7 @@ TimingEvent
   report an observation, fact, adapter completion or failure
 
 TimingQuery<R>
-  request a consistency-sensitive result from authoritative TimingNode state
+  request a consistency-sensitive result from current TimingNode state
 ```
 
 The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
@@ -713,7 +713,7 @@ Working rules:
 
 ## Data and persistence architecture
 
-The initial architecture uses typed in-memory authoritative state/repositories with simple file-based persistence/restore rather than requiring an embedded database.
+The initial architecture keeps application/domain state in memory and uses simple file-based persistence/restore rather than requiring an embedded database.
 
 Keep these concepts distinct:
 
@@ -731,11 +731,11 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ## Integration architecture
 
-The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backoffice are system-level deployment/interface relationships. This SAD starts at the SI-01 boundary and explains how SI-01 realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backoffice are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 ### Backoffice
 
-RabbitMQ is not the application-level backoffice API. SI-01 depends on semantic source-aware ports, explicit TimingNode routing/bindings and local synchronisation/outbox behaviour. A process may compose 0..N backoffice connectors; RabbitMQ is one connector type.
+RabbitMQ is not the application-level backoffice API. The application depends on semantic source-aware ports, explicit TimingNode routing/bindings and local synchronisation/outbox behaviour. A process may compose 0..N backoffice connectors; RabbitMQ is one connector type.
 
 ```text
 application/domain
@@ -759,9 +759,9 @@ Power/startup/recovery lifecycle and filtering semantics are architectural conce
 
 ### CAN, keypad and displays
 
-CAN/device integrations follow the same rule: device/protocol callbacks enter SI-01 through integration boundaries and application-facing messages. Display state remains owned by SI-01 rather than by the display device.
+CAN/device integrations follow the same rule: device/protocol callbacks enter the application through integration boundaries and application-facing messages. Display state remains in the application rather than in the display device.
 
-Display V1 is a CAN-based integration. Display V2 is a network client that discovers the SI-01 service on the local network and connects for synchronised display data. Exact protocol/session details remain deferred until implementation requires them.
+Display V1 is a CAN-based integration. Display V2 is a network client that discovers the Headless Timing Application service on the local network and connects for synchronised display data. Exact protocol/session details remain deferred until implementation requires them.
 
 ### Connectivity
 
@@ -810,7 +810,7 @@ Private repositories may provide production RFID control, encrypted/proprietary 
 
 ## Technology decision register
 
-This table intentionally lives in the SAD because these choices shape the whole SI-01 architecture.
+This table intentionally lives in the SAD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
@@ -822,7 +822,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
-| Persistence | typed in-memory state + simple file persistence/restore | durability/file mechanics still open |
+| Persistence | application/domain state + simple file persistence/restore | durability/file mechanics still open |
 | Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
 | Remote API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
@@ -833,24 +833,24 @@ A technology should not be selected solely because it is common in unconstrained
 
 ## Physical/deployment view
 
-Representative SI-01 deployments are:
+Representative **Headless Timing Application** (SI-01) deployments are:
 
 ```text
 Production field host
   Raspberry Pi Zero / Zero W
-    one SI-01 process
+    one Headless Timing Application process
       one or more configured TimingNode objects
       local devices + local files
       optional network/backoffice connectivity
 
 Development/test host
   Linux or Windows
-    same SI-01 framework/application behaviour
+    same Headless Timing Application framework/application behaviour
     real or stub adapters
     may host larger multi-TimingNode simulation topology
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of SI-01 relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
 
 ## Testability and failure/recovery architecture
 
@@ -867,13 +867,13 @@ Testability is an architecture property. Application/domain code should where pr
 - expose observable status for degraded/failure conditions;
 - avoid `Thread.sleep()` as a domain timing mechanism.
 
-Fault handling should preserve local authority, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
+Fault handling should preserve local operation, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
 
 Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`.
 
 ## Detailed-design documents
 
-Keep this SAD as the main SI-01 technical design. Use a separate SDD only when
+Keep this SAD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
 implementation detail would make the SAD harder to read.
 
 Current active focused SDD:
