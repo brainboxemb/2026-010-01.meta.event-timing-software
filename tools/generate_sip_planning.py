@@ -344,6 +344,7 @@ def roadmap_positions(group: List[Step], page_x: float = 0.0) -> List[Tuple[Step
 def append_roadmap_svg_page(
     parts: List[str],
     group: List[Step],
+    planning_basis: str,
     page_index: int,
     page_x: float,
     *,
@@ -511,7 +512,12 @@ def render_roadmap_svgs(
     ]
     for page_index, group in enumerate(groups):
         append_roadmap_svg_page(
-            parts, group, page_index, page_index * A4_L_W_MM, standalone=False
+            parts,
+            group,
+            planning_basis,
+            page_index,
+            page_index * A4_L_W_MM,
+            standalone=False,
         )
     parts.append("</svg>")
     (out_dir / "sip-roadmap.svg").write_text("\n".join(parts), encoding="utf-8")
@@ -523,7 +529,12 @@ def render_roadmap_svgs(
             '<rect width="100%" height="100%" fill="white"/>',
         ]
         append_roadmap_svg_page(
-            page_parts, group, page_index, 0.0, standalone=True
+            page_parts,
+            group,
+            planning_basis,
+            page_index,
+            0.0,
+            standalone=True,
         )
         page_parts.append("</svg>")
         (page_dir / f"sip-roadmap-{page_index + 1}.svg").write_text(
