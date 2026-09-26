@@ -236,8 +236,8 @@ def phase_boundary_date(value: date) -> date:
 
 
 def roadmap_end_text(step: Step) -> str:
-    label = "done" if step.status == "done" else "end"
-    return f"{label} {step.target_date.strftime('%d %b %Y')}"
+    value = step.target_date.strftime("%d %b %Y")
+    return value if step.status == "done" else f"end {value}"
 
 
 def step_schedule_text(step: Step) -> str:
