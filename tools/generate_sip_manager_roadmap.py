@@ -419,6 +419,7 @@ def render_svgs(
             page_parts,
             group,
             terms,
+            planning_basis,
             page_index,
             0.0,
             standalone=True,
