@@ -63,8 +63,8 @@ Define enough architecture to start implementation deliberately.
 ### Result
 
 - Architecture baseline for software items and interfaces.
-- TimingNode, runtime, package and public/private boundaries are clear enough to code.
-- Build, test and verification direction is ready for implementation.
+- TimingNode, runtime and package boundaries are clear enough to code.
+- Build/test/verification direction is ready.
 
 ### Demo
 
@@ -142,14 +142,14 @@ Raspberry Pi deployment remains Step 4.
 ### Result
 
 - Headless Timing Application starts from external configuration.
-- Console, shell and Remote API expose the same version/status view.
+- Console, shell and Remote API show the same version/status.
 - Runtime logging and a repeatable black-box test path are available.
 
 ### Demo
 
 - Start the application on Windows from configuration.
-- Show the configured TimingNode, current version/status and runtime log file.
-- Read the same version/status through console, remote shell, HTTP and WebSocket.
+- Show TimingNode, version/status and runtime log.
+- Read version/status through console, shell, HTTP and WebSocket.
 
 ### Done
 
@@ -226,8 +226,8 @@ interface as a genuinely separate client.
 ### Demo
 
 - Show live version and status in the GUI.
-- Stop/restart the Headless Timing Application and show reconnect behaviour.
-- Switch the GUI from a local endpoint to the Raspberry Pi endpoint.
+- Stop/restart the timing application and show reconnect.
+- Switch the GUI from local to Raspberry Pi.
 
 ### Done
 
@@ -330,7 +330,7 @@ hardware.
 ### Result
 
 - Deterministic timing data and state foundation.
-- Registration, next-up-team and reference-data behaviour works locally.
+- Registration, NextUpTeams and reference data work locally.
 - State and source sequence continue correctly after restart.
 
 ### Demo
@@ -443,7 +443,7 @@ Replace the proven hardware stubs with representative real implementations.
 ### Result
 
 - Real RFID, CAN and display adapters.
-- Representative hardware-capable Headless Timing Application deployment.
+- Representative deployment with real timing hardware.
 - Observable device status and recovery.
 
 ### Demo
@@ -528,7 +528,7 @@ Turn the early target image/update path into a supportable operational setup.
 
 - Provision a clean target and start the service.
 - Perform an update and a failed-update rollback.
-- Produce diagnostics and run the representative operational scenario.
+- Produce diagnostics and run the operational scenario.
 
 ### Done
 
