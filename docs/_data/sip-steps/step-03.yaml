@@ -1,16 +1,5 @@
 step: 3
-title: Minimal version/status application on development host
-state: active
-summary: >-
-  Build the first long-running Headless Timing Application from external configuration.
-  One TimingNode is configured. Console, remote shell, HTTP and WebSocket expose the
-  same version/status.
 
-demonstration:
-  bullets:
-    - Start the Headless Timing Application on Windows from external configuration.
-    - Show the configured TimingNode, current version/status and runtime log file.
-    - Read the same version/status through console, remote shell, HTTP and WebSocket.
 planning_changes:
   - date: '2026-09-25'
     change: >-
@@ -39,28 +28,6 @@ planning_changes:
     change: >-
       Verification progress was refreshed: V01 is complete and V04 now covers
       Windows development-host proof including user/NetBeans acceptance.
-
-documents:
-  - name: 20-01-SRD
-    title: SI-01 first executable requirements
-    maturity: review
-    completeness: 100
-  - name: 40-01-IDD
-    title: Remote API interface
-    maturity: review
-    completeness: 100
-  - name: 40-02-IDD
-    title: Application configuration interface
-    maturity: review
-    completeness: 100
-  - name: 31-01-SAD
-    title: SI-01 application/configuration architecture
-    maturity: review
-    completeness: 95
-  - name: 50-SVP
-    title: Verification strategy + ST-1 profile
-    maturity: working
-    completeness: 90
 
 activities:
   - id: A01
