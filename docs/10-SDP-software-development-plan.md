@@ -2,287 +2,213 @@
 
 Status: working draft / non-authoritative
 
-This Software Development Plan describes the **high-level development strategy** for the software system: objectives, development approach, major phases/workstreams, resources, dependencies, risks and important unknowns.
+This plan describes the **development direction** for the event-timing software. It is
+intentionally high level: enough structure to keep the project coherent without turning
+a serious hobby project into a management exercise.
 
-It deliberately does **not** contain the detailed implementation sequence. That belongs in `11-SIP-software-implementation-planning.md`.
+The ordered implementation steps live in the SIP. Repository workflow, release mechanics
+and tooling live in the SDE. Verification detail lives in the SVP.
 
-## Document boundaries
+## What this plan is for
 
-Use the project documents as follows:
+The SDP answers a few broad questions:
 
-```text
-SDP  high-level development strategy, phases, risks, resources and assumptions
-SIP  concrete implementation steps, deliverables, demonstrations and exit evidence
-SDE  development environment, repositories, GitHub workflow, tooling and artifact conventions
-SVP  verification strategy, levels, system-test profiles and evidence model
-SSAD/SAD/SDD  software architecture and design
-```
+- what kind of software system are we trying to build;
+- how do we want to grow it without creating avoidable coupling;
+- which development phases and environments matter;
+- which assumptions and risks can materially change the approach.
 
-The SDP should remain understandable without knowing implementation details. When a phase requires detailed tasks, technology setup or commands, the SDP points to the SIP, SDE, SVP or architecture documents rather than duplicating them.
+It does **not** own implementation tasks, commands, CI evidence or release checklists.
 
-## Development objectives
+## Development goals
 
-The development effort should produce a reusable software system that:
+The project should result in a reusable timing system that:
 
-- supports reliable event timing and time registration;
-- runs on the mandatory original Raspberry Pi Zero / Zero W target;
-- separates the headless timing runtime from desktop and browser/iPad presentation clients;
-- supports multiple logical `TimingNode` aggregates in one application process;
-- supports configurable registration assets, registration sources and device mappings;
-- remains locally useful when external/backoffice connectivity is unavailable;
-- keeps traceable registration data and recovery state;
-- can be tested extensively without requiring all production hardware or proprietary components;
-- allows proprietary implementations to plug into public contracts without forking public framework source;
-- provides reproducible build, test, documentation and target-deployment automation early in development.
+- supports reliable event timing and registration;
+- runs on the original Raspberry Pi Zero / Zero W;
+- separates the **Headless Timing Application** (SI-01) from desktop and web clients;
+- supports multiple logical `TimingNode` instances in one application;
+- keeps local operation useful when backoffice/internet connectivity is unavailable;
+- keeps registrations and recovery state traceable;
+- can be tested without requiring all production hardware;
+- allows private implementations to plug into public contracts;
+- has reproducible build, test, documentation and deployment tooling.
 
-## Development strategy
+## Development approach
 
-### Incremental vertical development
+### Build in small demonstrable steps
 
-Develop in small, demonstrable increments rather than attempting the complete timing system in one integration step.
+Prefer useful vertical increments over building all layers in isolation first.
 
-Each increment should reduce a meaningful risk and end in a concrete deliverable. Detailed increment definitions and demonstrations belong in the SIP.
+Each SIP step should end in something concrete that can be run, shown or verified. The
+SIP owns the exact steps, result, demo and done criteria.
 
-### Release-backed completion baselines
+### Keep architecture ahead of expensive coupling
 
-A SIP implementation step is not complete merely because its planned activities are marked done. Each completed step should leave a stable, identifiable baseline that can be reviewed and rebuilt later.
+Define important boundaries before production implementations make them difficult to
+change:
 
-When a step produces a meaningful software baseline, that closure baseline should normally be a **normal software release**, not a planning-only tag. The release should have a non-snapshot software version, a matching `vX.Y.Z` Git tag, a dated CHANGELOG entry, retained release artifacts/evidence, and a build/test run from the tagged revision itself.
+- software-item and interface ownership;
+- TimingNode/domain ownership;
+- threading and state-change boundaries;
+- public/private extension points;
+- persistence and recovery direction.
 
-Before such a SIP step moves to `completed`, the project should:
+Architecture should support implementation, not delay executable software.
 
-- merge the accepted in-scope implementation/documentation work;
-- ensure build/test tooling that forms part of the release baseline is itself released or otherwise deliberately versioned and reproducibly consumable;
-- verify the required CI and generated evidence on the accepted repository state;
-- prepare the release version and CHANGELOG through the normal reviewed workflow;
-- verify the release candidate on the accepted main branch;
-- create the matching immutable release tag on that verified revision;
-- rebuild/test the tagged revision rather than relying only on pre-merge or pre-tag evidence;
-- verify that produced artifacts report the expected software version, source revision and build identity;
-- retain the release artifacts and verification evidence;
-- update the applicable Software User Manual (SUM), including its release compatibility matrix and user-visible build/run/configuration guidance;
-- record the closure evidence in the coordination repository;
-- only then mark the SIP step `completed` and activate the next step.
+### Get to executable software and the real target early
 
-A release version is consumed once its normal candidate tag has been created. If verification of the tagged revision fails, preserve the failed candidate as `vX.Y.Z-failed` on the same commit, verify that archival tag, remove the normal `vX.Y.Z` tag, and do not publish or retain it as a valid release. Record the failed version in the CHANGELOG as `FAILED DURING RELEASE BUILD`; the next release attempt advances the patch version rather than reusing the failed version. `-failed` tags are historical evidence only and must not trigger or represent normal releases.
+First make the headless application useful on the development host. Then prove the
+original Raspberry Pi Zero early enough that runtime, memory or deployment constraints
+can still influence design choices.
 
-A planning/documentation step that does not produce releasable software does not need an artificial software version. Its SIP definition may instead identify an appropriate immutable documentation/planning baseline. This exception should not be used to avoid releasing software when the step has produced a meaningful software maturity level.
+Image generation and normal application updates should become repeatable before manual
+SD-card preparation turns into routine workflow.
 
-After a software release, normal development should move to the next planned `-SNAPSHOT` version before new capability work begins. The SIP owns the concrete closure checklist and release meaning for each step. The SDE/tooling documentation owns the mechanics for release/tag-triggered builds, artifact retention and version/provenance verification.
+### Automate repeatable work
 
-### Architecture before irreversible coupling
+Use repository automation for builds, tests, generated documentation/evidence and later
+target images/updates.
 
-Define the important system/software-item boundaries, interface ownership, public/private extension model, threading/state model and persistence direction before production implementations make those choices expensive to change.
+AI-assisted work follows the same repository workflow and review/testing rules as other
+changes. The SDE and repository guidance own those details.
 
-Architecture remains a tool for implementation, not an excuse to postpone executable software indefinitely.
+### Increase test realism gradually
 
-### Early executable and early target automation
+Start with fast deterministic tests. Add process/network boundaries, broker integration,
+real Raspberry Pi execution and hardware-in-the-loop tests as the corresponding risks
+become relevant.
 
-First prove the headless application on a normal development environment, primarily Windows. Once the first useful executable exists, establish automated Raspberry Pi image generation and application update deployment early.
+The SVP owns the detailed verification model and `ST-*` profiles.
 
-The intent is to prevent manual SD-card preparation or ad-hoc target setup from becoming normal development practice.
+### Keep public and private concerns separate
 
-### Automation-first engineering
+Reusable contracts, stubs/testkit and reference applications can remain public. Private
+protocol implementations, real deployment identities, mappings, credentials and secrets
+stay outside public source.
 
-Use GitHub Actions and repository automation from the first implementation repositories for build, test, generated evidence and later target-image/update workflows.
+Prove that replacement boundary before proprietary code becomes large.
 
-AI-assisted development is part of the development approach, but AI follows the same issue/branch/pull-request/test/review discipline as human development. Detailed repository and AI working rules belong in the SDE and repository `AGENTS.md` files.
+### Use releases as useful baselines
 
-### Progressive test realism
+When a SIP step produces a meaningful software baseline, close it with a verified,
+identifiable release. Detailed version/tag/artifact mechanics belong in the SDE and
+repository tooling rather than here.
 
-Start with deterministic unit/application tests and progressively add process/network boundaries, broker integration and real target/hardware verification.
+Planning-only steps do not need artificial software releases.
 
-The exact verification levels and `ST-*` system-test profiles belong in the SVP. The SDP only requires that test realism grows with implementation risk rather than replacing fast tests with only expensive end-to-end testing.
+## Broad development phases
 
-### Public/private separation
+These phases are intentionally broader than the SIP steps.
 
-Keep reusable framework contracts, testkit/stubs and reference applications public where appropriate. Keep production-specific/proprietary protocol implementations, real deployment identities/mappings and secrets in private repositories or external configuration.
+### A — Architecture and engineering baseline
 
-Prove the extension boundary early, before substantial proprietary implementation accumulates.
+Establish the domain model, software items, interfaces, development environment,
+verification direction and public/private boundary.
 
-## High-level development phases
+### B — Framework and first useful application
 
-The detailed step numbering, deliverables and demonstrations are maintained in the SIP. These SDP phases are intentionally broader.
+Create the Java/Maven framework and the first long-running **Headless Timing Application**
+(SI-01) on the development host, including configuration and basic remote interfaces.
 
-### Phase A — Architecture and engineering baseline
+### C — Raspberry Pi deployment foundation
 
-Establish the project/document model, domain baseline, use cases, software-item boundaries, system interfaces, development/verification strategy and public/private boundary.
+Prove the original Pi Zero target with a repeatable image, service startup, application
+update path and initial resource measurements.
 
-Outcome: implementation can begin without inventing foundational conventions inside the first coding PRs.
+### D — Independent clients and extension proofs
 
-### Phase B — Framework and first executable
+Add the **Desktop GUI Application** (SI-02), an external reference/test consumer and a
+small private-extension proof to verify that public contracts work outside the framework
+repository.
 
-Create the public Java/Maven framework structure and a minimal SI-01 headless executable on the development environment.
+### E — Timing-domain and web operator behaviour
 
-Prove shared version/status behaviour, public application boundaries, basic concurrency/testability direction and CI.
+Grow the useful TimingNode/domain behaviour, persistence/recovery and the browser/iPad
+**Web Operator Application** (SI-03).
 
-### Phase C — Target deployment foundation
+### F — Device and backoffice integration
 
-Prove the mandatory Raspberry Pi Zero target early.
+Move from deterministic stubs to representative RFID/CAN/display hardware and backoffice
+integration while keeping the same application/domain boundaries.
 
-Establish reproducible image creation, pinned runtime provisioning, automatic service startup, repeatable application updates and the first target resource baseline.
+### G — Operational maturity
 
-This is a development foundation, not final deployment hardening.
+Harden provisioning, updates/rollback, configuration/secrets, diagnostics, longer-running
+tests and measured resource limits.
 
-### Phase D — Client and external-consumer proofs
+## Pace and planning horizon
 
-Introduce a separate desktop GUI software item and an external public reference/test project.
+The working assumption is about **one focused project day per week**. Estimates are
+project days, not promises about calendar dates.
 
-Use these to prove that software-item interfaces and public Maven/API/SPI boundaries work outside the framework reactor and across a real network boundary.
+The SIP roadmap owns the detailed estimates and target dates in
+`docs/_data/sip-roadmap.yaml`. Re-estimate when implementation evidence materially
+changes uncertainty.
 
-Also prove that private/proprietary implementations can replace public stubs through supported contracts.
+The overall project is expected to span many months rather than being treated as a fixed
+deadline. Keeping steps small and demonstrable is more useful than maintaining a detailed
+long-range schedule.
 
-### Phase E — Timing-domain and operator capability growth
+## Development resources
 
-Implement registration/source state, ready-team state, reference data, local persistence/recovery and meaningful operational behaviour.
+The expected minimum setup is:
 
-Introduce the browser/iPad operator application when sufficient domain capability exists to make it useful.
+- a normal Windows development workstation for Java/Maven, documentation tooling and
+  local/integration tests;
+- at least one original Raspberry Pi Zero / Zero W for real target validation;
+- representative RFID/CAN/keypad/display hardware when hardware integration begins.
 
-### Phase F — Device and backoffice integration
+A separate integration host may be added later if broker services, longer tests or test
+drivers make that useful. It is not a current requirement.
 
-Integrate controlled stubs first, then representative production RFID/CAN/display implementations and backoffice communication.
+## Current assumptions
 
-Maintain the same core behaviour and public contracts while replacing test adapters with real implementations.
-
-### Phase G — Operational maturity
-
-Harden target deployment, update/rollback, secrets/configuration handling, diagnostics, long-running verification, hardware-in-the-loop testing and measured resource budgets.
-
-The goal is to mature automation introduced earlier, not to introduce deployment automation only at the end.
-
-## Planning cadence and indicative horizon
-
-The current working planning assumption is approximately **one focused project day per week**.
-
-Effort is estimated in **project days**, not ordinary calendar days. This is useful for a part-time/learning project because a five-project-day task means roughly five focused working sessions even when those sessions are spread across several weeks.
-
-Detailed per-step estimates are maintained as working SIP-roadmap data in `docs/_data/sip-roadmap.json` and are rendered into the generated SIP roadmap. They are planning aids, not commitments or formal requirements.
-
-The current baseline contains approximately **51 focused project days** from the remaining architecture work through deployment hardening. At one project day per week this gives a theoretical baseline of roughly one year. A **25% planning reserve** is currently shown for learning, integration surprises, hardware availability, target-image tooling and proprietary/backoffice unknowns.
-
-The resulting high-level horizon is approximately:
-
-| SDP phase | Indicative target at 1 project day/week | Planning meaning |
-| --- | --- | --- |
-| Phase A — Architecture and engineering baseline | September 2026 | Architecture/document baseline ready to start implementation. |
-| Phase B — Framework and first executable | October 2026 | Public framework skeleton and first SI-01 behaviour running on the development host. |
-| Phase C — Target deployment foundation | November 2026 | Reproducible Pi Zero image, service startup and normal application-update path demonstrated. |
-| Phase D — Client and external-consumer proofs | December 2026 – January 2027 | Desktop GUI, external reference project and initial private-extension proof available. |
-| Phase E — Timing-domain and operator capability growth | February – March 2027 | Local registration/state/recovery behaviour and first useful browser/iPad operator flow available. |
-| Phase F — Device and backoffice integration | April – July 2027 | Stub hardware, representative real devices and backoffice integration progressively demonstrated. |
-| Phase G — Operational maturity | August – September 2027 | Deployment/update/diagnostic lifecycle hardened against a representative system. |
-| Planning reserve | Q4 2027 | Capacity for learning, rework, hardware/protocol uncertainty and slippage without pretending the baseline is a fixed deadline. |
-
-These dates should be reforecast when evidence materially changes the estimate of a SIP step. The roadmap should therefore show both **estimated project days** and **baseline target dates**, while remaining a deliverable/capability roadmap rather than becoming a classical Gantt chart.
-
-A cadence of one project day per week also creates a context-switching risk: work can lose momentum when a difficult investigation spans several weeks. Where possible, steps should therefore remain small enough to reach a demonstrable result within a limited number of focused sessions.
-
-## Development resources and environments
-
-The project should plan explicitly for the environments needed to develop and verify the system.
-
-### Development workstation
-
-At least one normal development workstation is required. The initial development environment is expected to be Windows because that is the primary convenient development host.
-
-It should be capable of:
-
-- Java/Maven development;
-- running SI-01 and SI-02 locally;
-- running Python project tooling;
-- executing normal unit/application/system tests;
-- running Docker/Compose when required for integration services such as RabbitMQ, if supported by the selected workstation setup.
-
-### Mandatory target hardware
-
-At least one original Raspberry Pi Zero / Zero W is required for target validation because ARMv6 runtime behaviour cannot be inferred reliably from desktop development alone.
-
-Target use includes:
-
-- validating the selected Java runtime;
-- booting generated images;
-- measuring startup/memory/CPU/thread behaviour;
-- validating service startup and application updates;
-- later device/network/hardware integration.
-
-### Possible separate integration/test host
-
-A second PC, Linux host or more capable Raspberry Pi may be useful for:
-
-- hosting RabbitMQ/Docker integration services;
-- running backoffice simulators/test drivers while the Pi Zero runs SI-01;
-- running longer system tests;
-- keeping load from the test infrastructure off the constrained target;
-- acting as a reproducible local integration server.
-
-This is currently a **planning option**, not yet a mandatory resource.
-
-An explicit early question is whether the normal development workstation plus one standalone Pi Zero are sufficient for the first phases, or whether a dedicated integration host materially improves repeatability and test realism.
-
-### Representative hardware later
-
-Production-device phases require representative RFID, CAN, keypad and display hardware. These do not need to block the first framework/application phases because stubs/testkit components are part of the strategy.
-
-## Dependencies and assumptions
-
-Current planning assumptions include:
-
-- original Raspberry Pi Zero / Zero W remains a mandatory SI-01 target;
-- Java 8 is the initial baseline until an explicit evidence-backed decision changes it;
-- Maven is the Java build/dependency baseline;
-- GitHub and GitHub Actions remain available for source control and automation;
+- original Raspberry Pi Zero / Zero W remains a required target;
+- Java 8 is the initial target baseline until measurements justify changing it;
+- Maven remains the Java build/dependency baseline;
+- GitHub/GitHub Actions remain available for source and automation;
 - public and private repositories can share versioned public contracts/artifacts;
-- production secrets and deployment mappings can be provided outside public source control;
-- representative hardware and backoffice access will become available when their integration phases begin;
-- local operation must not be designed around permanent internet/backoffice availability.
+- secrets and real deployment mappings stay outside public source;
+- representative hardware/backoffice access will be available when those phases begin;
+- local timing operation must not depend on permanent backoffice/internet connectivity.
 
-When an assumption proves false, the SDP and affected SIP/architecture material should be revised explicitly.
+If an assumption becomes false and affects direction, update this plan and the relevant
+SIP/architecture documents.
 
-## Risks and unknowns
+## Main risks and unknowns
 
-The following risks/unknowns should remain visible at SDP level because they can affect overall approach, schedule or feasibility.
-
-| Risk / unknown | Development response |
+| Risk / unknown | Response |
 | --- | --- |
-| ARMv6 Java runtime availability/support may constrain dependencies and maintenance. | Pin and test an explicit Java 8 runtime early; retain Java 11 only as an evidence-driven future option. |
-| Pi Zero CPU/RAM may make apparently convenient libraries or thread models too heavy. | Measure target resources from the first target image and keep adapters/domain architecture lightweight. |
-| Image generation/update automation may be more complex than expected on legacy Pi Zero support. | Introduce it early as its own SIP increment rather than deferring deployment risk. |
-| Public/private API boundaries may be wrong or too coupled. | Create external reference and private-extension proofs before proprietary implementation becomes large. |
-| Threading/order/timestamp errors could corrupt timing semantics. | Keep mutable state behind controlled serialized boundaries and verify source timestamps/order deterministically. |
-| Offline/reconnect behaviour may become complex across persistence and backoffice synchronisation. | Separate local authority/outbox/transport semantics and test disconnect/recovery progressively. |
-| Real RFID filtering/decryption/hardware behaviour may differ from simulations. | Keep production adapters replaceable and add HIL evidence once hardware is available. |
-| Backoffice/RabbitMQ protocol details may constrain public interfaces. | Keep semantic backoffice ports transport-independent and isolate proprietary protocol mapping. |
-| Full-field simulation may stress the runtime differently from normal Pi deployment. | Support configurable multi-TimingNode/source simulations and measure scaling independently from target topology. |
-| A single development PC + Pi Zero may be insufficient for repeatable integration/HIL tests. | Evaluate a separate integration host as test infrastructure needs become concrete. |
-| One-day-per-week cadence may create context-switching overhead and stretch difficult investigations. | Keep increments demonstrable and reforecast project-day estimates when learning/integration evidence changes uncertainty. |
-| AI-assisted development can create large/fast changes that are difficult to review. | Require the same PR-first workflow, tests, generated evidence and source-of-truth discipline for AI work. |
+| ARMv6 Java/runtime support constrains libraries or maintenance. | Prove the chosen runtime on a real Pi Zero early; reconsider Java only from measured evidence. |
+| Pi Zero CPU/RAM is too limited for convenient designs. | Measure real resource use early and keep the runtime architecture lean. |
+| Image/update automation is harder than expected. | Treat target deployment as an early capability rather than end-of-project packaging. |
+| Public/private boundaries are wrong. | Use external-consumer and private-replacement proofs before proprietary code grows. |
+| Ordering/threading/timestamp mistakes affect timing results. | Keep state changes controlled and verify ordering/timestamps deterministically. |
+| Offline/reconnect behaviour becomes complex. | Keep local operation, persistence and transport concerns separate and test recovery progressively. |
+| Real hardware differs from simulations. | Use replaceable adapters and add representative HIL tests when hardware becomes available. |
+| Backoffice details leak into public/domain APIs. | Keep semantic application ports separate from transport/proprietary mappings. |
+| Part-time cadence causes loss of context. | Prefer small demonstrable steps and keep current decisions/evidence easy to recover. |
 
-This table is expected to evolve as evidence replaces uncertainty.
+## Decisions still to resolve
 
-## Key development decisions still to be made
+Important choices still expected during implementation include:
 
-Examples of decisions that remain below SDP level but may materially affect the plan include:
+- exact ARMv6 Java runtime/distribution;
+- Raspberry Pi image-builder and update/rollback approach;
+- later logging/test-library choices where not already settled;
+- configuration/secrets refinement as more adapters are added;
+- public/private artifact publication;
+- whether a dedicated integration host becomes worthwhile;
+- whether Java 11 ever provides enough benefit to replace the Java 8 target baseline.
 
-- exact ARMv6 Java 8 distribution/runtime;
-- Raspberry Pi image-builder technology;
-- application-update/rollback mechanism;
-- final Java logging/test libraries;
-- HTTP/WebSocket/remote-shell technology compatible with Java 8 and Pi Zero;
-- exact configuration file format and secret injection model;
-- public/private Maven artifact publication mechanism;
-- whether a dedicated integration/test host is required;
-- when Java 11 evidence is mature enough to reconsider the baseline.
+These decisions belong in the SIP, SDE, architecture or implementation work when they
+become concrete.
 
-Detailed resolution belongs in the SIP, SDE, architecture or implementation PR depending on the topic.
+## When to update this plan
 
-## Planning and control
+Change the SDP when the **development direction** changes: a major target assumption,
+phase strategy, resource need or project-level risk.
 
-The SDP controls **direction**, not day-to-day implementation tasks.
-
-- Use the **SIP** for the ordered implementation steps, deliverables, demonstrations and exit evidence.
-- Use the **SDE** for repository structure, GitHub workflow, development tooling, generated-output conventions and environment setup.
-- Use the **SVP** for verification levels, test profiles and evidence expectations.
-- Use **SSAD/SAD/SDD/IDD/SRD** documents for architecture, interfaces, design and formal requirements.
-- Use active pull requests for implementation detail and step-specific evidence.
-
-The SDP should be reviewed when a major assumption, resource need, risk or overall phase strategy changes.
+Do not update it for ordinary activity progress. That belongs in the SIP, issues, pull
+requests and generated evidence.
