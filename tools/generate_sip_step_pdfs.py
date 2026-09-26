@@ -33,6 +33,8 @@ from generate_sip_planning import (
     planning_changes_height,
     step_card_meta,
     step_demo_id,
+    step_effort_text,
+    step_schedule_text,
     validate_data,
     wrap,
 )
@@ -108,7 +110,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         17.0,
         [
             f"{step.status.upper()} | baseline ~{step.estimate_days}d | "
-            f"{base.step_effort_text(step)} | {base.step_schedule_text(step)}"
+            f"{step_effort_text(step)} | {step_schedule_text(step)}"
         ],
         2.9,
         bold=True,
