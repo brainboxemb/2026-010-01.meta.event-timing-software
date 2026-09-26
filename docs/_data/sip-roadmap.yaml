@@ -5,13 +5,13 @@ planning_reserve_fraction: 0.25
 
 actuals:
   through_date: "2026-09-26"
-  estimated_project_days: 5.0
+  estimated_project_days: 4.8
   method: >-
-    Approximation from main-branch commit activity across the meta and
-    implementation repositories. Activity is grouped into work sessions, a
-    session is split after 90 minutes without commits, a single-commit session
-    counts at least 15 minutes, and 8 hours equals one project day. This is a
-    planning indication, not time tracking.
+    Approximation from commit activity within merged pull requests across the
+    meta and implementation repositories. Each commit contributes a 30-minute
+    activity window (15 minutes before and after); overlapping windows from both
+    repositories are merged and counted once. The resulting hours are divided by
+    8 to obtain project days. This is a planning indication, not time tracking.
 
 terms:
   - term: SI-01
