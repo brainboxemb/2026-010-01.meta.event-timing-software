@@ -2,10 +2,10 @@
 """Generate the canonical SIP planning views.
 
 Sources:
-- docs/11-SIP-software-implementation-planning.md: milestone titles,
-  deliverables and demonstrations.
-- docs/_data/sip-roadmap.yaml: estimates, cadence and milestone document state.
-- docs/_data/sip-steps/step-NN.yaml: detailed per-step activity drill-down.
+- docs/11-SIP-software-implementation-planning.md: canonical step content
+  (title, status, goal, result, demo and done).
+- docs/_data/sip-roadmap.yaml: estimates, cadence, terms and document state.
+- docs/_data/sip-steps/step-NN.yaml: detailed activity/status drill-down only.
 - docs/_data/schemas/*.schema.json: planning data validation.
 
 Generated output:
@@ -89,6 +89,11 @@ STATE_STYLE = {
 class Step:
     number: int
     title: str
+    status: str
+    goal: str
+    result_bullets: List[str]
+    demo_bullets: List[str]
+    done_bullets: List[str]
     deliverable: str
     demonstration: str
     estimate_days: int
@@ -163,6 +168,38 @@ def extract_subsection(body: str, heading: str) -> str:
     return match.group(1).strip() if match else ""
 
 
+def subsection_bullets(body: str, heading: str) -> List[str]:
+    section = extract_subsection(body, heading)
+    bullets = [
+        strip_markdown(match.group(1))
+        for match in re.finditer(r"^\s*-\s+(.+?)\s*$", section, flags=re.M)
+    ]
+    if bullets:
+        return [item for item in bullets if item]
+    fallback = strip_markdown(section)
+    return [fallback] if fallback else []
+
+
+def sip_status(body: str, step_number: int) -> str:
+    match = re.search(r"^Status:\s*(.+?)\s*$", body, flags=re.M)
+    if not match:
+        raise SystemExit(f"Missing Status for SIP Step {step_number}")
+    raw = match.group(1).strip().lower()
+    aliases = {
+        "completed": "done",
+        "complete": "done",
+        "done": "done",
+        "active": "active",
+        "planned": "planned",
+        "not started": "planned",
+        "blocked": "blocked",
+        "deferred": "deferred",
+    }
+    if raw not in aliases:
+        raise SystemExit(f"Unsupported SIP Step {step_number} status: {raw}")
+    return aliases[raw]
+
+
 def parse_sip(path: Path, plan: dict) -> List[Step]:
     text = path.read_text(encoding="utf-8")
     heading_re = re.compile(r"^## Step (\d+)\s+[—-]\s+(.+?)\s*$", re.M)
@@ -186,14 +223,25 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
         target = start + timedelta(days=round(cumulative / cadence * 7))
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         body = text[match.end():end]
+        goal = strip_markdown(extract_subsection(body, "Goal"))
+        result_bullets = subsection_bullets(body, "Result")
+        demo_bullets = subsection_bullets(body, "Demo")
+        done_bullets = subsection_bullets(body, "Done")
+        if not goal or not result_bullets or not demo_bullets or not done_bullets:
+            raise SystemExit(
+                f"SIP Step {number} must define Goal, Result, Demo and Done"
+            )
         steps.append(
             Step(
                 number=number,
                 title=match.group(2).strip(),
-                deliverable=concise(extract_subsection(body, "Deliverable"), 190)
-                or "Deliverable to be refined.",
-                demonstration=concise(extract_subsection(body, "Demonstration"), 190)
-                or "Demonstration to be refined.",
+                status=sip_status(body, number),
+                goal=goal,
+                result_bullets=result_bullets,
+                demo_bullets=demo_bullets,
+                done_bullets=done_bullets,
+                deliverable=" ".join(result_bullets),
+                demonstration=" ".join(demo_bullets),
                 estimate_days=estimate,
                 target_date=target,
                 documents=list(cfg.get("documents", [])),
@@ -691,7 +739,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         MARGIN_MM,
         17.0,
         [
-            f"{board['state'].upper()} | ~{step.estimate_days} roadmap project days | "
+            f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
             f"target {step.target_date.strftime('%d %b %Y')}"
         ],
         2.9,
@@ -703,13 +751,13 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         parts,
         MARGIN_MM,
         24.0,
-        wrap(board.get("summary", ""), 75, 3),
+        wrap(step.goal, 75, 3),
         2.7,
         anchor="start",
         fill="#555",
     )
 
-    demo = board.get("demonstration")
+    demo = step.demo_bullets
     usable_w = A4_P_W_MM - 2 * MARGIN_MM
     if demo:
         demo_top = 34.0
@@ -729,7 +777,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
             fill="#4f81bd",
         )
         cursor = demo_top + 10.5
-        for bullet in demo["bullets"]:
+        for bullet in demo:
             lines = wrap(bullet, 71, 2)
             svg_text(
                 parts,
@@ -745,7 +793,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
     else:
         docs_top = 34.0
 
-    docs = board["documents"]
+    docs = step.documents
     docs_h = 25.0 if len(docs) > 4 else 19.0
     parts.append(
         f'<rect x="{MARGIN_MM}" y="{docs_top}" width="{usable_w}" height="{docs_h}" '

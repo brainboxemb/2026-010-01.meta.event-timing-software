@@ -2,7 +2,18 @@ status: working estimate / non-authoritative
 start_date: "2026-09-12"
 cadence_project_days_per_week: 1.0
 planning_reserve_fraction: 0.25
-active_step: 3
+
+terms:
+  - term: SI-01
+    meaning: Headless Timing Application
+  - term: SI-02
+    meaning: Desktop GUI Application
+  - term: SI-03
+    meaning: Web Operator Application
+  - term: TimingNode
+    meaning: Logical timing unit with its own identity and state
+  - term: ST-1
+    meaning: Application behaviour system-test profile
 
 documentation_maturity:
   levels:
@@ -53,7 +64,7 @@ steps:
       - {name: 13-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 20-01-SRD, title: SI-01 first executable requirements, maturity: review, completeness: 100}
       - {name: 31-01-SDD-02, title: Java component/package design, maturity: working, completeness: 85}
-      - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
+      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
       - {name: 50-SVP, title: Verification strategy / Step 2 evidence, maturity: working, completeness: 85}
 
   "3":
@@ -66,7 +77,7 @@ steps:
       verification: {level: working, scope: "configuration/component evidence plus ST-1 executable behaviour"}
     documents:
       - {name: 20-01-SRD, title: SI-01 first executable requirements, maturity: review, completeness: 100}
-      - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
+      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
       - {name: 40-02-IDD, title: Application configuration interface, maturity: review, completeness: 100}
       - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 95}
       - {name: 50-SVP, title: First executable ST-1 evidence, maturity: working, completeness: 90}
@@ -90,12 +101,12 @@ steps:
     workstream: client
     docs:
       requirements: {level: working, scope: "SI-02 connection/status GUI behaviour"}
-      idd: {level: review, scope: "application-control/status interface between SI-01 and SI-02"}
+      idd: {level: review, scope: "Remote API between SI-01 and SI-02"}
       design: {level: working, scope: "SI-02 SAD sufficient for first GUI"}
       verification: {level: working, scope: "local/Pi GUI interface scenarios"}
     documents:
       - {name: 20-02-SRD, title: Desktop GUI requirements, maturity: working, completeness: 60}
-      - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
+      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
       - {name: 31-02-SAD, title: Desktop GUI architecture, maturity: working, completeness: 80}
       - {name: 50-SVP, title: GUI local/Pi scenarios, maturity: working, completeness: 75}
 
@@ -110,7 +121,7 @@ steps:
     documents:
       - {name: 13-SDE, title: Reusable Java toolchain, maturity: accepted, completeness: 100}
       - {name: 31-01-SDD-02, title: Java component/public boundaries, maturity: review, completeness: 95}
-      - {name: 40-01-IDD, title: Application control/status interface, maturity: review, completeness: 100}
+      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
       - {name: 50-SVP, title: External ST-1/ST-2 scenarios, maturity: review, completeness: 85}
 
   "7":

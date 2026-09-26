@@ -1,32 +1,4 @@
 step: 2
-title: Framework repository skeleton
-state: complete
-summary: >-
-  SI-01 is established as the first real consumer of the reusable Java toolchain.
-  The framework/app skeleton builds, tests and runs on the supported development
-  environments, reports traceable build identity, and is closed by the verified
-  0.1.0 software release.
-documents:
-  - name: 13-SDE
-    title: Java build/test toolchain
-    maturity: accepted
-    completeness: 100
-  - name: 20-01-SRD
-    title: SI-01 first executable requirements
-    maturity: review
-    completeness: 100
-  - name: 31-01-SDD-02
-    title: Java component/package design
-    maturity: working
-    completeness: 85
-  - name: 40-01-IDD
-    title: Application control/status interface
-    maturity: review
-    completeness: 100
-  - name: 50-SVP
-    title: Verification strategy / Step 2 evidence
-    maturity: working
-    completeness: 85
 
 activities:
   - id: T01
