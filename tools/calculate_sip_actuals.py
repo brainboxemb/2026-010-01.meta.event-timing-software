@@ -1,21 +1,10 @@
 #!/usr/bin/env python3
-"""Recalculate the SIP actual-effort planning snapshot from merged PR activity.
-
-The normal documentation build deliberately does not call this script. It renders
-from the committed snapshot in docs/_data/sip-roadmap.yaml.
-
-This tool combines commit activity from both event-timing project repositories
-into one chronological timeline. Each commit contributes a 30-minute activity
-window (15 minutes before and after the commit); overlapping windows are merged
-before the total is converted to 8-hour project days.
-"""
+"""Calculate the SIP actual-effort planning snapshot from GitHub PR commits."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
-from typing import Iterable
 import argparse
 import json
 import os
@@ -27,290 +16,133 @@ import urllib.request
 import yaml
 
 
-PROJECT_REPOSITORIES = (
+REPOSITORIES = (
     "brainboxemb/2026-010-01.meta.event-timing-software",
     "brainboxemb/2026-010-02.java.event-timing-framework",
 )
-DEFAULT_PLAN = Path("docs/_data/sip-roadmap.yaml")
-ACTIVITY_WINDOW_MINUTES = 30
+PLAN_PATH = Path("docs/_data/sip-roadmap.yaml")
+WINDOW_MINUTES = 30
 PROJECT_DAY_HOURS = 8.0
 
 
-@dataclass(frozen=True)
-class Activity:
-    repository: str
-    sha: str
-    timestamp: datetime
-    message: str
+def github_get(path: str, params: dict[str, object] | None = None):
+    query = urllib.parse.urlencode(params or {})
+    url = f"https://api.github.com{path}" + (f"?{query}" if query else "")
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "event-timing-sip-actuals",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
 
-
-@dataclass(frozen=True)
-class ActivityBlock:
-    start: datetime
-    end: datetime
-    activities: tuple[Activity, ...]
-
-    @property
-    def hours(self) -> float:
-        return (self.end - self.start).total_seconds() / 3600.0
-
-
-class GitHubClient:
-    def __init__(self, token: str | None) -> None:
-        self.token = token
-
-    def get(self, path: str, params: dict[str, str | int] | None = None):
-        query = urllib.parse.urlencode(params or {})
-        url = f"https://api.github.com{path}"
-        if query:
-            url += f"?{query}"
-        headers = {
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "event-timing-sip-actuals",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+    try:
         request = urllib.request.Request(url, headers=headers)
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            if exc.code == 403 and not self.token:
-                raise SystemExit(
-                    "GitHub API rate limit reached. Set GITHUB_TOKEN or GH_TOKEN "
-                    "and run the command again."
-                ) from exc
-            raise SystemExit(f"GitHub API request failed ({exc.code}): {detail}") from exc
-
-    def pages(self, path: str, params: dict[str, str | int] | None = None):
-        page = 1
-        while True:
-            page_params = dict(params or {})
-            page_params.update({"per_page": 100, "page": page})
-            items = self.get(path, page_params)
-            if not isinstance(items, list):
-                raise SystemExit(f"Expected a list from GitHub API path {path}")
-            yield from items
-            if len(items) < 100:
-                break
-            page += 1
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        if exc.code == 403 and not token:
+            raise SystemExit(
+                "GitHub API rate limit reached; set GITHUB_TOKEN or GH_TOKEN."
+            ) from exc
+        raise SystemExit(f"GitHub API request failed ({exc.code}): {detail}") from exc
 
 
-def parse_timestamp(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+def github_pages(path: str, params: dict[str, object] | None = None):
+    page = 1
+    while True:
+        query = dict(params or {})
+        query.update({"per_page": 100, "page": page})
+        items = github_get(path, query)
+        if not isinstance(items, list):
+            raise SystemExit(f"Expected a list from GitHub API path {path}")
+        yield from items
+        if len(items) < 100:
+            return
+        page += 1
 
 
-def day_start(value: date) -> datetime:
-    return datetime.combine(value, time.min, tzinfo=timezone.utc)
+def timestamp(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+        timezone.utc
+    )
 
 
-def day_end_inclusive(value: date) -> datetime:
-    return datetime.combine(value, time.max, tzinfo=timezone.utc)
-
-
-def merged_pull_requests(
-    client: GitHubClient,
-    repository: str,
-    start: datetime,
-    through: datetime,
-) -> list[dict]:
-    pulls: list[dict] = []
-    for pull in client.pages(
+def merged_pr_numbers(repository: str, start: datetime, through: datetime) -> list[int]:
+    numbers = []
+    for pull in github_pages(
         f"/repos/{repository}/pulls",
-        {"state": "closed", "sort": "updated", "direction": "asc"},
+        {"state": "closed", "sort": "updated", "direction": "desc"},
     ):
         merged_at = pull.get("merged_at")
-        if not merged_at:
-            continue
-        merged = parse_timestamp(merged_at)
-        if start <= merged <= through:
-            pulls.append(pull)
-    return pulls
+        if merged_at and start <= timestamp(merged_at) <= through:
+            numbers.append(int(pull["number"]))
+    return numbers
 
 
-def pull_activities(
-    client: GitHubClient,
-    repository: str,
-    pull_number: int,
-    start: datetime,
-    through: datetime,
-) -> list[Activity]:
-    activities: list[Activity] = []
-    for commit in client.pages(
-        f"/repos/{repository}/pulls/{pull_number}/commits",
+def commit_times(repository: str, pull_number: int) -> list[tuple[str, datetime]]:
+    result = []
+    for commit in github_pages(
+        f"/repos/{repository}/pulls/{pull_number}/commits"
     ):
         stamp = (
             commit.get("commit", {}).get("author", {}).get("date")
             or commit.get("commit", {}).get("committer", {}).get("date")
         )
-        if not stamp:
-            continue
-        timestamp = parse_timestamp(stamp)
-        if not (start <= timestamp <= through):
-            continue
-        activities.append(
-            Activity(
-                repository=repository,
-                sha=commit["sha"],
-                timestamp=timestamp,
-                message=commit.get("commit", {}).get("message", "").splitlines()[0],
-            )
-        )
-    return activities
+        if stamp:
+            result.append((commit["sha"], timestamp(stamp)))
+    return result
 
 
-def collect_activities(
-    client: GitHubClient,
-    repositories: Iterable[str],
-    start: datetime,
-    through: datetime,
-) -> list[Activity]:
-    unique: dict[tuple[str, str], Activity] = {}
-    for repository in repositories:
-        pulls = merged_pull_requests(client, repository, start, through)
-        for pull in pulls:
-            for activity in pull_activities(
-                client, repository, int(pull["number"]), start, through
-            ):
-                unique[(activity.repository, activity.sha)] = activity
-    return sorted(unique.values(), key=lambda item: item.timestamp)
+def collect_activity(start: datetime, through: datetime) -> list[tuple[str, datetime]]:
+    unique: dict[tuple[str, str], datetime] = {}
+    for repository in REPOSITORIES:
+        for pull_number in merged_pr_numbers(repository, start, through):
+            for sha, commit_time in commit_times(repository, pull_number):
+                if start <= commit_time <= through:
+                    unique[(repository, sha)] = commit_time
+    return sorted(
+        ((repository, commit_time) for (repository, _), commit_time in unique.items()),
+        key=lambda item: item[1],
+    )
 
 
-def merge_activity_windows(activities: Iterable[Activity]) -> list[ActivityBlock]:
-    ordered = list(activities)
-    if not ordered:
-        return []
+def activity_blocks(
+    activity: list[tuple[str, datetime]],
+) -> list[tuple[datetime, datetime, set[str], int]]:
+    half_window = timedelta(minutes=WINDOW_MINUTES / 2)
+    blocks: list[tuple[datetime, datetime, set[str], int]] = []
 
-    half_window = timedelta(minutes=ACTIVITY_WINDOW_MINUTES / 2.0)
-    blocks: list[ActivityBlock] = []
+    for repository, commit_time in activity:
+        start = commit_time - half_window
+        end = commit_time + half_window
 
-    for activity in ordered:
-        window_start = activity.timestamp - half_window
-        window_end = activity.timestamp + half_window
-
-        if not blocks or window_start > blocks[-1].end:
-            blocks.append(
-                ActivityBlock(
-                    start=window_start,
-                    end=window_end,
-                    activities=(activity,),
-                )
-            )
+        if not blocks or start > blocks[-1][1]:
+            blocks.append((start, end, {repository}, 1))
             continue
 
-        previous = blocks[-1]
-        blocks[-1] = ActivityBlock(
-            start=previous.start,
-            end=max(previous.end, window_end),
-            activities=previous.activities + (activity,),
+        old_start, old_end, repositories, count = blocks[-1]
+        blocks[-1] = (
+            old_start,
+            max(old_end, end),
+            repositories | {repository},
+            count + 1,
         )
 
     return blocks
 
 
-def update_plan_snapshot(path: Path, through: date, project_days: float) -> None:
+def update_snapshot(path: Path, through: date, project_days: float) -> None:
     text = path.read_text(encoding="utf-8")
-    actuals_match = re.search(r"(?ms)^actuals:\n(?P<body>(?:^[ \t].*\n?)+)", text)
-    if not actuals_match:
+    actuals = re.search(r"(?ms)^actuals:\n(?P<body>(?:^[ \t].*\n?)+)", text)
+    if not actuals:
         raise SystemExit(f"Could not find actuals block in {path}")
 
-    body = actuals_match.group("body")
+    body = actuals.group("body")
     body = re.sub(
-        r'(?m)^(  through_date:\s*)".*?"\s*
-    updated = text[: actuals_match.start("body")] + body + text[actuals_match.end("body") :]
-    path.write_text(updated, encoding="utf-8")
-
-
-def print_report(
-    repositories: tuple[str, ...],
-    start: date,
-    through: date,
-    activities: list[Activity],
-    blocks: list[ActivityBlock],
-) -> float:
-    total_hours = sum(block.hours for block in blocks)
-    project_days = total_hours / PROJECT_DAY_HOURS
-
-    print("SIP actual-effort planning indication")
-    print(f"Range:        {start.isoformat()} through {through.isoformat()}")
-    print(f"Repositories: {', '.join(repositories)}")
-    print(f"Commits:      {len(activities)} merged-PR commits")
-    print(f"Window:       {ACTIVITY_WINDOW_MINUTES:g} min per commit (±{ACTIVITY_WINDOW_MINUTES / 2:g} min)")
-    print(f"Blocks:       {len(blocks)} merged activity windows")
-    print(f"Hours:        {total_hours:.2f}")
-    print(f"Project days: {project_days:.2f} ({PROJECT_DAY_HOURS:g} h/day)")
-    print()
-    print("Activity blocks:")
-    for index, block in enumerate(blocks, start=1):
-        repo_names = sorted({item.repository.rsplit("/", 1)[-1] for item in block.activities})
-        print(
-            f"  {index:02d}  {block.start.isoformat()} -> {block.end.isoformat()}  "
-            f"{block.hours:5.2f} h  {len(block.activities):3d} commits  "
-            f"[{', '.join(repo_names)}]"
-        )
-    return project_days
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Calculate the SIP actual-effort snapshot from merged PR commits."
-    )
-    parser.add_argument(
-        "--plan",
-        type=Path,
-        default=DEFAULT_PLAN,
-        help=f"Roadmap YAML (default: {DEFAULT_PLAN})",
-    )
-    parser.add_argument(
-        "--through",
-        type=date.fromisoformat,
-        default=date.today(),
-        help="Inclusive snapshot date in YYYY-MM-DD form (default: today)",
-    )
-    parser.add_argument(
-        "--update",
-        action="store_true",
-        help="Update actuals.through_date and estimated_project_days in the roadmap YAML.",
-    )
-    args = parser.parse_args()
-
-    plan = yaml.safe_load(args.plan.read_text(encoding="utf-8"))
-    start = date.fromisoformat(str(plan["start_date"]))
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    client = GitHubClient(token)
-
-    start_dt = day_start(start)
-    through_dt = day_end_inclusive(args.through)
-    activities = collect_activities(
-        client,
-        PROJECT_REPOSITORIES,
-        start_dt,
-        through_dt,
-    )
-    blocks = merge_activity_windows(activities)
-    project_days = print_report(
-        PROJECT_REPOSITORIES,
-        start,
-        args.through,
-        activities,
-        blocks,
-    )
-
-    if args.update:
-        rounded = round(project_days, 1)
-        update_plan_snapshot(args.plan, args.through, rounded)
-        print()
-        print(
-            f"Updated {args.plan}: through_date={args.through.isoformat()}, "
-            f"estimated_project_days={rounded:.1f}"
-        )
-
-
-if __name__ == "__main__":
-    main()
-,
+        r'(?m)^(  through_date:\s*)".*?"\s*$',
         lambda match: f'{match.group(1)}"{through.isoformat()}"',
         body,
         count=1,
@@ -321,91 +153,59 @@ if __name__ == "__main__":
         body,
         count=1,
     )
-    updated = text[: actuals_match.start("body")] + body + text[actuals_match.end("body") :]
-    path.write_text(updated, encoding="utf-8")
-
-
-def print_report(
-    repositories: tuple[str, ...],
-    start: date,
-    through: date,
-    activities: list[Activity],
-    blocks: list[ActivityBlock],
-) -> float:
-    total_hours = sum(block.hours for block in blocks)
-    project_days = total_hours / PROJECT_DAY_HOURS
-
-    print("SIP actual-effort planning indication")
-    print(f"Range:        {start.isoformat()} through {through.isoformat()}")
-    print(f"Repositories: {', '.join(repositories)}")
-    print(f"Commits:      {len(activities)} merged-PR commits")
-    print(f"Window:       {ACTIVITY_WINDOW_MINUTES:g} min per commit (±{ACTIVITY_WINDOW_MINUTES / 2:g} min)")
-    print(f"Blocks:       {len(blocks)} merged activity windows")
-    print(f"Hours:        {total_hours:.2f}")
-    print(f"Project days: {project_days:.2f} ({PROJECT_DAY_HOURS:g} h/day)")
-    print()
-    print("Activity blocks:")
-    for index, block in enumerate(blocks, start=1):
-        repo_names = sorted({item.repository.rsplit("/", 1)[-1] for item in block.activities})
-        print(
-            f"  {index:02d}  {block.start.isoformat()} -> {block.end.isoformat()}  "
-            f"{block.hours:5.2f} h  {len(block.activities):3d} commits  "
-            f"[{', '.join(repo_names)}]"
-        )
-    return project_days
+    path.write_text(
+        text[: actuals.start("body")] + body + text[actuals.end("body") :],
+        encoding="utf-8",
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Calculate the SIP actual-effort snapshot from merged PR commits."
+        description="Calculate SIP actual effort from merged-PR commit activity."
     )
-    parser.add_argument(
-        "--plan",
-        type=Path,
-        default=DEFAULT_PLAN,
-        help=f"Roadmap YAML (default: {DEFAULT_PLAN})",
-    )
-    parser.add_argument(
-        "--through",
-        type=date.fromisoformat,
-        default=date.today(),
-        help="Inclusive snapshot date in YYYY-MM-DD form (default: today)",
-    )
+    parser.add_argument("--plan", type=Path, default=PLAN_PATH)
+    parser.add_argument("--through", type=date.fromisoformat, default=date.today())
     parser.add_argument(
         "--update",
         action="store_true",
-        help="Update actuals.through_date and estimated_project_days in the roadmap YAML.",
+        help="Write the rounded result to the roadmap YAML snapshot.",
     )
     args = parser.parse_args()
 
     plan = yaml.safe_load(args.plan.read_text(encoding="utf-8"))
-    start = date.fromisoformat(str(plan["start_date"]))
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    client = GitHubClient(token)
+    start_date = date.fromisoformat(str(plan["start_date"]))
+    start = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+    through = datetime.combine(args.through, time.max, tzinfo=timezone.utc)
 
-    start_dt = day_start(start)
-    through_dt = day_end_exclusive(args.through)
-    activities = collect_activities(
-        client,
-        PROJECT_REPOSITORIES,
-        start_dt,
-        through_dt,
-    )
-    blocks = merge_activity_windows(activities)
-    project_days = print_report(
-        PROJECT_REPOSITORIES,
-        start,
-        args.through,
-        activities,
-        blocks,
-    )
+    activity = collect_activity(start, through)
+    blocks = activity_blocks(activity)
+    total_hours = sum((end - start).total_seconds() for start, end, _, _ in blocks) / 3600
+    project_days = total_hours / PROJECT_DAY_HOURS
+
+    print("SIP actual-effort planning indication")
+    print(f"Range:        {start_date} through {args.through}")
+    print(f"Repositories: {', '.join(REPOSITORIES)}")
+    print(f"Commits:      {len(activity)} merged-PR commits")
+    print(f"Window:       {WINDOW_MINUTES} min per commit (±{WINDOW_MINUTES / 2:g} min)")
+    print(f"Blocks:       {len(blocks)}")
+    print(f"Hours:        {total_hours:.2f}")
+    print(f"Project days: {project_days:.2f} ({PROJECT_DAY_HOURS:g} h/day)")
+    print()
+    print("Activity blocks:")
+    for index, (start, end, repositories, count) in enumerate(blocks, start=1):
+        names = ", ".join(sorted(repo.rsplit("/", 1)[-1] for repo in repositories))
+        hours = (end - start).total_seconds() / 3600
+        print(
+            f"  {index:02d}  {start.isoformat()} -> {end.isoformat()}  "
+            f"{hours:5.2f} h  {count:3d} commits  [{names}]"
+        )
 
     if args.update:
         rounded = round(project_days, 1)
-        update_plan_snapshot(args.plan, args.through, rounded)
+        update_snapshot(args.plan, args.through, rounded)
         print()
         print(
-            f"Updated {args.plan}: through_date={args.through.isoformat()}, "
+            f"Updated {args.plan}: through_date={args.through}, "
             f"estimated_project_days={rounded:.1f}"
         )
 
