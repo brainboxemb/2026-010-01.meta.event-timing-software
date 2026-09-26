@@ -84,7 +84,9 @@ TimingApplication
         +-- StageTiming
 ```
 
+<a id="fig-si01-01"></a>
 ![SI-01 layered architecture](../../../raw/prod/docs/assets/architecture/layered-architecture.svg)
+*Figure SI01-01 — SI-01 layered architecture.*
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
@@ -245,7 +247,9 @@ TimingApplication
 
 `TimingNodeId` is the stable identity of the `TimingNode` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
 
+<a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
+*Figure SI01-02 — SI-01 software/domain decomposition.*
 
 The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational TimingNode state. The physical registration asset is not a child component of this software tree.
 
@@ -276,7 +280,9 @@ BackofficeConnector (0..N)
     +-- bindings <-> 1..N TimingNodeId
 ```
 
+<a id="fig-si01-03"></a>
 ![TimingNode, hardware and backoffice routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
+*Figure SI01-03 — TimingNode, hardware and backoffice routing.*
 
 `TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
 
@@ -387,7 +393,9 @@ TimingNode A serial executor    TimingNode B serial executor
 I/O mappings / timers resolve targets
 ```
 
+<a id="fig-si01-04"></a>
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
+*Figure SI01-04 — SI-01 runtime dispatch process.*
 
 The source for this process view is
 `docs/_diagrams/runtime-dispatch-process.yaml`.

@@ -1,6 +1,6 @@
 diagram:
   id: system-device-network-topology
-  title: System device and logical interface topology
+  title: Figure SYS-02 — System device and logical interface topology
   width: 1540
   height: 900
   note: Solid relationships show logical system interfaces between endpoints. Intermediate LAN/Wi-Fi equipment is a deployment option, not an IF-03 or IF-09 dependency.

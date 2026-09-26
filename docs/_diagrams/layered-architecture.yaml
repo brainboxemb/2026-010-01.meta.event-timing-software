@@ -1,6 +1,6 @@
 diagram:
   id: layered-architecture
-  title: SI-01 layered architecture — responsibilities and services
+  title: Figure SI01-01 — SI-01 layered architecture — responsibilities and services
   width: 1540
   height: 1150
   description: Working responsibility view of the reusable framework and executable application.

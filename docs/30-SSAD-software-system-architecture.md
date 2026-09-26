@@ -83,7 +83,9 @@ Supporting framework modules, adapters, testkits/reference projects and private 
 
 The desktop GUI and browser clients may disconnect without transferring authoritative timing-domain ownership away from SI-01.
 
+<a id="fig-sys-01"></a>
 ![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
+*Figure SYS-01 — Software items and principal system interfaces.*
 
 ## Software-item relationships
 
@@ -140,7 +142,9 @@ The following rules apply across software-item boundaries:
 
 The principal device/interface relationships are a **software-system concern** because they show where SI-01, the operator software items, external field devices and backoffice meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
 
+<a id="fig-sys-02"></a>
 ![System device and logical interface topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
+*Figure SYS-02 — System device and logical interface topology.*
 
 Representative relationships are:
 
@@ -174,7 +178,9 @@ An available IP path may be direct/point-to-point, same-host or loopback during 
 
 Network health is not one boolean and should not be modeled as one mandatory chain. The system needs to expose separately observable states because they answer different operational questions.
 
+<a id="fig-sys-03"></a>
 ![Network connectivity status — separate observations](../../../raw/prod/docs/assets/architecture/system-connectivity-status.svg)
+*Figure SYS-03 — Network connectivity status — separate observations.*
 
 At minimum distinguish:
 
