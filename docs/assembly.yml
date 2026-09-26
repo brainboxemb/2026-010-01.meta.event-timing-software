@@ -129,7 +129,6 @@ books:
       - timing-application-architecture
       - java-component-design
       - gui-application-architecture
-      - web-operator-architecture
       - data-display-design
       - backoffice-transport-design
       - application-control-status
