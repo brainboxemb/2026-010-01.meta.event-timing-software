@@ -3,6 +3,16 @@ start_date: "2026-09-12"
 cadence_project_days_per_week: 1.0
 planning_reserve_fraction: 0.25
 
+actuals:
+  through_date: "2026-09-26"
+  estimated_project_days: 5.0
+  method: >-
+    Approximation from main-branch commit activity across the meta and
+    implementation repositories. Activity is grouped into work sessions, a
+    session is split after 90 minutes without commits, a single-commit session
+    counts at least 15 minutes, and 8 hours equals one project day. This is a
+    planning indication, not time tracking.
+
 terms:
   - term: SI-01
     meaning: Headless Timing Application
@@ -31,6 +41,7 @@ notes:
   - The baseline assumes approximately one focused project day per week.
   - Forecast months include the configured 25% planning reserve.
   - Forecasts are planning aids, not commitments.
+  - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - The 11-step plan totals 55 estimated project days before reserve; reducing or combining steps must not silently remove work.
   - Documentation maturity and completeness are capability/step scoped.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
@@ -39,6 +50,7 @@ notes:
 steps:
   "1":
     estimate_project_days: 1
+    completed_date: "2026-09-12"
     workstream: architecture
     docs:
       requirements: {level: outline, scope: "first implementation direction"}
@@ -54,6 +66,7 @@ steps:
 
   "2":
     estimate_project_days: 6
+    completed_date: "2026-09-13"
     workstream: framework
     docs:
       requirements: {level: review, scope: "first executable SI-01 scope"}
@@ -68,6 +81,7 @@ steps:
 
   "3":
     estimate_project_days: 3
+    remaining_estimate_project_days: 2
     workstream: application
     docs:
       requirements: {level: working, scope: "configuration, lifecycle and public interface behaviour"}
