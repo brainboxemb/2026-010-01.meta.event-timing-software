@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Show concrete end dates for every SIP phase: keep actual completion dates for completed steps and round future cumulative forecast boundaries up to Monday for presentation without feeding that rounding into later calculations.
+
 - Make SIP roadmap document indicators cumulative and scope-honest: render maturity/completeness as `R-60`, define completeness against expected project-wide document scope, include system use cases in the progression, and show use cases/SRD/IDD/design/verification growing across later implementation steps instead of marking first-slice documents as 100% complete.
 
 - Make SIP actual-effort planning reproducible with a two-repository merged-PR commit-window calculator; use 30-minute overlapping activity windows, refresh the 26 September snapshot to about 38.2 hours / 4.8 project days, and add a manually dispatched GitHub Action that can create a draft snapshot-update PR.
