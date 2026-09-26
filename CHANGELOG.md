@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Track approximate git-derived actual effort per SIP step using explicit merged-PR boundaries; show original estimate, actual and remaining estimate as independent planning signals and refresh the current project snapshot to about 5.1 project days.
+
 - Show concrete end dates for every SIP phase: keep actual completion dates for completed steps and round future cumulative forecast boundaries up to Monday for presentation without feeding that rounding into later calculations.
 
 - Make SIP roadmap document indicators cumulative and scope-honest: render maturity/completeness as `R-60`, define completeness against expected project-wide document scope, include system use cases in the progression, and show use cases/SRD/IDD/design/verification growing across later implementation steps instead of marking first-slice documents as 100% complete.

@@ -58,7 +58,9 @@ python tools/calculate_sip_actuals.py --through YYYY-MM-DD
 python tools/calculate_sip_actuals.py --through YYYY-MM-DD --update
 ```
 
-The calculator uses commits from merged pull requests in the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlapping windows across both repositories, and divides the resulting hours by 8. The result is a planning indication, not time registration.
+The calculator uses commits from merged pull requests in the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlapping windows, and divides the resulting hours by 8. The project total merges all repository activity. Per-step actuals use the same method after assigning PRs through the explicit SIP-step PR boundaries in `sip-roadmap.yaml`.
+
+The roadmap deliberately treats **original estimate**, **actual** and **remaining estimate** as separate planning signals. `original - actual` is therefore not expected to equal `remaining`; a difference is useful re-estimation evidence. The result remains a planning indication, not time registration.
 
 ## Working documents
 

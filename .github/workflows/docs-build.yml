@@ -16,6 +16,8 @@ on:
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
+      - 'tools/calculate_sip_actuals.py'
+      - 'tools/calculate_sip_actuals.py'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
@@ -94,6 +96,12 @@ jobs:
         run: |
           set -euo pipefail
           ! grep -R -n -E '31-01-SDD-02-data-and-display-design\.md|31-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
+
+      - name: Validate SIP actuals tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/calculate_sip_actuals.py --help >/dev/null
 
       # Moon owns only the high-level execute/hydrate decision. The existing
       # project-specific diagram/planning scripts and released eng-docs assembler

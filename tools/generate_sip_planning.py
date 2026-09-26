@@ -97,6 +97,7 @@ class Step:
     deliverable: str
     demonstration: str
     estimate_days: int
+    actual_days: float | None
     remaining_days: float
     target_date: date
     documents: List[dict]
@@ -216,18 +217,19 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     )
     actual_date = through.strftime("%d %b").lstrip("0")
     return (
-        f"Plan: {baseline_days:g}d baseline · ~{actual_days:g}d actual to "
+        f"Plan: {baseline_days:g}d original · ~{actual_days:g}d actual to "
         f"{actual_date} · ~{remaining_days:g}d remaining · "
         f"~{cadence_text} · +{reserve * 100:g}% reserve"
     )
 
 
 def step_effort_text(step: Step) -> str:
-    if step.status == "done":
-        return "done"
+    parts = [f"orig ~{step.estimate_days:g}d"]
+    if step.actual_days is not None:
+        parts.append(f"act ~{step.actual_days:g}d")
     if step.status == "active":
-        return f"~{step.remaining_days:g}d remaining"
-    return f"~{step.estimate_days}d"
+        parts.append(f"rem ~{step.remaining_days:g}d")
+    return " · ".join(parts)
 
 
 def phase_boundary_date(value: date) -> date:
@@ -305,6 +307,11 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
                 deliverable=" ".join(result_bullets),
                 demonstration=" ".join(demo_bullets),
                 estimate_days=estimate,
+                actual_days=(
+                    float(cfg["actual_estimated_project_days"])
+                    if "actual_estimated_project_days" in cfg
+                    else None
+                ),
                 remaining_days=remaining,
                 target_date=target,
                 documents=list(cfg.get("documents", [])),
@@ -446,7 +453,7 @@ def append_roadmap_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", roadmap_end_text(step)],
+            [step_effort_text(step), roadmap_end_text(step)],
             2.3,
             weight="bold",
             fill="#555",
@@ -662,7 +669,7 @@ def render_roadmap_pdf(
                 c,
                 center_x,
                 page_h - 24.0,
-                [f"~{step.estimate_days}d", roadmap_end_text(step)],
+                [step_effort_text(step), roadmap_end_text(step)],
                 6.2,
                 bold=True,
             )
@@ -824,9 +831,14 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         17.0,
         [
             (
-                f"{step.status.upper()} | baseline ~{step.estimate_days}d"
+                f"{step.status.upper()} | original estimate ~{step.estimate_days:g}d"
                 + (
-                    f" | ~{step.remaining_days:g}d remaining"
+                    f" | actual ~{step.actual_days:g}d"
+                    if step.actual_days is not None
+                    else ""
+                )
+                + (
+                    f" | remaining estimate ~{step.remaining_days:g}d"
                     if step.status == "active"
                     else ""
                 )

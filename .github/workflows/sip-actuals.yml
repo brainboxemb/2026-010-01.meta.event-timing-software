@@ -147,7 +147,7 @@ jobs:
           {
             echo "Automated refresh of the SIP actual-effort planning snapshot through **${THROUGH_DATE}**."
             echo
-            echo "The calculation combines merged-PR commit activity from the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlap across both repositories, and divides the resulting hours by 8."
+            echo "The calculation combines merged-PR commit activity from the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlap, and divides the resulting hours by 8. Per-step values use the explicit SIP-step PR attribution in the roadmap data."
             echo
             echo '```text'
             cat "${report}"
