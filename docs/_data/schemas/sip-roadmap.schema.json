@@ -77,7 +77,8 @@
       "required": [
         "through_date",
         "estimated_project_days",
-        "method"
+        "method",
+        "step_pr_attribution"
       ],
       "properties": {
         "through_date": {
@@ -91,6 +92,34 @@
         "method": {
           "type": "string",
           "minLength": 20
+        },
+        "step_pr_attribution": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "minProperties": 1,
+            "patternProperties": {
+              "^[1-9][0-9]*$": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "first_pr"
+                ],
+                "properties": {
+                  "first_pr": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "last_pr": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
         }
       }
     }
@@ -150,6 +179,10 @@
           "format": "date"
         },
         "remaining_estimate_project_days": {
+          "type": "number",
+          "minimum": 0
+        },
+        "actual_estimated_project_days": {
           "type": "number",
           "minimum": 0
         }
