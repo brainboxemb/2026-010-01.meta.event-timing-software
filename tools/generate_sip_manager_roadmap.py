@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Render the manager-facing SIP roadmap.
 
-The detailed SIP remains the engineering source for milestone titles and scope.
-`docs/_data/sip-manager-roadmap.yaml` contains deliberately short presentation
-summaries for the A4 roadmap.  This renderer overwrites only the roadmap SVG/PDF
-outputs produced by `generate_sip_planning.py`; detailed per-step boards remain
-owned by the canonical planning generator.
+The SIP is the content source of truth for step title, status, result and demo.
+Roadmap YAML contributes only estimates, terms and document-status metadata.
+This renderer overwrites only the roadmap SVG/PDF outputs produced by
+`generate_sip_planning.py`; detailed per-step activity boards remain owned by
+the canonical planning generator.
 
-The roadmap intentionally fails instead of ellipsizing manager-facing bullets.
-If a bullet no longer fits, shorten the presentation summary or revisit the
-layout rather than silently clipping meaning.
+The roadmap intentionally fails instead of ellipsizing SIP bullets. If a bullet
+no longer fits, shorten the SIP wording or revisit the layout rather than
+silently clipping meaning.
 """
 
 from __future__ import annotations
@@ -85,12 +85,12 @@ def timeline_start(page_index: int, page_x: float) -> float:
     return page_x + MARGIN
 
 
-def manager_state(step_number: int, active_step: int) -> str:
-    if step_number < active_step:
-        return "done"
-    if step_number == active_step:
-        return "active"
-    return "planned"
+def manager_state(step: base.Step) -> str:
+    if step.status not in STATUS_STYLE:
+        raise SystemExit(
+            f"Unsupported roadmap status for Step {step.number}: {step.status}"
+        )
+    return step.status
 
 
 def bullet_lines(text: str) -> List[str]:
@@ -110,20 +110,18 @@ def bullet_lines(text: str) -> List[str]:
     return lines
 
 
-def validate_manager_steps(steps: Iterable[base.Step], manager: dict) -> None:
-    expected = {str(step.number) for step in steps}
-    present = set(manager["steps"])
-    if expected != present:
-        missing = sorted(expected - present)
-        extra = sorted(present - expected)
-        raise SystemExit(
-            f"Manager-roadmap step mismatch; missing={missing}, extra={extra}"
-        )
-    for number in sorted(expected, key=int):
-        summary = manager["steps"][number]
-        for key in ("deliverable", "demonstration"):
-            for bullet in summary[key]:
-                bullet_lines(bullet)
+def validate_sip_steps(steps: Iterable[base.Step]) -> None:
+    for step in steps:
+        if not 1 <= len(step.result_bullets) <= 3:
+            raise SystemExit(
+                f"SIP Step {step.number} Result must contain 1..3 roadmap bullets"
+            )
+        if not 1 <= len(step.demo_bullets) <= 3:
+            raise SystemExit(
+                f"SIP Step {step.number} Demo must contain 1..3 roadmap bullets"
+            )
+        for bullet in step.result_bullets + step.demo_bullets:
+            bullet_lines(bullet)
 
 
 def svg_text(
@@ -238,9 +236,7 @@ def svg_status_badge(parts: List[str], center_x: float, y: float, state: str) ->
 def append_svg_page(
     parts: List[str],
     group: List[base.Step],
-    summaries: Dict[str, dict],
     terms: List[dict],
-    active_step: int,
     page_index: int,
     page_x: float,
     *,
@@ -279,7 +275,7 @@ def append_svg_page(
 
     for step, center_x, width in manager_positions(group, page_index, page_x):
         radius = 3.4
-        state = manager_state(step.number, active_step)
+        state = manager_state(step)
         _, state_fill, state_stroke = STATUS_STYLE[state]
         points = (
             f"{center_x},{TIMELINE_Y-radius} {center_x+radius},{TIMELINE_Y} "
@@ -329,10 +325,9 @@ def append_svg_page(
         svg_status_badge(parts, center_x, 49.0, state)
 
         x = center_x - width / 2
-        summary = summaries[str(step.number)]
         for top, height, heading, bullets, fill in (
-            (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", summary["deliverable"], "#f6f8fa"),
-            (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", summary["demonstration"], "#ffffff"),
+            (DELIVERABLE_TOP, DELIVERABLE_H, "RESULT", step.result_bullets, "#f6f8fa"),
+            (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", step.demo_bullets, "#ffffff"),
         ):
             parts.append(
                 f'<rect x="{x:.2f}" y="{top:.2f}" width="{width:.2f}" height="{height:.2f}" '
@@ -551,8 +546,7 @@ def append_pdf_changes_page(c: canvas.Canvas, changes: List[dict]) -> None:
 
 def render_svgs(
     groups: List[List[base.Step]],
-    manager: dict,
-    active_step: int,
+    terms: List[dict],
     changes: List[dict],
     out_dir: Path,
 ) -> None:
@@ -568,9 +562,7 @@ def render_svgs(
         append_svg_page(
             parts,
             group,
-            manager["steps"],
-            manager["terms"],
-            active_step,
+            terms,
             page_index,
             page_index * PAGE_W,
             standalone=False,
@@ -593,9 +585,7 @@ def render_svgs(
         append_svg_page(
             page_parts,
             group,
-            manager["steps"],
-            manager["terms"],
-            active_step,
+            terms,
             page_index,
             0.0,
             standalone=True,
@@ -658,8 +648,7 @@ def pdf_status_badge(
 
 def render_pdf(
     groups: List[List[base.Step]],
-    manager: dict,
-    active_step: int,
+    terms: List[dict],
     changes: List[dict],
     path: Path,
 ) -> None:
@@ -702,7 +691,7 @@ def render_pdf(
             c.setFont("Helvetica-Bold", 7.0)
             c.drawString((x + 3.0) * mm, (page_h - TERMS_TOP - 6.2) * mm, "TERMS")
             cursor = TERMS_TOP + 13.0
-            for item in manager["terms"]:
+            for item in terms:
                 c.setFillColor(HexColor("#333333"))
                 c.setFont("Helvetica-Bold", 6.4)
                 c.drawString((x + 3.0) * mm, (page_h - cursor) * mm, item["term"])
@@ -725,7 +714,7 @@ def render_pdf(
                 cursor += 5.2 + len(meaning) * 2.45 + 2.7
 
         for step, center_x, width in manager_positions(group, page_index):
-            state = manager_state(step.number, active_step)
+            state = manager_state(step)
             _, state_fill, state_stroke = STATUS_STYLE[state]
             r = 3.4
             path_points: List[Tuple[float, float]] = [
@@ -771,10 +760,9 @@ def render_pdf(
             pdf_status_badge(c, center_x, 49.0, state, page_h)
 
             x = center_x - width / 2
-            summary = manager["steps"][str(step.number)]
             for top, height, heading, bullets, fill in (
-                (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", summary["deliverable"], "#f6f8fa"),
-                (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", summary["demonstration"], "#ffffff"),
+                (DELIVERABLE_TOP, DELIVERABLE_H, "RESULT", step.result_bullets, "#f6f8fa"),
+                (DEMO_TOP, DEMO_H, f"DEMO · {demo_id(step.number)}", step.demo_bullets, "#ffffff"),
             ):
                 c.setStrokeColor(HexColor("#6c8ebf"))
                 c.setFillColor(HexColor(fill))
@@ -865,29 +853,27 @@ def main() -> None:
 
     data_dir = Path(args.data_dir)
     plan_path = data_dir / "sip-roadmap.yaml"
-    manager_path = data_dir / "sip-manager-roadmap.yaml"
     plan = base.load_yaml(plan_path)
-    manager = base.load_yaml(manager_path)
     base.validate_data(
-        manager,
-        base.load_json(data_dir / "schemas" / "sip-manager-roadmap.schema.json"),
-        manager_path,
+        plan,
+        base.load_json(data_dir / "schemas" / "sip-roadmap.schema.json"),
+        plan_path,
     )
     steps = base.parse_sip(Path(args.sip), plan)
-    validate_manager_steps(steps, manager)
+    validate_sip_steps(steps)
     groups = base.roadmap_groups(steps)
     boards = base.load_step_boards(
         data_dir,
         base.load_json(data_dir / "schemas" / "sip-step-board.schema.json"),
     )
     changes = collect_planning_changes(boards)
-    active_step = int(plan.get("active_step", 1))
+    terms = list(plan["terms"])
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
 
-    render_svgs(groups, manager, active_step, changes, out_dir)
-    render_pdf(groups, manager, active_step, changes, out_dir / "sip-roadmap.pdf")
+    render_svgs(groups, terms, changes, out_dir)
+    render_pdf(groups, terms, changes, out_dir / "sip-roadmap.pdf")
     update_planning_readme(out_dir)
 
 
