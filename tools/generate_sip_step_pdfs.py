@@ -107,8 +107,8 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         MARGIN_MM,
         17.0,
         [
-            f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
-            f"forecast {step.target_date.strftime('%b %Y')}"
+            f"{step.status.upper()} | baseline ~{step.estimate_days}d | "
+            f"{base.step_effort_text(step)} | {base.step_schedule_text(step)}"
         ],
         2.9,
         bold=True,
