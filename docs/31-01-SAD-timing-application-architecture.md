@@ -546,7 +546,7 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted as authority | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
 | clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
@@ -810,7 +810,7 @@ Private repositories may provide production RFID control, encrypted/proprietary 
 
 ## Technology decision register
 
-This table intentionally lives in the SAD because these choices shape the whole SI-01 architecture.
+This table intentionally lives in the SAD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
@@ -873,7 +873,7 @@ Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`
 
 ## Detailed-design documents
 
-Keep this SAD as the main SI-01 technical design. Use a separate SDD only when
+Keep this SAD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
 implementation detail would make the SAD harder to read.
 
 Current active focused SDD:

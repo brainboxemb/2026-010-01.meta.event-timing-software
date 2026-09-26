@@ -99,11 +99,11 @@ The **Web Operator Application** (SI-03) is a browser-based IP client. The **Hea
 
 ### **Headless Timing Application** (SI-01) ↔ backoffice
 
-The **Headless Timing Application** (SI-01) exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport, codec and network route are Headless Timing Application/integration design concerns unless they change the external system contract.
+The **Headless Timing Application** (SI-01) exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport, codec and network route are implementation/integration design concerns for the **Headless Timing Application** (SI-01) unless they change the external system contract.
 
 ### **Headless Timing Application** (SI-01) ↔ field devices
 
-RFID, CAN, keypad and display equipment are external device boundaries of the **Headless Timing Application** (SI-01). Device semantics belong in system/device interfaces; internal adapter lifecycle, threads and processing pipelines belong in the Headless Timing Application architecture/design.
+RFID, CAN, keypad and display equipment are external device boundaries of the **Headless Timing Application** (SI-01). Device semantics belong in system/device interfaces; internal adapter lifecycle, threads and processing pipelines belong in the **Headless Timing Application** (SI-01) architecture/design.
 
 ## System interface catalogue
 
@@ -131,7 +131,7 @@ The following rules apply across software-item boundaries:
 
 - operator behaviour exposed through console, desktop and browser should converge on shared system semantics rather than implementing different business rules per client;
 - network clients read state from and send commands to the **Headless Timing Application** (SI-01); timing state remains in that application;
-- loss of the **Desktop GUI Application** (SI-02) or **Web Operator Application** (SI-03) must not by itself stop local operation of the Headless Timing Application;
+- loss of the **Desktop GUI Application** (SI-02) or **Web Operator Application** (SI-03) must not by itself stop local operation of the **Headless Timing Application** (SI-01);
 - IF-03 and IF-09 are endpoint-to-endpoint logical interfaces and must not make a physical Wi-Fi router an architectural prerequisite;
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
@@ -239,7 +239,7 @@ Reference: `reference/README.md`.
 - final system interface/IDD breakdown and ownership;
 - authentication, authorisation and secure transport requirements across software-item boundaries;
 - compatibility/versioning policy for IF-03 and IF-06;
-- final deployment ownership for serving SI-03 assets;
+- final deployment ownership for serving **Web Operator Application** (SI-03) assets;
 - which device semantics require system-level IDDs versus software-item-only design;
 - required behaviour when local IP, configured router/AP, external network or backoffice connectivity is unavailable;
 - final system-level availability/recovery requirements.
