@@ -230,11 +230,19 @@ def step_effort_text(step: Step) -> str:
     return f"~{step.estimate_days}d"
 
 
+def phase_boundary_date(value: date) -> date:
+    """Round a future calculated phase end up to the next Monday boundary."""
+    return value + timedelta(days=(-value.weekday()) % 7)
+
+
+def roadmap_end_text(step: Step) -> str:
+    label = "done" if step.status == "done" else "end"
+    return f"{label} {step.target_date.strftime('%d %b %Y')}"
+
+
 def step_schedule_text(step: Step) -> str:
-    month = step.target_date.strftime("%b %Y")
-    if step.status == "done":
-        return f"completed {month}"
-    return f"forecast {month}"
+    label = "completed" if step.status == "done" else "forecast end"
+    return f"{label} {step.target_date.strftime('%d %b %Y')}"
 
 
 def parse_sip(path: Path, plan: dict) -> List[Step]:
@@ -272,9 +280,10 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
         else:
             remaining = float(cfg.get("remaining_estimate_project_days", estimate))
             cumulative_remaining += remaining
-            target = reforecast_date + timedelta(
+            calculated_target = reforecast_date + timedelta(
                 days=round(cumulative_remaining * (1.0 + reserve) / cadence * 7)
             )
+            target = phase_boundary_date(calculated_target)
 
         goal = strip_markdown(extract_subsection(body, "Goal"))
         result_bullets = subsection_bullets(body, "Result")
@@ -437,7 +446,7 @@ def append_roadmap_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
+            [f"~{step.estimate_days}d", roadmap_end_text(step)],
             2.3,
             weight="bold",
             fill="#555",
@@ -653,7 +662,7 @@ def render_roadmap_pdf(
                 c,
                 center_x,
                 page_h - 24.0,
-                [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
+                [f"~{step.estimate_days}d", roadmap_end_text(step)],
                 6.2,
                 bold=True,
             )
