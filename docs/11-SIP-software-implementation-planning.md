@@ -62,7 +62,7 @@ Define enough architecture to start implementation deliberately.
 
 ### Result
 
-- Architecture baseline for the three software items and their main interfaces.
+- Architecture baseline for all three software items and main interfaces.
 - TimingNode, runtime, package and public/private boundaries are clear enough to code.
 - Build, test and verification direction is ready for implementation.
 
@@ -147,7 +147,7 @@ Raspberry Pi deployment remains Step 4.
 
 ### Demo
 
-- Start the Headless Timing Application on Windows from external configuration.
+- Start the Headless Timing Application on Windows from configuration.
 - Show the configured TimingNode, current version/status and runtime log file.
 - Read the same version/status through console, remote shell, HTTP and WebSocket.
 
@@ -374,7 +374,7 @@ Provide the browser/iPad **Web Operator Application** (SI-03).
 
 ### Demo
 
-- Operate the timing application from a representative browser/iPad.
+- Operate the application from a representative browser/iPad.
 - Interrupt the connection and show stale/disconnected state.
 - Reconnect to a fresh snapshot and continue with live updates.
 
