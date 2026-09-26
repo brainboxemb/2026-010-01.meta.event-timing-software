@@ -222,6 +222,14 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     )
 
 
+def step_effort_text(step: Step) -> str:
+    if step.status == "done":
+        return "done"
+    if step.status == "active":
+        return f"~{step.remaining_days:g}d remaining"
+    return f"~{step.estimate_days}d"
+
+
 def step_schedule_text(step: Step) -> str:
     month = step.target_date.strftime("%b %Y")
     if step.status == "done":
