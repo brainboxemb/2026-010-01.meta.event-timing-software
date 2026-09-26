@@ -21,7 +21,7 @@ groups:
 
 nodes:
   - id: si01
-    label: "SI-01 Headless Timing Application\nauthoritative local timing runtime"
+    label: "Headless Timing Application (SI-01)\nlocal timing runtime"
     kind: core
     group: field
     layout: {x: 235, y: 180, w: 330, h: 95}
@@ -45,13 +45,13 @@ nodes:
     layout: {x: 260, y: 625, w: 280, h: 75}
 
   - id: si02
-    label: "SI-02 Desktop GUI\nIP client"
+    label: "Desktop GUI Application (SI-02)\nIP client"
     kind: client
     group: clients
     layout: {x: 805, y: 190, w: 350, h: 75}
 
   - id: si03
-    label: "SI-03 Web / iPad\nIP client"
+    label: "Web Operator Application (SI-03)\nWeb / iPad client"
     kind: client
     group: clients
     layout: {x: 805, y: 375, w: 350, h: 75}

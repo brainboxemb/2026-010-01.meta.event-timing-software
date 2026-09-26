@@ -62,6 +62,20 @@ Keep implementation detail in the implementation repository. This repository
 may define intended architecture/contracts and cross-repository evidence, but
 should not become a second implementation source tree.
 
+### Software-item naming in prose
+
+In running architecture text, prefer the readable software-item name first and keep the
+formal identifier after it, for example **Headless Timing Application** (SI-01),
+**Desktop GUI Application** (SI-02) and **Web Operator Application** (SI-03).
+Use bare SI identifiers mainly in compact tables, diagrams, filenames and other formal
+references.
+
+Prefer plain application language over governance-heavy terms such as
+`authoritative state` when normal ownership wording is sufficient. State what keeps or
+owns the data directly, for example "timing state remains in the Headless Timing
+Application". Reserve terms such as `authoritative` for cases where competing sources
+of truth are actually being distinguished.
+
 ### Architecture figure references
 
 Architecture figures use a visible stable label plus a Markdown anchor so reviews and
