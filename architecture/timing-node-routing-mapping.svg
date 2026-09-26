@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">TimingNode I/O mapping — antennas and backoffice connectors</text>
+<line x1="390.0" y1="212.0" x2="910.0" y2="184.3" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="390.0" y1="251.1" x2="910.0" y2="358.8" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="390.0" y1="423.8" x2="910.0" y2="402.2" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1085.6" y1="220.0" x2="1089.5" y2="540.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="292.8" y1="680.0" x2="1014.4" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="335.2" y1="680.0" x2="966.6" y2="440.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1154.5" y1="680.0" x2="1091.2" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="90" y="180" width="300" height="80" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="240.0" y="211.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Antenna ANT1</text>
+<text x="240.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">AntennaId</text>
+<rect x="90" y="390" width="300" height="80" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="240.0" y="421.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Antenna ANT2</text>
+<text x="240.0" y="440.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">AntennaId</text>
+<rect x="910" y="130" width="350" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1085.0" y="166.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-A</text>
+<text x="1085.0" y="185.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId</text>
+<rect x="910" y="350" width="350" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1085.0" y="386.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-B</text>
+<text x="1085.0" y="405.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId</text>
+<rect x="980" y="540" width="220" height="75" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="1090.0" y="568.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Location X</text>
+<text x="1090.0" y="587.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">LocationID</text>
+<rect x="80" y="680" width="300" height="80" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="230.0" y="711.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">BackofficeConnector 01</text>
+<text x="230.0" y="730.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMQ</text>
+<rect x="1010" y="680" width="300" height="80" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1160.0" y="711.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">BackofficeConnector 02</text>
+<text x="1160.0" y="730.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMQ</text>
+</svg>

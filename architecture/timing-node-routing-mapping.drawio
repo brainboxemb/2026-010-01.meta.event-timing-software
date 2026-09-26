@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="timing-node-routing-mapping" name="TimingNode I/O mapping — antennas and backoffice connectors">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ant1" value="Antenna ANT1&lt;br&gt;AntennaId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="90" y="180" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ant2" value="Antenna ANT2&lt;br&gt;AntennaId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="90" y="390" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node_a" value="TimingNode timing-node-A&lt;br&gt;TimingNodeId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="910" y="130" width="350" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="node_b" value="TimingNode timing-node-B&lt;br&gt;TimingNodeId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="910" y="350" width="350" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="loc_a" value="Location X&lt;br&gt;LocationID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="980" y="540" width="220" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" value="BackofficeConnector 01&lt;br&gt;RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="680" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" value="BackofficeConnector 02&lt;br&gt;RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="680" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="ant1" target="node_a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="ant1" target="node_b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="ant2" target="node_b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="node_a" target="loc_a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="conn1" target="node_a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="conn1" target="node_b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="conn2" target="node_a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

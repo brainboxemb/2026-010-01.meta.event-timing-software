@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1340" height="700" viewBox="0 0 1340 700">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Connectivity status is layered; local timing is not a RabbitMQ connection state</text>
+<line x1="400.0" y1="255.0" x2="520.0" y2="255.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="820.0" y1="255.0" x2="940.0" y2="255.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="297.3" y1="300.0" x2="507.5" y2="500.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="770.0" y1="550.0" x2="880.0" y2="550.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1056.8" y1="500.0" x2="1083.9" y2="300.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="100" y="210" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="250.0" y="246.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Local LAN / router</text>
+<text x="250.0" y="265.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">independent status</text>
+<rect x="520" y="210" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="670.0" y="246.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Internet reachability</text>
+<text x="670.0" y="265.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">independent status</text>
+<rect x="940" y="210" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1090.0" y="246.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMQ / backoffice</text>
+<text x="1090.0" y="265.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">session status</text>
+<rect x="350" y="500" width="420" height="100" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="560.0" y="541.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">SI-01 local timing operation</text>
+<text x="560.0" y="560.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RFID/CAN/in-memory state</text>
+<rect x="880" y="500" width="340" height="100" rx="8" ry="8" fill="#d0e0e3" stroke="#6c8ebf" stroke-width="2"/>
+<text x="1050.0" y="541.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Outbox + local reference data</text>
+<text x="1050.0" y="560.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">allow deferred synchronisation</text>
+</svg>

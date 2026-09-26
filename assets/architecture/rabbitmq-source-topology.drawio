@@ -1,0 +1,67 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="rabbitmq-source-topology" name="RabbitMQ — BackofficeConnector implementations with TimingNode routing">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="960" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="broker1" value="RabbitMQ broker A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="95" y="70" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="broker2" value="RabbitMQ broker B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="70" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" value="RabbitMqBackofficeConnector connector-01&lt;br&gt;owns connection/channels internally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" value="RabbitMqBackofficeConnector connector-02&lt;br&gt;owns connection/channels internally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="965" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bindings" value="Backoffice bindings&lt;br&gt;TimingNodeId + external names" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="500" y="410" width="400" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="node1" value="TimingNode timing-node-01&lt;br&gt;TimingNodeId-scoped application path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="95" y="620" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="node2" value="TimingNode timing-node-02&lt;br&gt;TimingNodeId-scoped application path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="965" y="620" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="outbox" value="local durable/pending outbox&lt;br&gt;TimingNodeId retained" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="525" y="620" width="350" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="0..N connectors per application&lt;br&gt;1..N TimingNode bindings per connector&lt;br&gt;one TimingNode may use multiple connectors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="455" y="790" width="490" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="transport" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="broker1" target="conn1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="transport" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="broker2" target="conn2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="inbound / outbound" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="conn1" target="bindings">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="inbound / outbound" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="conn2" target="bindings">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="route / bind" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="bindings" target="node1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="route / bind" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="bindings" target="node2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="committed outbound" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="node1" target="outbox">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="committed outbound" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="node2" target="outbox">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="publish pending" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="outbox" target="bindings">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="configured multiplicity" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="bindings" target="note">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,287 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210.0mm" height="297.0mm" viewBox="0 0 210.0 297.0">
+<rect width="100%" height="100%" fill="white"/>
+<text x="8.00" y="10.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="4.00" font-weight="bold" fill="#222">
+<tspan x="8.00" dy="0.00">SIP Step 3 — Application and Remote API foundation</tspan>
+</text>
+<text x="8.00" y="17.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#555">
+<tspan x="8.00" dy="0.00">ACTIVE | original estimate ~3d | actual ~2.9d | remaining estimate ~2d | forecast end 19 Oct 2026</tspan>
+</text>
+<text x="8.00" y="24.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="normal" fill="#555">
+<tspan x="8.00" dy="0.00">Build the first useful Headless Timing Application (SI-01) on the</tspan>
+<tspan x="8.00" dy="3.24">development host.</tspan>
+</text>
+<rect x="8.0" y="34.0" width="194.0" height="27.0" rx="1.5" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.45"/>
+<text x="11.00" y="39.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#4f81bd">
+<tspan x="11.00" dy="0.00">END DEMO · SIP-STP03-DEMO</tspan>
+</text>
+<text x="12.00" y="44.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Start SI-01 from configuration.</tspan>
+</text>
+<text x="12.00" y="48.05" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Inspect version/status through public interfaces.</tspan>
+</text>
+<text x="12.00" y="51.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Inspect IF-03 with the JavaFX test client.</tspan>
+</text>
+<rect x="8.0" y="65.0" width="194.0" height="25.0" rx="1.5" fill="#fafafa" stroke="#999" stroke-width="0.4"/>
+<text x="11.00" y="70.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#444">
+<tspan x="11.00" dy="0.00">DOCUMENTATION</tspan>
+</text>
+<text x="11.00" y="75.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="11.00" dy="0.00">04-UC W-55 — System use cases</tspan>
+</text>
+<text x="106.50" y="75.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="106.50" dy="0.00">20-01-SRD R-35 — SI-01 requirements</tspan>
+</text>
+<text x="11.00" y="81.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">40-01-IDD R-65 — Remote API interface</tspan>
+</text>
+<text x="106.50" y="81.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="106.50" dy="0.00">40-02-IDD R-55 — Application configuration...</tspan>
+</text>
+<text x="11.00" y="87.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">31-01-SAD R-65 — SI-01 architecture</tspan>
+</text>
+<text x="106.50" y="87.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="106.50" dy="0.00">50-SVP W-45 — Software Verification Plan</tspan>
+</text>
+<rect x="8.0" y="94.00" width="194.00" height="77.10" rx="1.5" fill="#ffffff" stroke="#70ad47" stroke-width="0.45"/>
+<rect x="8.0" y="94.00" width="194.00" height="5.50" rx="1.5" fill="#edf6e9" stroke="#70ad47" stroke-width="0.35"/>
+<text x="10.50" y="98.15" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#70ad47">
+<tspan x="10.50" dy="0.00">Application / product</tspan>
+</text>
+<rect x="8.00" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A01</tspan>
+</text>
+<rect x="54.47" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Shared application</tspan>
+<tspan x="39.83" dy="3.60">boundary + build</tspan>
+<tspan x="39.83" dy="3.60">identity</tspan>
+</text>
+<text x="9.60" y="121.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">CommandHandler is the current...</tspan>
+</text>
+<rect x="73.17" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A02</tspan>
+</text>
+<rect x="119.63" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Application</tspan>
+<tspan x="105.00" dy="3.60">configuration +</tspan>
+<tspan x="105.00" dy="3.60">minimal TimingNode</tspan>
+</text>
+<text x="74.77" y="121.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A01 | Load one external...</tspan>
+</text>
+<rect x="138.33" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">A03</tspan>
+</text>
+<rect x="184.80" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Run until shutdown +</tspan>
+<tspan x="170.17" dy="3.60">graceful stop</tspan>
+</text>
+<text x="139.93" y="121.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A02 | Keep the configured...</tspan>
+</text>
+<rect x="8.00" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A04</tspan>
+</text>
+<rect x="54.47" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Local console</tspan>
+</text>
+<text x="9.60" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A03 | Provide help,...</tspan>
+</text>
+<rect x="73.17" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A05</tspan>
+</text>
+<rect x="119.63" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Remote terminal /</tspan>
+<tspan x="105.00" dy="3.60">shell adapter</tspan>
+</text>
+<text x="74.77" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A01,A03,A04 | Expose the...</tspan>
+</text>
+<rect x="138.33" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">A06</tspan>
+</text>
+<rect x="184.80" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Remote API HTTP / JSON</tspan>
+</text>
+<text x="139.93" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A01,A02,A03 | Implement...</tspan>
+</text>
+<rect x="8.00" y="147.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#4472c4" stroke-width="0.45"/>
+<text x="9.60" y="152.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A07</tspan>
+</text>
+<rect x="54.47" y="148.80" width="16.00" height="5.0" rx="0.8" fill="#ddebf7" stroke="#4472c4" stroke-width="0.25"/>
+<text x="62.47" y="152.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#4472c4">
+<tspan x="62.47" dy="0.00">ACTIVE</tspan>
+</text>
+<text x="39.83" y="157.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Remote API WebSocket</tspan>
+<tspan x="39.83" dy="3.60">events</tspan>
+</text>
+<text x="9.60" y="168.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A03,A06 | Dedicated...</tspan>
+</text>
+<rect x="73.17" y="147.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="152.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A08</tspan>
+</text>
+<rect x="119.63" y="148.80" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="152.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="157.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Runtime file logging</tspan>
+</text>
+<text x="74.77" y="168.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A03 | Write runtime logs to...</tspan>
+</text>
+<rect x="8.0" y="172.60" width="194.00" height="53.60" rx="1.5" fill="#ffffff" stroke="#8064a2" stroke-width="0.45"/>
+<rect x="8.0" y="172.60" width="194.00" height="5.50" rx="1.5" fill="#f0ebf7" stroke="#8064a2" stroke-width="0.35"/>
+<text x="10.50" y="176.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#8064a2">
+<tspan x="10.50" dy="0.00">Verification / test</tspan>
+</text>
+<rect x="8.00" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V01</tspan>
+</text>
+<rect x="54.47" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Shared behaviour +</tspan>
+<tspan x="39.83" dy="3.60">configuration unit</tspan>
+<tspan x="39.83" dy="3.60">tests</tspan>
+</text>
+<text x="9.60" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A01,A02 | Shared...</tspan>
+</text>
+<rect x="73.17" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V02</tspan>
+</text>
+<rect x="119.63" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Adapter equivalence</tspan>
+<tspan x="105.00" dy="3.60">checks</tspan>
+</text>
+<text x="74.77" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A04,A05,A06,A07</tspan>
+</text>
+<rect x="138.33" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="139.93" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">V03</tspan>
+</text>
+<rect x="184.80" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="192.80" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="192.80" dy="0.00">PLANNED</tspan>
+</text>
+<text x="170.17" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">ST-1 application</tspan>
+<tspan x="170.17" dy="3.60">behaviour black-box</tspan>
+<tspan x="170.17" dy="3.60">test</tspan>
+</text>
+<text x="139.93" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A02,A04,A05,A06,A07,A08,V01,...</tspan>
+</text>
+<rect x="8.00" y="202.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="207.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V04</tspan>
+</text>
+<rect x="54.47" y="203.90" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="207.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="212.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Windows</tspan>
+<tspan x="39.83" dy="3.60">development-host</tspan>
+<tspan x="39.83" dy="3.60">execution proof</tspan>
+</text>
+<text x="9.60" y="223.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after A03 | Combine automated...</tspan>
+</text>
+<rect x="73.17" y="202.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#808080" stroke-width="0.45"/>
+<text x="74.77" y="207.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V05</tspan>
+</text>
+<rect x="119.63" y="203.90" width="16.00" height="5.0" rx="0.8" fill="#ffffff" stroke="#808080" stroke-width="0.25"/>
+<text x="127.63" y="207.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#808080">
+<tspan x="127.63" dy="0.00">PLANNED</tspan>
+</text>
+<text x="105.00" y="212.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Step-3 0.2.x release /</tspan>
+<tspan x="105.00" dy="3.60">identity proof</tspan>
+</text>
+<text x="74.77" y="223.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after V03,V04 | v0.2.1 is the...</tspan>
+</text>
+<rect x="8.0" y="228.70" width="194.00" height="34.90" rx="1.5" fill="#fafafa" stroke="#999999" stroke-width="0.4"/>
+<text x="11.00" y="234.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#555555">
+<tspan x="11.00" dy="0.00">PLANNING CHANGES</tspan>
+</text>
+<text x="12.00" y="238.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#6c8ebf">
+<tspan x="12.00" dy="0.00">2026-09-25</tspan>
+</text>
+<text x="32.00" y="238.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.15" font-weight="normal" fill="#333333">
+<tspan x="32.00" dy="0.00">A02 was narrowed to one application.yml with one TimingNode; broader</tspan>
+<tspan x="32.00" dy="2.58">presentation/platform configuration stays capability-driven.</tspan>
+</text>
+<text x="12.00" y="244.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#6c8ebf">
+<tspan x="12.00" dy="0.00">2026-09-25</tspan>
+</text>
+<text x="32.00" y="244.80" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.15" font-weight="normal" fill="#333333">
+<tspan x="32.00" dy="0.00">Build provenance now uses revision, sourceRef, buildOrigin and</tspan>
+<tspan x="32.00" dy="2.58">dirty-state instead of embedding buildTime.</tspan>
+</text>
+<text x="12.00" y="250.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#6c8ebf">
+<tspan x="12.00" dy="0.00">2026-09-25</tspan>
+</text>
+<text x="32.00" y="250.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.15" font-weight="normal" fill="#333333">
+<tspan x="32.00" dy="0.00">A04/A05 split local console from remote shell while keeping shared</tspan>
+<tspan x="32.00" dy="2.58">command behaviour.</tspan>
+</text>
+<text x="12.00" y="257.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.00" font-weight="bold" fill="#6c8ebf">
+<tspan x="12.00" dy="0.00">2026-09-25</tspan>
+</text>
+<text x="32.00" y="257.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.15" font-weight="normal" fill="#333333">
+<tspan x="32.00" dy="0.00">A08 runtime file logging was added to Step 3; live diagnostics remain</tspan>
+<tspan x="32.00" dy="2.58">a later presentation concern.</tspan>
+</text>
+</svg>

@@ -1,0 +1,15 @@
+Documentation capability: docs.diagrams
+action=diagrams
+source_revision=9fe1789832c1a4e3f0e5adadddf7d4fa4a5cf883
+owner_revision=9fe1789832c1a4e3f0e5adadddf7d4fa4a5cf883
+tool_eng_docs_sha=dd15acb88e2e42a4913aa9d3b86b1cd811e4aa46
+
+> eng-docs diagrams --source docs/_diagrams --theme docs/_diagram-theme/default.yaml --out bld/docs/architecture
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_architecture_diagrams.py
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_timing_detail_diagrams.py
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_data_display_diagrams.py
+
+> /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_system_model_diagrams.py

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">RabbitMQ — BackofficeConnector implementations with TimingNode routing</text>
+<line x1="245.0" y1="145.0" x2="245.0" y2="250.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1155.0" y1="145.0" x2="1155.0" y2="250.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="387.2" y1="350.0" x2="557.8" y2="410.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1012.8" y1="350.0" x2="842.2" y2="410.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="593.9" y1="510.0" x2="360.5" y2="620.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="806.1" y1="510.0" x2="1039.5" y2="620.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="435.0" y1="665.0" x2="525.0" y2="665.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="965.0" y1="665.0" x2="875.0" y2="665.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="700.0" y1="620.0" x2="700.0" y2="510.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="700.0" y1="510.0" x2="700.0" y2="790.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="95" y="70" width="300" height="75" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="245.0" y="107.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMQ broker A</text>
+<rect x="1005" y="70" width="300" height="75" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="1155.0" y="107.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMQ broker B</text>
+<rect x="55" y="250" width="380" height="100" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="245.0" y="291.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMqBackofficeConnector connector-01</text>
+<text x="245.0" y="310.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">owns connection/channels internally</text>
+<rect x="965" y="250" width="380" height="100" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1155.0" y="291.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RabbitMqBackofficeConnector connector-02</text>
+<text x="1155.0" y="310.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">owns connection/channels internally</text>
+<rect x="500" y="410" width="400" height="100" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="700.0" y="451.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Backoffice bindings</text>
+<text x="700.0" y="470.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId + external names</text>
+<rect x="95" y="620" width="340" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="265.0" y="656.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-01</text>
+<text x="265.0" y="675.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId-scoped application path</text>
+<rect x="965" y="620" width="340" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1135.0" y="656.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-02</text>
+<text x="1135.0" y="675.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId-scoped application path</text>
+<rect x="525" y="620" width="350" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="700.0" y="656.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">local durable/pending outbox</text>
+<text x="700.0" y="675.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeId retained</text>
+<rect x="455" y="790" width="490" height="105" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="700.0" y="824.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">0..N connectors per application</text>
+<text x="700.0" y="843.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">1..N TimingNode bindings per connector</text>
+<text x="700.0" y="862.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">one TimingNode may use multiple connectors</text>
+</svg>

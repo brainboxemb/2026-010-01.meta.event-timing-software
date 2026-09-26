@@ -1,0 +1,86 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="runtime-dispatch-process" name="Figure SI01-04 — SI-01 runtime ingress — TimingNode serial execution">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="930" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group-ingress" value="Concurrent ingress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef4ff;strokeColor=#6c8ebf;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="330" height="690" as="geometry" />
+        </mxCell>
+        <mxCell id="group-runtime" value="Application / TimingNode ownership" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#82b366;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="430" y="110" width="790" height="690" as="geometry" />
+        </mxCell>
+        <mxCell id="group-execution" value="Execution resources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f2eff8;strokeColor=#9673a6;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="110" width="260" height="690" as="geometry" />
+        </mxCell>
+        <mxCell id="operator-ingress" value="Operator / presentation ingress&lt;br&gt;HTTP • shell • console" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="100" y="190" width="250" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="io-mapping" value="I/O mappings&lt;br&gt;Antenna • BackofficeConnector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="85" y="345" width="280" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="timer-ingress" value="Scheduled triggers&lt;br&gt;callback submits to owning target" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="100" y="540" width="250" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="command-handler" value="CommandHandler&lt;br&gt;presentation commands / queries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="155" width="610" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-node-01" value="TimingNode timing-node-01&lt;br&gt;serial executor • bounded FIFO&lt;br&gt;normal application/domain calls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="505" y="410" width="300" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-node-02" value="TimingNode timing-node-02&lt;br&gt;serial executor • bounded FIFO&lt;br&gt;normal application/domain calls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="845" y="410" width="300" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="state-executor" value="Shared state ExecutorService&lt;br&gt;1 worker in constrained profile&lt;br&gt;configurable &amp;gt;1 for independent TimingNodes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="260" width="180" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="io-rule" value="Blocking I/O / scheduler rule&lt;br&gt;outside TimingNode serial execution&lt;br&gt;completion is submitted back" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="500" width="180" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="operator-ingress" target="command-handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.28;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="command-handler" target="timing-node-01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.72;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="command-handler" target="timing-node-02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.3;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="io-mapping" target="timing-node-01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.7;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="io-mapping" target="timing-node-02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="timer-ingress" target="timing-node-02">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="582" />
+              <mxPoint x="825" y="582" />
+              <mxPoint x="825" y="489" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0;entryY=0.35;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="timing-node-01" target="state-executor">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1190" y="436" />
+              <mxPoint x="1190" y="304" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0;entryY=0.7;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="timing-node-02" target="state-executor">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1215" y="489" />
+              <mxPoint x="1215" y="348" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="io-rule" target="timing-node-02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

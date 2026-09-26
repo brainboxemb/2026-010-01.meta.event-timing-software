@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="layered-architecture" name="Figure SI01-01 — SI-01 layered architecture — responsibilities and services">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1540" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group-presentation-layer" value="Presentation / external interfaces" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef4ff;strokeColor=#6c8ebf;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="120" y="85" width="1120" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="group-application-layer" value="Application layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#82b366;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="120" y="260" width="1120" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="group-domain-layer" value="Domain layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="120" y="445" width="1120" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="group-timing-node-aggregate" value="TimingNode (1..N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="145" y="485" width="820" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="group-io-layer" value="I/O" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff0ee;strokeColor=#b85450;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="120" y="775" width="1120" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="group-platform-layer" value="Platform abstractions / execution environment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f2eff8;strokeColor=#9673a6;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="120" y="970" width="1120" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="group-crosscutting-layer" value="Cross-cutting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#777777;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="85" width="230" height="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="local-console" value="Console&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;local text interface&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="150" y="135" width="220" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="remote-shell" value="Remote Shell&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;remote text interface&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="390" y="135" width="220" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="remote-api" value="Remote API&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;HTTP + WebSocket • GUI / tools / test / control&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="630" y="135" width="500" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="application-conductor" value="Conductor&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;lifecycle / application-wide coordination&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="250" y="305" width="360" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="command-handler" value="CommandHandler&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;presentation commands / queries&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="750" y="305" width="360" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-node-root" value="TimingNode&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;TimingNodeId • LocationID • lifecycle/status&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="355" y="500" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tag-processor" value="TagProcessor&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;RFID/tag processing&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="175" y="570" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-start-times" value="StageStartTimes&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;start-time reference&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="425" y="570" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-node-journal" value="Journal&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;registrations • sequence/persistence&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="690" y="570" width="245" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="next-up-teams" value="NextUpTeams&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;teams expected next&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="175" y="650" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="race-data" value="RaceData&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;participant/team/tag reference&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="425" y="650" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-timing" value="StageTiming&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;running times + ranking&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="690" y="650" width="245" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="system-status-domain" value="SystemStatus&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;application-wide status/health&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="995" y="570" width="210" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="storage-io" value="Storage&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;file / DB • backup / restore&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f4cccc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="145" y="825" width="220" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="antenna-io" value="Antenna (0..N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="385" y="825" width="280" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="backoffice-connector-io" value="BackofficeConnector (0..N)&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;RabbitMQ&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="685" y="825" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="devices-io" value="Devices&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;CAN • display&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="825" width="215" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="platform-primitives" value="Clock • filesystem • executors • process/network/OS primitives" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="240" y="1000" width="880" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="crosscutting-concerns" value="Logging&lt;br&gt;&lt;br&gt;Configuration&lt;br&gt;&lt;br&gt;Diagnostics&lt;br&gt;&lt;br&gt;Build / version identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="165" width="170" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary-note" value="Responsibility view only&lt;br&gt;≠ Maven artifact split" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="970" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.1;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="local-console" target="command-handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.35;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="remote-shell" target="command-handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.65;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="remote-api" target="command-handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="command-handler" target="timing-node-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.1;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="application-conductor" target="timing-node-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.8;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="application-conductor" target="system-status-domain">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.6;entryY=1;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="system-status-domain" target="remote-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.42;entryY=1;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="antenna-io" target="timing-node-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.78;entryY=1;entryDx=0;entryDy=0;entryPerimeter=1;dashed=1;" edge="1" parent="1" source="backoffice-connector-io" target="timing-node-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.05;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="storage-io" target="platform-primitives">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.35;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="antenna-io" target="platform-primitives">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.65;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="backoffice-connector-io" target="platform-primitives">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.92;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="devices-io" target="platform-primitives">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

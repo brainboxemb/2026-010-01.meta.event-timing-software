@@ -1,0 +1,344 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210.0mm" height="297.0mm" viewBox="0 0 210.0 297.0">
+<rect width="100%" height="100%" fill="white"/>
+<text x="8.00" y="10.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="4.00" font-weight="bold" fill="#222">
+<tspan x="8.00" dy="0.00">SIP Step 2 — Framework repository skeleton</tspan>
+</text>
+<text x="8.00" y="17.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.90" font-weight="bold" fill="#555">
+<tspan x="8.00" dy="0.00">DONE | original estimate ~6d | actual ~1.6d | completed 13 Sep 2026</tspan>
+</text>
+<text x="8.00" y="24.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.70" font-weight="normal" fill="#555">
+<tspan x="8.00" dy="0.00">Create the Java repository and prove that it builds and runs independently.</tspan>
+</text>
+<rect x="8.0" y="34.0" width="194.0" height="27.0" rx="1.5" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.45"/>
+<text x="11.00" y="39.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#4f81bd">
+<tspan x="11.00" dy="0.00">END DEMO · SIP-STP02-DEMO</tspan>
+</text>
+<text x="12.00" y="44.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Build from a clean checkout.</tspan>
+</text>
+<text x="12.00" y="48.05" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Produce both artifacts.</tspan>
+</text>
+<text x="12.00" y="51.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#333">
+<tspan x="12.00" dy="0.00">• Start, identify and stop the application.</tspan>
+</text>
+<rect x="8.0" y="65.0" width="194.0" height="25.0" rx="1.5" fill="#fafafa" stroke="#999" stroke-width="0.4"/>
+<text x="11.00" y="70.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#444">
+<tspan x="11.00" dy="0.00">DOCUMENTATION</tspan>
+</text>
+<text x="11.00" y="75.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="11.00" dy="0.00">04-UC W-40 — System use cases</tspan>
+</text>
+<text x="106.50" y="75.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#70ad47">
+<tspan x="106.50" dy="0.00">13-SDE A-100 — Java build/test toolchain</tspan>
+</text>
+<text x="11.00" y="81.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">20-01-SRD R-25 — SI-01 requirements</tspan>
+</text>
+<text x="106.50" y="81.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="106.50" dy="0.00">31-01-SDD-02 W-55 — Java component/package...</tspan>
+</text>
+<text x="11.00" y="87.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#bf9000">
+<tspan x="11.00" dy="0.00">40-01-IDD R-45 — Remote API interface</tspan>
+</text>
+<text x="106.50" y="87.90" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="bold" fill="#5b9bd5">
+<tspan x="106.50" dy="0.00">50-SVP W-35 — Software Verification Plan</tspan>
+</text>
+<rect x="8.0" y="94.00" width="194.00" height="77.10" rx="1.5" fill="#ffffff" stroke="#5b9bd5" stroke-width="0.45"/>
+<rect x="8.0" y="94.00" width="194.00" height="5.50" rx="1.5" fill="#eaf2f8" stroke="#5b9bd5" stroke-width="0.35"/>
+<text x="10.50" y="98.15" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#5b9bd5">
+<tspan x="10.50" dy="0.00">Tooling / engineering environment</tspan>
+</text>
+<rect x="8.00" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">T01</tspan>
+</text>
+<rect x="54.47" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Java toolchain</tspan>
+<tspan x="39.83" dy="3.60">baseline</tspan>
+</text>
+<rect x="73.17" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">T02</tspan>
+</text>
+<rect x="119.63" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Create</tspan>
+<tspan x="105.00" dy="3.60">tool.java-project</tspan>
+</text>
+<text x="74.77" y="121.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">~0.5d | after T01</tspan>
+</text>
+<rect x="138.33" y="100.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="105.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">T03</tspan>
+</text>
+<rect x="184.80" y="101.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="105.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="110.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Maven Wrapper fixture</tspan>
+</text>
+<text x="139.93" y="121.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">~0.5d | after T02</tspan>
+</text>
+<rect x="8.00" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">T04</tspan>
+</text>
+<rect x="54.47" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Pin Java 8 + Maven</tspan>
+<tspan x="39.83" dy="3.60">baseline</tspan>
+</text>
+<text x="9.60" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">~0.5d | after T02</tspan>
+</text>
+<rect x="73.17" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">T05</tspan>
+</text>
+<rect x="119.63" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Linux canonical CI</tspan>
+</text>
+<text x="74.77" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">~0.5d | after T03,T04</tspan>
+</text>
+<rect x="138.33" y="124.30" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="129.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">T06</tspan>
+</text>
+<rect x="184.80" y="125.30" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="128.85" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="133.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Windows compatibility</tspan>
+<tspan x="170.17" dy="3.60">CI</tspan>
+</text>
+<text x="139.93" y="144.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">~0.5d | after T03,T04</tspan>
+</text>
+<rect x="8.00" y="147.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="152.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">T07</tspan>
+</text>
+<rect x="54.47" y="148.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="152.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="157.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Canonical artifact +</tspan>
+<tspan x="39.83" dy="3.60">provenance</tspan>
+</text>
+<text x="9.60" y="168.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">~0.5d | after T05</tspan>
+</text>
+<rect x="73.17" y="147.80" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="152.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">T08</tspan>
+</text>
+<rect x="119.63" y="148.80" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="152.35" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="157.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Version reusable</tspan>
+<tspan x="105.00" dy="3.60">workflow</tspan>
+</text>
+<text x="74.77" y="168.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">~0.5d | after T05,T06,T07</tspan>
+</text>
+<rect x="8.0" y="172.60" width="194.00" height="53.60" rx="1.5" fill="#ffffff" stroke="#70ad47" stroke-width="0.45"/>
+<rect x="8.0" y="172.60" width="194.00" height="5.50" rx="1.5" fill="#edf6e9" stroke="#70ad47" stroke-width="0.35"/>
+<text x="10.50" y="176.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#70ad47">
+<tspan x="10.50" dy="0.00">Application / product</tspan>
+</text>
+<rect x="8.00" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A01</tspan>
+</text>
+<rect x="54.47" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Create SI-01</tspan>
+<tspan x="39.83" dy="3.60">implementation</tspan>
+<tspan x="39.83" dy="3.60">repository</tspan>
+</text>
+<text x="9.60" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after T08</tspan>
+</text>
+<rect x="73.17" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A02</tspan>
+</text>
+<rect x="119.63" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Repository baseline</tspan>
+<tspan x="105.00" dy="3.60">files</tspan>
+</text>
+<text x="74.77" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A01</tspan>
+</text>
+<rect x="138.33" y="179.40" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="184.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">A03</tspan>
+</text>
+<rect x="184.80" y="180.40" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="183.95" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="188.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Maven reactor /</tspan>
+<tspan x="170.17" dy="3.60">artifact skeleton</tspan>
+</text>
+<text x="139.93" y="199.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">~0.5d | after A01</tspan>
+</text>
+<rect x="8.00" y="202.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="207.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">A04</tspan>
+</text>
+<rect x="54.47" y="203.90" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="207.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="212.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Package /</tspan>
+<tspan x="39.83" dy="3.60">responsibility</tspan>
+<tspan x="39.83" dy="3.60">boundaries</tspan>
+</text>
+<text x="9.60" y="223.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">~0.5d | after A03</tspan>
+</text>
+<rect x="73.17" y="202.90" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="207.60" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">A05</tspan>
+</text>
+<rect x="119.63" y="203.90" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="207.45" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="212.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Minimal runnable app</tspan>
+<tspan x="105.00" dy="3.60">lifecycle</tspan>
+</text>
+<text x="74.77" y="223.10" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">~0.5d | after A04</tspan>
+</text>
+<rect x="8.0" y="227.70" width="194.00" height="53.60" rx="1.5" fill="#ffffff" stroke="#8064a2" stroke-width="0.45"/>
+<rect x="8.0" y="227.70" width="194.00" height="5.50" rx="1.5" fill="#f0ebf7" stroke="#8064a2" stroke-width="0.35"/>
+<text x="10.50" y="231.85" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.55" font-weight="bold" fill="#8064a2">
+<tspan x="10.50" dy="0.00">Verification / test</tspan>
+</text>
+<rect x="8.00" y="234.50" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="239.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V01</tspan>
+</text>
+<rect x="54.47" y="235.50" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="239.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="244.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Generic fixture -</tspan>
+<tspan x="39.83" dy="3.60">Linux verify</tspan>
+</text>
+<text x="9.60" y="254.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after T05</tspan>
+</text>
+<rect x="73.17" y="234.50" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="239.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V02</tspan>
+</text>
+<rect x="119.63" y="235.50" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="239.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="244.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Generic fixture -</tspan>
+<tspan x="105.00" dy="3.60">Windows verify</tspan>
+</text>
+<text x="74.77" y="254.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after T06</tspan>
+</text>
+<rect x="138.33" y="234.50" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="239.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">V03</tspan>
+</text>
+<rect x="184.80" y="235.50" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="239.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="244.00" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">Canonical artifact</tspan>
+<tspan x="170.17" dy="3.60">smoke</tspan>
+</text>
+<text x="139.93" y="254.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after T07,V02</tspan>
+</text>
+<rect x="8.00" y="258.00" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="9.60" y="262.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="9.60" dy="0.00">V04</tspan>
+</text>
+<rect x="54.47" y="259.00" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="62.47" y="262.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="62.47" dy="0.00">DONE</tspan>
+</text>
+<text x="39.83" y="267.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="39.83" dy="0.00">Clean-checkout</tspan>
+<tspan x="39.83" dy="3.60">consumer proof</tspan>
+</text>
+<text x="9.60" y="278.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="9.60" dy="0.00">after T08,A01</tspan>
+</text>
+<rect x="73.17" y="258.00" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="74.77" y="262.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="74.77" dy="0.00">V05</tspan>
+</text>
+<rect x="119.63" y="259.00" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="127.63" y="262.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="127.63" dy="0.00">DONE</tspan>
+</text>
+<text x="105.00" y="267.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="105.00" dy="0.00">Architecture/dependency</tspan>
+<tspan x="105.00" dy="3.60">checks</tspan>
+</text>
+<text x="74.77" y="278.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="74.77" dy="0.00">after A03</tspan>
+</text>
+<rect x="138.33" y="258.00" width="63.67" height="22.00" rx="1.2" fill="#fffdf2" stroke="#548235" stroke-width="0.45"/>
+<text x="139.93" y="262.70" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.30" font-weight="bold" fill="#555">
+<tspan x="139.93" dy="0.00">V06</tspan>
+</text>
+<rect x="184.80" y="259.00" width="16.00" height="5.0" rx="0.8" fill="#e2f0d9" stroke="#548235" stroke-width="0.25"/>
+<text x="192.80" y="262.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="1.90" font-weight="bold" fill="#548235">
+<tspan x="192.80" dy="0.00">DONE</tspan>
+</text>
+<text x="170.17" y="267.50" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="3.00" font-weight="bold" fill="#222">
+<tspan x="170.17" dy="0.00">0.1.0 release build /</tspan>
+<tspan x="170.17" dy="3.60">identity proof</tspan>
+</text>
+<text x="139.93" y="278.20" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="2.20" font-weight="normal" fill="#555">
+<tspan x="139.93" dy="0.00">after A05,V05 | v0.1.0 points to...</tspan>
+</text>
+</svg>

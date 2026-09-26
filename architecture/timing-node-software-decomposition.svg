@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="830" viewBox="0 0 1400 830">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">SI-01 software/domain decomposition — TimingNodes and responsibilities</text>
+<line x1="606.2" y1="145.0" x2="429.0" y2="230.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="793.8" y1="145.0" x2="971.0" y2="230.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="296.3" y1="325.0" x2="221.9" y2="430.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="375.7" y1="325.0" x2="476.7" y2="430.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="458.7" y1="325.0" x2="743.1" y2="430.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="532.0" y1="325.0" x2="1000.0" y2="435.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="320.2" y1="325.0" x2="255.3" y2="640.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="364.0" y1="325.0" x2="589.2" y2="640.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="726.7" y1="145.0" x2="1020.3" y2="640.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="412.9" y1="325.0" x2="962.7" y2="640.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="1067.7" y1="325.0" x2="1052.4" y2="640.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="505" y="55" width="390" height="90" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="700.0" y="91.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">SI-01 TimingApplicationRuntime</text>
+<text x="700.0" y="110.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">one JVM/process</text>
+<rect x="120" y="230" width="420" height="95" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="330.0" y="268.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-A</text>
+<text x="330.0" y="287.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">configured at Location X</text>
+<rect x="860" y="230" width="420" height="95" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1070.0" y="268.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode timing-node-B</text>
+<text x="1070.0" y="287.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">configured at Location Y</text>
+<rect x="40" y="430" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="190.0" y="466.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode lifecycle / status</text>
+<text x="190.0" y="485.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">OPEN • CLOSED • health</text>
+<rect x="370" y="430" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="520.0" y="466.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TagProcessor</text>
+<text x="520.0" y="485.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RFID/tag observation processing</text>
+<rect x="700" y="430" width="330" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="865.0" y="466.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">StageStartTimeRegistry</text>
+<text x="865.0" y="485.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">local stage start-time reference</text>
+<rect x="1000" y="430" width="340" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1170.0" y="466.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNodeJournal</text>
+<text x="1170.0" y="485.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">registrations + TimingNodeId-scoped sequence/persistence</text>
+<rect x="80" y="640" width="330" height="100" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="245.0" y="681.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">PrepareTeamRegistry</text>
+<text x="245.0" y="700.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">teams to prepare + internal keypad history</text>
+<rect x="460" y="640" width="330" height="100" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="625.0" y="681.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RaceData</text>
+<text x="625.0" y="700.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">participant/team/tag reference data</text>
+<rect x="840" y="640" width="420" height="100" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="1050.0" y="681.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Shared runtime infrastructure</text>
+<text x="1050.0" y="700.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">HTTP • logging • executors • configuration</text>
+</svg>
