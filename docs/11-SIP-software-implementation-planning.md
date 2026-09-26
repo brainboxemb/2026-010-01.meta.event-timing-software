@@ -207,7 +207,7 @@ Run the representative SI-01 application on a real Raspberry Pi target.
 
 - Start SI-01 on the Pi.
 - Query version/status remotely.
-- Show the basic runtime measurements and deployment procedure.
+- Show runtime measurements and deployment.
 
 ### Done
 
@@ -253,7 +253,7 @@ JavaFX engineering client does not decide this technology.
 
 - Independent GUI application using only the Remote API.
 - Basic SI-01 status visible through the GUI.
-- GUI technology is an explicit decision rather than an accidental inheritance.
+- GUI technology is chosen explicitly.
 
 ### Demo
 
@@ -300,7 +300,7 @@ hardware.
 ### Result
 
 - Useful timing/domain state and behaviour.
-- Registration and timing calculations work with deterministic inputs.
+- Timing calculations work with deterministic inputs.
 - Required state survives restart where designed.
 
 ### Demo
@@ -350,7 +350,7 @@ Exact adapter order depends on available hardware and project need.
 
 ### Result
 
-- Selected real devices feed/use the normal SI-01 application/domain paths.
+- Real devices use normal SI-01 paths.
 - Device failures are observable and recoverable where supported.
 
 ### Demo
@@ -397,7 +397,7 @@ Connect SI-01 to the required backoffice data flows.
 ### Result
 
 - Required data can move between SI-01 and the backoffice.
-- Local operation behaves deliberately while the external connection is unavailable.
+- Local operation continues as designed during an outage.
 - Transport details remain outside domain behaviour.
 
 ### Demo
