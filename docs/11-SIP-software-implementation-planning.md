@@ -28,9 +28,12 @@ rather than merely fill headings:
 - **Demo** is the practical end demonstration.
 - **Done** is the engineering exit criterion.
 
-The roadmap estimates are focused project days. Future phase ends are shown as concrete
-Monday boundaries for readability; the underlying cumulative forecast is calculated
-before that display rounding. Forecast dates are planning aids, not commitments.
+The roadmap estimates are focused project days. Each step may show its original estimate,
+git-derived actual effort and current remaining estimate. These are independent planning
+signals: original minus actual does not have to equal remaining. Future phase ends are
+shown as concrete Monday boundaries for readability; the underlying cumulative forecast
+is calculated before that display rounding. Forecast dates are planning aids, not
+commitments.
 
 ---
 
@@ -642,6 +645,8 @@ These remain options until an earlier step creates a concrete need:
 - Do not make the number of roadmap steps determine the project duration.
 - Estimates describe effort; planning reserve covers uncertainty and should affect the
   forecast horizon.
+- Keep original estimate, git-derived actual and remaining estimate distinct; use their
+  differences as re-estimation evidence rather than treating them as time-accounting sums.
 - Show at least one concrete end date per phase. Future calculated ends round up to the
   next Monday for presentation only; do not feed that rounded date into later forecasts.
 - Explain why a step exists and what uncertainty/value it addresses.
