@@ -117,7 +117,7 @@ def validate_planning(root: Path) -> dict:
         root / "sip-roadmap.svg",
         root / "sip-roadmap.pdf",
         root / "roadmap/sip-roadmap-1.svg",
-        root / "roadmap/sip-roadmap-4.svg",
+        root / "roadmap/sip-roadmap-2.svg",
         root / "steps/step-02.svg",
         root / "steps/step-02.pdf",
     ]

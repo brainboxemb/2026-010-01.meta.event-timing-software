@@ -9,8 +9,8 @@ Sources:
 - docs/_data/schemas/*.schema.json: planning data validation.
 
 Generated output:
-- planning/sip-roadmap.svg: one continuous four-page-wide roadmap;
-- planning/sip-roadmap.pdf: the same roadmap as four A4-landscape pages;
+- planning/sip-roadmap.svg: one continuous roadmap;
+- planning/sip-roadmap.pdf: the same roadmap as A4-landscape pages;
 - planning/roadmap/sip-roadmap-1.svg .. -4.svg: separate A4 pages;
 - planning/steps/step-NN.svg: A4-portrait detailed step boards.
 
@@ -43,7 +43,7 @@ A4_L_H_MM = 210.0
 A4_P_W_MM = 210.0
 A4_P_H_MM = 297.0
 ROADMAP_STEPS_PER_PAGE = 4
-ROADMAP_PAGE_COUNT = 4
+ROADMAP_PAGE_COUNT = 2
 MARGIN_MM = 8.0
 
 TIMELINE_Y = 31.0
