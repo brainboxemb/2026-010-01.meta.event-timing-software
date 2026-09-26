@@ -27,7 +27,7 @@ At this stage the intended bias is **towards one coherent SAD rather than early 
 
 The **Headless Timing Application** (SI-01) architecture is driven by these concerns:
 
-- run on the original Raspberry Pi Zero / Zero W as a mandatory constrained target;
+- run on the original Raspberry Pi Zero / Zero W target; actual runtime/resource constraints are established by measurement;
 - remain usable on Linux/Windows development and test hosts;
 - keep timing/domain state in the application;
 - support one or more logical TimingNodes without state leakage;
@@ -38,7 +38,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep public framework/reference code independent of private production source;
-- avoid framework complexity that is not justified on the constrained target.
+- avoid framework complexity that is not justified by the application.
 
 ## +1 scenarios used to validate the architecture
 
@@ -50,7 +50,7 @@ Representative architecture-validation scenarios include:
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
-5. continue local operation while a GUI/browser or backoffice connection is unavailable;
+5. continue local operation while a GUI/test client or backoffice connection is unavailable;
 6. host several TimingNodes in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
@@ -103,14 +103,13 @@ presentation/
       messages/
     console/
     shell/
-    web/              future browser/iPad interface
   common/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
 The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
 
-The future **Web** interface is separate even though it may also use HTTP and WebSocket. It owns the browser/iPad pages, user-specific endpoints and live messages. Console and remote shell likewise remain separate presentation interfaces; sharing a terminal session does not make them one interface.
+A browser-based engineering client, if useful later, consumes the same Remote API as other external test tools. It does not require a separate SI-01 presentation interface merely because the client itself runs in a browser. Console and remote shell remain separate presentation interfaces; sharing a terminal session does not make them one interface.
 
 `presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
 
@@ -800,7 +799,7 @@ io
 platform
 ```
 
-Within presentation, functional interfaces own their transport-specific subpackages. A future Web interface may therefore have its own `web/http` and `web/websocket` alongside `remoteapi/http` and `remoteapi/websocket`.
+Within presentation, functional interfaces own their transport-specific subpackages. External GUI or engineering clients consume the Remote API rather than creating transport packages inside SI-01.
 
 Do not create future packages merely to mirror the architecture picture. Package structure becomes explicit only as real classes make ownership and dependency rules enforceable.
 
@@ -814,13 +813,13 @@ This table intentionally lives in the SAD because these choices shape the whole 
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
-| Java baseline | Java SE 8 initially because original Pi Zero/ARMv6 is mandatory | accepted baseline; pin/verify reference runtime |
+| Java baseline | Java SE 8 is the current SI-01 baseline | accepted for current implementation; verify the selected runtime on the Pi target |
 | Build | Maven | accepted |
-| Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors; constrained profile starts with one state worker | architecture baseline selected; verify queue capacities, overload behaviour and worker-count evidence |
+| Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors | architecture baseline selected; keep defaults simple and tune only if evidence requires it |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
-| Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; pin compatible 2.0.x API/provider and measure field logging on Pi Zero |
+| Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | application/domain state + simple file persistence/restore | durability/file mechanics still open |
 | Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
@@ -829,7 +828,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
 
-A technology should not be selected solely because it is common in unconstrained server applications. Pi Zero compatibility, memory/thread footprint, testability and operational simplicity are architecture criteria.
+Technology choices should fit the actual application and target. Pi compatibility is verified on real hardware; memory/thread footprint becomes a design concern only when measurements make it one.
 
 ## Physical/deployment view
 
@@ -890,16 +889,16 @@ implementation needs focused design.
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 
-- TimingNode queue capacities, overload policy per ingress class and backing-worker count based on Pi-Zero/integration-test measurements;
-- field logging handlers, level defaults, rotation/retention and Pi-Zero resource evidence;
+- TimingNode queue capacities and overload policy if real workloads show a need for explicit limits;
+- field logging handlers, level defaults and rotation/retention;
 - remote-shell technology;
 - first concrete command/query submission/result API signatures;
 - `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;
 - wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
 - concrete configuration file syntax/library and first Java configuration type boundaries;
 - persistence commit/durability/atomic-write/recovery policy;
-- reference ARMv6 Java 8 runtime/vendor/version;
+- concrete Java runtime/vendor/version for the Pi target;
 - status/health vocabulary and publication model;
 - exact public API/SPI boundaries as real consumers appear;
 - RabbitMQ connection/channel/retry strategy when that integration becomes active;
-- evidence threshold and timing for a later Java 11 migration.
+- whether there is ever a concrete reason to move beyond the current Java 8 baseline.

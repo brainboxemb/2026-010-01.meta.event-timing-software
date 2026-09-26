@@ -31,8 +31,6 @@ documents:
     source: docs/31-01-SDD-02-java-component-design.md
   - id: gui-application-architecture
     source: docs/31-02-SAD-gui-application-architecture.md
-  - id: web-operator-architecture
-    source: docs/31-03-SAD-web-operator-application-architecture.md
   - id: data-display-design
     source: docs/31-01-SDD-01-data-and-display-design.md
   - id: backoffice-transport-design
@@ -69,7 +67,6 @@ indexes:
           - document: timing-application-architecture
           - document: java-component-design
           - document: gui-application-architecture
-          - document: web-operator-architecture
       - title: Deferred detailed-design notes
         items:
           - document: data-display-design
@@ -116,7 +113,6 @@ books:
       - timing-application-architecture
       - java-component-design
       - gui-application-architecture
-      - web-operator-architecture
 
   - output: documents/software-document-set.md
     title: Software engineering document set
@@ -133,7 +129,6 @@ books:
       - timing-application-architecture
       - java-component-design
       - gui-application-architecture
-      - web-operator-architecture
       - data-display-design
       - backoffice-transport-design
       - application-control-status

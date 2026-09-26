@@ -52,10 +52,9 @@ GitHub-hosted CI
   generated documentation/artifacts
 
 Raspberry Pi Zero target
-  generated target image
-  pinned ARMv6-compatible Java runtime
-  SI-01 service
-  target/resource/HIL verification
+  SI-01 runtime
+  selected compatible Java runtime
+  target/runtime/HIL verification
 
 Optional integration host
   broker/test services
@@ -369,10 +368,9 @@ Expected mechanisms include:
 - small manual test clients where they materially improve developer inspection of a public interface;
 - lightweight native socket simulator for network-loop tests;
 - Docker/Compose service fixtures for RabbitMQ-specific integration;
-- real Pi Zero / hardware environment for target/HIL testing.
+- real Pi Zero / hardware environment for target/HIL testing when relevant.
 
-A manual test client may use a different desktop runtime/toolchain from the constrained
-SI-01 target when that boundary is explicit. It must still consume the public interface
+A manual test client may use a different desktop runtime/toolchain from SI-01 when that boundary is explicit. It must still consume the public interface
 rather than internal SI-01 classes.
 
 Do not make Docker a prerequisite for fast tests that do not need an external service.
@@ -397,18 +395,12 @@ Detailed verification scenarios belong in the SVP and relevant SDD, not in this 
 
 ## Raspberry Pi build/deployment environment
 
-Once the relevant SIP step begins, the implementation environment should provide reproducible automation for:
+The exact Pi deployment approach is still open. When the Raspberry Pi SIP step starts,
+begin with the simplest repeatable way to install and run SI-01 on the target.
 
-- downloading/selecting a pinned compatible base OS image;
-- provisioning the pinned Java runtime;
-- installing SI-01 and service files;
-- embedding only safe/default public configuration;
-- producing a versioned flashable image artifact;
-- recording source/build provenance;
-- installing a versioned application update on an existing target without requiring a full reflash;
-- preserving runtime data/configuration according to the application design.
-
-The SDE defines the automation/environment expectations; the SIP defines when these are delivered and demonstrated; detailed scripts/tool choices belong in the implementation repository.
+Record the chosen OS/runtime and installation procedure. Add image generation, update
+automation or rollback tooling only when it solves a demonstrated development or field
+need. Detailed scripts/tool choices belong in the implementation repository.
 
 ## Public and private repository environment
 
@@ -419,7 +411,6 @@ Public/private separation must be enforceable by normal build structure:
 - private Maven/repository credentials use secure CI/developer credential mechanisms;
 - proprietary protocols and real deployment mappings remain private;
 - public integration fixtures use synthetic identities;
-- public reference projects prove external consumption independently from private code.
 
 ## Secrets and configuration
 
@@ -455,15 +446,13 @@ Repository-specific rules may add constraints but should not silently weaken sys
 Environment/convention decisions still to resolve include:
 
 - exact developer-machine JDK provisioning;
-- exact ARMv6 Java runtime provisioning mechanism;
+- concrete Java runtime provisioning for the Pi target;
 - Maven public/private artifact repository and credential setup;
 - standard Java formatting/static-analysis toolchain;
 - standard unit/integration-test libraries;
 - reusable repository bootstrap/template conventions;
 - exact ruleset/branch-protection template;
 - release/version/artifact naming conventions;
-- image-builder tooling and artifact-storage mechanism;
-- application-update transport/install mechanism;
-- generated package/image branch/release conventions;
+- whether image-builder/update tooling is useful after the first Pi target proof;
 - exact local integration-host setup if a separate host becomes necessary;
 - whether generated documentation later also produces PDF/HTML.

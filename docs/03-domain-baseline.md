@@ -311,7 +311,7 @@ For this use case:
 - simulation must not require a special bypass around the application/domain model;
 - public test scenarios use generic identities, while a private integration configuration may map to the actual production inventory/protocol IDs.
 
-Resource limits for the original Raspberry Pi Zero and larger desktop/integration-test deployments are different concerns. The architecture should permit the same logical model to run with different configured scale and adapter sets.
+The Raspberry Pi Zero target and desktop/integration-test hosts may show different runtime behaviour. Measure that difference when representative software exists; do not invent target resource limits in the domain model.
 
 ## Public/private domain-data boundary
 

@@ -2,46 +2,26 @@
 
 Status: working draft / non-authoritative
 
-This is the implementation roadmap for the event-timing software. It is deliberately
-structured, but kept compact: enough formality to keep the project understandable and
-traceable without turning a hobby project into a paperwork exercise.
+This is the implementation roadmap for the event-timing software. It is structured
+enough to keep the project understandable, but each step should also explain **why** it
+exists and what is needed to perform it.
 
-Detailed implementation discussion, test logs and CI evidence belong in the applicable
-issues, pull requests, releases and generated evidence.
+This SIP is the content source of truth for the generated roadmap and step cards.
 
-## How this plan is used
+## Step format
 
-This SIP is the **content source of truth** for the implementation steps. Each step owns:
+Each step contains:
 
-- its number, title and status;
-- Goal;
-- Scope;
-- Result;
-- Demo;
-- Done.
+- **Why** — the reason for doing the step now;
+- **Goal** — what capability the step should add;
+- **Scope** — the main work;
+- **Needs** — concrete resources/environment when relevant;
+- **Result** — what should exist afterwards;
+- **Demo** — a practical way to show it works;
+- **Done** — enough to close the step.
 
-The generated roadmap and step cards use this content directly.
-
-Supporting planning YAML may add estimates, document maturity, detailed activities,
-dependencies and planning-change notes. It must not maintain a second copy of a step's
-title, status, result or demo.
-
-Software-item names are written name-first in prose:
-
-```text
-Headless Timing Application (SI-01)
-Desktop GUI Application (SI-02)
-Web Operator Application (SI-03)
-```
-
-## Completion model
-
-A step should end in something concrete that can be shown and reviewed. **Demo** says
-what we should be able to show; **Done** says what is enough to close the step.
-
-A software-producing step normally closes on a verified software release. The exact
-release mechanics belong in the SDE and repository workflow rather than being repeated
-here. Failed release candidates are not silently reused.
+Detailed task history, CI logs and release mechanics stay in issues, PRs, SDE and
+generated evidence.
 
 ---
 
@@ -49,34 +29,44 @@ here. Failed release candidates are not silently reused.
 
 Status: completed
 
+### Why
+
+Start implementation with shared names and boundaries instead of inventing them inside
+the first coding changes.
+
 ### Goal
 
 Define enough architecture to start implementation deliberately.
 
 ### Scope
 
-- domain baseline and operational use cases;
-- software-system and software-item architecture;
-- initial interface catalogue and verification direction;
-- Java/Maven, TimingNode, threading, status and public/private extension direction.
+- domain and TimingNode baseline;
+- Headless Timing Application boundary;
+- first interfaces and verification direction;
+- Java/Maven and repository direction.
+
+### Needs
+
+- current project/domain knowledge;
+- architecture/document tooling.
 
 ### Result
 
-- Architecture baseline for software items and interfaces.
-- TimingNode, runtime and package boundaries are clear.
-- Build/test/verification direction is ready.
+- Architecture baseline for the first implementation.
+- TimingNode, application and interface boundaries are clear.
+- Build/test direction is ready.
 
 ### Demo
 
-- Walk through the architecture book and key diagrams.
-- Show the runtime, domain and interface boundaries.
-- Show how public interfaces and verification levels fit together.
+- Walk through the architecture diagrams.
+- Explain TimingNode and application boundaries.
+- Show how the first executable fits the architecture.
 
 ### Done
 
-- the architecture documents build and are reviewable;
-- the implementation repository can be started without inventing its basic boundaries;
-- unresolved topics remain visible instead of being hidden as assumptions.
+- architecture documents build and are reviewable;
+- framework implementation can start without inventing basic ownership;
+- unresolved subjects are explicitly open.
 
 ---
 
@@ -84,35 +74,45 @@ Define enough architecture to start implementation deliberately.
 
 Status: completed
 
+### Why
+
+A real repository/build proves more than another round of architecture text and gives all
+later work a stable place to land.
+
 ### Goal
 
-Create the public Java repository and prove that it builds and runs independently.
+Create the Java repository and prove that it builds and runs independently.
 
 ### Scope
 
-- Maven reactor with reusable framework and runnable application;
-- Java 8 baseline for the original Raspberry Pi Zero target;
-- build identity, logging and unit-test baseline;
-- reusable Git/Java project tooling and Linux/Windows CI;
+- Maven reactor with framework and runnable application;
+- Java baseline;
+- build/version identity and logging baseline;
+- unit tests and Linux/Windows CI;
 - minimal application lifecycle.
+
+### Needs
+
+- development workstation;
+- GitHub CI.
 
 ### Result
 
-- Reusable framework JAR plus runnable application JAR.
-- Clean bootstrap, build and test on Linux and Windows.
-- Traceable build identity, logging and a clean application lifecycle.
+- Reusable framework JAR and runnable application JAR.
+- Clean build/test on Linux and Windows.
+- Traceable build identity and lifecycle.
 
 ### Demo
 
-- Restore pinned tooling from a clean checkout.
-- Run Maven verify and produce both artifacts.
-- Start the application, show its version and stop cleanly.
+- Build from a clean checkout.
+- Produce both artifacts.
+- Start the application, show its version and stop it.
 
 ### Done
 
-- clean checkout/bootstrap/build works;
+- clean bootstrap/build works;
 - Linux and Windows verification are green;
-- release `v0.1.0` is the accepted Step-2 software baseline.
+- release `v0.1.0` is the accepted Step-2 baseline.
 
 ---
 
@@ -120,439 +120,317 @@ Create the public Java repository and prove that it builds and runs independentl
 
 Status: active
 
+### Why
+
+Before adding real hardware or target deployment, SI-01 needs to become a useful
+long-running application whose public interfaces can be exercised independently.
+
 ### Goal
 
-Build the first useful long-running **Headless Timing Application** (SI-01) on the
-development host before adding Raspberry Pi deployment and real timing hardware.
+Build the first useful **Headless Timing Application** (SI-01) on the development host.
 
 ### Scope
 
 - external application configuration with at least one TimingNode;
-- shared application command/query boundary;
+- shared command/query behaviour;
 - local console and remote shell;
 - Remote API over HTTP/JSON and WebSocket;
-- equivalent version/status semantics across the initial interfaces;
+- version/status consistency across those interfaces;
 - runtime file logging;
-- independent development/test client;
-- first ST-1 black-box application test;
-- repeatable Windows execution from built artifacts.
+- black-box/application testing;
+- current JavaFX engineering client for manual integration testing.
 
-Raspberry Pi deployment remains Step 4.
+The JavaFX client is not the planned Desktop GUI Application (SI-02).
+
+### Needs
+
+- Windows development workstation;
+- built SI-01 artifacts;
+- no Raspberry Pi or production timing hardware required yet.
 
 ### Result
 
-- Headless Timing Application starts from external configuration.
-- Console, shell and Remote API show the same version/status.
-- Runtime logging and a repeatable black-box test path are available.
+- SI-01 starts from external configuration.
+- Console, shell and Remote API expose consistent version/status.
+- Automated and manual black-box testing are possible.
 
 ### Demo
 
-- Start the application on Windows from configuration.
-- Show TimingNode, version/status and runtime log.
-- Read version/status through all four interfaces.
+- Start SI-01 on Windows from configuration.
+- Inspect version/status through the public interfaces.
+- Use the JavaFX engineering client to inspect the Remote API.
 
 ### Done
 
-- configuration is validated and used for application composition;
-- initial presentation interfaces use the shared application behaviour;
-- ST-1 exercises the running process through public interfaces;
-- Windows artifact execution is repeatable and CI is green;
-- the step closes on the next accepted `0.2.x` release after the active work is complete.
+- configuration drives application composition;
+- initial presentation interfaces use shared application behaviour;
+- ST-1 exercises the running application through public interfaces;
+- runtime logging and Windows artifact execution are repeatable;
+- the step closes on the next accepted `0.2.x` release.
 
 ---
 
-## Step 4 — Raspberry Pi Zero image and updates
+## Step 4 — Raspberry Pi target proof
 
 Status: planned
 
+### Why
+
+The Pi Zero/Zero W is a target, but we should measure real behaviour instead of assuming
+in advance that Java, memory or CPU will be a problem.
+
 ### Goal
 
-Run the working application on the original Raspberry Pi Zero / Zero W with a repeatable
-image and a fast application-update path.
+Run the representative SI-01 application on a real Raspberry Pi target.
 
 ### Scope
 
-- pinned Raspberry Pi OS/base image and ARMv6-capable Java runtime;
-- reproducible flashable image;
-- automatic service startup;
-- versioned application update without reflashing the whole image;
-- preservation of configuration/data across normal app updates;
-- first real Pi Zero resource measurements.
+- choose/provision a suitable OS and Java runtime;
+- deploy and start SI-01;
+- use the existing Remote API for basic remote inspection;
+- record simple startup/CPU/memory observations;
+- determine what deployment automation is actually useful.
+
+### Needs
+
+- original Raspberry Pi Zero / Zero W;
+- suitable storage, power and network connection;
+- representative SI-01 build.
 
 ### Result
 
-- Reproducible Raspberry Pi Zero image.
-- Versioned application update without reflashing.
-- First target-hardware resource baseline.
+- SI-01 runs on the Pi target.
+- Basic target measurements are available.
+- Real deployment needs are known rather than guessed.
 
 ### Demo
 
-- Flash the generated image and boot the target.
-- Query application version and status remotely.
-- Update the application and verify the restart path.
+- Start SI-01 on the Pi.
+- Query version/status remotely.
+- Show runtime measurements and deployment.
 
 ### Done
 
-- image creation is repeatable from documented inputs;
-- application starts automatically on a real original Pi Zero / Zero W;
-- update works without manual file-copy guesswork;
-- basic resource measurements and build/runtime identity are recorded.
+- target execution is repeatable enough for development;
+- selected Java/runtime setup is recorded;
+- any actual target limitation is documented with evidence.
 
 ---
 
-## Step 5 — First Desktop GUI client
+## Step 5 — Desktop GUI Application
 
 Status: planned
 
+### Why
+
+A real independent GUI is both useful to operate the application and a strong proof that
+the Remote API is a usable external contract.
+
 ### Goal
 
-Prove that the **Desktop GUI Application** (SI-02) can use the remote application
-interface as a genuinely separate client.
+Create the planned **Desktop GUI Application** (SI-02) as a separate Remote API client.
 
 ### Scope
 
-- connect/disconnect and endpoint selection;
-- display version and basic application/TimingNode status;
-- clear stale/disconnected state;
-- no dependency on internal Headless Timing Application classes or files;
-- local and Raspberry Pi endpoints.
+First increment only:
+
+- endpoint selection and connect/disconnect;
+- version and basic application/TimingNode status;
+- clear connected/disconnected/stale state;
+- reconnect behaviour;
+- no dependency on SI-01 internal classes/files.
+
+The GUI technology, runtime and packaging are deliberately still open. The current
+JavaFX engineering client does not decide this technology.
+
+### Needs
+
+- development workstation;
+- stable enough Remote API from SI-01;
+- a technology choice made when this step starts.
 
 ### Result
 
-- Separate desktop GUI client for the Headless Timing Application.
-- Network-only connection to the application.
-- The same client works with local and Raspberry Pi endpoints.
+- Independent GUI application using only the Remote API.
+- Basic SI-01 status visible through the GUI.
+- GUI technology is chosen explicitly.
 
 ### Demo
 
-- Show live version and status in the GUI.
-- Stop/restart the timing application and show reconnect.
-- Switch the GUI from local to Raspberry Pi.
+- Connect the GUI to a running SI-01.
+- Show version/status and disconnect/reconnect.
+- Point the same GUI at a local or Pi-hosted SI-01.
 
 ### Done
 
-- GUI and Headless Timing Application build independently;
-- basic connection/status behaviour has automated coverage;
-- local and Raspberry Pi demonstrations use the same client logic.
+- GUI and SI-01 build independently;
+- connection/status behaviour has useful automated coverage;
+- implementation technology is documented with its reason.
 
 ---
 
-## Step 6 — External reference/test project
+## Step 6 — TimingNode data and timing behaviour
 
 Status: planned
 
-### Goal
+### Why
 
-Create a separate public consumer that proves the framework can be used outside its own
-reactor.
-
-### Scope
-
-- public/stub composition using published/local Maven artifacts;
-- deterministic ST-1 application scenarios;
-- lightweight ST-2 socket/backoffice simulator;
-- multiple synthetic TimingNodes/sources where useful;
-- fault injection through supported test boundaries.
-
-### Result
-
-- External reference/test repository.
-- Framework consumed as a normal external dependency.
-- Repeatable ST-1 and ST-2 synthetic scenarios.
-
-### Demo
-
-- Build and run from the reference repository only.
-- Start a synthetic TimingNode composition.
-- Exercise the socket simulator, disconnect and reconnect flow.
-
-### Done
-
-- no framework source copy/fork is required;
-- public contracts are sufficient to compose and test the application;
-- key synthetic scenarios run automatically where practical.
-
----
-
-## Step 7 — Proprietary extension proof
-
-Status: planned
+Once the application/runtime boundary is stable, the next value comes from the timing
+behaviour itself rather than more infrastructure.
 
 ### Goal
 
-Prove that a private implementation can replace a public stub through the same public
-contract.
-
-### Scope
-
-Use one small but realistic private component, preferably an RFID adapter shell or
-proprietary tag/protocol implementation.
-
-### Result
-
-- A private implementation can replace a public stub.
-- Both compositions use the same public framework contract.
-- Public builds remain independent of private source.
-
-### Demo
-
-- Run the public-stub composition.
-- Swap in the private implementation.
-- Show equivalent higher-level application behaviour.
-
-### Done
-
-- public framework source does not change to select the private component;
-- private code is not required to build/test the public framework;
-- proprietary identities and protocol details remain private.
-
----
-
-## Step 8 — TimingNode data and state foundation
-
-Status: planned
-
-### Goal
-
-Implement the useful local timing/domain behaviour without depending on production
+Implement the useful local TimingNode/domain behaviour without depending on production
 hardware.
 
 ### Scope
 
-- registrations and per-source sequence/history;
-- StageStartTimes and RaceData/reference data;
-- NextUpTeams with traceable changes;
-- StageTiming / derived timing results;
-- simple persistence, restart and restore;
-- clear TimingNode lifecycle and relevant degraded/error state;
-- bounded state-changing work.
+- registrations and source sequence/history;
+- StageStartTimes;
+- NextUpTeams;
+- RaceData/reference data;
+- StageTiming and derived timing results;
+- persistence/restart/restore where needed by this state.
+
+### Needs
+
+- synthetic test data;
+- no production RFID/CAN hardware required for the first implementation.
 
 ### Result
 
-- Deterministic timing data and state foundation.
-- Registration, NextUpTeams and reference data work locally.
-- State and source sequence continue correctly after restart.
+- Useful timing/domain state and behaviour.
+- Timing calculations work with deterministic inputs.
+- Required state survives restart where designed.
 
 ### Demo
 
-- Run two independent synthetic registration sources.
-- Update local timing/team data and show a derived timing result.
-- Restart and show restored state with continued source sequences.
+- Feed synthetic registrations.
+- Update start/team/reference data.
+- Show a derived timing result and restart/restore behaviour.
 
 ### Done
 
-- core state transitions and sequence rules have deterministic tests;
-- restart/restore paths are automated;
-- behaviour can be driven without production hardware;
-- failures are visible rather than silently ignored.
+- core state transitions and timing rules have deterministic tests;
+- behaviour can be exercised without real devices;
+- persistence needs are implemented for the chosen state.
 
 ---
 
-## Step 9 — Web/iPad operator application
+## Step 7 — Device integration
 
 Status: planned
 
+### Why
+
+After the domain behaviour works with controlled inputs, real device adapters can be
+connected without using hardware to define the business logic.
+
 ### Goal
 
-Provide the browser/iPad **Web Operator Application** (SI-03).
+Connect the required timing devices to SI-01.
 
 ### Scope
 
-- Headless Timing Application serves the web bundle;
-- web-specific HTTP endpoints and WebSocket channel;
-- status, registrations and useful timing controls;
-- TimingNode open/close and start flow where defined;
-- NextUpTeams interaction;
-- clear disconnected/stale state and reconnect snapshot;
-- representative iPad/Safari use.
+Expected device areas include:
+
+- RFID observations and lifecycle;
+- CAN/keypad;
+- displays where required;
+- controllable stubs/simulators where they help development;
+- real-device recovery/error behaviour as it becomes known.
+
+Exact adapter order depends on available hardware and project need.
+
+### Needs
+
+- representative RFID/CAN/display hardware for the adapters being implemented;
+- protocol/device information;
+- synthetic/stub equivalents where useful.
 
 ### Result
 
-- Browser/iPad operator application.
-- Live operation against the Headless Timing Application.
-- Explicit stale and reconnect behaviour.
+- Real devices use normal SI-01 paths.
+- Device failures are observable and recoverable where supported.
 
 ### Demo
 
-- Operate the application from a browser/iPad.
-- Interrupt the connection and show stale/disconnected state.
-- Reconnect to a fresh snapshot and continue with live updates.
+- Run SI-01 with representative selected hardware.
+- Show a normal device flow.
+- Demonstrate one useful recovery/failure scenario.
 
 ### Done
 
-- representative Safari/iPad flow works;
-- normal local use does not require internet/backoffice connectivity;
-- business rules remain in the Headless Timing Application.
+- implemented adapters use the normal application/domain contracts;
+- representative hardware behaviour is verified;
+- unsupported or still-open device behaviour is documented rather than guessed.
 
 ---
 
-## Step 10 — Stub-controlled hardware integration
+## Step 8 — Backoffice integration
 
 Status: planned
 
-### Goal
+### Why
 
-Exercise device, fault and recovery flows deterministically before connecting production
-hardware.
-
-### Scope
-
-- RFID power/lifecycle/reads and failure injection;
-- CAN discovery, keypad and display behaviour;
-- Display V1/V2 connection and reconnect flows;
-- network/backoffice failure scenarios where useful;
-- all injected events use normal adapter/application paths.
-
-### Result
-
-- Controlled synthetic hardware environment.
-- RFID, CAN, keypad and display lifecycle simulation.
-- Deterministic device fault and recovery injection.
-
-### Demo
-
-- Drive a normal synthetic device lifecycle.
-- Inject reads, discovery and display updates.
-- Force a failure and demonstrate recovery.
-
-### Done
-
-- scenarios are repeatable without physical hardware;
-- test code does not directly mutate timing/domain state;
-- the same contracts are suitable for later production adapters.
-
----
-
-## Step 11 — Production RFID/CAN/display integration
-
-Status: planned
+Backoffice synchronisation should be added after local operation is useful, so local
+timing behaviour does not become dependent on the external transport.
 
 ### Goal
 
-Replace the proven hardware stubs with representative real implementations.
+Connect SI-01 to the required backoffice data flows.
 
 ### Scope
 
-- production/private RFID control and protocol/decryption;
-- production CAN adapter and supported devices;
-- keypad and Display V1;
-- Display V2 network data path;
-- device health/recovery;
-- hardware-in-the-loop verification.
+- reference/input data needed locally;
+- outbound registrations/results as required;
+- source identity/order where relevant;
+- disconnect/reconnect/recovery behaviour;
+- concrete transport adapter(s) when the external contract is known.
+
+### Needs
+
+- backoffice/interface information;
+- broker/test environment if RabbitMQ is the selected transport;
+- synthetic test data and credentials/configuration.
 
 ### Result
 
-- Real RFID, CAN and display adapters.
-- Representative deployment with real timing hardware.
-- Observable device status and recovery.
+- Required data can move between SI-01 and the backoffice.
+- Local operation continues as designed during an outage.
+- Transport details remain outside domain behaviour.
 
 ### Demo
 
-- Run the application with representative real hardware.
-- Capture registrations and device discovery.
-- Force a recoverable device failure and recover.
+- Exchange representative data.
+- Interrupt the connection.
+- Continue the applicable local flow and reconnect cleanly.
 
 ### Done
 
-- representative HIL scenarios pass;
-- production adapters replace stubs without changing domain behaviour;
-- Pi Zero resource behaviour remains workable.
+- implemented backoffice flows have integration tests;
+- disconnect/reconnect semantics are explicit;
+- transport/proprietary details do not leak into generic domain APIs.
 
 ---
 
-## Step 12 — Backoffice/reference-data integration
+## Open / later possibilities
 
-Status: planned
+These are **not roadmap commitments** yet:
 
-### Goal
+- a small web client for exercising the Remote API;
+- more elaborate target-image/update automation;
+- a dedicated integration host;
+- extra private/public extension proofs;
+- Java 11 or another later runtime baseline;
+- further operational/deployment hardening.
 
-Connect local operation to the backoffice while keeping local timing useful during an
-outage.
-
-### Scope
-
-- system-level backoffice contract;
-- transport-independent semantic boundary;
-- RabbitMQ adapter and source-aware routing;
-- StageStartTimes/reference-data synchronisation;
-- registration outbox/delivery and reconciliation;
-- reconnect/idempotency;
-- ST-3 RabbitMQ integration environment.
-
-### Result
-
-- Backoffice-integrated Headless Timing Application.
-- Offline-safe source-aware synchronisation.
-- Reproducible RabbitMQ integration tests.
-
-### Demo
-
-- Exchange data through a synthetic broker topology.
-- Stop the broker while local operation continues.
-- Restart it and reconcile pending data.
-
-### Done
-
-- source routing/isolation is verified;
-- local data survives broker outages;
-- reconnect restores normal synchronisation;
-- proprietary mappings remain outside the public repository.
-
----
-
-## Step 13 — Deployment hardening and operation
-
-Status: planned
-
-### Goal
-
-Turn the early target image/update path into a supportable operational setup.
-
-### Scope
-
-- harden image creation and service recovery;
-- configuration/secrets provisioning;
-- application and image/runtime update policy;
-- rollback/recovery;
-- diagnostics/support export;
-- longer ST-4 and hardware-in-the-loop scenarios;
-- resource limits based on measured evidence where useful.
-
-### Result
-
-- Supportable Raspberry Pi deployment lifecycle.
-- Provisioning, updates, rollback and diagnostics.
-- Operational ST-4 / hardware-test baseline.
-
-### Demo
-
-- Provision a clean target and start the service.
-- Perform an update and a failed-update rollback.
-- Produce diagnostics and run the operational scenario.
-
-### Done
-
-- provisioning/update/recovery paths are repeatable;
-- configuration/secrets stay outside generic public images;
-- operational diagnostics are useful;
-- representative full-system verification is green.
-
----
-
-## Java 11 checkpoint
-
-Status: future
-
-Do not block early work on Java 11. Once the application is representative, compare a
-suitable Java 11 runtime with the working Java 8 baseline on the same Pi Zero class and
-workload. Move only if the measured deployment, memory, CPU, compatibility and maintenance
-trade-off is worthwhile.
+Promote one of these into a SIP step only when there is a concrete reason to do it.
 
 ## Planning rules
 
-- Keep steps demonstrable and reasonably small.
-- Prefer normal public interfaces over demo-only shortcuts.
-- Keep detailed implementation/evidence in issues, PRs and generated evidence.
-- Keep the SIP concise; change it when the plan changes, not when every task status changes.
-- Measure Pi Zero behaviour rather than inventing resource budgets.
-- Keep lifecycle, subsystem health and connectivity as separate concepts.
+- Keep steps small enough to remain understandable between work sessions.
+- Explain why a step exists; do not turn a list of possible future ideas into a roadmap.
+- Record real resource needs under **Needs**.
+- Measure target behaviour before inventing performance constraints.
+- Keep the SIP as the source for generated roadmap/card content.

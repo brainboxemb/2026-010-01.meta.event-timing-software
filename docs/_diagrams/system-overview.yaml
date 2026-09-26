@@ -10,12 +10,12 @@ groups: []
 nodes:
   - {id: console, label: "Local console", kind: client, layout: {x: 40, y: 90, w: 190, h: 70}}
   - {id: remote, label: "Remote terminal", kind: client, layout: {x: 250, y: 90, w: 190, h: 70}}
-  - {id: desktop, label: "Desktop GUI Application (SI-02)", kind: client, layout: {x: 460, y: 90, w: 210, h: 70}}
-  - {id: ipad, label: "Web Operator Application (SI-03)\nWeb / iPad", kind: client, layout: {x: 700, y: 75, w: 230, h: 100}}
+  - {id: desktop, label: "Desktop GUI Application (SI-02)\nplanned • technology open", kind: client, layout: {x: 450, y: 75, w: 250, h: 100}}
+  - {id: test_client, label: "Engineering / test clients\nJavaFX • scripts • optional web", kind: client, layout: {x: 730, y: 75, w: 260, h: 100}}
   - {id: backoffice, label: "Backoffice", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
   - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
   - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
-  - {id: web_adapter, label: "HTTP + WebSocket adapter\nserves React bundle", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
+  - {id: web_adapter, label: "Remote API\nHTTP + WebSocket", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
   - {id: backoffice_adapter, label: "Backoffice adapter\nRabbitMQ intended", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
   - {id: gateway, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
@@ -34,7 +34,7 @@ edges:
   - {from: console, to: console_adapter}
   - {from: remote, to: remote_adapter}
   - {from: desktop, to: web_adapter}
-  - {from: ipad, to: web_adapter}
+  - {from: test_client, to: web_adapter}
   - {from: backoffice, to: backoffice_adapter}
   - {from: console_adapter, to: gateway}
   - {from: remote_adapter, to: gateway}

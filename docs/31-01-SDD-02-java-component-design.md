@@ -272,16 +272,7 @@ The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
 framework and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
 both transports with a larger combined stack.
 
-A future browser/iPad **Web** presentation interface is intentionally separate:
-
-```text
-presentation/interfaces/web/
-  http/          pages + web-specific endpoints
-  websocket/     web-client live channel
-  messages/      web-specific representations
-```
-
-Those packages are created only when the Web capability is implemented.
+A browser-based engineering client, if added, should consume the Remote API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
 Manual inspection is provided by an independent development tool:
 
@@ -292,8 +283,8 @@ test-client/
           v
   TestClientFxApplication    JavaFX development view
           |
-          +-- ApplicationControlClient  HTTP/JSON client
-          +-- StatusWebSocketClient      Java 17 WebSocket client
+          +-- RemoteApiClient          HTTP/JSON client
+          +-- RemoteApiEventClient       Java 17 WebSocket client
           +-- RemoteShellClient          A05 raw TCP shell client
           |
           v
@@ -303,11 +294,10 @@ test-client/
 `test-client/` is a standalone Java-17 Maven project, not a module in the Java-8
 SI-01 reactor. It has no dependency on `event-timing-framework` or
 `event-timing-app`; this preserves the external-client boundary and makes later
-extraction to a dedicated repository straightforward if the tool grows. It is
-engineering support rather than SI-02.
+extraction to a dedicated repository straightforward if the tool grows. It is engineering support rather than the planned SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared presentation/application boundary remains small:
-`CommandHandler.version()` returns authoritative build identity and
+`CommandHandler.version()` returns build identity and
 `CommandHandler.status()` returns the current TimingNode status used by the
 current presentation adapters.
 

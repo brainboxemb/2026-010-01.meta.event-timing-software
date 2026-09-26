@@ -50,8 +50,8 @@ nodes:
     group: clients
     layout: {x: 805, y: 190, w: 350, h: 75}
 
-  - id: si03
-    label: "Web Operator Application (SI-03)\nWeb / iPad client"
+  - id: test-client
+    label: "Engineering / test client\nJavaFX • script • optional web"
     kind: client
     group: clients
     layout: {x: 805, y: 375, w: 350, h: 75}
@@ -99,7 +99,7 @@ edges:
     from_anchor: {side: left, position: 0.50}
     to_anchor: {side: right, position: 0.25}
 
-  - from: si03
+  - from: test-client
     to: si01
     label: IF-03
     route:

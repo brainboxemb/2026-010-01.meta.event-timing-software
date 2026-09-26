@@ -59,10 +59,10 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
-| UC-006 | Drive a passive display from current system state | Timing application | Keep a passive Display V1 aligned with the authoritative current ready-team/display model. |
-| UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data without moving domain authority out of SI-01. |
-| UC-008 | Operate SI-01 through a desktop GUI | Operator | View status/data and execute permitted commands while SI-01 may run on a remote Raspberry Pi. |
-| UC-009 | Operate SI-01 through the browser/iPad application | Operator | Download the web application and use HTTP/WebSocket for status, registration data and operator commands. |
+| UC-006 | Drive a passive display from current system state | Timing application | Keep a passive Display V1 aligned with the current ready-team/display model. |
+| UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
+| UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the Remote API. |
+| UC-009 | Exercise the Remote API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
 | UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
@@ -129,7 +129,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 ## UC-003 — Register a participant through RFID
 
-**Goal:** create a valid traceable registration from RFID observations without treating the first raw observation as automatically authoritative.
+**Goal:** create a valid traceable registration from RFID observations without treating the first raw observation as automatically accepted.
 
 **Primary actor:** RFID subsystem.
 
@@ -183,14 +183,14 @@ The current catalogue starts lightweight and can be expanded as requirements are
 1. A team-number add/remove action enters through a normal input adapter.
 2. SI-01 routes the command to the applicable TimingNode.
 3. `PrepareTeamRegistry` records the traceable add/remove mutation and updates its current set.
-4. Display state is rebuilt/updated from the authoritative current prepare-team registry.
+4. Display state is rebuilt/updated from the current prepare-team state.
 5. Operator/status clients can observe the resulting state.
 
 The `PrepareTeamRegistry` history is separate from participant/timing `RegistrationRecord` streams.
 
 ## UC-006 — Drive a passive display from current system state
 
-**Goal:** ensure Display V1 shows the current authoritative ready-team/display model.
+**Goal:** ensure Display V1 shows the current ready-team/display model.
 
 **Primary actor:** SI-01.
 
@@ -199,11 +199,11 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 1. SI-01 derives a current `DisplayModel` from application state.
 2. The passive-display adapter translates that model into CAN/device commands.
 3. On state change, reconnect or rediscovery, SI-01 actively refreshes the display as required.
-4. The display itself does not become authoritative for ready-team/domain state.
+4. The display itself does not own ready-team/domain state.
 
 ## UC-007 — Synchronise a smart display
 
-**Goal:** provide a smarter network display with data/state while SI-01 remains authoritative.
+**Goal:** provide a smarter network display with data/state while SI-01 keeps that state.
 
 **Primary actor:** smart display.
 
@@ -213,11 +213,11 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 2. The display discovers and connects to SI-01.
 3. SI-01 provides a full current snapshot/data set.
 4. Subsequent updates are synchronised over the selected network protocol.
-5. After reconnect, the display can recover from a fresh authoritative snapshot.
+5. After reconnect, the display can recover from a fresh current snapshot.
 
 ## UC-008 — Operate SI-01 through a desktop GUI
 
-**Goal:** operate/observe a timing application running locally or on another host such as a Raspberry Pi.
+**Goal:** operate/observe a timing application through the Remote API.
 
 **Primary actor:** operator.
 
@@ -227,21 +227,25 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 2. It retrieves current application/instance/subsystem state.
 3. The operator performs permitted commands such as open/close/device recovery and later registration-related operations.
 4. SI-02 shows command outcome and live/stale/disconnected status explicitly.
-5. No authoritative timing state is stored solely in the GUI.
+5. Timing state remains in SI-01 rather than being stored only in the GUI.
 
-## UC-009 — Operate SI-01 through the browser/iPad application
+## UC-009 — Exercise the Remote API through an optional web test client
 
-**Goal:** provide local browser/iPad operation without requiring a separately installed native client.
+**Goal:** provide a simple browser-based way to inspect or exercise the Remote API when
+that is useful during development.
 
-**Primary actor:** operator.
+**Primary actor:** test/developer.
 
 **Main flow:**
 
-1. The browser loads the compiled React application from SI-01 over HTTP.
-2. The application obtains initial state/registration data via HTTP/query endpoints.
-3. Live state/registration changes arrive over WebSocket.
-4. Operator actions such as open/close/start are submitted through the same shared application semantics as other clients.
-5. Disconnection/stale state is visible to the operator.
+1. A small web client connects to the existing Remote API.
+2. It shows a small set of API data such as version/status.
+3. It may exercise supported commands/events needed for manual integration testing.
+4. It remains test tooling; it does not become another source of timing/domain state.
+
+This use case is optional. The current JavaFX engineering client already provides manual
+integration inspection, and there is no current requirement for a separate web product.
+
 
 ## UC-010 — Synchronise reference data from backoffice
 
@@ -427,7 +431,7 @@ The following scenarios should be associated with applicable use cases rather th
 - operating-system wall-clock correction forwards or backwards while observations are being captured;
 - local daylight-saving-time transition or other local-time ambiguity;
 - queue pressure/backpressure;
-- GUI/browser disconnect/stale state;
+- GUI/test-client disconnect/stale state;
 - socket transport disconnect/reconnect;
 - RabbitMQ broker/channel/consumer recovery.
 
