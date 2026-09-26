@@ -63,7 +63,7 @@ Define enough architecture to start implementation deliberately.
 ### Result
 
 - Architecture baseline for software items and interfaces.
-- TimingNode, runtime and package boundaries are clear enough to code.
+- TimingNode, runtime and package boundaries are clear.
 - Build/test/verification direction is ready.
 
 ### Demo
@@ -149,7 +149,7 @@ Raspberry Pi deployment remains Step 4.
 
 - Start the application on Windows from configuration.
 - Show TimingNode, version/status and runtime log.
-- Read version/status through console, shell, HTTP and WebSocket.
+- Read version/status through all four interfaces.
 
 ### Done
 
