@@ -23,7 +23,6 @@ system requirements + system interfaces
         |
         +--> 31-01-SAD  SI-01 Timing Application Architecture
         +--> 31-02-SAD  SI-02 Desktop GUI Application Architecture
-        +--> 31-03-SAD  SI-03 Web Operator Application Architecture
                     |
                     +--> focused SDD only when separate detailed design is useful
 ```
@@ -43,11 +42,11 @@ The software-item SADs answer how each software item is internally structured an
 The software-system architecture is driven by these system-level concerns:
 
 - the **Headless Timing Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
-- the **Desktop GUI Application** (SI-02) and **Web Operator Application** (SI-03) are separate software items and communicate with the Headless Timing Application over system-defined interfaces;
-- local timing/device operation must not depend on a connected desktop or browser client;
+- the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the Remote API;
+- local timing/device operation must not depend on a connected GUI or engineering/test client;
 - external devices and backoffice systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
-- deployments must support constrained field hardware as well as development/test hosts;
+- deployments should support the intended field target and normal development/test hosts; target limits are measured rather than assumed;
 - system interfaces and software-item ownership should remain stable even when internal implementation technology changes;
 - IP-based system interfaces must not require a particular router or Wi-Fi topology merely to exercise the interface.
 
@@ -58,22 +57,24 @@ The second-level number used in SRD/SAD/SDD filenames identifies the software it
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
 | **SI-01** | Headless Timing Application | working architecture | Local timing/registration runtime, device integration, state, status, persistence and backoffice synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
-| **SI-02** | Desktop GUI Application | working architecture | Desktop operator client for status and control through the system interface | Operator workstation/laptop |
-| **SI-03** | Web Operator Application | working architecture | Browser/iPad operator client using the SI-01 network interface | Browser/iPad on an available IP path to SI-01 |
+| **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the Remote API | Operator workstation/laptop |
 
-Supporting framework modules, adapters, testkits/reference projects and private implementation repositories are engineering components, not automatically separate product software items.
+Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX Remote API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
 
 ## System context
 
 ```text
                          Operator
-                       /          \
-                      v            v
-             SI-02 Desktop GUI   SI-03 Web/iPad
-                      \            /
-                       \          /
-                        v        v
+                            |
+                            v
+                    SI-02 Desktop GUI
+                            |
+                            v
                     SI-01 Timing Application
+                       ^            ^
+                       |            |
+              engineering/test   scripts / optional
+              JavaFX client      web test client
                     /      |       \
                    v       v        v
              field devices local   Backoffice
@@ -81,7 +82,7 @@ Supporting framework modules, adapters, testkits/reference projects and private 
              / displays
 ```
 
-The desktop GUI and browser clients may disconnect without changing where timing state is kept: it remains in the **Headless Timing Application** (SI-01).
+GUI and engineering/test clients may disconnect without changing where timing state is kept: it remains in the **Headless Timing Application** (SI-01).
 
 <a id="fig-sys-01"></a>
 ![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
@@ -93,9 +94,6 @@ The desktop GUI and browser clients may disconnect without changing where timing
 
 The **Desktop GUI Application** (SI-02) is an IP network client of the **Headless Timing Application** (SI-01). It presents operator status and control but does not access the application's memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
 
-### **Headless Timing Application** (SI-01) ↔ **Web Operator Application** (SI-03)
-
-The **Web Operator Application** (SI-03) is a browser-based IP client. The **Headless Timing Application** (SI-01) keeps its browser-facing **Web** presentation boundary separate from the general-purpose IF-03 Remote API because the Web interface owns browser/iPad pages, user-facing HTTP endpoints and its own live WebSocket semantics. Both may reuse the same application behaviour internally, but transport reuse does not make them one functional interface. The exact system-interface allocation for the future Web boundary is completed before implementation of the Web Operator Application.
 
 ### **Headless Timing Application** (SI-01) ↔ backoffice
 
@@ -115,7 +113,6 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
 | **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `40-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
-| **IF-05 Web Operator HMI** | Operator ↔ SI-03 | browser/iPad | Browser screens, controls and feedback | Web HMI IDD candidate |
 | **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
@@ -129,9 +126,9 @@ System-level IDDs own interface semantics. Software-item SRDs and SADs reference
 
 The following rules apply across software-item boundaries:
 
-- operator behaviour exposed through console, desktop and browser should converge on shared system semantics rather than implementing different business rules per client;
+- operator and engineering clients should use shared application semantics rather than implement different business rules per client;
 - network clients read state from and send commands to the **Headless Timing Application** (SI-01); timing state remains in that application;
-- loss of the **Desktop GUI Application** (SI-02) or **Web Operator Application** (SI-03) must not by itself stop local operation of the **Headless Timing Application** (SI-01);
+- loss of the **Desktop GUI Application** (SI-02) or an engineering/test client must not by itself stop local operation of the **Headless Timing Application** (SI-01);
 - IF-03 and IF-09 are endpoint-to-endpoint logical interfaces and must not make a physical Wi-Fi router an architectural prerequisite;
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
@@ -162,8 +159,8 @@ Field host
 SI-02 Desktop GUI
   +-- IF-03 over available IP path --> SI-01
 
-SI-03 Web Operator Application
-  +-- future Web presentation interface over available IP path --> SI-01
+Engineering/test clients
+  +-- IF-03 over available IP path --> SI-01
 
 Smart Display V2
   +-- IF-09 over available IP path --> SI-01
@@ -197,7 +194,7 @@ The exact process/thread topology, internal runtime cardinality, queueing model,
 
 ### State ownership and disconnected operation
 
-The **Headless Timing Application** (SI-01) keeps the local operational state. Losing a GUI/browser or external connection must not move that state elsewhere or make synchronisation appear healthy when it is not.
+The **Headless Timing Application** (SI-01) keeps the local operational state. Losing a GUI/test client or external connection must not move that state elsewhere or make synchronisation appear healthy when it is not.
 
 ### Public/private implementation boundary
 
@@ -226,7 +223,7 @@ The SAD for the **Headless Timing Application** (SI-01) owns, among other things
 - backoffice transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
-The SADs for the **Desktop GUI Application** (SI-02) and **Web Operator Application** (SI-03) similarly own their internal architectures while conforming to the system interfaces defined here and in applicable IDDs.
+The SAD for the planned **Desktop GUI Application** (SI-02) owns its internal architecture while conforming to the Remote API and applicable IDDs.
 
 ## Architecture review model
 
@@ -239,7 +236,6 @@ Reference: `reference/README.md`.
 - final system interface/IDD breakdown and ownership;
 - authentication, authorisation and secure transport requirements across software-item boundaries;
 - compatibility/versioning policy for IF-03 and IF-06;
-- final deployment ownership for serving **Web Operator Application** (SI-03) assets;
 - which device semantics require system-level IDDs versus software-item-only design;
 - required behaviour when local IP, configured router/AP, external network or backoffice connectivity is unavailable;
 - final system-level availability/recovery requirements.

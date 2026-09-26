@@ -4,7 +4,7 @@ Status: working draft / non-authoritative
 
 Software item: **Desktop GUI Application** (SI-02)
 
-This Software Architecture Document describes the initial architecture direction for the desktop operator GUI. The GUI is a separate software item from the **Headless Timing Application** (SI-01) and communicates with it through system-defined network interfaces.
+This Software Architecture Document describes the initial architecture direction for the planned desktop GUI. The GUI is a separate software item from the **Headless Timing Application** (SI-01) and communicates with it through system-defined network interfaces.
 
 ## Purpose
 
@@ -37,6 +37,12 @@ Headless Timing Application
 ```
 
 The transport and message contracts ultimately belong in a system-level IDD rather than being owned by either software item.
+
+## Relationship to the current JavaFX test client
+
+The current JavaFX test client is an engineering/manual-integration tool for IF-03. It is
+**not** the first implementation of SI-02 and does not select the GUI toolkit, runtime or
+packaging for SI-02.
 
 ## First increment
 
@@ -99,7 +105,7 @@ Current direction:
 - stale-data behaviour;
 - errors/result semantics.
 
-The same interface should be usable by test tools and, where suitable, the browser/iPad software item.
+The same interface is also used by engineering/test tools. A small browser-based test client may consume it later without becoming another software item.
 
 ## Internal GUI layering
 

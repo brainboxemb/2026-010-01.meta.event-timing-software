@@ -61,10 +61,9 @@ The GitHub documentation workflow follows the same path before invoking `eng-doc
 - [`docs/31-01-SDD-02-java-component-design.md`](docs/31-01-SDD-02-java-component-design.md) — active focused software item 01 Java/Maven component/package detailed design.
 - [`docs/31-01-SDD-03-backoffice-transport-design.md`](docs/31-01-SDD-03-backoffice-transport-design.md) — deferred software item 01 transport-independent backoffice detailed-design note.
 - [`docs/31-02-SAD-gui-application-architecture.md`](docs/31-02-SAD-gui-application-architecture.md) — software item 02, desktop GUI architecture.
-- [`docs/31-03-SAD-web-operator-application-architecture.md`](docs/31-03-SAD-web-operator-application-architecture.md) — software item 03, React/browser/iPad operator architecture.
 - [`docs/40-01-IDD-application-control-status.md`](docs/40-01-IDD-application-control-status.md) — AP-1 working IF-03 application-control/status contract for the first executable slice.
 - [`docs/40-02-IDD-application-configuration.md`](docs/40-02-IDD-application-configuration.md) — SI-01 deployment/configuration contract for TimingNodes, I/O assets, presentation bindings, platform/profile overlays and secret references.
-- [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model including Pi Zero/resource and fault-injection verification.
+- [`docs/50-SVP-software-verification-plan.md`](docs/50-SVP-software-verification-plan.md) — system-level verification strategy, test profiles and evidence model.
 - [`docs/60-01-SUM-headless-timing-application.md`](docs/60-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual with build/run instructions and compatibility matrix.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
@@ -107,8 +106,7 @@ Current working software-item register:
 
 ```text
 SI-01  Headless Timing Application
-SI-02  Desktop GUI Application
-SI-03  Web Operator Application (React/browser/iPad)
+SI-02  Desktop GUI Application (planned; technology open)
 ```
 
 Examples:
@@ -116,15 +114,11 @@ Examples:
 ```text
 20-01-SRD-...                 requirements for software item 01
 20-02-SRD-...                 requirements for software item 02
-20-03-SRD-...                 requirements for software item 03
-
 31-01-SAD-...                 architecture for software item 01
 31-01-SDD-01-...              first current detailed-design document for software item 01
 31-01-SDD-02-...              second current detailed-design document for software item 01
 
 31-02-SAD-...                 architecture for software item 02
-31-03-SAD-...                 architecture for software item 03
-
 60-01-SUM-...                 release/user manual for software item 01
 ```
 
@@ -137,8 +131,8 @@ The project intentionally separates:
 - **brainstorm** — ideas, candidate requirements, alternatives and unresolved questions;
 - **domain baseline** — supplied domain facts/terminology that later requirements/design must preserve or explicitly revise;
 - **use cases** — externally meaningful operational goals and scenarios used as input to requirements/interfaces and later verification;
-- **SDP** — development management view: objectives, broad approach/phases, risks, assumptions, required resources/environments and major unknowns;
-- **SIP** — implementation execution view: ordered steps, concrete deliverables, demonstrations and exit evidence;
+- **SDP** — short development-direction view: broad phases, known resources and open project-level questions;
+- **SIP** — implementation roadmap: why each step exists, scope/resources, result, demo and done criteria;
 - **SDE** — engineering-environment view: repository layout, GitHub/branch/PR workflow, tooling, CI, generated artifacts, developer/target environment conventions;
 - **system requirements / SSAD / IDDs** — software-system-level behaviour, architecture and interfaces;
 - **software-item SRD / SAD / SDD** — requirements, architecture and detailed design for each software item;

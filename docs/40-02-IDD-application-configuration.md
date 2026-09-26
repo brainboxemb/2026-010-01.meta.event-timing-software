@@ -142,10 +142,9 @@ presentation
     http
     webSocket
   remoteShell
-  web              future browser/iPad interface
 ```
 
-A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell, tablet or later GUI endpoint exists. Presentation interfaces map their requests to the application boundary.
+A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell or external GUI/test client exists. Presentation interfaces map their requests to the application boundary.
 
 The currently implemented A05-A07 subset is:
 
@@ -165,10 +164,7 @@ presentation:
 
 `remoteShell` and `remoteApi` are independently optional. Within `remoteApi`, HTTP
 and WebSocket listeners are independently optional; when present, each requires its
-`bindAddress` and `port`. The committed development example uses loopback for all
-listeners. A future `presentation.web` section may define its own HTTP/WebSocket
-settings without competing with the Remote API namespace. These settings configure
-presentation listeners and do not become TimingNode fields.
+`bindAddress` and `port`. The committed development example uses loopback for all listeners. External GUI/test clients connect to the Remote API and do not require their own SI-01 presentation configuration section. These settings configure presentation listeners and do not become TimingNode fields.
 
 ### Runtime
 

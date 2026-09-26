@@ -33,7 +33,6 @@ ARCHITECTURE_DOCUMENTS = [
     "31-01-SAD-timing-application-architecture.md",
     "31-01-SDD-02-java-component-design.md",
     "31-02-SAD-gui-application-architecture.md",
-    "31-03-SAD-web-operator-application-architecture.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
