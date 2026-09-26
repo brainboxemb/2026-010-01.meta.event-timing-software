@@ -3,31 +3,20 @@ step: 3
 planning_changes:
   - date: '2026-09-25'
     change: >-
-      A06 completed HTTP/JSON status plus the independent JavaFX development client.
+      A02 was narrowed to one application.yml with one TimingNode; broader
+      presentation/platform configuration stays capability-driven.
   - date: '2026-09-25'
     change: >-
-      Build provenance was redefined to omit buildTime and embed revision,
-      sourceRef, buildOrigin and dirty-state for self-identifying artifacts.
+      Build provenance now uses revision, sourceRef, buildOrigin and dirty-state
+      instead of embedding buildTime.
   - date: '2026-09-25'
     change: >-
-      A02 was narrowed to one external application.yml producing one TimingNodeId
-      and one TimingNode; presentation configuration was deferred.
+      A04/A05 split local console from remote shell while keeping shared command
+      behaviour.
   - date: '2026-09-25'
     change: >-
-      A03 was clarified as run until shutdown plus graceful stop; interactive
-      console control moved to A04.
-  - date: '2026-09-25'
-    change: >-
-      A04 and A05 were separated into local console and remote terminal/shell;
-      both use the same application command behaviour.
-  - date: '2026-09-25'
-    change: >-
-      A08 Runtime file logging was added to Step 3, with live debug logging kept
-      as a later diagnostic presentation consumer.
-  - date: '2026-09-25'
-    change: >-
-      Verification progress was refreshed: V01 is complete and V04 now covers
-      Windows development-host proof including user/NetBeans acceptance.
+      A08 runtime file logging was added to Step 3; live diagnostics remain a
+      later presentation concern.
 
 activities:
   - id: A01
@@ -85,7 +74,7 @@ activities:
   - id: A06
     lane: application
     kind: implementation
-    title: HTTP / JSON status adapter
+    title: Remote API HTTP / JSON
     state: done
     depends_on: [A01, A02, A03]
     note: >-
@@ -96,7 +85,7 @@ activities:
   - id: A07
     lane: application
     kind: implementation
-    title: WebSocket status / event stream
+    title: Remote API WebSocket events
     state: active
     depends_on: [A01, A03, A06]
     note: >-
@@ -126,7 +115,7 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    title: Adapter equivalence / state ownership checks
+    title: Adapter equivalence checks
     state: planned
     depends_on: [A04, A05, A06, A07]
 
