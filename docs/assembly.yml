@@ -67,7 +67,6 @@ indexes:
           - document: timing-application-architecture
           - document: java-component-design
           - document: gui-application-architecture
-          - document: web-operator-architecture
       - title: Deferred detailed-design notes
         items:
           - document: data-display-design
@@ -114,7 +113,6 @@ books:
       - timing-application-architecture
       - java-component-design
       - gui-application-architecture
-      - web-operator-architecture
 
   - output: documents/software-document-set.md
     title: Software engineering document set
