@@ -44,7 +44,8 @@ documentation_maturity:
 notes:
   - Estimates are focused project days, not calendar days.
   - The baseline assumes approximately one focused project day per week.
-  - Forecast months include the configured 25% planning reserve.
+  - Forecast end dates include the configured 25% planning reserve.
+  - Future phase ends are displayed on Monday boundaries; this display rounding is not fed back into later cumulative forecasts.
   - Forecasts are planning aids, not commitments.
   - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - The 11-step plan totals 55 estimated project days before reserve; reducing or combining steps must not silently remove work.

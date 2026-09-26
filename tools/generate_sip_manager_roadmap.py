@@ -301,7 +301,7 @@ def append_svg_page(
             parts,
             center_x,
             24.0,
-            [base.step_effort_text(step), step.target_date.strftime("%b %Y")],
+            [base.step_effort_text(step), base.roadmap_end_text(step)],
             2.35,
             anchor="middle",
             weight="bold",
@@ -568,7 +568,7 @@ def render_pdf(
             c.drawCentredString(
                 center_x * mm,
                 (page_h - 26.0) * mm,
-                step.target_date.strftime("%b %Y"),
+                base.roadmap_end_text(step),
             )
             title_lines = textwrap.wrap(
                 f"Step {step.number} — {step.title}",
