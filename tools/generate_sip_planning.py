@@ -343,7 +343,7 @@ def roadmap_groups(steps: List[Step]) -> List[List[Step]]:
 def compact_doc_label(document: dict) -> str:
     style = MATURITY[document["maturity"]]
     completeness = document.get("completeness")
-    suffix = style["label"] if completeness is None else f"{style['label']}{int(completeness)}"
+    suffix = style["label"] if completeness is None else f"{style['label']}-{int(completeness)}"
     return f"{document['name']} {suffix}"
 
 
@@ -898,7 +898,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         y = docs_top + 8.0 + row * 6.4
         style = MATURITY[document["maturity"]]
         label = (
-            f"{document['name']} {style['label']}{document['completeness']} — "
+            f"{document['name']} {style['label']}-{document['completeness']} — "
             f"{concise(document['title'], 27)}"
         )
         svg_text(
