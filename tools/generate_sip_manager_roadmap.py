@@ -301,7 +301,7 @@ def append_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
+            [base.step_effort_text(step), step.target_date.strftime("%b %Y")],
             2.35,
             anchor="middle",
             weight="bold",
@@ -563,7 +563,7 @@ def render_pdf(
 
             c.setFillColor(HexColor("#555555"))
             c.setFont("Helvetica-Bold", 6.5)
-            c.drawCentredString(center_x * mm, (page_h - 22.8) * mm, f"~{step.estimate_days}d")
+            c.drawCentredString(center_x * mm, (page_h - 22.8) * mm, base.step_effort_text(step))
             c.drawCentredString(
                 center_x * mm,
                 (page_h - 26.0) * mm,
