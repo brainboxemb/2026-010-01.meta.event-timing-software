@@ -42,6 +42,19 @@ python -m pip install ./tools/tool.eng-docs
 
 The GitHub documentation workflow follows the same path before invoking `eng-docs diagrams` and the project-specific generators. Do not replace this with an independently chosen `git+https` tool version in local setup or CI.
 
+
+### Refresh the SIP actual-effort snapshot
+
+The committed roadmap snapshot stays deterministic and is not recalculated during the documentation build. To inspect the current planning indication from Git activity across both event-timing repositories, run:
+
+```bash
+python tools/calculate_sip_actuals.py --through YYYY-MM-DD
+```
+
+The calculator uses commits from merged pull requests in the meta and implementation repositories, gives each commit a 30-minute activity window, merges overlapping windows across both repositories, and divides the resulting hours by 8. To write the rounded result back to `docs/_data/sip-roadmap.yaml`, add `--update`.
+
+Set `GITHUB_TOKEN` or `GH_TOKEN` when needed to avoid unauthenticated GitHub API rate limits. The result is a planning indication, not time registration.
+
 ## Working documents
 
 - [`AGENTS.md`](AGENTS.md) — persistent guidance for coding and research agents.
