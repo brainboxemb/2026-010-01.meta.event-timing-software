@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-This Software Verification Plan defines the initial verification strategy for the software system. It is intentionally introduced early because testability, fault handling, interface boundaries, and Raspberry Pi Zero resource constraints are architectural concerns rather than end-of-project activities.
+This Software Verification Plan defines the initial verification strategy for the software system. It is introduced early so public interfaces, testability, fault handling and target execution can be checked as the software grows.
 
 The SVP applies across software items unless a software-item-specific verification document later adds more detail.
 
@@ -19,7 +19,7 @@ Verification should provide evidence that:
 - faults and reconnect/recovery paths behave deliberately;
 - local operation remains available where required during backoffice/network outages;
 - multiple registration assets/sources remain isolated and correctly routed;
-- the mandatory original Raspberry Pi Zero target remains viable;
+- SI-01 runs correctly on the intended Raspberry Pi Zero / Zero W target;
 - public framework code can be consumed by external reference and private integration projects;
 - generated documentation and build artifacts are reproducible and reviewable.
 
@@ -103,8 +103,8 @@ Expected examples:
 
 - local console returns the same application version/status model as other clients;
 - remote shell returns the same version/status semantics;
-- Desktop GUI (SI-02) connects to Timing Application (SI-01) across a real network boundary;
-- Web Operator Application (SI-03) loads over HTTP and communicates through HTTP/WebSocket;
+- the current JavaFX engineering client and later Desktop GUI (SI-02) consume IF-03 across a real network boundary;
+- an optional simple web test client may consume IF-03 if it becomes useful;
 - backoffice semantic exchange through both socket-test and RabbitMQ adapters;
 - Display V2 mDNS discovery and subsequent data/session protocol;
 - CAN keypad/display interactions.
@@ -120,9 +120,9 @@ Candidate scenarios:
 - SI-01 + test driver through the public application-control interface;
 - SI-01 + simple socket backoffice simulator;
 - SI-01 + RabbitMQ test broker with multiple configured source consumers/publishers;
-- SI-01 + SI-02 over localhost;
-- SI-01 on Raspberry Pi + SI-02 on another computer;
-- SI-01 + browser/iPad client;
+- SI-01 + JavaFX engineering client over localhost;
+- SI-01 + planned SI-02 GUI when that software item exists;
+- SI-01 on Raspberry Pi + an external IF-03 client;
 - stub RFID + real domain pipeline + local persistence;
 - CAN scanner + keypad + Display V1 stub/real hardware;
 - backoffice disconnect/reconnect with local outbox;
@@ -146,28 +146,21 @@ Likely scope:
 
 Hardware tests should be separated from the fast normal pull-request path when they are slow, scarce, or environment-specific.
 
-### V6 — Operational/resource verification
+### V6 — Target/runtime observations
 
-Purpose: verify that the implementation remains viable on the weakest mandatory target and under representative failure/load conditions.
+Purpose: record enough real target behaviour to detect an actual problem rather than
+assuming one in advance.
 
-Measure at least:
+For the first Pi proof, simple observations are sufficient:
 
-- process startup time;
-- resident memory / RSS;
-- configured/max heap and observed heap behaviour;
-- idle CPU usage;
-- representative active CPU usage;
-- application/thread count;
-- TimingNode state-lane backlog/latency under representative input;
-- registration-source count and source-scaling overhead;
-- socket/RabbitMQ connection count and resource cost where enabled;
-- RabbitMQ channel/consumer count and their resource cost;
-- HTTP/status response latency;
-- backup/write behaviour and SD-card write rate where relevant;
-- reconnect/recovery timings;
-- long-running stability.
+- startup time;
+- memory use;
+- idle and representative CPU use;
+- thread count;
+- basic Remote API responsiveness.
 
-Initial tests establish a baseline. Numeric acceptance budgets should be introduced only when evidence is sufficient; this document deliberately does not invent values before measurement.
+Add more detailed measurements only when a feature or observed problem justifies them.
+There are no numeric Pi resource budgets at this stage.
 
 ## Automated system-test profiles
 
@@ -303,17 +296,15 @@ Possible compositions include:
 - Pi Zero + socket simulator to isolate target runtime/network behaviour;
 - Pi Zero + RabbitMQ broker on another host;
 - Pi Zero + real RFID/CAN/display hardware;
-- SI-02/SI-03 clients against the real target application.
+- engineering client and later SI-02 against the real target application.
 
 ST-4 is generally slower/on-demand and can reuse test scenarios first proven at ST-1/ST-3.
 
 ## Raspberry Pi Zero baseline evidence
 
-The original Raspberry Pi Zero / Zero W is a mandatory target for software item 01.
+The original Raspberry Pi Zero / Zero W is an intended target for SI-01. The first representative executable should be run on real hardware using the selected runtime so target behaviour is known rather than guessed.
 
-The first representative executable should therefore capture a repeatable baseline on real hardware using the selected Java 8 runtime.
-
-Minimum baseline record:
+Useful first baseline:
 
 ```text
 hardware model / RAM
@@ -432,9 +423,7 @@ The exact boundary between normal PR and merge-time ST-3 execution can be adjust
 
 The public framework must be verifiable without proprietary source or deployment identities.
 
-The public reference/test project should prove that published Maven artifacts and public contracts work outside the framework reactor through ST-1, ST-2 and a synthetic ST-3 RabbitMQ topology.
-
-Private repositories should reuse the same scenario concepts where possible. A private implementation is successful when it can replace a public stub/default adapter through the supported API/SPI without requiring changes to public framework source.
+Private implementations should use the same public contracts where applicable; detailed private-repository verification is added when such an implementation actually exists.
 
 Production asset names, source IDs, broker mappings, proprietary message schemas and credentials must not be copied into public verification fixtures.
 
@@ -447,7 +436,7 @@ Useful evidence may include:
 - ST-1/ST-2/ST-3 scenario reports;
 - integration logs;
 - Docker/Compose service logs for integration failures;
-- resource-measurement summaries;
+- target/runtime measurement notes where useful;
 - generated architecture/documentation review output;
 - hardware-test notes or captured device logs;
 - protocol/interface test reports where appropriate.
@@ -473,7 +462,7 @@ The exact traceability tooling is still open; initially this can remain Markdown
 
 - requirement and verification-case identifier conventions;
 - scenario identifier convention across ST-1/ST-4 profiles;
-- when numeric Pi Zero budgets become acceptance criteria rather than measured baselines;
+- whether any measured Pi behaviour warrants a numeric acceptance limit;
 - standard test framework/version compatible with Java 8;
 - architecture-test tooling compatible with the Java baseline;
 - exact public test-driver protocol/API for ST-1 automation;
