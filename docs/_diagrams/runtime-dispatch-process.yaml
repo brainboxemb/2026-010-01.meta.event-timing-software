@@ -1,6 +1,6 @@
 diagram:
   id: runtime-dispatch-process
-  title: SI-01 runtime ingress — TimingNode serial execution
+  title: Figure SI01-04 — SI-01 runtime ingress — TimingNode serial execution
   width: 1580
   height: 930
   description: Process view of concurrent ingress, explicit TimingNode routing and per-TimingNode serial execution.

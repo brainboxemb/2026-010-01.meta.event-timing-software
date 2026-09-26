@@ -1,6 +1,6 @@
 diagram:
   id: system-connectivity-status
-  title: Network connectivity status — separate observations
+  title: Figure SYS-03 — Network connectivity status — separate observations
   width: 1460
   height: 780
   note: Router/AP connectivity is optional and may be N/A for direct or automated-test deployments. Local, external and backoffice connectivity are reported separately.

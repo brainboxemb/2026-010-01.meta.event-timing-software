@@ -62,6 +62,22 @@ Keep implementation detail in the implementation repository. This repository
 may define intended architecture/contracts and cross-repository evidence, but
 should not become a second implementation source tree.
 
+### Architecture figure references
+
+Architecture figures use a visible stable label plus a Markdown anchor so reviews and
+design text can refer to a figure unambiguously.
+
+Use scope-based labels such as `Figure SYS-01` for the system SSAD and
+`Figure SI01-01` for the SI-01 SAD. Put an anchor immediately before the image,
+for example `<a id="fig-si01-01"></a>`, and a visible caption immediately after
+it. Refer to it as `[Figure SI01-01](#fig-si01-01)` when linking within the same
+document.
+
+Figure identifiers are stable references: do **not** renumber existing figures when a
+new diagram is inserted. Assign the next unused number in that document/scope. Where a
+generated diagram has an authored source/title, include the same figure label in the
+rendered title when practical.
+
 ## Public/private boundary
 
 This is a public repository. Keep real/proprietary deployment identities,
