@@ -8,6 +8,7 @@
     "start_date",
     "cadence_project_days_per_week",
     "planning_reserve_fraction",
+    "actuals",
     "terms",
     "steps"
   ],
@@ -69,6 +70,29 @@
         }
       },
       "additionalProperties": false
+    },
+    "actuals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "through_date",
+        "estimated_project_days",
+        "method"
+      ],
+      "properties": {
+        "through_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "estimated_project_days": {
+          "type": "number",
+          "minimum": 0
+        },
+        "method": {
+          "type": "string",
+          "minLength": 20
+        }
+      }
     }
   },
   "additionalProperties": false,
@@ -120,6 +144,14 @@
           "items": {
             "$ref": "#/$defs/documentIndicator"
           }
+        },
+        "completed_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "remaining_estimate_project_days": {
+          "type": "number",
+          "minimum": 0
         }
       },
       "additionalProperties": false

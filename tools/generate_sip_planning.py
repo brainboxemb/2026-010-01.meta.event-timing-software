@@ -11,7 +11,7 @@ Sources:
 Generated output:
 - planning/sip-roadmap.svg: one continuous roadmap;
 - planning/sip-roadmap.pdf: the same roadmap as A4-landscape pages;
-- planning/roadmap/sip-roadmap-1.svg .. -4.svg: separate A4 pages;
+- planning/roadmap/sip-roadmap-1.svg .. -3.svg: separate A4 pages;
 - planning/steps/step-NN.svg: A4-portrait detailed step boards.
 
 All outputs are presentations of the same planning sources.
@@ -97,6 +97,7 @@ class Step:
     deliverable: str
     demonstration: str
     estimate_days: int
+    remaining_days: float
     target_date: date
     documents: List[dict]
 
@@ -200,6 +201,42 @@ def sip_status(body: str, step_number: int) -> str:
     return aliases[raw]
 
 
+def planning_basis_text(steps: List[Step], plan: dict) -> str:
+    baseline_days = sum(step.estimate_days for step in steps)
+    remaining_days = sum(step.remaining_days for step in steps)
+    actuals = plan["actuals"]
+    actual_days = float(actuals["estimated_project_days"])
+    through = date.fromisoformat(str(actuals["through_date"]))
+    cadence = float(plan["cadence_project_days_per_week"])
+    reserve = float(plan.get("planning_reserve_fraction", 0.0))
+    cadence_text = (
+        f"{cadence:g}d/week"
+        if cadence == 1.0
+        else f"{cadence:g}d/week"
+    )
+    actual_date = through.strftime("%d %b").lstrip("0")
+    return (
+        f"Plan: {baseline_days:g}d baseline · ~{actual_days:g}d actual to "
+        f"{actual_date} · ~{remaining_days:g}d remaining · "
+        f"~{cadence_text} · +{reserve * 100:g}% reserve"
+    )
+
+
+def step_effort_text(step: Step) -> str:
+    if step.status == "done":
+        return "done"
+    if step.status == "active":
+        return f"~{step.remaining_days:g}d remaining"
+    return f"~{step.estimate_days}d"
+
+
+def step_schedule_text(step: Step) -> str:
+    month = step.target_date.strftime("%b %Y")
+    if step.status == "done":
+        return f"completed {month}"
+    return f"forecast {month}"
+
+
 def parse_sip(path: Path, plan: dict) -> List[Step]:
     text = path.read_text(encoding="utf-8")
     heading_re = re.compile(r"^## Step (\d+)\s+[—-]\s+(.+?)\s*$", re.M)
@@ -207,10 +244,10 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
     if not matches:
         raise SystemExit(f"No SIP steps found in {path}")
 
-    start = date.fromisoformat(str(plan["start_date"]))
+    reforecast_date = date.fromisoformat(str(plan["actuals"]["through_date"]))
     cadence = float(plan["cadence_project_days_per_week"])
     reserve = float(plan.get("planning_reserve_fraction", 0.0))
-    cumulative = 0
+    cumulative_remaining = 0.0
     settings: Dict[str, dict] = plan["steps"]
     steps: List[Step] = []
 
@@ -220,10 +257,25 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
         if cfg is None:
             raise SystemExit(f"Missing roadmap data for SIP Step {number}")
         estimate = int(cfg["estimate_project_days"])
-        cumulative += estimate
-        target = start + timedelta(days=round(cumulative * (1.0 + reserve) / cadence * 7))
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         body = text[match.end():end]
+        status = sip_status(body, number)
+
+        if status == "done":
+            completed = cfg.get("completed_date")
+            if not completed:
+                raise SystemExit(
+                    f"Completed SIP Step {number} requires completed_date"
+                )
+            remaining = 0.0
+            target = date.fromisoformat(str(completed))
+        else:
+            remaining = float(cfg.get("remaining_estimate_project_days", estimate))
+            cumulative_remaining += remaining
+            target = reforecast_date + timedelta(
+                days=round(cumulative_remaining * (1.0 + reserve) / cadence * 7)
+            )
+
         goal = strip_markdown(extract_subsection(body, "Goal"))
         result_bullets = subsection_bullets(body, "Result")
         demo_bullets = subsection_bullets(body, "Demo")
@@ -236,7 +288,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
             Step(
                 number=number,
                 title=match.group(2).strip(),
-                status=sip_status(body, number),
+                status=status,
                 goal=goal,
                 result_bullets=result_bullets,
                 demo_bullets=demo_bullets,
@@ -244,6 +296,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
                 deliverable=" ".join(result_bullets),
                 demonstration=" ".join(demo_bullets),
                 estimate_days=estimate,
+                remaining_days=remaining,
                 target_date=target,
                 documents=list(cfg.get("documents", [])),
             )
@@ -329,6 +382,7 @@ def roadmap_positions(group: List[Step], page_x: float = 0.0) -> List[Tuple[Step
 def append_roadmap_svg_page(
     parts: List[str],
     group: List[Step],
+    planning_basis: str,
     page_index: int,
     page_x: float,
     *,
@@ -354,7 +408,10 @@ def append_roadmap_svg_page(
         parts,
         title_x,
         17.5,
-        [f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
+        [
+            f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
+            f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+        ],
         2.5,
         anchor="start",
         fill="#555",
@@ -479,7 +536,9 @@ def append_roadmap_svg_page(
             )
 
 
-def render_roadmap_svgs(groups: List[List[Step]], out_dir: Path) -> None:
+def render_roadmap_svgs(
+    groups: List[List[Step]], planning_basis: str, out_dir: Path
+) -> None:
     page_dir = out_dir / "roadmap"
     page_dir.mkdir(parents=True, exist_ok=True)
 
@@ -491,7 +550,12 @@ def render_roadmap_svgs(groups: List[List[Step]], out_dir: Path) -> None:
     ]
     for page_index, group in enumerate(groups):
         append_roadmap_svg_page(
-            parts, group, page_index, page_index * A4_L_W_MM, standalone=False
+            parts,
+            group,
+            planning_basis,
+            page_index,
+            page_index * A4_L_W_MM,
+            standalone=False,
         )
     parts.append("</svg>")
     (out_dir / "sip-roadmap.svg").write_text("\n".join(parts), encoding="utf-8")
@@ -503,7 +567,12 @@ def render_roadmap_svgs(groups: List[List[Step]], out_dir: Path) -> None:
             '<rect width="100%" height="100%" fill="white"/>',
         ]
         append_roadmap_svg_page(
-            page_parts, group, page_index, 0.0, standalone=True
+            page_parts,
+            group,
+            planning_basis,
+            page_index,
+            0.0,
+            standalone=True,
         )
         page_parts.append("</svg>")
         (page_dir / f"sip-roadmap-{page_index + 1}.svg").write_text(
@@ -530,7 +599,9 @@ def pdf_text(
             c.drawString(x * mm, y_pos * mm, str(line))
 
 
-def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
+def render_roadmap_pdf(
+    groups: List[List[Step]], planning_basis: str, path: Path
+) -> None:
     c = canvas.Canvas(str(path), pagesize=landscape(A4))
     page_w = A4_L_W_MM
     page_h = A4_L_H_MM
@@ -545,7 +616,10 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
         c.drawString(
             MARGIN_MM * mm,
             (page_h - 17.5) * mm,
-            f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
+            (
+                f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
+                f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+            ),
         )
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
@@ -740,8 +814,15 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         MARGIN_MM,
         17.0,
         [
-            f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
-            f"forecast {step.target_date.strftime('%b %Y')}"
+            (
+                f"{step.status.upper()} | baseline ~{step.estimate_days}d"
+                + (
+                    f" | ~{step.remaining_days:g}d remaining"
+                    if step.status == "active"
+                    else ""
+                )
+                + f" | {step_schedule_text(step)}"
+            )
         ],
         2.9,
         anchor="start",
@@ -971,11 +1052,21 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
     path.write_text("\n".join(parts), encoding="utf-8")
 
 
-def write_readme(out_dir: Path, boards: Dict[int, dict]) -> None:
+def write_readme(
+    out_dir: Path,
+    boards: Dict[int, dict],
+    planning_basis: str,
+    actual_method: str,
+) -> None:
     lines = [
         "# Generated SIP planning",
         "",
         "All files below are generated from the same SIP/YAML planning sources.",
+        "",
+        f"**{planning_basis}**",
+        "",
+        "Actual effort is a planning indication derived from repository activity, not time registration.",
+        actual_method,
         "",
         "- [Continuous roadmap](./sip-roadmap.svg) — all roadmap pages side by side.",
         f"- [Roadmap PDF](./sip-roadmap.pdf) — {ROADMAP_PAGE_COUNT} A4-landscape pages.",
@@ -1010,6 +1101,7 @@ def main() -> None:
     )
     steps = parse_sip(Path(args.sip), plan)
     groups = roadmap_groups(steps)
+    planning_basis = planning_basis_text(steps, plan)
 
     boards = load_step_boards(
         data_dir,
@@ -1025,8 +1117,8 @@ def main() -> None:
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
     (out_dir / "steps").mkdir(parents=True, exist_ok=True)
 
-    render_roadmap_svgs(groups, out_dir)
-    render_roadmap_pdf(groups, out_dir / "sip-roadmap.pdf")
+    render_roadmap_svgs(groups, planning_basis, out_dir)
+    render_roadmap_pdf(groups, planning_basis, out_dir / "sip-roadmap.pdf")
 
     for number, board in sorted(boards.items()):
         render_step_svg(
@@ -1035,7 +1127,12 @@ def main() -> None:
             out_dir / "steps" / f"step-{number:02d}.svg",
         )
 
-    write_readme(out_dir, boards)
+    write_readme(
+        out_dir,
+        boards,
+        planning_basis,
+        str(plan["actuals"]["method"]),
+    )
 
 
 if __name__ == "__main__":

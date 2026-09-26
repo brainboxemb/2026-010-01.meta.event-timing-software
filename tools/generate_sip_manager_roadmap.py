@@ -235,6 +235,7 @@ def append_svg_page(
     parts: List[str],
     group: List[base.Step],
     terms: List[dict],
+    planning_basis: str,
     page_index: int,
     page_x: float,
     *,
@@ -258,7 +259,10 @@ def append_svg_page(
         parts,
         page_x + MARGIN,
         17.5,
-        [f"Page {page_index + 1}/{STEP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}"],
+        [
+            f"Page {page_index + 1}/{STEP_PAGE_COUNT} — "
+            f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+        ],
         2.5,
         fill="#555555",
     )
@@ -297,7 +301,7 @@ def append_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
+            [base.step_effort_text(step), step.target_date.strftime("%b %Y")],
             2.35,
             anchor="middle",
             weight="bold",
@@ -381,6 +385,7 @@ def append_svg_page(
 def render_svgs(
     groups: List[List[base.Step]],
     terms: List[dict],
+    planning_basis: str,
     out_dir: Path,
 ) -> None:
     page_dir = out_dir / "roadmap"
@@ -396,6 +401,7 @@ def render_svgs(
             parts,
             group,
             terms,
+            planning_basis,
             page_index,
             page_index * PAGE_W,
             standalone=False,
@@ -413,6 +419,7 @@ def render_svgs(
             page_parts,
             group,
             terms,
+            planning_basis,
             page_index,
             0.0,
             standalone=True,
@@ -466,6 +473,7 @@ def pdf_status_badge(
 def render_pdf(
     groups: List[List[base.Step]],
     terms: List[dict],
+    planning_basis: str,
     path: Path,
 ) -> None:
     c = canvas.Canvas(str(path), pagesize=landscape(A4))
@@ -479,7 +487,10 @@ def render_pdf(
         c.drawString(
             MARGIN * mm,
             (page_h - 17.5) * mm,
-            f"Page {page_index + 1}/{STEP_PAGE_COUNT} — Steps {group[0].number}-{group[-1].number}",
+            (
+                f"Page {page_index + 1}/{STEP_PAGE_COUNT} — "
+                f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
+            ),
         )
         c.setStrokeColor(HexColor("#333333"))
         c.setLineWidth(0.65)
@@ -553,7 +564,7 @@ def render_pdf(
 
             c.setFillColor(HexColor("#555555"))
             c.setFont("Helvetica-Bold", 6.5)
-            c.drawCentredString(center_x * mm, (page_h - 22.8) * mm, f"~{step.estimate_days}d")
+            c.drawCentredString(center_x * mm, (page_h - 22.8) * mm, base.step_effort_text(step))
             c.drawCentredString(
                 center_x * mm,
                 (page_h - 26.0) * mm,
@@ -662,12 +673,13 @@ def main() -> None:
     validate_sip_steps(steps)
     groups = base.roadmap_groups(steps)
     terms = list(plan["terms"])
+    planning_basis = base.planning_basis_text(steps, plan)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
 
-    render_svgs(groups, terms, out_dir)
-    render_pdf(groups, terms, out_dir / "sip-roadmap.pdf")
+    render_svgs(groups, terms, planning_basis, out_dir)
+    render_pdf(groups, terms, planning_basis, out_dir / "sip-roadmap.pdf")
 
 
 if __name__ == "__main__":

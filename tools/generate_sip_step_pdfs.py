@@ -33,6 +33,8 @@ from generate_sip_planning import (
     planning_changes_height,
     step_card_meta,
     step_demo_id,
+    step_effort_text,
+    step_schedule_text,
     validate_data,
     wrap,
 )
@@ -107,8 +109,8 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         MARGIN_MM,
         17.0,
         [
-            f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
-            f"forecast {step.target_date.strftime('%b %Y')}"
+            f"{step.status.upper()} | baseline ~{step.estimate_days}d | "
+            f"{step_effort_text(step)} | {step_schedule_text(step)}"
         ],
         2.9,
         bold=True,
