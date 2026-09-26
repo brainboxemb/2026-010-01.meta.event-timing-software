@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Simplify the SDP into a lighter high-level development-direction document; move detailed release mechanics, calendar planning and step execution back to the SDE/SIP where they belong.
+
 - Improve architecture readability by using software-item names before SI labels in running prose and replacing unnecessary `authoritative`/in-memory repository wording with direct state-ownership language.
 
 - Reframe IF-03 as the general Remote API, organise SI-01 presentation by functional interface first (`remoteapi`, console, shell, future Web) and nest A06/A07 HTTP/WebSocket configuration under `presentation.remoteApi`.
