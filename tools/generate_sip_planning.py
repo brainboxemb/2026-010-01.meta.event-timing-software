@@ -43,7 +43,7 @@ A4_L_H_MM = 210.0
 A4_P_W_MM = 210.0
 A4_P_H_MM = 297.0
 ROADMAP_STEPS_PER_PAGE = 4
-ROADMAP_PAGE_COUNT = 2
+ROADMAP_PAGE_COUNT = 3
 MARGIN_MM = 8.0
 
 TIMELINE_Y = 31.0
@@ -209,6 +209,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
 
     start = date.fromisoformat(str(plan["start_date"]))
     cadence = float(plan["cadence_project_days_per_week"])
+    reserve = float(plan.get("planning_reserve_fraction", 0.0))
     cumulative = 0
     settings: Dict[str, dict] = plan["steps"]
     steps: List[Step] = []
@@ -220,7 +221,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
             raise SystemExit(f"Missing roadmap data for SIP Step {number}")
         estimate = int(cfg["estimate_project_days"])
         cumulative += estimate
-        target = start + timedelta(days=round(cumulative / cadence * 7))
+        target = start + timedelta(days=round(cumulative * (1.0 + reserve) / cadence * 7))
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         body = text[match.end():end]
         goal = strip_markdown(extract_subsection(body, "Goal"))
@@ -379,7 +380,7 @@ def append_roadmap_svg_page(
             parts,
             center_x,
             24.0,
-            [f"~{step.estimate_days}d", step.target_date.strftime("%d %b %Y")],
+            [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
             2.3,
             weight="bold",
             fill="#555",
@@ -578,7 +579,7 @@ def render_roadmap_pdf(groups: List[List[Step]], path: Path) -> None:
                 c,
                 center_x,
                 page_h - 24.0,
-                [f"~{step.estimate_days}d", step.target_date.strftime("%d %b %Y")],
+                [f"~{step.estimate_days}d", step.target_date.strftime("%b %Y")],
                 6.2,
                 bold=True,
             )
@@ -740,7 +741,7 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
         17.0,
         [
             f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
-            f"target {step.target_date.strftime('%d %b %Y')}"
+            f"forecast {step.target_date.strftime('%b %Y')}"
         ],
         2.9,
         anchor="start",
@@ -977,7 +978,7 @@ def write_readme(out_dir: Path, boards: Dict[int, dict]) -> None:
         "All files below are generated from the same SIP/YAML planning sources.",
         "",
         "- [Continuous roadmap](./sip-roadmap.svg) — all roadmap pages side by side.",
-        "- [Roadmap PDF](./sip-roadmap.pdf) — four A4-landscape pages.",
+        f"- [Roadmap PDF](./sip-roadmap.pdf) — {ROADMAP_PAGE_COUNT} A4-landscape pages.",
         "",
         "## Roadmap pages",
         "",

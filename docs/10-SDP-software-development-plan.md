@@ -110,7 +110,9 @@ A dedicated integration host is an option only if a real need appears.
 
 These should remain questions until we have a reason to decide them:
 
-- exact Raspberry Pi OS/image/update approach;
+- target-platform choice, including Raspberry Pi availability and OTS versus custom hardware;
+- whether local e-ink display, RTC and CAN belong on the target platform;
+- exact Raspberry Pi/target OS, image and update approach;
 - exact Java runtime on the Pi target;
 - whether target measurements reveal any meaningful CPU/RAM/thread limitations;
 - technology and packaging for the real Desktop GUI Application (SI-02);
@@ -126,7 +128,8 @@ Only risks that can materially change the direction belong here.
 
 | Risk / unknown | Current response |
 | --- | --- |
-| Pi deployment/runtime differs materially from development-host behaviour. | Run the representative application on a real Pi and measure before changing architecture. |
+| Target hardware availability or lifecycle blocks the preferred platform. | Keep software development hardware-independent; study Pi-class alternatives and OTS/custom options before procurement. |
+| Pi/target deployment/runtime differs materially from development-host behaviour. | Run the representative application on selected real hardware and measure before changing architecture. |
 | Timing/order/threading mistakes affect results. | Keep state changes controlled and verify timing/ordering behaviour deterministically. |
 | Hardware behaviour differs from simulations. | Keep adapters replaceable and verify against representative hardware when available. |
 | Backoffice details leak into application/domain APIs. | Keep application semantics separate from transport/proprietary mappings. |

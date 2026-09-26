@@ -32,8 +32,6 @@ PAGE_W = base.A4_L_W_MM
 PAGE_H = base.A4_L_H_MM
 MARGIN = base.MARGIN_MM
 STEP_PAGE_COUNT = base.ROADMAP_PAGE_COUNT
-TOTAL_PAGE_COUNT = STEP_PAGE_COUNT + 1
-CHANGE_PAGE_INDEX = STEP_PAGE_COUNT
 STEPS_PER_PAGE = base.ROADMAP_STEPS_PER_PAGE
 TIMELINE_Y = 31.0
 TERMS_W = 34.0
@@ -547,12 +545,11 @@ def append_pdf_changes_page(c: canvas.Canvas, changes: List[dict]) -> None:
 def render_svgs(
     groups: List[List[base.Step]],
     terms: List[dict],
-    changes: List[dict],
     out_dir: Path,
 ) -> None:
     page_dir = out_dir / "roadmap"
     page_dir.mkdir(parents=True, exist_ok=True)
-    panorama_w = PAGE_W * TOTAL_PAGE_COUNT
+    panorama_w = PAGE_W * STEP_PAGE_COUNT
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{panorama_w}mm" height="{PAGE_H}mm" '
         f'viewBox="0 0 {panorama_w} {PAGE_H}">',
@@ -567,12 +564,6 @@ def render_svgs(
             page_index * PAGE_W,
             standalone=False,
         )
-    append_svg_changes_page(
-        parts,
-        changes,
-        CHANGE_PAGE_INDEX * PAGE_W,
-        standalone=False,
-    )
     parts.append("</svg>")
     (out_dir / "sip-roadmap.svg").write_text("\n".join(parts), encoding="utf-8")
 
@@ -595,16 +586,6 @@ def render_svgs(
             "\n".join(page_parts), encoding="utf-8"
         )
 
-    change_parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_W}mm" height="{PAGE_H}mm" '
-        f'viewBox="0 0 {PAGE_W} {PAGE_H}">',
-        '<rect width="100%" height="100%" fill="white"/>',
-    ]
-    append_svg_changes_page(change_parts, changes, 0.0, standalone=True)
-    change_parts.append("</svg>")
-    (page_dir / f"sip-roadmap-{TOTAL_PAGE_COUNT}.svg").write_text(
-        "\n".join(change_parts), encoding="utf-8"
-    )
 
 
 def pdf_bullets(
@@ -649,7 +630,6 @@ def pdf_status_badge(
 def render_pdf(
     groups: List[List[base.Step]],
     terms: List[dict],
-    changes: List[dict],
     path: Path,
 ) -> None:
     c = canvas.Canvas(str(path), pagesize=landscape(A4))
@@ -741,7 +721,7 @@ def render_pdf(
             c.drawCentredString(
                 center_x * mm,
                 (page_h - 26.0) * mm,
-                step.target_date.strftime("%d %b %Y"),
+                step.target_date.strftime("%b %Y"),
             )
             title_lines = textwrap.wrap(
                 f"Step {step.number} — {step.title}",
@@ -820,28 +800,11 @@ def render_pdf(
                 )
         c.showPage()
 
-    append_pdf_changes_page(c, changes)
-    c.showPage()
+
     c.save()
 
 
-def update_planning_readme(out_dir: Path) -> None:
-    path = out_dir / "README.md"
-    if not path.exists():
-        return
-    text = path.read_text(encoding="utf-8")
-    text = text.replace(
-        "Roadmap PDF](./sip-roadmap.pdf) — four A4-landscape pages.",
-        "Roadmap PDF](./sip-roadmap.pdf) — four step pages plus one planning-changes page.",
-    )
-    marker = f"- [Roadmap page {STEP_PAGE_COUNT}](./roadmap/sip-roadmap-{STEP_PAGE_COUNT}.svg)"
-    addition = (
-        marker
-        + "\n"
-        + f"- [Planning changes](./roadmap/sip-roadmap-{TOTAL_PAGE_COUNT}.svg)"
-    )
-    text = text.replace(marker, addition)
-    path.write_text(text, encoding="utf-8")
+
 
 
 def main() -> None:
@@ -862,19 +825,13 @@ def main() -> None:
     steps = base.parse_sip(Path(args.sip), plan)
     validate_sip_steps(steps)
     groups = base.roadmap_groups(steps)
-    boards = base.load_step_boards(
-        data_dir,
-        base.load_json(data_dir / "schemas" / "sip-step-board.schema.json"),
-    )
-    changes = collect_planning_changes(boards)
     terms = list(plan["terms"])
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
 
-    render_svgs(groups, terms, changes, out_dir)
-    render_pdf(groups, terms, changes, out_dir / "sip-roadmap.pdf")
-    update_planning_readme(out_dir)
+    render_svgs(groups, terms, out_dir)
+    render_pdf(groups, terms, out_dir / "sip-roadmap.pdf")
 
 
 if __name__ == "__main__":

@@ -12,6 +12,8 @@ terms:
     meaning: Logical timing unit with its own identity and state
   - term: ST-1
     meaning: Application black-box test profile
+  - term: OTS
+    meaning: Off-the-shelf hardware
 
 documentation_maturity:
   levels:
@@ -27,10 +29,12 @@ documentation_maturity:
 notes:
   - Estimates are focused project days, not calendar days.
   - The baseline assumes approximately one focused project day per week.
-  - Target dates are planning aids, not commitments.
-  - Documentation maturity and completeness are capability/step scoped, not a single score for the whole future product.
-  - The roadmap names relevant documents compactly; concrete engineering activities belong on the matching per-step A4 board when such a drill-down exists.
-  - Re-estimate a step when implementation evidence materially changes uncertainty.
+  - Forecast months include the configured 25% planning reserve.
+  - Forecasts are planning aids, not commitments.
+  - The 11-step plan totals 55 estimated project days before reserve; reducing or combining steps must not silently remove work.
+  - Documentation maturity and completeness are capability/step scoped.
+  - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
+  - Re-estimate when implementation evidence materially changes uncertainty.
 
 steps:
   "1":
@@ -77,61 +81,107 @@ steps:
       - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 95}
 
   "4":
-    estimate_project_days: 3
-    workstream: platform
-    docs:
-      requirements: {level: working, scope: "target execution needs discovered from real Pi use"}
-      idd: {level: outline, scope: "no new product interface expected"}
-      design: {level: working, scope: "runtime/deployment choices based on target evidence"}
-      verification: {level: working, scope: "real Pi execution and measurements"}
-    documents:
-      - {name: 12-SDE, title: Target development environment, maturity: working, completeness: 75}
-      - {name: 50-SVP, title: Pi target verification, maturity: working, completeness: 75}
-
-  "5":
-    estimate_project_days: 3
-    workstream: client
-    docs:
-      requirements: {level: working, scope: "first real GUI connection/status behaviour"}
-      idd: {level: review, scope: "Remote API consumed by SI-02"}
-      design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
-      verification: {level: working, scope: "GUI connect/status/reconnect behaviour"}
-    documents:
-      - {name: 31-02-SAD, title: Desktop GUI architecture, maturity: outline, completeness: 45}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
-
-  "6":
     estimate_project_days: 6
     workstream: domain
     docs:
-      requirements: {level: working, scope: "registration, timing data and persistence behaviour"}
-      idd: {level: working, scope: "interfaces needed by implemented domain behaviour"}
-      design: {level: working, scope: "TimingNode data/timing design"}
-      verification: {level: working, scope: "state, timing and restart/restore tests"}
+      requirements: {level: working, scope: "TimingNode state and domain capabilities"}
+      idd: {level: working, scope: "public semantics required by new domain behaviour"}
+      design: {level: working, scope: "TimingNode state ownership and data model"}
+      verification: {level: working, scope: "deterministic state/domain tests"}
     documents:
-      - {name: 20-01-SRD, title: Timing application requirements, maturity: working, completeness: 75}
+      - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 85}
+      - {name: 20-01-SRD, title: SI-01 requirements, maturity: working, completeness: 75}
       - {name: 31-01-SAD, title: TimingNode architecture, maturity: review, completeness: 95}
+      - {name: 50-SVP, title: Domain verification direction, maturity: working, completeness: 80}
+
+  "5":
+    estimate_project_days: 5
+    workstream: simulation
+    docs:
+      requirements: {level: working, scope: "synthetic timing flow and recovery behaviour"}
+      idd: {level: working, scope: "public interfaces used by black-box scenarios"}
+      design: {level: working, scope: "synthetic adapters and persistence/recovery boundaries"}
+      verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
+    documents:
+      - {name: 20-01-SRD, title: SI-01 requirements, maturity: working, completeness: 80}
+      - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 95}
+      - {name: 50-SVP, title: System-test scenarios, maturity: working, completeness: 85}
+
+  "6":
+    estimate_project_days: 4
+    workstream: client
+    docs:
+      requirements: {level: working, scope: "first useful SI-02 behaviour"}
+      idd: {level: review, scope: "Remote API consumed by SI-02"}
+      design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
+      verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
+    documents:
+      - {name: 31-02-SAD, title: Desktop GUI architecture, maturity: outline, completeness: 45}
+      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 100}
+      - {name: 50-SVP, title: GUI verification direction, maturity: working, completeness: 80}
 
   "7":
-    estimate_project_days: 7
-    workstream: hardware
-    docs:
-      requirements: {level: working, scope: "device behaviour selected for implementation"}
-      idd: {level: working, scope: "device interfaces as they become concrete"}
-      design: {level: working, scope: "adapter/lifecycle design for selected devices"}
-      verification: {level: working, scope: "stub and representative hardware verification"}
-    documents:
-      - {name: 31-01-SAD, title: Device integration architecture, maturity: working, completeness: 80}
-      - {name: 50-SVP, title: Device verification direction, maturity: working, completeness: 75}
-
-  "8":
     estimate_project_days: 6
     workstream: backoffice
     docs:
       requirements: {level: working, scope: "required backoffice data flows"}
       idd: {level: working, scope: "semantic contract and selected transport"}
       design: {level: working, scope: "transport/recovery behaviour"}
-      verification: {level: working, scope: "integration and disconnect/reconnect tests"}
+      verification: {level: working, scope: "integration and outage/reconnect tests"}
     documents:
       - {name: 31-01-SAD, title: Backoffice integration architecture, maturity: working, completeness: 80}
+      - {name: 31-01-SDD-03, title: Backoffice transport design, maturity: outline, completeness: 40}
       - {name: 50-SVP, title: Backoffice integration verification, maturity: working, completeness: 75}
+
+  "8":
+    estimate_project_days: 4
+    workstream: platform-study
+    docs:
+      requirements: {level: working, scope: "target hardware needs and constraints"}
+      idd: {level: outline, scope: "device/electrical interfaces identified as needed"}
+      design: {level: working, scope: "target platform and hardware-block decision"}
+      verification: {level: outline, scope: "criteria for later target proof"}
+    documents:
+      - {name: 10-SDP, title: Software Development Plan, maturity: review, completeness: 90}
+      - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 95}
+      - {name: 12-SDE, title: Target development environment, maturity: working, completeness: 75}
+      - {name: 31-01-SAD, title: Target/device architecture, maturity: working, completeness: 80}
+
+  "9":
+    estimate_project_days: 4
+    workstream: platform
+    docs:
+      requirements: {level: working, scope: "selected target execution/deployment needs"}
+      idd: {level: review, scope: "Remote API used for target inspection"}
+      design: {level: working, scope: "selected runtime/deployment path"}
+      verification: {level: working, scope: "real target execution and measurements"}
+    documents:
+      - {name: 12-SDE, title: Target development environment, maturity: working, completeness: 80}
+      - {name: 31-01-SAD, title: SI-01 deployment architecture, maturity: working, completeness: 85}
+      - {name: 50-SVP, title: Target verification, maturity: working, completeness: 80}
+
+  "10":
+    estimate_project_days: 8
+    workstream: hardware
+    docs:
+      requirements: {level: working, scope: "selected real-device behaviour"}
+      idd: {level: working, scope: "RFID/CAN/display/RTC interfaces as applicable"}
+      design: {level: working, scope: "device adapter/lifecycle design"}
+      verification: {level: working, scope: "synthetic-to-real and HIL verification"}
+    documents:
+      - {name: 31-01-SAD, title: Device integration architecture, maturity: working, completeness: 85}
+      - {name: 50-SVP, title: Hardware verification direction, maturity: working, completeness: 80}
+
+  "11":
+    estimate_project_days: 8
+    workstream: integration
+    docs:
+      requirements: {level: working, scope: "representative integrated operation"}
+      idd: {level: working, scope: "interfaces required by integrated system"}
+      design: {level: working, scope: "recovery/operational integration discovered in system proof"}
+      verification: {level: working, scope: "representative integrated and recovery scenarios"}
+    documents:
+      - {name: 10-SDP, title: Software Development Plan, maturity: review, completeness: 95}
+      - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 95}
+      - {name: 50-SVP, title: Integrated system verification, maturity: working, completeness: 90}
+      - {name: 60-01-SUM, title: SI-01 user manual, maturity: working, completeness: 80}
