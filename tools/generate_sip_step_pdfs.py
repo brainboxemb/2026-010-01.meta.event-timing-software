@@ -108,7 +108,7 @@ def render_step_pdf(board: dict, step, path: Path) -> None:
         17.0,
         [
             f"{step.status.upper()} | ~{step.estimate_days} roadmap project days | "
-            f"target {step.target_date.strftime('%d %b %Y')}"
+            f"forecast {step.target_date.strftime('%b %Y')}"
         ],
         2.9,
         bold=True,
