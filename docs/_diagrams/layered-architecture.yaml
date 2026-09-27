@@ -126,9 +126,10 @@ nodes:
   subtitle: "file / DB • backup / restore"
   kind: storage
   layout: {x: 145, y: 825, w: 220, h: 75}
-- id: antenna-io
+- id: devices-io
   group: io-layer
-  label: "Antenna (0..N)"
+  label: "Devices"
+  subtitle: "Antenna • DisplayRev1Can • Keypad"
   kind: integration
   layout: {x: 385, y: 825, w: 280, h: 75}
 - id: backend-gateway-io
@@ -137,10 +138,10 @@ nodes:
   subtitle: "addressing/routing • 1..N connectors"
   kind: integration
   layout: {x: 685, y: 825, w: 300, h: 75}
-- id: devices-io
+- id: device-network-io
   group: io-layer
-  label: "Devices"
-  subtitle: "CAN • display"
+  label: "Network controllers"
+  subtitle: "CanNetworkController • WifiNetworkController"
   kind: integration
   layout: {x: 1005, y: 825, w: 215, h: 75}
 
@@ -200,10 +201,16 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.60}
 
-- from: antenna-io
+- from: devices-io
   to: timing-node-root
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.42}
+
+- from: device-network-io
+  to: timing-node-root
+  dashed: true
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.60}
 
 - from: backend-gateway-io
   to: timing-node-root
@@ -216,7 +223,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.05}
 
-- from: antenna-io
+- from: device-network-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
@@ -226,7 +233,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}
 
-- from: devices-io
+- from: device-network-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.92}
