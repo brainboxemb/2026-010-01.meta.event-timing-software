@@ -77,8 +77,11 @@ io.github.brainboxemb.eventtiming/
   io/
     devices/
       antenna/
+      display/
+      keypad/
+    devicenetworks/
       can/
-      wifi/
+      network/
     messaging/
     storage/
   infra/
