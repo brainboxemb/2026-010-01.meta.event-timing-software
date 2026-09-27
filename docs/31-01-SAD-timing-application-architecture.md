@@ -228,8 +228,9 @@ I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
 I/O remains a plain architecture layer/container, just like Presentation,
 Application and Domain. The contained Storage, Devices, Messaging and DeviceNetworks elements carry
 packaging-component notation where the package-like ownership/decomposition
-semantics are meaningful. `BackendGateway` is a normal software component
-inside the Messaging package component.
+semantics are meaningful. For compactness, Figure SI01-01 shows their contained
+software components as an indented hierarchy rather than as nested component
+boxes; `BackendGateway` remains a software component owned by Messaging.
 
 The high-level I/O view separates **Devices** from **DeviceNetworks**.
 
