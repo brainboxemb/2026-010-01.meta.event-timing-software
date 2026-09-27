@@ -40,7 +40,10 @@ ApplicationConfig
 ├── applicationId
 ├── timingNodes
 ├── io
-│   ├── hardware
+│   ├── devices
+│   │   ├── antennas
+│   │   ├── can
+│   │   └── wifi
 │   ├── registrationRouting
 │   ├── backend
 │   │   └── connectors
@@ -93,22 +96,36 @@ Rules:
 I/O configuration selects concrete external I/O implementations and their
 TimingNode mappings.
 
-Representative antenna configuration:
+Representative device configuration direction:
 
 ```text
 io
-  antennas
-    ANT1
-      type: rfid
-      timingNodes: [timing-node-01, timing-node-02]
-    ANT2
-      type: rfid
-      timingNodes: [timing-node-02]
+  devices
+    antennas
+      ANT1
+        type: rfid
+        timingNodes: [timing-node-01, timing-node-02]
+      ANT2
+        type: rfid
+        timingNodes: [timing-node-02]
+
+    can
+      enabled: true
+
+    wifi
+      enabled: true
 ```
 
 I/O configuration may define 0..N antennas. `AntennaId` is distinct from
 `TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
+
+The CAN section configures the network owned by `CanNetworkController`; exact
+bus/driver/discovery fields are added when that implementation slice exists.
+The Wi-Fi/device-network section configures `WifiNetworkController`, including
+the advertised local service and listen/session settings when IF-09 becomes
+concrete. Exact mDNS service naming and network application protocol remain
+deferred rather than being invented in IF-11 now.
 
 Concrete antenna configuration owns its driver/protocol/device settings. A
 separate registration-asset identity is not part of the active software
@@ -272,6 +289,8 @@ Validation includes, where applicable:
 - references to unknown TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
+- invalid CAN network/controller settings when CAN is enabled;
+- invalid smart-network service/listener settings when Wi-Fi device service is enabled;
 - duplicate/conflicting backend connector identifiers;
 - backend message mappings/targets that reference unknown TimingNodes;
 - conflicting presentation bind address/port combinations;
