@@ -41,7 +41,8 @@ ApplicationConfig
 ├── timingNodes
 ├── io
 │   ├── devices
-│   │   └── antennas
+│   │   └── antennaManager
+│   │       └── antennas
 │   ├── deviceNetworks
 │   │   ├── can
 │   │   └── network
@@ -102,13 +103,14 @@ Representative device configuration direction:
 ```text
 io
   devices
-    antennas
-      ANT1
-        type: rfid
-        timingNodes: [timing-node-01, timing-node-02]
-      ANT2
-        type: rfid
-        timingNodes: [timing-node-02]
+    antennaManager
+      antennas
+        ANT1
+          type: rfid
+          timingNodes: [timing-node-01, timing-node-02]
+        ANT2
+          type: rfid
+          timingNodes: [timing-node-02]
 
   deviceNetworks
     can
@@ -118,7 +120,7 @@ io
       enabled: true
 ```
 
-I/O configuration may define 0..N antennas. `AntennaId` is distinct from
+`AntennaManager` is the configured owner of the antenna set and may define 0..N antennas. `AntennaId` is distinct from
 `TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
