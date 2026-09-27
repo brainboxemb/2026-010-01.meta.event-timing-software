@@ -3,7 +3,7 @@ diagram:
   title: Figure SYS-03 — Network connectivity status — separate observations
   width: 1460
   height: 780
-  note: Router/AP connectivity is optional and may be N/A for direct or automated-test deployments. Local, external and backoffice connectivity are reported separately.
+  note: Router/AP connectivity is optional and may be N/A for direct or automated-test deployments. Local, external and backend connectivity are reported separately.
 
 groups:
   - id: paths
@@ -52,14 +52,14 @@ nodes:
     group: status
     layout: {x: 760, y: 380, w: 280, h: 95}
 
-  - id: backoffice-status
-    label: "Backoffice connectivity\nendpoint / transport / session health"
+  - id: backend-status
+    label: "Backend connectivity\nendpoint / transport / session health"
     kind: application
     group: status
     layout: {x: 1060, y: 380, w: 280, h: 95}
 
   - id: independence-note
-    label: "These states are not interchangeable:\nlocal operation may be healthy while router, external or backoffice connectivity is unavailable."
+    label: "These states are not interchangeable:\nlocal operation may be healthy while router, external or backend connectivity is unavailable."
     kind: model
     group: status
     layout: {x: 810, y: 545, w: 480, h: 80}
@@ -94,7 +94,7 @@ edges:
     to_anchor: {side: left, position: 0.75}
 
   - from: external-status
-    to: backoffice-status
+    to: backend-status
     label: distinct from session health
     dashed: true
     from_anchor: {side: right, position: 0.50}
