@@ -155,6 +155,7 @@ The domain owns timing rules and TimingNode state:
 TimingNode
   TimingNodeId
   LocationID
+  State
   MessageHandler
   TagProcessor
   StageStartTimes
@@ -163,6 +164,10 @@ TimingNode
   RaceData
   StageTiming
 ```
+
+`TimingNode` is the top-level domain class for one timing location. It owns its
+identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
+components shown beneath it in Figure SI01-01.
 
 `MessageHandler` is the TimingNode entry point for backend messages that have
 already been addressed to that TimingNode. It owns no transport connection or
