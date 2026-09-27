@@ -27,6 +27,7 @@ groups:
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
+  notation: component
   layout: {x: 120, y: 860, w: 1120, h: 240}
 - id: platform-layer
   label: Platform abstractions / execution environment
@@ -157,7 +158,9 @@ nodes:
 - id: storage-io
   group: io-layer
   label: "Storage"
-  subtitle: "file / DB • backup / restore"
+  items:
+    - "file / DB"
+    - "backup / restore"
   kind: storage
   layout: {x: 145, y: 895, w: 220, h: 170}
 - id: devices-io
@@ -183,7 +186,9 @@ nodes:
   label: "BackendGateway"
   subtitle: "addressing / routing"
   items:
-    - "Connector (1..N)"
+    - label: "Connector (1..N)"
+      items:
+        - RabbitMQConnector
   kind: integration
   notation: component
   layout: {x: 685, y: 895, w: 300, h: 170}
