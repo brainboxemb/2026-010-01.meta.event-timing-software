@@ -66,7 +66,7 @@ nodes:
   label: "Shared terminal handling"
   subtitle: "command parsing • terminal session behaviour"
   kind: presentation
-  layout: {x: 255, y: 220, w: 420, h: 60}
+  layout: {x: 145, y: 220, w: 440, h: 60}
 
 - id: application-conductor
   group: application-layer
@@ -135,27 +135,35 @@ nodes:
 - id: storage-io
   group: io-layer
   label: "Storage"
-  subtitle: "• file\n• DB\n• backup / restore"
+  subtitle: "file / DB • backup / restore"
   kind: storage
-  layout: {x: 145, y: 905, w: 220, h: 125}
+  layout: {x: 145, y: 905, w: 220, h: 105}
 - id: devices-io
   group: io-layer
   label: "Devices"
-  subtitle: "• Antenna\n• DisplayRev1Can\n• Keypad\n• DisplayRev2Wifi"
+  items:
+    - Antenna
+    - DisplayRev1Can
+    - Keypad
+    - DisplayRev2Wifi
   kind: integration
-  layout: {x: 385, y: 905, w: 280, h: 125}
+  layout: {x: 385, y: 895, w: 280, h: 135}
 - id: backend-gateway-io
   group: io-layer
   label: "BackendGateway"
-  subtitle: "• addressing / routing\n• Connector (1..N)"
+  subtitle: "addressing / routing"
+  items:
+    - "Connector (1..N)"
   kind: integration
-  layout: {x: 685, y: 905, w: 300, h: 125}
+  layout: {x: 685, y: 905, w: 300, h: 105}
 - id: device-network-io
   group: io-layer
   label: "Device Networks"
-  subtitle: "• CanNetworkController\n• NetworkDeviceService"
+  items:
+    - CanNetworkController
+    - NetworkDeviceService
   kind: integration
-  layout: {x: 1005, y: 905, w: 215, h: 125}
+  layout: {x: 1005, y: 905, w: 215, h: 105}
 
 - id: platform-primitives
   group: platform-layer
@@ -178,7 +186,7 @@ edges:
 - from: local-console
   to: shared-terminal
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.25}
+  to_anchor: {side: top, position: 0.23}
 
 - from: remote-shell
   to: shared-terminal
@@ -186,17 +194,17 @@ edges:
   to_anchor: {side: top, position: 0.75}
 
 - from: shared-terminal
-  to: command-handler
-  from_anchor: {side: bottom, position: 0.70}
-  to_anchor: {side: top, position: 0.15}
+  to: application-layer
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.22}
 
 - from: web-interface
-  to: command-handler
+  to: application-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.52}
 
 - from: remote-api
-  to: command-handler
+  to: application-layer
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.80}
 
@@ -217,45 +225,19 @@ edges:
   from_anchor: {side: bottom, position: 0.80}
   to_anchor: {side: top, position: 0.50}
 
-- from: system-status-domain
-  to: remote-api
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.60}
-
 - from: devices-io
-  to: timing-node-root
+  to: domain-layer
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.42}
-
-- from: device-network-io
-  to: timing-node-root
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.60}
+  to_anchor: {side: bottom, position: 0.38}
 
 - from: backend-gateway-io
-  to: timing-node-root
+  to: domain-layer
   dashed: true
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.78}
-
-- from: storage-io
-  to: platform-primitives
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.05}
-
-- from: devices-io
-  to: platform-primitives
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.35}
-
-- from: backend-gateway-io
-  to: platform-primitives
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.65}
+  to_anchor: {side: bottom, position: 0.66}
 
 - from: device-network-io
-  to: platform-primitives
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.92}
+  to: domain-layer
+  dashed: true
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.88}
