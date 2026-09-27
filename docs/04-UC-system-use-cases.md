@@ -59,7 +59,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
-| UC-006 | Drive a passive display from current system state | Timing application | Keep a passive Display V1 aligned with the current ready-team/display model. |
+| UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
 | UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the Remote API. |
 | UC-009 | Exercise the Remote API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
