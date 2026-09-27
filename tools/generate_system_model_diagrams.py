@@ -20,8 +20,8 @@ def software_item_overview() -> Diagram:
         Node("outbox", "Backend outbox / sync", 980, 705, 270, 70, "queue"),
 
         Node("rfid", "IF-07 RFID subsystem\\nprivate production adapter possible", 55, 480, 330, 90, "external"),
-        Node("can", "IF-08 CAN bus\\nkeypad + Display V1", 80, 850, 300, 85, "external"),
-        Node("v2", "IF-09 Smart Display V2\\nmDNS + network data", 1010, 480, 330, 90, "external"),
+        Node("can", "IF-08 CAN bus\\nkeypad + DisplayRev1Can", 80, 850, 300, 85, "external"),
+        Node("v2", "IF-09 DisplayRev2Wifi\\nsmart client • mDNS + network data", 1010, 480, 330, 90, "external"),
         Node("backoffice", "IF-06 Backend\\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
     ]
 
