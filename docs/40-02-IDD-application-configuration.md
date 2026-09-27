@@ -207,7 +207,7 @@ rabbitmq
   passwordSecret: RABBITMQ_PASSWORD
 ```
 
-The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, backoffice credentials, certificates and similar sensitive values.
+The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, backend credentials, certificates and similar sensitive values.
 
 This baseline does not require a general `SecretProvider` hierarchy.
 
