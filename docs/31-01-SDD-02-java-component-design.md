@@ -71,7 +71,7 @@ io.github.brainboxemb.eventtiming/
         messages/
       console/
       shell/
-      web/              only when implemented
+      web/
     common/
       terminal/
   io/
@@ -88,7 +88,7 @@ io.github.brainboxemb.eventtiming/
   platform/
 ```
 
-Presentation subpackages are organised by **functional interface first**. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. `presentation.common` is only for behaviour shared by more than one presentation interface.
+Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
 
 These are source-organisation boundaries, not automatically Maven modules.
 

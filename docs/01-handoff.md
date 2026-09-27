@@ -53,6 +53,7 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - presentation endpoints verwijzen naar TimingNodes; een TimingNode kent geen HTTP-poort of tablet;
 - `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
 - `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
+- Presentation modelleert `Console`, `Remote Shell`, `Web` en `Remote API` als aparte interfaces; Console en Remote Shell delen `presentation.common.terminal` voor gemeenschappelijke terminalafhandeling;
 - `ApplicationId` is de afzonderlijke identiteit van de draaiende Timing Application; bij een single-TimingNode deployment mag en zal deze voorlopig dezelfde geconfigureerde waarde gebruiken als `TimingNodeId`, maar het blijven verschillende types/namespaces;
 - de high-level I/O-architectuur scheidt `Devices` (Antenna, displays, keypad) van `Device Networks` (`CanNetworkController`, `NetworkDeviceService`);
 - `CanNetworkController` beheert CAN-bus lifecycle/discovery/device-state; `DisplayRev1Can` is het passieve CAN-display dat SI-01 actief aanstuurt;
