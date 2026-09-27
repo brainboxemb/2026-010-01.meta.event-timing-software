@@ -129,7 +129,7 @@ nodes:
 - id: devices-io
   group: io-layer
   label: "Devices"
-  subtitle: "Antenna • DisplayRev1Can • Keypad"
+  subtitle: "Antenna • DisplayRev1Can • Keypad • DisplayRev2Wifi"
   kind: integration
   layout: {x: 385, y: 825, w: 280, h: 75}
 - id: backend-gateway-io
@@ -140,8 +140,8 @@ nodes:
   layout: {x: 685, y: 825, w: 300, h: 75}
 - id: device-network-io
   group: io-layer
-  label: "Network controllers"
-  subtitle: "CanNetworkController • WifiNetworkController"
+  label: "Device Networks"
+  subtitle: "CanNetworkController • NetworkDeviceService"
   kind: integration
   layout: {x: 1005, y: 825, w: 215, h: 75}
 
