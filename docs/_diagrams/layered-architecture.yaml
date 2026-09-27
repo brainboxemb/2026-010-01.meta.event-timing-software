@@ -58,7 +58,7 @@ nodes:
   layout: {x: 145, y: 125, w: 200, h: 65}
 - id: remote-shell
   group: presentation-layer
-  label: "Remote Shell"
+  label: "RemoteShell"
   subtitle: "remote text interface"
   kind: presentation
   notation: component
@@ -79,7 +79,7 @@ nodes:
   layout: {x: 825, y: 125, w: 380, h: 65}
 - id: shared-terminal
   group: presentation-layer
-  label: "Shared terminal handling"
+  label: "SharedTerminalHandler"
   subtitle: "command parsing • terminal session behaviour"
   kind: presentation
   notation: component
