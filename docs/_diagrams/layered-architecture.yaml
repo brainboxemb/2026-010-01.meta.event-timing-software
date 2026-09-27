@@ -28,6 +28,11 @@ groups:
   label: I/O
   kind: layer-infrastructure
   layout: {x: 120, y: 920, w: 1120, h: 240}
+- id: messaging-io
+  label: "Messaging"
+  kind: integration
+  notation: packaging-component
+  layout: {x: 685, y: 955, w: 300, h: 170}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
@@ -187,11 +192,6 @@ nodes:
   kind: integration
   notation: packaging-component
   layout: {x: 385, y: 955, w: 280, h: 170}
-- id: messaging-io
-  label: "Messaging"
-  kind: integration
-  notation: packaging-component
-  layout: {x: 685, y: 955, w: 300, h: 170}
 - id: backend-gateway-io
   group: messaging-io
   label: "BackendGateway"
