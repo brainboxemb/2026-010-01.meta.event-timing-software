@@ -9,7 +9,7 @@ from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, r
 
 def data_display_flow() -> Diagram:
     nodes = [
-        Node("backoffice", "Backoffice\\nrace data + stage start times", 40, 90, 320, 85, "external"),
+        Node("backoffice", "Backend system\\nrace data + stage start times", 40, 90, 320, 85, "external"),
         Node("keypad", "CAN keypad\\nadd / remove team to prepare", 410, 90, 300, 85, "external"),
         Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 760, 90, 400, 85, "external"),
 
@@ -79,7 +79,7 @@ def registration_stream_identity() -> Diagram:
         Node("record", "RegistrationRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
         Node("key", "Stable key\\n(TimingNodeId, SequenceNumber)", 820, 380, 380, 85, "service"),
         Node("location", "LocationID 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
-        Node("upstream", "Backoffice / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
+        Node("upstream", "Backend / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
         Node("gap", "Example gap\\nA: 1041, 1042, 1044 → 1043 missing", 820, 735, 390, 85, "queue"),
     ]
 
