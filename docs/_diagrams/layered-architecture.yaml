@@ -42,10 +42,7 @@ nodes:
 - id: timing-node-root
   group: timing-node-aggregate
   label: "TimingNode"
-  items:
-    - "TimingNodeID"
-    - "LocationID"
-    - "State"
+  subtitle: "TimingNodeID • LocationID • State"
   kind: model
   notation: component
   layout: {x: 165, y: 605, w: 780, h: 55}
