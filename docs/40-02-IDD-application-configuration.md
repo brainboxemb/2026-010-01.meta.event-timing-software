@@ -124,7 +124,9 @@ The CAN section configures the network owned by `CanNetworkController`; exact
 bus/driver/discovery fields are added when that implementation slice exists.
 The Wi-Fi/device-network section configures `WifiNetworkController`, including
 the advertised local service and listen/session settings when IF-09 becomes
-concrete. Exact mDNS service naming and network application protocol remain
+concrete. The class/component name reflects the current device-network direction;
+IF-09 itself remains an IP interface and does not require a physical Wi-Fi
+router or WLAN. Exact mDNS service naming and network application protocol remain
 deferred rather than being invented in IF-11 now.
 
 Concrete antenna configuration owns its driver/protocol/device settings. A
