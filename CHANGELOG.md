@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine SI-01 backend messaging architecture: add distinct `ApplicationId`, introduce `BackendGateway` over 1..N transport connectors, place `MessageHandler` with each TimingNode, and keep application-level message handling deferred until a concrete use case exists.
+
 - Track approximate git-derived actual effort per SIP step using explicit merged-PR boundaries; show original estimate, actual and remaining estimate as independent planning signals and refresh the current project snapshot to about 5.1 project days.
 
 - Show concrete end dates for every SIP phase: keep actual completion dates for completed steps and round future cumulative forecast boundaries up to Monday for presentation without feeding that rounding into later calculations.
