@@ -122,11 +122,16 @@ io/
   devices/
     antenna/
       Antenna.java                 concrete/source types only when implemented
+    display/
+      DisplayRev1Can.java          passive CAN display support when implemented
+    keypad/                        only when device-specific code justifies it
+
+  devicenetworks/
     can/
       CanNetworkController.java    CAN lifecycle, discovery and device state
-      DisplayRev1Can.java          passive CAN display support when implemented
-    wifi/
-      WifiNetworkController.java   mDNS advertisement + smart-client sessions
+    network/
+      NetworkDeviceService.java    bidirectional network-device boundary
+
   messaging/
     BackendGateway.java            when backend messaging is implemented
     Connector.java                 only if multiple transports justify a shared contract
@@ -139,10 +144,17 @@ types early. `ApplicationId` is a separate Java type from `TimingNodeId` even
 when a single-TimingNode deployment configures the same string value for both.
 
 `CanNetworkController` owns CAN-network lifecycle/discovery and CAN-device
-communication. `WifiNetworkController` owns the local smart-device service
-boundary: service advertisement and accepted smart-client sessions. The smart
-display itself remains an external client and therefore does not require a
-`DisplayRev2Wifi` class inside SI-01 merely to mirror the hardware name.
+communication. `NetworkDeviceService` owns the general bidirectional
+network-device boundary. It may expose application data outward and accept
+device-originated messages/events inward.
+
+The high-level architecture deliberately stops there. Service discovery,
+connection/listener/session handling and protocol framing are lower-level design
+concerns below `NetworkDeviceService`. Likewise, a smart-display/domain handler
+should not acquire socket, mDNS or transport knowledge merely because it is
+reached through this service. The smart display remains an external client and
+therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
+mirror the hardware name.
 
 `BackendGateway` owns backend addressing/routing and uses 1..N concrete
 connectors. A connector such as `RabbitMqConnector` owns transport/session
