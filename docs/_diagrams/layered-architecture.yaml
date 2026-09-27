@@ -186,7 +186,7 @@ edges:
 - from: local-console
   to: shared-terminal
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.23}
+  to_anchor: {side: top, position: 0.2272727273}
 
 - from: remote-shell
   to: shared-terminal
@@ -196,48 +196,36 @@ edges:
 - from: shared-terminal
   to: application-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.22}
+  to_anchor: {side: top, position: 0.21875}
 
 - from: web-interface
   to: application-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.52}
+  to_anchor: {side: top, position: 0.5223214286}
 
 - from: remote-api
   to: application-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.80}
+  to_anchor: {side: top, position: 0.7991071429}
 
-- from: command-handler
-  to: timing-node-root
+- from: application-layer
+  to: domain-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.25}
-
-- from: application-conductor
-  to: timing-node-root
-  dashed: true
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.10}
-
-- from: application-conductor
-  to: system-status-domain
-  dashed: true
-  from_anchor: {side: bottom, position: 0.80}
   to_anchor: {side: top, position: 0.50}
 
 - from: devices-io
   to: domain-layer
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.38}
+  to_anchor: {side: bottom, position: 0.3616071429}
 
 - from: backend-gateway-io
   to: domain-layer
   dashed: true
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.66}
+  to_anchor: {side: bottom, position: 0.6383928571}
 
 - from: device-network-io
   to: domain-layer
   dashed: true
   from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.88}
+  to_anchor: {side: bottom, position: 0.8861607143}
