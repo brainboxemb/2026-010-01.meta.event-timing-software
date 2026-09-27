@@ -33,7 +33,7 @@ nodes:
     layout: {x: 115, y: 410, w: 250, h: 85}
 
   - id: can
-    label: "CAN devices\nkeypad + Display V1"
+    label: "CAN devices\nkeypad + DisplayRev1Can"
     kind: external
     group: field
     layout: {x: 410, y: 410, w: 250, h: 85}
@@ -57,7 +57,7 @@ nodes:
     layout: {x: 805, y: 375, w: 350, h: 75}
 
   - id: display2
-    label: "Smart Display V2\nIP / Wi-Fi client"
+    label: "DisplayRev2Wifi / Smart Display V2\nsmart IP client • discovers SI-01 via mDNS"
     kind: external
     group: clients
     layout: {x: 805, y: 560, w: 350, h: 85}
