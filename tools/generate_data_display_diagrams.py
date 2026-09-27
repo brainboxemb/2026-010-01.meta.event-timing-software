@@ -61,9 +61,9 @@ def data_display_flow() -> Diagram:
         Edge("start", "published", "start-time data"),
         Edge("prepare", "published", "current state"),
         Edge("calculator", "published", "timing results"),
-        Edge("published", "wifi", "data service"),
-        Edge("display2", "wifi", "discovers via mDNS + connects"),
-        Edge("wifi", "display2", "snapshot / updates", True),
+        Edge("published", "network", "data service"),
+        Edge("display2", "network", "connects / device messages"),
+        Edge("network", "display2", "snapshot / updates", True),
     ]
 
     return Diagram(
