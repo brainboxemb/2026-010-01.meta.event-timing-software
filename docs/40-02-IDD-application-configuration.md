@@ -41,9 +41,10 @@ ApplicationConfig
 ├── timingNodes
 ├── io
 │   ├── devices
-│   │   ├── antennas
+│   │   └── antennas
+│   ├── deviceNetworks
 │   │   ├── can
-│   │   └── wifi
+│   │   └── network
 │   ├── registrationRouting
 │   ├── backend
 │   │   └── connectors
