@@ -72,7 +72,7 @@ nodes:
 - id: timing-node-root
   group: timing-node-aggregate
   label: "TimingNode"
-  subtitle: "TimingNodeId • LocationID • lifecycle/status"
+  subtitle: "TimingNodeId • LocationID • lifecycle/status • MessageHandler"
   kind: model
   layout: {x: 355, y: 500, w: 400, h: 50}
 
@@ -131,10 +131,10 @@ nodes:
   label: "Antenna (0..N)"
   kind: integration
   layout: {x: 385, y: 825, w: 280, h: 75}
-- id: backoffice-connector-io
+- id: backend-gateway-io
   group: io-layer
-  label: "BackofficeConnector (0..N)"
-  subtitle: "RabbitMQ"
+  label: "BackendGateway"
+  subtitle: "addressing/routing • 1..N connectors"
   kind: integration
   layout: {x: 685, y: 825, w: 300, h: 75}
 - id: devices-io
@@ -205,7 +205,7 @@ edges:
   from_anchor: {side: top, position: 0.50}
   to_anchor: {side: bottom, position: 0.42}
 
-- from: backoffice-connector-io
+- from: backend-gateway-io
   to: timing-node-root
   dashed: true
   from_anchor: {side: top, position: 0.50}
@@ -221,7 +221,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
 
-- from: backoffice-connector-io
+- from: backend-gateway-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}
