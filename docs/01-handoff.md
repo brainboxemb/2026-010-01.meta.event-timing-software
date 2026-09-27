@@ -53,6 +53,9 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - presentation endpoints verwijzen naar TimingNodes; een TimingNode kent geen HTTP-poort of tablet;
 - `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
 - `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
+- `ApplicationId` is de afzonderlijke identiteit van de draaiende Timing Application; bij een single-TimingNode deployment mag en zal deze voorlopig dezelfde geconfigureerde waarde gebruiken als `TimingNodeId`, maar het blijven verschillende types/namespaces;
+- backend messaging gebruikt `BackendGateway` boven 1..N connectors; een `RabbitMqConnector` bezit transport/session mechanics, niet TimingNode-routing;
+- een TimingNode heeft een `MessageHandler` voor backendberichten die al op `TimingNodeId` zijn geadresseerd; er is nog geen application-level `MessageHandler` zonder concrete use case;
 - maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
 - deel herbruikbare application/runtime-functionaliteit via composition wanneer echte reuse dat rechtvaardigt; introduceer geen `BaseApplication` inheritance-hiërarchie zonder concrete noodzaak;
 - de eerstvolgende bounded Step-3 slice is external configuration echt maken: concrete configuratierepresentatie/library kiezen, een minimale `ApplicationConfig` laden/mergen/valideren en daarmee ten minste één TimingNode plus de eerste presentation binding samenstellen;

@@ -106,15 +106,37 @@ Use these rules:
 For example, the first TimingNode implementation is grouped as:
 
 ```text
+application/
+  ApplicationId.java
+
 domain/
   timing/
     TimingNode.java
     TimingNodeId.java
+    MessageHandler.java            when backend message handling is implemented
+
+io/
+  messaging/
+    BackendGateway.java            when backend messaging is implemented
+    Connector.java                 only if multiple transports justify a shared contract
+    rabbitmq/
+      RabbitMqConnector.java
 ```
 
-If this capability later grows into several cohesive areas, deeper packages such
-as `timing/registration` or `timing/stage` may become useful. Do not create
-those packages before the corresponding code exists.
+The names above record ownership/direction, not a requirement to create empty
+types early. `ApplicationId` is a separate Java type from `TimingNodeId` even
+when a single-TimingNode deployment configures the same string value for both.
+
+`BackendGateway` owns backend addressing/routing and uses 1..N concrete
+connectors. A connector such as `RabbitMqConnector` owns transport/session
+mechanics. `TimingNode.MessageHandler` owns the semantic handling of messages
+already resolved to that TimingNode and executes state-changing work inside its
+serial boundary. No application-level `MessageHandler` is introduced until a
+real application-scoped backend message requires one.
+
+If the TimingNode capability later grows into several cohesive areas, deeper
+packages such as `timing/registration` or `timing/stage` may become useful.
+Do not create those packages before the corresponding code exists.
 
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
@@ -321,7 +343,7 @@ Expected private/product-specific areas may include:
 - production RFID control/protocol details;
 - product-specific I/O/protocol implementations;
 - production asset/source inventory and mappings;
-- production backoffice schemas/codecs where sensitive;
+- production backend schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
 Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model or runtime plugin discovery unless a real requirement appears.

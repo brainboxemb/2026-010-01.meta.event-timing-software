@@ -69,7 +69,7 @@ nodes:
     layout: {x: 785, y: 690, w: 390, h: 80}
 
   - id: backoffice
-    label: "Backoffice system"
+    label: "Backend system"
     kind: external
     group: external
     layout: {x: 1275, y: 345, w: 200, h: 80}

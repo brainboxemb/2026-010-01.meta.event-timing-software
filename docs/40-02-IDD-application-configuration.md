@@ -37,11 +37,12 @@ The logical configuration root is:
 
 ```text
 ApplicationConfig
+├── applicationId
 ├── timingNodes
 ├── io
 │   ├── hardware
 │   ├── registrationRouting
-│   ├── backoffice
+│   ├── backend
 │   │   └── connectors
 │   └── storage
 ├── presentation
@@ -50,6 +51,23 @@ ApplicationConfig
 ```
 
 The structure is a contract for configuration ownership. It does not require one Java POJO for every node before a running slice needs it.
+
+### Application identity
+
+`ApplicationId` identifies the configured Headless Timing Application instance.
+It is a separate identity/type from `TimingNodeId`.
+
+For the current single-TimingNode deployment style, the intended starting
+convention is to configure the same string value for `ApplicationId` and the
+single `TimingNodeId`. This equality is a deployment convention, not identity
+aliasing: multi-TimingNode deployments may use one application id with several
+different TimingNode ids.
+
+Representative direction:
+
+```text
+applicationId: timing-node-01
+```
 
 ### TimingNodes
 
@@ -96,37 +114,39 @@ Concrete antenna configuration owns its driver/protocol/device settings. A
 separate registration-asset identity is not part of the active software
 configuration model.
 
-### Backoffice connectors and routing
+### Backend messaging
 
-A deployment may configure 0..N backoffice connectors:
+When backend messaging is enabled, SI-01 composes one `BackendGateway` using
+1..N connectors. Configuration selects those concrete transports and any
+transport-specific addressing/mapping needed at the external boundary.
+
+Representative direction:
 
 ```text
 io
-  backoffice
+  backend
     connectors
       connector-01
         type: rabbitmq
         credentials: rabbitmq-main
-        bindings
-          - timingNode: timing-node-01
-            externalName: START
-          - timingNode: timing-node-02
-            externalName: FINISH
       connector-02
-        type: rabbitmq
-        credentials: rabbitmq-secondary
-        bindings
-          - timingNode: timing-node-01
-            externalName: NODE-A
+        type: socket
 ```
 
-Backoffice configuration owns the connector collection and binding mapping. A
-connector may bind 1..N TimingNodes and one TimingNode may be bound to more than
-one connector. `externalName` is connector/backoffice-facing configuration and
-does not replace the stable internal `TimingNodeId`.
+`BackendGateway` owns backend-message addressing/routing after a connector has
+converted external protocol data into an application-facing message. A message
+addressed to a `TimingNodeId` is resolved to that TimingNode and enters its
+serial execution boundary before its `MessageHandler` processes it.
 
-Concrete connector implementations own transport resources such as RabbitMQ
-connections/channels internally.
+A connector owns transport resources such as RabbitMQ connections/channels or a
+socket session. It does not own TimingNode selection or TimingNode message
+semantics.
+
+`ApplicationId` establishes the separate application-wide identity needed for
+future application-scoped backend messaging. No application-level
+`MessageHandler` is part of the current configuration/architecture baseline;
+that behaviour is added only when a concrete application-scoped capability
+requires it.
 
 Storage settings remain under I/O because they configure external persistence.
 
@@ -187,7 +207,7 @@ rabbitmq
   passwordSecret: RABBITMQ_PASSWORD
 ```
 
-The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, backoffice credentials, certificates and similar sensitive values.
+The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, backend credentials, certificates and similar sensitive values.
 
 This baseline does not require a general `SecretProvider` hierarchy.
 
@@ -247,12 +267,13 @@ SI-01 validates the complete effective configuration before normal application c
 
 Validation includes, where applicable:
 
+- missing/invalid `ApplicationId`;
 - duplicate `TimingNodeId` values;
 - references to unknown TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
-- duplicate/conflicting backoffice connector identifiers or bindings;
-- connector bindings that reference unknown TimingNodes;
+- duplicate/conflicting backend connector identifiers;
+- backend message mappings/targets that reference unknown TimingNodes;
 - conflicting presentation bind address/port combinations;
 - unsupported adapter/driver types;
 - missing required secret references or unresolved required secret values;
@@ -291,6 +312,7 @@ The first implementation should introduce only the configuration objects and fie
 At minimum, Step 3 needs enough configuration to:
 
 - start from external configuration;
+- construct the application with a stable `ApplicationId`;
 - construct at least one configured TimingNode with a stable `TimingNodeId`;
 - bind the first IF-03 presentation endpoint safely;
 - report configuration/startup failures through the first executable behaviour.

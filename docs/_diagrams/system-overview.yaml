@@ -12,17 +12,17 @@ nodes:
   - {id: remote, label: "Remote terminal", kind: client, layout: {x: 250, y: 90, w: 190, h: 70}}
   - {id: desktop, label: "Desktop GUI Application (SI-02)\nplanned • technology open", kind: client, layout: {x: 450, y: 75, w: 250, h: 100}}
   - {id: test_client, label: "Engineering / test clients\nJavaFX • scripts • optional web", kind: client, layout: {x: 730, y: 75, w: 260, h: 100}}
-  - {id: backoffice, label: "Backoffice", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
+  - {id: backend, label: "Backend system", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
   - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
   - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
   - {id: web_adapter, label: "Remote API\nHTTP + WebSocket", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
-  - {id: backoffice_adapter, label: "Backoffice adapter\nRabbitMQ intended", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
-  - {id: gateway, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
+  - {id: backend_connector, label: "Connector\nRabbitMQ / other transport", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
+  - {id: command_boundary, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
-  - {id: backoffice_port, label: "BackofficePort", kind: port, layout: {x: 1190, y: 395, w: 220, h: 70}}
-  - {id: runtime, label: "Headless Timing Application (SI-01)\nruntime / 1..N TimingNodes", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
+  - {id: backend_gateway, label: "BackendGateway\naddressing / routing", kind: port, layout: {x: 1170, y: 390, w: 260, h: 80}}
+  - {id: runtime, label: "Headless Timing Application (SI-01)\nApplicationId • 1..N TimingNodes", kind: service, layout: {x: 160, y: 555, w: 340, h: 95}}
   - {id: status, label: "Status service\nimmutable snapshots", kind: service, layout: {x: 545, y: 555, w: 280, h: 95}}
-  - {id: domain, label: "Timing/domain capabilities\nregistration • ready-team • reference data", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
+  - {id: domain, label: "TimingNode capabilities\nMessageHandler • registration • reference data", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
   - {id: memory, label: "Application / domain state\nkept in memory at runtime", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}
   - {id: device_ports, label: "RFID + CAN + Display ports", kind: port, layout: {x: 575, y: 750, w: 300, h: 80}}
   - {id: platform_ports, label: "Clock + Settings + Platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
@@ -35,19 +35,20 @@ edges:
   - {from: remote, to: remote_adapter}
   - {from: desktop, to: web_adapter}
   - {from: test_client, to: web_adapter}
-  - {from: backoffice, to: backoffice_adapter}
-  - {from: console_adapter, to: gateway}
-  - {from: remote_adapter, to: gateway}
-  - {from: web_adapter, to: gateway}
+  - {from: backend, to: backend_connector}
+  - {from: console_adapter, to: command_boundary}
+  - {from: remote_adapter, to: command_boundary}
+  - {from: web_adapter, to: command_boundary}
   - {from: events, to: web_adapter, label: "WebSocket push", dashed: true}
-  - {from: backoffice_adapter, to: backoffice_port}
-  - {from: gateway, to: runtime}
-  - {from: gateway, to: domain}
+  - {from: backend_connector, to: backend_gateway}
+  - {from: command_boundary, to: runtime}
+  - {from: command_boundary, to: domain}
   - {from: runtime, to: status}
   - {from: domain, to: status}
   - {from: status, to: events}
   - {from: domain, to: events}
-  - {from: domain, to: backoffice_port}
+  - {from: backend_gateway, to: domain, label: "TimingNodeId"}
+  - {from: domain, to: backend_gateway, label: "outbound"}
   - {from: runtime, to: memory}
   - {from: domain, to: memory}
   - {from: domain, to: device_ports}

@@ -34,7 +34,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
-- remain testable without production RFID, CAN, backoffice or proprietary implementations;
+- remain testable without production RFID, CAN, backend or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep public framework/reference code independent of private production source;
@@ -50,7 +50,7 @@ Representative architecture-validation scenarios include:
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
-5. continue local operation while a GUI/test client or backoffice connection is unavailable;
+5. continue local operation while a GUI/test client or backend connection is unavailable;
 6. host several TimingNodes in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
@@ -69,13 +69,14 @@ The compact software/domain ownership model is intentionally also kept as copyab
 
 ```text
 TimingApplication
-  |
+  +-- ApplicationId
   +-- SystemStatus
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
+        +-- MessageHandler
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -136,9 +137,10 @@ or query names a `TimingNodeId`, the application looks up that `TimingNode` and
 submits state-changing work to its serial executor.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce commands merely to preserve a layer diagram. I/O routing and
-binding are configuration/composition responsibilities; they do not imply
-separate router classes unless implementation behaviour later justifies them.
+do not introduce commands merely to preserve a layer diagram. Boundary-specific
+routing is introduced only where it owns real behaviour. Backend messaging now
+has such a responsibility in `BackendGateway`; this does not reintroduce a
+generic application dispatcher.
 
 ### Domain
 
@@ -148,6 +150,7 @@ The domain owns timing rules and TimingNode state:
 TimingNode
   TimingNodeId
   LocationID
+  MessageHandler
   TagProcessor
   StageStartTimes
   Journal
@@ -156,6 +159,10 @@ TimingNode
   StageTiming
 ```
 
+`MessageHandler` is the TimingNode entry point for backend messages that have
+already been addressed to that TimingNode. It owns no transport connection or
+cross-node routing; state-changing handling executes through the TimingNode's
+serial boundary and delegates to the relevant TimingNode responsibilities.
 `TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `Journal` owns
 registration/history data and sequence semantics. `NextUpTeams` owns the teams
 expected next at the TimingNode.
@@ -182,9 +189,11 @@ I/O contains adapters that move data between the application and the outside wor
 ```text
 io/
   Antenna (0..N)
-  BackofficeConnector (0..N)
-    RabbitMqBackofficeConnector
-    SocketBackofficeConnector
+  messaging/
+    BackendGateway
+      Connector (1..N)
+        RabbitMqConnector
+        SocketConnector
   Devices
     CAN
     Display
@@ -196,10 +205,13 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes.
 
-The **Headless Timing Application** (SI-01) may compose 0..N configured `Antenna` instances and 0..N
-`BackofficeConnector` instances. Antenna mappings route observations to 1..N
-TimingNodes; connector bindings map inbound/outbound data to/from TimingNodes.
-Concrete antennas/connectors own their protocol/device resources internally.
+The **Headless Timing Application** (SI-01) may compose 0..N configured `Antenna`
+instances and, when backend messaging is configured, one `BackendGateway`.
+The gateway uses 1..N connectors. Antenna mappings route observations to 1..N
+TimingNodes. `BackendGateway` owns backend-message addressing/routing, while a
+concrete connector owns its transport resources and protocol/session mechanics.
+A `RabbitMqConnector` is one transport implementation; it does not own
+TimingNode semantics.
 
 ### Platform
 
@@ -229,13 +241,14 @@ The architecture deliberately uses **separate views** for software/domain decomp
 
 ```text
 TimingApplication
-  |
+  +-- ApplicationId
   +-- SystemStatus
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
+        +-- MessageHandler
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -244,7 +257,14 @@ TimingApplication
         +-- StageTiming
 ```
 
-`TimingNodeId` is the stable identity of the `TimingNode` and scopes its registration sequence, persistence and synchronisation semantics. `LocationID` is the separately configured physical event location.
+`ApplicationId` identifies the running Headless Timing Application instance.
+`TimingNodeId` is the stable identity of a `TimingNode` and scopes its
+registration sequence, persistence and synchronisation semantics. The two
+identities remain separate types/namespaces even when their configured string
+values are equal. For the current single-TimingNode deployment style, using the
+same configured value for `ApplicationId` and `TimingNodeId` is the intended
+starting convention. `LocationID` is the separately configured physical event
+location.
 
 <a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
@@ -272,24 +292,42 @@ One antenna may intentionally feed one or more TimingNodes.
 Configuration connects identities without collapsing them:
 
 ```text
+TimingApplication
+    +-- ApplicationId
+
 Antenna (0..N)
     +-- each Antenna -> 1..N TimingNodeId
 
-BackofficeConnector (0..N)
-    +-- bindings <-> 1..N TimingNodeId
+BackendGateway
+    +-- Connector (1..N)
+    +-- backend message target -> TimingNodeId -> TimingNode.MessageHandler
 ```
 
 <a id="fig-si01-03"></a>
-![TimingNode, hardware and backoffice routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
-*Figure SI01-03 — TimingNode, hardware and backoffice routing.*
+![TimingNode, hardware and backend messaging routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
+*Figure SI01-03 — TimingNode, hardware and backend messaging routing.*
 
 `TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
 
 Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
 
-Configured backoffice bindings map connector-specific inbound/outbound data to TimingNodes. A connector binding may assign an external/backoffice-facing name to a TimingNode without changing its internal `TimingNodeId`. One connector may serve many TimingNodes and one TimingNode may bind to more than one connector.
+`BackendGateway` is the backend-messaging boundary. It receives transport-neutral
+messages from its configured connectors, interprets backend addressing and resolves
+a TimingNode-targeted message to the matching `TimingNodeId`. The resolved
+message is submitted through that TimingNode's serial execution boundary and then
+handled by its `MessageHandler`.
 
-These mappings belong to the I/O composition/configuration boundary; they do not require a separate router object. Concrete `Antenna` and `BackofficeConnector` implementations own their protocol/device resources internally.
+Connectors do not route directly to TimingNodes and do not own domain semantics.
+A connector-specific external name or routing key may participate in boundary
+mapping, but it does not replace the stable internal `TimingNodeId`. One gateway
+may use multiple connectors and one TimingNode may exchange messages through more
+than one connector via that gateway.
+
+`ApplicationId` establishes a separate addressable identity for the application
+as a whole. Future application-scoped backend messages, such as application-wide
+status/monitoring operations, may use it. No application-level `MessageHandler`
+is introduced yet; that component should appear only when a concrete application-
+scoped message use case requires it.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
@@ -368,15 +406,16 @@ The application boundary determines which TimingNode(s) receive the work:
 
 - `CommandHandler` handles presentation commands/queries that address a TimingNode;
 - configured antenna mappings map an `AntennaId` to 1..N TimingNodes;
-- configured connector bindings/names map a `BackofficeConnector` to 1..N TimingNodes;
+- `BackendGateway` resolves backend messages addressed by `TimingNodeId` and submits them to the matching TimingNode;
 - a scheduled task keeps the TimingNode target it was registered for.
 
 Each resolved target is then submitted to that TimingNode's serial executor.
 When one observation fans out to two TimingNodes, both receive their own queued
 work and keep independent TimingNode-scoped state/sequence semantics.
 
-There is no central generic `TimingSystemDispatcher`. The two routers above are
-specific boundary responsibilities with real mapping ownership; they are not a
+There is no central generic `TimingSystemDispatcher`. `CommandHandler`,
+antenna mapping and `BackendGateway` are separate boundary responsibilities.
+`BackendGateway` is specifically the backend-messaging gateway; it is not a
 generic message bus or all-purpose mediator.
 
 ```text
@@ -598,7 +637,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - persistence/backup state;
 - race-data freshness;
 - local clock/time-source health where relevant to timing validity;
-- network/backoffice connectivity;
+- network/backend connectivity;
 - inbound/outbound synchronisation state.
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
@@ -641,7 +680,7 @@ Working decisions:
 - log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
 - stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
-- logging is not the mechanism for application status, registration history, audit/domain records or backoffice synchronisation state;
+- logging is not the mechanism for application status, registration history, audit/domain records or backend synchronisation state;
 - the selected backend may publish the same log records to multiple handlers/sinks;
 - the initial operational sink is file logging; a later diagnostic/debug presentation may add a live sink without changing framework logging calls;
 - a live diagnostic sink is a support/presentation stream and must not become a substitute for the structured application-status model.
@@ -662,8 +701,8 @@ ApplicationConfig
 ├── io
 │   ├── hardware
 │   ├── registrationRouting
-│   ├── backoffice
-│   │   └── 0..N connectors
+│   ├── backend
+│   │   └── connectors (1..N when BackendGateway is configured)
 │   └── storage
 ├── presentation
 ├── runtime
@@ -672,9 +711,11 @@ ApplicationConfig
 
 The identity boundaries are deliberate:
 
+- the application owns a stable `ApplicationId`;
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
+- `ApplicationId` and `TimingNodeId` are different identities, but a single-TimingNode deployment may intentionally configure the same value for both;
 - the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
-- the application may compose 0..N backoffice connectors, each with 1..N TimingNode bindings;
+- when backend messaging is configured, the application composes one `BackendGateway` using 1..N connectors;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
@@ -722,7 +763,7 @@ Keep these concepts distinct:
 4. race/reference data — locally available participant/team/tag-reference input received from external sources;
 5. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
 6. local backup/restore — restart/power-loss recovery;
-7. backoffice outbox/synchronisation — pending external delivery/reconciliation.
+7. backend outbox/synchronisation — pending external delivery/reconciliation.
 
 Registration identity remains TimingNode-scoped; the current stable conceptual key is `(TimingNodeId, SequenceNumber)`.
 
@@ -730,23 +771,38 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ## Integration architecture
 
-The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backoffice are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backend are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
-### Backoffice
+### Backend messaging
 
-RabbitMQ is not the application-level backoffice API. The application depends on semantic source-aware ports, explicit TimingNode routing/bindings and local synchronisation/outbox behaviour. A process may compose 0..N backoffice connectors; RabbitMQ is one connector type.
+Backend messaging is a semantic application boundary, not a RabbitMQ API.
+`BackendGateway` owns addressing/routing across 1..N transport connectors.
+A TimingNode-targeted message is resolved by `TimingNodeId`, submitted through
+that TimingNode's serial boundary and handled by its `MessageHandler`.
 
 ```text
-application/domain
-    semantic backoffice ports
-            |
-            +--> stub/in-memory adapter
-            +--> lightweight socket test adapter
-            +--> RabbitMQ adapter
-            +--> private/proprietary codec/mapping where required
+external backend system
+        |
+        +--> RabbitMqConnector --+
+        +--> SocketConnector ----+--> BackendGateway
+                                      |
+                                      +--> TimingNodeId
+                                             |
+                                             v
+                                       TimingNode
+                                         MessageHandler
 ```
 
-The socket implementation exists to test a real process/network boundary without requiring the production broker. RabbitMQ is the intended production-shaped broker transport. Exact connection/channel topology, routing keys and retry mechanics are adapter-level decisions and should be detailed when that implementation is active.
+Connectors own transport/session mechanics and protocol-specific mapping at the
+external boundary. Exact RabbitMQ connection/channel topology, routing keys and
+retry mechanics are connector-level decisions and should be detailed when that
+implementation is active. Product/deployment-specific backend names and private
+wire details remain outside the public architecture documentation.
+
+`ApplicationId` is reserved for application-scoped backend addressing. The
+current architecture does not add an application-level message handler merely to
+complete the symmetry; it will be introduced only when an application-scoped
+message capability is actually implemented.
 
 ### RFID
 
@@ -764,7 +820,7 @@ Display V1 is a CAN-based integration. Display V2 is a network client that disco
 
 ### Connectivity
 
-Status must distinguish at least local network reachability from external/backoffice session health where those distinctions affect operator decisions. Temporary external connectivity loss must not silently invalidate otherwise available local operation.
+Status must distinguish at least local network reachability from external/backend session health where those distinctions affect operator decisions. Temporary external connectivity loss must not silently invalidate otherwise available local operation.
 
 ## Development view
 
@@ -805,7 +861,7 @@ Do not create future packages merely to mirror the architecture picture. Package
 
 ### Public/private extension model
 
-Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production backoffice codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
+Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production backend codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
 
 ## Technology decision register
 
@@ -825,7 +881,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
 | Remote API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
-| Backoffice | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
+| Backend | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
 
 Technology choices should fit the actual application and target. Pi compatibility is verified on real hardware; memory/thread footprint becomes a design concern only when measurements make it one.
@@ -840,7 +896,7 @@ Production field host
     one Headless Timing Application process
       one or more configured TimingNode objects
       local devices + local files
-      optional network/backoffice connectivity
+      optional network/backend connectivity
 
 Development/test host
   Linux or Windows
@@ -849,7 +905,7 @@ Development/test host
     may host larger multi-TimingNode simulation topology
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backoffice is defined in the SSAD rather than duplicated here.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backend is defined in the SSAD rather than duplicated here.
 
 ## Testability and failure/recovery architecture
 
@@ -882,7 +938,7 @@ Current active focused SDD:
   Java packages, Maven artifacts and composition
 ```
 
-Persistence/data and backoffice transport notes remain deferred until their
+Persistence/data and backend transport notes remain deferred until their
 implementation needs focused design.
 
 ## Open architecture decisions

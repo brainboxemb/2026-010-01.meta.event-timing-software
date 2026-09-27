@@ -44,7 +44,7 @@ The software-system architecture is driven by these system-level concerns:
 - the **Headless Timing Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
 - the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the Remote API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
-- external devices and backoffice systems are explicit system interfaces rather than hidden implementation dependencies;
+- external devices and backend systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
 - deployments should support the intended field target and normal development/test hosts; target limits are measured rather than assumed;
 - system interfaces and software-item ownership should remain stable even when internal implementation technology changes;
@@ -56,7 +56,7 @@ The second-level number used in SRD/SAD/SDD filenames identifies the software it
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
-| **SI-01** | Headless Timing Application | working architecture | Local timing/registration runtime, device integration, state, status, persistence and backoffice synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
+| **SI-01** | Headless Timing Application | working architecture | Local timing/registration runtime, device integration, state, status, persistence and backend synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the Remote API | Operator workstation/laptop |
 
 Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX Remote API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
@@ -77,7 +77,7 @@ Supporting framework modules, adapters and engineering/test clients are not auto
               JavaFX client      web test client
                     /      |       \
                    v       v        v
-             field devices local   Backoffice
+             field devices local   Backend
              RFID / CAN     state   integration
              / displays
 ```
@@ -95,9 +95,9 @@ GUI and engineering/test clients may disconnect without changing where timing st
 The **Desktop GUI Application** (SI-02) is an IP network client of the **Headless Timing Application** (SI-01). It presents operator status and control but does not access the application's memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
 
 
-### **Headless Timing Application** (SI-01) ↔ backoffice
+### **Headless Timing Application** (SI-01) ↔ backend
 
-The **Headless Timing Application** (SI-01) exchanges race/reference data, registration information, status and reconciliation information with the backoffice through a system-owned semantic interface. The concrete transport, codec and network route are implementation/integration design concerns for the **Headless Timing Application** (SI-01) unless they change the external system contract.
+The **Headless Timing Application** (SI-01) exchanges race/reference data, registration information, status and reconciliation information with the backend through a system-owned semantic interface. The concrete transport, codec and network route are implementation/integration design concerns for the **Headless Timing Application** (SI-01) unless they change the external system contract.
 
 ### **Headless Timing Application** (SI-01) ↔ field devices
 
@@ -113,7 +113,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
 | **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `40-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
-| **IF-06 Backoffice Integration** | SI-01 ↔ Backoffice | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
+| **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | Discovery, Display V1 and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | SI-01 ↔ Display V2 | IP path; direct or LAN/Wi-Fi deployment | Synchronised display/domain data | system IDD candidate |
@@ -133,11 +133,11 @@ The following rules apply across software-item boundaries:
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
 - transport-specific implementation detail should not leak into the semantic system interface unless that transport is itself part of the external contract;
-- system status must distinguish local IP availability, configured network-infrastructure state, external reachability and backoffice/session health where those distinctions affect operator decisions.
+- system status must distinguish local IP availability, configured network-infrastructure state, external reachability and backend/session health where those distinctions affect operator decisions.
 
 ## System deployment view
 
-The principal device/interface relationships are a **software-system concern** because they show where the **Headless Timing Application** (SI-01), the operator software items, external field devices and backoffice meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
+The principal device/interface relationships are a **software-system concern** because they show where the **Headless Timing Application** (SI-01), the operator software items, external field devices and backend meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
 
 <a id="fig-sys-02"></a>
 ![System device and logical interface topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
@@ -165,7 +165,7 @@ Engineering/test clients
 Smart Display V2
   +-- IF-09 over available IP path --> SI-01
 
-Backoffice
+Backend
   +-- IF-06 over configured external path --> SI-01
 ```
 
@@ -184,9 +184,9 @@ At minimum distinguish:
 - **local IP connectivity** — network interface/link of the **Headless Timing Application** (SI-01) and its ability to communicate with local peers;
 - **configured router/AP connectivity** — whether the deployment is connected/associated with the configured local router or access point; this may legitimately be **N/A** for direct/development/test compositions;
 - **external network reachability** — whether connectivity beyond the local network is available;
-- **backoffice connectivity** — whether the configured backoffice endpoint/transport/session is healthy.
+- **backend connectivity** — whether the configured backend endpoint/transport/session is healthy.
 
-These states must not be conflated. For example, local timing and direct local clients may remain fully operational while the router, external uplink or backoffice is unavailable. Conversely, a configured field deployment may need to report that it has lost its expected router/AP even before external reachability is tested.
+These states must not be conflated. For example, local timing and direct local clients may remain fully operational while the router, external uplink or backend is unavailable. Conversely, a configured field deployment may need to report that it has lost its expected router/AP even before external reachability is tested.
 
 The exact process/thread topology, internal runtime cardinality, queueing model, service composition, connectivity probing mechanism and adapter implementation are intentionally outside this SSAD.
 
@@ -220,7 +220,7 @@ The SAD for the **Headless Timing Application** (SI-01) owns, among other things
 - logging/configuration/composition choices;
 - Java/framework/library decisions;
 - RFID/CAN/display adapter architecture behind the system device interfaces;
-- backoffice transport implementation behind IF-06;
+- backend transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
 The SAD for the planned **Desktop GUI Application** (SI-02) owns its internal architecture while conforming to the Remote API and applicable IDDs.
@@ -237,5 +237,5 @@ Reference: `reference/README.md`.
 - authentication, authorisation and secure transport requirements across software-item boundaries;
 - compatibility/versioning policy for IF-03 and IF-06;
 - which device semantics require system-level IDDs versus software-item-only design;
-- required behaviour when local IP, configured router/AP, external network or backoffice connectivity is unavailable;
+- required behaviour when local IP, configured router/AP, external network or backend connectivity is unavailable;
 - final system-level availability/recovery requirements.
