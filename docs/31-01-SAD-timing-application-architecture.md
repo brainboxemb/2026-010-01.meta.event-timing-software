@@ -113,9 +113,9 @@ The **Remote API** is the general programmable interface of the **Headless Timin
 
 **Web** is modelled separately as the browser-facing presentation interface of SI-01. It may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
-**Console** and **Remote Shell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared terminal handling then converges on the same `CommandHandler` as the other presentation interfaces.
+**Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and Remote Shell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
