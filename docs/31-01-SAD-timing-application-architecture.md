@@ -461,7 +461,7 @@ The application boundary determines which TimingNode(s) receive the work:
 - `CommandHandler` handles presentation commands/queries that address a TimingNode;
 - configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
 - `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
-- `NetworkDeviceService` advertises the local data service and accepts smart-client sessions;
+- `NetworkDeviceService` owns bidirectional network-device communication; discovery/session mechanics stay below this high-level responsibility;
 - `BackendGateway` resolves backend messages addressed by `TimingNodeId` and submits them to the matching TimingNode;
 - a scheduled task keeps the TimingNode target it was registered for.
 
