@@ -20,8 +20,8 @@ def software_item_overview() -> Diagram:
         Node("outbox", "Backend outbox / sync", 980, 705, 270, 70, "queue"),
 
         Node("rfid", "IF-07 RFID subsystem\\nprivate production adapter possible", 55, 480, 330, 90, "external"),
-        Node("can", "IF-08 CAN bus\\nkeypad + Display V1", 80, 850, 300, 85, "external"),
-        Node("v2", "IF-09 Smart Display V2\\nmDNS + network data", 1010, 480, 330, 90, "external"),
+        Node("can", "IF-08 CAN bus\\nkeypad + DisplayRev1Can", 80, 850, 300, 85, "external"),
+        Node("v2", "IF-09 DisplayRev2Wifi\\nsmart client • mDNS + network data", 1010, 480, 330, 90, "external"),
         Node("backoffice", "IF-06 Backend\\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
     ]
 
@@ -95,8 +95,8 @@ def timing_node_routing_mapping() -> Diagram:
     nodes = [
         Node("app", "TimingApplication\\nApplicationId", 520, 55, 360, 80, "core"),
 
-        Node("ant1", "Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
-        Node("ant2", "Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
+        Node("ant1", "Devices / Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
+        Node("ant2", "Devices / Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
 
         Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nMessageHandler", 975, 170, 330, 100, "service"),
         Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nMessageHandler", 975, 390, 330, 100, "service"),
@@ -122,7 +122,7 @@ def timing_node_routing_mapping() -> Diagram:
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingNode I/O mapping — antennas, BackendGateway and connectors",
+        "TimingNode I/O mapping — device antennas, BackendGateway and connectors",
         1400,
         900,
         nodes,

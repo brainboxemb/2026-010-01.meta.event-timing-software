@@ -59,7 +59,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
-| UC-006 | Drive a passive display from current system state | Timing application | Keep a passive Display V1 aligned with the current ready-team/display model. |
+| UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
 | UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the Remote API. |
 | UC-009 | Exercise the Remote API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
@@ -188,32 +188,35 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 The `PrepareTeamRegistry` history is separate from participant/timing `RegistrationRecord` streams.
 
-## UC-006 — Drive a passive display from current system state
+## UC-006 — Drive a passive CAN display from current system state
 
-**Goal:** ensure Display V1 shows the current ready-team/display model.
+**Goal:** ensure the passive DisplayRev1Can shows the current ready-team/display model.
 
 **Primary actor:** SI-01.
 
 **Main flow:**
 
-1. SI-01 derives a current `DisplayModel` from application state.
-2. The passive-display adapter translates that model into CAN/device commands.
-3. On state change, reconnect or rediscovery, SI-01 actively refreshes the display as required.
-4. The display itself does not own ready-team/domain state.
+1. `CanNetworkController` discovers and monitors the configured CAN devices.
+2. SI-01 derives a current `DisplayModel` from application state.
+3. DisplayRev1Can-specific handling translates that model into CAN/device commands.
+4. On state change or CAN-device rediscovery, SI-01 actively refreshes the display as required.
+5. The passive display itself does not own ready-team/domain state.
 
-## UC-007 — Synchronise a smart display
+## UC-007 — Provide data to a smart network display
 
-**Goal:** provide a smarter network display with data/state while SI-01 keeps that state.
+**Goal:** expose current timing/status/reference data so a smart display can render and synchronise itself without SI-01 owning its presentation logic.
 
 **Primary actor:** smart display.
 
 **Main flow:**
 
-1. SI-01 advertises the configured service through mDNS.
-2. The display discovers and connects to SI-01.
-3. SI-01 provides a full current snapshot/data set.
-4. Subsequent updates are synchronised over the selected network protocol.
-5. After reconnect, the display can recover from a fresh current snapshot.
+1. `WifiNetworkController` starts the configured local data service and advertises that service through mDNS.
+2. DisplayRev2Wifi discovers the advertised SI-01 service and initiates the connection.
+3. SI-01 provides current timing/status/reference data through the selected network interface.
+4. DisplayRev2Wifi owns its local rendering and synchronisation state and consumes the data it needs.
+5. If the connection is lost, DisplayRev2Wifi is responsible for rediscovery/reconnect and can rebuild its local view from current SI-01 data.
+
+SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
 
 ## UC-008 — Operate SI-01 through a desktop GUI
 

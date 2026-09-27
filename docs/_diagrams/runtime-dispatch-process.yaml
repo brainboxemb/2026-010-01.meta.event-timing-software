@@ -30,7 +30,7 @@ nodes:
     layout: {x: 100, y: 190, w: 250, h: 85}
 
   - id: io-mapping
-    label: "I/O ingress\nAntenna mappings • BackendGateway"
+    label: "Device/backend ingress\nAntenna • CanNetworkController • BackendGateway"
     kind: integration
     group: ingress
     layout: {x: 85, y: 345, w: 280, h: 120}

@@ -9,30 +9,31 @@ from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, r
 
 def data_display_flow() -> Diagram:
     nodes = [
-        Node("backoffice", "Backend system\\nrace data + stage start times", 40, 90, 320, 85, "external"),
+        Node("backend", "Backend system\\nrace data + stage start times", 40, 90, 320, 85, "external"),
         Node("keypad", "CAN keypad\\nadd / remove team to prepare", 410, 90, 300, 85, "external"),
         Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 760, 90, 400, 85, "external"),
 
-        Node("queue", "TimingNode serialized ingress", 470, 245, 500, 75, "queue"),
+        Node("queue", "TimingNode serialized ingress", 520, 245, 500, 75, "queue"),
 
         Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
-        Node("start", "StageStartTimeRegistry\\nstage start-time reference", 360, 420, 300, 90, "service"),
-        Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 690, 420, 330, 90, "service"),
-        Node("journal", "TimingNodeJournal\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
+        Node("start", "StageStartTimes\\nstage start-time reference", 360, 420, 300, 90, "service"),
+        Node("prepare", "NextUpTeams\\nteams expected next + traceable history", 690, 420, 330, 90, "service"),
+        Node("journal", "Journal\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
 
-        Node("calculator", "StageTiming\\nelapsed time + local ranking", 345, 610, 310, 90, "service"),
-        Node("display_model", "DisplayModel\\nrevisioned data snapshot", 715, 610, 300, 90, "core"),
-        Node("backup", "Simple file backup / restore\\nTimingNode state + sequence recovery", 1080, 610, 360, 90, "adapter"),
+        Node("calculator", "StageTiming\\nelapsed time + local ranking", 155, 610, 310, 90, "service"),
+        Node("display_model", "DisplayModel\\npassive DisplayRev1Can model", 515, 610, 300, 90, "core"),
+        Node("backup", "Simple file backup / restore\\nTimingNode state + sequence recovery", 865, 610, 360, 90, "adapter"),
+        Node("published", "Published timing/status/reference data\\ncurrent snapshot + updates", 1265, 610, 330, 90, "interface"),
 
-        Node("v1", "Display V1 adapter\\nactively sends CAN display state", 640, 800, 330, 100, "adapter"),
-        Node("v2", "Display V2 session\\nsynchronises data snapshot/model", 1040, 800, 330, 100, "adapter"),
+        Node("can", "CanNetworkController\\nCAN discovery • device state • communication", 480, 800, 370, 100, "adapter"),
+        Node("wifi", "WifiNetworkController\\nmDNS service advertisement • client sessions", 1240, 800, 380, 100, "adapter"),
 
-        Node("display1", "Passive CAN LED display", 640, 965, 300, 75, "external"),
-        Node("display2", "Smart Wi-Fi display\\nlocal presentation logic", 1050, 955, 310, 90, "external"),
+        Node("display1", "DisplayRev1Can\\npassive CAN display", 510, 975, 310, 80, "external"),
+        Node("display2", "DisplayRev2Wifi\\nsmart client • owns render + sync", 1260, 965, 350, 95, "external"),
     ]
 
     edges = [
-        Edge("backoffice", "queue", "sync/update"),
+        Edge("backend", "queue", "sync/update"),
         Edge("keypad", "queue", "prepare-team mutation"),
         Edge("registration", "queue", "registration command/observation"),
 
@@ -53,21 +54,26 @@ def data_display_flow() -> Diagram:
         Edge("prepare", "backup", "state + history", True),
         Edge("journal", "backup", "records + TimingNodeId sequence", True),
 
-        Edge("display_model", "v1"),
-        Edge("display_model", "v2"),
-        Edge("v1", "display1", "active CAN commands"),
-        Edge("v2", "display2", "full snapshot / updates"),
+        Edge("display_model", "can"),
+        Edge("can", "display1", "active CAN commands"),
+
+        Edge("race", "published", "reference data"),
+        Edge("start", "published", "start-time data"),
+        Edge("prepare", "published", "current state"),
+        Edge("calculator", "published", "timing results"),
+        Edge("published", "wifi", "data service"),
+        Edge("display2", "wifi", "discovers via mDNS + connects"),
+        Edge("wifi", "display2", "snapshot / updates", True),
     ]
 
     return Diagram(
         "data-display-flow",
-        "TimingNode data, backup and V1/V2 display behaviour",
-        1500,
-        1080,
+        "TimingNode data — active CAN display and smart network data service",
+        1650,
+        1100,
         nodes,
         edges,
     )
-
 
 def registration_stream_identity() -> Diagram:
     nodes = [
