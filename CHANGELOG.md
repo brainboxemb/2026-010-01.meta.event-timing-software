@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Pin `tool.eng-docs` v0.3.0 and simplify the SI-01 layered architecture with structured list/tree content, layer-boundary edge targets and fewer speculative or low-value arrows.
+
 - Refine the main SI-01 layered architecture view with explicit Web presentation, shared Console/Remote Shell terminal handling, and bullet-level I/O refinement for Storage, Devices, BackendGateway and Device Networks.
 
 - Refine device/network architecture: separate functional `Devices` from `Device Networks`, keep `CanNetworkController` for active CAN management, replace `WifiNetworkController` with bidirectional `NetworkDeviceService`, and keep smart-display rendering/synchronisation outside SI-01.
