@@ -208,11 +208,11 @@ io/
     Keypad
       KeypadRev1Can
 
-  Device Networks
+  DeviceNetworks
     CanNetworkController
     NetworkDeviceService
 
-  messaging/
+  Messaging
     BackendGateway
       Connector (1..N)
         RabbitMqConnector
@@ -226,11 +226,12 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
 I/O remains a plain architecture layer/container, just like Presentation,
-Application and Domain. The contained Storage, Devices, BackendGateway and
-Device Networks elements carry packaging-component notation where the package-like
-ownership/decomposition semantics are meaningful.
+Application and Domain. The contained Storage, Devices, Messaging and DeviceNetworks elements carry
+packaging-component notation where the package-like ownership/decomposition
+semantics are meaningful. `BackendGateway` is a normal software component
+inside the Messaging package component.
 
-The high-level I/O view separates **Devices** from **Device Networks**.
+The high-level I/O view separates **Devices** from **DeviceNetworks**.
 
 `Devices` groups the software components that represent external device roles in
 SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
@@ -240,7 +241,7 @@ path. `Vendor1Antenna` is a concrete antenna implementation. `Display` and
 `DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. These names
 describe software components/implementations, not the physical devices themselves.
 
-`Device Networks` owns the communication/network responsibilities used to reach
+`DeviceNetworks` owns the communication/network responsibilities used to reach
 those devices. `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning,
 online state and CAN-device communication. `NetworkDeviceService` owns the
 bidirectional network-device boundary for smart/network-attached devices: SI-01
