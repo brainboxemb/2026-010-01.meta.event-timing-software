@@ -73,12 +73,14 @@ nodes:
   label: "Conductor"
   subtitle: "lifecycle / application-wide coordination"
   kind: application
+  notation: component
   layout: {x: 250, y: 390, w: 360, h: 75}
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
   subtitle: "presentation commands / queries"
   kind: application
+  notation: component
   layout: {x: 750, y: 390, w: 360, h: 75}
 
 - id: timing-node-root
@@ -86,6 +88,7 @@ nodes:
   label: "TimingNode"
   subtitle: "TimingNodeId • LocationID • lifecycle/status • MessageHandler"
   kind: model
+  notation: component
   layout: {x: 355, y: 585, w: 400, h: 50}
 
 - id: tag-processor
@@ -93,36 +96,42 @@ nodes:
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
+  notation: component
   layout: {x: 175, y: 655, w: 235, h: 60}
 - id: stage-start-times
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
+  notation: component
   layout: {x: 425, y: 655, w: 250, h: 60}
 - id: timing-node-journal
   group: timing-node-aggregate
   label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
+  notation: component
   layout: {x: 690, y: 655, w: 245, h: 60}
 - id: next-up-teams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
+  notation: component
   layout: {x: 175, y: 735, w: 235, h: 60}
 - id: race-data
   group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
+  notation: component
   layout: {x: 425, y: 735, w: 250, h: 60}
 - id: stage-timing
   group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
+  notation: component
   layout: {x: 690, y: 735, w: 245, h: 60}
 
 - id: system-status-domain
@@ -130,6 +139,7 @@ nodes:
   label: "SystemStatus"
   subtitle: "application-wide status/health"
   kind: service
+  notation: component
   layout: {x: 995, y: 655, w: 210, h: 85}
 
 - id: storage-io
@@ -142,10 +152,9 @@ nodes:
   group: io-layer
   label: "Devices"
   items:
-    - "AntennaManager → Antenna (1..N)"
-    - DisplayRev1Can
-    - DisplayRev2Wifi
-    - Keypad
+    - "AntennaManager → Antenna (0..N) → Vendor1Antenna"
+    - "Display → DisplayRev1Can / DisplayRev2Wifi"
+    - "Keypad → KeypadRev1Can"
   kind: integration
   layout: {x: 385, y: 895, w: 280, h: 135}
 - id: backend-gateway-io
@@ -155,6 +164,7 @@ nodes:
   items:
     - "Connector (1..N)"
   kind: integration
+  notation: component
   layout: {x: 685, y: 895, w: 300, h: 135}
 - id: device-network-io
   group: io-layer
