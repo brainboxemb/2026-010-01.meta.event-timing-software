@@ -30,7 +30,7 @@ nodes:
     layout: {x: 100, y: 190, w: 250, h: 85}
 
   - id: io-mapping
-    label: "I/O mappings\nAntenna • BackofficeConnector"
+    label: "I/O ingress\nAntenna mappings • BackendGateway"
     kind: integration
     group: ingress
     layout: {x: 85, y: 345, w: 280, h: 120}
@@ -48,13 +48,13 @@ nodes:
     layout: {x: 520, y: 155, w: 610, h: 80}
 
   - id: timing-node-01
-    label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nnormal application/domain calls"
+    label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nMessageHandler • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 505, y: 410, w: 300, h: 105}
 
   - id: timing-node-02
-    label: "TimingNode timing-node-02\nserial executor • bounded FIFO\nnormal application/domain calls"
+    label: "TimingNode timing-node-02\nserial executor • bounded FIFO\nMessageHandler • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 845, y: 410, w: 300, h: 105}
