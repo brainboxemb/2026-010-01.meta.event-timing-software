@@ -98,21 +98,24 @@ Presentation owns client-facing interfaces and their external representations. I
 ```text
 presentation/
   interfaces/
+    console/
+    shell/
+    web/
     remoteapi/
       http/
       websocket/
       messages/
-    console/
-    shell/
   common/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
 The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
 
-A browser-based engineering client, if useful later, consumes the same Remote API as other external test tools. It does not require a separate SI-01 presentation interface merely because the client itself runs in a browser. Console and remote shell remain separate presentation interfaces; sharing a terminal session does not make them one interface.
+**Web** is modelled separately as the browser-facing presentation interface of SI-01. It may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+**Console** and **Remote Shell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared terminal handling then converges on the same `CommandHandler` as the other presentation interfaces.
+
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and Remote Shell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
