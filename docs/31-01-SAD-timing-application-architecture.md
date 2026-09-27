@@ -196,9 +196,12 @@ io/
   Devices
     AntennaManager
       Antenna (0..N)
-    DisplayRev1Can
-    DisplayRev2Wifi
+        Vendor1Antenna
+    Display
+      DisplayRev1Can
+      DisplayRev2Wifi
     Keypad
+      KeypadRev1Can
 
   Device Networks
     CanNetworkController
@@ -220,12 +223,13 @@ I/O owns the external boundary and its mapping to TimingNodes.
 
 The high-level I/O view separates **Devices** from **Device Networks**.
 
-`Devices` names the functional external device concepts with which SI-01
-interacts. `AntennaManager` owns the configured 0..N antennas and the coordination
-needed when multiple physical antennas form one registration input path. The other
-device concepts are the passive CAN display, smart network display and keypad.
-This is an architectural responsibility view, not a requirement that every
-external device name has a matching Java class inside SI-01.
+`Devices` groups the software components that represent external device roles in
+SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
+coordination needed when multiple physical antennas form one registration input
+path. `Vendor1Antenna` is a concrete antenna implementation. `Display` and
+`Keypad` name the software-facing device roles; `DisplayRev1Can`,
+`DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. These names
+describe software components/implementations, not the physical devices themselves.
 
 `Device Networks` owns the communication/network responsibilities used to reach
 those devices. `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning,
