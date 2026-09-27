@@ -753,9 +753,14 @@ The main configuration groups are:
 
 ```text
 ApplicationConfig
+├── applicationId
 ├── timingNodes
 ├── io
-│   ├── hardware
+│   ├── devices
+│   │   └── antennas
+│   ├── deviceNetworks
+│   │   ├── can
+│   │   └── network
 │   ├── registrationRouting
 │   ├── backend
 │   │   └── connectors (1..N when BackendGateway is configured)
