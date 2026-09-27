@@ -95,8 +95,8 @@ def timing_node_routing_mapping() -> Diagram:
     nodes = [
         Node("app", "TimingApplication\\nApplicationId", 520, 55, 360, 80, "core"),
 
-        Node("ant1", "Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
-        Node("ant2", "Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
+        Node("ant1", "Devices / Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
+        Node("ant2", "Devices / Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
 
         Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nMessageHandler", 975, 170, 330, 100, "service"),
         Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nMessageHandler", 975, 390, 330, 100, "service"),
