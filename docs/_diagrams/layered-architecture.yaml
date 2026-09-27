@@ -1,8 +1,8 @@
 diagram:
   id: layered-architecture
-  title: Figure SI01-01 — SI-01 layered architecture — responsibilities and services
+  title: Figure SI01-01 — SI-01 layered architecture
   width: 1540
-  height: 1280
+  height: 1375
   description: Working responsibility view of the reusable framework and executable application.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -18,54 +18,71 @@ groups:
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 120, y: 530, w: 1120, h: 300}
+  layout: {x: 120, y: 530, w: 1120, h: 360}
 - id: timing-node-aggregate
-  label: TimingNode (1..N)
+  label: "TimingNode (1..N)"
   kind: model
-  layout: {x: 145, y: 570, w: 820, h: 235}
+  notation: component
+  layout: {x: 145, y: 570, w: 820, h: 310}
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
-  layout: {x: 120, y: 860, w: 1120, h: 205}
+  layout: {x: 120, y: 920, w: 1120, h: 240}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 120, y: 1095, w: 1120, h: 100}
+  layout: {x: 120, y: 1190, w: 1120, h: 100}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1270, y: 85, w: 230, h: 1110}
+  layout: {x: 1270, y: 85, w: 230, h: 1205}
 
 nodes:
+- id: timing-node-root
+  group: timing-node-aggregate
+  label: "TimingNode"
+  items:
+    - TimingNodeID
+    - LocationID
+    - State
+  kind: model
+  notation: class
+  layout: {x: 165, y: 610, w: 245, h: 155}
+
 - id: local-console
   group: presentation-layer
   label: "Console"
   subtitle: "local text interface"
   kind: presentation
+  notation: component
   layout: {x: 145, y: 125, w: 200, h: 65}
 - id: remote-shell
   group: presentation-layer
-  label: "Remote Shell"
+  label: "RemoteShell"
   subtitle: "remote text interface"
   kind: presentation
+  notation: component
   layout: {x: 365, y: 125, w: 220, h: 65}
 - id: web-interface
   group: presentation-layer
   label: "Web"
   subtitle: "browser-facing UI"
   kind: presentation
+  notation: component
   layout: {x: 605, y: 125, w: 200, h: 65}
 - id: remote-api
   group: presentation-layer
-  label: "Remote API"
+  label: "RemoteApi"
   subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
+  notation: component
   layout: {x: 825, y: 125, w: 380, h: 65}
 - id: shared-terminal
   group: presentation-layer
-  label: "Shared terminal handling"
+  label: "SharedTerminalHandler"
   subtitle: "command parsing • terminal session behaviour"
   kind: presentation
+  notation: component
   layout: {x: 145, y: 220, w: 440, h: 60}
 
 - id: application-conductor
@@ -73,103 +90,130 @@ nodes:
   label: "Conductor"
   subtitle: "lifecycle / application-wide coordination"
   kind: application
+  notation: component
   layout: {x: 250, y: 390, w: 360, h: 75}
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
   subtitle: "presentation commands / queries"
   kind: application
+  notation: component
   layout: {x: 750, y: 390, w: 360, h: 75}
 
-- id: timing-node-root
+- id: message-handler
   group: timing-node-aggregate
-  label: "TimingNode"
-  subtitle: "TimingNodeId • LocationID • lifecycle/status • MessageHandler"
-  kind: model
-  layout: {x: 355, y: 585, w: 400, h: 50}
+  label: "MessageHandler"
+  subtitle: "addressed backend message entry point"
+  kind: service
+  notation: component
+  layout: {x: 430, y: 610, w: 245, h: 70}
 
 - id: tag-processor
   group: timing-node-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
-  layout: {x: 175, y: 655, w: 235, h: 60}
+  notation: component
+  layout: {x: 695, y: 610, w: 245, h: 70}
 - id: stage-start-times
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
-  layout: {x: 425, y: 655, w: 250, h: 60}
+  notation: component
+  layout: {x: 430, y: 695, w: 245, h: 70}
 - id: timing-node-journal
   group: timing-node-aggregate
   label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
-  layout: {x: 690, y: 655, w: 245, h: 60}
+  notation: component
+  layout: {x: 695, y: 695, w: 245, h: 70}
 - id: next-up-teams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
-  layout: {x: 175, y: 735, w: 235, h: 60}
+  notation: component
+  layout: {x: 165, y: 780, w: 245, h: 70}
 - id: race-data
   group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
-  layout: {x: 425, y: 735, w: 250, h: 60}
+  notation: component
+  layout: {x: 430, y: 780, w: 245, h: 70}
 - id: stage-timing
   group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
-  layout: {x: 690, y: 735, w: 245, h: 60}
+  notation: component
+  layout: {x: 695, y: 780, w: 245, h: 70}
 
 - id: system-status-domain
   group: domain-layer
   label: "SystemStatus"
   subtitle: "application-wide status/health"
   kind: service
+  notation: component
   layout: {x: 995, y: 655, w: 210, h: 85}
 
 - id: storage-io
   group: io-layer
   label: "Storage"
-  subtitle: "file / DB • backup / restore"
+  items:
+    - "file / DB"
+    - "backup / restore"
   kind: storage
-  layout: {x: 145, y: 905, w: 220, h: 105}
+  notation: packaging-component
+  layout: {x: 145, y: 955, w: 220, h: 170}
 - id: devices-io
   group: io-layer
   label: "Devices"
   items:
-    - Antenna
-    - DisplayRev1Can
-    - Keypad
-    - DisplayRev2Wifi
+    - label: "AntennaManager"
+      items:
+        - label: "Antenna (0..N)"
+          items:
+            - Vendor1Antenna
+    - label: Display
+      items:
+        - DisplayRev1Can
+        - DisplayRev2Wifi
+    - label: Keypad
+      items:
+        - KeypadRev1Can
   kind: integration
-  layout: {x: 385, y: 895, w: 280, h: 135}
-- id: backend-gateway-io
+  notation: packaging-component
+  layout: {x: 385, y: 955, w: 280, h: 170}
+- id: messaging-io
   group: io-layer
-  label: "BackendGateway"
-  subtitle: "addressing / routing"
+  label: "Messaging"
   items:
-    - "Connector (1..N)"
+    - label: "BackendGateway"
+      items:
+        - label: "Connector (1..N)"
+          items:
+            - RabbitMqConnector
   kind: integration
-  layout: {x: 685, y: 905, w: 300, h: 105}
+  notation: packaging-component
+  layout: {x: 685, y: 955, w: 300, h: 170}
 - id: device-network-io
   group: io-layer
-  label: "Device Networks"
+  label: "DeviceNetworks"
   items:
     - CanNetworkController
     - NetworkDeviceService
   kind: integration
-  layout: {x: 1005, y: 905, w: 215, h: 105}
+  notation: packaging-component
+  layout: {x: 1005, y: 955, w: 215, h: 170}
 
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout: {x: 240, y: 1125, w: 880, h: 45}
+  layout: {x: 240, y: 1220, w: 880, h: 45}
 
 - id: crosscutting-concerns
   group: crosscutting-layer
@@ -180,7 +224,7 @@ nodes:
   group: crosscutting-layer
   label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
-  layout: {x: 1300, y: 1095, w: 170, h: 70}
+  layout: {x: 1300, y: 1190, w: 170, h: 70}
 
 edges:
 - from: local-console
@@ -194,38 +238,31 @@ edges:
   to_anchor: {side: top, position: 0.75}
 
 - from: shared-terminal
-  to: application-layer
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.21875}
+  to_anchor: {side: top, position: 0.18}
 
 - from: web-interface
-  to: application-layer
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.5223214286}
-
-- from: remote-api
-  to: application-layer
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.7991071429}
-
-- from: application-layer
-  to: domain-layer
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
-- from: devices-io
-  to: domain-layer
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.3616071429}
+- from: remote-api
+  to: command-handler
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.82}
 
-- from: backend-gateway-io
-  to: domain-layer
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.6383928571}
+- from: command-handler
+  to: application-conductor
+  from_anchor: {side: left, position: 0.50}
+  to_anchor: {side: right, position: 0.50}
 
-- from: device-network-io
+- from: application-conductor
   to: domain-layer
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.8861607143}
+  from_anchor: {side: bottom, position: 0.35}
+  to_anchor: {side: top, position: 0.35}
+
+- from: command-handler
+  to: domain-layer
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.65}

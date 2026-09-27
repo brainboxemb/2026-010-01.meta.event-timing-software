@@ -113,9 +113,9 @@ The **Remote API** is the general programmable interface of the **Headless Timin
 
 **Web** is modelled separately as the browser-facing presentation interface of SI-01. It may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
-**Console** and **Remote Shell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared terminal handling then converges on the same `CommandHandler` as the other presentation interfaces.
+**Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and Remote Shell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
@@ -135,9 +135,11 @@ application/
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 `CommandHandler` is the shared entry point for presentation requests. It may
-serve simple application reads such as `version()`. When a presentation command
-or query names a `TimingNodeId`, the application looks up that `TimingNode` and
-submits state-changing work to its serial executor.
+serve simple application reads such as `version()`. Application-wide operations
+delegate to `Conductor` where lifecycle or cross-node coordination is required.
+When a presentation command or query names a `TimingNodeId`, `CommandHandler`
+resolves that `TimingNode` and submits state-changing work directly to its serial
+executor; `Conductor` is not a mandatory hop for TimingNode-scoped work.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce commands merely to preserve a layer diagram. Boundary-specific
@@ -153,6 +155,7 @@ The domain owns timing rules and TimingNode state:
 TimingNode
   TimingNodeId
   LocationID
+  State
   MessageHandler
   TagProcessor
   StageStartTimes
@@ -161,6 +164,10 @@ TimingNode
   RaceData
   StageTiming
 ```
+
+`TimingNode` is the top-level domain class for one timing location. It owns its
+identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
+components shown beneath it in Figure SI01-01.
 
 `MessageHandler` is the TimingNode entry point for backend messages that have
 already been addressed to that TimingNode. It owns no transport connection or
@@ -192,16 +199,20 @@ I/O contains adapters that move data between the application and the outside wor
 ```text
 io/
   Devices
-    Antenna (0..N)
-    DisplayRev1Can
+    AntennaManager
+      Antenna (0..N)
+        Vendor1Antenna
+    Display
+      DisplayRev1Can
+      DisplayRev2Wifi
     Keypad
-    DisplayRev2Wifi
+      KeypadRev1Can
 
-  Device Networks
+  DeviceNetworks
     CanNetworkController
     NetworkDeviceService
 
-  messaging/
+  Messaging
     BackendGateway
       Connector (1..N)
         RabbitMqConnector
@@ -213,16 +224,25 @@ io/
 ```
 
 Presentation stays separate because it owns client-facing API/view semantics.
-I/O owns the external boundary and its mapping to TimingNodes.
+I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
+I/O remains a plain architecture layer/container, just like Presentation,
+Application and Domain. The contained Storage, Devices, Messaging and DeviceNetworks elements carry
+packaging-component notation where the package-like ownership/decomposition
+semantics are meaningful. For compactness, Figure SI01-01 shows their contained
+software components as an indented hierarchy rather than as nested component
+boxes; `BackendGateway` remains a software component owned by Messaging.
 
-The high-level I/O view separates **Devices** from **Device Networks**.
+The high-level I/O view separates **Devices** from **DeviceNetworks**.
 
-`Devices` names the functional external device concepts with which SI-01
-interacts: antennas, the passive CAN display, keypad and smart network display.
-This is an architectural responsibility view, not a requirement that every
-external device name has a matching Java class inside SI-01.
+`Devices` groups the software components that represent external device roles in
+SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
+coordination needed when multiple physical antennas form one registration input
+path. `Vendor1Antenna` is a concrete antenna implementation. `Display` and
+`Keypad` name the software-facing device roles; `DisplayRev1Can`,
+`DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. These names
+describe software components/implementations, not the physical devices themselves.
 
-`Device Networks` owns the communication/network responsibilities used to reach
+`DeviceNetworks` owns the communication/network responsibilities used to reach
 those devices. `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning,
 online state and CAN-device communication. `NetworkDeviceService` owns the
 bidirectional network-device boundary for smart/network-attached devices: SI-01
