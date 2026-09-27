@@ -27,6 +27,7 @@ groups:
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
+  notation: packaging-component
   layout: {x: 120, y: 920, w: 1120, h: 240}
 - id: platform-layer
   label: Platform abstractions / execution environment
