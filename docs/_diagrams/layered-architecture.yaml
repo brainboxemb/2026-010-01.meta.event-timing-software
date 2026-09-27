@@ -48,7 +48,7 @@ nodes:
     - State
   kind: model
   notation: class
-  layout: {x: 165, y: 610, w: 250, h: 120}
+  layout: {x: 165, y: 610, w: 245, h: 155}
 
 - id: local-console
   group: presentation-layer
@@ -107,7 +107,7 @@ nodes:
   subtitle: "addressed backend message entry point"
   kind: service
   notation: component
-  layout: {x: 435, y: 610, w: 240, h: 70}
+  layout: {x: 430, y: 610, w: 245, h: 70}
 
 - id: tag-processor
   group: timing-node-aggregate
@@ -115,42 +115,42 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 695, y: 610, w: 240, h: 70}
+  layout: {x: 695, y: 610, w: 245, h: 70}
 - id: stage-start-times
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 435, y: 695, w: 240, h: 70}
+  layout: {x: 430, y: 695, w: 245, h: 70}
 - id: timing-node-journal
   group: timing-node-aggregate
   label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
   notation: component
-  layout: {x: 695, y: 695, w: 240, h: 70}
+  layout: {x: 695, y: 695, w: 245, h: 70}
 - id: next-up-teams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 165, y: 780, w: 240, h: 70}
+  layout: {x: 165, y: 780, w: 245, h: 70}
 - id: race-data
   group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 425, y: 780, w: 240, h: 70}
+  layout: {x: 430, y: 780, w: 245, h: 70}
 - id: stage-timing
   group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 685, y: 780, w: 250, h: 70}
+  layout: {x: 695, y: 780, w: 245, h: 70}
 
 - id: system-status-domain
   group: domain-layer
