@@ -22,6 +22,7 @@ groups:
 - id: timing-node-aggregate
   label: TimingNode (1..N)
   kind: model
+  notation: component
   layout: {x: 145, y: 570, w: 820, h: 235}
 - id: io-layer
   label: I/O
@@ -82,14 +83,6 @@ nodes:
   kind: application
   notation: component
   layout: {x: 750, y: 390, w: 360, h: 75}
-
-- id: timing-node-root
-  group: timing-node-aggregate
-  label: "TimingNode"
-  subtitle: "TimingNodeId • LocationID • lifecycle/status"
-  kind: model
-  notation: component
-  layout: {x: 355, y: 585, w: 400, h: 50}
 
 - id: message-handler
   group: timing-node-aggregate
