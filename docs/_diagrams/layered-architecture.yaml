@@ -86,10 +86,18 @@ nodes:
 - id: timing-node-root
   group: timing-node-aggregate
   label: "TimingNode"
-  subtitle: "TimingNodeId • LocationID • lifecycle/status • MessageHandler"
+  subtitle: "TimingNodeId • LocationID • lifecycle/status"
   kind: model
   notation: component
   layout: {x: 355, y: 585, w: 400, h: 50}
+
+- id: message-handler
+  group: timing-node-aggregate
+  label: "MessageHandler"
+  subtitle: "addressed backend message entry point"
+  kind: service
+  notation: component
+  layout: {x: 175, y: 655, w: 235, h: 60}
 
 - id: tag-processor
   group: timing-node-aggregate
@@ -97,42 +105,42 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 175, y: 655, w: 235, h: 60}
+  layout: {x: 425, y: 655, w: 250, h: 60}
 - id: stage-start-times
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 425, y: 655, w: 250, h: 60}
+  layout: {x: 690, y: 655, w: 245, h: 60}
 - id: timing-node-journal
   group: timing-node-aggregate
   label: "Journal"
   subtitle: "registrations • sequence/persistence"
   kind: service
   notation: component
-  layout: {x: 690, y: 655, w: 245, h: 60}
+  layout: {x: 175, y: 735, w: 235, h: 60}
 - id: next-up-teams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 175, y: 735, w: 235, h: 60}
+  layout: {x: 425, y: 735, w: 250, h: 60}
 - id: race-data
   group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 425, y: 735, w: 250, h: 60}
+  layout: {x: 690, y: 735, w: 245, h: 60}
 - id: stage-timing
   group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 690, y: 735, w: 245, h: 60}
+  layout: {x: 995, y: 745, w: 210, h: 50}
 
 - id: system-status-domain
   group: domain-layer
