@@ -72,7 +72,7 @@ nodes:
   layout: {x: 605, y: 125, w: 200, h: 65}
 - id: remote-api
   group: presentation-layer
-  label: "Remote API"
+  label: "RemoteApi"
   subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
   notation: component
