@@ -223,7 +223,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.05}
 
-- from: device-network-io
+- from: devices-io
   to: platform-primitives
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
