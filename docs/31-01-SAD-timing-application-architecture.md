@@ -135,9 +135,11 @@ application/
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 `CommandHandler` is the shared entry point for presentation requests. It may
-serve simple application reads such as `version()`. When a presentation command
-or query names a `TimingNodeId`, the application looks up that `TimingNode` and
-submits state-changing work to its serial executor.
+serve simple application reads such as `version()`. Application-wide operations
+delegate to `Conductor` where lifecycle or cross-node coordination is required.
+When a presentation command or query names a `TimingNodeId`, `CommandHandler`
+resolves that `TimingNode` and submits state-changing work directly to its serial
+executor; `Conductor` is not a mandatory hop for TimingNode-scoped work.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce commands merely to preserve a layer diagram. Boundary-specific
@@ -192,10 +194,11 @@ I/O contains adapters that move data between the application and the outside wor
 ```text
 io/
   Devices
-    Antenna (0..N)
+    AntennaManager
+      Antenna (0..N)
     DisplayRev1Can
-    Keypad
     DisplayRev2Wifi
+    Keypad
 
   Device Networks
     CanNetworkController
@@ -218,7 +221,9 @@ I/O owns the external boundary and its mapping to TimingNodes.
 The high-level I/O view separates **Devices** from **Device Networks**.
 
 `Devices` names the functional external device concepts with which SI-01
-interacts: antennas, the passive CAN display, keypad and smart network display.
+interacts. `AntennaManager` owns the configured 0..N antennas and the coordination
+needed when multiple physical antennas form one registration input path. The other
+device concepts are the passive CAN display, smart network display and keypad.
 This is an architectural responsibility view, not a requirement that every
 external device name has a matching Java class inside SI-01.
 
