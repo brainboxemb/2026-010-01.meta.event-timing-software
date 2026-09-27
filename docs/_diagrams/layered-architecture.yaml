@@ -218,6 +218,11 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
 
+- from: command-handler
+  to: domain-layer
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.65}
+
 - from: domain-layer
   to: devices-io
   from_anchor: {side: bottom, position: 0.3616071429}
