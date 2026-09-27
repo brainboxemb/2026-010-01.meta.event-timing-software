@@ -188,7 +188,7 @@ nodes:
   items:
     - label: "Connector (1..N)"
       items:
-        - RabbitMQConnector
+        - RabbitMqConnector
   kind: integration
   notation: component
   layout: {x: 685, y: 895, w: 300, h: 170}
