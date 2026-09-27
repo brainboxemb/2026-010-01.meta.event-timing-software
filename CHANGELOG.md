@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Refine device/network architecture: group antennas under Devices, add `CanNetworkController` and `WifiNetworkController`, distinguish passive `DisplayRev1Can` from smart `DisplayRev2Wifi`, and keep smart-display rendering/synchronisation outside SI-01.
+- Refine device/network architecture: separate functional `Devices` from `Device Networks`, keep `CanNetworkController` for active CAN management, replace `WifiNetworkController` with bidirectional `NetworkDeviceService`, and keep smart-display rendering/synchronisation outside SI-01.
 
 - Refine SI-01 backend messaging architecture: add distinct `ApplicationId`, introduce `BackendGateway` over 1..N transport connectors, place `MessageHandler` with each TimingNode, and keep application-level message handling deferred until a concrete use case exists.
 

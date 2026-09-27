@@ -26,7 +26,7 @@ def data_display_flow() -> Diagram:
         Node("published", "Published timing/status/reference data\\ncurrent snapshot + updates", 1265, 610, 330, 90, "interface"),
 
         Node("can", "CanNetworkController\\nCAN discovery • device state • communication", 480, 800, 370, 100, "adapter"),
-        Node("wifi", "WifiNetworkController\\nmDNS service advertisement • client sessions", 1240, 800, 380, 100, "adapter"),
+        Node("network", "NetworkDeviceService\\nbidirectional network-device boundary", 1240, 800, 380, 100, "adapter"),
 
         Node("display1", "DisplayRev1Can\\npassive CAN display", 510, 975, 310, 80, "external"),
         Node("display2", "DisplayRev2Wifi\\nsmart client • owns render + sync", 1260, 965, 350, 95, "external"),
@@ -61,9 +61,9 @@ def data_display_flow() -> Diagram:
         Edge("start", "published", "start-time data"),
         Edge("prepare", "published", "current state"),
         Edge("calculator", "published", "timing results"),
-        Edge("published", "wifi", "data service"),
-        Edge("display2", "wifi", "discovers via mDNS + connects"),
-        Edge("wifi", "display2", "snapshot / updates", True),
+        Edge("published", "network", "data service"),
+        Edge("display2", "network", "connects / device messages"),
+        Edge("network", "display2", "snapshot / updates", True),
     ]
 
     return Diagram(

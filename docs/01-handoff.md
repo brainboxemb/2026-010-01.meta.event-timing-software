@@ -54,9 +54,9 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
 - `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
 - `ApplicationId` is de afzonderlijke identiteit van de draaiende Timing Application; bij een single-TimingNode deployment mag en zal deze voorlopig dezelfde geconfigureerde waarde gebruiken als `TimingNodeId`, maar het blijven verschillende types/namespaces;
-- device-I/O valt onder `Devices`; `Antenna` is daar onderdeel van;
+- de high-level I/O-architectuur scheidt `Devices` (Antenna, displays, keypad) van `Device Networks` (`CanNetworkController`, `NetworkDeviceService`);
 - `CanNetworkController` beheert CAN-bus lifecycle/discovery/device-state; `DisplayRev1Can` is het passieve CAN-display dat SI-01 actief aanstuurt;
-- `WifiNetworkController` adverteert de lokale SI-01 data-service via mDNS en accepteert smart-client sessies; `DisplayRev2Wifi` ontdekt/verbindt zelf en bezit rendering, reconnect en synchronisatie;
+- `NetworkDeviceService` is de bidirectionele netwerkdevice-boundary; discovery/session/protocol-afhandeling is detail design. `DisplayRev2Wifi` ontdekt/verbindt zelf en bezit rendering, reconnect en synchronisatie;
 - `DisplayModel` is alleen voor de passieve CAN-displayroute; smart-displaydata blijft algemene timing/status/reference-data;
 - backend messaging gebruikt `BackendGateway` boven 1..N connectors; een `RabbitMqConnector` bezit transport/session mechanics, niet TimingNode-routing;
 - een TimingNode heeft een `MessageHandler` voor backendberichten die al op `TimingNodeId` zijn geadresseerd; er is nog geen application-level `MessageHandler` zonder concrete use case;
