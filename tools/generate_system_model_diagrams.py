@@ -52,21 +52,22 @@ def software_item_overview() -> Diagram:
 
 def timing_node_software_decomposition() -> Diagram:
     nodes = [
-        Node("app", "SI-01 TimingApplicationRuntime\\none JVM/process", 505, 55, 390, 90, "core"),
-        Node("wp1", "TimingNode timing-node-A\\nconfigured at Location X", 120, 230, 420, 95, "service"),
-        Node("wp2", "TimingNode timing-node-B\\nconfigured at Location Y", 860, 230, 420, 95, "service"),
+        Node("app", "SI-01 TimingApplication\\nApplicationId • one JVM/process", 505, 55, 390, 90, "core"),
+        Node("wp1", "TimingNode timing-node-A\\nTimingNodeId • Location X\\nMessageHandler", 120, 230, 420, 105, "service"),
+        Node("wp2", "TimingNode timing-node-B\\nTimingNodeId • Location Y\\nMessageHandler", 860, 230, 420, 105, "service"),
 
-        Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 430, 300, 90, "service"),
-        Node("tag", "TagProcessor\\nRFID/tag observation processing", 370, 430, 300, 90, "service"),
-        Node("start", "StageStartTimeRegistry\\nlocal stage start-time reference", 700, 430, 330, 90, "service"),
-        Node("journal", "TimingNodeJournal\\nregistrations + TimingNodeId-scoped sequence/persistence", 1000, 430, 340, 90, "service"),
-        Node("ready", "PrepareTeamRegistry\\nteams to prepare + internal keypad history", 80, 640, 330, 100, "service"),
-        Node("race", "RaceData\\nparticipant/team/tag reference data", 460, 640, 330, 100, "service"),
-        Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 840, 640, 420, 100, "interface"),
+        Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 440, 280, 90, "service"),
+        Node("tag", "TagProcessor\\nRFID/tag observation processing", 345, 440, 280, 90, "service"),
+        Node("start", "StageStartTimes\\nlocal stage start-time reference", 650, 440, 300, 90, "service"),
+        Node("journal", "Journal\\nregistrations + TimingNodeId sequence/persistence", 975, 440, 360, 90, "service"),
+        Node("ready", "NextUpTeams\\nteams expected next", 80, 650, 300, 95, "service"),
+        Node("race", "RaceData\\nparticipant/team/tag reference data", 425, 650, 300, 95, "service"),
+        Node("stage", "StageTiming\\nrunning times + ranking", 770, 650, 280, 95, "service"),
+        Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 1080, 650, 260, 95, "interface"),
     ]
 
     edges = [
-        Edge("app", "wp1", "hosts 1..X"),
+        Edge("app", "wp1", "hosts 1..N"),
         Edge("app", "wp2"),
         Edge("wp1", "life"),
         Edge("wp1", "tag"),
@@ -74,6 +75,7 @@ def timing_node_software_decomposition() -> Diagram:
         Edge("wp1", "journal"),
         Edge("wp1", "ready"),
         Edge("wp1", "race"),
+        Edge("wp1", "stage"),
         Edge("app", "shared"),
         Edge("wp1", "shared", "uses shared facilities", True),
         Edge("wp2", "shared", "uses shared facilities", True),
@@ -81,9 +83,9 @@ def timing_node_software_decomposition() -> Diagram:
 
     return Diagram(
         "timing-node-software-decomposition",
-        "SI-01 software/domain decomposition — TimingNodes and responsibilities",
+        "SI-01 software/domain decomposition — application identity and TimingNode responsibilities",
         1400,
-        830,
+        850,
         nodes,
         edges,
     )
@@ -91,30 +93,36 @@ def timing_node_software_decomposition() -> Diagram:
 
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("ant1", "Antenna ANT1\\nAntennaId", 90, 180, 300, 80, "adapter"),
-        Node("ant2", "Antenna ANT2\\nAntennaId", 90, 390, 300, 80, "adapter"),
+        Node("app", "TimingApplication\\nApplicationId", 520, 55, 360, 80, "core"),
 
-        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId", 910, 130, 350, 90, "service"),
-        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId", 910, 350, 350, 90, "service"),
-        Node("loc_a", "Location X\\nLocationID", 980, 540, 220, 75, "external"),
+        Node("ant1", "Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
+        Node("ant2", "Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
 
-        Node("conn1", "BackofficeConnector 01\\nRabbitMQ", 80, 680, 300, 80, "adapter"),
-        Node("conn2", "BackofficeConnector 02\\nRabbitMQ", 1010, 680, 300, 80, "adapter"),
+        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nMessageHandler", 975, 170, 330, 100, "service"),
+        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nMessageHandler", 975, 390, 330, 100, "service"),
+        Node("loc_a", "Location X\\nLocationID", 1030, 560, 220, 75, "external"),
+
+        Node("gateway", "BackendGateway\\nbackend addressing / routing", 510, 585, 380, 90, "interface"),
+        Node("conn1", "Connector 01\\nRabbitMQ", 85, 740, 280, 80, "adapter"),
+        Node("conn2", "Connector 02\\nother transport", 1035, 740, 280, 80, "adapter"),
     ]
 
     edges = [
+        Edge("app", "node_a", "hosts"),
+        Edge("app", "node_b", "hosts"),
         Edge("ant1", "node_a"),
         Edge("ant1", "node_b"),
         Edge("ant2", "node_b"),
         Edge("node_a", "loc_a"),
-        Edge("conn1", "node_a"),
-        Edge("conn1", "node_b"),
-        Edge("conn2", "node_a"),
+        Edge("conn1", "gateway", "transport"),
+        Edge("conn2", "gateway", "transport"),
+        Edge("gateway", "node_a", "TimingNodeId"),
+        Edge("gateway", "node_b", "TimingNodeId"),
     ]
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingNode I/O mapping — antennas and backoffice connectors",
+        "TimingNode I/O mapping — antennas, BackendGateway and connectors",
         1400,
         900,
         nodes,
@@ -126,34 +134,34 @@ def rabbitmq_source_topology() -> Diagram:
         Node("broker1", "RabbitMQ broker A", 95, 70, 300, 75, "external"),
         Node("broker2", "RabbitMQ broker B", 1005, 70, 300, 75, "external"),
 
-        Node("conn1", "RabbitMqBackofficeConnector connector-01\\nowns connection/channels internally", 55, 250, 380, 100, "adapter"),
-        Node("conn2", "RabbitMqBackofficeConnector connector-02\\nowns connection/channels internally", 965, 250, 380, 100, "adapter"),
+        Node("conn1", "RabbitMqConnector connector-01\\nowns connection/channels internally", 55, 245, 380, 100, "adapter"),
+        Node("conn2", "RabbitMqConnector connector-02\\nowns connection/channels internally", 965, 245, 380, 100, "adapter"),
 
-        Node("bindings", "Backoffice bindings\\nTimingNodeId + external names", 500, 410, 400, 100, "interface"),
+        Node("gateway", "BackendGateway\\naddressing / routing\\nuses 1..N connectors", 500, 405, 400, 110, "interface"),
 
-        Node("node1", "TimingNode timing-node-01\\nTimingNodeId-scoped application path", 95, 620, 340, 90, "service"),
-        Node("node2", "TimingNode timing-node-02\\nTimingNodeId-scoped application path", 965, 620, 340, 90, "service"),
-        Node("outbox", "local durable/pending outbox\\nTimingNodeId retained", 525, 620, 350, 90, "service"),
+        Node("node1", "TimingNode timing-node-01\\nTimingNodeId\\nMessageHandler", 95, 625, 340, 100, "service"),
+        Node("node2", "TimingNode timing-node-02\\nTimingNodeId\\nMessageHandler", 965, 625, 340, 100, "service"),
+        Node("outbox", "local durable/pending outbox\\nTimingNodeId retained", 525, 625, 350, 90, "service"),
 
-        Node("note", "0..N connectors per application\\n1..N TimingNode bindings per connector\\none TimingNode may use multiple connectors", 455, 790, 490, 105, "interface"),
+        Node("note", "BackendGateway uses 1..N connectors\\nconnectors own transport, not TimingNode routing", 455, 810, 490, 90, "interface"),
     ]
 
     edges = [
         Edge("broker1", "conn1", "transport"),
         Edge("broker2", "conn2", "transport"),
-        Edge("conn1", "bindings", "inbound / outbound"),
-        Edge("conn2", "bindings", "inbound / outbound"),
-        Edge("bindings", "node1", "route / bind"),
-        Edge("bindings", "node2", "route / bind"),
+        Edge("conn1", "gateway", "messages"),
+        Edge("conn2", "gateway", "messages"),
+        Edge("gateway", "node1", "TimingNodeId"),
+        Edge("gateway", "node2", "TimingNodeId"),
         Edge("node1", "outbox", "committed outbound"),
         Edge("node2", "outbox", "committed outbound"),
-        Edge("outbox", "bindings", "publish pending"),
-        Edge("bindings", "note", "configured multiplicity", True),
+        Edge("outbox", "gateway", "publish pending"),
+        Edge("gateway", "note", "configured multiplicity", True),
     ]
 
     return Diagram(
         "rabbitmq-source-topology",
-        "RabbitMQ — BackofficeConnector implementations with TimingNode routing",
+        "RabbitMQ connectors behind BackendGateway with TimingNode routing",
         1400,
         960,
         nodes,
