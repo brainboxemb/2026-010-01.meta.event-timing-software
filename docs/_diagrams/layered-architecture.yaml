@@ -137,15 +137,15 @@ nodes:
   label: "Storage"
   subtitle: "file / DB • backup / restore"
   kind: storage
-  layout: {x: 145, y: 905, w: 220, h: 105}
+  layout: {x: 145, y: 895, w: 220, h: 135}
 - id: devices-io
   group: io-layer
   label: "Devices"
   items:
-    - Antenna
+    - "AntennaManager → Antenna (1..N)"
     - DisplayRev1Can
-    - Keypad
     - DisplayRev2Wifi
+    - Keypad
   kind: integration
   layout: {x: 385, y: 895, w: 280, h: 135}
 - id: backend-gateway-io
@@ -155,7 +155,7 @@ nodes:
   items:
     - "Connector (1..N)"
   kind: integration
-  layout: {x: 685, y: 905, w: 300, h: 105}
+  layout: {x: 685, y: 895, w: 300, h: 135}
 - id: device-network-io
   group: io-layer
   label: "Device Networks"
@@ -163,7 +163,7 @@ nodes:
     - CanNetworkController
     - NetworkDeviceService
   kind: integration
-  layout: {x: 1005, y: 905, w: 215, h: 105}
+  layout: {x: 1005, y: 895, w: 215, h: 135}
 
 - id: platform-primitives
   group: platform-layer
@@ -194,24 +194,29 @@ edges:
   to_anchor: {side: top, position: 0.75}
 
 - from: shared-terminal
-  to: application-layer
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.21875}
+  to_anchor: {side: top, position: 0.18}
 
 - from: web-interface
-  to: application-layer
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.5223214286}
-
-- from: remote-api
-  to: application-layer
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.7991071429}
-
-- from: application-layer
-  to: domain-layer
+  to: command-handler
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
+
+- from: remote-api
+  to: command-handler
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.82}
+
+- from: command-handler
+  to: application-conductor
+  from_anchor: {side: left, position: 0.50}
+  to_anchor: {side: right, position: 0.50}
+
+- from: application-conductor
+  to: domain-layer
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.35}
 
 - from: devices-io
   to: domain-layer
