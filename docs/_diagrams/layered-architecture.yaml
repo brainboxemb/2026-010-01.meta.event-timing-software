@@ -10,6 +10,7 @@ groups:
 - id: presentation-layer
   label: Presentation / external interfaces
   kind: layer-presentation
+  notation: packaging-component
   layout: {x: 120, y: 85, w: 1120, h: 230}
 - id: application-layer
   label: Application layer
@@ -22,12 +23,12 @@ groups:
 - id: timing-node-aggregate
   label: "TimingNode (1..N)"
   kind: model
-  notation: component
+  notation: packaging-component
   layout: {x: 145, y: 570, w: 820, h: 250}
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
-  notation: component
+  notation: packaging-component
   layout: {x: 120, y: 860, w: 1120, h: 240}
 - id: platform-layer
   label: Platform abstractions / execution environment
@@ -42,40 +43,48 @@ nodes:
 - id: timing-node-root
   group: timing-node-aggregate
   label: "TimingNode"
-  subtitle: "TimingNodeID • LocationID • State"
+  items:
+    - TimingNodeID
+    - LocationID
+    - State
   kind: model
-  notation: component
-  layout: {x: 165, y: 605, w: 780, h: 55}
+  notation: class
+  layout: {x: 165, y: 600, w: 780, h: 70}
 
 - id: local-console
   group: presentation-layer
   label: "Console"
   subtitle: "local text interface"
   kind: presentation
+  notation: component
   layout: {x: 145, y: 125, w: 200, h: 65}
 - id: remote-shell
   group: presentation-layer
   label: "Remote Shell"
   subtitle: "remote text interface"
   kind: presentation
+  notation: component
   layout: {x: 365, y: 125, w: 220, h: 65}
 - id: web-interface
   group: presentation-layer
   label: "Web"
   subtitle: "browser-facing UI"
   kind: presentation
+  notation: component
   layout: {x: 605, y: 125, w: 200, h: 65}
 - id: remote-api
   group: presentation-layer
   label: "Remote API"
   subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
+  notation: component
   layout: {x: 825, y: 125, w: 380, h: 65}
 - id: shared-terminal
   group: presentation-layer
   label: "Shared terminal handling"
   subtitle: "command parsing • terminal session behaviour"
   kind: presentation
+  notation: component
   layout: {x: 145, y: 220, w: 440, h: 60}
 
 - id: application-conductor
@@ -99,7 +108,7 @@ nodes:
   subtitle: "addressed backend message entry point"
   kind: service
   notation: component
-  layout: {x: 165, y: 675, w: 185, h: 60}
+  layout: {x: 165, y: 685, w: 185, h: 60}
 
 - id: tag-processor
   group: timing-node-aggregate
@@ -107,14 +116,14 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 365, y: 675, w: 185, h: 60}
+  layout: {x: 365, y: 685, w: 185, h: 60}
 - id: stage-start-times
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 565, y: 675, w: 185, h: 60}
+  layout: {x: 565, y: 685, w: 185, h: 60}
 - id: timing-node-journal
   group: timing-node-aggregate
   label: "Journal"
@@ -159,6 +168,7 @@ nodes:
     - "file / DB"
     - "backup / restore"
   kind: storage
+  notation: component
   layout: {x: 145, y: 895, w: 220, h: 170}
 - id: devices-io
   group: io-layer
@@ -177,6 +187,7 @@ nodes:
       items:
         - KeypadRev1Can
   kind: integration
+  notation: component
   layout: {x: 385, y: 895, w: 280, h: 170}
 - id: backend-gateway-io
   group: io-layer
@@ -196,6 +207,7 @@ nodes:
     - CanNetworkController
     - NetworkDeviceService
   kind: integration
+  notation: component
   layout: {x: 1005, y: 895, w: 215, h: 170}
 
 - id: platform-primitives
