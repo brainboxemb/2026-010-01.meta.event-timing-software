@@ -187,8 +187,13 @@ nodes:
   kind: integration
   notation: packaging-component
   layout: {x: 385, y: 955, w: 280, h: 170}
+- id: messaging-io
+  label: "Messaging"
+  kind: integration
+  notation: packaging-component
+  layout: {x: 685, y: 955, w: 300, h: 170}
 - id: backend-gateway-io
-  group: io-layer
+  group: messaging-io
   label: "BackendGateway"
   subtitle: "addressing / routing"
   items:
@@ -196,11 +201,11 @@ nodes:
       items:
         - RabbitMqConnector
   kind: integration
-  notation: packaging-component
-  layout: {x: 685, y: 955, w: 300, h: 170}
+  notation: component
+  layout: {x: 705, y: 990, w: 260, h: 115}
 - id: device-network-io
   group: io-layer
-  label: "Device Networks"
+  label: "DeviceNetworks"
   items:
     - CanNetworkController
     - NetworkDeviceService
