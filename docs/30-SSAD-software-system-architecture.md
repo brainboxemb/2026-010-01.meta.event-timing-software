@@ -155,7 +155,7 @@ Field host
   SI-01 Headless Timing Application
     |
     +-- IF-07 --> RFID subsystem
-    +-- IF-08 --> CAN devices / keypad / Display V1
+    +-- IF-08 --> CAN devices / keypad / DisplayRev1Can
     +-- local persistent state
 
 SI-02 Desktop GUI
