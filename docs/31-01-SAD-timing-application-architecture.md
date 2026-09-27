@@ -188,15 +188,19 @@ I/O contains adapters that move data between the application and the outside wor
 
 ```text
 io/
-  Antenna (0..N)
+  Devices
+    Antenna (0..N)
+    CanNetworkController
+      DisplayRev1Can
+      Keypad
+    WifiNetworkController
+      local service advertisement
+      smart-client sessions
   messaging/
     BackendGateway
       Connector (1..N)
         RabbitMqConnector
         SocketConnector
-  Devices
-    CAN
-    Display
   Storage
     file
     db
@@ -205,13 +209,22 @@ io/
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes.
 
-The **Headless Timing Application** (SI-01) may compose 0..N configured `Antenna`
-instances and, when backend messaging is configured, one `BackendGateway`.
-The gateway uses 1..N connectors. Antenna mappings route observations to 1..N
-TimingNodes. `BackendGateway` owns backend-message addressing/routing, while a
-concrete connector owns its transport resources and protocol/session mechanics.
-A `RabbitMqConnector` is one transport implementation; it does not own
-TimingNode semantics.
+The **Headless Timing Application** (SI-01) groups external field/device I/O under
+`Devices`. This includes 0..N configured `Antenna` instances plus device-network
+controllers for CAN and local smart-network services.
+
+`CanNetworkController` owns CAN-bus lifecycle, device discovery/scanning, online
+state and CAN-device communication. Device-specific behaviour such as
+`DisplayRev1Can` remains below that network controller.
+
+`WifiNetworkController` owns the local smart-device service boundary. It
+advertises the configured SI-01 data service through mDNS and accepts connections
+initiated by smart clients. It does not own smart-display rendering logic.
+
+When backend messaging is configured, SI-01 also composes one
+`BackendGateway`. The gateway uses 1..N connectors and owns backend-message
+addressing/routing, while a concrete connector owns its transport resources and
+protocol/session mechanics.
 
 ### Platform
 
@@ -272,20 +285,35 @@ location.
 
 The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational TimingNode state. The physical registration asset is not a child component of this software tree.
 
-### Antenna topology
+### Device and network-controller topology
 
-The active software/configuration model uses the configured antenna directly:
+Field I/O is grouped under `Devices`:
 
 ```text
-Antenna (0..N)
+Devices
+  +-- Antenna (0..N)
+  +-- CanNetworkController
+  |     +-- DisplayRev1Can
+  |     +-- Keypad
+  +-- WifiNetworkController
+        +-- mDNS service advertisement
+        +-- smart-client sessions
 ```
 
-An `Antenna` is an I/O source with its own `AntennaId` and concrete
-driver/connection settings. Reader/protocol/device details stay inside that
-concrete antenna implementation/configuration unless later evidence requires a
-separate architectural concept.
+An `Antenna` remains an I/O source with its own `AntennaId` and concrete
+driver/connection settings. Grouping it under Devices does not change its
+TimingNode routing semantics: one antenna may intentionally feed one or more
+TimingNodes.
 
-One antenna may intentionally feed one or more TimingNodes.
+`CanNetworkController` represents the managed CAN network rather than one
+particular device. It owns bus lifecycle, discovery/scanning and device online
+state. CAN-attached device implementations such as `DisplayRev1Can` and keypad
+handling use that controller.
+
+`WifiNetworkController` publishes the local SI-01 data service and accepts
+connections from smart clients. The current direction is intentionally
+server/provider oriented: SI-01 advertises its service, while the smart display
+discovers SI-01 and initiates the connection.
 
 ### Configuration, routing and identity mapping
 
@@ -295,8 +323,14 @@ Configuration connects identities without collapsing them:
 TimingApplication
     +-- ApplicationId
 
-Antenna (0..N)
-    +-- each Antenna -> 1..N TimingNodeId
+Devices
+    +-- Antenna (0..N)
+    |     +-- each Antenna -> 1..N TimingNodeId
+    +-- CanNetworkController
+    |     +-- DisplayRev1Can / keypad
+    +-- WifiNetworkController
+          +-- advertised SI-01 data service
+          +-- smart clients connect inward
 
 BackendGateway
     +-- Connector (1..N)
@@ -310,6 +344,11 @@ BackendGateway
 `TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
 
 Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
+
+CAN and smart-network controllers are not alternate presentation layers. They are
+I/O/device-network responsibilities. A keypad or display may present information
+to a human, but it is still an external device from SI-01's architecture
+perspective.
 
 `BackendGateway` is the backend-messaging boundary. It receives transport-neutral
 messages from its configured connectors, interprets backend addressing and resolves
@@ -405,7 +444,9 @@ Those callback threads must not change mutable TimingNode state directly.
 The application boundary determines which TimingNode(s) receive the work:
 
 - `CommandHandler` handles presentation commands/queries that address a TimingNode;
-- configured antenna mappings map an `AntennaId` to 1..N TimingNodes;
+- configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
+- `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
+- `WifiNetworkController` advertises the local data service and accepts smart-client sessions;
 - `BackendGateway` resolves backend messages addressed by `TimingNodeId` and submits them to the matching TimingNode;
 - a scheduled task keeps the TimingNode target it was registered for.
 
@@ -714,7 +755,10 @@ The identity boundaries are deliberate:
 - the application owns a stable `ApplicationId`;
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
 - `ApplicationId` and `TimingNodeId` are different identities, but a single-TimingNode deployment may intentionally configure the same value for both;
+- field I/O is grouped under Devices;
 - the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
+- `CanNetworkController` owns CAN-network discovery, connected-device state and CAN communication;
+- `WifiNetworkController` owns local service advertisement and incoming smart-client sessions;
 - when backend messaging is configured, the application composes one `BackendGateway` using 1..N connectors;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
@@ -814,9 +858,26 @@ Power/startup/recovery lifecycle and filtering semantics are architectural conce
 
 ### CAN, keypad and displays
 
-CAN/device integrations follow the same rule: device/protocol callbacks enter the application through integration boundaries and application-facing messages. Display state remains in the application rather than in the display device.
+`CanNetworkController` owns the active CAN network: bus lifecycle, discovery/scanning,
+device online state and communication. CAN/device callbacks do not mutate
+TimingNode state directly; accepted work crosses the normal application/serial
+boundary.
 
-Display V1 is a CAN-based integration. Display V2 is a network client that discovers the Headless Timing Application service on the local network and connects for synchronised display data. Exact protocol/session details remain deferred until implementation requires them.
+`DisplayRev1Can` is the passive CAN display generation. SI-01 owns the
+display-specific `DisplayModel` for this path and actively translates that model
+into CAN/device commands. The display does not own the ready-team/domain model.
+
+`DisplayRev2Wifi` is deliberately different. It is a smart external client with
+its own rendering and synchronisation behaviour. `WifiNetworkController`
+advertises the SI-01 data service through mDNS and exposes the selected network
+endpoint. DisplayRev2Wifi discovers that service, initiates the connection and
+owns reconnect/resynchronisation behaviour.
+
+SI-01 therefore publishes current timing/status/reference data to smart clients;
+it does **not** drive DisplayRev2Wifi through the passive-display `DisplayModel`
+and does not need to know how that smart display renders the data. Exact mDNS
+service names and the application protocol (for example TCP/WebSocket) remain
+deferred until IF-09 implementation needs them.
 
 ### Connectivity
 
