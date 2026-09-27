@@ -225,10 +225,10 @@ io/
 
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
-the I/O boundary is shown as a packaging component: it is primarily a
-package-like ownership/decomposition boundary that contains the Storage,
-Devices, BackendGateway and Device Networks elements, rather than a single
-runtime service component.
+I/O remains a plain architecture layer/container, just like Presentation,
+Application and Domain. The contained Storage, Devices, BackendGateway and
+Device Networks elements carry packaging-component notation where the package-like
+ownership/decomposition semantics are meaningful.
 
 The high-level I/O view separates **Devices** from **Device Networks**.
 
