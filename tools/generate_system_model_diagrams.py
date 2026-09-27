@@ -122,7 +122,7 @@ def timing_node_routing_mapping() -> Diagram:
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingNode I/O mapping — antennas, BackendGateway and connectors",
+        "TimingNode I/O mapping — device antennas, BackendGateway and connectors",
         1400,
         900,
         nodes,
