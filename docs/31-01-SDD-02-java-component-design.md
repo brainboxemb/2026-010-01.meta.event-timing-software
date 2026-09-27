@@ -75,7 +75,10 @@ io.github.brainboxemb.eventtiming/
     common/
       terminal/
   io/
-    hardware/
+    devices/
+      antenna/
+      can/
+      wifi/
     messaging/
     storage/
   infra/
@@ -116,6 +119,14 @@ domain/
     MessageHandler.java            when backend message handling is implemented
 
 io/
+  devices/
+    antenna/
+      Antenna.java                 concrete/source types only when implemented
+    can/
+      CanNetworkController.java    CAN lifecycle, discovery and device state
+      DisplayRev1Can.java          passive CAN display support when implemented
+    wifi/
+      WifiNetworkController.java   mDNS advertisement + smart-client sessions
   messaging/
     BackendGateway.java            when backend messaging is implemented
     Connector.java                 only if multiple transports justify a shared contract
@@ -126,6 +137,12 @@ io/
 The names above record ownership/direction, not a requirement to create empty
 types early. `ApplicationId` is a separate Java type from `TimingNodeId` even
 when a single-TimingNode deployment configures the same string value for both.
+
+`CanNetworkController` owns CAN-network lifecycle/discovery and CAN-device
+communication. `WifiNetworkController` owns the local smart-device service
+boundary: service advertisement and accepted smart-client sessions. The smart
+display itself remains an external client and therefore does not require a
+`DisplayRev2Wifi` class inside SI-01 merely to mirror the hardware name.
 
 `BackendGateway` owns backend addressing/routing and uses 1..N concrete
 connectors. A connector such as `RabbitMqConnector` owns transport/session
