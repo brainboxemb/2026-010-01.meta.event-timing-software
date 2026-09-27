@@ -213,40 +213,12 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
 
+- from: application-conductor
+  to: domain-layer
+  from_anchor: {side: bottom, position: 0.35}
+  to_anchor: {side: top, position: 0.35}
+
 - from: command-handler
   to: domain-layer
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}
-
-- from: domain-layer
-  to: devices-io
-  from_anchor: {side: bottom, position: 0.3616071429}
-  to_anchor: {side: top, position: 0.47}
-
-- from: devices-io
-  to: domain-layer
-  dashed: true
-  from_anchor: {side: top, position: 0.53}
-  to_anchor: {side: bottom, position: 0.3616071429}
-
-- from: domain-layer
-  to: backend-gateway-io
-  from_anchor: {side: bottom, position: 0.6383928571}
-  to_anchor: {side: top, position: 0.47}
-
-- from: backend-gateway-io
-  to: domain-layer
-  dashed: true
-  from_anchor: {side: top, position: 0.53}
-  to_anchor: {side: bottom, position: 0.6383928571}
-
-- from: domain-layer
-  to: device-network-io
-  from_anchor: {side: bottom, position: 0.8861607143}
-  to_anchor: {side: top, position: 0.47}
-
-- from: device-network-io
-  to: domain-layer
-  dashed: true
-  from_anchor: {side: top, position: 0.53}
-  to_anchor: {side: bottom, position: 0.8861607143}
