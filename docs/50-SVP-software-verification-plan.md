@@ -166,7 +166,10 @@ There are no numeric Pi resource budgets at this stage.
 
 The `ST-*` profiles provide a progressive set of reusable system-test compositions. A test case can exist at one or more profiles depending on the behaviour being verified.
 
+<a id="SVP-ST-1"></a>
 ### ST-1 — Application behaviour profile
+
+<!-- eng {"type":"document-section"} -->
 
 Purpose: fast automated verification of **application behaviour through the public application interface**.
 
