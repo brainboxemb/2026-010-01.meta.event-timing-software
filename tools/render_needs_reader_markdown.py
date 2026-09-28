@@ -137,6 +137,7 @@ def render_need(
         output.append("")
         output.extend(f"- {item}" for item in metadata)
 
+    output.extend(["", "---", ""])
     return output
 
 
