@@ -75,8 +75,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "f4fd2fdfa7e28a9d6d51b5bd088a8300edd6d932"
-          grep -F 'ref: f4fd2fdfa7e28a9d6d51b5bd088a8300edd6d932' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "d0e166f6db4ace36e015f88456317ddda81688b3"
+          grep -F 'ref: d0e166f6db4ace36e015f88456317ddda81688b3' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -192,7 +192,7 @@ jobs:
                   raise SystemExit(f"project-owned execution revision mismatch: {execution_id}")
               if data["status"] != "success" or data["exit_code"] != 0:
                   raise SystemExit(f"producer execution failed: {execution_id}")
-              if data["tool_eng_docs_sha"] != "f4fd2fdfa7e28a9d6d51b5bd088a8300edd6d932":
+              if data["tool_eng_docs_sha"] != "d0e166f6db4ace36e015f88456317ddda81688b3":
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
               log_path = path.parent / data["log"]
               if not log_path.is_file() or log_path.stat().st_size == 0:
