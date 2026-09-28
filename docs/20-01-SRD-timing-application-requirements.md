@@ -82,14 +82,14 @@ status model that is separate from log output.
 The first-executable status shall expose enough information
 to determine at least:
 
--  application/build identity;
--  application state;
--  configured `TimingNode` `TimingNodeId` value(s);
--  the current minimal lifecycle state represented for those
+- application/build identity;
+- application state;
+- configured `TimingNode` `TimingNodeId` value(s);
+- the current minimal lifecycle state represented for those
   TimingNodes;
--  explicit degraded/error information for first-executable
-  configuration/startup failures that remain observable while the process can
-  continue serving status.
+- explicit degraded/error information for first-executable
+  configuration/startup failures that remain observable
+  while the process can continue serving status.
 ```
 
 The concrete IF-03 schema is defined by `40-01-IDD-application-control-status.md`.
