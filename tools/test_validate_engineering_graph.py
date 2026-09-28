@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import subprocess
 import sys
 import tempfile
@@ -6,7 +7,7 @@ from pathlib import Path
 
 VALIDATOR = Path(__file__).with_name("validate_engineering_graph.py")
 
-def run_case(docs, diagrams=""):
+def run_case(docs, diagrams="", source_revision=None, output=False):
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
         d=root/"docs"; g=root/"diagrams"
@@ -15,24 +16,36 @@ def run_case(docs, diagrams=""):
             (d/name).write_text(content,encoding="utf-8")
         if diagrams:
             (g/"diagram.yaml").write_text(diagrams,encoding="utf-8")
-        return subprocess.run(
-            [sys.executable,str(VALIDATOR),"--docs",str(d),"--diagrams",str(g)],
-            text=True,capture_output=True
-        )
+        command=[sys.executable,str(VALIDATOR),"--docs",str(d),"--diagrams",str(g)]
+        out=root/"graph.json"
+        if source_revision:
+            command += ["--source-revision",source_revision]
+        if output:
+            command += ["--output",str(out)]
+        result=subprocess.run(command,text=True,capture_output=True)
+        graph=json.loads(out.read_text(encoding="utf-8")) if output and out.is_file() else None
+        return result,graph
 
-valid=run_case(
+valid,graph=run_case(
     {"a.md": '<a id="REQ-1"></a>\n**REQ-1 — Example**\n\n<!-- eng {"type":"requirement","relations":{"allocated_to":["NodeA"]}} -->\n'},
-    "nodes:\n  - id: node-a\n    object_id: NodeA\n"
+    "nodes:\n  - id: node-a\n    object_id: NodeA\n",
+    source_revision="example-revision",
+    output=True,
 )
 assert valid.returncode == 0, valid.stderr
+assert graph["schema"] == "brainboxemb.engineering-graph-canary"
+assert graph["schema_version"] == 1
+assert graph["source_revision"] == "example-revision"
+assert graph["object_count"] == 2
+assert graph["relation_count"] == 1
 
-duplicate=run_case({
+duplicate,_=run_case({
     "a.md": '<a id="REQ-1"></a>\n<!-- eng {"type":"requirement"} -->\n',
     "b.md": '<a id="REQ-1"></a>\n<!-- eng {"type":"requirement"} -->\n',
 })
 assert duplicate.returncode != 0 and "duplicate engineering id REQ-1" in duplicate.stderr + duplicate.stdout
 
-unknown=run_case({
+unknown,_=run_case({
     "a.md": '<a id="REQ-1"></a>\n<!-- eng {"type":"requirement","relations":{"allocated_to":["Missing"]}} -->\n',
 })
 assert unknown.returncode != 0 and "unknown allocated_to target Missing" in unknown.stderr + unknown.stdout
