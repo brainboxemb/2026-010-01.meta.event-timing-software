@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""Render MyST/Sphinx-Needs directives as reader-friendly generated Markdown."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import re
+
+import yaml
+
+
+OPEN_RE = re.compile(r"^\x60\x60\x60\{([A-Za-z0-9_-]+)\}\s*(.*)$")
+COLON_OPTION_RE = re.compile(r"^:([A-Za-z0-9_-]+):\s*(.*)$")
+
+TYPE_LABELS = {
+    "uc": "Use Case",
+    "req": "Requirement",
+    "ifreq": "Interface Requirement",
+    "arch": "Architecture Element",
+    "vc": "Verification Case",
+}
+
+RELATION_LABELS = (
+    ("derived_from", "Derived from"),
+    ("derived_from_back", "Source for"),
+    ("satisfies", "Satisfies"),
+    ("satisfies_back", "Satisfied by"),
+    ("verifies", "Verifies"),
+    ("verifies_back", "Verified by"),
+)
+
+
+class ReaderRenderError(ValueError):
+    pass
+
+
+def load_needs(path: Path) -> dict[str, dict]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    current = data.get("current_version")
+    versions = data.get("versions", {})
+    if not current or current not in versions:
+        raise ReaderRenderError(f"{path}: invalid Sphinx-Needs current_version")
+    needs = versions[current].get("needs")
+    if not isinstance(needs, dict):
+        raise ReaderRenderError(f"{path}: current version has no needs object")
+    return needs
+
+
+def parse_options(lines: list[str], start: int) -> tuple[dict, int]:
+    options: dict = {}
+    index = start
+
+    if index < len(lines) and lines[index] == "---":
+        end = index + 1
+        while end < len(lines) and lines[end] != "---":
+            end += 1
+        if end >= len(lines):
+            raise ReaderRenderError("unterminated YAML option block")
+        raw = "\n".join(lines[index + 1 : end])
+        parsed = yaml.safe_load(raw) or {}
+        if not isinstance(parsed, dict):
+            raise ReaderRenderError("Need YAML options must be a mapping")
+        options.update(parsed)
+        return options, end + 1
+
+    while index < len(lines):
+        match = COLON_OPTION_RE.match(lines[index])
+        if not match:
+            break
+        options[match.group(1)] = match.group(2)
+        index += 1
+
+    return options, index
+
+
+def target_link(target: str, needs: dict[str, dict]) -> str:
+    need = needs.get(target)
+    if not isinstance(need, dict):
+        return f"`{target}`"
+
+    docname = need.get("docname")
+    if isinstance(docname, str) and docname:
+        name = Path(docname).name + ".md"
+        return f"[`{target}`]({name}#{target})"
+
+    return f"`{target}`"
+
+
+def relation_lines(need: dict, needs: dict[str, dict]) -> list[str]:
+    rows = []
+    for field, label in RELATION_LABELS:
+        targets = need.get(field, [])
+        if not targets:
+            continue
+        if not isinstance(targets, list):
+            raise ReaderRenderError(
+                f"{need.get('id')}: relation field {field} is not a list"
+            )
+        links = ", ".join(target_link(target, needs) for target in targets)
+        rows.append(f"> **{label}:** {links}")
+    return rows
+
+
+def render_need(
+    directive: str,
+    title: str,
+    options: dict,
+    body: list[str],
+    needs: dict[str, dict],
+) -> list[str]:
+    object_id = options.get("id")
+    if not isinstance(object_id, str) or not object_id:
+        raise ReaderRenderError(
+            f"{directive} {title!r}: generated reader needs an explicit id"
+        )
+
+    need = needs.get(object_id)
+    if not isinstance(need, dict):
+        raise ReaderRenderError(f"{object_id}: not present in needs.json")
+
+    label = TYPE_LABELS.get(directive, need.get("type_name") or directive)
+    resolved_title = need.get("title") or title
+
+    output = [
+        f'<a id="{object_id}"></a>',
+        "",
+        f"> **{label} — `{object_id}` — {resolved_title}**",
+    ]
+
+    relations = relation_lines(need, needs)
+    if relations:
+        output.append(">")
+        output.extend(relations)
+
+    output.append("")
+    output.extend(body)
+    return output
+
+
+def transform_text(text: str, needs: dict[str, dict]) -> str:
+    lines = text.splitlines()
+    output: list[str] = []
+    index = 0
+
+    while index < len(lines):
+        match = OPEN_RE.match(lines[index])
+        if not match or match.group(1) not in TYPE_LABELS:
+            output.append(lines[index])
+            index += 1
+            continue
+
+        directive = match.group(1)
+        title = match.group(2).strip()
+        options, body_start = parse_options(lines, index + 1)
+
+        if body_start < len(lines) and lines[body_start] == "":
+            body_start += 1
+
+        end = body_start
+        while end < len(lines) and lines[end] != "```":
+            end += 1
+        if end >= len(lines):
+            raise ReaderRenderError(
+                f"unterminated MyST Need directive starting at line {index + 1}"
+            )
+
+        body = lines[body_start:end]
+        output.extend(render_need(directive, title, options, body, needs))
+        index = end + 1
+
+    return "\n".join(output) + ("\n" if text.endswith("\n") else "")
+
+
+def render_tree(documents: Path, needs_path: Path) -> int:
+    needs = load_needs(needs_path)
+    changed = 0
+
+    for path in sorted(documents.rglob("*.md")):
+        source = path.read_text(encoding="utf-8")
+        rendered = transform_text(source, needs)
+        if rendered != source:
+            path.write_text(rendered, encoding="utf-8")
+            changed += 1
+
+    return changed
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--documents", required=True)
+    parser.add_argument("--needs", required=True)
+    args = parser.parse_args()
+
+    changed = render_tree(Path(args.documents), Path(args.needs))
+    print(f"reader Markdown: transformed {changed} generated document(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
