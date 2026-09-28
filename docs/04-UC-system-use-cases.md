@@ -74,14 +74,13 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
 | UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
 
-<a id="UC-001"></a>
-## UC-001 — Start and prepare a TimingNode
-
-<!-- eng {"type":"use-case"} -->
+```{uc} Start and prepare a TimingNode
+:id: UC-001
 
 **Goal:** bring one configured `TimingNode` into a known usable state.
 
 **Primary actor:** operator or automated startup policy.
+```
 
 **Preconditions:**
 
@@ -221,14 +220,13 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 
 SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
 
-<a id="UC-008"></a>
-## UC-008 — Operate SI-01 through a desktop GUI
-
-<!-- eng {"type":"use-case"} -->
+```{uc} Operate SI-01 through a desktop GUI
+:id: UC-008
 
 **Goal:** operate/observe a timing application through the Remote API.
 
 **Primary actor:** operator.
+```
 
 **Main flow:**
 
@@ -315,14 +313,13 @@ integration inspection, and there is no current requirement for a separate web p
 5. Status reports restore health/errors before normal operation is presented as healthy.
 6. Backoffice/outbox recovery resumes independently from local startup.
 
-<a id="UC-014"></a>
-## UC-014 — Run multiple TimingNodes in one process
-
-<!-- eng {"type":"use-case"} -->
+```{uc} Run multiple TimingNodes in one process
+:id: UC-014
 
 **Goal:** host multiple independently addressed TimingNodes while preserving independent lifecycle, state and `TimingNodeId`-scoped streams.
 
 **Primary actor:** configuration/test/operator tooling.
+```
 
 **Main flow:**
 
