@@ -18,18 +18,22 @@ groups:
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 120, y: 530, w: 1120, h: 390}
-# Visual shoulder: part of I/O reaches upward beside the lower Domain area.
-# It expresses architectural proximity, not a reversed dependency direction.
-- id: io-domain-shoulder
-  label: " "
-  kind: layer-infrastructure
-  layout: {x: 375, y: 865, w: 300, h: 55}
+  layout: {x: 120, y: 530, w: 1120, h: 360}
+  # Cut away the lower-right corner so domain-adjacent I/O can sit beside the
+  # lower Domain band without stretching Domain down into I/O.
+  outline:
+    points:
+      - {x: 0.0, y: 0.0}
+      - {x: 1.0, y: 0.0}
+      - {x: 1.0, y: 0.6666667}
+      - {x: 0.7232143, y: 0.6666667}
+      - {x: 0.6517857, y: 1.0}
+      - {x: 0.0, y: 1.0}
 - id: timing-node-aggregate
   label: "TimingNode (1..N)"
   kind: model
   notation: component
-  layout: {x: 145, y: 570, w: 820, h: 295}
+  layout: {x: 145, y: 570, w: 820, h: 310}
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
@@ -192,7 +196,18 @@ nodes:
         - KeypadRev1Can
   kind: integration
   notation: packaging-component
-  layout: {x: 385, y: 880, w: 280, h: 170}
+  # Bridges upward into the Domain cut-away while remaining visibly connected
+  # to the normal I/O band below.
+  layout: {x: 960, y: 800, w: 260, h: 170}
+- id: device-network-io
+  group: io-layer
+  label: "DeviceNetworks"
+  items:
+    - CanNetworkController
+    - NetworkDeviceService
+  kind: integration
+  notation: packaging-component
+  layout: {x: 385, y: 955, w: 260, h: 170}
 - id: messaging-io
   group: io-layer
   label: "Messaging"
@@ -204,16 +219,7 @@ nodes:
             - RabbitMqConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 685, y: 955, w: 300, h: 170}
-- id: device-network-io
-  group: io-layer
-  label: "DeviceNetworks"
-  items:
-    - CanNetworkController
-    - NetworkDeviceService
-  kind: integration
-  notation: packaging-component
-  layout: {x: 1005, y: 955, w: 215, h: 170}
+  layout: {x: 665, y: 955, w: 275, h: 170}
 
 - id: platform-primitives
   group: platform-layer
