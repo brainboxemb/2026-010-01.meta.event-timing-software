@@ -218,7 +218,7 @@ nodes:
 - id: application-bootstrap
   group: crosscutting-layer
   label: "ApplicationBootstrap"
-  subtitle: "configuration • composition • startup"
+  subtitle: "config • composition"
   kind: crosscutting
   notation: component
   layout: {x: 1300, y: 165, w: 170, h: 80}
