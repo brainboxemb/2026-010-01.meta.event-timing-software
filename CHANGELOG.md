@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine backend messaging into an I/O `Messaging / BackendGateway` boundary, application-level `BackendMessageRouter` for backend-only target resolution, and bidirectional per-TimingNode `BackendMessagePort`; make the layered view show router relations to Domain and I/O Messaging, and define one Web presentation binding/port per configured TimingNode.
+
 - Introduce `ApplicationBootstrap` as a reusable framework-owned cross-cutting startup/composition component, keep the effective configuration model with that framework bootstrap, keep concrete YAML/build-resource loaders in the thin executable artifact, and define component-root Java package readability rules without adding a separate Runtime box to the architecture view.
 
 - Pin `tool.eng-docs` v0.3.10 and refine Figure SI01-01 into complementary Domain/I/O polygons with a visible gap: enlarge Domain for breathing room, fully enclose raised Devices in an I/O shoulder, and compact the normal I/O cards/band.

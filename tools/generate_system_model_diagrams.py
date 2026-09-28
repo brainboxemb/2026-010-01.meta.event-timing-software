@@ -53,8 +53,8 @@ def software_item_overview() -> Diagram:
 def timing_node_software_decomposition() -> Diagram:
     nodes = [
         Node("app", "SI-01 TimingApplication\\nApplicationId • one JVM/process", 505, 55, 390, 90, "core"),
-        Node("wp1", "TimingNode timing-node-A\\nTimingNodeId • Location X\\nMessageHandler", 120, 230, 420, 105, "service"),
-        Node("wp2", "TimingNode timing-node-B\\nTimingNodeId • Location Y\\nMessageHandler", 860, 230, 420, 105, "service"),
+        Node("wp1", "TimingNode timing-node-A\\nTimingNodeId • Location X\\nBackendMessagePort", 120, 230, 420, 105, "service"),
+        Node("wp2", "TimingNode timing-node-B\\nTimingNodeId • Location Y\\nBackendMessagePort", 860, 230, 420, 105, "service"),
 
         Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 440, 280, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 345, 440, 280, 90, "service"),
@@ -93,21 +93,25 @@ def timing_node_software_decomposition() -> Diagram:
 
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
-        Node("app", "TimingApplication\\nApplicationId", 520, 55, 360, 80, "core"),
+        Node("app", "TimingApplication\\nApplicationId", 520, 40, 360, 80, "core"),
 
-        Node("ant1", "Devices / Antenna ANT1\\nAntennaId", 70, 190, 280, 80, "adapter"),
-        Node("ant2", "Devices / Antenna ANT2\\nAntennaId", 70, 400, 280, 80, "adapter"),
+        Node("ant1", "Devices / Antenna ANT1\\nAntennaId", 60, 185, 280, 80, "adapter"),
+        Node("ant2", "Devices / Antenna ANT2\\nAntennaId", 60, 405, 280, 80, "adapter"),
 
-        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nMessageHandler", 975, 170, 330, 100, "service"),
-        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nMessageHandler", 975, 390, 330, 100, "service"),
-        Node("loc_a", "Location X\\nLocationID", 1030, 560, 220, 75, "external"),
+        Node("status", "Application-scoped Domain\\nSystemStatus", 510, 185, 380, 90, "service"),
+        Node("router", "BackendMessageRouter\\nbackend target resolution", 500, 355, 400, 100, "interface"),
 
-        Node("gateway", "BackendGateway\\nbackend addressing / routing", 510, 585, 380, 90, "interface"),
-        Node("conn1", "Connector 01\\nRabbitMQ", 85, 740, 280, 80, "adapter"),
-        Node("conn2", "Connector 02\\nother transport", 1035, 740, 280, 80, "adapter"),
+        Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nBackendMessagePort", 975, 170, 350, 105, "service"),
+        Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nBackendMessagePort", 975, 390, 350, 105, "service"),
+        Node("loc_a", "Location X\\nLocationID", 1040, 555, 220, 75, "external"),
+
+        Node("gateway", "Messaging / BackendGateway\\nexternal backend boundary", 500, 575, 400, 90, "interface"),
+        Node("conn1", "Connector 01\\nRabbitMQ", 85, 750, 280, 80, "adapter"),
+        Node("conn2", "Connector 02\\nother transport", 1035, 750, 280, 80, "adapter"),
     ]
 
     edges = [
+        Edge("app", "status", "owns"),
         Edge("app", "node_a", "hosts"),
         Edge("app", "node_b", "hosts"),
         Edge("ant1", "node_a"),
@@ -116,34 +120,37 @@ def timing_node_routing_mapping() -> Diagram:
         Edge("node_a", "loc_a"),
         Edge("conn1", "gateway", "transport"),
         Edge("conn2", "gateway", "transport"),
-        Edge("gateway", "node_a", "TimingNodeId"),
-        Edge("gateway", "node_b", "TimingNodeId"),
+        Edge("gateway", "router", "backend messages"),
+        Edge("router", "status", "ApplicationId"),
+        Edge("router", "node_a", "TimingNodeId"),
+        Edge("router", "node_b", "TimingNodeId"),
     ]
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingNode I/O mapping — device antennas, BackendGateway and connectors",
+        "TimingNode I/O mapping — BackendGateway, BackendMessageRouter and domain ports",
         1400,
-        900,
+        910,
         nodes,
         edges,
     )
 
 def rabbitmq_source_topology() -> Diagram:
     nodes = [
-        Node("broker1", "RabbitMQ broker A", 95, 70, 300, 75, "external"),
-        Node("broker2", "RabbitMQ broker B", 1005, 70, 300, 75, "external"),
+        Node("broker1", "RabbitMQ broker A", 95, 60, 300, 75, "external"),
+        Node("broker2", "RabbitMQ broker B", 1005, 60, 300, 75, "external"),
 
-        Node("conn1", "RabbitMqConnector connector-01\\nowns connection/channels internally", 55, 245, 380, 100, "adapter"),
-        Node("conn2", "RabbitMqConnector connector-02\\nowns connection/channels internally", 965, 245, 380, 100, "adapter"),
+        Node("conn1", "RabbitMqConnector connector-01\\nowns connection/channels internally", 55, 220, 380, 100, "adapter"),
+        Node("conn2", "RabbitMqConnector connector-02\\nowns connection/channels internally", 965, 220, 380, 100, "adapter"),
 
-        Node("gateway", "BackendGateway\\naddressing / routing\\nuses 1..N connectors", 500, 405, 400, 110, "interface"),
+        Node("gateway", "BackendGateway\\nexternal backend boundary\\nuses 1..N connectors", 500, 390, 400, 110, "interface"),
+        Node("router", "BackendMessageRouter\\napplication / TimingNode target routing", 500, 555, 400, 100, "interface"),
 
-        Node("node1", "TimingNode timing-node-01\\nTimingNodeId\\nMessageHandler", 95, 625, 340, 100, "service"),
-        Node("node2", "TimingNode timing-node-02\\nTimingNodeId\\nMessageHandler", 965, 625, 340, 100, "service"),
-        Node("outbox", "local durable/pending outbox\\nTimingNodeId retained", 525, 625, 350, 90, "service"),
+        Node("node1", "TimingNode timing-node-01\\nTimingNodeId\\nBackendMessagePort", 95, 735, 350, 105, "service"),
+        Node("node2", "TimingNode timing-node-02\\nTimingNodeId\\nBackendMessagePort", 955, 735, 350, 105, "service"),
+        Node("outbox", "local durable/pending outbox\\nTimingNodeId retained", 525, 745, 350, 90, "service"),
 
-        Node("note", "BackendGateway uses 1..N connectors\\nconnectors own transport, not TimingNode routing", 455, 810, 490, 90, "interface"),
+        Node("note", "Gateway owns connectors / backend boundary\\nRouter owns target resolution\\nTimingNode port is bidirectional", 430, 900, 540, 100, "interface"),
     ]
 
     edges = [
@@ -151,19 +158,20 @@ def rabbitmq_source_topology() -> Diagram:
         Edge("broker2", "conn2", "transport"),
         Edge("conn1", "gateway", "messages"),
         Edge("conn2", "gateway", "messages"),
-        Edge("gateway", "node1", "TimingNodeId"),
-        Edge("gateway", "node2", "TimingNodeId"),
+        Edge("gateway", "router", "transport-neutral messages"),
+        Edge("router", "node1", "TimingNodeId"),
+        Edge("router", "node2", "TimingNodeId"),
         Edge("node1", "outbox", "committed outbound"),
         Edge("node2", "outbox", "committed outbound"),
-        Edge("outbox", "gateway", "publish pending"),
-        Edge("gateway", "note", "configured multiplicity", True),
+        Edge("outbox", "router", "publish pending"),
+        Edge("router", "note", "responsibility split", True),
     ]
 
     return Diagram(
         "rabbitmq-source-topology",
-        "RabbitMQ connectors behind BackendGateway with TimingNode routing",
+        "RabbitMQ connectors behind BackendGateway and BackendMessageRouter",
         1400,
-        960,
+        1040,
         nodes,
         edges,
     )

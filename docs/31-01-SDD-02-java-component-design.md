@@ -88,7 +88,7 @@ io.github.brainboxemb.eventtiming/
   platform/
 ```
 
-Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary Remote API classes stay directly at `presentation.interfaces.remoteapi` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
+Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary Remote API classes stay directly at `presentation.interfaces.remoteapi` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
 
 These are source-organisation boundaries, not automatically Maven modules.
 
@@ -122,12 +122,13 @@ For example, the first TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
+  BackendMessageRouter.java       when backend messaging is implemented
 
 domain/
   timing/
     TimingNode.java
     TimingNodeId.java
-    MessageHandler.java            when backend message handling is implemented
+    BackendMessagePort.java            when backend message handling is implemented
 
 io/
   devices/
@@ -167,12 +168,13 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
 mirror the hardware name.
 
-`BackendGateway` owns backend addressing/routing and uses 1..N concrete
+`BackendGateway` owns the external backend boundary and uses 1..N concrete
 connectors. A connector such as `RabbitMqConnector` owns transport/session
-mechanics. `TimingNode.MessageHandler` owns the semantic handling of messages
-already resolved to that TimingNode and executes state-changing work inside its
-serial boundary. No application-level `MessageHandler` is introduced until a
-real application-scoped backend message requires one.
+mechanics. `BackendMessageRouter` in the application package owns backend-only
+application/domain target resolution; it is not a generic internal message bus.
+`TimingNode.BackendMessagePort` is the bidirectional semantic backend-message
+port of one TimingNode. Application-scoped messages can be routed directly to the
+appropriate Domain responsibility without inventing an application-level port.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.

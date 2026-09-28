@@ -76,7 +76,7 @@ TimingApplication
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
-        +-- MessageHandler
+        +-- BackendMessagePort
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -116,7 +116,7 @@ presentation/
 
 The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
 
-**Web** is modelled separately as the browser-facing presentation interface of SI-01. It may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
+**Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode, so an application with 1..N TimingNodes exposes 1..N Web bindings/ports. Each Web binding references its TimingNode by `TimingNodeId`; the bind address/port remains presentation configuration and is not a property of the TimingNode domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
 **Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
@@ -135,6 +135,9 @@ application/
 
   CommandHandler
     shared presentation command/query boundary
+
+  BackendMessageRouter
+    backend-only application/domain target resolution and routing
 ```
 
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
@@ -147,10 +150,13 @@ resolves that `TimingNode` and submits state-changing work directly to its seria
 executor; `Conductor` is not a mandatory hop for TimingNode-scoped work.
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce commands merely to preserve a layer diagram. Boundary-specific
-routing is introduced only where it owns real behaviour. Backend messaging now
-has such a responsibility in `BackendGateway`; this does not reintroduce a
-generic application dispatcher.
+do not introduce messages merely to preserve a layer diagram. Backend messaging
+is the explicit exception: `BackendMessageRouter` owns target resolution for
+backend-originated and backend-bound messages at application scope. It routes
+application-scoped backend messages to the relevant domain responsibility and
+TimingNode-scoped messages by `TimingNodeId` to that node's
+`BackendMessagePort`. It is deliberately **not** a generic application message
+bus or mediator for normal collaboration between domain components.
 
 ### Domain
 
@@ -161,7 +167,7 @@ TimingNode
   TimingNodeId
   LocationID
   State
-  MessageHandler
+  BackendMessagePort
   TagProcessor
   StageStartTimes
   Journal
@@ -174,10 +180,14 @@ TimingNode
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
 components shown beneath it in Figure SI01-01.
 
-`MessageHandler` is the TimingNode entry point for backend messages that have
-already been addressed to that TimingNode. It owns no transport connection or
-cross-node routing; state-changing handling executes through the TimingNode's
-serial boundary and delegates to the relevant TimingNode responsibilities.
+`BackendMessagePort` is the bidirectional backend-message boundary of one
+TimingNode. Inbound messages have already been resolved to that TimingNode by
+`BackendMessageRouter`; state-changing handling executes through the
+TimingNode's serial boundary and delegates to the relevant TimingNode
+responsibilities. Outbound TimingNode messages leave through the same semantic
+port and return to `BackendMessageRouter` for application/backend routing. The
+port owns no transport connection, connector lifecycle or cross-node target
+resolution.
 `TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `Journal` owns
 registration/history data and sequence semantics. `NextUpTeams` owns the teams
 expected next at the TimingNode.
@@ -263,10 +273,12 @@ the high-level architecture. The current IF-09 direction may use mDNS and a
 client-initiated IP session, but `NetworkDeviceService` itself is not Wi-Fi
 specific and does not own smart-display rendering/domain behaviour.
 
-When backend messaging is configured, SI-01 also composes one
-`BackendGateway`. The gateway uses 1..N connectors and owns backend-message
-addressing/routing, while a concrete connector owns its transport resources and
-protocol/session mechanics.
+When backend messaging is configured, SI-01 composes one `BackendGateway`
+inside I/O/Messaging. The gateway uses 1..N connectors and owns the external
+backend boundary plus connector-facing message exchange. A concrete connector
+owns its transport resources and protocol/session mechanics.
+`BackendMessageRouter` in the application layer owns application/domain target
+resolution instead of placing that responsibility in I/O.
 
 ### Platform
 
@@ -312,7 +324,7 @@ TimingApplication
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
-        +-- MessageHandler
+        +-- BackendMessagePort
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -388,9 +400,13 @@ Device Networks
     +-- CanNetworkController
     +-- NetworkDeviceService
 
-BackendGateway
-    +-- Connector (1..N)
-    +-- backend message target -> TimingNodeId -> TimingNode.MessageHandler
+Messaging
+    +-- BackendGateway
+          +-- Connector (1..N)
+
+BackendMessageRouter
+    +-- application-scoped backend target -> Domain responsibility
+    +-- TimingNodeId -> TimingNode.BackendMessagePort
 ```
 
 <a id="fig-si01-03"></a>
@@ -406,23 +422,25 @@ I/O/device-network responsibilities. A keypad or display may present information
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`BackendGateway` is the backend-messaging boundary. It receives transport-neutral
-messages from its configured connectors, interprets backend addressing and resolves
-a TimingNode-targeted message to the matching `TimingNodeId`. The resolved
-message is submitted through that TimingNode's serial execution boundary and then
-handled by its `MessageHandler`.
+`BackendGateway` is the I/O backend-messaging boundary. It exchanges
+transport-neutral messages with its configured connectors but does not resolve
+those messages to application/domain targets. `BackendMessageRouter` owns that
+application-level target resolution: an application-scoped backend message can
+be routed to the relevant Domain responsibility (for example `SystemStatus`),
+while a `TimingNodeId` target resolves to that TimingNode's
+`BackendMessagePort`.
 
-Connectors do not route directly to TimingNodes and do not own domain semantics.
-A connector-specific external name or routing key may participate in boundary
-mapping, but it does not replace the stable internal `TimingNodeId`. One gateway
-may use multiple connectors and one TimingNode may exchange messages through more
-than one connector via that gateway.
+Connectors do not route directly to Domain or TimingNodes and do not own domain
+semantics. A connector-specific external name or routing key may participate in
+boundary mapping, but it does not replace `ApplicationId` or the stable
+internal `TimingNodeId`. One gateway may use multiple connectors and one
+TimingNode may exchange messages through more than one connector via the gateway,
+router and its bidirectional port.
 
-`ApplicationId` establishes a separate addressable identity for the application
-as a whole. Future application-scoped backend messages, such as application-wide
-status/monitoring operations, may use it. No application-level `MessageHandler`
-is introduced yet; that component should appear only when a concrete application-
-scoped message use case requires it.
+`ApplicationId` establishes the separate addressable identity for
+application-scoped backend messages. That does not require a synthetic
+application-level `BackendMessagePort`; `BackendMessageRouter` can route such
+messages directly to the appropriate application/domain responsibility.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
@@ -503,7 +521,7 @@ The application boundary determines which TimingNode(s) receive the work:
 - configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
 - `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
 - `NetworkDeviceService` owns bidirectional network-device communication; discovery/session mechanics stay below this high-level responsibility;
-- `BackendGateway` resolves backend messages addressed by `TimingNodeId` and submits them to the matching TimingNode;
+- `BackendMessageRouter` resolves backend targets: application-scoped messages go to the relevant Domain responsibility and `TimingNodeId` messages go to the matching TimingNode's `BackendMessagePort`;
 - a scheduled task keeps the TimingNode target it was registered for.
 
 Each resolved target is then submitted to that TimingNode's serial executor.
@@ -511,9 +529,10 @@ When one observation fans out to two TimingNodes, both receive their own queued
 work and keep independent TimingNode-scoped state/sequence semantics.
 
 There is no central generic `TimingSystemDispatcher`. `CommandHandler`,
-antenna mapping and `BackendGateway` are separate boundary responsibilities.
-`BackendGateway` is specifically the backend-messaging gateway; it is not a
-generic message bus or all-purpose mediator.
+antenna mapping and backend messaging remain separate boundary responsibilities.
+`BackendMessageRouter` is specifically for backend-message target resolution;
+it is not a generic message bus or all-purpose mediator. `BackendGateway`
+remains the I/O/backend boundary and connector owner.
 
 ```text
 operator endpoint
@@ -881,9 +900,11 @@ The **external device and network topology is owned by the SSAD**, because RFID/
 ### Backend messaging
 
 Backend messaging is a semantic application boundary, not a RabbitMQ API.
-`BackendGateway` owns addressing/routing across 1..N transport connectors.
+`BackendGateway` owns the external backend boundary across 1..N transport
+connectors. `BackendMessageRouter` owns application/domain target resolution.
 A TimingNode-targeted message is resolved by `TimingNodeId`, submitted through
-that TimingNode's serial boundary and handled by its `MessageHandler`.
+that TimingNode's serial boundary and enters/leaves the TimingNode through its
+bidirectional `BackendMessagePort`.
 
 ```text
 external backend system
@@ -891,11 +912,14 @@ external backend system
         +--> RabbitMqConnector --+
         +--> SocketConnector ----+--> BackendGateway
                                       |
-                                      +--> TimingNodeId
-                                             |
-                                             v
-                                       TimingNode
-                                         MessageHandler
+                                      v
+                               BackendMessageRouter
+                                  |             |
+                      application/domain       +--> TimingNodeId
+                            target                     |
+                              |                        v
+                              v                  TimingNode
+                         SystemStatus              BackendMessagePort
 ```
 
 Connectors own transport/session mechanics and protocol-specific mapping at the
@@ -904,9 +928,10 @@ retry mechanics are connector-level decisions and should be detailed when that
 implementation is active. Product/deployment-specific backend names and private
 wire details remain outside the public architecture documentation.
 
-`ApplicationId` is reserved for application-scoped backend addressing. The
-current architecture does not add an application-level message handler merely to
-complete the symmetry; it will be introduced only when an application-scoped
+`ApplicationId` is used for application-scoped backend addressing.
+`BackendMessageRouter` provides that application-level routing without adding a
+generic application message handler merely to complete the symmetry. Additional
+domain handling is introduced only when a concrete application-scoped
 message capability is actually implemented.
 
 ### RFID
