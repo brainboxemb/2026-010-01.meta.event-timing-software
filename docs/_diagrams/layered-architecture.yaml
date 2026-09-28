@@ -307,12 +307,11 @@ edges:
 - from: backend-message-router
   to: messaging-io
   from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
   route:
     - {x: 1165, y: 427.5}
-    - {x: 1165, y: 1120}
-    - {x: 665, y: 1120}
-    - {x: 665, y: 1095}
+    - {x: 1165, y: 945}
+    - {x: 665, y: 945}
 
 - from: application-conductor
   to: domain-layer
