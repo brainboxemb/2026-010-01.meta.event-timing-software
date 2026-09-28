@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Add the Migration 013 Step-3 traceability authoring canary: stable engineering anchors, compact adjacent relation metadata for the bounded UC/SI01/IF03/VC slice, architecture identities sourced directly from diagram YAML, and a project-local validator that rejects duplicate IDs and unknown relation targets.
+- Add the Migration 013 Step-3 traceability authoring canary: stable engineering anchors, compact adjacent relation metadata for the bounded UC/SI01/IF03/VC slice, architecture identities sourced directly from diagram YAML, directional ownership (`derived_from` on requirements, `satisfies` on design, `verifies` on verification), a human review view showing authored input beside generated incoming relations, and a project-local validator that rejects duplicate IDs and unknown relation owners/targets.
 
 
 - Compact Figure SI01-01 by aligning the main architecture canvas with the fixed title origin, reducing unused horizontal layer width and right-side whitespace, and increase secondary diagram text from 11 px to 12 px for readability.
