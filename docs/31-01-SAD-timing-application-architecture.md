@@ -142,8 +142,6 @@ application/
     backend-only application/domain target resolution and routing
 ```
 
-<!-- eng-rel {"id":"Conductor","relations":{}} -->
-
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
 
 <!-- eng-rel {"id":"CommandHandler","relations":{"satisfies":["SI01-REQ-022","SI01-REQ-030","SI01-REQ-031","IF03-REQ-001","IF03-REQ-004"]}} -->
