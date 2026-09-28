@@ -118,7 +118,11 @@ presentation/
 :id: RemoteApi
 :satisfies: SI01-REQ-031, IF03-REQ-001, IF03-REQ-002, IF03-REQ-004
 
-The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
+The **Remote API** is the general programmable interface of the **Headless Timing
+Application** (SI-01) for remote clients, engineering tools and headless
+black-box/integration tests. A06/A07 implement only its first
+version/status/event slice; later supported control and diagnostic operations
+grow inside the same functional interface.
 ```
 
 **Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode, so an application with 1..N TimingNodes exposes 1..N Web bindings/ports. Each Web binding references its TimingNode by `TimingNodeId`; the bind address/port remains presentation configuration and is not a property of the TimingNode domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
@@ -327,7 +331,11 @@ composition is complete.
 :id: TimingNode
 :satisfies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021
 
-A `TimingNode` is the primary independently addressed operational/domain aggregate inside the **Headless Timing Application** (SI-01). One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
+A `TimingNode` is the primary independently addressed operational/domain
+aggregate inside the **Headless Timing Application** (SI-01). One application
+process may host one or more TimingNodes. `SystemStatus` is application-scoped
+and aggregates/monitors overall runtime and TimingNode status rather than
+belonging to one TimingNode.
 ```
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
