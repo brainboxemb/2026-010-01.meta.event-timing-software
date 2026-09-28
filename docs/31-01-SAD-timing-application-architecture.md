@@ -897,21 +897,24 @@ The **external device and network topology is owned by the SSAD**, because RFID/
 ### Backend messaging
 
 Backend messaging is a semantic application boundary, not a RabbitMQ API.
-`BackendGateway` owns addressing/routing across 1..N transport connectors.
-A TimingNode-targeted message is resolved by `TimingNodeId`, submitted through
-that TimingNode's serial boundary and handled by its `MessageHandler`.
+The I/O `Messaging` capability owns `BackendGateway` and 1..N transport
+connectors. `BackendMessageRouter` owns only the application-level semantic
+target resolution that follows that I/O boundary.
 
 ```text
 external backend system
         |
         +--> RabbitMqConnector --+
-        +--> SocketConnector ----+--> BackendGateway
+        +--> SocketConnector ----+--> Messaging / BackendGateway
                                       |
-                                      +--> TimingNodeId
-                                             |
-                                             v
-                                       TimingNode
-                                         MessageHandler
+                                      v
+                               BackendMessageRouter
+                                  /             \
+                         ApplicationId       TimingNodeId
+                              |                  |
+                              v                  v
+                         SystemStatus        TimingNode
+                                            MessageHandler
 ```
 
 Connectors own transport/session mechanics and protocol-specific mapping at the
@@ -920,10 +923,11 @@ retry mechanics are connector-level decisions and should be detailed when that
 implementation is active. Product/deployment-specific backend names and private
 wire details remain outside the public architecture documentation.
 
-`ApplicationId` is reserved for application-scoped backend addressing. The
-current architecture does not add an application-level message handler merely to
-complete the symmetry; it will be introduced only when an application-scoped
-message capability is actually implemented.
+`ApplicationId` is the application-scoped backend target identity; it can
+resolve to application responsibilities such as `SystemStatus` without adding
+a symmetric application-level `MessageHandler`. `BackendMessageRouter` is
+not used for ordinary internal collaboration between application/domain
+components.
 
 ### RFID
 
