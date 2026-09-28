@@ -13,32 +13,37 @@ The application/domain model must not depend on RabbitMQ classes, socket classes
 
 Concrete production broker endpoint names, credentials, queue/exchange names, routing keys, external source IDs and message schemas are deployment/proprietary information and are intentionally excluded from this public repository.
 
-Package/artifact placement follows `31-01-SDD-02-java-component-design.md`: a transport implementation can initially live under the framework `comm` packages and becomes a separate Maven library only when independent reuse, dependencies, lifecycle, ownership or release boundaries justify that split.
+Package/artifact placement follows `31-01-SDD-02-java-component-design.md`: a transport implementation can initially live under the framework `io.messaging` capability and becomes a separate Maven library only when independent reuse, dependencies, lifecycle, ownership or release boundaries justify that split.
 
 ## Architectural goal
 
-Backoffice semantics and transport are separate responsibilities:
+Backoffice target routing and transport are separate responsibilities:
 
 ```text
-Timing/domain behaviour
-       |
-       v
-Backoffice semantic boundary
-  source-aware messages
-  status
-  outbox
-       |
-       +-----------------------+
-       |                       |
-       v                       v
-SocketBackoffice           RabbitMqBackoffice
-system-test transport      production-shaped transport
-       |                       |
-       v                       v
-socket test peer           RabbitMQ broker
+SystemStatus / TimingNode.BackendMessagePort
+               ^
+               |
+      BackendMessageRouter
+      backend targets only
+               |
+               v
+         Messaging (I/O)
+          BackendGateway
+               |
+       +-------+-------+
+       |               |
+       v               v
+ SocketConnector   RabbitMqConnector
+       |               |
+       v               v
+ socket test peer  RabbitMQ broker
 ```
 
-Both implementations must preserve the same logical `RegistrationSource` identity and feed the same serialized application/domain path.
+`BackendMessageRouter` is application behaviour scoped only to external backend
+messages. `BackendGateway` and its connectors are I/O. Both transport
+implementations preserve the same semantic addressing and feed the same
+application router; neither transport owns application/TimingNode target
+resolution. `TimingNode.BackendMessagePort` is bidirectional.
 
 ## Semantic backoffice boundary
 
@@ -58,7 +63,7 @@ interface BackofficeInboundListener {
 
 `BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public framework.
 
-These semantic contracts belong with the domain/backoffice responsibility that owns their meaning. Transport/session/wire types belong under `comm`.
+These semantic contracts form the boundary between application `BackendMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
 The final system-level backoffice IDD can define the semantic obligations that both sides must fulfil while transport-specific/private specifications define their actual encoding where required.
 
@@ -210,13 +215,16 @@ RabbitMQ callbacks are external I/O callbacks and must not directly mutate timin
 RabbitMQ consumer callback
       |
       v
-source-aware BackofficeInboundMessage
+RabbitMqConnector / BackendGateway
       |
       v
-Backoffice binding resolution selects TimingNodeId / RegistrationSource
+transport-neutral backend message
       |
       v
-serialized framework/domain boundary
+BackendMessageRouter resolves ApplicationId / TimingNodeId
+      |
+      v
+application target or TimingNode.BackendMessagePort
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.
