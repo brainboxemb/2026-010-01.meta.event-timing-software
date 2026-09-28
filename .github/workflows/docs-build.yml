@@ -173,7 +173,7 @@ jobs:
                   raise SystemExit(f"project-owned execution revision mismatch: {execution_id}")
               if data["status"] != "success" or data["exit_code"] != 0:
                   raise SystemExit(f"producer execution failed: {execution_id}")
-              if data["tool_eng_docs_sha"] != "84fb9eae2efa5ed4a423747740875d9fcc9302aa":
+              if data["tool_eng_docs_sha"] != "99a565eedc999a77bb0339a684660b08edbc04dd":
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
               log_path = path.parent / data["log"]
               if not log_path.is_file() or log_path.stat().st_size == 0:
