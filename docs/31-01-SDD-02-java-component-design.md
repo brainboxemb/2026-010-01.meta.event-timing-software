@@ -82,6 +82,8 @@ io.github.brainboxemb.eventtiming/
     messaging/
     storage/
   infra/
+    bootstrap/
+  runtime/
   platform/
 ```
 
@@ -269,19 +271,49 @@ io.github.brainboxemb.eventtiming.app/
     RemoteApiWebSocketConfig.java
 ```
 
-The root stays readable by keeping the runtime objects visible and grouping the
-cohesive startup/configuration family under `app.bootstrap`. This is a source
-organisation boundary inside the executable artifact, not another Maven module.
+The framework owns the reusable SI-01 runtime and bootstrap components:
+
+```text
+io.github.brainboxemb.eventtiming/
+  runtime/
+    TimingApplication.java
+    TimingApplicationLifecycle.java
+  infra/
+    bootstrap/
+      ApplicationBootstrap.java
+      ApplicationConfig.java
+      PresentationConfig.java
+      RemoteShellConfig.java
+      RemoteApiConfig.java
+      RemoteApiHttpConfig.java
+      RemoteApiWebSocketConfig.java
+```
+
+`runtime/` is a Java source-organisation package for the top-level runtime
+objects; it is **not** an additional architecture layer or box in Figure SI01-01.
+The figure already describes the contents/responsibilities of that running
+`TimingApplication`.
+
+The executable artifact is deliberately thin:
+
+```text
+io.github.brainboxemb.eventtiming.app/
+  TimingApplicationMain.java
+  bootstrap/
+    YamlApplicationConfigLoader.java
+    EmbeddedBuildIdentityLoader.java
+```
 
 The executable startup flow is:
 
 ```text
 main()
-  -> obtain embedded BuildIdentity
-  -> ApplicationBootstrap
-       -> load + validate effective ApplicationConfig
+  -> EmbeddedBuildIdentityLoader
+  -> YamlApplicationConfigLoader
+       -> validated ApplicationConfig
+  -> framework ApplicationBootstrap
        -> select/construct concrete presentation/I/O/platform implementations
-       -> create reusable application/domain/core objects
+       -> create reusable application/domain/runtime objects
        -> install/start presentation and shutdown handling
   -> TimingApplication runtime
 ```
@@ -290,17 +322,18 @@ main()
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable framework application/runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The current executable keeps the small `TimingApplication.Builder` only for
-constructing the runtime object itself. `ApplicationBootstrap` is the concrete
-cross-cutting composition component around it: it owns the implemented Step-3
-YAML load/validation, effective `ApplicationConfig`, concrete presentation
-listener composition and startup/shutdown wiring.
+The framework keeps the small `TimingApplication.Builder` only for constructing
+the runtime object itself. `ApplicationBootstrap` is the concrete cross-cutting
+composition component around it and consumes the framework-owned effective
+`ApplicationConfig`.
 
-The configuration classes remain in the executable for now because the current
-consumer is the default application bootstrap. Moving a stable configuration
-model into the reusable framework is justified only when another concrete
-executable needs to consume the same model; the architecture does not make that
-artifact split pre-emptively.
+Concrete syntax/parsing is intentionally outside the framework. The default
+`event-timing-app` launcher currently uses SnakeYAML through
+`YamlApplicationConfigLoader`, maps that input into the framework configuration
+model, loads embedded build provenance through `EmbeddedBuildIdentityLoader`,
+and then delegates to `ApplicationBootstrap`. This keeps format/tooling
+dependencies such as SnakeYAML out of the reusable framework while making the
+architectural bootstrap/configuration model reusable.
 
 The implemented presentation structure is:
 
