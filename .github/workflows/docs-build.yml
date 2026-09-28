@@ -168,6 +168,13 @@ jobs:
             bld/sphinx-needs/source \
             bld/sphinx-needs/html
 
+      - name: Verify native Sphinx reader layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -F 'needs_layout_engineering_reader' bld/sphinx-needs/html/docs >/dev/null
+          grep -R -F 'id="target__hide__meta"' bld/sphinx-needs/html/docs >/dev/null
+
       - name: Normalize engineering traceability
         shell: bash
         env:
