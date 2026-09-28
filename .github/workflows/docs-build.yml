@@ -21,6 +21,7 @@ on:
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
+      - 'tools/render_needs_reader_markdown.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -45,6 +46,7 @@ on:
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
+      - 'tools/render_needs_reader_markdown.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -181,6 +183,50 @@ jobs:
             --source-revision "$SOURCE_REVISION" \
             --out bld/engineering-graph.json \
             --review bld/engineering-graph-review.md
+
+      - name: Render generated Markdown for human review
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/render_needs_reader_markdown.py \
+            --documents bld/docs/documents \
+            --needs bld/sphinx-needs/needs/needs.json
+
+      - name: Verify generated reader Markdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path("bld/docs/documents")
+          text = "\n".join(
+              path.read_text(encoding="utf-8")
+              for path in sorted(root.rglob("*.md"))
+          )
+
+          forbidden = (
+              "```{uc}",
+              "```{req}",
+              "```{ifreq}",
+              "```{arch}",
+              "```{vc}",
+          )
+          for token in forbidden:
+              if token in text:
+                  raise SystemExit(f"generated reader Markdown still contains {token}")
+
+          required = (
+              '> **Requirement — `SI01-REQ-003` — Minimal TimingNode composition**',
+              '**Derived from:**',
+              '**Satisfied by:**',
+              '**Verified by:**',
+              '<a id="SI01-REQ-003"></a>',
+          )
+          for token in required:
+              if token not in text:
+                  raise SystemExit(f"generated reader Markdown missing {token}")
+          PY
 
       - name: Verify generated output and retained producer evidence
         shell: bash
