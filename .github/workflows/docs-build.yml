@@ -107,6 +107,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python tools/test_validate_engineering_graph.py
           python tools/validate_engineering_graph.py --output bld/engineering-graph.json
 
       # Moon owns only the high-level execute/hydrate decision. The existing
