@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add the Migration 013 Step-3 traceability authoring canary: stable engineering anchors, compact adjacent relation metadata for the bounded UC/SI01/IF03/VC slice, architecture identities sourced directly from diagram YAML, directional ownership (`derived_from` on requirements, `satisfies` on design, `verifies` on verification), a human review view showing authored input beside generated incoming relations, and a project-local validator that rejects duplicate IDs and unknown relation owners/targets.
+
+
 - Compact Figure SI01-01 by aligning the main architecture canvas with the fixed title origin, reducing unused horizontal layer width and right-side whitespace, and increase secondary diagram text from 11 px to 12 px for readability.
 
 - Pin released `tool.eng-docs v0.3.11` and give the first SI-01 architecture nodes stable engineering `object_id` metadata (`TimingNode`, `CommandHandler`, `Conductor`, `RemoteApi`), with CI verifying that normal generated SVG and editable draw.io output preserve those identities without changing the visible Figure SI01-01 design.

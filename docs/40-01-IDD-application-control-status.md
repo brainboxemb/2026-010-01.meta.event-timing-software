@@ -273,16 +273,22 @@ This allows ST-1, engineering-client and later SI-02 development without prematu
 
 ## First-executable contract rules
 
+<a id="IF03-REQ-001"></a>
 **IF03-REQ-001 — Shared semantics**  
+<!-- eng {"type":"interface-requirement","relations":{"derived_from":["SI01-REQ-022","SI01-REQ-030"]}} -->
 HTTP/JSON and WebSocket representations shall map to the shared SI-01 application/status semantics rather than implement independent business/status state in the transport adapter.
 
+<a id="IF03-REQ-002"></a>
 **IF03-REQ-002 — Remote-host operation**  
+<!-- eng {"type":"interface-requirement","relations":{"derived_from":["SI01-REQ-031"]}} -->
 The interface shall support operation across a normal IP network boundary when non-loopback access is explicitly configured, so a client can run on a workstation while SI-01 runs on another host such as a Raspberry Pi.
 
 **IF03-REQ-003 — Version query**  
 The interface shall provide `GET /api/v1/version` representing `IF03-OP-001`.
 
+<a id="IF03-REQ-004"></a>
 **IF03-REQ-004 — Status query**  
+<!-- eng {"type":"interface-requirement","relations":{"derived_from":["SI01-REQ-020","SI01-REQ-021","SI01-REQ-022"]}} -->
 The interface shall provide `GET /api/v1/status` representing `IF03-OP-002`.
 
 **IF03-REQ-005 — Live status/event delivery**  
@@ -322,7 +328,10 @@ The SRD references this contract instead of duplicating transport schema details
 
 Verification-case identifiers use `VC-<profile>-<number>` for this baseline.
 
+<a id="VC-ST1-001"></a>
 ### VC-ST1-001 — Query and resynchronise first-executable status
+
+<!-- eng {"type":"verification-case","relations":{"verifies":["SI01-REQ-003","SI01-REQ-020","SI01-REQ-021","SI01-REQ-022","SI01-REQ-030","SI01-REQ-031","IF03-REQ-001","IF03-REQ-002","IF03-REQ-004"]}} -->
 
 Trace target:
 

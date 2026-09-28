@@ -168,6 +168,7 @@ The `ST-*` profiles provide a progressive set of reusable system-test compositio
 
 ### ST-1 — Application behaviour profile
 
+
 Purpose: fast automated verification of **application behaviour through the public application interface**.
 
 Composition:
