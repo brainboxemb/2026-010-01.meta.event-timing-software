@@ -1,8 +1,8 @@
 diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
-  width: 1640
-  height: 1415
+  width: 1600
+  height: 1345
   description: Working responsibility view of the reusable framework and executable application.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -10,25 +10,25 @@ groups:
 - id: presentation-layer
   label: Presentation / external interfaces
   kind: layer-presentation
-  layout: {x: 120, y: 85, w: 1220, h: 230}
+  layout: {x: 120, y: 85, w: 1180, h: 230}
 - id: application-layer
   label: Application layer
   kind: layer-application
-  layout: {x: 120, y: 345, w: 1220, h: 155}
+  layout: {x: 120, y: 345, w: 1180, h: 155}
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 120, y: 530, w: 1220, h: 400}
-  # Domain keeps breathing room below TimingNode while its lower-right edge
-  # yields to domain-adjacent I/O. The matching I/O polygon stays separated by
-  # a small white gap so neither responsibility visually overlaps the other.
+  layout: {x: 120, y: 530, w: 1180, h: 400}
+  # Domain keeps breathing room below TimingNode. The shallower cut-away starts
+  # earlier to keep the Domain/I/O relation visible without making Devices look
+  # deeply embedded in Domain.
   outline:
     points:
       - {x: 0.0, y: 0.0}
       - {x: 1.0, y: 0.0}
-      - {x: 1.0, y: 0.65}
-      - {x: 0.7704918, y: 0.65}
-      - {x: 0.7049180, y: 1.0}
+      - {x: 1.0, y: 0.775}
+      - {x: 0.7203390, y: 0.775}
+      - {x: 0.6694915, y: 1.0}
       - {x: 0.0, y: 1.0}
 - id: timing-node-aggregate
   label: "TimingNode (1..N)"
@@ -38,26 +38,26 @@ groups:
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
-  layout: {x: 120, y: 820, w: 1220, h: 330}
-  label_offset: {x: 0, y: 130}
-  # The right shoulder is part of I/O itself, not a device card floating above
-  # the layer. Its diagonal follows Domain with a visible separation.
+  layout: {x: 120, y: 870, w: 1180, h: 260}
+  label_offset: {x: 0, y: 86}
+  # The shallower right shoulder remains part of I/O itself. It starts further
+  # left and follows Domain with a constant visible gap.
   outline:
     points:
-      - {x: 0.0, y: 0.4242424}
-      - {x: 0.7131148, y: 0.4242424}
-      - {x: 0.7786885, y: 0.0}
+      - {x: 0.0, y: 0.3461538}
+      - {x: 0.6779661, y: 0.3461538}
+      - {x: 0.7288136, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 1.0}
       - {x: 0.0, y: 1.0}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 120, y: 1190, w: 1220, h: 100}
+  layout: {x: 120, y: 1160, w: 1180, h: 100}
 - id: crosscutting-layer
   label: Cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1370, y: 85, w: 230, h: 1245}
+  layout: {x: 1330, y: 85, w: 230, h: 1175}
 
 nodes:
 - id: timing-node-root
@@ -179,7 +179,7 @@ nodes:
   subtitle: "application-wide status/health"
   kind: service
   notation: component
-  layout: {x: 995, y: 655, w: 210, h: 85}
+  layout: {x: 1000, y: 655, w: 220, h: 85}
 
 - id: storage-io
   group: io-layer
@@ -189,7 +189,7 @@ nodes:
     - "backup / restore"
   kind: storage
   notation: packaging-component
-  layout: {x: 145, y: 995, w: 220, h: 120}
+  layout: {x: 145, y: 990, w: 200, h: 95}
 - id: devices-io
   group: io-layer
   label: "Devices"
@@ -208,9 +208,9 @@ nodes:
         - KeypadRev1Can
   kind: integration
   notation: packaging-component
-  # Fully enclosed by the raised I/O shoulder while remaining connected to the
-  # compact normal I/O band below.
-  layout: {x: 1075, y: 840, w: 240, h: 165}
+  # Aligned with SystemStatus above and fully enclosed by the shallower I/O
+  # shoulder.
+  layout: {x: 1000, y: 885, w: 220, h: 165}
 - id: device-network-io
   group: io-layer
   label: "DeviceNetworks"
@@ -219,7 +219,7 @@ nodes:
     - NetworkDeviceService
   kind: integration
   notation: packaging-component
-  layout: {x: 385, y: 995, w: 250, h: 120}
+  layout: {x: 365, y: 990, w: 240, h: 95}
 - id: messaging-io
   group: io-layer
   label: "Messaging"
@@ -231,13 +231,13 @@ nodes:
             - RabbitMqConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 655, y: 995, w: 285, h: 120}
+  layout: {x: 625, y: 990, w: 260, h: 105}
 
 - id: platform-primitives
   group: platform-layer
   label: Clock • filesystem • executors • process/network/OS primitives
   kind: platform
-  layout: {x: 290, y: 1220, w: 880, h: 45}
+  layout: {x: 270, y: 1190, w: 880, h: 45}
 
 - id: application-bootstrap
   group: crosscutting-layer
@@ -245,17 +245,17 @@ nodes:
   subtitle: "config • composition"
   kind: crosscutting
   notation: component
-  layout: {x: 1400, y: 165, w: 170, h: 80}
+  layout: {x: 1360, y: 165, w: 170, h: 80}
 - id: crosscutting-concerns
   group: crosscutting-layer
   label: "Logging\n\nDiagnostics\n\nBuild / version identity"
   kind: crosscutting
-  layout: {x: 1400, y: 285, w: 170, h: 175}
+  layout: {x: 1360, y: 285, w: 170, h: 175}
 - id: boundary-note
   group: crosscutting-layer
   label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
-  layout: {x: 1400, y: 1210, w: 170, h: 70}
+  layout: {x: 1360, y: 1180, w: 170, h: 70}
 
 edges:
 - from: local-console
