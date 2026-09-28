@@ -1077,7 +1077,10 @@ Development/test host
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backend is defined in the SSAD rather than duplicated here.
 
+<a id="SAD-TESTABILITY"></a>
 ## Testability and failure/recovery architecture
+
+<!-- eng {"type":"document-section"} -->
 
 Testability is an architecture property. Application/domain code should where practical:
 
