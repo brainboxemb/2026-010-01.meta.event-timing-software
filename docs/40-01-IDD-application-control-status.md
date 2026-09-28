@@ -277,14 +277,18 @@ This allows ST-1, engineering-client and later SI-02 development without prematu
 :id: IF03-REQ-001
 :derived_from: SI01-REQ-022, SI01-REQ-030
 
-HTTP/JSON and WebSocket representations shall map to the shared SI-01 application/status semantics rather than implement independent business/status state in the transport adapter.
+HTTP/JSON and WebSocket representations shall map to the shared SI-01
+application/status semantics rather than implement independent business/status
+state in the transport adapter.
 ```
 
 ```{ifreq} Remote-host operation
 :id: IF03-REQ-002
 :derived_from: SI01-REQ-031
 
-The interface shall support operation across a normal IP network boundary when non-loopback access is explicitly configured, so a client can run on a workstation while SI-01 runs on another host such as a Raspberry Pi.
+The interface shall support operation across a normal IP network boundary when
+non-loopback access is explicitly configured, so a client can run on a
+workstation while SI-01 runs on another host such as a Raspberry Pi.
 ```
 
 **IF03-REQ-003 — Version query**  
