@@ -227,6 +227,26 @@ jobs:
           for token in required:
               if token not in text:
                   raise SystemExit(f"generated reader Markdown missing {token}")
+
+          srd = (root / "20-01-SRD-timing-application-requirements.md").read_text(
+              encoding="utf-8"
+          )
+          start = srd.index('<a id="SI01-REQ-003"></a>')
+          end = srd.index('<a id="SI01-REQ-020"></a>', start)
+          block = srd[start:end]
+          body_text = "The first executable shall support configuration of at least"
+          order = (
+              block.index("**SI01-REQ-003 — Minimal TimingNode composition**"),
+              block.index(body_text),
+              block.index("- **Type:** Requirement"),
+              block.index("- **Derived from:**"),
+              block.index("- **Satisfied by:**"),
+              block.index("- **Verified by:**"),
+          )
+          if order != tuple(sorted(order)):
+              raise SystemExit(
+                  "generated reader Markdown does not render Need body before metadata"
+              )
           PY
 
       - name: Verify generated output and retained producer evidence
