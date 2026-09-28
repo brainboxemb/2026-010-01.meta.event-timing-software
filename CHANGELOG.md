@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Separate backend target routing from the I/O gateway: add application-level `BackendMessageRouter` scoped only to external backend messages, keep `Messaging`/`BackendGateway` as the I/O transport boundary, route application targets such as `SystemStatus` and TimingNode targets to `MessageHandler`, and explicitly avoid a generic in-process message bus.
+- Clarify Web presentation multiplicity: SI-01 may compose 1..N Web endpoints, with each endpoint bound to exactly one `TimingNodeId` and owning its own presentation-configured listen port.
+
 - Introduce `ApplicationBootstrap` as a reusable framework-owned cross-cutting startup/composition component, keep the effective configuration model with that framework bootstrap, keep concrete YAML/build-resource loaders in the thin executable artifact, and define component-root Java package readability rules without adding a separate Runtime box to the architecture view.
 
 - Pin `tool.eng-docs` v0.3.10 and refine Figure SI01-01 into complementary Domain/I/O polygons with a visible gap: enlarge Domain for breathing room, fully enclose raised Devices in an I/O shoulder, and compact the normal I/O cards/band.

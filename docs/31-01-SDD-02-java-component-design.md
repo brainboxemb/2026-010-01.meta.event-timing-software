@@ -122,6 +122,7 @@ For example, the first TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
+  BackendMessageRouter.java        when backend messaging is implemented
 
 domain/
   timing/
@@ -167,12 +168,17 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
 mirror the hardware name.
 
-`BackendGateway` owns backend addressing/routing and uses 1..N concrete
-connectors. A connector such as `RabbitMqConnector` owns transport/session
-mechanics. `TimingNode.MessageHandler` owns the semantic handling of messages
-already resolved to that TimingNode and executes state-changing work inside its
-serial boundary. No application-level `MessageHandler` is introduced until a
-real application-scoped backend message requires one.
+`BackendMessageRouter` owns application-level target resolution for external
+backend messages only. It resolves application-scoped targets such as
+`SystemStatus` and `TimingNodeId` targets before the selected
+`TimingNode.MessageHandler` handles domain meaning inside its serial boundary.
+It is not a generic in-process message bus.
+
+The I/O `messaging` capability owns `BackendGateway` and its 1..N concrete
+connectors. `BackendGateway` owns the application-facing backend transport/message
+boundary; a connector such as `RabbitMqConnector` owns transport/session
+mechanics. The application router depends on the Messaging capability rather than
+on a concrete connector.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.

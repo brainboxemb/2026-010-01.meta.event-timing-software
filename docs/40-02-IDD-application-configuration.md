@@ -158,20 +158,18 @@ io
         type: socket
 ```
 
-`BackendGateway` owns backend-message addressing/routing after a connector has
-converted external protocol data into an application-facing message. A message
-addressed to a `TimingNodeId` is resolved to that TimingNode and enters its
-serial execution boundary before its `MessageHandler` processes it.
+`BackendGateway` owns the I/O backend transport/message boundary after a
+connector has converted external protocol data into an application-facing
+message. Application-level `BackendMessageRouter` then resolves the semantic
+backend target. A `TimingNodeId` target enters that TimingNode's serial
+execution boundary before its `MessageHandler` processes it; an
+`ApplicationId` target can resolve to application-scoped responsibilities such
+as `SystemStatus`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or a
-socket session. It does not own TimingNode selection or TimingNode message
-semantics.
-
-`ApplicationId` establishes the separate application-wide identity needed for
-future application-scoped backend messaging. No application-level
-`MessageHandler` is part of the current configuration/architecture baseline;
-that behaviour is added only when a concrete application-scoped capability
-requires it.
+socket session. It does not own application/TimingNode selection or domain
+message semantics. `BackendMessageRouter` is scoped only to external backend
+messages and is not a generic internal message bus.
 
 Storage settings remain under I/O because they configure external persistence.
 
@@ -187,9 +185,26 @@ presentation
     http
     webSocket
   remoteShell
+  web
+    web-01
+      timingNodeId: timing-node-01
+      bindAddress
+      port
+    web-02
+      timingNodeId: timing-node-02
+      bindAddress
+      port
 ```
 
-A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell or external GUI/test client exists. Presentation interfaces map their requests to the application boundary.
+The Web interface is multiplicative: a deployment composes one Web endpoint per
+TimingNode that exposes the browser UI. Each Web endpoint references exactly one
+`TimingNodeId` and owns its own listener/bind address/port. A multi-TimingNode
+process can therefore expose 1..N Web ports. Those transport settings remain
+presentation configuration; they are not fields of `TimingNode`.
+
+A TimingNode therefore does not need to know that an HTTP listener, WebSocket,
+shell or external GUI/test client exists. Presentation interfaces map their
+requests to the application boundary.
 
 The currently implemented A05-A07 subset is:
 

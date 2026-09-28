@@ -30,22 +30,34 @@ nodes:
     layout: {x: 100, y: 190, w: 250, h: 85}
 
   - id: io-mapping
-    label: "Device/backend ingress\nAntenna • Device Networks • BackendGateway"
+    label: "Device ingress\nAntenna • Device Networks"
     kind: integration
     group: ingress
-    layout: {x: 85, y: 345, w: 280, h: 120}
+    layout: {x: 85, y: 325, w: 280, h: 100}
+
+  - id: backend-ingress
+    label: "Messaging / BackendGateway\nbackend transport boundary"
+    kind: integration
+    group: ingress
+    layout: {x: 85, y: 460, w: 280, h: 100}
 
   - id: timer-ingress
     label: "Scheduled triggers\ncallback submits to owning target"
     kind: platform
     group: ingress
-    layout: {x: 100, y: 540, w: 250, h: 85}
+    layout: {x: 100, y: 605, w: 250, h: 85}
 
   - id: command-handler
     label: "CommandHandler\npresentation commands / queries"
     kind: application
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}
+
+  - id: backend-message-router
+    label: "BackendMessageRouter\nbackend target resolution only"
+    kind: application
+    group: runtime
+    layout: {x: 520, y: 275, w: 610, h: 80}
 
   - id: timing-node-01
     label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nMessageHandler • normal domain calls"
@@ -89,10 +101,33 @@ edges:
 
   - from: io-mapping
     to: timing-node-01
+    from_anchor: {side: right, position: 0.35}
+    to_anchor: {side: left, position: 0.30}
+    route:
+      - {x: 420, y: 360}
+      - {x: 470, y: 360}
+      - {x: 470, y: 442}
+
+  - from: io-mapping
+    to: timing-node-02
+    from_anchor: {side: right, position: 0.70}
+    to_anchor: {side: left, position: 0.30}
+    route:
+      - {x: 410, y: 395}
+      - {x: 825, y: 395}
+      - {x: 825, y: 442}
+
+  - from: backend-ingress
+    to: backend-message-router
+    from_anchor: {side: right, position: 0.50}
+    to_anchor: {side: left, position: 0.50}
+
+  - from: backend-message-router
+    to: timing-node-01
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
-  - from: io-mapping
+  - from: backend-message-router
     to: timing-node-02
     from_anchor: {side: bottom, position: 0.70}
     to_anchor: {side: top, position: 0.50}
