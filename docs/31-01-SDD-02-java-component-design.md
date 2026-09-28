@@ -202,7 +202,10 @@ io
   hardware, messaging and storage adapters
 
 infra
-  cross-cutting technical support
+  cross-cutting technical support and framework bootstrap/composition
+
+runtime
+  top-level composed runtime object and lifecycle mechanics
 
 platform
   execution-environment abstractions
@@ -214,11 +217,13 @@ interfaces.
 ## Internal dependency direction
 
 ```text
-presentation --> application
-application  --> domain / core / I/O ports
-io           --> application/domain ports + platform
-core         --> reusable runtime mechanics
-platform     --> low-level environment only
+presentation    --> application
+application     --> domain / core / I/O ports
+io              --> application/domain ports + platform
+runtime         --> application / domain / core
+infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
+core            --> reusable execution mechanics
+platform        --> low-level environment only
 ```
 
 Domain code does not depend on presentation or concrete I/O adapters.
