@@ -17,7 +17,8 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/calculate_sip_actuals.py'
-      - 'tools/calculate_sip_actuals.py'
+      - 'tools/validate_engineering_graph.py'
+      - 'tools/test_validate_engineering_graph.py'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
@@ -41,6 +42,9 @@ on:
       - 'tools/generate_timing_detail_diagrams.py'
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
+      - 'tools/calculate_sip_actuals.py'
+      - 'tools/validate_engineering_graph.py'
+      - 'tools/test_validate_engineering_graph.py'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
@@ -105,10 +109,14 @@ jobs:
 
       - name: Validate engineering traceability canary
         shell: bash
+        env:
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           python tools/test_validate_engineering_graph.py
-          python tools/validate_engineering_graph.py --output bld/engineering-graph.json
+          python tools/validate_engineering_graph.py \
+            --source-revision "$SOURCE_REVISION" \
+            --output bld/engineering-graph.json
 
       # Moon owns only the high-level execute/hydrate decision. The existing
       # project-specific diagram/planning scripts and released eng-docs assembler
@@ -125,6 +133,7 @@ jobs:
           SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
+          test -f bld/engineering-graph.json
           test -f bld/docs/README.md
           test -f bld/docs/source-sha.txt
           test -f bld/docs/documents/README.md
@@ -191,6 +200,25 @@ jobs:
           if assembled_source != revisions["docs-assemble"]:
               raise SystemExit("assembled source SHA does not match assemble producer evidence")
 
+          graph = json.loads((root / "bld/engineering-graph.json").read_text(encoding="utf-8"))
+          if graph.get("schema") != "brainboxemb.engineering-graph-canary" or graph.get("schema_version") != 1:
+              raise SystemExit("unexpected engineering graph evidence schema")
+          if graph.get("source_revision") != os.environ["SOURCE_REVISION"]:
+              raise SystemExit("engineering graph evidence revision mismatch")
+          expected_ids = {
+              "UC-001", "UC-008", "UC-014",
+              "SI01-REQ-003", "SI01-REQ-020", "SI01-REQ-021",
+              "SI01-REQ-022", "SI01-REQ-030", "SI01-REQ-031",
+              "IF03-REQ-001", "IF03-REQ-002", "IF03-REQ-004",
+              "TimingNode", "CommandHandler", "Conductor", "RemoteApi",
+              "VC-ST1-001", "SAD-TESTABILITY", "SVP-ST-1",
+          }
+          actual_ids = {item["id"] for item in graph["objects"]}
+          if actual_ids != expected_ids:
+              raise SystemExit("engineering graph bounded-slice object set mismatch")
+          if graph.get("object_count") != 19 or graph.get("relation_count") != 42:
+              raise SystemExit("engineering graph bounded-slice counts mismatch")
+
           materialization = json.loads(
               (root / ".moon/invocations/software_docs.assemble/materialization.json").read_text(encoding="utf-8")
           )
@@ -209,12 +237,26 @@ jobs:
       # producer provenance on a later cache hit.
       - name: Stage documentation publication
         shell: bash
+        env:
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           staging="$RUNNER_TEMP/software-docs-publication"
           rm -rf "$staging"
-          mkdir -p "$staging/orchestration"
+          mkdir -p "$staging/orchestration" "$staging/evidence/traceability"
           cp -a bld/docs/. "$staging/"
+          cp bld/engineering-graph.json "$staging/evidence/traceability/engineering-graph.json"
+          cat > "$staging/evidence/traceability/README.md" <<EOF
+          # Engineering graph review evidence
+
+          This is Migration 013 Step-3 review evidence, not a stable public graph API.
+
+          - source revision: `$SOURCE_REVISION`
+          - source: selected event-timing Markdown anchors/adjacent relations plus diagram `object_id` values
+          - normalized graph: [engineering-graph.json](engineering-graph.json)
+
+          Reader-facing backlinks, object pages and portal views are intentionally deferred.
+          EOF
           cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
 
