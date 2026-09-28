@@ -251,8 +251,8 @@ jobs:
 
           This is Migration 013 Step-3 review evidence, not a stable public graph API.
 
-          - source revision: `$SOURCE_REVISION`
-          - source: selected event-timing Markdown anchors/adjacent relations plus diagram `object_id` values
+          - source revision: $SOURCE_REVISION
+          - source: selected event-timing Markdown anchors/adjacent relations plus diagram object_id values
           - normalized graph: [engineering-graph.json](engineering-graph.json)
 
           Reader-facing backlinks, object pages and portal views are intentionally deferred.
