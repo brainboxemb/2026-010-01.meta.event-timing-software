@@ -6,14 +6,21 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Qualify the reusable `tool.eng-docs` engineering-graph boundary against the
-  real Step-3 traceability source, moving extraction/review validation out of
-  project-local scripts while keeping event-timing object/relation semantics in
-  `docs/engineering-graph-model.yml`. This qualification branch pins the exact
-  unreleased owner head and must move to the immutable release before merge.
+- Requalify Migration 013 traceability authoring on the bounded 17-object /
+  34-relation slice using native MyST/Sphinx-Needs: graph-exposed engineering
+  objects now own their stable ID and outgoing relations directly in typed
+  directives, consumer-owned Needs schemas validate relation types, Needs
+  generates inverse/backlinks, and `needs.json` feeds the reusable
+  `tool.eng-docs` normalization/review boundary. Architecture diagram
+  `object_id` values reference the same Needs objects rather than define a
+  second engineering graph. This qualification branch pins the exact unreleased
+  owner PR head and must move to immutable `v0.4.0` before merge.
 
-
-- Add the Migration 013 Step-3 traceability authoring canary: stable engineering anchors, compact adjacent relation metadata for the bounded UC/SI01/IF03/VC slice, architecture identities sourced directly from diagram YAML, directional ownership (`derived_from` on requirements, `satisfies` on design, `verifies` on verification), a human review view showing authored input beside generated incoming relations, and a project-local validator that rejects duplicate IDs and unknown relation owners/targets.
+- Retain the Migration 013 Step-3 production result as the behaviour baseline:
+  requirements own `derived_from`, design owns `satisfies`, verification owns
+  `verifies`, and inverse context is generated rather than authored. The
+  original anchor + hidden-`eng` syntax is superseded by the native
+  MyST/Sphinx-Needs authoring decision.
 
 
 - Compact Figure SI01-01 by aligning the main architecture canvas with the fixed title origin, reducing unused horizontal layer width and right-side whitespace, and increase secondary diagram text from 11 px to 12 px for readability.
