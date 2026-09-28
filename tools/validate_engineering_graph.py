@@ -11,6 +11,7 @@ def main():
     p.add_argument("--docs", default="docs")
     p.add_argument("--diagrams", default="docs/_diagrams")
     p.add_argument("--output")
+    p.add_argument("--source-revision")
     a=p.parse_args()
     objects={}
     relations=[]
@@ -45,7 +46,15 @@ def main():
     for r in relations:
         if r["to"] not in objects:
             raise SystemExit(f'{r["source"]}: unknown {r["type"]} target {r["to"]}')
-    graph={"objects":[objects[k] for k in sorted(objects)],"relations":relations}
+    graph={
+        "schema":"brainboxemb.engineering-graph-canary",
+        "schema_version":1,
+        "source_revision":a.source_revision,
+        "object_count":len(objects),
+        "relation_count":len(relations),
+        "objects":[objects[k] for k in sorted(objects)],
+        "relations":relations,
+    }
     if a.output:
         out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(graph,indent=2)+"\n",encoding="utf-8")
