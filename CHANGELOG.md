@@ -6,6 +6,13 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Qualify the reusable `tool.eng-docs` engineering-graph boundary against the
+  real Step-3 traceability source, moving extraction/review validation out of
+  project-local scripts while keeping event-timing object/relation semantics in
+  `docs/engineering-graph-model.yml`. This qualification branch pins the exact
+  unreleased owner head and must move to the immutable release before merge.
+
+
 - Add the Migration 013 Step-3 traceability authoring canary: stable engineering anchors, compact adjacent relation metadata for the bounded UC/SI01/IF03/VC slice, architecture identities sourced directly from diagram YAML, directional ownership (`derived_from` on requirements, `satisfies` on design, `verifies` on verification), a human review view showing authored input beside generated incoming relations, and a project-local validator that rejects duplicate IDs and unknown relation owners/targets.
 
 
