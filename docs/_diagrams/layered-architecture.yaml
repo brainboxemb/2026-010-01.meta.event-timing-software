@@ -87,8 +87,8 @@ nodes:
   layout: {x: 365, y: 125, w: 220, h: 65}
 - id: web-interface
   group: presentation-layer
-  label: "Web"
-  subtitle: "browser-facing UI"
+  label: "Web (1..N)"
+  subtitle: "per TimingNode • own port"
   kind: presentation
   notation: component
   layout: {x: 605, y: 125, w: 200, h: 65}
@@ -113,19 +113,26 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 250, y: 390, w: 360, h: 75}
+  layout: {x: 165, y: 390, w: 280, h: 75}
 - id: command-handler
   group: application-layer
   label: "CommandHandler"
   subtitle: "presentation commands / queries"
   kind: application
   notation: component
-  layout: {x: 750, y: 390, w: 360, h: 75}
+  layout: {x: 465, y: 390, w: 310, h: 75}
+- id: backend-message-router
+  group: application-layer
+  label: "BackendMessageRouter"
+  subtitle: "backend target resolution / routing"
+  kind: application
+  notation: component
+  layout: {x: 795, y: 390, w: 405, h: 75}
 
-- id: message-handler
+- id: backend-message-port
   group: timing-node-aggregate
-  label: "MessageHandler"
-  subtitle: "addressed backend message entry point"
+  label: "BackendMessagePort"
+  subtitle: "inbound / outbound backend messages"
   kind: service
   notation: component
   layout: {x: 430, y: 610, w: 245, h: 70}
@@ -287,6 +294,21 @@ edges:
   to: application-conductor
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
+
+- from: backend-message-router
+  to: domain-layer
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.86}
+
+- from: backend-message-router
+  to: messaging-io
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
+  route:
+    - {x: 1315, y: 427.5}
+    - {x: 1315, y: 1120}
+    - {x: 755, y: 1120}
+    - {x: 755, y: 1095}
 
 - from: application-conductor
   to: domain-layer

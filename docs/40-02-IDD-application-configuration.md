@@ -142,8 +142,10 @@ configuration model.
 ### Backend messaging
 
 When backend messaging is enabled, SI-01 composes one `BackendGateway` using
-1..N connectors. Configuration selects those concrete transports and any
-transport-specific addressing/mapping needed at the external boundary.
+1..N connectors plus one application-level `BackendMessageRouter`.
+Configuration selects the concrete transports and any transport-specific
+addressing/mapping needed at the external boundary; target resolution to
+application/domain responsibilities remains an application concern.
 
 Representative direction:
 
@@ -158,20 +160,17 @@ io
         type: socket
 ```
 
-`BackendGateway` owns backend-message addressing/routing after a connector has
-converted external protocol data into an application-facing message. A message
-addressed to a `TimingNodeId` is resolved to that TimingNode and enters its
-serial execution boundary before its `MessageHandler` processes it.
+`BackendGateway` owns the external backend boundary after a connector has
+converted external protocol data into an application-facing message.
+`BackendMessageRouter` resolves the internal target: `ApplicationId` can
+address an application-scoped Domain responsibility, while `TimingNodeId`
+resolves to the corresponding TimingNode's bidirectional
+`BackendMessagePort`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or a
-socket session. It does not own TimingNode selection or TimingNode message
-semantics.
-
-`ApplicationId` establishes the separate application-wide identity needed for
-future application-scoped backend messaging. No application-level
-`MessageHandler` is part of the current configuration/architecture baseline;
-that behaviour is added only when a concrete application-scoped capability
-requires it.
+socket session. It does not own Domain/TimingNode selection or message
+semantics. The router is backend-specific and is not used as a generic internal
+application message bus.
 
 Storage settings remain under I/O because they configure external persistence.
 
@@ -183,11 +182,24 @@ Representative direction:
 
 ```text
 presentation
+  web
+    endpoints (1 per TimingNode)
+      web-timing-node-01
+        timingNodeId: timing-node-01
+        bindAddress
+        port
+      ...
   remoteApi
     http
     webSocket
   remoteShell
 ```
+
+The intended Web topology has exactly one configured Web binding for each
+configured TimingNode. Each binding references a `TimingNodeId` and owns its
+own bind address/port; a multi-TimingNode process therefore exposes 1..N Web
+ports. Those listener settings remain Presentation configuration and do not
+become fields of the TimingNode domain object.
 
 A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell or external GUI/test client exists. Presentation interfaces map their requests to the application boundary.
 
