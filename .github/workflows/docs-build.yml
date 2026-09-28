@@ -320,7 +320,13 @@ jobs:
                   raise SystemExit(f"project-owned execution revision mismatch: {execution_id}")
               if data["status"] != "success" or data["exit_code"] != 0:
                   raise SystemExit(f"producer execution failed: {execution_id}")
-              if data["tool_eng_docs_sha"] != "63af20a033d6295a28c844d12cb87f76165e69a5":
+              allowed_tool_eng_docs_producers = {
+                  # Pre-release owner head used to produce the reusable cached Book tree.
+                  "a5224de7d62973a1836ec023801324adaa6ebebd",
+                  # Immutable v0.4.0 release currently pinned by this consumer.
+                  "63af20a033d6295a28c844d12cb87f76165e69a5",
+              }
+              if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
               log_path = path.parent / data["log"]
               if not log_path.is_file() or log_path.stat().st_size == 0:
