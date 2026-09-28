@@ -114,6 +114,8 @@ presentation/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
+<!-- eng-rel {"id":"RemoteApi","relations":{"satisfies":["SI01-REQ-031","IF03-REQ-001","IF03-REQ-002","IF03-REQ-004"]}} -->
+
 The **Remote API** is the general programmable interface of the **Headless Timing Application** (SI-01) for remote clients, engineering tools and headless black-box/integration tests. A06/A07 implement only its first version/status/event slice; later supported control and diagnostic operations grow inside the same functional interface.
 
 **Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode, so an application with 1..N TimingNodes exposes 1..N Web bindings/ports. Each Web binding references its TimingNode by `TimingNodeId`; the bind address/port remains presentation configuration and is not a property of the TimingNode domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
@@ -140,7 +142,11 @@ application/
     backend-only application/domain target resolution and routing
 ```
 
+<!-- eng-rel {"id":"Conductor","relations":{}} -->
+
 `Conductor` coordinates application-wide lifecycle and active TimingNodes.
+
+<!-- eng-rel {"id":"CommandHandler","relations":{"satisfies":["SI01-REQ-022","SI01-REQ-030","SI01-REQ-031","IF03-REQ-001","IF03-REQ-004"]}} -->
 
 `CommandHandler` is the shared entry point for presentation requests. It may
 serve simple application reads such as `version()`. Application-wide operations
@@ -308,6 +314,8 @@ adapter. Normal runtime interactions do not route through bootstrap after
 composition is complete.
 
 ## Principal runtime abstractions
+
+<!-- eng-rel {"id":"TimingNode","relations":{"satisfies":["SI01-REQ-003","SI01-REQ-020","SI01-REQ-021"]}} -->
 
 A `TimingNode` is the primary independently addressed operational/domain aggregate inside the **Headless Timing Application** (SI-01). One application process may host one or more TimingNodes. `SystemStatus` is application-scoped and aggregates/monitors overall runtime and TimingNode status rather than belonging to one TimingNode.
 
@@ -1077,10 +1085,8 @@ Development/test host
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backend is defined in the SSAD rather than duplicated here.
 
-<a id="SAD-TESTABILITY"></a>
 ## Testability and failure/recovery architecture
 
-<!-- eng {"type":"document-section"} -->
 
 Testability is an architecture property. Application/domain code should where practical:
 
