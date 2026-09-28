@@ -1,0 +1,90 @@
+diagram:
+  id: runtime-logging
+  title: Figure SI01-05 — Runtime logging and live diagnostics
+  width: 1420
+  height: 760
+  description: Cross-cutting logging flow from provider-neutral framework calls to retained file logging and optional engineering live diagnostics.
+  note: The configured level is the restart baseline. A temporary runtime override is process state only and is not written back to deployment configuration.
+
+groups:
+  - id: code
+    label: Reusable framework / application code
+    kind: layer-domain
+    layout: {x: 70, y: 120, w: 300, h: 500}
+
+  - id: logging
+    label: Executable logging composition
+    kind: layer-crosscutting
+    layout: {x: 410, y: 120, w: 610, h: 500}
+
+  - id: engineering
+    label: Engineering support
+    kind: layer-presentation
+    layout: {x: 1060, y: 120, w: 290, h: 500}
+
+nodes:
+  - id: slf4j-calls
+    label: "SLF4J API\nframework log calls"
+    kind: service
+    group: code
+    layout: {x: 110, y: 260, w: 220, h: 90}
+
+  - id: jul
+    label: "slf4j-jdk14\njava.util.logging"
+    kind: crosscutting
+    group: logging
+    layout: {x: 455, y: 205, w: 245, h: 90}
+
+  - id: control
+    label: "LoggingControl\nconfigured level + runtime override"
+    kind: crosscutting
+    group: logging
+    layout: {x: 735, y: 205, w: 240, h: 90}
+
+  - id: console
+    label: "ConsoleHandler\nlocal diagnostics"
+    kind: crosscutting
+    group: logging
+    layout: {x: 455, y: 385, w: 210, h: 85}
+
+  - id: file
+    label: "FileHandler\nsize rotation + retention"
+    kind: storage
+    group: logging
+    layout: {x: 690, y: 385, w: 245, h: 85}
+
+  - id: live
+    label: "LiveLogHandler + DiagnosticLogServer\nbest-effort stream"
+    kind: crosscutting
+    group: logging
+    layout: {x: 545, y: 505, w: 345, h: 85}
+
+  - id: log-files
+    label: "Operational log files\nretained history"
+    kind: storage
+    group: engineering
+    layout: {x: 1095, y: 240, w: 220, h: 90}
+
+  - id: test-client
+    label: "JavaFX engineering client\nLogs tab"
+    kind: client
+    group: engineering
+    layout: {x: 1095, y: 445, w: 220, h: 90}
+
+edges:
+  - {from: slf4j-calls, to: jul}
+  - {from: control, to: jul, label: "global level"}
+  - {from: jul, to: console}
+  - {from: jul, to: file}
+  - {from: jul, to: live}
+  - {from: file, to: log-files, label: "retained"}
+  - from: live
+    to: test-client
+    label: "new log records"
+    from_anchor: {side: right, position: 0.65}
+    to_anchor: {side: left, position: 0.65}
+  - from: test-client
+    to: live
+    label: "TCP connect + get/set level"
+    from_anchor: {side: left, position: 0.30}
+    to_anchor: {side: right, position: 0.30}
