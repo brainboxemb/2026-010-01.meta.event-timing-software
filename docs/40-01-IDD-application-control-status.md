@@ -335,8 +335,13 @@ The SRD references this contract instead of duplicating transport schema details
 Verification-case identifiers use `VC-<profile>-<number>` for this baseline.
 
 ```{vc} Query and resynchronise first-executable status
-:id: VC-ST1-001
-:verifies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021, SI01-REQ-022, SI01-REQ-030, SI01-REQ-031, IF03-REQ-001, IF03-REQ-002, IF03-REQ-004
+---
+id: VC-ST1-001
+verifies: >-
+  SI01-REQ-003, SI01-REQ-020, SI01-REQ-021, SI01-REQ-022,
+  SI01-REQ-030, SI01-REQ-031, IF03-REQ-001, IF03-REQ-002,
+  IF03-REQ-004
+---
 
 Trace target:
 
