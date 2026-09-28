@@ -83,6 +83,7 @@ io.github.brainboxemb.eventtiming/
     storage/
   infra/
     bootstrap/
+      config/
   runtime/
   platform/
 ```
@@ -286,12 +287,13 @@ io.github.brainboxemb.eventtiming/
   infra/
     bootstrap/
       ApplicationBootstrap.java
-      ApplicationConfig.java
-      PresentationConfig.java
-      RemoteShellConfig.java
-      RemoteApiConfig.java
-      RemoteApiHttpConfig.java
-      RemoteApiWebSocketConfig.java
+      config/
+        ApplicationConfig.java
+        PresentationConfig.java
+        RemoteShellConfig.java
+        RemoteApiConfig.java
+        RemoteApiHttpConfig.java
+        RemoteApiWebSocketConfig.java
 ```
 
 `runtime/` is a Java source-organisation package for the top-level runtime
