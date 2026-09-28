@@ -61,6 +61,7 @@ groups:
 
 nodes:
 - id: timing-node-root
+  object_id: TimingNode
   group: timing-node-aggregate
   label: "TimingNode"
   items:
@@ -93,6 +94,7 @@ nodes:
   notation: component
   layout: {x: 605, y: 125, w: 200, h: 65}
 - id: remote-api
+  object_id: RemoteApi
   group: presentation-layer
   label: "RemoteApi"
   subtitle: "HTTP + WebSocket • tools / test / control"
@@ -108,6 +110,7 @@ nodes:
   layout: {x: 145, y: 220, w: 440, h: 60}
 
 - id: application-conductor
+  object_id: Conductor
   group: application-layer
   label: "Conductor"
   subtitle: "lifecycle / application-wide coordination"
@@ -115,6 +118,7 @@ nodes:
   notation: component
   layout: {x: 165, y: 390, w: 280, h: 75}
 - id: command-handler
+  object_id: CommandHandler
   group: application-layer
   label: "CommandHandler"
   subtitle: "presentation commands / queries"
