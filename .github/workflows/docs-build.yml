@@ -335,8 +335,8 @@ jobs:
           - normalized graph: [engineering-graph.json](engineering-graph.json)
           - consumer-owned Needs configuration: [input/conf.py](input/conf.py) · [input/schemas.json](input/schemas.json)
 
-          Requirements own `derived_from`, design owns `satisfies`, and verification owns `verifies`.
-          Sphinx-Needs generates the inverse/backlink context. Diagram `object_id` values reference the same engineering objects.
+          Requirements own derived_from, design owns satisfies, and verification owns verifies.
+          Sphinx-Needs generates the inverse/backlink context. Diagram object_id values reference the same engineering objects.
           EOF
           cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
