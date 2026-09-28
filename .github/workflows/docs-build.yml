@@ -103,6 +103,12 @@ jobs:
           set -euo pipefail
           python tools/calculate_sip_actuals.py --help >/dev/null
 
+      - name: Validate engineering traceability canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/validate_engineering_graph.py --output bld/engineering-graph.json
+
       # Moon owns only the high-level execute/hydrate decision. The existing
       # project-specific diagram/planning scripts and released eng-docs assembler
       # remain authoritative for how their outputs are produced.
