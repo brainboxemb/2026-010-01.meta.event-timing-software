@@ -130,15 +130,13 @@ def render_need(
         "",
     ]
 
-    output.append(f"*{label}*  ")
-
-    relations = relation_items(need, needs)
-    for index, relation in enumerate(relations):
-        suffix = "  " if index < len(relations) - 1 else ""
-        output.append(relation.replace("**", "*") + suffix)
-
-    output.append("")
     output.extend(body)
+
+    metadata = [f"**Type:** {label}", *relation_items(need, needs)]
+    if metadata:
+        output.append("")
+        output.extend(f"- {item}" for item in metadata)
+
     return output
 
 
