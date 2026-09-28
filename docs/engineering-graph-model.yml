@@ -1,0 +1,20 @@
+schema_version: 1
+diagram_object_type: architecture-element
+
+object_types:
+  - use-case
+  - requirement
+  - interface-requirement
+  - architecture-element
+  - verification-case
+
+relations:
+  derived_from:
+    from: [requirement, interface-requirement]
+    to: [use-case, requirement]
+  satisfies:
+    from: [architecture-element]
+    to: [requirement, interface-requirement]
+  verifies:
+    from: [verification-case]
+    to: [requirement, interface-requirement]
