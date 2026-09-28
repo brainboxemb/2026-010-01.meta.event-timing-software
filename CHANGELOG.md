@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Introduce `ApplicationBootstrap` as a concrete cross-cutting startup/composition component, move configuration ownership out of the generic cross-cutting list, and define component-root Java package readability rules that avoid one-class transport/message subpackages while allowing cohesive support families such as executable bootstrap configuration.
+- Introduce `ApplicationBootstrap` as a reusable framework-owned cross-cutting startup/composition component, keep the effective configuration model with that framework bootstrap, keep concrete YAML/build-resource loaders in the thin executable artifact, and define component-root Java package readability rules without adding a separate Runtime box to the architecture view.
 
 - Pin `tool.eng-docs` v0.3.0 and simplify the SI-01 layered architecture with structured list/tree content, layer-boundary edge targets and fewer speculative or low-value arrows.
 
