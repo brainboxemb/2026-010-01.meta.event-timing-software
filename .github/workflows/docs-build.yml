@@ -116,7 +116,8 @@ jobs:
           python tools/test_validate_engineering_graph.py
           python tools/validate_engineering_graph.py \
             --source-revision "$SOURCE_REVISION" \
-            --output bld/engineering-graph.json
+            --output bld/engineering-graph.json \
+            --review-output bld/engineering-graph-review.md
 
       # Moon owns only the high-level execute/hydrate decision. The existing
       # project-specific diagram/planning scripts and released eng-docs assembler
@@ -134,6 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f bld/engineering-graph.json
+          test -f bld/engineering-graph-review.md
           test -f bld/docs/README.md
           test -f bld/docs/source-sha.txt
           test -f bld/docs/documents/README.md
@@ -211,12 +213,12 @@ jobs:
               "SI01-REQ-022", "SI01-REQ-030", "SI01-REQ-031",
               "IF03-REQ-001", "IF03-REQ-002", "IF03-REQ-004",
               "TimingNode", "CommandHandler", "Conductor", "RemoteApi",
-              "VC-ST1-001", "SAD-TESTABILITY", "SVP-ST-1",
+              "VC-ST1-001",
           }
           actual_ids = {item["id"] for item in graph["objects"]}
           if actual_ids != expected_ids:
               raise SystemExit("engineering graph bounded-slice object set mismatch")
-          if graph.get("object_count") != 19 or graph.get("relation_count") != 42:
+          if graph.get("object_count") != 17 or graph.get("relation_count") != 34:
               raise SystemExit("engineering graph bounded-slice counts mismatch")
 
           materialization = json.loads(
@@ -246,6 +248,7 @@ jobs:
           mkdir -p "$staging/orchestration" "$staging/evidence/traceability"
           cp -a bld/docs/. "$staging/"
           cp bld/engineering-graph.json "$staging/evidence/traceability/engineering-graph.json"
+          cp bld/engineering-graph-review.md "$staging/evidence/traceability/review.md"
           cat > "$staging/evidence/traceability/README.md" <<EOF
           # Engineering graph review evidence
 
@@ -253,9 +256,11 @@ jobs:
 
           - source revision: $SOURCE_REVISION
           - source: selected event-timing Markdown anchors/adjacent relations plus diagram object_id values
+          - human review: [review.md](review.md)
           - normalized graph: [engineering-graph.json](engineering-graph.json)
 
-          Reader-facing backlinks, object pages and portal views are intentionally deferred.
+          The review shows authored input beside generated incoming relations.
+          Reader-facing object pages and the final portal remain intentionally deferred.
           EOF
           cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
