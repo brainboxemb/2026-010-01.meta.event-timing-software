@@ -63,7 +63,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and I/O adapters are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
+`TimingApplication` is the top-level executable/runtime object. The cross-cutting `ApplicationBootstrap` component owns startup composition: it loads and validates deployment configuration, constructs the selected presentation/I/O/platform implementations and reusable application/domain objects, and then starts the runtime. `TimingApplication` is therefore not itself a component inside the application layer, and bootstrap is not a normal runtime layer or mandatory call path.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -101,10 +101,7 @@ presentation/
     console/
     shell/
     web/
-    remoteapi/
-      http/
-      websocket/
-      messages/
+    remoteapi/        primary Remote API transport/message classes
   common/
     terminal/         behaviour genuinely shared by console + shell
 ```
@@ -115,7 +112,7 @@ The **Remote API** is the general programmable interface of the **Headless Timin
 
 **Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Remote API HTTP, WebSocket and wire-message mapping remain together at the `interfaces.remoteapi` component package root while that implementation is still small; deeper transport/message subpackages are introduced only when they contain a real cohesive decomposition.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
@@ -273,9 +270,17 @@ network / OS primitives
 
 ### Cross-cutting concerns
 
-Cross-cutting technical concerns include logging, configuration, diagnostics,
-metrics and build/version identity. In Java, `infra` is reserved for concrete
-cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
+Cross-cutting technical concerns include logging, diagnostics, metrics and
+build/version identity. In Java, `infra` is reserved for concrete cross-cutting
+support such as `BuildIdentity`; it is not the I/O layer.
+
+`ApplicationBootstrap` is shown as a small concrete component inside the
+cross-cutting area because startup configuration and composition touch several
+normal layers without becoming a layer themselves. It owns loading/validating
+the effective `ApplicationConfig`, selecting and wiring concrete presentation,
+I/O and platform implementations, creating the reusable application/domain
+objects, and initiating startup/shutdown handling. Normal runtime interactions do
+not route through bootstrap after composition is complete.
 
 ## Principal runtime abstractions
 

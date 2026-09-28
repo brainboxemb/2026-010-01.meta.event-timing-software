@@ -215,11 +215,18 @@ nodes:
   kind: platform
   layout: {x: 240, y: 1220, w: 880, h: 45}
 
+- id: application-bootstrap
+  group: crosscutting-layer
+  label: "ApplicationBootstrap"
+  subtitle: "configuration • composition • startup"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1300, y: 165, w: 170, h: 80}
 - id: crosscutting-concerns
   group: crosscutting-layer
-  label: "Logging\n\nConfiguration\n\nDiagnostics\n\nBuild / version identity"
+  label: "Logging\n\nDiagnostics\n\nBuild / version identity"
   kind: crosscutting
-  layout: {x: 1300, y: 165, w: 170, h: 235}
+  layout: {x: 1300, y: 285, w: 170, h: 175}
 - id: boundary-note
   group: crosscutting-layer
   label: "Responsibility view only\n≠ Maven artifact split"

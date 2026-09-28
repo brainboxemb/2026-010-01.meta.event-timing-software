@@ -66,9 +66,6 @@ io.github.brainboxemb.eventtiming/
   presentation/
     interfaces/
       remoteapi/
-        http/
-        websocket/
-        messages/
       console/
       shell/
       web/
@@ -88,7 +85,7 @@ io.github.brainboxemb.eventtiming/
   platform/
 ```
 
-Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
+Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary Remote API classes stay directly at `presentation.interfaces.remoteapi` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
 
 These are source-organisation boundaries, not automatically Maven modules.
 
@@ -99,12 +96,20 @@ Use these rules:
   separate type;
 - do not create marker classes to represent layers;
 - place a type by what it means, not by which layer happens to call it;
+- keep primary component/capability classes visible at that component package
+  root so opening the package gives a useful architecture overview;
+- do not introduce a subpackage merely to classify one class by transport,
+  message shape or implementation role;
+- use a deeper subpackage for a cohesive supporting family when it materially
+  improves navigation, or when multiple real sub-capabilities need their own
+  namespace;
+- preserve Java encapsulation when choosing package boundaries: subpackages do
+  not share package-private access, so do not split implementation helpers only
+  to make a tree look tidy if that would force a wider API;
 - use capability-oriented subpackages when a domain concept has a main object plus
   closely related value/supporting types; keep that small group together rather
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
-- split a capability package further only when multiple cohesive sub-capabilities
-  exist in real code;
 - reserve `infra` for concrete cross-cutting technical support such as
   `BuildIdentity`;
 - use `io` for external hardware, messaging and storage adapters.
@@ -250,33 +255,52 @@ This keeps logging technology replaceable at the executable boundary while givin
 Its package root remains:
 
 ```text
-io.github.brainboxemb.eventtiming.app
+io.github.brainboxemb.eventtiming.app/
+  TimingApplication.java
+  TimingApplicationLifecycle.java
+  bootstrap/
+    ApplicationBootstrap.java
+    ApplicationConfig.java
+    ApplicationConfigLoader.java
+    PresentationConfig.java
+    RemoteShellConfig.java
+    RemoteApiConfig.java
+    RemoteApiHttpConfig.java
+    RemoteApiWebSocketConfig.java
 ```
 
-The executable stays primarily a composition/startup boundary:
+The root stays readable by keeping the runtime objects visible and grouping the
+cohesive startup/configuration family under `app.bootstrap`. This is a source
+organisation boundary inside the executable artifact, not another Maven module.
+
+The executable startup flow is:
 
 ```text
 main()
   -> obtain embedded BuildIdentity
-  -> load effective ApplicationConfig
-  -> validate configuration
-  -> select/construct concrete presentation/I/O/platform implementations
-  -> create reusable application/domain/core objects
-  -> start lifecycle
-  -> install shutdown handling
+  -> ApplicationBootstrap
+       -> load + validate effective ApplicationConfig
+       -> select/construct concrete presentation/I/O/platform implementations
+       -> create reusable application/domain/core objects
+       -> install/start presentation and shutdown handling
+  -> TimingApplication runtime
 ```
 
 `BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable framework application/runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The current executable uses a small nested composition helper:
+The current executable keeps the small `TimingApplication.Builder` only for
+constructing the runtime object itself. `ApplicationBootstrap` is the concrete
+cross-cutting composition component around it: it owns the implemented Step-3
+YAML load/validation, effective `ApplicationConfig`, concrete presentation
+listener composition and startup/shutdown wiring.
 
-```java
-TimingApplication.builder(buildIdentity).build()
-```
-
-This builder is an executable-composition convenience, not a new architecture layer. It should construct only currently real collaborators and grow only when concrete composition needs appear. `ApplicationConfigLoader` now owns the implemented Step-3 YAML parsing/validation, while `ApplicationConfig` and the currently real presentation config types remain executable-composition inputs rather than domain objects.
+The configuration classes remain in the executable for now because the current
+consumer is the default application bootstrap. Moving a stable configuration
+model into the reusable framework is justified only when another concrete
+executable needs to consume the same model; the architecture does not make that
+artifact split pre-emptively.
 
 The implemented presentation structure is:
 
@@ -288,12 +312,9 @@ presentation/
     shell/
       RemoteShellServer
     remoteapi/
-      http/
-        RemoteApiHttpServer
-      websocket/
-        RemoteApiWebSocketServer
-      messages/
-        RemoteApiMessageWriter
+      RemoteApiHttpServer
+      RemoteApiWebSocketServer
+      RemoteApiMessageWriter
   common/
     terminal/
       TerminalSession
