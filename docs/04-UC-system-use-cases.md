@@ -77,7 +77,8 @@ The current catalogue starts lightweight and can be expanded as requirements are
 ```{uc} Start and prepare a TimingNode
 :id: UC-001
 
-**Goal:** bring one configured `TimingNode` into a known usable state.
+**Goal:** bring one configured `TimingNode` into a known
+usable state.
 
 **Primary actor:** operator or automated startup policy.
 ```
@@ -223,7 +224,8 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 ```{uc} Operate SI-01 through a desktop GUI
 :id: UC-008
 
-**Goal:** operate/observe a timing application through the Remote API.
+**Goal:** operate/observe a timing application through the
+Remote API.
 
 **Primary actor:** operator.
 ```
@@ -316,8 +318,9 @@ integration inspection, and there is no current requirement for a separate web p
 ```{uc} Run multiple TimingNodes in one process
 :id: UC-014
 
-**Goal:** host multiple independently addressed TimingNodes while preserving
-independent lifecycle, state and `TimingNodeId`-scoped streams.
+**Goal:** host multiple independently addressed TimingNodes
+while preserving independent lifecycle, state and
+`TimingNodeId`-scoped streams.
 
 **Primary actor:** configuration/test/operator tooling.
 ```
