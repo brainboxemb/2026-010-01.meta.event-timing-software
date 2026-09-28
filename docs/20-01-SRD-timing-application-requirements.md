@@ -100,13 +100,13 @@ On connection/reconnection the client shall be able to recover a complete author
 <a id="SI01-REQ-030"></a>
 **SI01-REQ-030 — Shared application behaviour**
 
-<!-- eng {"type":"requirement","relations":{"allocated_to":["CommandHandler"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"source":["SAD-TESTABILITY"],"allocated_to":["CommandHandler"],"verified_by":["VC-ST1-001"]}} -->  
 Transport-specific adapters shall invoke shared SI-01 application commands/queries rather than implementing independent copies of version/status behaviour.
 
 <a id="SI01-REQ-031"></a>
 **SI01-REQ-031 — Externally testable executable**
 
-<!-- eng {"type":"requirement","relations":{"allocated_to":["CommandHandler","RemoteApi","IF03-REQ-002"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"source":["SAD-TESTABILITY","SVP-ST-1"],"allocated_to":["CommandHandler","RemoteApi","IF03-REQ-002"],"verified_by":["VC-ST1-001"]}} -->  
 The produced SI-01 application shall support ST-1 verification as a separate running process through its public application interface without direct test mutation of internal application/domain state.
 
 **SI01-REQ-032 — Safe default network exposure**  
