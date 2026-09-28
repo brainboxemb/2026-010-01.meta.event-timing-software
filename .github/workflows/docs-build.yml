@@ -120,7 +120,7 @@ jobs:
           rm -rf bld/sphinx-needs
           mkdir -p \
             bld/sphinx-needs/source/docs \
-            bld/sphinx-needs/source/assets \
+            bld/sphinx-needs/source/_static/architecture \
             bld/sphinx-needs/diagrams
 
           cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
@@ -130,14 +130,17 @@ jobs:
           cp docs/31-01-SAD-timing-application-architecture.md bld/sphinx-needs/source/docs/
           cp docs/40-01-IDD-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
-          cp -a bld/docs/assets/. bld/sphinx-needs/source/assets/
+          cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/_static/architecture/
 
           python - <<'PY'
           from pathlib import Path
 
           for path in Path("bld/sphinx-needs/source/docs").glob("*.md"):
               text = path.read_text(encoding="utf-8")
-              text = text.replace("../../raw/prod/docs/assets/", "../assets/")
+              text = text.replace(
+                  "../../raw/prod/docs/assets/architecture/",
+                  "../_static/architecture/",
+              )
               path.write_text(text, encoding="utf-8")
           PY
 
