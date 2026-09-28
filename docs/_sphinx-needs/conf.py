@@ -16,6 +16,19 @@ needs_build_json = True
 needs_reproducible_json = True
 needs_json_remove_defaults = True
 
+# Keep the native HTML reader content-first: engineering metadata and
+# traceability remain available from each Need, but start collapsed.
+needs_card_layouts = {
+    "engineering_reader": {
+        "extends": "clean",
+        "meta": {
+            "exclude": ["layout", "style"],
+        },
+        "collapse": "closed",
+    },
+}
+needs_default_layout = "engineering_reader"
+
 needs_types = [
     {"directive": "uc", "title": "Use Case", "prefix": "UC-", "color": "#BFD8D2", "style": "node"},
     {"directive": "req", "title": "Requirement", "prefix": "REQ-", "color": "#FEDCD2", "style": "node"},
