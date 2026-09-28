@@ -92,11 +92,12 @@ TimingApplication
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
-layer cake**. Domain keeps its normal layer height, but its lower-right boundary
-has a polygon cut-away where domain-adjacent I/O can rise beside it. The first
-visible example is Devices: its card bridges upward into that cut-away while
-remaining connected to the normal I/O band below. This expresses architectural
-proximity/cohesion only; it does not permit Domain to depend on concrete I/O.
+layer cake**. Domain has extra space below its contained components and yields
+through a lower-right polygon cut-away. I/O uses a complementary polygon with a
+raised right shoulder around Devices. A small visible gap remains between both
+layer outlines, so neither responsibility appears to overlap the other. This
+expresses architectural proximity/cohesion only; it does not permit Domain to
+depend on concrete I/O.
 
 ### Presentation
 
@@ -229,11 +230,12 @@ io/
 
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
-the Domain layer uses a real polygon cut-away rather than being stretched
-downward. Devices is drawn partly beside the lower Domain band and partly over
-the main I/O band to show that device-facing behaviour can be semantically close
-to Domain without becoming domain state or reversing the dependency direction.
-The contained Storage, Devices, Messaging and DeviceNetworks elements carry
+Domain and I/O both use explicit polygon outlines. The I/O outline rises around
+Devices, so Devices remains completely inside its owning layer while being drawn
+beside the lower Domain area. The normal I/O band and its Storage, Messaging and
+DeviceNetworks cards stay compact because they no longer need to inherit the
+height required by Devices. The contained Storage, Devices, Messaging and
+DeviceNetworks elements carry
 packaging-component notation where the package-like ownership/decomposition
 semantics are meaningful. For compactness, Figure SI01-01 shows their contained
 software components as an indented hierarchy rather than as nested component
