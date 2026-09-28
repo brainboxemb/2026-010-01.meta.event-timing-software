@@ -17,12 +17,11 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/calculate_sip_actuals.py'
-      - 'tools/validate_engineering_graph.py'
-      - 'tools/test_validate_engineering_graph.py'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
+      - 'tools/render_needs_reader_markdown.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -43,12 +42,11 @@ on:
       - 'tools/generate_data_display_diagrams.py'
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/calculate_sip_actuals.py'
-      - 'tools/validate_engineering_graph.py'
-      - 'tools/test_validate_engineering_graph.py'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
+      - 'tools/render_needs_reader_markdown.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -77,8 +75,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "99a565eedc999a77bb0339a684660b08edbc04dd"
-          grep -F 'ref: v0.3.11' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "63af20a033d6295a28c844d12cb87f76165e69a5"
+          grep -F 'ref: v0.4.0' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -93,6 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
+          python -m pip install --disable-pip-version-check -r docs/_sphinx-needs/requirements.txt
           python -m pip install --disable-pip-version-check ./tools/tool.eng-docs
 
       - name: Validate current SDD references
@@ -107,18 +106,6 @@ jobs:
           set -euo pipefail
           python tools/calculate_sip_actuals.py --help >/dev/null
 
-      - name: Validate engineering traceability canary
-        shell: bash
-        env:
-          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          set -euo pipefail
-          python tools/test_validate_engineering_graph.py
-          python tools/validate_engineering_graph.py \
-            --source-revision "$SOURCE_REVISION" \
-            --output bld/engineering-graph.json \
-            --review-output bld/engineering-graph-review.md
-
       # Moon owns only the high-level execute/hydrate decision. The existing
       # project-specific diagram/planning scripts and released eng-docs assembler
       # remain authoritative for how their outputs are produced.
@@ -127,6 +114,148 @@ jobs:
         with:
           task: software:docs.assemble
           cache-namespace: event-timing-software-docs
+
+      - name: Build native MyST/Sphinx-Needs traceability
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf bld/sphinx-needs
+          mkdir -p \
+            bld/sphinx-needs/source/docs/architecture-assets \
+            bld/sphinx-needs/diagrams
+
+          cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
+          cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
+          cp docs/04-UC-system-use-cases.md bld/sphinx-needs/source/docs/
+          cp docs/20-01-SRD-timing-application-requirements.md bld/sphinx-needs/source/docs/
+          cp docs/31-01-SAD-timing-application-architecture.md bld/sphinx-needs/source/docs/
+          cp docs/40-01-IDD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
+          cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          for path in Path("bld/sphinx-needs/source/docs").glob("*.md"):
+              text = path.read_text(encoding="utf-8")
+              text = re.sub(
+                  r"(?:\.\./)+raw/prod/docs/assets/architecture/",
+                  "architecture-assets/",
+                  text,
+              )
+              path.write_text(text, encoding="utf-8")
+          PY
+
+          cat > bld/sphinx-needs/source/index.md <<'EOF'
+          # Migration 013 traceability canary
+
+          ~~~{toctree}
+          :maxdepth: 2
+
+          docs/04-UC-system-use-cases
+          docs/20-01-SRD-timing-application-requirements
+          docs/31-01-SAD-timing-application-architecture
+          docs/40-01-IDD-application-control-status
+          ~~~
+          EOF
+
+          sphinx-build -W --keep-going -b needs \
+            bld/sphinx-needs/source \
+            bld/sphinx-needs/needs
+
+          sphinx-build -W --keep-going -b html \
+            bld/sphinx-needs/source \
+            bld/sphinx-needs/html
+
+      - name: Verify native Sphinx reader layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -F 'needs_layout_engineering_reader' bld/sphinx-needs/html/docs >/dev/null
+          grep -R -F 'id="target__hide__meta"' bld/sphinx-needs/html/docs >/dev/null
+
+      - name: Normalize engineering traceability
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          eng-docs graph \
+            --needs bld/sphinx-needs/needs/needs.json \
+            --relation derived_from \
+            --relation satisfies \
+            --relation verifies \
+            --diagrams bld/sphinx-needs/diagrams \
+            --source-revision "$SOURCE_REVISION" \
+            --out bld/engineering-graph.json \
+            --review bld/engineering-graph-review.md
+
+      - name: Render generated Markdown for human review
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/render_needs_reader_markdown.py \
+            --documents bld/docs/documents \
+            --needs bld/sphinx-needs/needs/needs.json
+
+      - name: Verify generated reader Markdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path("bld/docs/documents")
+          text = "\n".join(
+              path.read_text(encoding="utf-8")
+              for path in sorted(root.rglob("*.md"))
+          )
+
+          forbidden = (
+              "```{uc}",
+              "```{req}",
+              "```{ifreq}",
+              "```{arch}",
+              "```{vc}",
+          )
+          for token in forbidden:
+              if token in text:
+                  raise SystemExit(f"generated reader Markdown still contains {token}")
+
+          required = (
+              '**SI01-REQ-003 — Minimal TimingNode composition**',
+              '- **Type:** Requirement',
+              '- **Derived from:**',
+              '- **Satisfied by:**',
+              '- **Verified by:**',
+              '<a id="SI01-REQ-003"></a>',
+          )
+          for token in required:
+              if token not in text:
+                  raise SystemExit(f"generated reader Markdown missing {token}")
+
+          srd = (root / "20-01-SRD-timing-application-requirements.md").read_text(
+              encoding="utf-8"
+          )
+          start = srd.index('<a id="SI01-REQ-003"></a>')
+          end = srd.index('<a id="SI01-REQ-020"></a>', start)
+          block = srd[start:end]
+          body_text = "The first executable shall support configuration of at least"
+          order = (
+              block.index("**SI01-REQ-003 — Minimal TimingNode composition**"),
+              block.index(body_text),
+              block.index("- **Type:** Requirement"),
+              block.index("- **Derived from:**"),
+              block.index("- **Satisfied by:**"),
+              block.index("- **Verified by:**"),
+              block.index("\n---\n"),
+          )
+          if order != tuple(sorted(order)):
+              raise SystemExit(
+                  "generated reader Markdown does not render Need body before metadata/separator"
+              )
+          PY
 
       - name: Verify generated output and retained producer evidence
         shell: bash
@@ -191,7 +320,13 @@ jobs:
                   raise SystemExit(f"project-owned execution revision mismatch: {execution_id}")
               if data["status"] != "success" or data["exit_code"] != 0:
                   raise SystemExit(f"producer execution failed: {execution_id}")
-              if data["tool_eng_docs_sha"] != "99a565eedc999a77bb0339a684660b08edbc04dd":
+              allowed_tool_eng_docs_producers = {
+                  # Pre-release owner head used to produce the reusable cached Book tree.
+                  "a5224de7d62973a1836ec023801324adaa6ebebd",
+                  # Immutable v0.4.0 release currently pinned by this consumer.
+                  "63af20a033d6295a28c844d12cb87f76165e69a5",
+              }
+              if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
               log_path = path.parent / data["log"]
               if not log_path.is_file() or log_path.stat().st_size == 0:
@@ -203,10 +338,16 @@ jobs:
               raise SystemExit("assembled source SHA does not match assemble producer evidence")
 
           graph = json.loads((root / "bld/engineering-graph.json").read_text(encoding="utf-8"))
-          if graph.get("schema") != "brainboxemb.engineering-graph-canary" or graph.get("schema_version") != 1:
+          if graph.get("schema") != "brainboxemb.engineering-graph" or graph.get("schema_version") != 1:
               raise SystemExit("unexpected engineering graph evidence schema")
           if graph.get("source_revision") != os.environ["SOURCE_REVISION"]:
               raise SystemExit("engineering graph evidence revision mismatch")
+          if graph.get("source_graph") != {
+              "kind": "sphinx-needs",
+              "project": "Event timing engineering graph",
+              "version": "migration-013",
+          }:
+              raise SystemExit("unexpected Sphinx-Needs graph provenance")
           expected_ids = {
               "UC-001", "UC-008", "UC-014",
               "SI01-REQ-003", "SI01-REQ-020", "SI01-REQ-021",
@@ -220,6 +361,14 @@ jobs:
               raise SystemExit("engineering graph bounded-slice object set mismatch")
           if graph.get("object_count") != 17 or graph.get("relation_count") != 34:
               raise SystemExit("engineering graph bounded-slice counts mismatch")
+          objects = {item["id"]: item for item in graph["objects"]}
+          for object_id in ("TimingNode", "CommandHandler", "Conductor", "RemoteApi"):
+              if not objects[object_id].get("diagram_refs"):
+                  raise SystemExit(f"architecture object has no diagram reference: {object_id}")
+          needs = json.loads((root / "bld/sphinx-needs/needs/needs.json").read_text(encoding="utf-8"))
+          current = needs.get("current_version")
+          if set(needs["versions"][current]["needs"]) != expected_ids:
+              raise SystemExit("Sphinx-Needs bounded-slice object set mismatch")
 
           materialization = json.loads(
               (root / ".moon/invocations/software_docs.assemble/materialization.json").read_text(encoding="utf-8")
@@ -245,22 +394,30 @@ jobs:
           set -euo pipefail
           staging="$RUNNER_TEMP/software-docs-publication"
           rm -rf "$staging"
-          mkdir -p "$staging/orchestration" "$staging/evidence/traceability"
+          mkdir -p "$staging/orchestration" "$staging/evidence/traceability/native" "$staging/evidence/traceability/input"
           cp -a bld/docs/. "$staging/"
           cp bld/engineering-graph.json "$staging/evidence/traceability/engineering-graph.json"
           cp bld/engineering-graph-review.md "$staging/evidence/traceability/review.md"
+          cp bld/sphinx-needs/needs/needs.json "$staging/evidence/traceability/needs.json"
+          cp -a bld/sphinx-needs/html/. "$staging/evidence/traceability/native/"
+          cp docs/_sphinx-needs/conf.py "$staging/evidence/traceability/input/conf.py"
+          cp docs/_sphinx-needs/schemas.json "$staging/evidence/traceability/input/schemas.json"
+          cp docs/_sphinx-needs/requirements.txt "$staging/evidence/traceability/input/requirements.txt"
           cat > "$staging/evidence/traceability/README.md" <<EOF
           # Engineering graph review evidence
 
-          This is Migration 013 Step-3 review evidence, not a stable public graph API.
+          This is Migration 013 native MyST/Sphinx-Needs production-canary evidence.
 
           - source revision: $SOURCE_REVISION
-          - source: selected event-timing Markdown anchors/adjacent relations plus diagram object_id values
-          - human review: [review.md](review.md)
+          - authoritative authoring: selected MyST/Sphinx-Needs objects in the event-timing engineering documents
+          - native Sphinx reader: [native/index.html](native/index.html)
+          - Sphinx-Needs export: [needs.json](needs.json)
+          - normalized human review: [review.md](review.md)
           - normalized graph: [engineering-graph.json](engineering-graph.json)
+          - consumer-owned Needs configuration: [input/conf.py](input/conf.py) · [input/schemas.json](input/schemas.json)
 
-          The review shows authored input beside generated incoming relations.
-          Reader-facing object pages and the final portal remain intentionally deferred.
+          Requirements own derived_from, design owns satisfies, and verification owns verifies.
+          Sphinx-Needs generates the inverse/backlink context. Diagram object_id values reference the same engineering objects.
           EOF
           cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
