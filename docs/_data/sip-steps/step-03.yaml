@@ -19,10 +19,8 @@ planning_changes:
       later presentation concern.
   - date: '2026-09-28'
     change: >-
-      A08 was refined from file-only logging to one cross-cutting logging slice:
-      retained rotating file logs, an optional engineering live-log socket and
-      a temporary runtime-global log-level override. The live channel remains
-      separate from IF-03 application/status events.
+      A08 now combines retained file logs, optional live diagnostics and a
+      temporary runtime-global log-level override.
 
 activities:
   - id: A01
