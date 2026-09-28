@@ -91,6 +91,12 @@ TimingApplication
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
+The Domain/I/O boundary is deliberately **stepped rather than a rigid horizontal
+layer cake**. Some I/O-facing responsibilities can sit close to domain-aware
+logic — device/display handling is the first visible example — while remaining
+on the I/O side of the dependency boundary. The shape communicates architectural
+proximity and cohesion; it does not permit Domain to depend on concrete I/O.
+
 ### Presentation
 
 Presentation owns client-facing interfaces and their external representations. Its structure is **functional interface first, transport second**:
@@ -222,8 +228,10 @@ io/
 
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
-I/O remains a plain architecture layer/container, just like Presentation,
-Application and Domain. The contained Storage, Devices, Messaging and DeviceNetworks elements carry
+the Domain/I/O boundary is intentionally stepped: the Devices area is drawn
+higher to show that some device-facing behaviour can be semantically close to
+Domain without becoming domain state or reversing the dependency direction.
+The contained Storage, Devices, Messaging and DeviceNetworks elements carry
 packaging-component notation where the package-like ownership/decomposition
 semantics are meaningful. For compactness, Figure SI01-01 shows their contained
 software components as an indented hierarchy rather than as nested component
