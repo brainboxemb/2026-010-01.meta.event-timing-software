@@ -63,7 +63,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level executable/runtime object. The cross-cutting `ApplicationBootstrap` component owns startup composition: it loads and validates deployment configuration, constructs the selected presentation/I/O/platform implementations and reusable application/domain objects, and then starts the runtime. `TimingApplication` is therefore not itself a component inside the application layer, and bootstrap is not a normal runtime layer or mandatory call path.
+`TimingApplication` is the top-level framework runtime object. The cross-cutting `ApplicationBootstrap` framework component owns startup composition from an already parsed/validated deployment configuration: it constructs the selected presentation/I/O/platform implementations and reusable application/domain objects, and then starts the runtime. The runnable `event-timing-app` artifact remains a thin launcher/input adapter that reads concrete YAML/build-resource inputs and delegates to the framework. `TimingApplication` is therefore not itself a component inside the application layer, and bootstrap is not a normal runtime layer or mandatory call path.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -274,13 +274,14 @@ Cross-cutting technical concerns include logging, diagnostics, metrics and
 build/version identity. In Java, `infra` is reserved for concrete cross-cutting
 support such as `BuildIdentity`; it is not the I/O layer.
 
-`ApplicationBootstrap` is shown as a small concrete component inside the
-cross-cutting area because startup configuration and composition touch several
-normal layers without becoming a layer themselves. It owns loading/validating
-the effective `ApplicationConfig`, selecting and wiring concrete presentation,
-I/O and platform implementations, creating the reusable application/domain
-objects, and initiating startup/shutdown handling. Normal runtime interactions do
-not route through bootstrap after composition is complete.
+`ApplicationBootstrap` is shown as a small concrete framework component inside the
+cross-cutting area because startup composition touches several normal layers
+without becoming a layer itself. It consumes the effective `ApplicationConfig`,
+selects and wires concrete presentation, I/O and platform implementations,
+creates the reusable application/domain objects, and initiates startup/shutdown
+handling. Concrete configuration-file parsing belongs to the executable input
+adapter. Normal runtime interactions do not route through bootstrap after
+composition is complete.
 
 ## Principal runtime abstractions
 
