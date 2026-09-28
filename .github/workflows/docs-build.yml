@@ -217,7 +217,7 @@ jobs:
                   raise SystemExit(f"generated reader Markdown still contains {token}")
 
           required = (
-              '> **Requirement — `SI01-REQ-003` — Minimal TimingNode composition**',
+              '**SI01-REQ-003 — Minimal TimingNode composition**',
               '**Derived from:**',
               '**Satisfied by:**',
               '**Verified by:**',
