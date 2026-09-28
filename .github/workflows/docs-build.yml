@@ -218,9 +218,9 @@ jobs:
 
           required = (
               '**SI01-REQ-003 — Minimal TimingNode composition**',
-              '**Derived from:**',
-              '**Satisfied by:**',
-              '**Verified by:**',
+              '*Derived from:*',
+              '*Satisfied by:*',
+              '*Verified by:*',
               '<a id="SI01-REQ-003"></a>',
           )
           for token in required:
