@@ -47,7 +47,7 @@ SI-01 shall support a controlled shutdown path that terminates the first-executa
 <a id="SI01-REQ-003"></a>
 **SI01-REQ-003 — Minimal TimingNode composition**
 
-<!-- eng {"type":"requirement","relations":{"source":["UC-001","UC-014"],"allocated_to":["TimingNode"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"derived_from":["UC-001","UC-014"]}} -->  
 The first executable shall support configuration of at least one `TimingNode` with a stable `TimingNodeId` that can be represented in application status.
 
 IF-11 defines how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingNodeId`, registration-asset identity and antenna identity distinct. Detailed operational RFID behaviour remains outside this first slice.
@@ -67,13 +67,13 @@ The public representation and required fields are defined by IF-03.
 <a id="SI01-REQ-020"></a>
 **SI01-REQ-020 — Authoritative current status snapshot**
 
-<!-- eng {"type":"requirement","relations":{"source":["UC-001","UC-008"],"allocated_to":["TimingNode","IF03-REQ-004"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"derived_from":["UC-001","UC-008"]}} -->  
 SI-01 shall maintain an authoritative current application status model that is separate from log output.
 
 <a id="SI01-REQ-021"></a>
 **SI01-REQ-021 — Minimum first-executable status content**
 
-<!-- eng {"type":"requirement","relations":{"source":["UC-001","UC-008"],"allocated_to":["TimingNode","IF03-REQ-004"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"derived_from":["UC-001","UC-008"]}} -->  
 The first-executable status shall expose enough information to determine at least:
 
 - application/build identity;
@@ -87,7 +87,7 @@ The concrete IF-03 schema is defined by `40-01-IDD-application-control-status.md
 <a id="SI01-REQ-022"></a>
 **SI01-REQ-022 — Equivalent status semantics across first interfaces**
 
-<!-- eng {"type":"requirement","relations":{"source":["UC-008"],"allocated_to":["CommandHandler","IF03-REQ-001","IF03-REQ-004"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement","relations":{"derived_from":["UC-008"]}} -->  
 Local console, remote-shell and IF-03 application-control/status representations shall be derived from the same application status semantics. A transport adapter shall not maintain a separate authoritative status model.
 
 **SI01-REQ-023 — Status-change publication**  
@@ -100,13 +100,13 @@ On connection/reconnection the client shall be able to recover a complete author
 <a id="SI01-REQ-030"></a>
 **SI01-REQ-030 — Shared application behaviour**
 
-<!-- eng {"type":"requirement","relations":{"source":["SAD-TESTABILITY"],"allocated_to":["CommandHandler"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement"} -->  
 Transport-specific adapters shall invoke shared SI-01 application commands/queries rather than implementing independent copies of version/status behaviour.
 
 <a id="SI01-REQ-031"></a>
 **SI01-REQ-031 — Externally testable executable**
 
-<!-- eng {"type":"requirement","relations":{"source":["SAD-TESTABILITY","SVP-ST-1"],"allocated_to":["CommandHandler","RemoteApi","IF03-REQ-002"],"verified_by":["VC-ST1-001"]}} -->  
+<!-- eng {"type":"requirement"} -->  
 The produced SI-01 application shall support ST-1 verification as a separate running process through its public application interface without direct test mutation of internal application/domain state.
 
 **SI01-REQ-032 — Safe default network exposure**  
