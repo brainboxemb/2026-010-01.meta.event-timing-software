@@ -316,7 +316,8 @@ integration inspection, and there is no current requirement for a separate web p
 ```{uc} Run multiple TimingNodes in one process
 :id: UC-014
 
-**Goal:** host multiple independently addressed TimingNodes while preserving independent lifecycle, state and `TimingNodeId`-scoped streams.
+**Goal:** host multiple independently addressed TimingNodes while preserving
+independent lifecycle, state and `TimingNodeId`-scoped streams.
 
 **Primary actor:** configuration/test/operator tooling.
 ```
