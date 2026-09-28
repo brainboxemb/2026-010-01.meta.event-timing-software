@@ -73,8 +73,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "84fb9eae2efa5ed4a423747740875d9fcc9302aa"
-          grep -F 'ref: v0.3.10' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "99a565eedc999a77bb0339a684660b08edbc04dd"
+          grep -F 'ref: v0.3.11' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -130,6 +130,12 @@ jobs:
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
+          test -f bld/docs/assets/architecture/layered-architecture.svg
+          test -f bld/docs/assets/architecture/layered-architecture.drawio
+          for object_id in TimingNode CommandHandler Conductor RemoteApi; do
+            grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.svg
+            grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.drawio
+          done
           test -f bld/docs/planning/sip-roadmap.svg
           test -s bld/docs/planning/sip-roadmap.pdf
           test -f .moon/invocations/software_docs.assemble/materialization.json
