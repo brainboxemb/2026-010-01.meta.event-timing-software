@@ -63,7 +63,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level executable/composition root. Presentation interfaces, application-layer coordination, domain state and I/O adapters are instantiated as parts of that one running application; `TimingApplication` is therefore not itself a component inside the application layer.
+`TimingApplication` is the top-level framework runtime object. The cross-cutting `ApplicationBootstrap` framework component owns startup composition from an already parsed/validated deployment configuration: it constructs the selected presentation/I/O/platform implementations and reusable application/domain objects, and then starts the runtime. The runnable `event-timing-app` artifact remains a thin launcher/input adapter that reads concrete YAML/build-resource inputs and delegates to the framework. `TimingApplication` is therefore not itself a component inside the application layer, and bootstrap is not a normal runtime layer or mandatory call path.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -91,6 +91,14 @@ TimingApplication
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
+The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
+layer cake**. Domain has extra space below its contained components and yields
+through a lower-right polygon cut-away. I/O uses a complementary polygon with a
+raised right shoulder around Devices. A small visible gap remains between both
+layer outlines, so neither responsibility appears to overlap the other. This
+expresses architectural proximity/cohesion only; it does not permit Domain to
+depend on concrete I/O.
+
 ### Presentation
 
 Presentation owns client-facing interfaces and their external representations. Its structure is **functional interface first, transport second**:
@@ -101,10 +109,7 @@ presentation/
     console/
     shell/
     web/
-    remoteapi/
-      http/
-      websocket/
-      messages/
+    remoteapi/        primary Remote API transport/message classes
   common/
     terminal/         behaviour genuinely shared by console + shell
 ```
@@ -115,7 +120,7 @@ The **Remote API** is the general programmable interface of the **Headless Timin
 
 **Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Message mapping shared only by Remote API HTTP and WebSocket stays under `interfaces/remoteapi/messages`, not global common code.
+`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Remote API HTTP, WebSocket and wire-message mapping remain together at the `interfaces.remoteapi` component package root while that implementation is still small; deeper transport/message subpackages are introduced only when they contain a real cohesive decomposition.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
@@ -225,8 +230,12 @@ io/
 
 Presentation stays separate because it owns client-facing API/view semantics.
 I/O owns the external boundary and its mapping to TimingNodes. In Figure SI01-01
-I/O remains a plain architecture layer/container, just like Presentation,
-Application and Domain. The contained Storage, Devices, Messaging and DeviceNetworks elements carry
+Domain and I/O both use explicit polygon outlines. The I/O outline rises around
+Devices, so Devices remains completely inside its owning layer while being drawn
+beside the lower Domain area. The normal I/O band and its Storage, Messaging and
+DeviceNetworks cards stay compact because they no longer need to inherit the
+height required by Devices. The contained Storage, Devices, Messaging and
+DeviceNetworks elements carry
 packaging-component notation where the package-like ownership/decomposition
 semantics are meaningful. For compactness, Figure SI01-01 shows their contained
 software components as an indented hierarchy rather than as nested component
@@ -273,9 +282,18 @@ network / OS primitives
 
 ### Cross-cutting concerns
 
-Cross-cutting technical concerns include logging, configuration, diagnostics,
-metrics and build/version identity. In Java, `infra` is reserved for concrete
-cross-cutting support such as `BuildIdentity`; it is not the I/O layer.
+Cross-cutting technical concerns include logging, diagnostics, metrics and
+build/version identity. In Java, `infra` is reserved for concrete cross-cutting
+support such as `BuildIdentity`; it is not the I/O layer.
+
+`ApplicationBootstrap` is shown as a small concrete framework component inside the
+cross-cutting area because startup composition touches several normal layers
+without becoming a layer itself. It consumes the effective `ApplicationConfig`,
+selects and wires concrete presentation, I/O and platform implementations,
+creates the reusable application/domain objects, and initiates startup/shutdown
+handling. Concrete configuration-file parsing belongs to the executable input
+adapter. Normal runtime interactions do not route through bootstrap after
+composition is complete.
 
 ## Principal runtime abstractions
 
