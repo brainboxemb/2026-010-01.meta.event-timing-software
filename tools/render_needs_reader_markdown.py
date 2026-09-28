@@ -88,8 +88,8 @@ def target_link(target: str, needs: dict[str, dict]) -> str:
     return f"`{target}`"
 
 
-def relation_lines(need: dict, needs: dict[str, dict]) -> list[str]:
-    rows = []
+def relation_items(need: dict, needs: dict[str, dict]) -> list[str]:
+    items = []
     for field, label in RELATION_LABELS:
         targets = need.get(field, [])
         if not targets:
@@ -99,8 +99,8 @@ def relation_lines(need: dict, needs: dict[str, dict]) -> list[str]:
                 f"{need.get('id')}: relation field {field} is not a list"
             )
         links = ", ".join(target_link(target, needs) for target in targets)
-        rows.append(f"> **{label}:** {links}")
-    return rows
+        items.append(f"**{label}:** {links}")
+    return items
 
 
 def render_need(
@@ -126,13 +126,14 @@ def render_need(
     output = [
         f'<a id="{object_id}"></a>',
         "",
-        f"> **{label} — `{object_id}` — {resolved_title}**",
+        f"**{object_id} — {resolved_title}**",
+        "",
     ]
 
-    relations = relation_lines(need, needs)
-    if relations:
-        output.append(">")
-        output.extend(relations)
+    relations = relation_items(need, needs)
+    meta = [f"*{label}*"]
+    meta.extend(relations)
+    output.append(" · ".join(meta))
 
     output.append("")
     output.extend(body)
