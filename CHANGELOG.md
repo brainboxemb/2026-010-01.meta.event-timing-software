@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the Step-3 A08 logging architecture: keep framework logging provider-neutral through SLF4J, let the executable configure JUL with rotating retained file output, add an optional client-initiated live diagnostics socket for the JavaFX engineering client, and allow a temporary runtime-global log-level override without mutating deployment configuration or mixing logs into IF-03 status/events.
+
 - Refine backend messaging into an I/O `Messaging / BackendGateway` boundary, application-level `BackendMessageRouter` for backend-only target resolution, and bidirectional per-TimingNode `BackendMessagePort`; make the layered view show router relations to Domain and I/O Messaging, and define one Web presentation binding/port per configured TimingNode.
 
 - Introduce `ApplicationBootstrap` as a reusable framework-owned cross-cutting startup/composition component, keep the effective configuration model with that framework bootstrap, keep concrete YAML/build-resource loaders in the thin executable artifact, and define component-root Java package readability rules without adding a separate Runtime box to the architecture view.

@@ -762,9 +762,10 @@ Logging records diagnostic/history information; status represents current operat
 
 ## Logging architecture
 
-Logging is a SAD-level technology decision because it affects almost every component, operational diagnostics, footprint and public/private integration.
+Logging is a SAD-level cross-cutting technology decision because it affects almost every
+component, operational diagnostics, footprint and engineering support.
 
-The baseline logging architecture is:
+The A08 baseline keeps framework logging calls independent from the concrete runtime backend:
 
 ```text
 framework/application code
@@ -780,9 +781,15 @@ provider selected by executable composition
                          v
                   java.util.logging
                      |
-                     +-- console handler
-                     +-- file handler
-                     +-- future live diagnostic handler
+                     +-- ConsoleHandler
+                     +-- rotating FileHandler
+                     +-- LiveLogHandler
+                              |
+                              v
+                     DiagnosticLogServer
+                              ^
+                              |
+                    engineering client connects
 ```
 
 Working decisions:
@@ -791,19 +798,32 @@ Working decisions:
 - `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
 - the executable composition selects exactly one provider;
 - the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating to the JDK `java.util.logging` backend;
-- Logback/reload4j or another backend is not part of the baseline unless later operational requirements justify it;
-- another executable/private consumer may choose a different compatible provider without changing framework/domain source;
-- log calls use parameterised messages where practical so disabled diagnostic logging does not require avoidable string construction;
+- the default executable owns the concrete JUL handler/server composition; changing that composition must not require domain/framework logging calls to change;
+- the startup configuration defines one global semantic log level; the A08 baseline uses the normal `TRACE / DEBUG / INFO / WARN / ERROR` vocabulary and maps it to the selected backend;
+- `LoggingControl` owns the current global level and may apply a **temporary runtime override**. A runtime override is intentionally not written back to `application.yml` and resets to the configured level on restart;
+- the durable operational sink is a human-readable rotating file log with configured size limit and retained generations;
+- console logging remains available for local startup/development feedback;
+- an optional `DiagnosticLogServer` accepts a connection initiated by the JavaFX engineering client and streams new log records through a dedicated diagnostics channel;
+- the same diagnostics connection may query/change the temporary runtime log level; this control remains logging-specific rather than becoming a generic application command bus;
+- live delivery is best effort: a missing, slow or disconnected engineering client must not block TimingNode/application execution, and live records need not be retained for later replay;
+- the file sink is the retained source for historical operational logs; A08 does not add an in-memory log-history model or ring buffer;
+- the live diagnostics channel is **separate from IF-03 `/api/v1/events`**. Log records are diagnostics, not application/domain status events;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
 - stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
 - logging is not the mechanism for application status, registration history, audit/domain records or backend synchronisation state;
-- the selected backend may publish the same log records to multiple handlers/sinks;
-- the initial operational sink is file logging; a later diagnostic/debug presentation may add a live sink without changing framework logging calls;
-- a live diagnostic sink is a support/presentation stream and must not become a substitute for the structured application-status model.
+- Logback/reload4j or another backend is not part of the baseline unless later operational requirements justify it.
 
-The exact field handlers, console/file split, rotation, retention and default level policy remain deployment/runtime configuration choices. They must be measured on the Pi Zero before being treated as accepted field defaults.
+<a id="fig-si01-05"></a>
+![Runtime logging and live diagnostics](../../../raw/prod/docs/assets/architecture/runtime-logging.svg)
+*Figure SI01-05 — Runtime logging, retained file sink and engineering live diagnostics.*
 
-SLF4J 2.0.x is compatible with the Java-8 baseline; the implementation repository should pin the API/provider patch version together through Maven dependency management.
+The exact default file size, retention count and production log level remain deployment choices
+and must be measured on the target platform before being treated as accepted field defaults.
+Per-package levels, persistent runtime overrides, JSON file logging and a general-purpose
+diagnostics framework are outside A08.
+
+SLF4J 2.0.x is compatible with the Java-8 baseline; the implementation repository should pin
+the API/provider patch version together through Maven dependency management.
 
 ## Configuration and composition architecture
 
@@ -826,6 +846,7 @@ ApplicationConfig
 │   │   └── connectors (1..N when BackendGateway is configured)
 │   └── storage
 ├── presentation
+├── logging
 ├── runtime
 └── security
 ```

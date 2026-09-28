@@ -17,6 +17,12 @@ planning_changes:
     change: >-
       A08 runtime file logging was added to Step 3; live diagnostics remain a
       later presentation concern.
+  - date: '2026-09-28'
+    change: >-
+      A08 was refined from file-only logging to one cross-cutting logging slice:
+      retained rotating file logs, an optional engineering live-log socket and
+      a temporary runtime-global log-level override. The live channel remains
+      separate from IF-03 application/status events.
 
 activities:
   - id: A01
@@ -86,7 +92,7 @@ activities:
     lane: application
     kind: implementation
     title: Remote API WebSocket events
-    state: active
+    state: done
     depends_on: [A01, A03, A06]
     note: >-
       Dedicated Java-WebSocket listener; snapshot on connect, changes only for real state changes.
@@ -94,13 +100,15 @@ activities:
   - id: A08
     lane: application
     kind: implementation
-    title: Runtime file logging
-    state: planned
+    title: Runtime logging + live diagnostics
+    state: active
     depends_on: [A03]
     note: >-
-      Write runtime logs to file with configurable level and basic rotation/retention.
-      Keep the backend open to additional diagnostic sinks; a live debug-UI stream is
-      a later presentation consumer, not application status.
+      Keep framework logging on SLF4J while the executable configures JUL. Write
+      rotating retained file logs, optionally expose a best-effort live log socket
+      for the JavaFX engineering client, and allow a temporary process-wide level
+      override without rewriting application.yml. Logs remain separate from
+      IF-03 application/status events.
 
   - id: V01
     lane: verification

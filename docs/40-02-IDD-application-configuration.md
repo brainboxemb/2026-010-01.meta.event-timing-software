@@ -51,6 +51,7 @@ ApplicationConfig
 │   │   └── connectors
 │   └── storage
 ├── presentation
+├── logging
 ├── runtime
 └── security
 ```
@@ -223,6 +224,47 @@ presentation:
 and WebSocket listeners are independently optional; when present, each requires its
 `bindAddress` and `port`. The committed development example uses loopback for all listeners. External GUI/test clients connect to the Remote API and do not require their own SI-01 presentation configuration section. These settings configure presentation listeners and do not become TimingNode fields.
 
+### Logging
+
+Logging is cross-cutting deployment configuration and is not TimingNode/domain state.
+The A08 baseline configures a startup level, a retained file sink and an optional
+engineering live-diagnostics listener.
+
+Representative direction:
+
+```yaml
+logging:
+  level: INFO
+  file:
+    path: logs/event-timing.log
+    rotateBytes: 1048576
+    retainedFiles: 5
+  live:
+    bindAddress: 127.0.0.1
+    port: 8030
+```
+
+Rules:
+
+- `level` is the configured global startup level; the implementation accepts the
+  semantic levels `TRACE`, `DEBUG`, `INFO`, `WARN` and `ERROR`;
+- `file.path` identifies the operational log-file pattern/location; its parent
+  directory may be created by the executable;
+- `rotateBytes` and `retainedFiles` define basic size rotation/retention and
+  must be positive;
+- `live` is optional and owns its own bind address/listen port. The development
+  example is loopback-only;
+- an engineering client initiates the live connection to SI-01 and may query/set
+  a temporary runtime log-level override on that diagnostics connection;
+- runtime level overrides are process state only: they are not written back into
+  IF-11 configuration and restart restores the configured `logging.level`;
+- live log delivery is best effort and is not the durable log store;
+- this diagnostics listener is separate from Presentation/IF-03 status/events;
+  configuring it does not add fields to a TimingNode.
+
+Per-package levels, persistent runtime overrides and general-purpose diagnostics
+routing are deliberately outside the A08 baseline.
+
 ### Runtime
 
 Runtime configuration contains process/executor/queue settings that affect application execution but are not domain identity.
@@ -313,7 +355,8 @@ Validation includes, where applicable:
 - invalid network-device service settings when the network device service is enabled;
 - duplicate/conflicting backend connector identifiers;
 - backend message mappings/targets that reference unknown TimingNodes;
-- conflicting presentation bind address/port combinations;
+- conflicting presentation/logging listener bind address/port combinations;
+- invalid logging level, file rotation/retention values or live-listener settings;
 - unsupported adapter/driver types;
 - missing required secret references or unresolved required secret values;
 - invalid runtime values such as impossible queue/executor settings.
@@ -330,6 +373,7 @@ main()
   -> load IF-11 configuration sources
   -> produce effective ApplicationConfig
   -> validate effective configuration
+  -> configure executable runtime logging
   -> compose TimingApplication and selected adapters
   -> start application lifecycle
 ```

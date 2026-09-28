@@ -240,23 +240,34 @@ Logging follows the same library-versus-executable composition boundary.
 ```text
 event-timing-framework.jar
   -> slf4j-api only
+  -> provider-neutral LoggingConfig values
 
- event-timing-app.jar / runtime composition
+event-timing-app.jar / runtime composition
   -> selects exactly one SLF4J provider
   -> initial provider: slf4j-jdk14
   -> backend: java.util.logging
+  -> RuntimeLogging / LoggingControl
+       +-- ConsoleHandler
+       +-- FileHandler
+       +-- LiveLogHandler + DiagnosticLogServer
 ```
 
 Working rules:
 
 - framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- the executable application chooses the provider as part of runtime composition;
-- the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to the JDK `java.util.logging` backend without introducing Logback into the baseline;
-- another executable/private consumer may select another compatible provider later without changing framework source;
+- provider-neutral deployment values such as semantic level, log-file path/rotation and optional live-listener bind/port may live in the framework-owned effective configuration model;
+- the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
+- the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
+- concrete JUL types such as `FileHandler`, `Handler`, backend `Level` and socket lifecycle stay in the executable implementation, not in reusable domain/framework contracts;
+- `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
+- the optional diagnostic listener is a logging-specific engineering facility. The test client initiates its TCP connection, log delivery is best effort, and network failure must not be allowed to block ordinary log publishers;
+- the live diagnostics protocol is separate from the IF-03 status/event wire model;
+- another executable/private consumer may select another compatible provider later without changing framework/domain source;
 - exactly one provider should be present in a runtime composition;
 - provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
 
-This keeps logging technology replaceable at the executable boundary while giving reusable framework code one consistent facade.
+This keeps logging technology replaceable at the executable boundary while giving reusable
+framework code one consistent facade and one small provider-neutral configuration contract.
 
 ## Default executable application
 
@@ -296,6 +307,9 @@ io.github.brainboxemb.eventtiming/
         RemoteApiConfig.java
         RemoteApiHttpConfig.java
         RemoteApiWebSocketConfig.java
+        LoggingConfig.java
+        LoggingFileConfig.java
+        LoggingLiveConfig.java
 ```
 
 `runtime/` is a Java source-organisation package for the top-level runtime
@@ -311,6 +325,10 @@ io.github.brainboxemb.eventtiming.app/
   bootstrap/
     YamlApplicationConfigLoader.java
     EmbeddedBuildIdentityLoader.java
+  logging/
+    RuntimeLogging.java
+    LiveLogHandler.java
+    DiagnosticLogServer.java
 ```
 
 The executable startup flow is:
@@ -320,6 +338,8 @@ main()
   -> EmbeddedBuildIdentityLoader
   -> YamlApplicationConfigLoader
        -> validated ApplicationConfig
+  -> RuntimeLogging
+       -> configure JUL level + console/file/live handlers
   -> framework ApplicationBootstrap
        -> select/construct concrete presentation/I/O/platform implementations
        -> create reusable application/domain/runtime objects

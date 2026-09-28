@@ -65,8 +65,10 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - `BackendMessageRouter` is nadrukkelijk geen generieke interne message/event bus; normale samenwerking binnen de applicatie blijft directe Java-collaboration waar passend;
 - maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
 - deel herbruikbare application/runtime-functionaliteit via composition wanneer echte reuse dat rechtvaardigt; introduceer geen `BaseApplication` inheritance-hiërarchie zonder concrete noodzaak;
-- de eerstvolgende bounded Step-3 slice is external configuration echt maken: concrete configuratierepresentatie/library kiezen, een minimale `ApplicationConfig` laden/mergen/valideren en daarmee ten minste één TimingNode plus de eerste presentation binding samenstellen;
-- implementeer alleen configuratietypes die die slice daadwerkelijk nodig heeft.
+- A07 Remote API WebSocket events is gemerged en handmatig op Windows/NetBeans geaccepteerd;
+- de actuele bounded Step-3 implementatieslice is A08 runtime logging: SLF4J blijft de framework-facade, de executable configureert JUL, file logging krijgt level + rotation/retention en de JavaFX engineering client kan optioneel via een eigen live-log socket verbinden;
+- A08 mag één tijdelijke process-wide loglevel override aanbieden; die wijzigt `application.yml` niet en reset bij restart;
+- de live logstream blijft gescheiden van IF-03 status/events en is geen applicatiestatus.
 
 Voor Java releasewerk geldt bewust:
 - Maven project version, CHANGELOG release section en Git tag moeten expliciet overeenkomen;
