@@ -249,10 +249,11 @@ jobs:
               block.index("- **Derived from:**"),
               block.index("- **Satisfied by:**"),
               block.index("- **Verified by:**"),
+              block.index("\n---\n"),
           )
           if order != tuple(sorted(order)):
               raise SystemExit(
-                  "generated reader Markdown does not render Need body before metadata"
+                  "generated reader Markdown does not render Need body before metadata/separator"
               )
           PY
 
