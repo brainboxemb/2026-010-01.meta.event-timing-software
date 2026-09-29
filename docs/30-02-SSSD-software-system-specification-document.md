@@ -21,7 +21,7 @@ The category-20 register does not replace an external authority. It records whic
 
 A system-owned IDD that is created **from an interface allocation made by this SSSD** is downstream of the SSSD. Once released, that IDD becomes an input to the software-item specification(s) that implement or consume the interface.
 
-The SIP, SDE, software-item SISDs/SDDs and SVP may reference the SSSD, but they are not inputs to it merely because they discuss the same capability.
+The SIP, SDE, software-item SSDs/SDDs and SVP may reference the SSSD, but they are not inputs to it merely because they discuss the same capability.
 
 ## Document role
 
@@ -49,13 +49,13 @@ domain --------+----> 30-01 system use cases
                  +--------------+--------------+
                                 |
                                 v
-                         40-<SI>-SISD
+                         40-<SI>-SSD
                                 |
                                 v
                          40-<SI>-SDD-xx
 ```
 
-An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SISD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SISDs.
+An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SSD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SSDs.
 
 Planning, engineering-environment and verification documents are separate control/evidence documents. They may schedule, enable or verify this specification but do not define its product requirements or architecture by document order.
 
@@ -68,7 +68,7 @@ The SSSD answers questions such as:
 - where the software items execute;
 - which architectural constraints must remain consistent across software items.
 
-The software-item SISDs define the requirements and architecture of each software item.
+The software-item SSDs define the requirements and architecture of each software item.
 
 ## Software-system requirements baseline
 
@@ -101,7 +101,7 @@ The software-system architecture is driven by these system-level concerns:
 
 ## Software-item register
 
-The software-item segment in `40-<SI>-SISD` and `40-<SI>-SDD-<N>` filenames identifies the software item.
+The software-item segment in `40-<SI>-SSD` and `40-<SI>-SDD-<N>` filenames identifies the software item.
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
@@ -264,7 +264,7 @@ The architecture must support constrained field deployment and normal Linux/Wind
 
 ## Relationship to software-item architecture
 
-The SISD for the **Headless Timing Application** (SI-01) owns, among other things:
+The SSD for the **Headless Timing Application** (SI-01) owns, among other things:
 
 - layered application responsibilities;
 - `TimingNode` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
@@ -277,11 +277,11 @@ The SISD for the **Headless Timing Application** (SI-01) owns, among other thing
 - upstream transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
-The SISD for the planned **Desktop GUI Application** (SI-02) owns its requirements/internal architecture while conforming to the Remote API and applicable IDDs.
+The SSD for the planned **Desktop GUI Application** (SI-02) owns its requirements/internal architecture while conforming to the Remote API and applicable IDDs.
 
 ## Architecture review model
 
-The project uses the 4+1 architectural view model as a review aid, not as a requirement for five documents. At system level, the SSSD primarily provides system context and deployment/relationship views. The software-item SISDs provide the coherent logical, process, development and deployment views of each item and reference selected use cases as scenarios.
+The project uses the 4+1 architectural view model as a review aid, not as a requirement for five documents. At system level, the SSSD primarily provides system context and deployment/relationship views. The software-item SSDs provide the coherent logical, process, development and deployment views of each item and reference selected use cases as scenarios.
 
 Reference: `reference/README.md`.
 
