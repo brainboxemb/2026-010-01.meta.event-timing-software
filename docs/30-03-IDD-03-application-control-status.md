@@ -134,8 +134,15 @@ The first-executable status representation is:
 The first executable does not expose a separate application lifecycle state in
 `/status`. A successful query already establishes that the IF-03 service is
 running; startup/shutdown process lifecycle remains an internal/runtime concern
-for this slice. Observable operational status is owned by the configured
-`TimingNode` objects and by structured problem entries.
+for this slice.
+
+Internally SI-01 may host 1..N `TimingSystem` aggregates, each with its own
+`SystemStatus`, but `TimingSystemId` is deliberately not part of this first
+external IF-03 shape. The `timingNodes` array is an application-facing
+aggregation of the configured TimingNodes; the current configuration baseline
+keeps `TimingNodeId` application-wide unique so that this flattened view is
+unambiguous. Structured problem entries carry additional observable operational
+problems.
 
 The first executable does not yet implement operational open/close commands. A
 configured minimal `TimingNode` therefore reports `CLOSED`; later SIP
