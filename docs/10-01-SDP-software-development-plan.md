@@ -19,7 +19,8 @@ The numeric prefix groups documents by **engineering role**. It is primarily a n
 10  planning
 20  external / parent-system inputs
 30  software-system specification and design
-40  software-item specification and design
+40  software-item specification
+41  software-item detailed design
 50  development environment / engineering
 60  verification and validation
 70  user / operational documentation
@@ -43,11 +44,12 @@ Current examples are:
 30-03-IDD-03-application-control-status
 30-03-IDD-11-application-configuration
 
-40-01-01-SSD-timing-application-specification-document
-40-01-02-SDD-data-and-display-design
-40-01-03-SDD-java-component-design
-40-01-04-SDD-backoffice-transport-design
-40-02-01-SSD-gui-application-specification-document
+40-01-SSD-timing-application-specification-document
+40-02-SSD-gui-application-specification-document
+
+41-01-SDD-data-and-display-design
+41-02-SDD-java-component-design
+41-03-SDD-backoffice-transport-design
 
 50-01-SDE-software-development-environment
 50-02-SDE-java-build-test-toolchain
@@ -61,8 +63,9 @@ Numbering rules:
 
 - the first two digits are the stable document **category**;
 - within category 00/10/20/50/60, the next segment is a category-local document sequence;
-- within category 40, the next segment is the stable software-item number, so `40-01-...` belongs to SI-01 and `40-02-...` to SI-02;
-- an optional software-item use-case document may therefore be named `40-01-UC-...` or `40-02-UC-...`; create one only when decomposing a system use case at that software-item boundary adds useful behavioural information rather than duplicating the system use case;
+- category 40 contains software-item specification documents. The next segment is a category-local document sequence; it is **not** the software-item number. Software-item ownership is stated in the document and in traceability;
+- category 41 contains software-item detailed-design documents, also with a category-local sequence independent of software-item identity;
+- an optional software-item use-case document belongs with software-item specification material and receives the next available category-40 document number when introduced; create one only when decomposing a system use case at that software-item boundary adds useful behavioural information rather than duplicating the system use case;
 - `30-03` is the subgroup for **system-owned IDDs**. The IDD suffix retains the interface identity, for example `30-03-IDD-03-...` for IF-03 and `30-03-IDD-11-...` for IF-11;
 - category 70 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM-...` for SI-01;
 - an externally owned document keeps the identifier/version assigned by its owner. Category 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
@@ -100,15 +103,15 @@ domain baseline ---------+------> 30-01 system use cases
                       +--------------------+--------------------+
                       |                                         |
                       v                                         v
-          30-03 system-owned IDD(s)             optional 40-<SI>-UC(s)
+          30-03 system-owned IDD(s)             optional 40-<N>-UC(s)
                       |                                         |
                       +--------------------+--------------------+
                                            |
                                            v
-                                     40-<SI>-SSD
+                                     40-<N>-SSD
                                            |
                                            v
-                                     40-<SI>-SDD(s)
+                                     41-<N>-SDD(s)
                                            |
                                            v
                                       implementation
