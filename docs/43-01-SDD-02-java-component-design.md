@@ -414,12 +414,18 @@ event-timing-framework.jar
     CompactLogFormatter.java
     LiveLogHandler.java
 
+event-timing-framework.jar
+  io.github.brainboxemb.eventtiming.infra/
+    BuildIdentity.java
+    EmbeddedBuildIdentityLoader.java
+    bootstrap/
+      ApplicationBootstrap.java
+      config/
+        YamlApplicationConfigLoader.java
+
 event-timing-app.jar
   io.github.brainboxemb.eventtiming.app/
     TimingApplicationMain.java
-    bootstrap/
-      YamlApplicationConfigLoader.java
-      EmbeddedBuildIdentityLoader.java
 ```
 
 `event-timing-framework.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
@@ -428,8 +434,9 @@ The executable startup flow is:
 
 ```text
 main()
-  -> EmbeddedBuildIdentityLoader
-  -> YamlApplicationConfigLoader
+  -> framework EmbeddedBuildIdentityLoader
+       -> executable-provided filtered build resource
+  -> framework YamlApplicationConfigLoader
        -> validated ApplicationConfig
   -> Logging
        -> configure JUL level + console/file handlers
@@ -450,13 +457,18 @@ the runtime object itself. `ApplicationBootstrap` is the concrete cross-cutting
 composition component around it and consumes the framework-owned effective
 `ApplicationConfig`.
 
-Concrete syntax/parsing is intentionally outside the framework. The default
-`event-timing-app` launcher currently uses SnakeYAML through
-`YamlApplicationConfigLoader`, maps that input into the framework configuration
-model, loads embedded build provenance through `EmbeddedBuildIdentityLoader`,
-and then delegates to `ApplicationBootstrap`. This keeps format/tooling
-dependencies such as SnakeYAML out of the reusable framework while making the
-architectural bootstrap/configuration model reusable.
+The default IF-11 file syntax is YAML and its parser/mapping belongs to reusable
+framework infrastructure. `YamlApplicationConfigLoader` lives with the framework
+bootstrap/configuration model and maps YAML into component-owned configuration values
+before composition starts. SnakeYAML is therefore a framework implementation dependency;
+the IF-11 contract remains independent of SnakeYAML APIs and another input adapter may
+construct the same typed `ApplicationConfig` without YAML.
+
+Build-identity interpretation is reusable for the same reason. The framework owns
+`BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
+the filtered `event-timing-build.properties` resource and build-time provenance injection,
+because those values identify that executable artifact. The framework loader only interprets
+the classpath resource and has no dependency on `TimingApplicationMain` or another app class.
 
 The implemented presentation structure is:
 
