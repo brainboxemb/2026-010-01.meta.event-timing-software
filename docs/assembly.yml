@@ -19,11 +19,11 @@ documents:
   - {id: software-system-specification, source: docs/30-02-SSSD-software-system-specification-document.md}
   - {id: application-control-status, source: docs/30-03-IDD-03-application-control-status.md}
   - {id: application-configuration, source: docs/30-03-IDD-11-application-configuration.md}
-  - {id: timing-application-specification, source: docs/40-01-SISD-timing-application-specification-document.md}
-  - {id: gui-application-specification, source: docs/40-02-SISD-gui-application-specification-document.md}
-  - {id: data-display-design, source: docs/40-01-SDD-01-data-and-display-design.md}
-  - {id: java-component-design, source: docs/40-01-SDD-02-java-component-design.md}
-  - {id: backoffice-transport-design, source: docs/40-01-SDD-03-backoffice-transport-design.md}
+  - {id: timing-application-specification, source: docs/40-01-SSD-timing-application-specification-document.md}
+  - {id: gui-application-specification, source: docs/40-02-SSD-gui-application-specification-document.md}
+  - {id: data-display-design, source: docs/41-01-SDD-data-and-display-design.md}
+  - {id: java-component-design, source: docs/41-02-SDD-java-component-design.md}
+  - {id: backoffice-transport-design, source: docs/41-03-SDD-backoffice-transport-design.md}
   - {id: software-verification-plan, source: docs/60-01-SVP-software-verification-plan.md}
   - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
 
@@ -85,7 +85,7 @@ indexes:
 books:
   - output: documents/architecture-book.md
     title: Software specification and architecture document set
-    description: Generated review/output book containing the SSSD, software-item SISDs and currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
+    description: Generated review/output book containing the SSSD, software-item SSDs and currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
     documents:
       - software-system-specification
       - application-control-status
