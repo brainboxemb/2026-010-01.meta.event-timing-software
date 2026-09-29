@@ -155,20 +155,13 @@ nodes:
   kind: service
   notation: component
   layout: {x: 340, y: 695, w: 245, h: 70}
-- id: timing-node-logbook
-  group: timing-node-aggregate
-  label: "LogBook"
-  subtitle: "registrations • sequence/persistence"
-  kind: service
-  notation: component
-  layout: {x: 605, y: 695, w: 245, h: 70}
 - id: next-up-teams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 75, y: 780, w: 245, h: 70}
+  layout: {x: 605, y: 695, w: 245, h: 70}
 - id: race-data
   group: timing-node-aggregate
   label: "RaceData"
@@ -184,13 +177,41 @@ nodes:
   notation: component
   layout: {x: 605, y: 780, w: 245, h: 70}
 
-- id: system-status-domain
+- id: system-domain
+  object_id: System
   group: domain-layer
-  label: "SystemStatus"
-  subtitle: "application-wide status/health"
+  label: "System"
+  subtitle: "SystemStatus • heartbeat / ping semantics"
   kind: service
   notation: component
-  layout: {x: 910, y: 655, w: 220, h: 85}
+  layout: {x: 900, y: 550, w: 230, h: 55}
+
+- id: logbook-domain
+  object_id: LogBook
+  group: domain-layer
+  label: "LogBook"
+  subtitle: "TimingNode lifecycle • 0..N LogBookItem"
+  kind: service
+  notation: component
+  layout: {x: 900, y: 620, w: 230, h: 55}
+
+- id: timing-data-domain
+  object_id: TimingData
+  group: domain-layer
+  label: "TimingData"
+  subtitle: "TimingDataRecord • encode / decode"
+  kind: service
+  notation: component
+  layout: {x: 900, y: 690, w: 230, h: 55}
+
+- id: upstream-protocol-domain
+  object_id: UpstreamProtocol
+  group: domain-layer
+  label: "UpstreamProtocol"
+  subtitle: "timing data • sync • ping / pong"
+  kind: service
+  notation: component
+  layout: {x: 900, y: 760, w: 230, h: 55}
 
 - id: storage-io
   group: io-layer
@@ -301,9 +322,9 @@ edges:
   to_anchor: {side: right, position: 0.50}
 
 - from: upstream-message-router
-  to: domain-layer
+  to: upstream-protocol-domain
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.86}
+  to_anchor: {side: top, position: 0.50}
 
 - from: upstream-message-router
   to: messaging-io
