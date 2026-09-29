@@ -558,7 +558,7 @@ The semantic `UpstreamProtocol` belongs to Domain. The gateway/connector path
 may transport an encoded protocol representation without interpreting
 TimingData fields or reimplementing synchronisation rules. After protocol
 decoding, `UpstreamMessageRouter` in the application layer owns target
-resolution to the application-wide `System` or the addressed TimingNode.
+resolution to the application-wide `TimingSystem` or the addressed TimingNode.
 
 #### Platform
 
