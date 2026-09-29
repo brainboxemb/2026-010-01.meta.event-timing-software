@@ -31,12 +31,16 @@ groups:
       - {x: 0.6694915, y: 1.0}
       - {x: 0.0, y: 1.0}
 - id: timing-system-aggregate
-  label: "TimingSystem (1..N)"
+  object_id: TimingSystem
+  label: "TimingSystem"
+  note: "TimingSystemId (internal)"
   kind: model
   notation: component
   layout: {x: 55, y: 536, w: 1080, h: 355}
 - id: timing-node-aggregate
-  label: "TimingNode (1..N)"
+  object_id: TimingNode
+  label: "TimingNode [1..N]"
+  note: "TimingNodeId • LocationID • State"
   kind: model
   notation: component
   layout: {x: 550, y: 556, w: 560, h: 330}
@@ -65,28 +69,6 @@ groups:
   layout: {x: 1180, y: 85, w: 230, h: 1221}
 
 nodes:
-- id: timing-system-root
-  object_id: TimingSystem
-  group: timing-system-aggregate
-  label: "TimingSystem"
-  items:
-    - TimingSystemId (internal)
-  kind: model
-  notation: class
-  layout: {x: 75, y: 576, w: 220, h: 65}
-
-- id: timing-node-root
-  object_id: TimingNode
-  group: timing-node-aggregate
-  label: "TimingNode"
-  items:
-    - TimingNodeId
-    - LocationID
-    - State
-  kind: model
-  notation: class
-  layout: {x: 570, y: 586, w: 240, h: 105}
-
 - id: local-console
   object_id: Console
   group: presentation-layer
@@ -106,8 +88,8 @@ nodes:
 - id: web-interface
   object_id: Web
   group: presentation-layer
-  label: "Web (1..N per TimingSystem)"
-  subtitle: "per TimingNode • own port"
+  label: "Web"
+  subtitle: "1 port per TimingNode"
   kind: presentation
   notation: component
   layout: {x: 515, y: 125, w: 240, h: 65}
@@ -160,7 +142,7 @@ nodes:
   subtitle: "system-level upstream"
   kind: service
   notation: component
-  layout: {x: 75, y: 676, w: 220, h: 55}
+  layout: {x: 75, y: 616, w: 220, h: 55}
 
 - id: system-status-domain
   object_id: SystemStatus
@@ -169,7 +151,7 @@ nodes:
   subtitle: "complete system overview"
   kind: service
   notation: component
-  layout: {x: 315, y: 676, w: 220, h: 55}
+  layout: {x: 315, y: 616, w: 220, h: 55}
 
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
@@ -178,7 +160,7 @@ nodes:
   subtitle: "node-level upstream"
   kind: service
   notation: component
-  layout: {x: 850, y: 586, w: 240, h: 55}
+  layout: {x: 850, y: 626, w: 240, h: 55}
 
 - id: tag-processor
   object_id: TagProcessor
@@ -187,7 +169,7 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 570, y: 706, w: 240, h: 50}
+  layout: {x: 570, y: 626, w: 240, h: 50}
 - id: stage-start-times
   object_id: StageStartTimes
   group: timing-node-aggregate
@@ -195,7 +177,7 @@ nodes:
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 706, w: 240, h: 50}
+  layout: {x: 570, y: 696, w: 240, h: 50}
 - id: next-up-teams
   object_id: NextUpTeams
   group: timing-node-aggregate
@@ -203,7 +185,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 570, y: 766, w: 240, h: 50}
+  layout: {x: 850, y: 696, w: 240, h: 50}
 - id: race-data
   object_id: RaceData
   group: timing-node-aggregate
@@ -211,7 +193,7 @@ nodes:
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 766, w: 240, h: 50}
+  layout: {x: 570, y: 766, w: 240, h: 50}
 - id: stage-timing
   object_id: StageTiming
   group: timing-node-aggregate
@@ -219,7 +201,7 @@ nodes:
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 570, y: 826, w: 240, h: 50}
+  layout: {x: 850, y: 766, w: 240, h: 50}
 
 - id: logbook-domain
   object_id: LogBook
@@ -246,7 +228,7 @@ nodes:
   subtitle: "TimingData • sync • ping / pong"
   kind: service
   notation: component
-  layout: {x: 75, y: 746, w: 220, h: 55}
+  layout: {x: 75, y: 686, w: 220, h: 55}
 
 - id: time-source-domain
   object_id: TimeSource
@@ -255,7 +237,7 @@ nodes:
   subtitle: "absolute time • controllable offset"
   kind: service
   notation: component
-  layout: {x: 75, y: 816, w: 220, h: 55}
+  layout: {x: 75, y: 756, w: 220, h: 55}
 
 - id: storage-io
   object_id: Storage
@@ -354,12 +336,6 @@ nodes:
   layout: {x: 1210, y: 1226, w: 170, h: 70}
 
 edges:
-- from: timing-system-root
-  to: timing-node-root
-  label: contains 1..N
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
-
 - from: local-console
   to: shared-terminal
   from_anchor: {side: bottom, position: 0.50}
