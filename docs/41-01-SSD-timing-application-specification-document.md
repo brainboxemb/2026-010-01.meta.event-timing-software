@@ -744,11 +744,15 @@ role.
 development, simulation and hardware-independent verification.
 ```
 
-`VendorAntenna` is shown in Figure SI01-01 only as an illustrative
-extension-provided production implementation beside the built-in simulator. It is
-not a stable implementation identity or required concrete class name; an actual
-vendor integration receives its project-owned name when that implementation is
-selected.
+```{arch} VendorAntenna
+:id: VendorAntenna
+
+`VendorAntenna` is the generic architecture role for an extension-provided
+production Antenna implementation beside the built-in simulator. It establishes
+that production/vendor implementations use the same Antenna contract and
+AntennaProvider extension path; an actual vendor integration may receive a more
+specific implementation name when selected.
+```
 
 ```{arch} Display
 :id: Display
@@ -828,6 +832,17 @@ transport-specific addressing.
 
 `RabbitMqConnector` is the RabbitMQ implementation of the Connector role for
 production-shaped upstream messaging.
+```
+
+```{arch} DebugConnector
+:id: DebugConnector
+
+`DebugConnector` is the development/debug implementation of the Connector role.
+It provides a production-semantics-preserving upstream transport path that an
+independent engineering desktop/debug tool can use without becoming part of
+SI-01 or bypassing UpstreamGateway/UpstreamProtocol. The concrete debug transport
+and desktop-tool interaction are refined by downstream design rather than by
+Figure SI01-01.
 ```
 
 #### Platform
@@ -1030,6 +1045,8 @@ Device Networks
 Messaging
     +-- UpstreamGateway
           +-- Connector (1..N)
+                +-- RabbitMqConnector
+                +-- DebugConnector
 
 UpstreamMessageRouter
     +-- system-level message -> TimingSystem.UpstreamMessagePort
@@ -1053,9 +1070,15 @@ perspective.
 `UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `TimingNodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `TimingSystemId` field is required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
-semantics. A connector-specific external name or routing key may participate in boundary mapping, but it does not replace the stable functional `TimingNodeId`. Internal `TimingSystemId` is local composition context rather than a new upstream routing identity. One gateway may use multiple connectors and one
+semantics. A connector-specific external name or routing key may participate in
+boundary mapping, but it does not replace the stable functional `TimingNodeId`.
+Internal `TimingSystemId` is local composition context rather than a new
+upstream routing identity. One gateway may use multiple connectors and one
 TimingNode may exchange messages through more than one connector via the gateway,
-router and its bidirectional port.
+router and its bidirectional port. `RabbitMqConnector` represents the
+production-shaped transport; `DebugConnector` provides an engineering/debug
+transport to an external desktop/debug tool while preserving the same gateway
+and protocol boundary.
 
 `ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `TimingNodeId`.
 
@@ -1589,7 +1612,7 @@ not need to be forced through a TimingNode.
 external upstream system
         |
         +--> RabbitMqConnector --+
-        +--> SocketConnector ----+--> UpstreamGateway
+        +--> DebugConnector -----+--> UpstreamGateway
                                       |
                                       | encoded UpstreamProtocol
                                       v
