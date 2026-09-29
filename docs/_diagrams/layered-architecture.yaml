@@ -65,9 +65,8 @@ nodes:
   group: timing-system-aggregate
   label: "TimingSystem"
   items:
-    - TimingSystemId
+    - TimingSystemId (internal)
     - SystemStatus
-    - heartbeat / ping
   kind: model
   notation: class
   layout: {x: 75, y: 610, w: 245, h: 100}
@@ -187,7 +186,7 @@ nodes:
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 75, y: 715, w: 245, h: 50}
+  layout: {x: 340, y: 715, w: 245, h: 50}
 
 - id: logbook-domain
   object_id: LogBook
@@ -205,16 +204,16 @@ nodes:
   subtitle: "record + codec • Web / storage / upstream"
   kind: service
   notation: component
-  layout: {x: 900, y: 690, w: 230, h: 55}
+  layout: {x: 900, y: 705, w: 230, h: 55}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
-  group: domain-layer
+  group: timing-system-aggregate
   label: "UpstreamProtocol"
-  subtitle: "timing data • sync • ping / pong"
+  subtitle: "TimingData • sync • ping / pong"
   kind: service
   notation: component
-  layout: {x: 900, y: 760, w: 230, h: 55}
+  layout: {x: 75, y: 715, w: 245, h: 50}
 
 - id: storage-io
   group: io-layer
@@ -370,22 +369,17 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
+- from: timing-system-root
+  to: upstream-protocol-domain
+  label: owns protocol
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
 - from: upstream-protocol-domain
   to: timing-data-domain
   label: uses
   dashed: true
-  from_anchor: {side: left, position: 0.35}
-  to_anchor: {side: left, position: 0.65}
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
   route:
-    - {x: 875, y: 779.25}
-    - {x: 875, y: 725.75}
-
-- from: upstream-protocol-domain
-  to: timing-system-root
-  label: ping / status
-  dashed: true
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-  route:
-    - {x: 1015, y: 540}
-    - {x: 197.5, y: 540}
+    - {x: 875, y: 740}
