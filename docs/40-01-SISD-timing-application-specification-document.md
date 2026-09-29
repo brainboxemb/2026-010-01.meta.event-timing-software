@@ -577,16 +577,27 @@ composition is complete.
 
 ### Principal runtime abstractions
 
+```{arch} TimingSystem
+:id: TimingSystem
+
+A `TimingSystem` is an internal parent domain aggregate.
+One **Headless Timing Application** (SI-01) may host 1..N
+TimingSystems, for example to run multiple independent
+simulation contexts. Each TimingSystem owns its own
+`SystemStatus`, `UpstreamProtocol` context and 1..N
+TimingNodes. Its internal `TimingSystemId` is not assumed
+to be part of the upstream wire contract.
+```
+
 ```{arch} TimingNode
 :id: TimingNode
 :satisfies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021
 
-A `TimingNode` is the primary independently addressed
-operational/domain aggregate inside the **Headless Timing
-Application** (SI-01). One application process may host one
-or more TimingNodes. `SystemStatus` is application-scoped
-and aggregates/monitors overall runtime and TimingNode
-status rather than belonging to one TimingNode.
+A `TimingNode` is the independently addressed
+operational/domain aggregate at one timing location. It
+belongs to exactly one `TimingSystem`; the upstream and
+TimingData contracts remain functionally centred on
+`TimingNodeId`.
 ```
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
