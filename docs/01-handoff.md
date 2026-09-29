@@ -21,12 +21,12 @@ Lees eerst in de meta-repository:
 - `docs/11-SIP-software-implementation-planning.md`
 - `docs/12-SDE-software-development-environment.md`
 - `docs/13-SDE-java-build-test-toolchain.md`
-- `docs/20-01-SRD-timing-application-requirements.md`
-- `docs/30-SSAD-software-system-architecture.md`
-- `docs/31-01-SAD-timing-application-architecture.md`
+- `docs/30-01-SISD-timing-application-specification-document.md`
+- `docs/20-SSSD-software-system-specification-document.md`
+- `docs/30-01-SISD-timing-application-specification-document.md`
 - `docs/31-01-SDD-02-java-component-design.md`
-- `docs/40-01-IDD-application-control-status.md`
-- `docs/40-02-IDD-application-configuration.md`
+- `docs/21-01-IDD-application-control-status.md`
+- `docs/21-02-IDD-application-configuration.md`
 - `docs/50-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:
@@ -148,7 +148,7 @@ SI-02  Desktop GUI Application
 SI-03  Web Operator Application (React/browser/iPad)
 ```
 
-The software-item number is stable across that item's SRD/SAD/SDD documents. It is not a document sequence number. The SSAD owns the software-item/interface catalogue; system-owned interfaces are documented through IDDs where applicable.
+The software-item number is stable across that item's SISD/SDD documents. It is not a document sequence number. The SSSD owns software-item/interface allocation; system-owned interfaces are documented through IDDs where applicable.
 
 ## Document roles
 
@@ -159,7 +159,7 @@ Use the sources consistently:
 - SDP — staged software-development governance and maturity/release direction;
 - SIP — implementation sequence, active step and step-exit expectations;
 - SDE — common development environment, repository/toolchain and workflow rules;
-- SSAD/SAD/SDD — accepted architecture/design at the appropriate level;
+- SSSD/SISD/SDD — accepted specification/design at the appropriate level;
 - SVP — common verification strategy and evidence expectations;
 - active implementation/tool PR — detailed change/evidence record for current work.
 

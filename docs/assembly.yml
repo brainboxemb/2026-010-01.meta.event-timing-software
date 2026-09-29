@@ -9,38 +9,22 @@ asset_manifests:
     publish_prefix: planning
 
 documents:
-  - id: domain-baseline
-    source: docs/03-domain-baseline.md
-  - id: system-use-cases
-    source: docs/04-UC-system-use-cases.md
-  - id: software-development-plan
-    source: docs/10-SDP-software-development-plan.md
-  - id: software-implementation-planning
-    source: docs/11-SIP-software-implementation-planning.md
-  - id: software-development-environment
-    source: docs/12-SDE-software-development-environment.md
-  - id: java-build-test-toolchain
-    source: docs/13-SDE-java-build-test-toolchain.md
-  - id: timing-application-requirements
-    source: docs/20-01-SRD-timing-application-requirements.md
-  - id: software-system-architecture
-    source: docs/30-SSAD-software-system-architecture.md
-  - id: timing-application-architecture
-    source: docs/31-01-SAD-timing-application-architecture.md
-  - id: java-component-design
-    source: docs/31-01-SDD-02-java-component-design.md
-  - id: gui-application-architecture
-    source: docs/31-02-SAD-gui-application-architecture.md
-  - id: data-display-design
-    source: docs/31-01-SDD-01-data-and-display-design.md
-  - id: backoffice-transport-design
-    source: docs/31-01-SDD-03-backoffice-transport-design.md
-  - id: application-control-status
-    source: docs/40-01-IDD-application-control-status.md
-  - id: software-verification-plan
-    source: docs/50-SVP-software-verification-plan.md
-  - id: timing-application-user-manual
-    source: docs/60-01-SUM-headless-timing-application.md
+  - {id: domain-baseline, source: docs/03-domain-baseline.md}
+  - {id: system-use-cases, source: docs/04-UC-system-use-cases.md}
+  - {id: software-development-plan, source: docs/10-SDP-software-development-plan.md}
+  - {id: software-implementation-planning, source: docs/11-SIP-software-implementation-planning.md}
+  - {id: software-development-environment, source: docs/12-SDE-software-development-environment.md}
+  - {id: java-build-test-toolchain, source: docs/13-SDE-java-build-test-toolchain.md}
+  - {id: software-system-specification, source: docs/20-SSSD-software-system-specification-document.md}
+  - {id: application-control-status, source: docs/21-01-IDD-application-control-status.md}
+  - {id: application-configuration, source: docs/21-02-IDD-application-configuration.md}
+  - {id: timing-application-specification, source: docs/30-01-SISD-timing-application-specification-document.md}
+  - {id: gui-application-specification, source: docs/30-02-SISD-gui-application-specification-document.md}
+  - {id: data-display-design, source: docs/31-01-SDD-01-data-and-display-design.md}
+  - {id: java-component-design, source: docs/31-01-SDD-02-java-component-design.md}
+  - {id: backoffice-transport-design, source: docs/31-01-SDD-03-backoffice-transport-design.md}
+  - {id: software-verification-plan, source: docs/50-SVP-software-verification-plan.md}
+  - {id: timing-application-user-manual, source: docs/60-01-SUM-headless-timing-application.md}
 
 indexes:
   - output: documents/README.md
@@ -48,44 +32,41 @@ indexes:
     sections:
       - title: Domain context and use cases
         items:
-          - document: domain-baseline
-          - document: system-use-cases
+          - {document: domain-baseline}
+          - {document: system-use-cases}
       - title: Planning and development environment
         items:
-          - document: software-development-plan
-          - document: software-implementation-planning
-          - document: software-development-environment
-          - document: java-build-test-toolchain
-          - label: Generated SIP roadmap and printable PDFs
-            target: ../planning/README.md
-      - title: Requirements
+          - {document: software-development-plan}
+          - {document: software-implementation-planning}
+          - {document: software-development-environment}
+          - {document: java-build-test-toolchain}
+          - {label: Generated SIP roadmap and printable PDFs, target: ../planning/README.md}
+      - title: Software-system specification and interfaces
         items:
-          - document: timing-application-requirements
-      - title: Architecture
+          - {document: software-system-specification}
+          - {document: application-control-status}
+          - {document: application-configuration}
+      - title: Software-item specifications
         items:
-          - document: software-system-architecture
-          - document: timing-application-architecture
-          - document: java-component-design
-          - document: gui-application-architecture
+          - {document: timing-application-specification}
+          - {document: gui-application-specification}
+      - title: Focused detailed design
+        items:
+          - {document: java-component-design}
       - title: Deferred detailed-design notes
         items:
-          - document: data-display-design
-          - document: backoffice-transport-design
-      - title: Interfaces
-        items:
-          - document: application-control-status
+          - {document: data-display-design}
+          - {document: backoffice-transport-design}
       - title: Verification
         items:
-          - document: software-verification-plan
+          - {document: software-verification-plan}
       - title: User manuals
         items:
-          - document: timing-application-user-manual
+          - {document: timing-application-user-manual}
       - title: Combined documents
         items:
-          - label: Complete software engineering document set
-            target: ./software-document-set.md
-          - label: Architecture book
-            target: ./architecture-book.md
+          - {label: Complete software engineering document set, target: ./software-document-set.md}
+          - {label: Architecture/specification book, target: ./architecture-book.md}
 
   - output: README.md
     title: Generated documentation
@@ -93,30 +74,27 @@ indexes:
     sections:
       - title: Contents
         items:
-          - label: Generated document index
-            target: documents/README.md
-          - label: SIP roadmap and printable planning PDFs
-            target: planning/README.md
-          - label: Complete software engineering document set
-            target: documents/software-document-set.md
-          - label: Architecture book
-            target: documents/architecture-book.md
-          - label: Architecture assets
-            target: assets/architecture/README.md
+          - {label: Generated document index, target: documents/README.md}
+          - {label: SIP roadmap and printable planning PDFs, target: planning/README.md}
+          - {label: Complete software engineering document set, target: documents/software-document-set.md}
+          - {label: Architecture/specification book, target: documents/architecture-book.md}
+          - {label: Architecture assets, target: assets/architecture/README.md}
 
 books:
   - output: documents/architecture-book.md
-    title: Software architecture document set
-    description: Generated review/output book containing the software-system architecture, software-item architectures, and only currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
+    title: Software specification and architecture document set
+    description: Generated review/output book containing the SSSD, software-item SISDs and currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
     documents:
-      - software-system-architecture
-      - timing-application-architecture
+      - software-system-specification
+      - application-control-status
+      - application-configuration
+      - timing-application-specification
       - java-component-design
-      - gui-application-architecture
+      - gui-application-specification
 
   - output: documents/software-document-set.md
     title: Software engineering document set
-    description: Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, deferred design notes, interfaces and verification documents. The numbered source documents on the source branch remain authoritative.
+    description: Generated review/output book containing the current context, planning, specifications, interfaces, detailed design, verification and user guidance. The numbered source documents on the source branch remain authoritative.
     documents:
       - domain-baseline
       - system-use-cases
@@ -124,13 +102,13 @@ books:
       - software-implementation-planning
       - software-development-environment
       - java-build-test-toolchain
-      - timing-application-requirements
-      - software-system-architecture
-      - timing-application-architecture
+      - software-system-specification
+      - application-control-status
+      - application-configuration
+      - timing-application-specification
+      - gui-application-specification
       - java-component-design
-      - gui-application-architecture
       - data-display-design
       - backoffice-transport-design
-      - application-control-status
       - software-verification-plan
       - timing-application-user-manual

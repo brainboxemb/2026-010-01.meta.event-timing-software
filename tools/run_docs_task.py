@@ -143,7 +143,7 @@ def validate_assembly(root: Path) -> dict:
         root / "documents/architecture-book.md",
         root / "documents/12-SDE-software-development-environment.md",
         root / "documents/13-SDE-java-build-test-toolchain.md",
-        root / "documents/31-01-SAD-timing-application-architecture.md",
+        root / "documents/30-01-SISD-timing-application-specification-document.md",
         root / "documents/31-01-SDD-02-java-component-design.md",
         root / "documents/50-SVP-software-verification-plan.md",
         root / "assets/architecture/system-overview.svg",

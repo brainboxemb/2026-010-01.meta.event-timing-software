@@ -24,24 +24,29 @@ PLANNING_DOCUMENTS = [
     "13-SDE-java-build-test-toolchain.md",
 ]
 
-REQUIREMENTS_DOCUMENTS = [
-    "20-01-SRD-timing-application-requirements.md",
+SYSTEM_SPEC_DOCUMENTS = [
+    "20-SSSD-software-system-specification-document.md",
+    "21-01-IDD-application-control-status.md",
+    "21-02-IDD-application-configuration.md",
+]
+
+SOFTWARE_ITEM_SPEC_DOCUMENTS = [
+    "30-01-SISD-timing-application-specification-document.md",
+    "30-02-SISD-gui-application-specification-document.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
-    "30-SSAD-software-system-architecture.md",
-    "31-01-SAD-timing-application-architecture.md",
+    "20-SSSD-software-system-specification-document.md",
+    "21-01-IDD-application-control-status.md",
+    "21-02-IDD-application-configuration.md",
+    "30-01-SISD-timing-application-specification-document.md",
     "31-01-SDD-02-java-component-design.md",
-    "31-02-SAD-gui-application-architecture.md",
+    "30-02-SISD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
     "31-01-SDD-01-data-and-display-design.md",
     "31-01-SDD-03-backoffice-transport-design.md",
-]
-
-INTERFACE_DOCUMENTS = [
-    "40-01-IDD-application-control-status.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
@@ -51,10 +56,10 @@ VERIFICATION_DOCUMENTS = [
 DOCUMENTS = (
     CONTEXT_DOCUMENTS
     + PLANNING_DOCUMENTS
-    + REQUIREMENTS_DOCUMENTS
-    + ARCHITECTURE_DOCUMENTS
+    + SYSTEM_SPEC_DOCUMENTS
+    + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + INTERFACE_DOCUMENTS
+    + ["31-01-SDD-02-java-component-design.md"]
     + VERIFICATION_DOCUMENTS
 )
 
@@ -173,14 +178,14 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "architecture-book.md",
         "Software architecture document set",
-        "Generated review/output book containing the software-system architecture, software-item architectures, and only currently active focused detailed design.",
+        "Generated review/output book containing the SSSD, system interface contracts, software-item SISDs, and only currently active focused detailed design.",
         architecture_built,
     )
 
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, deferred design notes, interfaces and verification documents.",
+        "Generated review/output book containing the current context, planning, specifications, interfaces, detailed design and verification documents.",
         built,
     )
 
@@ -200,23 +205,22 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
     doc_index.append("- [Generated SIP roadmap and printable PDFs](../planning/README.md)")
 
-    doc_index.extend(["", "## Requirements", ""])
-    for name in REQUIREMENTS_DOCUMENTS:
+    doc_index.extend(["", "## Software-system specification and interfaces", ""])
+    for name in SYSTEM_SPEC_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Architecture", ""])
-    for name in ARCHITECTURE_DOCUMENTS:
+    doc_index.extend(["", "## Software-item specifications", ""])
+    for name in SOFTWARE_ITEM_SPEC_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Active focused detailed design", ""])
+    _, title, _ = by_name["31-01-SDD-02-java-component-design.md"]
+    doc_index.append(f"- [{title}](./31-01-SDD-02-java-component-design.md)")
 
     doc_index.extend(["", "## Deferred detailed-design notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:
-        _, title, _ = by_name[name]
-        doc_index.append(f"- [{title}](./{name})")
-
-    doc_index.extend(["", "## Interfaces", ""])
-    for name in INTERFACE_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 

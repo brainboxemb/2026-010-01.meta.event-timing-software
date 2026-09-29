@@ -32,10 +32,10 @@ Use the numbered project documents for their specific roles:
 - [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
 - [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
 - [docs/12-SDE-software-development-environment.md](docs/12-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
-- [docs/30-SSAD-software-system-architecture.md](docs/30-SSAD-software-system-architecture.md) — software-system architecture/item register/interfaces;
-- [docs/31-01-SAD-timing-application-architecture.md](docs/31-01-SAD-timing-application-architecture.md) — SI-01 architecture;
+- [docs/20-SSSD-software-system-specification-document.md](docs/20-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
+- [docs/30-01-SISD-timing-application-specification-document.md](docs/30-01-SISD-timing-application-specification-document.md) — SI-01 architecture;
 - [docs/31-01-SDD-02-java-component-design.md](docs/31-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
-- [docs/31-02-SAD-gui-application-architecture.md](docs/31-02-SAD-gui-application-architecture.md) — desktop GUI architecture;
+- [docs/30-02-SISD-gui-application-specification-document.md](docs/30-02-SISD-gui-application-specification-document.md) — desktop GUI architecture;
 - [docs/50-SVP-software-verification-plan.md](docs/50-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
@@ -80,8 +80,8 @@ of truth are actually being distinguished.
 Architecture figures use a visible stable label plus a Markdown anchor so reviews and
 design text can refer to a figure unambiguously.
 
-Use scope-based labels such as `Figure SYS-01` for the system SSAD and
-`Figure SI01-01` for the SI-01 SAD. Put an anchor immediately before the image,
+Use scope-based labels such as `Figure SYS-01` for the system SSSD and
+`Figure SI01-01` for the SI-01 SISD. Put an anchor immediately before the image,
 for example `<a id="fig-si01-01"></a>`, and a visible caption immediately after
 it. Refer to it as `[Figure SI01-01](#fig-si01-01)` when linking within the same
 document.
