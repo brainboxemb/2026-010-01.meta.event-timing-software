@@ -81,7 +81,6 @@ The current catalogue starts lightweight and can be expanded as requirements are
 usable state.
 
 **Primary actor:** operator or automated startup policy.
-```
 
 **Preconditions:**
 
@@ -107,6 +106,8 @@ usable state.
 - network/backoffice is unavailable while local operation may still remain possible.
 
 **Relevant interfaces:** IF-01/02/03, IF-07, IF-08, status model.
+
+```
 
 ## UC-002 — Open a TimingNode
 
@@ -228,7 +229,6 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 Remote API.
 
 **Primary actor:** operator.
-```
 
 **Main flow:**
 
@@ -237,6 +237,8 @@ Remote API.
 3. The operator performs permitted commands such as open/close/device recovery and later registration-related operations.
 4. SI-02 shows command outcome and live/stale/disconnected status explicitly.
 5. Timing state remains in SI-01 rather than being stored only in the GUI.
+
+```
 
 ## UC-009 — Exercise the Remote API through an optional web test client
 
@@ -323,7 +325,6 @@ while preserving independent lifecycle, state and
 `TimingNodeId`-scoped streams.
 
 **Primary actor:** configuration/test/operator tooling.
-```
 
 **Main flow:**
 
@@ -332,6 +333,8 @@ while preserving independent lifecycle, state and
 3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
 4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
 5. Public interfaces can address each instance explicitly.
+
+```
 
 ## UC-015 — Simulate a complete field toward backoffice
 
