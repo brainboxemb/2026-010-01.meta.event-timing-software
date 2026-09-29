@@ -35,8 +35,8 @@ nodes:
     group: ingress
     layout: {x: 85, y: 325, w: 280, h: 100}
 
-  - id: backend-ingress
-    label: "Messaging / BackendGateway\nbackend transport boundary"
+  - id: upstream-ingress
+    label: "Messaging / UpstreamGateway\nupstream transport boundary"
     kind: integration
     group: ingress
     layout: {x: 85, y: 460, w: 280, h: 100}
@@ -53,20 +53,20 @@ nodes:
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}
 
-  - id: backend-message-router
-    label: "BackendMessageRouter\nbackend target resolution only"
+  - id: upstream-message-router
+    label: "UpstreamMessageRouter\nupstream target resolution only"
     kind: application
     group: runtime
     layout: {x: 520, y: 275, w: 610, h: 80}
 
   - id: timing-node-01
-    label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nBackendMessagePort • normal domain calls"
+    label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nUpstreamMessagePort • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 505, y: 410, w: 300, h: 105}
 
   - id: timing-node-02
-    label: "TimingNode timing-node-02\nserial executor • bounded FIFO\nBackendMessagePort • normal domain calls"
+    label: "TimingNode timing-node-02\nserial executor • bounded FIFO\nUpstreamMessagePort • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 845, y: 410, w: 300, h: 105}
@@ -117,17 +117,17 @@ edges:
       - {x: 825, y: 395}
       - {x: 825, y: 442}
 
-  - from: backend-ingress
-    to: backend-message-router
+  - from: upstream-ingress
+    to: upstream-message-router
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}
 
-  - from: backend-message-router
+  - from: upstream-message-router
     to: timing-node-01
     from_anchor: {side: bottom, position: 0.30}
     to_anchor: {side: top, position: 0.50}
 
-  - from: backend-message-router
+  - from: upstream-message-router
     to: timing-node-02
     from_anchor: {side: bottom, position: 0.70}
     to_anchor: {side: top, position: 0.50}

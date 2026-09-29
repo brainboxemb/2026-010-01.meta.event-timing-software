@@ -59,10 +59,11 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - `CanNetworkController` beheert CAN-bus lifecycle/discovery/device-state; `DisplayRev1Can` is het passieve CAN-display dat SI-01 actief aanstuurt;
 - `NetworkDeviceService` is de bidirectionele netwerkdevice-boundary; discovery/session/protocol-afhandeling is detail design. `DisplayRev2Wifi` ontdekt/verbindt zelf en bezit rendering, reconnect en synchronisatie;
 - `DisplayModel` is alleen voor de passieve CAN-displayroute; smart-displaydata blijft algemene timing/status/reference-data;
-- backend messaging gebruikt application-level `BackendMessageRouter` uitsluitend voor backend target resolution; `ApplicationId` kan naar application-scoped responsibilities zoals `SystemStatus` routeren en `TimingNodeId` naar de betreffende `TimingNode.BackendMessagePort`;
-- I/O `Messaging` bezit `BackendGateway` boven 1..N connectors; `BackendGateway` is de backend/transport boundary en een `RabbitMqConnector` bezit transport/session mechanics, niet application/TimingNode-routing;
-- `TimingNode.BackendMessagePort` is de bidirectionele semantische backend-messagegrens van één TimingNode;
-- `BackendMessageRouter` is nadrukkelijk geen generieke interne message/event bus; normale samenwerking binnen de applicatie blijft directe Java-collaboration waar passend;
+- `upstream` benoemt de relatie met het centrale/externe systeem en niet de richting van één bericht; die relatie is bidirectioneel;
+- upstream messaging gebruikt application-level `UpstreamMessageRouter` uitsluitend voor upstream-system target resolution; `ApplicationId` kan naar application-scoped responsibilities zoals `SystemStatus` routeren en `TimingNodeId` naar de betreffende `TimingNode.UpstreamMessagePort`;
+- I/O `Messaging` bezit `UpstreamGateway` boven 1..N connectors; `UpstreamGateway` is de upstream/transport boundary en een `RabbitMqConnector` bezit transport/session mechanics, niet application/TimingNode-routing;
+- `TimingNode.UpstreamMessagePort` is de bidirectionele semantische upstream-messagegrens van één TimingNode;
+- `UpstreamMessageRouter` is nadrukkelijk geen generieke interne message/event bus; normale samenwerking binnen de applicatie blijft directe Java-collaboration waar passend;
 - maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
 - deel herbruikbare application/runtime-functionaliteit via composition wanneer echte reuse dat rechtvaardigt; introduceer geen `BaseApplication` inheritance-hiërarchie zonder concrete noodzaak;
 - A07 Remote API WebSocket events is gemerged en handmatig op Windows/NetBeans geaccepteerd;

@@ -20,15 +20,15 @@ Package/artifact placement follows `31-01-SDD-02-java-component-design.md`: a tr
 Backoffice target routing and transport are separate responsibilities:
 
 ```text
-SystemStatus / TimingNode.BackendMessagePort
+SystemStatus / TimingNode.UpstreamMessagePort
                ^
                |
-      BackendMessageRouter
-      backend targets only
+      UpstreamMessageRouter
+      upstream targets only
                |
                v
          Messaging (I/O)
-          BackendGateway
+          UpstreamGateway
                |
        +-------+-------+
        |               |
@@ -39,13 +39,15 @@ SystemStatus / TimingNode.BackendMessagePort
  socket test peer  RabbitMQ broker
 ```
 
-`BackendMessageRouter` is application behaviour scoped only to external backend
-messages. `BackendGateway` and its connectors are I/O. Both transport
+`UpstreamMessageRouter` is application behaviour scoped only to messages
+exchanged with the external upstream system. **Upstream** identifies that
+relationship and remains bidirectional; it is not a per-message direction.
+`UpstreamGateway` and its connectors are I/O. Both transport
 implementations preserve the same semantic addressing and feed the same
 application router; neither transport owns application/TimingNode target
-resolution. `TimingNode.BackendMessagePort` is bidirectional.
+resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
 
-## Semantic backoffice boundary
+## Semantic upstream/backoffice boundary
 
 The reusable framework/domain side should work with semantic source-aware messages, not transport destinations.
 
@@ -63,7 +65,7 @@ interface BackofficeInboundListener {
 
 `BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public framework.
 
-These semantic contracts form the boundary between application `BackendMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
+These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
 The final system-level backoffice IDD can define the semantic obligations that both sides must fulfil while transport-specific/private specifications define their actual encoding where required.
 
@@ -215,16 +217,16 @@ RabbitMQ callbacks are external I/O callbacks and must not directly mutate timin
 RabbitMQ consumer callback
       |
       v
-RabbitMqConnector / BackendGateway
+RabbitMqConnector / UpstreamGateway
       |
       v
-transport-neutral backend message
+transport-neutral upstream message
       |
       v
-BackendMessageRouter resolves ApplicationId / TimingNodeId
+UpstreamMessageRouter resolves ApplicationId / TimingNodeId
       |
       v
-application target or TimingNode.BackendMessagePort
+application target or TimingNode.UpstreamMessagePort
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.

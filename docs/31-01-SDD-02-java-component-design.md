@@ -122,13 +122,13 @@ For example, the first TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
-  BackendMessageRouter.java       when backend messaging is implemented
+  UpstreamMessageRouter.java       when upstream messaging is implemented
 
 domain/
   timing/
     TimingNode.java
     TimingNodeId.java
-    BackendMessagePort.java            when backend message handling is implemented
+    UpstreamMessagePort.java            when upstream message handling is implemented
 
 io/
   devices/
@@ -145,7 +145,7 @@ io/
       NetworkDeviceService.java    bidirectional network-device boundary
 
   messaging/
-    BackendGateway.java            when backend messaging is implemented
+    UpstreamGateway.java            when upstream messaging is implemented
     Connector.java                 only if multiple transports justify a shared contract
     rabbitmq/
       RabbitMqConnector.java
@@ -168,13 +168,15 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
 mirror the hardware name.
 
-`BackendGateway` owns the external backend boundary and uses 1..N concrete
+`UpstreamGateway` owns the external upstream-system boundary and uses 1..N concrete
 connectors. A connector such as `RabbitMqConnector` owns transport/session
-mechanics. `BackendMessageRouter` in the application package owns backend-only
-application/domain target resolution; it is not a generic internal message bus.
-`TimingNode.BackendMessagePort` is the bidirectional semantic backend-message
-port of one TimingNode. Application-scoped messages can be routed directly to the
-appropriate Domain responsibility without inventing an application-level port.
+mechanics. `UpstreamMessageRouter` in the application package owns target
+resolution for messages exchanged with that upstream system; it is not a
+generic internal message bus. `TimingNode.UpstreamMessagePort` is the
+bidirectional semantic upstream-message port of one TimingNode. Here
+**upstream** identifies the system relationship, not a one-way message
+direction. Application-scoped messages can be routed directly to the appropriate
+Domain responsibility without inventing an application-level port.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -458,7 +460,7 @@ Expected private/product-specific areas may include:
 - production RFID control/protocol details;
 - product-specific I/O/protocol implementations;
 - production asset/source inventory and mappings;
-- production backend schemas/codecs where sensitive;
+- production upstream/backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
 Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model or runtime plugin discovery unless a real requirement appears.
