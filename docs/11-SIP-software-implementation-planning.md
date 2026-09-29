@@ -132,7 +132,7 @@ Create the Java repository and prove that it builds and runs independently.
 
 ## Step 3 — Application and Remote API foundation
 
-Status: active
+Status: active — release closure candidate
 
 ### Purpose
 
@@ -186,6 +186,14 @@ Build the first useful **Headless Timing Application** (SI-01) on the developmen
 - ST-1 exercises the running application through public interfaces;
 - runtime logging and Windows artifact execution are repeatable;
 - the step closes on the next accepted `0.2.x` release.
+
+### Closure candidate
+
+The implementation and verification criteria above are satisfied on the current
+`0.2.2-SNAPSHOT` line. `VC-ST1-001` exercises the packaged application as a separate
+process through HTTP/WebSocket plus controlled remote-terminal shutdown and passes the
+normal Linux and native Windows Maven verification paths. Step 3 remains active only
+because the accepted `v0.2.2` release is the explicit closure gate.
 
 ---
 
