@@ -19,7 +19,7 @@ IF-03 is a system-owned interface allocated by
 therefore downstream of that allocation and upstream of both participating software-item
 specifications. Applicable system use cases supply operational intent.
 
-The SI-01/GUI SISDs and the SVP may trace to this IDD; they are not inputs to it.
+The SI-01/GUI SSDs and the SVP may trace to this IDD; they are not inputs to it.
 
 ## Parties
 
@@ -338,7 +338,7 @@ Without explicit configuration the first-executable IF-03 service shall bind onl
 **IF03-REQ-010 — Compatible extension**  
 Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
 
-## Relationship to SI-01 SISD
+## Relationship to SI-01 SSD
 
 | IDD obligation | SI-01 requirement(s) |
 | --- | --- |
@@ -351,7 +351,7 @@ Clients shall be able to ignore unknown response members/event types within API 
 | IF03-REQ-009 | SI01-REQ-032 |
 | IF03-REQ-010 | SI01-REQ-033 |
 
-The SI-01 SISD references this contract instead of duplicating transport schema details.
+The SI-01 SSD references this contract instead of duplicating transport schema details.
 
 ## First AP-1 verification case
 
@@ -372,7 +372,7 @@ Trace target:
 UC-001 / UC-008
   -> SI01-REQ-010/011/020/021/022/023/031/032/033
   -> IF03-REQ-001..010 as applicable
-  -> SI-01 status/application boundary from SISD/SDD
+  -> SI-01 status/application boundary from SSD/SDD
   -> VC-ST1-001
 ~~~
 ```
