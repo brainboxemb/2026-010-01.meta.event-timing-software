@@ -44,15 +44,15 @@ domain --------+----> 30-01 system use cases
                  +--------------+--------------+
                  |                             |
                  v                             v
-      30-03 system-owned IDDs       optional 40-<SI>-UC
+      30-03 system-owned IDDs       optional 40-<N>-UC
                  |                             |
                  +--------------+--------------+
                                 |
                                 v
-                         40-<SI>-SSD
+                         40-<N>-SSD
                                 |
                                 v
-                         40-<SI>-SDD-xx
+                         41-<N>-SDD
 ```
 
 An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SSD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SSDs.
@@ -101,7 +101,7 @@ The software-system architecture is driven by these system-level concerns:
 
 ## Software-item register
 
-The software-item segment in `40-<SI>-SSD` and `40-<SI>-SDD-<N>` filenames identifies the software item.
+Software-item identity is stated by the document and traceability metadata; the numeric segment in category 40/41 is a document sequence and does not encode the software-item number.
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
