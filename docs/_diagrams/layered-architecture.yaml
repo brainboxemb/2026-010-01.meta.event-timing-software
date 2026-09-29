@@ -273,18 +273,27 @@ nodes:
   label: "Devices"
   items:
     - label: "AntennaManager"
+      object_id: AntennaManager
       items:
         - label: "Antenna (0..N)"
+          object_id: Antenna
           items:
-            - SimulatedAntenna
+            - label: SimulatedAntenna
+              object_id: SimulatedAntenna
     - label: Display
+      object_id: Display
       items:
-        - DisplayRev1Can
-        - DisplayRev2Wifi
+        - label: DisplayRev1Can
+          object_id: DisplayRev1Can
+        - label: DisplayRev2Wifi
+          object_id: DisplayRev2Wifi
     - label: Keypad
+      object_id: Keypad
       items:
-        - KeypadRev1Can
-    - Beeper
+        - label: KeypadRev1Can
+          object_id: KeypadRev1Can
+    - label: Beeper
+      object_id: Beeper
   kind: integration
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
@@ -295,8 +304,10 @@ nodes:
   group: io-layer
   label: "DeviceNetworks"
   items:
-    - CanNetworkController
-    - NetworkDeviceService
+    - label: CanNetworkController
+      object_id: CanNetworkController
+    - label: NetworkDeviceService
+      object_id: NetworkDeviceService
   kind: integration
   notation: packaging-component
   layout: {x: 275, y: 1066, w: 240, h: 95}
@@ -306,10 +317,13 @@ nodes:
   label: "Messaging"
   items:
     - label: "UpstreamGateway"
+      object_id: UpstreamGateway
       items:
         - label: "Connector (1..N)"
+          object_id: Connector
           items:
-            - RabbitMqConnector
+            - label: RabbitMqConnector
+              object_id: RabbitMqConnector
   kind: integration
   notation: packaging-component
   layout: {x: 535, y: 1066, w: 260, h: 105}
