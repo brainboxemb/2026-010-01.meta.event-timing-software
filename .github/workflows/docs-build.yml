@@ -381,6 +381,23 @@ jobs:
           grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-001.html
           grep -q 'Authoritative source' bld/engineering-portal/browser-explorer-UC-001.html
 
+          grep -q 'data-engineering-id="AntennaManager"' bld/engineering-portal/site/explorer/index.html
+          grep -q 'aria-label="Open AntennaManager"' bld/engineering-portal/site/explorer/index.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/explorer/?object=AntennaManager" \
+            > bld/engineering-portal/browser-explorer-AntennaManager.html
+
+          grep -q '<code>AntennaManager</code>' bld/engineering-portal/browser-explorer-AntennaManager.html
+          grep -q 'coordinates the configured 0..N Antenna components' bld/engineering-portal/browser-explorer-AntennaManager.html
+          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer-AntennaManager.html
+
           "$chrome" \
             --headless \
             --no-sandbox \
