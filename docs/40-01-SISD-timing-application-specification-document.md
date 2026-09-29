@@ -48,16 +48,17 @@ SI-01 shall start using externally supplied configuration rather than requiring 
 **SI01-REQ-002 — Clean process shutdown**  
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
 
-```{req} Minimal TimingNode composition
+```{req} Minimal TimingSystem / TimingNode composition
 :id: SI01-REQ-003
 :derived_from: UC-001, UC-014
 
 The first executable shall support configuration of at least
-one `TimingNode` with a stable `TimingNodeId` that can be
+one internal `TimingSystem` containing at least one
+`TimingNode` with a stable `TimingNodeId` that can be
 represented in application status.
 ```
 
-IF-11 defines how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingNodeId`, registration-asset identity and antenna identity distinct. Detailed operational RFID behaviour remains outside this first slice.
+IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour remains outside this first slice.
 
 #### Build and version identity
 
@@ -220,7 +221,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - run on the original Raspberry Pi Zero / Zero W target; actual runtime/resource constraints are established by measurement;
 - remain usable on Linux/Windows development and test hosts;
 - keep timing/domain state in the application;
-- support one or more logical TimingNodes without state leakage;
+- support 1..N internal TimingSystems, each with 1..N logical TimingNodes, without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
@@ -241,7 +242,7 @@ Representative architecture-validation scenarios include:
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
 5. continue local operation while a GUI/test client or upstream connection is unavailable;
-6. host several TimingNodes in a development/simulation composition without state leakage;
+6. host several independent TimingSystems, each with one or more TimingNodes, in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
 
@@ -1121,7 +1122,10 @@ The main configuration groups are:
 ```text
 ApplicationConfig
 ├── applicationId
-├── timingNodes
+├── timingSystems
+│   └── <timingSystem>
+│       ├── timingSystemId
+│       └── timingNodes
 ├── io
 │   ├── devices
 │   │   └── antennas
@@ -1142,13 +1146,15 @@ ApplicationConfig
 The identity boundaries are deliberate:
 
 - the application owns a stable `ApplicationId`;
-- a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
-- `ApplicationId` and `TimingNodeId` are different identities, but a single-TimingNode deployment may intentionally configure the same value for both;
+- the application composes 1..N internal `TimingSystem` contexts, each with an internal `TimingSystemId`;
+- each TimingSystem owns 1..N TimingNodes;
+- a `TimingNode` owns its stable functional `TimingNodeId` and configured `LocationID`;
+- `TimingSystemId` is local composition/simulation identity and is not added to TimingData/upstream addressing;
 - the high-level I/O model separates Devices from Device Networks;
 - Devices names the functional device endpoints/concepts, including antennas, keypads, beepers, passive CAN devices and smart network devices;
 - the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
 - Device Networks contains `CanNetworkController` for the actively managed CAN network and `NetworkDeviceService` for bidirectional network-device communication;
-- when upstream messaging is configured, the application composes one `UpstreamGateway` using 1..N connectors;
+- when upstream messaging is configured for a TimingSystem, its protocol/gateway context uses 1..N connectors; multiple hosted TimingSystems keep those semantic contexts separate;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
@@ -1370,7 +1376,8 @@ Representative **Headless Timing Application** (SI-01) deployments are:
 Production field host
   Raspberry Pi Zero / Zero W
     one Headless Timing Application process
-      one or more configured TimingNode objects
+      one or more TimingSystem aggregates
+        each with 1..N TimingNodes
       local devices + local files
       optional network/upstream connectivity
 
@@ -1378,7 +1385,7 @@ Development/test host
   Linux or Windows
     same Headless Timing Application framework/application behaviour
     real or stub adapters
-    may host larger multi-TimingNode simulation topology
+    may host multiple independent TimingSystems for simulation
 ```
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSSD rather than duplicated here.
