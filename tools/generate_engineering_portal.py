@@ -299,10 +299,17 @@ def render_explorer(view: dict, svg: str) -> str:
     graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
     return f"""---
 hide:
+  - navigation
   - toc
 ---
 
 # Engineering explorer
+
+<div class="eng-workspace-nav" aria-label="Engineering portal navigation">
+  <a href="../">Portal</a>
+  <a href="../book/">Architecture Book</a>
+  <a href="../objects/">Object index</a>
+</div>
 
 The real generated SI-01 architecture stays visible while the selected
 engineering object and its traceability context are inspected.
