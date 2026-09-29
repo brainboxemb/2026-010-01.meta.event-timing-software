@@ -76,8 +76,8 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 - [`docs/12-SDE-software-development-environment.md`](docs/12-SDE-software-development-environment.md) — concrete engineering environment: repositories, GitHub workflow, tooling, CI, generated-output and development-host conventions.
 - [`docs/13-SDE-java-build-test-toolchain.md`](docs/13-SDE-java-build-test-toolchain.md) — Java-specific refinement of the SDE covering build/test roles, Maven Wrapper, canonical artifacts, cross-platform CI and the reusable `tool.java-project` boundary.
 - [`docs/20-SSSD-software-system-specification-document.md`](docs/20-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
-- [`docs/21-01-IDD-application-control-status.md`](docs/21-01-IDD-application-control-status.md) — system-owned IF-03 Remote API contract.
-- [`docs/21-02-IDD-application-configuration.md`](docs/21-02-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
+- [`docs/21-03-IDD-application-control-status.md`](docs/21-03-IDD-application-control-status.md) — system-owned IF-03 Remote API contract.
+- [`docs/21-11-IDD-application-configuration.md`](docs/21-11-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/30-01-SISD-timing-application-specification-document.md`](docs/30-01-SISD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/30-02-SISD-gui-application-specification-document.md`](docs/30-02-SISD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
 - [`docs/31-01-SDD-01-data-and-display-design.md`](docs/31-01-SDD-01-data-and-display-design.md) — deferred software item 01 data/display detailed-design note.
@@ -124,8 +124,8 @@ The system specification is deliberately separated from software-item specificat
 
 ```text
 20-SSSD                    software-system requirements + architecture
-21-01-IDD                  first system-owned detailed interface contract
-21-02-IDD                  second system-owned detailed interface contract
+21-03-IDD                  first system-owned detailed interface contract
+21-11-IDD                  second system-owned detailed interface contract
 
 30-01-SISD                 software item 01 requirements + architecture
 30-02-SISD                 software item 02 requirements + architecture
@@ -134,6 +134,8 @@ The system specification is deliberately separated from software-item specificat
 
 60-01-SUM                  release/user manual for software item 01
 ```
+
+`21-xx-IDD` uses the **system interface number** as `xx`: IF-03 is `21-03-IDD`, IF-11 is `21-11-IDD`. The IDD document number therefore stays aligned with the interface catalogue rather than creating a second interface numbering scheme.
 
 The software-item number remains stable across that item's SISD/SDDs. During the current
 working-draft phase, retiring an SDD may still compact the SDD sequence; historical names

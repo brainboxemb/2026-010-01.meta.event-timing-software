@@ -16,8 +16,8 @@ The SI-01 specification is derived from upstream software-system authority:
 - `04-UC-system-use-cases.md` for applicable operational intent;
 - `20-SSSD-software-system-specification-document.md` for SI-01 allocation,
   software-system constraints and interface ownership;
-- `21-01-IDD-application-control-status.md` for IF-03 obligations;
-- `21-02-IDD-application-configuration.md` for IF-11 obligations.
+- `21-03-IDD-application-control-status.md` for IF-03 obligations;
+- `21-11-IDD-application-configuration.md` for IF-11 obligations.
 
 `03-domain-baseline.md` supplies shared terminology/domain facts. It is supporting
 source knowledge rather than a substitute for a released requirement/interface baseline.
@@ -100,7 +100,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 schema is defined by `21-01-IDD-application-control-status.md`.
+The concrete IF-03 schema is defined by `21-03-IDD-application-control-status.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -1067,7 +1067,7 @@ the API/provider patch version together through Maven dependency management.
 
 ### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `21-02-IDD-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `21-11-IDD-application-configuration.md`.
 
 The main configuration groups are:
 

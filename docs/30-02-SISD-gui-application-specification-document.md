@@ -12,7 +12,7 @@ capability approaches implementation; no separate SISD/SISD pair is planned.
 
 - `20-SSSD-software-system-specification-document.md` for SI-02 allocation and
   software-system constraints;
-- `21-01-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- `21-03-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
 - applicable system use cases and a future system-owned GUI/HMI IDD when that contract
   is defined.
 

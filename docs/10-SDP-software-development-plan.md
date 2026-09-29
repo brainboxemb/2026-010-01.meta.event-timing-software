@@ -46,7 +46,7 @@ Rules:
 
 - **SSSD** — Software System Specification Document; combines software-system
   requirements and software-system architecture.
-- **IDD** — system-owned interface contract. An externally imposed/protocol IDD may
+- **IDD** — system-owned interface contract. The `21-xx-IDD` document number uses the existing `IF-xx` interface number. An externally imposed/protocol IDD may
   already exist and be an input to the SSSD. An IDD for an interface allocated by the
   SSSD normally follows that allocation and then becomes an input to every affected SISD.
 - **SISD** — Software Item Specification Document; combines a software item's
