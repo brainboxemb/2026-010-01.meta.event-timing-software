@@ -62,21 +62,24 @@ def discover_expected(root: Path) -> tuple[dict[str, set[str]], set[str]]:
         rel = path.relative_to(root).as_posix()
 
         data = yaml.safe_load(text)
+        groups = data.get("groups", []) if isinstance(data, dict) else []
         nodes = data.get("nodes", []) if isinstance(data, dict) else []
         missing_identity: list[str] = []
-        for node in nodes:
-            if not isinstance(node, dict):
-                continue
-            notation = node.get("notation")
-            object_id = node.get("object_id")
-            if notation in semantic_notations and not object_id:
-                missing_identity.append(
-                    f"{node.get('id', '<unnamed>')} ({node.get('label', '<unlabelled>')})"
-                )
+        for element_type, elements in (("group", groups), ("node", nodes)):
+            for element in elements:
+                if not isinstance(element, dict):
+                    continue
+                notation = element.get("notation")
+                object_id = element.get("object_id")
+                if notation in semantic_notations and not object_id:
+                    missing_identity.append(
+                        f"{element_type} {element.get('id', '<unnamed>')} "
+                        f"({element.get('label', '<unlabelled>')})"
+                    )
 
         if missing_identity:
             raise ValueError(
-                f"{rel} has semantic architecture node(s) without object_id: "
+                f"{rel} has semantic architecture element(s) without object_id: "
                 + ", ".join(missing_identity)
             )
 
