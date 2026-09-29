@@ -22,7 +22,7 @@ tasks:
   docs.planning:
     command: 'python tools/run_docs_task.py planning'
     inputs:
-      - 'docs/11-SIP-software-implementation-planning.md'
+      - 'docs/10-02-SIP-software-implementation-planning.md'
       - 'docs/_data/**'
       - 'tools/generate_sip_planning.py'
       - 'tools/generate_sip_step_pdfs.py'

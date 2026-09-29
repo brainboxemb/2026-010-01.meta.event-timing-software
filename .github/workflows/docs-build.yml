@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -R -n -E '31-01-SDD-02-data-and-display-design\.md|31-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
+          ! grep -R -n -E '40-01-SDD-02-data-and-display-design\.md|40-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
 
       - name: Validate SIP actuals tool
         shell: bash
@@ -129,9 +129,9 @@ jobs:
 
           cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
-          cp docs/04-UC-system-use-cases.md bld/sphinx-needs/source/docs/
-          cp docs/30-01-SISD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/21-03-IDD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/30-01-UC-system-use-cases.md bld/sphinx-needs/source/docs/
+          cp docs/40-01-SISD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
+          cp docs/30-03-IDD-03-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -155,9 +155,9 @@ jobs:
           ~~~{toctree}
           :maxdepth: 2
 
-          docs/04-UC-system-use-cases
-          docs/30-01-SISD-timing-application-specification-document
-          docs/21-03-IDD-application-control-status
+          docs/30-01-UC-system-use-cases
+          docs/40-01-SISD-timing-application-specification-document
+          docs/30-03-IDD-03-application-control-status
           ~~~
           EOF
 
@@ -430,7 +430,7 @@ jobs:
               if token not in text:
                   raise SystemExit(f"generated reader Markdown missing {token}")
 
-          sisd = (root / "30-01-SISD-timing-application-specification-document.md").read_text(
+          sisd = (root / "40-01-SISD-timing-application-specification-document.md").read_text(
               encoding="utf-8"
           )
           start = sisd.index('<a id="SI01-REQ-003"></a>')
@@ -452,7 +452,7 @@ jobs:
                   "generated reader Markdown does not render Need body before metadata/separator"
               )
 
-          use_cases = (root / "04-UC-system-use-cases.md").read_text(
+          use_cases = (root / "30-01-UC-system-use-cases.md").read_text(
               encoding="utf-8"
           )
           uc_start = use_cases.index('<a id="UC-001"></a>')
@@ -486,11 +486,11 @@ jobs:
           test -f bld/docs/documents/README.md
           test -f bld/docs/documents/software-document-set.md
           test -f bld/docs/documents/architecture-book.md
-          test -f bld/docs/documents/12-SDE-software-development-environment.md
-          test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
-          test -f bld/docs/documents/30-01-SISD-timing-application-specification-document.md
-          test -f bld/docs/documents/31-01-SDD-02-java-component-design.md
-          test -f bld/docs/documents/50-SVP-software-verification-plan.md
+          test -f bld/docs/documents/50-01-SDE-software-development-environment.md
+          test -f bld/docs/documents/50-02-SDE-java-build-test-toolchain.md
+          test -f bld/docs/documents/40-01-SISD-timing-application-specification-document.md
+          test -f bld/docs/documents/40-01-SDD-02-java-component-design.md
+          test -f bld/docs/documents/60-01-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg

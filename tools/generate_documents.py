@@ -13,54 +13,68 @@ import shutil
 
 
 CONTEXT_DOCUMENTS = [
-    "03-domain-baseline.md",
-    "04-UC-system-use-cases.md",
+    "00-04-domain-baseline.md",
 ]
 
 PLANNING_DOCUMENTS = [
-    "10-SDP-software-development-plan.md",
-    "11-SIP-software-implementation-planning.md",
-    "12-SDE-software-development-environment.md",
-    "13-SDE-java-build-test-toolchain.md",
+    "10-01-SDP-software-development-plan.md",
+    "10-02-SIP-software-implementation-planning.md",
+]
+
+EXTERNAL_INPUT_DOCUMENTS = [
+    "20-01-EXT-external-system-inputs.md",
 ]
 
 SYSTEM_SPEC_DOCUMENTS = [
-    "20-SSSD-software-system-specification-document.md",
-    "21-03-IDD-application-control-status.md",
-    "21-11-IDD-application-configuration.md",
+    "30-01-UC-system-use-cases.md",
+    "30-02-SSSD-software-system-specification-document.md",
+    "30-03-IDD-03-application-control-status.md",
+    "30-03-IDD-11-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
-    "30-01-SISD-timing-application-specification-document.md",
-    "30-02-SISD-gui-application-specification-document.md",
+    "40-01-SISD-timing-application-specification-document.md",
+    "40-02-SISD-gui-application-specification-document.md",
+]
+
+ENGINEERING_DOCUMENTS = [
+    "50-01-SDE-software-development-environment.md",
+    "50-02-SDE-java-build-test-toolchain.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
-    "20-SSSD-software-system-specification-document.md",
-    "21-03-IDD-application-control-status.md",
-    "21-11-IDD-application-configuration.md",
-    "30-01-SISD-timing-application-specification-document.md",
-    "31-01-SDD-02-java-component-design.md",
-    "30-02-SISD-gui-application-specification-document.md",
+    "30-02-SSSD-software-system-specification-document.md",
+    "30-03-IDD-03-application-control-status.md",
+    "30-03-IDD-11-application-configuration.md",
+    "40-01-SISD-timing-application-specification-document.md",
+    "40-01-SDD-02-java-component-design.md",
+    "40-02-SISD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
-    "31-01-SDD-01-data-and-display-design.md",
-    "31-01-SDD-03-backoffice-transport-design.md",
+    "40-01-SDD-01-data-and-display-design.md",
+    "40-01-SDD-03-backoffice-transport-design.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
-    "50-SVP-software-verification-plan.md",
+    "60-01-SVP-software-verification-plan.md",
+]
+
+USER_DOCUMENTS = [
+    "70-01-SUM-headless-timing-application.md",
 ]
 
 DOCUMENTS = (
     CONTEXT_DOCUMENTS
     + PLANNING_DOCUMENTS
+    + EXTERNAL_INPUT_DOCUMENTS
     + SYSTEM_SPEC_DOCUMENTS
     + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + ["31-01-SDD-02-java-component-design.md"]
+    + ["40-01-SDD-02-java-component-design.md"]
+    + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
+    + USER_DOCUMENTS
 )
 
 
@@ -192,20 +206,25 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     doc_index = [
         "# Generated documents",
         "",
-        "## Domain context and use cases",
+        "## Working context",
         "",
     ]
     for name in CONTEXT_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Planning and development environment", ""])
+    doc_index.extend(["", "## Planning", ""])
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
     doc_index.append("- [Generated SIP roadmap and printable PDFs](../planning/README.md)")
 
-    doc_index.extend(["", "## Software-system specification and interfaces", ""])
+    doc_index.extend(["", "## External / parent-system inputs", ""])
+    for name in EXTERNAL_INPUT_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Software-system specification and design", ""])
     for name in SYSTEM_SPEC_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
@@ -216,16 +235,26 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Active focused detailed design", ""])
-    _, title, _ = by_name["31-01-SDD-02-java-component-design.md"]
-    doc_index.append(f"- [{title}](./31-01-SDD-02-java-component-design.md)")
+    _, title, _ = by_name["40-01-SDD-02-java-component-design.md"]
+    doc_index.append(f"- [{title}](./40-01-SDD-02-java-component-design.md)")
 
     doc_index.extend(["", "## Deferred detailed-design notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Verification", ""])
+    doc_index.extend(["", "## Development environment / engineering", ""])
+    for name in ENGINEERING_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Verification and validation", ""])
     for name in VERIFICATION_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## User / operational documentation", ""])
+    for name in USER_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 

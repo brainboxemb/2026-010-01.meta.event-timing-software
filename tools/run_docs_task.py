@@ -141,11 +141,11 @@ def validate_assembly(root: Path) -> dict:
         root / "documents/README.md",
         root / "documents/software-document-set.md",
         root / "documents/architecture-book.md",
-        root / "documents/12-SDE-software-development-environment.md",
-        root / "documents/13-SDE-java-build-test-toolchain.md",
-        root / "documents/30-01-SISD-timing-application-specification-document.md",
-        root / "documents/31-01-SDD-02-java-component-design.md",
-        root / "documents/50-SVP-software-verification-plan.md",
+        root / "documents/50-01-SDE-software-development-environment.md",
+        root / "documents/50-02-SDE-java-build-test-toolchain.md",
+        root / "documents/40-01-SISD-timing-application-specification-document.md",
+        root / "documents/40-01-SDD-02-java-component-design.md",
+        root / "documents/60-01-SVP-software-verification-plan.md",
         root / "assets/architecture/system-overview.svg",
         root / "assets/architecture/system-overview.drawio",
         root / "planning/sip-roadmap.pdf",
@@ -154,10 +154,10 @@ def validate_assembly(root: Path) -> dict:
         if not path.is_file():
             raise RuntimeError(f"required assembled output missing: {path}")
     architecture_book = (root / "documents/architecture-book.md").read_text(encoding="utf-8")
-    active = "**Source document:** [31-01-SDD-02-java-component-design.md]"
+    active = "**Source document:** [40-01-SDD-02-java-component-design.md]"
     deferred = [
-        "**Source document:** [31-01-SDD-01-data-and-display-design.md]",
-        "**Source document:** [31-01-SDD-03-backoffice-transport-design.md]",
+        "**Source document:** [40-01-SDD-01-data-and-display-design.md]",
+        "**Source document:** [40-01-SDD-03-backoffice-transport-design.md]",
     ]
     if active not in architecture_book:
         raise RuntimeError("active SDD section missing from architecture book")

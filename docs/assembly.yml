@@ -9,58 +9,60 @@ asset_manifests:
     publish_prefix: planning
 
 documents:
-  - {id: domain-baseline, source: docs/03-domain-baseline.md}
-  - {id: system-use-cases, source: docs/04-UC-system-use-cases.md}
-  - {id: software-development-plan, source: docs/10-SDP-software-development-plan.md}
-  - {id: software-implementation-planning, source: docs/11-SIP-software-implementation-planning.md}
-  - {id: software-development-environment, source: docs/12-SDE-software-development-environment.md}
-  - {id: java-build-test-toolchain, source: docs/13-SDE-java-build-test-toolchain.md}
-  - {id: software-system-specification, source: docs/20-SSSD-software-system-specification-document.md}
-  - {id: application-control-status, source: docs/21-03-IDD-application-control-status.md}
-  - {id: application-configuration, source: docs/21-11-IDD-application-configuration.md}
-  - {id: timing-application-specification, source: docs/30-01-SISD-timing-application-specification-document.md}
-  - {id: gui-application-specification, source: docs/30-02-SISD-gui-application-specification-document.md}
-  - {id: data-display-design, source: docs/31-01-SDD-01-data-and-display-design.md}
-  - {id: java-component-design, source: docs/31-01-SDD-02-java-component-design.md}
-  - {id: backoffice-transport-design, source: docs/31-01-SDD-03-backoffice-transport-design.md}
-  - {id: software-verification-plan, source: docs/50-SVP-software-verification-plan.md}
-  - {id: timing-application-user-manual, source: docs/60-01-SUM-headless-timing-application.md}
+  - {id: domain-baseline, source: docs/00-04-domain-baseline.md}
+  - {id: system-use-cases, source: docs/30-01-UC-system-use-cases.md}
+  - {id: software-development-plan, source: docs/10-01-SDP-software-development-plan.md}
+  - {id: software-implementation-planning, source: docs/10-02-SIP-software-implementation-planning.md}
+  - {id: external-system-inputs, source: docs/20-01-EXT-external-system-inputs.md}
+  - {id: software-development-environment, source: docs/50-01-SDE-software-development-environment.md}
+  - {id: java-build-test-toolchain, source: docs/50-02-SDE-java-build-test-toolchain.md}
+  - {id: software-system-specification, source: docs/30-02-SSSD-software-system-specification-document.md}
+  - {id: application-control-status, source: docs/30-03-IDD-03-application-control-status.md}
+  - {id: application-configuration, source: docs/30-03-IDD-11-application-configuration.md}
+  - {id: timing-application-specification, source: docs/40-01-SISD-timing-application-specification-document.md}
+  - {id: gui-application-specification, source: docs/40-02-SISD-gui-application-specification-document.md}
+  - {id: data-display-design, source: docs/40-01-SDD-01-data-and-display-design.md}
+  - {id: java-component-design, source: docs/40-01-SDD-02-java-component-design.md}
+  - {id: backoffice-transport-design, source: docs/40-01-SDD-03-backoffice-transport-design.md}
+  - {id: software-verification-plan, source: docs/60-01-SVP-software-verification-plan.md}
+  - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
 
 indexes:
   - output: documents/README.md
     title: Generated documents
     sections:
-      - title: Domain context and use cases
+      - title: Working context
         items:
           - {document: domain-baseline}
-          - {document: system-use-cases}
-      - title: Planning and development environment
+      - title: Planning
         items:
           - {document: software-development-plan}
           - {document: software-implementation-planning}
-          - {document: software-development-environment}
-          - {document: java-build-test-toolchain}
           - {label: Generated SIP roadmap and printable PDFs, target: ../planning/README.md}
-      - title: Software-system specification and interfaces
+      - title: External / parent-system inputs
         items:
+          - {document: external-system-inputs}
+      - title: Software-system specification and design
+        items:
+          - {document: system-use-cases}
           - {document: software-system-specification}
           - {document: application-control-status}
           - {document: application-configuration}
-      - title: Software-item specifications
+      - title: Software-item specification and design
         items:
           - {document: timing-application-specification}
           - {document: gui-application-specification}
-      - title: Focused detailed design
-        items:
           - {document: java-component-design}
-      - title: Deferred detailed-design notes
-        items:
           - {document: data-display-design}
           - {document: backoffice-transport-design}
-      - title: Verification
+      - title: Development environment / engineering
+        items:
+          - {document: software-development-environment}
+          - {document: java-build-test-toolchain}
+      - title: Verification and validation
         items:
           - {document: software-verification-plan}
-      - title: User manuals
+      - title: User / operational documentation
         items:
           - {document: timing-application-user-manual}
       - title: Combined documents
@@ -97,11 +99,10 @@ books:
     description: Generated review/output book containing the current context, planning, specifications, interfaces, detailed design, verification and user guidance. The numbered source documents on the source branch remain authoritative.
     documents:
       - domain-baseline
-      - system-use-cases
       - software-development-plan
       - software-implementation-planning
-      - software-development-environment
-      - java-build-test-toolchain
+      - external-system-inputs
+      - system-use-cases
       - software-system-specification
       - application-control-status
       - application-configuration
@@ -110,5 +111,7 @@ books:
       - java-component-design
       - data-display-design
       - backoffice-transport-design
+      - software-development-environment
+      - java-build-test-toolchain
       - software-verification-plan
       - timing-application-user-manual
