@@ -25,7 +25,7 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimes
-        +-- TimingNodeJournal
+        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
@@ -112,7 +112,7 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimes
-        +-- TimingNodeJournal
+        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming

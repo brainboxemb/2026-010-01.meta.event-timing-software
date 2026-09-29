@@ -269,7 +269,7 @@ TimingApplication
         +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
-        +-- Journal
+        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
@@ -394,7 +394,7 @@ TimingNode
   UpstreamMessagePort
   TagProcessor
   StageStartTimes
-  Journal
+  LogBook
   NextUpTeams
   RaceData
   StageTiming
@@ -413,7 +413,7 @@ responsibilities. Outbound TimingNode messages leave through the same semantic
 port and return to `UpstreamMessageRouter` for application/upstream routing. The
 port owns no transport connection, connector lifecycle or cross-node target
 resolution.
-`TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `Journal` owns
+`TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `LogBook` owns
 registration/history data and sequence semantics. `NextUpTeams` owns the teams
 expected next at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
@@ -447,6 +447,7 @@ io/
       DisplayRev2Wifi
     Keypad
       KeypadRev1Can
+    Beeper
 
   DeviceNetworks
     CanNetworkController
@@ -481,9 +482,8 @@ The high-level I/O view separates **Devices** from **DeviceNetworks**.
 `Devices` groups the software components that represent external device roles in
 SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
 coordination needed when multiple physical antennas form one registration input
-path. `Vendor1Antenna` is a concrete antenna implementation. `Display` and
-`Keypad` name the software-facing device roles; `DisplayRev1Can`,
-`DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. These names
+path. `Vendor1Antenna` is a concrete antenna implementation. `Display`, `Keypad` and `Beeper` name the software-facing device roles; `DisplayRev1Can`,
+`DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. `Beeper` remains transport-neutral until a concrete implementation/connection is required. These names
 describe software components/implementations, not the physical devices themselves.
 
 `DeviceNetworks` owns the communication/network responsibilities used to reach
@@ -562,7 +562,7 @@ TimingApplication
         +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
-        +-- Journal
+        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
@@ -593,6 +593,7 @@ Devices
   +-- Antenna (0..N)
   +-- DisplayRev1Can
   +-- Keypad
+  +-- Beeper
   +-- DisplayRev2Wifi
 
 Device Networks
@@ -629,6 +630,7 @@ Devices
     |     +-- each Antenna -> 1..N TimingNodeId
     +-- DisplayRev1Can
     +-- Keypad
+    +-- Beeper
     +-- DisplayRev2Wifi
 
 Device Networks
@@ -653,7 +655,7 @@ UpstreamMessageRouter
 Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
 
 CAN and smart-network controllers are not alternate presentation layers. They are
-I/O/device-network responsibilities. A keypad or display may present information
+I/O/device-network responsibilities. A keypad, beeper or display may interact with or present information
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
@@ -1094,7 +1096,7 @@ The identity boundaries are deliberate:
 - a `TimingNode` owns its stable `TimingNodeId` and configured `LocationID`;
 - `ApplicationId` and `TimingNodeId` are different identities, but a single-TimingNode deployment may intentionally configure the same value for both;
 - the high-level I/O model separates Devices from Device Networks;
-- Devices names the functional device endpoints/concepts, including antennas, passive CAN devices and smart network devices;
+- Devices names the functional device endpoints/concepts, including antennas, keypads, beepers, passive CAN devices and smart network devices;
 - the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
 - Device Networks contains `CanNetworkController` for the actively managed CAN network and `NetworkDeviceService` for bidirectional network-device communication;
 - when upstream messaging is configured, the application composes one `UpstreamGateway` using 1..N connectors;
@@ -1200,7 +1202,7 @@ Decoding must retain public semantic tag classification (normal/reserve/test) ev
 
 Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
 
-#### CAN, keypad and displays
+#### CAN, keypad, beeper and displays
 
 `CanNetworkController` owns the active CAN network: bus lifecycle, discovery/scanning,
 device online state and communication. CAN/device callbacks do not mutate

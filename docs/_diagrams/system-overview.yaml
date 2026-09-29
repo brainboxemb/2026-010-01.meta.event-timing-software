@@ -27,7 +27,7 @@ nodes:
   - {id: device_ports, label: "Device I/O + NetworkDeviceService", kind: port, layout: {x: 575, y: 750, w: 300, h: 80}}
   - {id: platform_ports, label: "Clock + Settings + Platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
   - {id: backup, label: "Simple file backup / restore", kind: adapter, layout: {x: 200, y: 900, w: 290, h: 70}}
-  - {id: device_adapters, label: "Devices + Device Networks\nAntenna • CAN • network devices", kind: adapter, layout: {x: 575, y: 885, w: 300, h: 95}}
+  - {id: device_adapters, label: "Devices + Device Networks\nAntenna • CAN • beeper • network devices", kind: adapter, layout: {x: 575, y: 885, w: 300, h: 95}}
   - {id: platform_adapters, label: "Windows / Linux /\nPi Zero adapters", kind: adapter, layout: {x: 955, y: 885, w: 260, h: 95}}
 
 edges:

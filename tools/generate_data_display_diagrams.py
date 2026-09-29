@@ -18,7 +18,7 @@ def data_display_flow() -> Diagram:
         Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
         Node("start", "StageStartTimes\\nstage start-time reference", 360, 420, 300, 90, "service"),
         Node("prepare", "NextUpTeams\\nteams expected next + traceable history", 690, 420, 330, 90, "service"),
-        Node("journal", "Journal\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
+        Node("logbook", "LogBook\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
 
         Node("calculator", "StageTiming\\nelapsed time + local ranking", 155, 610, 310, 90, "service"),
         Node("display_model", "DisplayModel\\npassive DisplayRev1Can model", 515, 610, 300, 90, "core"),
@@ -40,11 +40,11 @@ def data_display_flow() -> Diagram:
         Edge("queue", "race"),
         Edge("queue", "start"),
         Edge("queue", "prepare"),
-        Edge("queue", "journal"),
+        Edge("queue", "logbook"),
 
         Edge("race", "calculator", "reference data"),
         Edge("start", "calculator", "start-time data"),
-        Edge("journal", "calculator", "registration data"),
+        Edge("logbook", "calculator", "registration data"),
 
         Edge("prepare", "display_model"),
         Edge("calculator", "display_model"),
@@ -52,7 +52,7 @@ def data_display_flow() -> Diagram:
         Edge("race", "backup", "snapshot", True),
         Edge("start", "backup", "snapshot", True),
         Edge("prepare", "backup", "state + history", True),
-        Edge("journal", "backup", "records + TimingNodeId sequence", True),
+        Edge("logbook", "backup", "records + TimingNodeId sequence", True),
 
         Edge("display_model", "can"),
         Edge("can", "display1", "active CAN commands"),

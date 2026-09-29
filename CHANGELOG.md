@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename the per-TimingNode `Journal` responsibility to `LogBook` across the current domain/architecture views, and add a transport-neutral `Beeper` role under SI-01 `Devices` without prematurely assigning it to CAN or another concrete device network.
+
 - Reorganized the authored documentation into category-numbered families (00 context, 10 planning, 20 external inputs, 30 system specification/design, 40 software-item specification/design, 50 engineering environment, 60 verification, 70 user/operations), added an external/parent-system input baseline, and documented optional software-item use cases.
 
 - Locally migrate document control to an acyclic specification hierarchy: introduce `30-02-SSSD` for combined software-system requirements/architecture, move system-owned IDDs to `21-xx`, combine the SI-01 SRD + SAD into `30-01-SISD`, migrate the SI-02 SAD to `30-02-SISD`, and define normative input/release-order rules in the SDP. Planning and verification documents remain downstream/control references rather than requirement inputs.

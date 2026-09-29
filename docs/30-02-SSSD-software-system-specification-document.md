@@ -150,7 +150,9 @@ The **Headless Timing Application** (SI-01) exchanges race/reference data, regis
 
 ### **Headless Timing Application** (SI-01) ↔ field devices
 
-RFID, CAN, keypad and display equipment are external device boundaries of the **Headless Timing Application** (SI-01). Device semantics belong in system/device interfaces; internal device/network-controller lifecycle, discovery, threads and processing pipelines belong in the **Headless Timing Application** (SI-01) architecture/design.
+RFID, CAN, keypad, beeper and display equipment are external device boundaries of the **Headless Timing Application** (SI-01). Device semantics belong in system/device interfaces; internal device/network-controller lifecycle, discovery, threads and processing pipelines belong in the **Headless Timing Application** (SI-01) architecture/design.
+
+The beeper is currently a transport-neutral device role; its concrete transport/interface allocation remains deferred rather than being assumed to be CAN.
 
 The two display generations deliberately have different ownership. DisplayRev1Can is a passive CAN device actively driven by SI-01. DisplayRev2Wifi is a smart external client: SI-01 advertises a local data service, the display discovers and connects to it, and the display owns its own rendering and synchronisation behaviour.
 

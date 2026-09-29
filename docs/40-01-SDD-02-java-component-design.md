@@ -76,6 +76,7 @@ io.github.brainboxemb.eventtiming/
       antenna/
       display/
       keypad/
+      beeper/
     devicenetworks/
       can/
       network/
@@ -137,6 +138,7 @@ io/
     display/
       DisplayRev1Can.java          passive CAN display support when implemented
     keypad/                        only when device-specific code justifies it
+    beeper/                         transport-specific implementation only when justified
 
   devicenetworks/
     can/
