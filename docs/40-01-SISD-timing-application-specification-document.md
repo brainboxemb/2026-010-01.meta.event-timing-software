@@ -260,7 +260,11 @@ The compact software/domain ownership model is intentionally also kept as copyab
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- SystemStatus
+  +-- System
+  |     +-- SystemStatus
+  |     +-- heartbeat / ping semantics
+  +-- TimingData
+  +-- UpstreamProtocol
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
@@ -269,10 +273,13 @@ TimingApplication
         +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
-        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
+        +-- owns lifecycle -> LogBook
+
+LogBook
+  +-- 0..N LogBookItem
 ```
 
 <a id="fig-si01-01"></a>
@@ -384,9 +391,15 @@ bus or mediator for normal collaboration between domain components.
 
 #### Domain
 
-The domain owns timing rules and TimingNode state:
+The domain owns timing semantics, application-wide system semantics and
+TimingNode state. The main responsibilities are deliberately not represented as
+one parent/child tree:
 
 ```text
+System
+  SystemStatus
+  heartbeat / ping semantics
+
 TimingNode
   TimingNodeId
   LocationID
@@ -394,15 +407,35 @@ TimingNode
   UpstreamMessagePort
   TagProcessor
   StageStartTimes
-  LogBook
   NextUpTeams
   RaceData
   StageTiming
+  owns lifecycle -> LogBook
+
+LogBook
+  0..N LogBookItem
+
+TimingData
+  TimingDataRecord
+  canonical structure / validation
+  encode / decode / compatibility
+
+UpstreamProtocol
+  TimingData transfer
+  synchronisation / reconciliation
+  ping / pong and other protocol messages
 ```
+
+`System` is the application-wide domain object. It owns `SystemStatus` and
+system-wide protocol semantics such as heartbeat/ping handling that do not belong
+to one TimingNode.
 
 `TimingNode` is the top-level domain class for one timing location. It owns its
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
-components shown beneath it in Figure SI01-01.
+components shown inside the TimingNode aggregate in Figure SI01-01. A TimingNode
+also owns the lifecycle of its `LogBook`, but the LogBook is shown as a separate
+Domain responsibility because its state model and persistence/interchange
+boundary are important architecture concepts in their own right.
 
 `UpstreamMessagePort` is the bidirectional upstream-message boundary of one
 TimingNode. Its name identifies the relationship with the upstream system; it
@@ -413,17 +446,35 @@ responsibilities. Outbound TimingNode messages leave through the same semantic
 port and return to `UpstreamMessageRouter` for application/upstream routing. The
 port owns no transport connection, connector lifecycle or cross-node target
 resolution.
-`TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `LogBook` owns
-registration/history data and sequence semantics. `NextUpTeams` owns the teams
-expected next at the TimingNode.
+`TagProcessor` handles tag observations. `StageStartTimes` owns stage start
+references. `NextUpTeams` owns the teams expected next at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
 derives running times and ranking.
 
+`LogBook` owns the operational logbook state for one TimingNode and contains
+0..N `LogBookItem` values. `LogBookItem` is the LogBook's internal domain
+representation; it is intentionally not required to have the same shape as the
+persistent/interchange representation.
+
+`TimingData` owns the canonical persistent/interchange representation of
+timing information. `TimingDataRecord` is its principal record type.
+`TimingData` also owns the public encode/decode, validation and compatibility
+semantics for that representation. This is a Domain contract because the meaning
+and compatibility of recorded timing data are product semantics, not a property
+of a filesystem, RabbitMQ or HTTP implementation.
+
+`UpstreamProtocol` is a second Domain-level protocol responsibility. It uses
+`TimingData` for timing-record transfer and additionally defines semantic
+messages needed for synchronisation, reconciliation, heartbeat/ping and other
+upstream-system exchanges. It is therefore broader than the TimingData record
+format itself.
+
 Detailed domain semantics belong in `00-04-domain-baseline.md`.
 
-#### Core runtime support
+#### Reusable runtime mechanics
 
-Core contains reusable execution mechanics, not business behaviour:
+Reusable execution mechanics support the layered architecture but are not a
+separate logical layer in Figure SI01-01:
 
 ```text
 serial execution
@@ -500,10 +551,14 @@ specific and does not own smart-display rendering/domain behaviour.
 
 When upstream messaging is configured, SI-01 composes one `UpstreamGateway`
 inside I/O/Messaging. The gateway uses 1..N connectors and owns the external
-upstream-system boundary plus connector-facing message exchange. A concrete connector
-owns its transport resources and protocol/session mechanics.
-`UpstreamMessageRouter` in the application layer owns application/domain target
-resolution instead of placing that responsibility in I/O.
+transport/session boundary. A concrete connector owns transport resources,
+delivery/session mechanics and transport-specific addressing.
+
+The semantic `UpstreamProtocol` belongs to Domain. The gateway/connector path
+may transport an encoded protocol representation without interpreting
+TimingData fields or reimplementing synchronisation rules. After protocol
+decoding, `UpstreamMessageRouter` in the application layer owns target
+resolution to the application-wide `System` or the addressed TimingNode.
 
 #### Platform
 
@@ -553,7 +608,11 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- SystemStatus
+  +-- System
+  |     +-- SystemStatus
+  |     +-- heartbeat / ping semantics
+  +-- TimingData
+  +-- UpstreamProtocol
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
@@ -562,10 +621,13 @@ TimingApplication
         +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
-        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
+        +-- owns lifecycle -> LogBook
+
+LogBook
+  +-- 0..N LogBookItem
 ```
 
 `ApplicationId` identifies the running Headless Timing Application instance.
@@ -1142,16 +1204,26 @@ The initial architecture keeps application/domain state in memory and uses simpl
 Keep these concepts distinct:
 
 1. ingress/ordering — concurrency ownership;
-2. registration ledger/source sequence — traceable domain/operational history;
-3. prepare-team registry — current teams-to-prepare plus internal traceable history;
-4. race/reference data — locally available participant/team/tag-reference input received from external sources;
-5. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
-6. local backup/restore — restart/power-loss recovery;
-7. upstream outbox/synchronisation — pending external delivery/reconciliation.
+2. `LogBook` / `LogBookItem` — operational domain state and history owned for a TimingNode;
+3. `TimingData` / `TimingDataRecord` — canonical persistent/interchange representation, validation and encode/decode compatibility;
+4. prepare-team state/history — operational teams-to-prepare behaviour distinct from timing records;
+5. race/reference data — locally available participant/team/tag-reference input received from external sources;
+6. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
+7. local backup/restore — restart/power-loss recovery;
+8. `UpstreamProtocol` — TimingData transfer plus synchronisation, reconciliation and system-level protocol messages.
 
-Registration identity remains TimingNode-scoped; the current stable conceptual key is `(TimingNodeId, SequenceNumber)`.
+TimingData identity remains TimingNode-scoped; the current stable conceptual key is
+`(TimingNodeId, SequenceNumber)`.
 
-Persistence durability semantics, file format, atomic-write strategy and corruption/recovery rules remain open decisions and may justify a focused data/persistence SDD only when implementation reaches that complexity.
+Storage consumes the TimingData representation/codec contract. A storage adapter
+may persist and recover encoded records without understanding their individual
+domain fields. The same principle applies to transport adapters: they move a
+representation owned by Domain instead of becoming an alternative owner of the
+record schema.
+
+Persistence durability semantics, concrete file format, atomic-write strategy
+and corruption/recovery rules remain open decisions and may justify a focused
+data/persistence SDD only when implementation reaches that complexity.
 
 ### Integration architecture
 
@@ -1159,12 +1231,20 @@ The **external device and network topology is owned by the SSSD**, because RFID/
 
 #### Upstream messaging
 
-Upstream messaging is a semantic application boundary, not a RabbitMQ API.
-`UpstreamGateway` owns the external upstream-system boundary across 1..N transport
-connectors. `UpstreamMessageRouter` owns application/domain target resolution.
-A TimingNode-targeted message is resolved by `TimingNodeId`, submitted through
-that TimingNode's serial boundary and enters/leaves the TimingNode through its
-bidirectional `UpstreamMessagePort`.
+Upstream messaging is a semantic system boundary, not a RabbitMQ API.
+`UpstreamProtocol` in Domain defines the messages and state semantics exchanged
+with the upstream system. It uses `TimingData` for timing-record payloads and
+also owns synchronisation/reconciliation and system-level protocol messages such
+as ping/pong.
+
+`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They
+carry the encoded protocol representation and own transport/session resources;
+they do not become owners of TimingData fields or upstream protocol semantics.
+`UpstreamMessageRouter` owns application-level target resolution after semantic
+protocol decoding. A TimingNode-targeted operation is resolved by
+`TimingNodeId`, submitted through that TimingNode's serial boundary and
+enters/leaves through its bidirectional `UpstreamMessagePort`. Application-wide
+operations such as heartbeat/status semantics target `System`.
 
 ```text
 external upstream system
@@ -1172,27 +1252,31 @@ external upstream system
         +--> RabbitMqConnector --+
         +--> SocketConnector ----+--> UpstreamGateway
                                       |
+                                      | encoded UpstreamProtocol
                                       v
-                               UpstreamMessageRouter
-                                  |             |
-                      application/domain       +--> TimingNodeId
-                            target                     |
-                              |                        v
-                              v                  TimingNode
-                         SystemStatus              UpstreamMessagePort
+                               UpstreamProtocol
+                                 /          \
+                                /            +--> TimingData
+                               v
+                      UpstreamMessageRouter
+                         |              |
+                         v              +--> TimingNodeId
+                       System                  |
+                  status / ping                v
+                                         TimingNode
+                                       UpstreamMessagePort
 ```
 
-Connectors own transport/session mechanics and protocol-specific mapping at the
-external boundary. Exact RabbitMQ connection/channel topology, routing keys and
-retry mechanics are connector-level decisions and should be detailed when that
-implementation is active. Product/deployment-specific upstream-system names and private
-wire details remain outside the public architecture documentation.
+Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
+connector-level decisions. Product/deployment-specific upstream-system names and
+private transport details remain outside the public architecture documentation.
+Public protocol semantics and TimingData compatibility remain owned by Domain.
 
 `ApplicationId` is used for application-scoped upstream addressing.
-`UpstreamMessageRouter` provides that application-level routing without adding a
-generic application message handler merely to complete the symmetry. Additional
-domain handling is introduced only when a concrete application-scoped
-message capability is actually implemented.
+`UpstreamMessageRouter` provides target resolution without becoming a generic
+internal message bus. Protocol messages that can be answered entirely by
+application-wide `System` semantics do not need to be forced through a
+TimingNode.
 
 #### RFID
 
