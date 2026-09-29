@@ -35,6 +35,11 @@ groups:
   kind: model
   notation: component
   layout: {x: 55, y: 570, w: 820, h: 310}
+- id: timing-node-aggregate
+  label: "TimingNode (1..N)"
+  kind: model
+  notation: component
+  layout: {x: 325, y: 590, w: 540, h: 275}
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
@@ -73,15 +78,15 @@ nodes:
 
 - id: timing-node-root
   object_id: TimingNode
-  group: timing-system-aggregate
-  label: "TimingNode (1..N)"
+  group: timing-node-aggregate
+  label: "TimingNode"
   items:
     - TimingNodeId
     - LocationID
     - State
   kind: model
   notation: class
-  layout: {x: 340, y: 610, w: 245, h: 100}
+  layout: {x: 340, y: 620, w: 245, h: 60}
 
 - id: local-console
   group: presentation-layer
@@ -145,48 +150,48 @@ nodes:
   layout: {x: 710, y: 390, w: 350, h: 75}
 
 - id: upstream-message-port
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "UpstreamMessagePort"
   subtitle: "bidirectional upstream messages"
   kind: service
   notation: component
-  layout: {x: 605, y: 610, w: 245, h: 70}
+  layout: {x: 605, y: 620, w: 245, h: 60}
 
 - id: tag-processor
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 605, y: 695, w: 245, h: 70}
+  layout: {x: 340, y: 695, w: 245, h: 60}
 - id: stage-start-times
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 75, y: 780, w: 245, h: 70}
+  layout: {x: 605, y: 695, w: 245, h: 60}
 - id: next-up-teams
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 340, y: 780, w: 245, h: 70}
+  layout: {x: 340, y: 770, w: 245, h: 60}
 - id: race-data
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 605, y: 780, w: 245, h: 70}
+  layout: {x: 605, y: 770, w: 245, h: 60}
 - id: stage-timing
-  group: timing-system-aggregate
+  group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 340, y: 715, w: 245, h: 50}
+  layout: {x: 340, y: 840, w: 245, h: 35}
 
 - id: logbook-domain
   object_id: LogBook
