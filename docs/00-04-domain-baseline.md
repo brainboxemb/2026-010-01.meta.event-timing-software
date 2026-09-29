@@ -179,7 +179,7 @@ LocationID = 1..25
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
-A registration record is associated with both:
+A `TimingDataRecord` is associated with both:
 
 ```text
 TimingNodeId
@@ -195,7 +195,7 @@ Every timing node registration stream has a monotonically increasing sequence nu
 Conceptually:
 
 ```text
-RegistrationRecordKey = (TimingNodeId, SequenceNumber)
+TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
 The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope.
@@ -240,18 +240,18 @@ TimingNodeId timing-node-02
 
 The exact file names, external IDs and deployment mappings are configuration/private data. The file format, append/snapshot policy, atomicity and durability rules still need detailed design and formal requirements.
 
-## Registration entries
+## TimingData entries
 
-A registration entry is not limited to participant RFID passage data. Operational events can also be persisted as registration entries when they must participate in the traceable/synchronised stream.
+A `TimingDataRecord` is not limited to participant RFID passage data. Operational events can also be represented as TimingData records when they must participate in the traceable/synchronised stream.
 
 Known example:
 
-- opening a location/timing node is itself a registration entry.
+- opening a location/timing node is itself a TimingData entry.
 
 A working minimal envelope is therefore conceptually:
 
 ```text
-RegistrationRecord
+TimingDataRecord
   timingNodeId
   locationId
   sequenceNumber
