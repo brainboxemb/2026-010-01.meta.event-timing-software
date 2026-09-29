@@ -82,7 +82,7 @@ def registration_stream_identity() -> Diagram:
         Node("source_b", "TimingNodeId timing-node-02\\nTimingNode identity", 60, 300, 270, 80, "external"),
         Node("seq_b", "timing-node-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
 
-        Node("record", "RegistrationRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
+        Node("record", "TimingDataRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
         Node("key", "Stable key\\n(TimingNodeId, SequenceNumber)", 820, 380, 380, 85, "service"),
         Node("location", "LocationID 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
         Node("upstream", "Backend / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
