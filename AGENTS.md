@@ -34,9 +34,9 @@ Use the numbered project documents for their specific roles:
 - [docs/10-02-SIP-software-implementation-planning.md](docs/10-02-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
 - [docs/50-01-SDE-software-development-environment.md](docs/50-01-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/30-02-SSSD-software-system-specification-document.md](docs/30-02-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
-- [docs/40-01-SISD-timing-application-specification-document.md](docs/40-01-SISD-timing-application-specification-document.md) — SI-01 architecture;
-- [docs/40-01-SDD-02-java-component-design.md](docs/40-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
-- [docs/40-02-SISD-gui-application-specification-document.md](docs/40-02-SISD-gui-application-specification-document.md) — desktop GUI architecture;
+- [docs/40-01-01-SSD-timing-application-specification-document.md](docs/40-01-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
+- [docs/40-01-03-SDD-java-component-design.md](docs/40-01-03-SDD-java-component-design.md) — active Java component/package/artifact design;
+- [docs/40-02-01-SSD-gui-application-specification-document.md](docs/40-02-01-SSD-gui-application-specification-document.md) — desktop GUI architecture;
 - [docs/60-01-SVP-software-verification-plan.md](docs/60-01-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
@@ -82,7 +82,7 @@ Architecture figures use a visible stable label plus a Markdown anchor so review
 design text can refer to a figure unambiguously.
 
 Use scope-based labels such as `Figure SYS-01` for the system SSSD and
-`Figure SI01-01` for the SI-01 SISD. Put an anchor immediately before the image,
+`Figure SI01-01` for the SI-01 SSD. Put an anchor immediately before the image,
 for example `<a id="fig-si01-01"></a>`, and a visible caption immediately after
 it. Refer to it as `[Figure SI01-01](#fig-si01-01)` when linking within the same
 document.
