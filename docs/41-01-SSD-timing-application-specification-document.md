@@ -330,6 +330,14 @@ Shared Domain contract:
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
+In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as UML-style
+component/aggregate containers. They are the architecture identities themselves,
+not UML class declarations. A small neutral inner property block lists the
+important identity/state concepts owned by each aggregate, without its own title,
+stereotype or component glyph; it therefore does not prescribe Java fields or a
+concrete class shape. Geometric containment plus the `TimingNode (1..N)` label
+expresses that one TimingSystem owns 1..N TimingNodes.
+
 The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
 layer cake**. Domain has extra space below its contained components and yields
 through a lower-right polygon cut-away. I/O uses a complementary polygon with a
@@ -373,13 +381,14 @@ interface.
 ```{arch} Web
 :id: Web
 
-**Web** is the browser-facing presentation interface of SI-01. Its composition is
-per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints,
-normally one per TimingNode. A Web binding resolves a TimingSystem/TimingNode
-target; bind address/port remains presentation configuration and is not a
-property of either domain object. Web may reuse application queries/events and
-transport facilities, but it is not collapsed into the Remote API merely because
-both can use HTTP/WebSocket technology.
+**Web** is the browser-facing presentation interface of SI-01. Each configured
+`TimingNode` has exactly one Web binding and therefore one configured Web
+listener port. The binding targets that TimingNode; its bind address/port remains
+Presentation configuration and is not a property of the TimingNode domain
+aggregate. A multi-TimingNode process therefore exposes 1..N Web ports. Web may
+reuse application queries/events and transport facilities, but it is not
+collapsed into the Remote API merely because both can use HTTP/WebSocket
+technology.
 ```
 
 ```{arch} Console
@@ -625,10 +634,10 @@ io/
       Antenna (0..N)
         SimulatedAntenna
     Display
-      DisplayRev1Can
-      DisplayRev2Wifi
+      Rev1CanDisplay
+      Rev2WifiDisplay
     Keypad
-      KeypadRev1Can
+      Rev1CanKeypad
     Beeper
 
   DeviceNetworks
@@ -735,6 +744,16 @@ role.
 development, simulation and hardware-independent verification.
 ```
 
+```{arch} VendorAntenna
+:id: VendorAntenna
+
+`VendorAntenna` is the generic architecture role for an extension-provided
+production Antenna implementation beside the built-in simulator. It establishes
+that production/vendor implementations use the same Antenna contract and
+AntennaProvider extension path; an actual vendor integration may receive a more
+specific implementation name when selected.
+```
+
 ```{arch} Display
 :id: Display
 
@@ -743,17 +762,17 @@ information without coupling Domain/Application behaviour to one physical
 display generation or transport.
 ```
 
-```{arch} DisplayRev1Can
-:id: DisplayRev1Can
+```{arch} Rev1CanDisplay
+:id: Rev1CanDisplay
 
-`DisplayRev1Can` is the CAN-connected revision-1 implementation of the Display
+`Rev1CanDisplay` is the CAN-connected revision-1 implementation of the Display
 role.
 ```
 
-```{arch} DisplayRev2Wifi
-:id: DisplayRev2Wifi
+```{arch} Rev2WifiDisplay
+:id: Rev2WifiDisplay
 
-`DisplayRev2Wifi` is the network-attached revision-2 implementation of the
+`Rev2WifiDisplay` is the network-attached revision-2 implementation of the
 Display role.
 ```
 
@@ -764,10 +783,10 @@ Display role.
 events without making the timing domain depend on a concrete bus implementation.
 ```
 
-```{arch} KeypadRev1Can
-:id: KeypadRev1Can
+```{arch} Rev1CanKeypad
+:id: Rev1CanKeypad
 
-`KeypadRev1Can` is the CAN-connected revision-1 implementation of the Keypad
+`Rev1CanKeypad` is the CAN-connected revision-1 implementation of the Keypad
 role.
 ```
 
@@ -813,6 +832,17 @@ transport-specific addressing.
 
 `RabbitMqConnector` is the RabbitMQ implementation of the Connector role for
 production-shaped upstream messaging.
+```
+
+```{arch} DebugConnector
+:id: DebugConnector
+
+`DebugConnector` is the development/debug implementation of the Connector role.
+It provides a production-semantics-preserving upstream transport path that an
+independent engineering desktop/debug tool can use without becoming part of
+SI-01 or bypassing UpstreamGateway/UpstreamProtocol. The concrete debug transport
+and desktop-tool interaction are refined by downstream design rather than by
+Figure SI01-01.
 ```
 
 #### Platform
@@ -966,10 +996,10 @@ responsibilities that serve them:
 ```text
 Devices
   +-- Antenna (0..N)
-  +-- DisplayRev1Can
+  +-- Rev1CanDisplay
   +-- Keypad
   +-- Beeper
-  +-- DisplayRev2Wifi
+  +-- Rev2WifiDisplay
 
 Device Networks
   +-- CanNetworkController
@@ -989,7 +1019,7 @@ device/domain object itself to know about sockets, discovery or transport
 sessions.
 
 The current smart-display direction remains client initiated: SI-01 makes its
-service discoverable and DisplayRev2Wifi connects to it. The exact discovery,
+service discoverable and Rev2WifiDisplay connects to it. The exact discovery,
 listener/session and packet-framing design belongs below this high-level view.
 
 #### Configuration, routing and identity mapping
@@ -1003,10 +1033,10 @@ TimingApplication
 Devices
     +-- Antenna (0..N)
     |     +-- each Antenna -> 1..N TimingNodeId
-    +-- DisplayRev1Can
+    +-- Rev1CanDisplay
     +-- Keypad
     +-- Beeper
-    +-- DisplayRev2Wifi
+    +-- Rev2WifiDisplay
 
 Device Networks
     +-- CanNetworkController
@@ -1015,6 +1045,8 @@ Device Networks
 Messaging
     +-- UpstreamGateway
           +-- Connector (1..N)
+                +-- RabbitMqConnector
+                +-- DebugConnector
 
 UpstreamMessageRouter
     +-- system-level message -> TimingSystem.UpstreamMessagePort
@@ -1038,9 +1070,15 @@ perspective.
 `UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `TimingNodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `TimingSystemId` field is required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
-semantics. A connector-specific external name or routing key may participate in boundary mapping, but it does not replace the stable functional `TimingNodeId`. Internal `TimingSystemId` is local composition context rather than a new upstream routing identity. One gateway may use multiple connectors and one
+semantics. A connector-specific external name or routing key may participate in
+boundary mapping, but it does not replace the stable functional `TimingNodeId`.
+Internal `TimingSystemId` is local composition context rather than a new
+upstream routing identity. One gateway may use multiple connectors and one
 TimingNode may exchange messages through more than one connector via the gateway,
-router and its bidirectional port.
+router and its bidirectional port. `RabbitMqConnector` represents the
+production-shaped transport; `DebugConnector` provides an engineering/debug
+transport to an external desktop/debug tool while preserving the same gateway
+and protocol boundary.
 
 `ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `TimingNodeId`.
 
@@ -1574,7 +1612,7 @@ not need to be forced through a TimingNode.
 external upstream system
         |
         +--> RabbitMqConnector --+
-        +--> SocketConnector ----+--> UpstreamGateway
+        +--> DebugConnector -----+--> UpstreamGateway
                                       |
                                       | encoded UpstreamProtocol
                                       v
@@ -1613,20 +1651,20 @@ device online state and communication. CAN/device callbacks do not mutate
 TimingNode state directly; accepted work crosses the normal application/serial
 boundary.
 
-`DisplayRev1Can` is the passive CAN display generation. SI-01 owns the
+`Rev1CanDisplay` is the passive CAN display generation. SI-01 owns the
 display-specific `DisplayModel` for this path and actively translates that model
 into CAN/device commands. The display does not own the ready-team/domain model.
 
-`DisplayRev2Wifi` is deliberately different. It is a smart external client with
+`Rev2WifiDisplay` is deliberately different. It is a smart external client with
 its own rendering and synchronisation behaviour. `NetworkDeviceService` provides the bidirectional network-device boundary.
 In the current IF-09 design it makes the SI-01 data service discoverable and
-accepts the session initiated by DisplayRev2Wifi. DisplayRev2Wifi owns
+accepts the session initiated by Rev2WifiDisplay. Rev2WifiDisplay owns
 reconnect/resynchronisation behaviour. The concrete discovery/listener/session
 mechanics are detailed below the high-level architecture rather than represented
 as additional peer components.
 
 SI-01 therefore publishes current timing/status/reference data to smart clients;
-it does **not** drive DisplayRev2Wifi through the passive-display `DisplayModel`
+it does **not** drive Rev2WifiDisplay through the passive-display `DisplayModel`
 and does not need to know how that smart display renders the data. Exact mDNS
 service names and the application protocol (for example TCP/WebSocket) remain
 deferred until IF-09 implementation needs them.
@@ -1699,7 +1737,9 @@ unknown configured IDs are startup/configuration errors.
 
 Built-in reference/simulation implementations remain part of the normal public
 software where they are needed for development and verification. In particular,
-`SimulatedAntenna` is always built in. A deployment can select an
+`SimulatedAntenna` is always built in. Figure SI01-01 labels the generic
+extension-provided alternative `VendorAntenna`; that label is illustrative, not
+a fixed public implementation type. A deployment can select an
 extension-provided implementation without changing the application/domain path
 used by the built-in implementation. IF-11 owns provider selection in deployment
 configuration; the concrete external-JAR packaging/search path remains a detailed
