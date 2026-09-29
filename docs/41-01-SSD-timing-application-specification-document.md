@@ -332,10 +332,11 @@ The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as UML-style
 component/aggregate containers. They are the architecture identities themselves,
-not UML class declarations. The compact text beneath each heading lists important
-identity/state concepts owned by that aggregate; it does not prescribe Java
-fields or a concrete class shape. Geometric containment plus the
-`TimingNode (1..N)` label expresses that one TimingSystem owns 1..N TimingNodes.
+not UML class declarations. A small neutral inner property block lists the
+important identity/state concepts owned by each aggregate, without its own title,
+stereotype or component glyph; it therefore does not prescribe Java fields or a
+concrete class shape. Geometric containment plus the `TimingNode (1..N)` label
+expresses that one TimingSystem owns 1..N TimingNodes.
 
 The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
 layer cake**. Domain has extra space below its contained components and yields
