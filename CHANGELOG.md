@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Thin the executable boundary further by moving the default YAML `ApplicationConfig` loader and embedded build-identity interpretation into `event-timing-framework`; keep the executable-owned filtered provenance resource, provider selection and packaging as concrete app build concerns.
+
 - Simplify primary Remote API class names inside `presentation.interfaces.remoteapi`: `HttpEndpoint`, `WebSocketEndpoint` and `MessageWriter`, keeping the function-first package and IF-03 semantics unchanged.
 
 - Refine A08 retained logging to timestamped per-session/rotation text files and a compact operator-facing line format; make file creation safe when a Raspberry Pi starts before network time synchronisation by treating wall-clock filenames as non-unique and protecting the active file; keep reusable logging implementation and component-owned configuration under framework `infra.logging` with explicit `Logging` and `LoggingServer`, while SLF4J provider selection remains an executable-composition concern and live diagnostics remain separate from IF-03.
