@@ -373,13 +373,12 @@ interface.
 ```{arch} Web
 :id: Web
 
-**Web** is the browser-facing presentation interface of SI-01. Its composition is
-per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints,
-normally one per TimingNode. A Web binding resolves a TimingSystem/TimingNode
-target; bind address/port remains presentation configuration and is not a
-property of either domain object. Web may reuse application queries/events and
-transport facilities, but it is not collapsed into the Remote API merely because
-both can use HTTP/WebSocket technology.
+**Web** is the browser-facing presentation interface of SI-01. Each configured
+`TimingNode` has one Web port. A TimingSystem therefore exposes one Web endpoint
+per contained TimingNode. The port/bind address remains presentation
+configuration and is not a property of the domain object itself. Web may reuse
+application queries/events and transport facilities, but it is not collapsed
+into the Remote API merely because both can use HTTP/WebSocket technology.
 ```
 
 ```{arch} Console
@@ -508,6 +507,8 @@ TimingData
   canonical structure / validation
   encode / decode / compatibility
 ```
+
+In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as semantic component/aggregate containers rather than UML classes. Their short header notes expose only key identity/state properties; they do not define an exact Java field layout. The contained `TimingNode [1..N]` notation expresses the composition multiplicity directly on the contained aggregate.
 
 `TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
