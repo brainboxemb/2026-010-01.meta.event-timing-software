@@ -13,7 +13,7 @@ It deliberately does **not** define domain behaviour, a Java class hierarchy, a 
 ## Inputs
 
 IF-11 is a system-owned deployment/configuration interface allocated by
-`30-02-SSSD-software-system-specification-document.md`. Applicable system use cases and
+`31-SSSD-software-system-specification-document.md`. Applicable system use cases and
 deployment constraints provide upstream intent. The SI-01 SSD consumes this contract;
 its internal architecture and Java SDD are downstream and are not inputs to the IDD.
 

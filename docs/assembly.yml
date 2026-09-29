@@ -10,20 +10,20 @@ asset_manifests:
 
 documents:
   - {id: domain-baseline, source: docs/00-04-domain-baseline.md}
-  - {id: system-use-cases, source: docs/30-01-UC-system-use-cases.md}
+  - {id: system-use-cases, source: docs/30-UC-system-use-cases.md}
   - {id: software-development-plan, source: docs/10-01-SDP-software-development-plan.md}
   - {id: software-implementation-planning, source: docs/10-02-SIP-software-implementation-planning.md}
   - {id: external-system-inputs, source: docs/20-01-EXT-external-system-inputs.md}
   - {id: software-development-environment, source: docs/50-01-SDE-software-development-environment.md}
   - {id: java-build-test-toolchain, source: docs/50-02-SDE-java-build-test-toolchain.md}
-  - {id: software-system-specification, source: docs/30-02-SSSD-software-system-specification-document.md}
-  - {id: application-control-status, source: docs/30-03-IDD-03-application-control-status.md}
-  - {id: application-configuration, source: docs/30-03-IDD-11-application-configuration.md}
+  - {id: software-system-specification, source: docs/31-SSSD-software-system-specification-document.md}
+  - {id: application-control-status, source: docs/32-IDD-03-application-control-status.md}
+  - {id: application-configuration, source: docs/33-IDD-11-application-configuration.md}
   - {id: timing-application-specification, source: docs/40-01-SSD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/40-02-SSD-gui-application-specification-document.md}
-  - {id: data-display-design, source: docs/41-01-SDD-data-and-display-design.md}
-  - {id: java-component-design, source: docs/41-02-SDD-java-component-design.md}
-  - {id: backoffice-transport-design, source: docs/41-03-SDD-backoffice-transport-design.md}
+  - {id: data-display-design, source: docs/41-01-SDD-01-data-and-display-design.md}
+  - {id: java-component-design, source: docs/41-01-SDD-02-java-component-design.md}
+  - {id: backoffice-transport-design, source: docs/41-01-SDD-03-backoffice-transport-design.md}
   - {id: software-verification-plan, source: docs/60-01-SVP-software-verification-plan.md}
   - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
 

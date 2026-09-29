@@ -78,8 +78,8 @@ steps:
     documents:
       - {name: 10-01-SDP, title: Software Development Plan, maturity: review, completeness: 55}
       - {name: 10-02-SIP, title: Software Implementation Planning, maturity: review, completeness: 60}
-      - {name: 30-01-UC, title: System use cases, maturity: outline, completeness: 25}
-      - {name: 30-02-SSSD, title: Software-system specification, maturity: working, completeness: 45}
+      - {name: 30-UC, title: System use cases, maturity: outline, completeness: 25}
+      - {name: 31-SSSD, title: Software-system specification, maturity: working, completeness: 45}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 30}
 
   "2":
@@ -93,11 +93,11 @@ steps:
       design: {level: working, scope: "module/package structure sufficient to code"}
       verification: {level: working, scope: "build/unit and first executable verification"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: working, completeness: 40}
+      - {name: 30-UC, title: System use cases, maturity: working, completeness: 40}
       - {name: 50-02-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 25}
-      - {name: 41-02-SDD, title: Java component/package design, maturity: working, completeness: 55}
-      - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 45}
+      - {name: 41-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
+      - {name: 32-IDD-03, title: Remote API interface, maturity: review, completeness: 45}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
 
   "3":
@@ -111,10 +111,10 @@ steps:
       design: {level: review, scope: "SI-01 composition exercised by code"}
       verification: {level: working, scope: "ST-1 plus manual engineering-client inspection"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: working, completeness: 55}
+      - {name: 30-UC, title: System use cases, maturity: working, completeness: 55}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 35}
-      - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 65}
-      - {name: 30-03-IDD-11, title: Application configuration interface, maturity: review, completeness: 55}
+      - {name: 32-IDD-03, title: Remote API interface, maturity: review, completeness: 65}
+      - {name: 33-IDD-11, title: Application configuration interface, maturity: review, completeness: 55}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
 
   "4":
@@ -127,9 +127,9 @@ steps:
       verification: {level: working, scope: "deterministic state/domain tests"}
     documents:
       - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 80}
-      - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 70}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 70}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 55}
-      - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 70}
+      - {name: 32-IDD-03, title: Remote API interface, maturity: review, completeness: 70}
       - {name: 60-01-SVP, title: Domain verification direction, maturity: working, completeness: 60}
 
   "5":
@@ -141,9 +141,9 @@ steps:
       design: {level: working, scope: "synthetic adapters and persistence/recovery boundaries"}
       verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 80}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 80}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
-      - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 80}
+      - {name: 32-IDD-03, title: Remote API interface, maturity: review, completeness: 80}
       - {name: 60-01-SVP, title: System-test scenarios, maturity: review, completeness: 70}
 
   "6":
@@ -155,9 +155,9 @@ steps:
       design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
       verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 85}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
       - {name: 40-02-SSD, title: Desktop GUI specification, maturity: working, completeness: 60}
-      - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 85}
+      - {name: 32-IDD-03, title: Remote API interface, maturity: review, completeness: 85}
       - {name: 60-01-SVP, title: GUI verification direction, maturity: review, completeness: 75}
 
   "7":
@@ -169,9 +169,9 @@ steps:
       design: {level: working, scope: "transport/recovery behaviour"}
       verification: {level: working, scope: "integration and outage/reconnect tests"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 90}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
-      - {name: 41-03-SDD, title: Backoffice transport design, maturity: working, completeness: 60}
+      - {name: 41-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
       - {name: 60-01-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
 
   "8":
@@ -210,7 +210,7 @@ steps:
       design: {level: working, scope: "device adapter/lifecycle design"}
       verification: {level: working, scope: "synthetic-to-real and HIL verification"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 95}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 95}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 95}
       - {name: 60-01-SVP, title: Hardware verification direction, maturity: review, completeness: 95}
       - {name: 70-01-SUM, title: SI-01 user manual, maturity: working, completeness: 70}
@@ -224,7 +224,7 @@ steps:
       design: {level: working, scope: "recovery/operational integration discovered in system proof"}
       verification: {level: working, scope: "representative integrated and recovery scenarios"}
     documents:
-      - {name: 30-01-UC, title: System use cases, maturity: accepted, completeness: 95}
+      - {name: 30-UC, title: System use cases, maturity: accepted, completeness: 95}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: accepted, completeness: 95}
       - {name: 60-01-SVP, title: Integrated system verification, maturity: accepted, completeness: 95}
       - {name: 70-01-SUM, title: SI-01 user manual, maturity: accepted, completeness: 90}

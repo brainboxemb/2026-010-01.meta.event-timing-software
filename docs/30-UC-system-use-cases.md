@@ -17,17 +17,17 @@ Relevant parent-system/external inputs are registered in `20-01-EXT-external-sys
 ```text
 00-04 Domain baseline -----------+
                                  |
-20-01 External/parent inputs ----+--> 30-01 System use cases
+20-01 External/parent inputs ----+--> 30-UC System use cases
                                               |
                                               v
-                                         30-02 SSSD
+                                         31-SSSD
                                               |
                                   allocates items/interfaces
                                               |
                               +---------------+---------------+
                               |                               |
                               v                               v
-                    30-03 system IDDs             optional software-item UC
+                    32/33 system IDDs             optional software-item UC
                               |                               |
                               +---------------+---------------+
                                               |

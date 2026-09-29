@@ -73,15 +73,15 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 - [`docs/10-01-SDP-software-development-plan.md`](docs/10-01-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
 - [`docs/10-02-SIP-software-implementation-planning.md`](docs/10-02-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
 - [`docs/20-01-EXT-external-system-inputs.md`](docs/20-01-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
-- [`docs/30-01-UC-system-use-cases.md`](docs/30-01-UC-system-use-cases.md) — software-system operational use cases.
-- [`docs/30-02-SSSD-software-system-specification-document.md`](docs/30-02-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
-- [`docs/30-03-IDD-03-application-control-status.md`](docs/30-03-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
-- [`docs/30-03-IDD-11-application-configuration.md`](docs/30-03-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
+- [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
+- [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
+- [`docs/32-IDD-03-application-control-status.md`](docs/32-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
+- [`docs/33-IDD-11-application-configuration.md`](docs/33-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/40-01-SSD-timing-application-specification-document.md`](docs/40-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/40-02-SSD-gui-application-specification-document.md`](docs/40-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
-- [`docs/41-01-SDD-data-and-display-design.md`](docs/41-01-SDD-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
-- [`docs/41-02-SDD-java-component-design.md`](docs/41-02-SDD-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
-- [`docs/41-03-SDD-backoffice-transport-design.md`](docs/41-03-SDD-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
+- [`docs/41-01-SDD-01-data-and-display-design.md`](docs/41-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
+- [`docs/41-01-SDD-02-java-component-design.md`](docs/41-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
+- [`docs/41-01-SDD-03-backoffice-transport-design.md`](docs/41-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
 - [`docs/50-01-SDE-software-development-environment.md`](docs/50-01-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
 - [`docs/50-02-SDE-java-build-test-toolchain.md`](docs/50-02-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/60-01-SVP-software-verification-plan.md`](docs/60-01-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
@@ -93,13 +93,13 @@ Generated documentation for an active pull request is published to `dev/pr-<N>/d
 
 ## Document ordering convention
 
-The first two digits are a **document category**, not an encoded dependency order. The SDP owns the detailed rule; the repository uses these categories consistently:
+The leading number is a **document number/range**, not an encoded dependency order. The SDP owns the detailed rule; the repository uses these categories consistently:
 
 ```text
 00  working/project context
 10  planning
 20  external / parent-system inputs
-30  software-system specification and design
+30–39  software-system specification and design
 40  software-item specification
 41  software-item detailed design
 50  development environment / engineering
@@ -113,23 +113,23 @@ Examples:
 10-01-SDP
 10-02-SIP
 20-01-EXT
-30-01-UC
-30-02-SSSD
-30-03-IDD-03
-30-03-IDD-11
+30-UC
+31-SSSD
+32-IDD-03
+33-IDD-11
 40-01-SSD
 40-02-SSD
-41-01-SDD
-41-02-SDD
+41-01-SDD-01
+41-01-SDD-02
 50-01-SDE
 50-02-SDE
 60-01-SVP
 70-01-SUM
 ```
 
-Category 40 is the software-item specification (SSD) range and category 41 is the software-item detailed-design (SDD) range. Their numeric suffixes are document sequences, not software-item identifiers; SI-01/SI-02 ownership is stated in the document and traceability metadata. Optional software-item use cases receive a separate range only when they are actually introduced.
+Document numbers `40` and `41` are reserved for software-item SSD and SDD documents. The segment after the document number is the stable software-item identifier (`01` for SI-01, `02` for SI-02). An SDD may then add a final sequence number, for example `41-01-SDD-02` for the second detailed-design document of SI-01. Optional software-item use cases receive a separate document number/range only when they are actually introduced.
 
-For system-owned IDDs, `30-03` identifies the IDD subgroup and the IDD suffix keeps the system interface identity, for example `IDD-03` for IF-03 and `IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the category-20 external-input baseline rather than being renumbered as locally owned interfaces.
+Software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix keeps the interface identity, for example `32-IDD-03` for IF-03 and `33-IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the category-20 external-input baseline rather than being renumbered as locally owned interfaces.
 
 ## Documentation levels
 
@@ -145,7 +145,7 @@ The project intentionally separates:
 - **user/operations** — release/user/operator guidance such as SUM;
 - **agent plan (`AP-*`)** — coordination history/work for this meta repository.
 
-Category numbers make those families easy to scan. Normative authority/release dependencies are expressed through document `Inputs` and traceability, not inferred from the numeric prefix.
+Document numbers and ranges make those families easy to scan. Normative authority/release dependencies are expressed through document `Inputs` and traceability, not inferred from the numeric prefix.
 
 ## Traceability direction
 

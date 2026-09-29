@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -R -n -E '40-01-SISD-timing-application-specification-document\.md|40-02-SISD-gui-application-specification-document\.md|40-01-SDD-01-data-and-display-design\.md|40-01-SDD-02-java-component-design\.md|40-01-SDD-03-backoffice-transport-design\.md|40-01-01-SSD-timing-application-specification-document\.md|40-02-01-SSD-gui-application-specification-document\.md' docs tools README.md CHANGELOG.md
+          ! grep -R -n -E '40-01-SISD-timing-application-specification-document\.md|40-02-SISD-gui-application-specification-document\.md|40-01-SDD-01-data-and-display-design\.md|40-01-SDD-02-java-component-design\.md|40-01-SDD-03-backoffice-transport-design\.md|40-01-01-SSD-timing-application-specification-document\.md|40-02-01-SSD-gui-application-specification-document\.md|30-01-UC-system-use-cases\.md|30-02-SSSD-software-system-specification-document\.md|30-03-IDD-03-application-control-status\.md|30-03-IDD-11-application-configuration\.md|41-01-SDD-data-and-display-design\.md|41-02-SDD-java-component-design\.md|41-03-SDD-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
 
       - name: Validate SIP actuals tool
         shell: bash
@@ -129,9 +129,9 @@ jobs:
 
           cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
-          cp docs/30-01-UC-system-use-cases.md bld/sphinx-needs/source/docs/
+          cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
           cp docs/40-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/30-03-IDD-03-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/32-IDD-03-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -155,9 +155,9 @@ jobs:
           ~~~{toctree}
           :maxdepth: 2
 
-          docs/30-01-UC-system-use-cases
+          docs/30-UC-system-use-cases
           docs/40-01-SSD-timing-application-specification-document
-          docs/30-03-IDD-03-application-control-status
+          docs/32-IDD-03-application-control-status
           ~~~
           EOF
 
@@ -461,7 +461,7 @@ jobs:
                   "generated reader Markdown does not render Need body before metadata/separator"
               )
 
-          use_cases = (root / "30-01-UC-system-use-cases.md").read_text(
+          use_cases = (root / "30-UC-system-use-cases.md").read_text(
               encoding="utf-8"
           )
           uc_start = use_cases.index('<a id="UC-001"></a>')
@@ -498,7 +498,7 @@ jobs:
           test -f bld/docs/documents/50-01-SDE-software-development-environment.md
           test -f bld/docs/documents/50-02-SDE-java-build-test-toolchain.md
           test -f bld/docs/documents/40-01-SSD-timing-application-specification-document.md
-          test -f bld/docs/documents/41-02-SDD-java-component-design.md
+          test -f bld/docs/documents/41-01-SDD-02-java-component-design.md
           test -f bld/docs/documents/60-01-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio

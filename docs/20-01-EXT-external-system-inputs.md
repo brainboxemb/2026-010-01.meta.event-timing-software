@@ -45,12 +45,12 @@ parent / surrounding system
         v
 20-01 external-input register
         |
-        +--> 30-01 system use cases where applicable
-        +--> 30-02 SSSD
+        +--> 30-UC system use cases where applicable
+        +--> 31-SSSD
         +--> 40-<N>-SSD when an obligation is already allocated directly
 ```
 
-System-owned interfaces are different: if the SSSD allocates and this project owns an interface contract, its IDD belongs in the category-30 system-design family, currently under `30-03-IDD-<IF>`.
+System-owned interfaces are different: if the SSSD allocates and this project owns an interface contract, that IDD receives its own software-system document number while retaining the interface identity in the IDD suffix; current examples are `32-IDD-03` and `33-IDD-11`.
 
 ## Entry discipline
 

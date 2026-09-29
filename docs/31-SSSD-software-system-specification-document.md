@@ -13,7 +13,7 @@ Stable working domain facts and terminology are consolidated in `00-04-domain-ba
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
 
 - `00-04-domain-baseline.md` for stable domain terminology and facts;
-- `30-01-UC-system-use-cases.md` for externally meaningful behaviour within this software-system scope;
+- `30-UC-system-use-cases.md` for externally meaningful behaviour within this software-system scope;
 - `20-01-EXT-external-system-inputs.md` for the controlled register of applicable parent-system requirements, externally owned IDDs, protocols and standards;
 - the exact externally owned source revisions identified by that register when they impose requirements or interface obligations on this software system.
 
@@ -33,26 +33,26 @@ parent / external system contracts
               v
 20-01 external-input baseline
               |
-domain --------+----> 30-01 system use cases
+domain --------+----> 30-UC system use cases
               |                 |
               +-----------------+
                                 v
-                         30-02 SSSD
+                         31-SSSD
                                 |
                     allocates items/interfaces
                                 |
                  +--------------+--------------+
                  |                             |
                  v                             v
-      30-03 system-owned IDDs       optional software-item UC
+      32/33 system-owned IDDs       optional software-item UC
                  |                             |
                  +--------------+--------------+
                                 |
                                 v
-                         40-<N>-SSD
+                         40-<SI>-SSD
                                 |
                                 v
-                         41-<N>-SDD
+                         41-<SI>-SDD-<N>
 ```
 
 An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SSD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SSDs.
@@ -164,14 +164,14 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `30-03-IDD-03-application-control-status.md` candidate |
+| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `32-IDD-03-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
-| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `30-03-IDD-11-application-configuration.md` |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `33-IDD-11-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 

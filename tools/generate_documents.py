@@ -26,10 +26,10 @@ EXTERNAL_INPUT_DOCUMENTS = [
 ]
 
 SYSTEM_SPEC_DOCUMENTS = [
-    "30-01-UC-system-use-cases.md",
-    "30-02-SSSD-software-system-specification-document.md",
-    "30-03-IDD-03-application-control-status.md",
-    "30-03-IDD-11-application-configuration.md",
+    "30-UC-system-use-cases.md",
+    "31-SSSD-software-system-specification-document.md",
+    "32-IDD-03-application-control-status.md",
+    "33-IDD-11-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
@@ -43,17 +43,17 @@ ENGINEERING_DOCUMENTS = [
 ]
 
 ARCHITECTURE_DOCUMENTS = [
-    "30-02-SSSD-software-system-specification-document.md",
-    "30-03-IDD-03-application-control-status.md",
-    "30-03-IDD-11-application-configuration.md",
+    "31-SSSD-software-system-specification-document.md",
+    "32-IDD-03-application-control-status.md",
+    "33-IDD-11-application-configuration.md",
     "40-01-SSD-timing-application-specification-document.md",
-    "41-02-SDD-java-component-design.md",
+    "41-01-SDD-02-java-component-design.md",
     "40-02-SSD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
-    "41-01-SDD-data-and-display-design.md",
-    "41-03-SDD-backoffice-transport-design.md",
+    "41-01-SDD-01-data-and-display-design.md",
+    "41-01-SDD-03-backoffice-transport-design.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
@@ -71,7 +71,7 @@ DOCUMENTS = (
     + SYSTEM_SPEC_DOCUMENTS
     + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + ["41-02-SDD-java-component-design.md"]
+    + ["41-01-SDD-02-java-component-design.md"]
     + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
     + USER_DOCUMENTS
@@ -235,8 +235,8 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Software-item detailed design — active", ""])
-    _, title, _ = by_name["41-02-SDD-java-component-design.md"]
-    doc_index.append(f"- [{title}](./41-02-SDD-java-component-design.md)")
+    _, title, _ = by_name["41-01-SDD-02-java-component-design.md"]
+    doc_index.append(f"- [{title}](./41-01-SDD-02-java-component-design.md)")
 
     doc_index.extend(["", "## Software-item detailed design — deferred notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:

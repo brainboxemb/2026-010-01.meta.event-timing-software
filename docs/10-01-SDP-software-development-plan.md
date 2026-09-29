@@ -18,7 +18,7 @@ The numeric prefix groups documents by **engineering role**. It is primarily a n
 00  working / project context
 10  planning
 20  external / parent-system inputs
-30  software-system specification and design
+30–39  software-system specification and design
 40  software-item specification
 41  software-item detailed design
 50  development environment / engineering
@@ -39,17 +39,17 @@ Current examples are:
 
 20-01-EXT-external-system-inputs
 
-30-01-UC-system-use-cases
-30-02-SSSD-software-system-specification-document
-30-03-IDD-03-application-control-status
-30-03-IDD-11-application-configuration
+30-UC-system-use-cases
+31-SSSD-software-system-specification-document
+32-IDD-03-application-control-status
+33-IDD-11-application-configuration
 
 40-01-SSD-timing-application-specification-document
 40-02-SSD-gui-application-specification-document
 
-41-01-SDD-data-and-display-design
-41-02-SDD-java-component-design
-41-03-SDD-backoffice-transport-design
+41-01-SDD-01-data-and-display-design
+41-01-SDD-02-java-component-design
+41-01-SDD-03-backoffice-transport-design
 
 50-01-SDE-software-development-environment
 50-02-SDE-java-build-test-toolchain
@@ -61,12 +61,12 @@ Current examples are:
 
 Numbering rules:
 
-- the first two digits are the stable document **category**;
+- the leading two-digit value is the stable document **number/range**;
 - within category 00/10/20/50/60, the next segment is a category-local document sequence;
-- category 40 contains software-item specification documents. The next segment is a category-local document sequence; it is **not** the software-item number. Software-item ownership is stated in the document and in traceability;
-- category 41 contains software-item detailed-design documents, also with a category-local sequence independent of software-item identity;
+- document number `40` is reserved for software-item SSDs; the next segment is the stable software-item identifier, for example `40-01-SSD` for SI-01 and `40-02-SSD` for SI-02;
+- document number `41` is reserved for software-item SDDs; the next segment is the stable software-item identifier and a final sequence distinguishes multiple SDDs for the same item, for example `41-01-SDD-01`, `41-01-SDD-02`, ...;
 - an optional software-item use-case document receives its own dedicated range if/when such documents are introduced; do not reuse the category-40 SSD or category-41 SDD ranges merely because the use case belongs to a software item;
-- `30-03` is the subgroup for **system-owned IDDs**. The IDD suffix retains the interface identity, for example `30-03-IDD-03-...` for IF-03 and `30-03-IDD-11-...` for IF-11;
+- software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix retains the interface identity, for example `32-IDD-03-...` for IF-03 and `33-IDD-11-...` for IF-11;
 - category 70 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM-...` for SI-01;
 - an externally owned document keeps the identifier/version assigned by its owner. Category 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
 
@@ -92,26 +92,26 @@ parent / external system requirements, IDDs, protocols
                          v
             20 external-input baseline
                          |
-domain baseline ---------+------> 30-01 system use cases
+domain baseline ---------+------> 30 system use cases
                          |                 |
                          +-----------------+
                                            v
-                                      30-02 SSSD
+                                      31 SSSD
                                            |
                                  allocates interfaces/items
                                            |
                       +--------------------+--------------------+
                       |                                         |
                       v                                         v
-          30-03 system-owned IDD(s)             optional software-item UC(s)
+          32/33 system-owned IDD(s)             optional software-item UC(s)
                       |                                         |
                       +--------------------+--------------------+
                                            |
                                            v
-                                     40-<N>-SSD
+                                     40-<SI>-SSD
                                            |
                                            v
-                                     41-<N>-SDD(s)
+                                     41-<SI>-SDD-<N>
                                            |
                                            v
                                       implementation

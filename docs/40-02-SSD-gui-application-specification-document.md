@@ -12,12 +12,12 @@ capability approaches implementation; no separate requirements/architecture docu
 
 The SI-02 specification consumes:
 
-- `30-02-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
-- `30-03-IDD-03-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- `31-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
+- `32-IDD-03-application-control-status.md` for the SI-01/SI-02 Remote API contract;
 - applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
 - a future system-owned GUI/HMI IDD when that contract is defined.
 
-`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
+`30-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
 
 The SIP may schedule SI-02 work but is not requirement/design authority.
 

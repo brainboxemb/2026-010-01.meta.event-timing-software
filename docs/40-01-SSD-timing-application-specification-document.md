@@ -13,12 +13,12 @@ requirements without creating a release dependency between a separate SRD and SA
 
 The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
 
-- `30-02-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
-- `30-03-IDD-03-application-control-status.md` for IF-03 obligations;
-- `30-03-IDD-11-application-configuration.md` for IF-11 obligations;
+- `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
+- `32-IDD-03-application-control-status.md` for IF-03 obligations;
+- `33-IDD-11-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
-`30-01-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
+`30-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
 
 `00-04-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
@@ -97,7 +97,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 schema is defined by `30-03-IDD-03-application-control-status.md`.
+The concrete IF-03 schema is defined by `32-IDD-03-application-control-status.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -233,7 +233,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 
 ### +1 scenarios used to validate the architecture
 
-The existing use cases in `30-01-UC-system-use-cases.md` are the scenario source. The SSD should not create a second competing use-case catalogue.
+The existing use cases in `30-UC-system-use-cases.md` are the scenario source. The SSD should not create a second competing use-case catalogue.
 
 Representative architecture-validation scenarios include:
 
@@ -1146,7 +1146,7 @@ the API/provider patch version together through Maven dependency management.
 
 ### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `30-03-IDD-11-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `33-IDD-11-application-configuration.md`.
 
 The main configuration groups are:
 
@@ -1449,7 +1449,7 @@ implementation detail would make the architecture section of this SSD harder to 
 Current active focused SDD:
 
 ```text
-41-02-SDD-java-component-design.md
+41-01-SDD-02-java-component-design.md
   Java packages, Maven artifacts and composition
 ```
 

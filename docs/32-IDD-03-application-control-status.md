@@ -15,7 +15,7 @@ A simple browser-based test client may consume IF-03 later, just like the curren
 ## Inputs
 
 IF-03 is a system-owned interface allocated by
-`30-02-SSSD-software-system-specification-document.md`. Its detailed contract is
+`31-SSSD-software-system-specification-document.md`. Its detailed contract is
 therefore downstream of that allocation and upstream of both participating software-item
 specifications. Applicable system use cases supply operational intent.
 
