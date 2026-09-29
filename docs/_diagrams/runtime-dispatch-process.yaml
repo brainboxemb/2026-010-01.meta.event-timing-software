@@ -35,7 +35,7 @@ nodes:
     group: ingress
     layout: {x: 85, y: 325, w: 280, h: 100}
 
-  - id: backend-ingress
+  - id: upstream-ingress
     label: "Messaging / UpstreamGateway\nupstream transport boundary"
     kind: integration
     group: ingress
@@ -117,7 +117,7 @@ edges:
       - {x: 825, y: 395}
       - {x: 825, y: 442}
 
-  - from: backend-ingress
+  - from: upstream-ingress
     to: upstream-message-router
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}

@@ -47,8 +47,9 @@ ApplicationConfig
 │   │   ├── can
 │   │   └── network
 │   ├── registrationRouting
-│   ├── backend
-│   │   └── connectors
+│   ├── messaging
+│   │   └── upstream
+│   │       └── connectors
 │   └── storage
 ├── presentation
 ├── logging
@@ -291,7 +292,7 @@ rabbitmq
   passwordSecret: RABBITMQ_PASSWORD
 ```
 
-The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, backend credentials, certificates and similar sensitive values.
+The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, upstream/backoffice credentials, certificates and similar sensitive values.
 
 This baseline does not require a general `SecretProvider` hierarchy.
 
@@ -358,7 +359,7 @@ Validation includes, where applicable:
 - empty or invalid antenna-routing targets;
 - invalid CAN device-network settings when CAN is enabled;
 - invalid network-device service settings when the network device service is enabled;
-- duplicate/conflicting backend connector identifiers;
+- duplicate/conflicting upstream connector identifiers;
 - upstream message mappings/targets that reference unknown TimingNodes;
 - conflicting presentation/logging listener bind address/port combinations;
 - invalid logging level, file rotation/retention values or live-listener settings;

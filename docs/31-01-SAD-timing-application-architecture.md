@@ -34,7 +34,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
-- remain testable without production RFID, CAN, backend or proprietary implementations;
+- remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep public framework/reference code independent of private production source;
@@ -50,7 +50,7 @@ Representative architecture-validation scenarios include:
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
-5. continue local operation while a GUI/test client or backend connection is unavailable;
+5. continue local operation while a GUI/test client or upstream connection is unavailable;
 6. host several TimingNodes in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
 8. capture and process observations correctly when local civil time crosses a daylight-saving transition or the operating-system wall clock is corrected forwards/backwards.
@@ -467,7 +467,7 @@ I/O/device-network responsibilities. A keypad or display may present information
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O backend-messaging boundary. It exchanges
+`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges
 transport-neutral messages with its configured connectors but does not resolve
 those messages to application/domain targets. `UpstreamMessageRouter` owns that
 application-level target resolution: an application-scoped upstream message can
@@ -799,7 +799,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 - persistence/backup state;
 - race-data freshness;
 - local clock/time-source health where relevant to timing validity;
-- network/backend connectivity;
+- network/upstream connectivity;
 - inbound/outbound synchronisation state.
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
@@ -888,8 +888,9 @@ ApplicationConfig
 │   │   ├── can
 │   │   └── network
 │   ├── registrationRouting
-│   ├── backend
-│   │   └── connectors (1..N when UpstreamGateway is configured)
+│   ├── messaging
+│   │   └── upstream
+│   │       └── connectors (1..N when UpstreamGateway is configured)
 │   └── storage
 ├── presentation
 ├── logging
@@ -962,7 +963,7 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ## Integration architecture
 
-The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backend are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 ### Upstream messaging
 
@@ -992,10 +993,10 @@ external upstream system
 Connectors own transport/session mechanics and protocol-specific mapping at the
 external boundary. Exact RabbitMQ connection/channel topology, routing keys and
 retry mechanics are connector-level decisions and should be detailed when that
-implementation is active. Product/deployment-specific backend names and private
+implementation is active. Product/deployment-specific upstream-system names and private
 wire details remain outside the public architecture documentation.
 
-`ApplicationId` is used for application-scoped backend addressing.
+`ApplicationId` is used for application-scoped upstream addressing.
 `UpstreamMessageRouter` provides that application-level routing without adding a
 generic application message handler merely to complete the symmetry. Additional
 domain handling is introduced only when a concrete application-scoped
@@ -1036,7 +1037,7 @@ deferred until IF-09 implementation needs them.
 
 ### Connectivity
 
-Status must distinguish at least local network reachability from external/backend session health where those distinctions affect operator decisions. Temporary external connectivity loss must not silently invalidate otherwise available local operation.
+Status must distinguish at least local network reachability from external/upstream session health where those distinctions affect operator decisions. Temporary external connectivity loss must not silently invalidate otherwise available local operation.
 
 ## Development view
 
@@ -1077,7 +1078,7 @@ Do not create future packages merely to mirror the architecture picture. Package
 
 ### Public/private extension model
 
-Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production backend codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
+Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production upstream/backoffice codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
 
 ## Technology decision register
 
@@ -1097,7 +1098,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 | Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
 | Remote API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
-| Backend | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
+| Upstream messaging | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
 
 Technology choices should fit the actual application and target. Pi compatibility is verified on real hardware; memory/thread footprint becomes a design concern only when measurements make it one.
@@ -1112,7 +1113,7 @@ Production field host
     one Headless Timing Application process
       one or more configured TimingNode objects
       local devices + local files
-      optional network/backend connectivity
+      optional network/upstream connectivity
 
 Development/test host
   Linux or Windows
@@ -1121,7 +1122,7 @@ Development/test host
     may host larger multi-TimingNode simulation topology
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and backend is defined in the SSAD rather than duplicated here.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSAD rather than duplicated here.
 
 ## Testability and failure/recovery architecture
 
@@ -1155,7 +1156,7 @@ Current active focused SDD:
   Java packages, Maven artifacts and composition
 ```
 
-Persistence/data and backend transport notes remain deferred until their
+Persistence/data and upstream transport notes remain deferred until their
 implementation needs focused design.
 
 ## Open architecture decisions

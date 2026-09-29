@@ -460,7 +460,7 @@ Expected private/product-specific areas may include:
 - production RFID control/protocol details;
 - product-specific I/O/protocol implementations;
 - production asset/source inventory and mappings;
-- production backend schemas/codecs where sensitive;
+- production upstream/backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
 Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model or runtime plugin discovery unless a real requirement appears.

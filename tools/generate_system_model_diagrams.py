@@ -17,12 +17,12 @@ def software_item_overview() -> Diagram:
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
-        Node("outbox", "Backend outbox / sync", 980, 705, 270, 70, "queue"),
+        Node("outbox", "Upstream outbox / sync", 980, 705, 270, 70, "queue"),
 
         Node("rfid", "IF-07 RFID subsystem\\nprivate production adapter possible", 55, 480, 330, 90, "external"),
         Node("can", "IF-08 CAN bus\\nkeypad + DisplayRev1Can", 80, 850, 300, 85, "external"),
         Node("v2", "IF-09 DisplayRev2Wifi\\nsmart client • mDNS + network data", 1010, 480, 330, 90, "external"),
-        Node("backoffice", "IF-06 Backend\\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
+        Node("backoffice", "IF-06 Upstream system\\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
     ]
 
     edges = [
@@ -239,7 +239,7 @@ def connectivity_layers() -> Diagram:
     nodes = [
         Node("local", "Local LAN / router\\nindependent status", 100, 210, 300, 90, "service"),
         Node("internet", "Internet reachability\\nindependent status", 520, 210, 300, 90, "service"),
-        Node("rabbit", "RabbitMQ / backend\\nsession status", 940, 210, 300, 90, "service"),
+        Node("rabbit", "RabbitMQ / upstream\\nsession status", 940, 210, 300, 90, "service"),
         Node("timing", "SI-01 local timing operation\\nRFID/CAN/in-memory state", 350, 500, 420, 100, "core"),
         Node("outbox", "Outbox + local reference data\\nallow deferred synchronisation", 880, 500, 340, 100, "queue"),
     ]
