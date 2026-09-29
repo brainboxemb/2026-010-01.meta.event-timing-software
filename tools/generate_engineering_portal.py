@@ -316,7 +316,6 @@ engineering object and its traceability context are inspected.
 
 <div class="eng-workspace" data-eng-explorer>
   <section class="eng-context">
-    <h2>Figure SI01-01 — architecture context</h2>
     <div class="eng-diagram">
       {svg}
     </div>
