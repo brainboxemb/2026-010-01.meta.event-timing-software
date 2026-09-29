@@ -126,10 +126,20 @@ application/
   UpstreamMessageRouter.java       when upstream messaging is implemented
 
 domain/
+  system/
+    System.java                         application-wide status/protocol semantics when justified
   timing/
     TimingNode.java
     TimingNodeId.java
     UpstreamMessagePort.java            when upstream message handling is implemented
+  logbook/
+    LogBook.java
+    LogBookItem.java                    internal logbook-domain representation
+  timingdata/
+    TimingData.java                     canonical record/codec contract
+    TimingDataRecord.java               persistent/interchange record
+  upstream/
+    UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
 
 io/
   devices/
@@ -170,15 +180,29 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
 mirror the hardware name.
 
-`UpstreamGateway` owns the external upstream-system boundary and uses 1..N concrete
-connectors. A connector such as `RabbitMqConnector` owns transport/session
-mechanics. `UpstreamMessageRouter` in the application package owns target
-resolution for messages exchanged with that upstream system; it is not a
-generic internal message bus. `TimingNode.UpstreamMessagePort` is the
-bidirectional semantic upstream-message port of one TimingNode. Here
-**upstream** identifies the system relationship, not a one-way message
-direction. Application-scoped messages can be routed directly to the appropriate
-Domain responsibility without inventing an application-level port.
+`TimingNode` owns the lifecycle of its `LogBook`, while the LogBook remains
+a separate Domain capability. The LogBook keeps 0..N `LogBookItem` values as
+its internal operational representation.
+
+`TimingData` is also a Domain capability, not an I/O codec package. It owns the
+canonical `TimingDataRecord` representation plus the public validation,
+encode/decode and compatibility contract used for persistence and interchange.
+Concrete storage, Web and messaging adapters may depend on that API and carry an
+encoded representation without knowing or switching on individual TimingData
+fields.
+
+`UpstreamProtocol` is a separate Domain capability built partly on
+`TimingData`. It adds synchronization/reconciliation and system-level messages
+such as ping/pong. `UpstreamGateway` owns the external transport boundary and
+uses 1..N concrete connectors. A connector such as `RabbitMqConnector` owns
+transport/session mechanics, not TimingData or UpstreamProtocol semantics.
+`UpstreamMessageRouter` in the application package owns target resolution
+after semantic protocol decoding; it is not a generic internal message bus.
+`TimingNode.UpstreamMessagePort` remains the bidirectional semantic
+upstream-message port of one TimingNode. Here **upstream** identifies the system
+relationship, not a one-way message direction. Application-scoped messages can
+target the application-wide Domain `System` without inventing a
+TimingNode-level handler.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -200,7 +224,7 @@ application
   commands, queries and application-level ports
 
 domain
-  domain model and semantic ports
+  domain model, semantic ports, TimingData representation/codec and UpstreamProtocol semantics
 
 core
   runtime/execution contracts
@@ -226,7 +250,7 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
-io              --> application/domain ports + platform
+io              --> application/domain ports/contracts + platform
 runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
 core            --> reusable execution mechanics
