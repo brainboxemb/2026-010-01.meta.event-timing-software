@@ -268,25 +268,26 @@ nodes:
           items:
             - label: SimulatedAntenna
               object_id: SimulatedAntenna
+            - VendorAntenna
     - label: Display
       object_id: Display
       items:
-        - label: DisplayRev1Can
-          object_id: DisplayRev1Can
-        - label: DisplayRev2Wifi
-          object_id: DisplayRev2Wifi
+        - label: Rev1CanDisplay
+          object_id: Rev1CanDisplay
+        - label: Rev2WifiDisplay
+          object_id: Rev2WifiDisplay
     - label: Keypad
       object_id: Keypad
       items:
-        - label: KeypadRev1Can
-          object_id: KeypadRev1Can
+        - label: Rev1CanKeypad
+          object_id: Rev1CanKeypad
     - label: Beeper
       object_id: Beeper
   kind: integration
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
-  layout: {x: 910, y: 961, w: 220, h: 195}
+  layout: {x: 910, y: 961, w: 220, h: 210}
 - id: device-network-io
   object_id: DeviceNetworks
   group: io-layer
