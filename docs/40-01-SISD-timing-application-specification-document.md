@@ -260,26 +260,30 @@ The compact software/domain ownership model is intentionally also kept as copyab
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- TimingSystem
-  |     +-- SystemStatus
-  |     +-- heartbeat / ping semantics
-  +-- TimingData
-  +-- UpstreamProtocol
   |
-  +-- 1..N TimingNode
-        +-- TimingNodeId
-        +-- LocationID
-        +-- lifecycle / status
-        +-- UpstreamMessagePort
-        +-- TagProcessor
-        +-- StageStartTimes
-        +-- NextUpTeams
-        +-- RaceData
-        +-- StageTiming
-        +-- owns lifecycle -> LogBook
+  +-- 1..N TimingSystem
+        +-- TimingSystemId
+        +-- SystemStatus
+        +-- heartbeat / ping semantics
+        |
+        +-- 1..N TimingNode
+              +-- TimingNodeId
+              +-- LocationID
+              +-- lifecycle / status
+              +-- UpstreamMessagePort
+              +-- TagProcessor
+              +-- StageStartTimes
+              +-- NextUpTeams
+              +-- RaceData
+              +-- StageTiming
+              +-- owns lifecycle -> LogBook
 
 LogBook
   +-- 0..N LogBookItem
+
+Domain contracts:
+  +-- TimingData
+  +-- UpstreamProtocol
 ```
 
 <a id="fig-si01-01"></a>
@@ -328,7 +332,7 @@ and diagnostic operations grow inside the same functional
 interface.
 ```
 
-**Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode, so an application with 1..N TimingNodes exposes 1..N Web bindings/ports. Each Web binding references its TimingNode by `TimingNodeId`; the bind address/port remains presentation configuration and is not a property of the TimingNode domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
+**Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode. Because one application may host 1..N TimingSystems and each TimingSystem 1..N TimingNodes, a Web binding resolves a TimingSystem/TimingNode target; bind address/port remains presentation configuration and is not a property of either domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
 **Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
@@ -355,8 +359,7 @@ application/
 ```{arch} Conductor
 :id: Conductor
 
-`Conductor` coordinates application-wide lifecycle and
-active TimingNodes.
+`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes.
 ```
 
 ```{arch} CommandHandler
@@ -371,11 +374,7 @@ satisfies: >-
 requests. It may serve simple application reads such as
 `version()`. Application-wide operations delegate to
 `Conductor` where lifecycle or cross-node coordination is
-required. When a presentation command or query names a
-`TimingNodeId`, `CommandHandler` resolves that `TimingNode`
-and submits state-changing work directly to its serial
-executor; `Conductor` is not a mandatory hop for
-TimingNode-scoped work.
+required. When a presentation command or query targets a TimingNode, `CommandHandler` resolves the owning `TimingSystem` and the target `TimingNode` and submits state-changing work directly to that node's serial executor; `Conductor` is not a mandatory hop for TimingNode-scoped work.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
@@ -383,10 +382,7 @@ do not introduce messages merely to preserve a layer diagram. Upstream messaging
 is the explicit exception: `UpstreamMessageRouter` owns target resolution for
 messages exchanged with the upstream system at application scope. **Upstream**
 describes that external system relationship, not the direction of an individual
-message; the exchange is bidirectional. It routes
-application-scoped upstream messages to the relevant domain responsibility and
-TimingNode-scoped messages by `TimingNodeId` to that node's
-`UpstreamMessagePort`. It is deliberately **not** a generic application message
+message; the exchange is bidirectional. It routes TimingSystem-scoped upstream messages by `TimingSystemId` to the relevant `TimingSystem` responsibility and node-scoped messages to the addressed TimingNode within that system through its `UpstreamMessagePort`. It is deliberately **not** a generic application message
 bus or mediator for normal collaboration between domain components.
 
 #### Domain
@@ -396,21 +392,21 @@ TimingNode state. The main responsibilities are deliberately not represented as
 one parent/child tree:
 
 ```text
-TimingSystem
+TimingSystem (1..N per TimingApplication)
+  TimingSystemId
   SystemStatus
   heartbeat / ping semantics
-
-TimingNode
-  TimingNodeId
-  LocationID
-  State
-  UpstreamMessagePort
-  TagProcessor
-  StageStartTimes
-  NextUpTeams
-  RaceData
-  StageTiming
-  owns lifecycle -> LogBook
+  1..N TimingNode
+    TimingNodeId
+    LocationID
+    State
+    UpstreamMessagePort
+    TagProcessor
+    StageStartTimes
+    NextUpTeams
+    RaceData
+    StageTiming
+    owns lifecycle -> LogBook
 
 LogBook
   0..N LogBookItem
@@ -426,11 +422,9 @@ UpstreamProtocol
   ping / pong and other protocol messages
 ```
 
-`TimingSystem` is the application-wide domain object. It owns `SystemStatus` and
-system-wide protocol semantics such as heartbeat/ping handling that do not belong
-to one TimingNode.
+`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns a stable `TimingSystemId`, its own `SystemStatus`, system-level heartbeat/ping semantics, and 1..N TimingNodes. This lets one process simulate or host multiple independent timing systems without merging their domain state.
 
-`TimingNode` is the top-level domain class for one timing location. It owns its
+`TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01. A TimingNode
 also owns the lifecycle of its `LogBook`, but the LogBook is shown as a separate
@@ -439,8 +433,7 @@ boundary are important architecture concepts in their own right.
 
 `UpstreamMessagePort` is the bidirectional upstream-message boundary of one
 TimingNode. Its name identifies the relationship with the upstream system; it
-does not imply that every message travels away from the TimingNode. Inbound messages have already been resolved to that TimingNode by
-`UpstreamMessageRouter`; state-changing handling executes through the
+does not imply that every message travels away from the TimingNode. Inbound messages have already been resolved first to the owning TimingSystem and then to that TimingNode by `UpstreamMessageRouter`; state-changing handling executes through the
 TimingNode's serial boundary and delegates to the relevant TimingNode
 responsibilities. Outbound TimingNode messages leave through the same semantic
 port and return to `UpstreamMessageRouter` for application/upstream routing. The
@@ -608,26 +601,30 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- TimingSystem
-  |     +-- SystemStatus
-  |     +-- heartbeat / ping semantics
-  +-- TimingData
-  +-- UpstreamProtocol
   |
-  +-- 1..N TimingNode
-        +-- TimingNodeId
-        +-- LocationID
-        +-- lifecycle / status
-        +-- UpstreamMessagePort
-        +-- TagProcessor
-        +-- StageStartTimes
-        +-- NextUpTeams
-        +-- RaceData
-        +-- StageTiming
-        +-- owns lifecycle -> LogBook
+  +-- 1..N TimingSystem
+        +-- TimingSystemId
+        +-- SystemStatus
+        +-- heartbeat / ping semantics
+        |
+        +-- 1..N TimingNode
+              +-- TimingNodeId
+              +-- LocationID
+              +-- lifecycle / status
+              +-- UpstreamMessagePort
+              +-- TagProcessor
+              +-- StageStartTimes
+              +-- NextUpTeams
+              +-- RaceData
+              +-- StageTiming
+              +-- owns lifecycle -> LogBook
 
 LogBook
   +-- 0..N LogBookItem
+
+Domain contracts:
+  +-- TimingData
+  +-- UpstreamProtocol
 ```
 
 `ApplicationId` identifies the running Headless Timing Application instance.
