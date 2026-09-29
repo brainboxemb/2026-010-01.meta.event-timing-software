@@ -1449,7 +1449,7 @@ implementation detail would make the architecture section of this SSD harder to 
 Current active focused SDD:
 
 ```text
-40-01-03-SDD-java-component-design.md
+41-02-SDD-java-component-design.md
   Java packages, Maven artifacts and composition
 ```
 
