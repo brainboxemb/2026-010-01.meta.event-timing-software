@@ -44,7 +44,7 @@ domain --------+----> 30-01 system use cases
                  +--------------+--------------+
                  |                             |
                  v                             v
-      30-03 system-owned IDDs       optional 40-<N>-UC
+      30-03 system-owned IDDs       optional software-item UC
                  |                             |
                  +--------------+--------------+
                                 |
