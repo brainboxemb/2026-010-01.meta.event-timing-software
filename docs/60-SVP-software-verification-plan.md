@@ -25,29 +25,38 @@ Verification should provide evidence that:
 
 ## Traceability direction
 
-The intended traceability chain is:
+The intended traceability chain follows the product-authority direction established in
+the SDP:
 
 ```text
-system requirement
-      |
-      +--> system-level IDD requirement/section where applicable
-      |
-      v
-software-item requirement (SRD)
-      |
-      v
-SAD / SDD design element
-      |
-      v
-implementation
-      |
-      v
-verification case + evidence
+system use case / external interface obligation
+             |
+             v
+            SSSD
+             |
+      +------+------+
+      |             |
+      v             v
+system IDD        SSD requirement
+      |             |
+      +------> SSD architecture
+                    |
+                    v
+               focused SDD
+                    |
+                    v
+              implementation
+                    |
+                    v
+          verification case + evidence
 ```
 
-An IDD remains software-system-owned. A software-item requirement references the relevant IDD obligation rather than duplicating the interface definition.
+An IDD remains software-system-owned. A software-item requirement references the
+applicable IDD obligation rather than duplicating its interface definition. The SVP and
+verification cases are downstream coverage/evidence artifacts; they are deliberately not
+normative inputs to the requirements they verify.
 
-Verification identifiers and exact requirement-reference syntax are still to be defined.
+Verification identifiers and exact requirement-reference syntax are still to be refined.
 
 ## Verification levels
 
@@ -426,7 +435,17 @@ The public framework must be verifiable without proprietary source or deployment
 
 Private implementations should use the same public contracts where applicable; detailed private-repository verification is added when such an implementation actually exists.
 
-Production asset names, source IDs, broker mappings, proprietary message schemas and credentials must not be copied into public verification fixtures.
+The public baseline should verify the Java-8 provider mechanism without requiring
+private source. Verification should cover at least:
+
+- built-in-provider discovery and selection;
+- `SimulatedAntenna` availability with no external extension JARs;
+- loading a synthetic external test provider through the same startup path intended for production extensions;
+- typed conformance for TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider contracts as those contracts are implemented;
+- deterministic failure for duplicate provider IDs, unknown configured provider IDs and incompatible provider configuration;
+- proof that domain/application behaviour receives normal typed contracts and does not depend on extension-loader classes.
+
+Production asset names, source IDs, broker mappings, proprietary message schemas, private provider names and credentials must not be copied into public verification fixtures.
 
 ## Generated evidence
 

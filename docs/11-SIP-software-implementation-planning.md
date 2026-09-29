@@ -268,7 +268,9 @@ Run realistic synthetic timing scenarios through the normal SI-01 application pa
 - multiple TimingNodes/sources where useful;
 - persistence and restart/restore for the state that actually needs it;
 - reconnect/recovery scenarios at public interfaces;
-- stronger ST-1 black-box scenarios.
+- stronger ST-1 black-box scenarios;
+- prove the Java-8 typed extension/provider bootstrap with built-in providers plus a synthetic external test provider;
+- keep `SimulatedAntenna` built in and always available so simulation does not depend on external JARs.
 
 A small browser test client may be added here only if it materially improves manual
 Remote API testing; it is not a product/software item.
@@ -277,7 +279,8 @@ Remote API testing; it is not a product/software item.
 
 - deterministic scenario/test data;
 - controllable synthetic adapters;
-- no target hardware.
+- no target hardware;
+- no private/product-specific provider implementation is required for the extension proof.
 
 ### Result
 
@@ -374,6 +377,7 @@ Connect SI-01 to the required backoffice flows using reproducible test infrastru
 - source identity/order where relevant;
 - disconnect/reconnect/reconciliation behaviour;
 - concrete transport adapter when the external contract is known;
+- exercise provider selection for `TimingData` and `UpstreamProtocol` behind their stable public contracts, using public synthetic/reference implementations for verification;
 - integration tests using synthetic/public test topology.
 
 ### Needs
@@ -547,7 +551,8 @@ Expected areas, refined from the Step-8 platform decision:
 - RTC integration where selected;
 - keypad/other local controls where required;
 - device status and useful recovery/error behaviour;
-- comparison with the equivalent synthetic test flows.
+- extension-provided `Antenna`, CAN-protocol and display-protocol implementations behind the typed provider contracts where the selected hardware requires them;
+- comparison with the equivalent synthetic test flows, retaining the built-in `SimulatedAntenna` as the reference path.
 
 ### Needs
 
@@ -635,7 +640,7 @@ These remain options until an earlier step creates a concrete need:
 - a small web client for exercising the Remote API;
 - more elaborate image/update/rollback automation;
 - a dedicated integration host;
-- extra public/private extension proofs;
+- additional extension families beyond the planned TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider boundaries;
 - a later Java runtime baseline;
 - additional custom electronics beyond what Step 8 justifies.
 

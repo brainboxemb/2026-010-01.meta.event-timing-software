@@ -1,4 +1,4 @@
-# 60-01-SUM — Headless Timing Application
+# 70-01-SUM — Headless Timing Application
 
 Status: working release-oriented user manual  
 Software item: **SI-01 — Headless Timing Application**

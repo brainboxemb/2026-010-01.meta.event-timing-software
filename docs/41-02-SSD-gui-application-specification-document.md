@@ -1,6 +1,32 @@
-# GUI Application Architecture (SAD)
+# Desktop GUI Application Specification Document (SSD)
 
 Status: working draft / non-authoritative
+
+Software item: **SI-02 — Desktop GUI Application**
+
+This SSD is intentionally architecture-heavy today because SI-02 implementation has not
+started. Software-item requirements will be promoted into this same document as the GUI
+capability approaches implementation; no separate requirements/architecture document pair is planned.
+
+## Inputs
+
+The SI-02 specification consumes:
+
+- `31-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
+- `32-03-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
+- a future system-owned GUI/HMI IDD when that contract is defined.
+
+`30-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
+
+The SIP may schedule SI-02 work but is not requirement/design authority.
+
+## Software-item requirements status
+
+No stable SI-02 requirement set has yet been promoted. The existing text below remains
+the working specification/architecture direction until that requirement slice is ready.
+
+## Software-item architecture
 
 Software item: **Desktop GUI Application** (SI-02)
 
@@ -89,7 +115,7 @@ A system-level GUI IDD can define items such as:
 - terminology and identifiers;
 - interaction flows for open/close/start/RFID recovery and later registration operations.
 
-The future SRD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
+The future SSD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
 
 ## Software-to-software interface IDD
 

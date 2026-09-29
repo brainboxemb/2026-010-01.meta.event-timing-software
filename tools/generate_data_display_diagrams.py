@@ -9,7 +9,7 @@ from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, r
 
 def data_display_flow() -> Diagram:
     nodes = [
-        Node("backend", "Backend system\\nrace data + stage start times", 40, 90, 320, 85, "external"),
+        Node("backend", "Upstream system\\nrace data + stage start times", 40, 90, 320, 85, "external"),
         Node("keypad", "CAN keypad\\nadd / remove team to prepare", 410, 90, 300, 85, "external"),
         Node("registration", "Registration candidates\\nRFID • start • manual • penalty • open", 760, 90, 400, 85, "external"),
 
@@ -18,7 +18,7 @@ def data_display_flow() -> Diagram:
         Node("race", "RaceData\\nparticipant/team/tag reference data", 30, 420, 300, 90, "service"),
         Node("start", "StageStartTimes\\nstage start-time reference", 360, 420, 300, 90, "service"),
         Node("prepare", "NextUpTeams\\nteams expected next + traceable history", 690, 420, 330, 90, "service"),
-        Node("journal", "Journal\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
+        Node("logbook", "LogBook\\nregistrations + TimingNodeId ordering", 1050, 420, 330, 90, "service"),
 
         Node("calculator", "StageTiming\\nelapsed time + local ranking", 155, 610, 310, 90, "service"),
         Node("display_model", "DisplayModel\\npassive DisplayRev1Can model", 515, 610, 300, 90, "core"),
@@ -40,11 +40,11 @@ def data_display_flow() -> Diagram:
         Edge("queue", "race"),
         Edge("queue", "start"),
         Edge("queue", "prepare"),
-        Edge("queue", "journal"),
+        Edge("queue", "logbook"),
 
         Edge("race", "calculator", "reference data"),
         Edge("start", "calculator", "start-time data"),
-        Edge("journal", "calculator", "registration data"),
+        Edge("logbook", "calculator", "registration data"),
 
         Edge("prepare", "display_model"),
         Edge("calculator", "display_model"),
@@ -52,7 +52,7 @@ def data_display_flow() -> Diagram:
         Edge("race", "backup", "snapshot", True),
         Edge("start", "backup", "snapshot", True),
         Edge("prepare", "backup", "state + history", True),
-        Edge("journal", "backup", "records + TimingNodeId sequence", True),
+        Edge("logbook", "backup", "records + TimingNodeId sequence", True),
 
         Edge("display_model", "can"),
         Edge("can", "display1", "active CAN commands"),
@@ -82,10 +82,10 @@ def registration_stream_identity() -> Diagram:
         Node("source_b", "TimingNodeId timing-node-02\\nTimingNode identity", 60, 300, 270, 80, "external"),
         Node("seq_b", "timing-node-02 sequence\\n551 → 552 → 553", 390, 290, 330, 100, "queue"),
 
-        Node("record", "RegistrationRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
+        Node("record", "TimingDataRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
         Node("key", "Stable key\\n(TimingNodeId, SequenceNumber)", 820, 380, 380, 85, "service"),
         Node("location", "LocationID 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
-        Node("upstream", "Backend / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
+        Node("upstream", "Upstream / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
         Node("gap", "Example gap\\nA: 1041, 1042, 1044 → 1043 missing", 820, 735, 390, 85, "queue"),
     ]
 

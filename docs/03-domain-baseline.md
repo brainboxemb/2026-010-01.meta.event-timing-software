@@ -8,7 +8,7 @@ Concrete production asset names, external registration-system IDs, source mappin
 
 ## TimingNodes, stages and locations
 
-One running headless timing application must be able to host **multiple logical timingNodes** at the same time.
+One running headless timing application must be able to host **1..N logical `TimingSystem` instances** at the same time. Each `TimingSystem` owns **1..N `TimingNode` instances**. This supports normal single-system deployment as well as simulation/test compositions that run multiple independent timing systems in one process.
 
 The working software/domain term is `TimingNode` for one independently addressed logical timing aggregate at the **end of a stage**. A `TimingNode` is deployed or configured for a physical event `LocationID`; the software identity of the timing node and the physical location where it is used are separate concepts.
 
@@ -16,37 +16,48 @@ Conceptually, one timing application owns one or more independently addressed ti
 
 ```text
 TimingApplication
+  +-- ApplicationId
   |
-  +-- SystemStatus
-  |
-  +-- 1..N TimingNode
-        +-- TimingNodeId
-        +-- LocationID
-        +-- lifecycle / status
-        +-- TagProcessor
-        +-- StageStartTimes
-        +-- TimingNodeJournal
-        +-- NextUpTeams
-        +-- RaceData
-        +-- StageTiming
+  +-- 1..N TimingSystem
+        +-- TimingSystemId        internal composition/simulation identity
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
+        |
+        +-- 1..N TimingNode
+              +-- TimingNodeId
+              +-- LocationID
+              +-- lifecycle / status
+              +-- UpstreamMessagePort
+              +-- TagProcessor
+              +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
+              +-- NextUpTeams
+              +-- RaceData
+              +-- StageTiming
+              +-- uses / produces TimingData
+
+Shared Domain contract:
+  +-- TimingData
 ```
 
-`TimingNodeId` is the stable identity of the `TimingNode`; `LocationID` identifies the physical event location where that timing node is configured or deployed.
+`ApplicationId`, internal `TimingSystemId`, `TimingNodeId` and `LocationID` are distinct concepts. `ApplicationId` identifies the running process/runtime. `TimingSystemId` is an internal composition/simulation identity used to distinguish multiple TimingSystem instances in one process; it is not part of the upstream functional addressing contract. `TimingNodeId` is the functional identity exposed to timing-data/upstream semantics, and `LocationID` identifies the physical event location where that node is configured or deployed.
 
 Operational state such as `OPEN` / `CLOSED` belongs to the TimingNode software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the timing node.
 
 A `Stage` and a `TimingNode` are related but distinct concepts: a stage ends at a timing node. Stage-specific reference data such as start-time data may therefore be consumed by the timing node software without making the stage itself a hardware or runtime container.
 
-The previous working name `TimingSystemInstance` mixed runtime isolation with the domain meaning of a timing node. New architecture/design work should use `TimingNode`; existing implementation names may be migrated later to match this documentation-led model.
+The previous working name `TimingSystemInstance` was rejected as a name for an individual timing node because it mixed node semantics with runtime isolation. `TimingSystem` now has a distinct broader meaning: one logical timing-system aggregate that owns 1..N `TimingNode` instances.
 
-## Antenna and TimingNode identity
+## Timing-system, antenna and TimingNode identity
 
-`TimingNodeId`, `AntennaId` and `LocationID` are separate namespaces.
+`ApplicationId`, `TimingSystemId`, `TimingNodeId`, `AntennaId` and `LocationID` are separate namespaces.
 
-`TimingNodeId` is the stable software identity of a `TimingNode`. It scopes
-that TimingNode's registration sequence, persistence and synchronisation
-semantics. `LocationID` separately identifies the event location where the
-TimingNode is configured or deployed.
+`TimingSystemId` identifies one logical `TimingSystem` inside a `TimingApplication` for internal composition, diagnostics and simulation isolation. The upstream system need not know that this grouping exists. `TimingNodeId` remains the functional identity of a node and scopes that node's registration sequence and synchronisation semantics. `LocationID` separately identifies the event location where the TimingNode is configured or deployed.
 
 The I/O boundary owns antenna configuration and mapping:
 
@@ -62,7 +73,10 @@ each Antenna
 An `Antenna` is the configured registration input. Reader/protocol/device
 details belong to the concrete antenna implementation/configuration and are not
 separate software identities unless implementation evidence later requires that
-distinction.
+distinction. `SimulatedAntenna` is the built-in baseline implementation and is
+always available for development/simulation. Other concrete antenna
+implementations may be selected through the application extension/provider
+mechanism without changing `AntennaId` or TimingNode semantics.
 
 One antenna may intentionally feed more than one TimingNode. Each target
 TimingNode keeps its own `TimingNodeId`, sequence and state; `AntennaId`
@@ -96,6 +110,14 @@ public repository.
 
 ## Separate software, I/O and configuration views
 
+The logical I/O layer is repeated as part of each `TimingSystem` runtime
+composition. A process hosting 1..N TimingSystems therefore normally composes
+1..N corresponding I/O sets (Storage, Devices, Messaging and DeviceNetworks).
+A lower-level implementation may multiplex a shared physical resource when that
+is explicitly designed, but that does not merge the TimingSystem ownership
+contexts.
+
+
 Do not express the complete system as one parent/child tree. The software/domain
 decomposition and I/O/configuration routing answer different questions.
 
@@ -103,23 +125,74 @@ decomposition and I/O/configuration routing answer different questions.
 
 ```text
 TimingApplication
+  +-- ApplicationId
   |
-  +-- SystemStatus
-  |
-  +-- 1..N TimingNode
-        +-- TimingNodeId
-        +-- LocationID
-        +-- lifecycle / status
-        +-- TagProcessor
-        +-- StageStartTimes
-        +-- TimingNodeJournal
-        +-- NextUpTeams
-        +-- RaceData
-        +-- StageTiming
+  +-- 1..N TimingSystem
+        +-- TimingSystemId        internal composition/simulation identity
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
+        |
+        +-- 1..N TimingNode
+              +-- TimingNodeId
+              +-- LocationID
+              +-- lifecycle / status
+              +-- UpstreamMessagePort
+              +-- TagProcessor
+              +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
+              +-- NextUpTeams
+              +-- RaceData
+              +-- StageTiming
+              +-- uses / produces TimingData
+
+Shared Domain contract:
+  +-- TimingData
 ```
 
-The exact component/class boundaries remain design work, but the TimingNode is
-the software/domain aggregate being operated.
+The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates.
+
+Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
+`UpstreamMessagePort`, `TimeSource` and heartbeat/ping semantics. `SystemStatus` is the
+complete current operational overview of that TimingSystem, not a single health
+flag. It may include its TimingNode states, antenna/device availability, whether
+a display is connected, keypad/beeper availability, device-network health,
+storage state, upstream connectivity and synchronisation state. Concrete I/O
+implementations report semantic status into this overview without becoming part
+of the Domain model. Those semantics remain isolated per simulated/hosted system
+rather than being application-global.
+
+`TimeSource` is also per TimingSystem. In production it can delegate to the
+platform wall clock. In simulation/test it may be controlled independently,
+including a programmable offset or stepped time, so several TimingSystems hosted
+in one process can intentionally observe different absolute times. Duration and
+timeout semantics remain separate and use a monotonic source where appropriate.
+
+Each TimingNode contains one `LogBook`. The LogBook owns its operational state
+as 0..N `LogBookItem` values and remains visibly part of the TimingNode
+aggregate. A `LogBookItem` is the internal logbook-domain representation and
+is not required to match the persistent/interchange representation one-for-one.
+The TimingNode aggregate has the architectural relationship to `TimingData`;
+the exact LogBookItem-to-record mapping is a lower-level design decision.
+
+`TimingData` defines the canonical persistent/interchange timing-data contract.
+Its principal record is `TimingDataRecord`; the TimingData responsibility also
+owns the public validation, encode/decode and compatibility semantics. Storage,
+Web and upstream communication may consume that contract without becoming owners
+of its field semantics.
+
+`UpstreamProtocol` is a Domain protocol owned in the context of one
+`TimingSystem`. It covers transfer of TimingData plus
+synchronization/reconciliation and protocol-level handling such as ping/pong.
+System-level semantic operations enter/leave through
+`TimingSystem.UpstreamMessagePort`; node-level operations use the addressed
+`TimingNode.UpstreamMessagePort`. The upstream peer can remain functionally
+TimingNode-oriented; a ping does not require exposing `TimingSystemId`.
+Transport/session mechanics remain I/O concerns.
 
 ### I/O routing view
 
@@ -144,26 +217,28 @@ LocationID = 1..25
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
-A registration record is associated with both:
+A `TimingDataRecord` is associated with the functional timing-node identity and physical location:
 
 ```text
 TimingNodeId
 LocationID
 ```
 
+The containing `TimingSystem` is local runtime/composition context and is not required to be serialized into TimingData.
+
 This lets a logical timing node preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
 
 ## Registration sequence
 
-Every timing node registration stream has a monotonically increasing sequence number scoped by **`TimingNodeId`**.
+Every timing node registration stream has a monotonically increasing sequence number scoped by **`TimingNodeId`** in the TimingData/upstream contract.
 
 Conceptually:
 
 ```text
-RegistrationRecordKey = (TimingNodeId, SequenceNumber)
+TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
-The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope.
+The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope. When one process hosts multiple TimingSystems, local storage/composition keeps their runtime contexts separated without changing the functional TimingData key.
 
 Generic example:
 
@@ -205,18 +280,18 @@ TimingNodeId timing-node-02
 
 The exact file names, external IDs and deployment mappings are configuration/private data. The file format, append/snapshot policy, atomicity and durability rules still need detailed design and formal requirements.
 
-## Registration entries
+## TimingData entries
 
-A registration entry is not limited to participant RFID passage data. Operational events can also be persisted as registration entries when they must participate in the traceable/synchronised stream.
+A `TimingDataRecord` is not limited to participant RFID passage data. Operational events can also be represented as TimingData records when they must participate in the traceable/synchronised stream.
 
 Known example:
 
-- opening a location/timing node is itself a registration entry.
+- opening a location/timing node is itself a TimingData entry.
 
 A working minimal envelope is therefore conceptually:
 
 ```text
-RegistrationRecord
+TimingDataRecord
   timingNodeId
   locationId
   sequenceNumber

@@ -54,7 +54,7 @@ At closure:
 - SDP, SIP, SDE and SVP responsibilities are separated explicitly;
 - public/private information boundaries are recorded in `AGENTS.md` and the architecture/design working drafts;
 - generated Markdown, diagrams, architecture books and the printable SIP roadmap build successfully in CI;
-- the SIP roadmap includes effort/calendar planning plus scope-aware documentation maturity for REQ/SRD, IDD, SAD/SDD and SVP/evidence;
+- the SIP roadmap includes effort/calendar planning plus scope-aware documentation maturity for SSSD/SSD requirements, IDD, SSD/SDD design and SVP/evidence;
 - generated A3 roadmap pages were visually inspected rather than accepted from CI status alone;
 - unresolved topics remain visible as working/open items;
 - formal requirements and IDDs for later capabilities remain deliberately deferred;
@@ -71,11 +71,11 @@ This step is intentionally **just-in-time**. It does not attempt to formalise th
 Expected scope:
 
 - identify the use cases and behaviours needed by the first executable;
-- create the initial `20-01-SRD` scope for SI-01 startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour;
+- create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `41-01-SSD`);
 - create the first system-level application-control/status IDD needed by the executable and later clients;
-- establish a traceable example from use case → system requirement → IDD where applicable → SI-01 requirement → SAD/SDD → verification case;
+- establish a traceable example from use case → SSSD/system IDD where applicable → SI-01 SSD requirement/architecture → SDD → verification case;
 - make the relevant ST-1/SVP verification material concrete enough for the first executable;
-- update SAD/SDD working drafts only where the formalised slice exposes a conflict or ambiguity;
+- update SSD/SDD working drafts only where the formalised slice exposes a conflict or ambiguity;
 - collect/index source material only where it is needed to resolve this slice;
 - keep RFID, CAN, displays, backoffice and other later capability requirements/IDDs at outline level unless this step exposes a true foundational dependency.
 
@@ -93,12 +93,12 @@ Exit criteria:
 
 ### AP-1 closure evidence
 
-PR #2 established the first reviewable SRD/IDD slice without expanding later product capabilities.
+PR #2 established the first reviewable SI-01 requirements/IDD slice without expanding later product capabilities.
 
 At closure:
 
-- `20-01-SRD-timing-application-requirements.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
-- `40-01-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
+- `41-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
+- `32-03-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
 - IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
 - first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
 - the first operational timing instance remains `CLOSED`; open/close and later domain behaviour are not partially invented for this baseline;
@@ -146,7 +146,7 @@ Exit criteria:
 
 ### AP-2 closure evidence
 
-PR #3 established `13-SDE-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
+PR #3 established `50-SDE-02-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
 
 At closure:
 
@@ -252,7 +252,7 @@ The architecture/package correction was merged first in meta PR #7 as commit `e9
 At closure:
 
 - the generated `prod/docs` publication is green and `prod/docs/source-sha.txt` points exactly to `e97f1f93d3e9f34dcbd0ef8d94e3d65468f073bc`;
-- `31-01-SDD-03`, `31-01-SDD-04`, and `31-01-SDD-05` distinguish architecture/package responsibilities from Maven artifact boundaries and allow later single-system/multi-system executable compositions;
+- `40-01-SDD-03`, `40-01-SDD-04`, and `40-01-SDD-05` distinguish architecture/package responsibilities from Maven artifact boundaries and allow later single-system/multi-system executable compositions;
 - framework PR #2 was merged as `50ee1a24351def8ce91fabb3769956a797c10fd5`;
 - framework issue #1 records that the original six-module proposal was deliberately superseded during review by the tested `framework + app` boundary;
 - latest pre-merge framework CI run `34697694095` was green and its canonical artifact was independently inspected/executed;
@@ -273,7 +273,7 @@ Current stable state:
 - `CommandHandler` is the current shared presentation/application boundary;
 - `BuildIdentity` remains separate from deployment configuration.
 
-The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one TimingNode plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
+The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one internal `TimingSystem` containing at least one TimingNode plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
 
 Do not add a new AP step merely to mirror SIP Step 3. Add one only when a distinct coordination deliverable needs its own plan.
 

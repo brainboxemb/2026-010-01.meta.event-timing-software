@@ -28,15 +28,16 @@ Use the numbered project documents for their specific roles:
 
 - [docs/00-brainstorm.md](docs/00-brainstorm.md) — ideas, alternatives and unresolved questions;
 - [docs/03-domain-baseline.md](docs/03-domain-baseline.md) — stable domain facts/terminology;
-- [docs/04-UC-system-use-cases.md](docs/04-UC-system-use-cases.md) — operational goals/use cases;
+- [docs/20-EXT-external-system-inputs.md](docs/20-EXT-external-system-inputs.md) — parent/external-system input baseline and revision register;
+- [docs/30-UC-system-use-cases.md](docs/30-UC-system-use-cases.md) — operational goals/use cases;
 - [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
 - [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
-- [docs/12-SDE-software-development-environment.md](docs/12-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
-- [docs/30-SSAD-software-system-architecture.md](docs/30-SSAD-software-system-architecture.md) — software-system architecture/item register/interfaces;
-- [docs/31-01-SAD-timing-application-architecture.md](docs/31-01-SAD-timing-application-architecture.md) — SI-01 architecture;
-- [docs/31-01-SDD-02-java-component-design.md](docs/31-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
-- [docs/31-02-SAD-gui-application-architecture.md](docs/31-02-SAD-gui-application-architecture.md) — desktop GUI architecture;
-- [docs/50-SVP-software-verification-plan.md](docs/50-SVP-software-verification-plan.md) — verification strategy/evidence model;
+- [docs/50-SDE-01-software-development-environment.md](docs/50-SDE-01-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
+- [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
+- [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
+- [docs/43-01-SDD-02-java-component-design.md](docs/43-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
+- [docs/41-02-SSD-gui-application-specification-document.md](docs/41-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
+- [docs/60-SVP-software-verification-plan.md](docs/60-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
 
@@ -80,8 +81,8 @@ of truth are actually being distinguished.
 Architecture figures use a visible stable label plus a Markdown anchor so reviews and
 design text can refer to a figure unambiguously.
 
-Use scope-based labels such as `Figure SYS-01` for the system SSAD and
-`Figure SI01-01` for the SI-01 SAD. Put an anchor immediately before the image,
+Use scope-based labels such as `Figure SYS-01` for the system SSSD and
+`Figure SI01-01` for the SI-01 SSD. Put an anchor immediately before the image,
 for example `<a id="fig-si01-01"></a>`, and a visible caption immediately after
 it. Refer to it as `[Figure SI01-01](#fig-si01-01)` when linking within the same
 document.
@@ -90,6 +91,17 @@ Figure identifiers are stable references: do **not** renumber existing figures w
 new diagram is inserted. Assign the next unused number in that document/scope. Where a
 generated diagram has an authored source/title, include the same figure label in the
 rendered title when practical.
+
+## SIP actual-effort refresh
+
+Use **Actions → Refresh SIP actuals** (`.github/workflows/sip-actuals.yml`) as the
+normal authority for refreshing the committed SIP actual-effort snapshot. Do not
+replace it with ad-hoc session heuristics. The workflow/calculator combines
+merged-PR commit activity from the meta and implementation repositories, assigns
+30-minute activity windows, merges overlap and divides by 8 hours per project
+day. If an agent cannot dispatch the workflow directly, it may reproduce the
+same calculator logic for analysis, but must say so and must not silently use a
+different effort model.
 
 ## Public/private boundary
 

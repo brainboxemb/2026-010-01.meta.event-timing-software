@@ -19,15 +19,15 @@ Lees eerst in de meta-repository:
 - `docs/03-domain-baseline.md`
 - `docs/10-SDP-software-development-plan.md`
 - `docs/11-SIP-software-implementation-planning.md`
-- `docs/12-SDE-software-development-environment.md`
-- `docs/13-SDE-java-build-test-toolchain.md`
-- `docs/20-01-SRD-timing-application-requirements.md`
-- `docs/30-SSAD-software-system-architecture.md`
-- `docs/31-01-SAD-timing-application-architecture.md`
-- `docs/31-01-SDD-02-java-component-design.md`
-- `docs/40-01-IDD-application-control-status.md`
-- `docs/40-02-IDD-application-configuration.md`
-- `docs/50-SVP-software-verification-plan.md`
+- `docs/50-SDE-01-software-development-environment.md`
+- `docs/50-SDE-02-java-build-test-toolchain.md`
+- `docs/41-01-SSD-timing-application-specification-document.md`
+- `docs/31-SSSD-software-system-specification-document.md`
+- `docs/41-01-SSD-timing-application-specification-document.md`
+- `docs/43-01-SDD-02-java-component-design.md`
+- `docs/32-03-IDD-application-control-status.md`
+- `docs/32-11-IDD-application-configuration.md`
+- `docs/60-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:
 - `brainboxemb/2026-010-01.meta.event-timing-software` — coordination, planning, requirements, architecture en verification direction;
@@ -49,19 +49,21 @@ Huidig continuation point dat je eerst tegen GitHub moet verifiëren:
 - de huidige gepubliceerde Step-3 productbaseline is `v0.2.1`;
 - normale ontwikkeling loopt op `0.2.2-SNAPSHOT`;
 - IF-03 definieert application-control/status;
-- IF-11 definieert deployment/application-configuratie, inclusief TimingNode-, I/O-, presentation-, runtime/security-ownership, platform/profile overlays en secret references;
+- IF-11 definieert deployment/application-configuratie, inclusief 1..N interne `TimingSystem`-contexts met elk 1..N TimingNodes, I/O-, presentation-, runtime/security-ownership, platform/profile overlays en secret references;
 - presentation endpoints verwijzen naar TimingNodes; een TimingNode kent geen HTTP-poort of tablet;
 - `BuildIdentity` is build provenance en staat los van deploymentconfiguratie;
+- `TimingSystem` is de interne parent Domain aggregate: één `TimingApplication` host 1..N TimingSystems en elk TimingSystem bevat 1..N TimingNodes; dit maakt meerdere volledige simulatiecontexts in één proces mogelijk;
+- `LogBook` is per TimingNode en bevat 0..N `LogBookItem`s; `TimingData` is het gedeelde Domain-contract voor `TimingDataRecord` + encode/decode/compatibility en wordt gebruikt voor opslag, Web en upstream;
 - `CommandHandler` is de huidige gedeelde presentation/application boundary voor echte commands/queries;
 - Presentation modelleert `Console`, `Remote Shell`, `Web` en `Remote API` als aparte interfaces; Console en Remote Shell delen `presentation.common.terminal` voor gemeenschappelijke terminalafhandeling; `Web` is 1..N endpoints, met per Web-endpoint precies één `TimingNodeId` en een eigen presentation-configured luisterpoort;
-- `ApplicationId` is de afzonderlijke identiteit van de draaiende Timing Application; bij een single-TimingNode deployment mag en zal deze voorlopig dezelfde geconfigureerde waarde gebruiken als `TimingNodeId`, maar het blijven verschillende types/namespaces;
-- de high-level I/O-architectuur scheidt `Devices` (Antenna, displays, keypad) van `Device Networks` (`CanNetworkController`, `NetworkDeviceService`);
+- `ApplicationId` identificeert de draaiende Timing Application; intern `TimingSystemId` onderscheidt 1..N gehoste/simulatiecontexts; `TimingNodeId` blijft de functionele TimingData/upstream-identiteit en `TimingSystemId` wordt niet automatisch extern gemaakt;
+- de high-level I/O-architectuur scheidt `Devices` (Antenna, displays, keypad, beeper) van `Device Networks` (`CanNetworkController`, `NetworkDeviceService`);
 - `CanNetworkController` beheert CAN-bus lifecycle/discovery/device-state; `DisplayRev1Can` is het passieve CAN-display dat SI-01 actief aanstuurt;
 - `NetworkDeviceService` is de bidirectionele netwerkdevice-boundary; discovery/session/protocol-afhandeling is detail design. `DisplayRev2Wifi` ontdekt/verbindt zelf en bezit rendering, reconnect en synchronisatie;
 - `DisplayModel` is alleen voor de passieve CAN-displayroute; smart-displaydata blijft algemene timing/status/reference-data;
 - `upstream` benoemt de relatie met het centrale/externe systeem en niet de richting van één bericht; die relatie is bidirectioneel;
-- upstream messaging gebruikt application-level `UpstreamMessageRouter` uitsluitend voor upstream-system target resolution; `ApplicationId` kan naar application-scoped responsibilities zoals `SystemStatus` routeren en `TimingNodeId` naar de betreffende `TimingNode.UpstreamMessagePort`;
-- I/O `Messaging` bezit `UpstreamGateway` boven 1..N connectors; `UpstreamGateway` is de upstream/transport boundary en een `RabbitMqConnector` bezit transport/session mechanics, niet application/TimingNode-routing;
+- elk intern `TimingSystem` bezit een Domain `UpstreamProtocol`-context voor TimingData-overdracht, synchronisatie/reconciliation en ping/heartbeat; het upstream-systeem hoeft `TimingSystemId` niet te kennen; `UpstreamMessageRouter` routeert TimingNode-gerichte semantiek functioneel via `TimingNodeId` naar `TimingNode.UpstreamMessagePort`;
+- I/O `Messaging` bezit per geconfigureerde upstream-context een `UpstreamGateway` boven 1..N connectors; gateway/connectors bezitten transport/session mechanics, niet TimingData- of UpstreamProtocol-semantiek;
 - `TimingNode.UpstreamMessagePort` is de bidirectionele semantische upstream-messagegrens van één TimingNode;
 - `UpstreamMessageRouter` is nadrukkelijk geen generieke interne message/event bus; normale samenwerking binnen de applicatie blijft directe Java-collaboration waar passend;
 - maak geen interne status-POJO-hiërarchie alleen om IF-03 JSON te spiegelen;
@@ -148,7 +150,7 @@ SI-02  Desktop GUI Application
 SI-03  Web Operator Application (React/browser/iPad)
 ```
 
-The software-item number is stable across that item's SRD/SAD/SDD documents. It is not a document sequence number. The SSAD owns the software-item/interface catalogue; system-owned interfaces are documented through IDDs where applicable.
+The software-item number is stable across that item's SSD/SDD documents. It is not a document sequence number. The SSSD owns software-item/interface allocation; system-owned interfaces are documented through IDDs where applicable.
 
 ## Document roles
 
@@ -159,7 +161,7 @@ Use the sources consistently:
 - SDP — staged software-development governance and maturity/release direction;
 - SIP — implementation sequence, active step and step-exit expectations;
 - SDE — common development environment, repository/toolchain and workflow rules;
-- SSAD/SAD/SDD — accepted architecture/design at the appropriate level;
+- SSSD/SSD/SDD — accepted specification/design at the appropriate level;
 - SVP — common verification strategy and evidence expectations;
 - active implementation/tool PR — detailed change/evidence record for current work.
 

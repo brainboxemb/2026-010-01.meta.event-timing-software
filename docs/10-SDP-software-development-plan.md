@@ -8,6 +8,150 @@ should distinguish decisions from things that still need discussion or evidence.
 The SIP owns the implementation steps. The SDE owns the development/release environment.
 The SVP owns verification detail.
 
+## Documentation structure and dependency discipline
+
+### Document categories and numbering
+
+The numeric prefix groups documents by **engineering role**. It is primarily a navigation/readability convention; it does not by itself define normative dependency order.
+
+```text
+00–09  working / project context
+10–19  planning
+20–29  external / parent-system inputs
+30–39  software-system specification and design
+40      software-item use cases
+41      software-item requirements / combined specification
+42      software-item architecture
+43      software-item detailed design
+50–59  development environment / engineering
+60–69  verification and validation
+70–79  user / operational documentation
+```
+
+Current examples are:
+
+```text
+00-brainstorm
+01-handoff
+02-agent-plan
+03-domain-baseline
+
+10-SDP
+11-SIP
+
+20-EXT-external-system-inputs
+
+30-UC-system-use-cases
+31-SSSD-software-system-specification-document
+32-03-IDD-application-control-status
+32-11-IDD-application-configuration
+
+40-01-UC                         reserved / optional for SI-01
+41-01-SSD-timing-application-specification-document
+41-02-SSD-gui-application-specification-document
+
+43-01-SDD-01-data-and-display-design
+43-01-SDD-02-java-component-design
+43-01-SDD-03-backoffice-transport-design
+
+50-SDE-01-software-development-environment
+50-SDE-02-java-build-test-toolchain
+
+60-SVP-software-verification-plan
+
+70-01-SUM-headless-timing-application
+```
+
+Numbering rules:
+
+- the leading two-digit value identifies the document category or reserved document family; it is not a dependency-order number;
+- where a reserved family has a natural stable scope identifier, that scope is the second segment. Software-item families use the software-item ID, for example `41-01-SSD` and `43-01-SDD-02`;
+- document family `32` is reserved for software-system-owned IDDs. Its second segment is the stable interface ID, so IF-03 is `32-03-IDD` and IF-11 is `32-11-IDD`; the number is not a document sequence;
+- document number `40` is reserved for optional software-item use cases, for example `40-01-UC` for SI-01;
+- document number `41` is reserved for software-item requirements/specification: use `41-<SI>-SSD` when requirements and architecture are combined, or `41-<SI>-SRD` when they are split;
+- document number `42` is reserved for a separate software-item architecture document `42-<SI>-SAD`; omit it when `41-<SI>-SSD` already combines requirements and architecture;
+- document number `43` is reserved for software-item detailed design. When several SDDs share the same software-item scope, a final sequence follows the type: `43-01-SDD-01`, `43-01-SDD-02`, ...;
+- a repeatable generic family without a natural scope identifier puts its sequence after the type. The generic SDE family therefore uses `50-SDE-01`, `50-SDE-02`, ...;
+- a singular generic document does not gain a synthetic sequence merely for symmetry, for example `60-SVP`;
+- range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM` for SI-01;
+- an externally owned document keeps the identifier/version assigned by its owner. Document 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
+
+A new document should fit an existing category/family before another one is
+invented. Scope identifiers and document sequences have different meanings and
+must not trade places merely to keep filenames numerically contiguous.
+### External and parent-system inputs
+
+The software system defined here is itself a subsystem of a larger operational system. Some requirements and interface contracts can therefore be defined **above the current software-system scope**.
+
+`20-EXT-external-system-inputs.md` records those controlled upstream inputs: parent-system requirements, externally owned IDDs, protocols, standards or equivalent contracts, including the exact version/revision when known and the part of this software system they constrain.
+
+The external source remains the authority. The local document-20 record is a baseline/traceability index and must not silently copy, weaken or reinterpret an externally controlled contract. Private/proprietary source material may remain outside this public repository while its applicable identity/revision is recorded generically when that can be done safely.
+
+### Normative authority and release dependencies
+
+Product-document `Inputs` are **authority/release dependencies**, not a list of every document that was useful while writing. Ordinary downstream references belong under traceability/related-document sections and do not make the referenced document an input.
+
+The generic direction is:
+
+```text
+parent / external system requirements, IDDs, protocols
+                         |
+                         v
+            20 external-input baseline
+                         |
+domain baseline ---------+------> 30 system use cases
+                         |                 |
+                         +-----------------+
+                                           v
+                                      31 SSSD
+                                           |
+                                 allocates interfaces/items
+                                           |
+                      +--------------------+--------------------+
+                      |                                         |
+                      v                                         v
+          32-<IF>-IDD(s)             40-<SI>-UC(s)
+                      |                                         |
+                      +--------------------+--------------------+
+                                           |
+                         +-----------------+-----------------+
+                         |                                   |
+                         v                                   v
+                  combined route                       split route
+                  41-<SI>-SSD                       41-<SI>-SRD
+                         |                                   |
+                         |                                   v
+                         |                            42-<SI>-SAD
+                         +-----------------+-----------------+
+                                           |
+                                           v
+                                     43-<SI>-SDD-<N>
+                                           |
+                                           v
+                                      implementation
+                                           |
+                                           v
+                                  verification evidence
+```
+
+The diagram shows the normal internal decomposition, not a rule that every input must pass through every box. An externally imposed requirement/IDD/protocol may directly constrain the SSSD and an affected software-item SRD/SSD when the allocation is already explicit.
+
+Document roles:
+
+- **SSSD** — combines software-system requirements and software-system architecture and owns software-item/interface allocation.
+- **System-owned IDD** — defines a contract allocated/owned by this software system. Once released, it constrains every affected SRD/SSD and, where architecture is split, its SAD.
+- **Software-item UC** — optional behavioural decomposition of one or more system use cases after responsibility has been allocated to a software item.
+- **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
+- **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.
+- **SDD** — focused detailed design downstream of the owning SSD or SAD.
+- **SVP/verification cases** — consume requirements and interface contracts for coverage; verification planning is not a requirement input.
+- **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
+- **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
+- **SUM** — release/user guidance downstream of the released software/configuration baseline.
+
+For independently released documents, a released document records the exact version/revision of every normative input. In the current repository-wide release model, one repository release/tag/commit may identify the coherent local document baseline, but the dependency graph must remain acyclic so independent document release remains possible later.
+
+
 ## Current direction
 
 The project currently centres on the **Headless Timing Application** (SI-01):

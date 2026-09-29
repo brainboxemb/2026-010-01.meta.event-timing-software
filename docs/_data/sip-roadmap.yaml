@@ -4,8 +4,9 @@ cadence_project_days_per_week: 1.0
 planning_reserve_fraction: 0.25
 
 actuals:
-  through_date: "2026-09-26"
-  estimated_project_days: 5.1
+  through_date: "2026-09-29"
+  estimated_project_days: 7.1
+  estimated_hours: 56.4
   method: >-
     Approximation from commit activity within merged pull requests across the
     meta and implementation repositories. Each commit contributes a 30-minute
@@ -58,7 +59,8 @@ notes:
   - Forecasts are planning aids, not commitments.
   - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - Per-step actuals use explicit merged-PR number boundaries per repository; original estimate, actual and remaining estimate are intentionally independent planning signals.
-  - The 11-step plan totals 55 estimated project days before reserve; reducing or combining steps must not silently remove work.
+  - The 11-step plan totals 59 estimated project days before reserve; the increase from 55d reserves explicit effort for the Java-8 extension/provider mechanism and its upstream/device integration rather than hiding that scope in existing steps.
+  - Extension/provider effort is planned as +1d in Step 5, +1d in Step 7 and +2d in Step 10.
   - Document maturity describes the established content; completeness is approximate project-wide document coverage, not completion of only the current slice.
   - Completeness percentages are planning indicators, intentionally coarse rather than time-tracking precision.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
@@ -73,15 +75,14 @@ steps:
     docs:
       requirements: {level: outline, scope: "first implementation direction"}
       idd: {level: outline, scope: "initial interface catalogue"}
-      design: {level: working, scope: "SSAD/SI-01 architecture baseline"}
+      design: {level: working, scope: "SSSD/SI-01 specification baseline"}
       verification: {level: working, scope: "initial verification direction"}
     documents:
       - {name: 10-SDP, title: Software Development Plan, maturity: review, completeness: 55}
       - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 60}
-      - {name: 04-UC, title: System use cases, maturity: outline, completeness: 25}
-      - {name: 30-SSAD, title: Software-system architecture, maturity: working, completeness: 45}
-      - {name: 31-01-SAD, title: SI-01 architecture, maturity: working, completeness: 40}
-      - {name: 50-SVP, title: Software Verification Plan, maturity: working, completeness: 30}
+      - {name: 30-UC, title: System use cases, maturity: outline, completeness: 25}
+      - {name: 31-SSSD, title: Software-system specification, maturity: working, completeness: 45}
+      - {name: 60-SVP, title: Software Verification Plan, maturity: working, completeness: 30}
 
   "2":
     estimate_project_days: 6
@@ -94,16 +95,16 @@ steps:
       design: {level: working, scope: "module/package structure sufficient to code"}
       verification: {level: working, scope: "build/unit and first executable verification"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: working, completeness: 40}
-      - {name: 13-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 25}
-      - {name: 31-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 45}
-      - {name: 50-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
+      - {name: 30-UC, title: System use cases, maturity: working, completeness: 40}
+      - {name: 50-SDE-02, title: Java build/test toolchain, maturity: accepted, completeness: 100}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 25}
+      - {name: 43-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
+      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 45}
+      - {name: 60-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
 
   "3":
     estimate_project_days: 3
-    actual_estimated_project_days: 2.9
+    actual_estimated_project_days: 4.9
     remaining_estimate_project_days: 2
     workstream: application
     docs:
@@ -112,12 +113,11 @@ steps:
       design: {level: review, scope: "SI-01 composition exercised by code"}
       verification: {level: working, scope: "ST-1 plus manual engineering-client inspection"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: working, completeness: 55}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 35}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 65}
-      - {name: 40-02-IDD, title: Application configuration interface, maturity: review, completeness: 55}
-      - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 65}
-      - {name: 50-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
+      - {name: 30-UC, title: System use cases, maturity: working, completeness: 55}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 35}
+      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 65}
+      - {name: 32-11-IDD, title: Application configuration interface, maturity: review, completeness: 55}
+      - {name: 60-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
 
   "4":
     estimate_project_days: 6
@@ -129,14 +129,13 @@ steps:
       verification: {level: working, scope: "deterministic state/domain tests"}
     documents:
       - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 80}
-      - {name: 04-UC, title: System use cases, maturity: review, completeness: 70}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 55}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 70}
-      - {name: 31-01-SAD, title: TimingNode architecture, maturity: review, completeness: 75}
-      - {name: 50-SVP, title: Domain verification direction, maturity: working, completeness: 60}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 70}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 55}
+      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 70}
+      - {name: 60-SVP, title: Domain verification direction, maturity: working, completeness: 60}
 
   "5":
-    estimate_project_days: 5
+    estimate_project_days: 6
     workstream: simulation
     docs:
       requirements: {level: working, scope: "synthetic timing flow and recovery behaviour"}
@@ -144,11 +143,10 @@ steps:
       design: {level: working, scope: "synthetic adapters and persistence/recovery boundaries"}
       verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: review, completeness: 80}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 70}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 80}
-      - {name: 31-01-SAD, title: SI-01 architecture, maturity: review, completeness: 80}
-      - {name: 50-SVP, title: System-test scenarios, maturity: review, completeness: 70}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 80}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
+      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 80}
+      - {name: 60-SVP, title: System-test scenarios, maturity: review, completeness: 70}
 
   "6":
     estimate_project_days: 4
@@ -159,13 +157,13 @@ steps:
       design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
       verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: review, completeness: 85}
-      - {name: 31-02-SAD, title: Desktop GUI architecture, maturity: working, completeness: 60}
-      - {name: 40-01-IDD, title: Remote API interface, maturity: review, completeness: 85}
-      - {name: 50-SVP, title: GUI verification direction, maturity: review, completeness: 75}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
+      - {name: 41-02-SSD, title: Desktop GUI specification, maturity: working, completeness: 60}
+      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 85}
+      - {name: 60-SVP, title: GUI verification direction, maturity: review, completeness: 75}
 
   "7":
-    estimate_project_days: 6
+    estimate_project_days: 7
     workstream: backoffice
     docs:
       requirements: {level: working, scope: "required backoffice data flows"}
@@ -173,11 +171,10 @@ steps:
       design: {level: working, scope: "transport/recovery behaviour"}
       verification: {level: working, scope: "integration and outage/reconnect tests"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: review, completeness: 90}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 85}
-      - {name: 31-01-SAD, title: Backoffice integration architecture, maturity: review, completeness: 90}
-      - {name: 31-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
-      - {name: 50-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
+      - {name: 43-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
+      - {name: 60-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
 
   "8":
     estimate_project_days: 4
@@ -190,9 +187,8 @@ steps:
     documents:
       - {name: 10-SDP, title: Software Development Plan, maturity: review, completeness: 75}
       - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 80}
-      - {name: 12-SDE, title: Target development environment, maturity: working, completeness: 60}
-      - {name: 31-01-SAD, title: Target/device architecture, maturity: review, completeness: 90}
-      - {name: 50-SVP, title: Target verification direction, maturity: review, completeness: 85}
+      - {name: 50-SDE-01, title: Target development environment, maturity: working, completeness: 60}
+      - {name: 60-SVP, title: Target verification direction, maturity: review, completeness: 85}
 
   "9":
     estimate_project_days: 4
@@ -203,13 +199,12 @@ steps:
       design: {level: working, scope: "selected runtime/deployment path"}
       verification: {level: working, scope: "real target execution and measurements"}
     documents:
-      - {name: 12-SDE, title: Target development environment, maturity: review, completeness: 75}
-      - {name: 31-01-SAD, title: SI-01 deployment architecture, maturity: review, completeness: 92}
-      - {name: 50-SVP, title: Target verification, maturity: review, completeness: 88}
-      - {name: 60-01-SUM, title: SI-01 user manual, maturity: working, completeness: 55}
+      - {name: 50-SDE-01, title: Target development environment, maturity: review, completeness: 75}
+      - {name: 60-SVP, title: Target verification, maturity: review, completeness: 88}
+      - {name: 70-01-SUM, title: SI-01 user manual, maturity: working, completeness: 55}
 
   "10":
-    estimate_project_days: 8
+    estimate_project_days: 10
     workstream: hardware
     docs:
       requirements: {level: working, scope: "selected real-device behaviour"}
@@ -217,11 +212,10 @@ steps:
       design: {level: working, scope: "device adapter/lifecycle design"}
       verification: {level: working, scope: "synthetic-to-real and HIL verification"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: review, completeness: 95}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: review, completeness: 95}
-      - {name: 31-01-SAD, title: Device integration architecture, maturity: review, completeness: 95}
-      - {name: 50-SVP, title: Hardware verification direction, maturity: review, completeness: 95}
-      - {name: 60-01-SUM, title: SI-01 user manual, maturity: working, completeness: 70}
+      - {name: 30-UC, title: System use cases, maturity: review, completeness: 95}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 95}
+      - {name: 60-SVP, title: Hardware verification direction, maturity: review, completeness: 95}
+      - {name: 70-01-SUM, title: SI-01 user manual, maturity: working, completeness: 70}
 
   "11":
     estimate_project_days: 8
@@ -232,9 +226,8 @@ steps:
       design: {level: working, scope: "recovery/operational integration discovered in system proof"}
       verification: {level: working, scope: "representative integrated and recovery scenarios"}
     documents:
-      - {name: 04-UC, title: System use cases, maturity: accepted, completeness: 95}
-      - {name: 20-01-SRD, title: SI-01 requirements, maturity: accepted, completeness: 95}
-      - {name: 31-01-SAD, title: SI-01 architecture, maturity: accepted, completeness: 95}
-      - {name: 50-SVP, title: Integrated system verification, maturity: accepted, completeness: 95}
-      - {name: 60-01-SUM, title: SI-01 user manual, maturity: accepted, completeness: 90}
+      - {name: 30-UC, title: System use cases, maturity: accepted, completeness: 95}
+      - {name: 41-01-SSD, title: SI-01 specification, maturity: accepted, completeness: 95}
+      - {name: 60-SVP, title: Integrated system verification, maturity: accepted, completeness: 95}
+      - {name: 70-01-SUM, title: SI-01 user manual, maturity: accepted, completeness: 90}
       - {name: 11-SIP, title: Software Implementation Planning, maturity: review, completeness: 95}

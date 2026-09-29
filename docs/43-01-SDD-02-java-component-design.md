@@ -6,7 +6,7 @@ Software item: **SI-01 — Headless Timing Application**
 
 This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
 
-The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by `31-01-SAD-timing-application-architecture.md`.
+The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `41-01-SSD-timing-application-specification-document.md`.
 
 ## Why this SDD exists
 
@@ -18,7 +18,7 @@ The central rule is:
 
 Keep these concepts distinct:
 
-1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SAD.
+1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SSD architecture.
 2. **Java package** — cohesive source organisation and enforceable dependency discipline.
 3. **Maven artifact** — reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
 4. **Application composition** — assembly of framework code and selected implementations into an executable.
@@ -76,6 +76,7 @@ io.github.brainboxemb.eventtiming/
       antenna/
       display/
       keypad/
+      beeper/
     devicenetworks/
       can/
       network/
@@ -125,22 +126,43 @@ application/
   UpstreamMessageRouter.java       when upstream messaging is implemented
 
 domain/
+  system/
+    TimingSystem.java                   parent aggregate for 1..N TimingNodes
+    TimingSystemId.java                 internal composition/simulation identity
+    SystemStatus.java                   complete current TimingSystem overview
+    UpstreamMessagePort.java            system-level upstream messages
+    TimeSource.java                     per-system absolute time / test control
   timing/
     TimingNode.java
     TimingNodeId.java
-    UpstreamMessagePort.java            when upstream message handling is implemented
+    UpstreamMessagePort.java            TimingNode-level upstream messages
+  logbook/
+    LogBook.java
+    LogBookItem.java                    internal logbook-domain representation
+  timingdata/
+    TimingData.java                     canonical record/codec contract
+    TimingDataRecord.java               persistent/interchange record
+    TimingDataProvider.java             typed extension provider contract
+  upstream/
+    UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
+    UpstreamProtocolProvider.java       typed extension provider contract
 
 io/
   devices/
     antenna/
-      Antenna.java                 concrete/source types only when implemented
+      Antenna.java                      stable antenna contract
+      AntennaProvider.java              typed extension provider contract
+      SimulatedAntenna.java             built-in reference/simulation implementation
     display/
-      DisplayRev1Can.java          passive CAN display support when implemented
+      DisplayProtocolProvider.java      typed protocol-extension provider contract
+      DisplayRev1Can.java               passive CAN display support when implemented
     keypad/                        only when device-specific code justifies it
+    beeper/                         transport-specific implementation only when justified
 
   devicenetworks/
     can/
       CanNetworkController.java    CAN lifecycle, discovery and device state
+      CanProtocolProvider.java     typed protocol-extension provider contract
     network/
       NetworkDeviceService.java    bidirectional network-device boundary
 
@@ -152,8 +174,23 @@ io/
 ```
 
 The names above record ownership/direction, not a requirement to create empty
-types early. `ApplicationId` is a separate Java type from `TimingNodeId` even
-when a single-TimingNode deployment configures the same string value for both.
+types early. `ApplicationId`, internal `TimingSystemId` and functional
+`TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
+multiple hosted/simulated systems locally; it is not automatically serialized
+into TimingData or exposed as an upstream address.
+
+Each `TimingSystem` owns one Domain `TimeSource`. The production implementation
+may delegate to a Platform wall-clock abstraction; tests/simulations may provide
+a controllable implementation with a per-system offset or stepped time. The
+Domain contract returns project-owned absolute `TimingTimestamp` values rather
+than exposing a platform clock API directly. Monotonic duration/time-out sources
+remain separate Platform/runtime concerns.
+
+The I/O package structure is logical; executable composition is per
+`TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
+corresponding I/O compositions, each with its own configured Storage, Devices,
+Messaging and DeviceNetworks objects. Explicit lower-level multiplexing may share
+a physical resource, but the owning TimingSystem contexts stay separate.
 
 `CanNetworkController` owns CAN-network lifecycle/discovery and CAN-device
 communication. `NetworkDeviceService` owns the general bidirectional
@@ -168,19 +205,33 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
 mirror the hardware name.
 
-`UpstreamGateway` owns the external upstream-system boundary and uses 1..N concrete
-connectors. A connector such as `RabbitMqConnector` owns transport/session
-mechanics. `UpstreamMessageRouter` in the application package owns target
-resolution for messages exchanged with that upstream system; it is not a
-generic internal message bus. `TimingNode.UpstreamMessagePort` is the
-bidirectional semantic upstream-message port of one TimingNode. Here
-**upstream** identifies the system relationship, not a one-way message
-direction. Application-scoped messages can be routed directly to the appropriate
-Domain responsibility without inventing an application-level port.
+`TimingNode` contains its `LogBook` as part of the TimingNode aggregate. The
+LogBook keeps 0..N `LogBookItem` values as its internal operational
+representation. A separate `logbook` package may still be used to keep that
+cohesive implementation together; package placement does not make LogBook a
+separate top-level aggregate.
+
+`TimingData` is also a Domain capability, not an I/O codec package. `TimingNode`
+has the explicit semantic relationship with this contract for timing data it
+produces or consumes. TimingData owns the canonical `TimingDataRecord`
+representation plus the public validation, encode/decode and compatibility
+contract used for persistence and interchange. Concrete storage, Web and
+messaging adapters may depend on that API and carry an encoded representation
+without knowing or switching on individual TimingData fields.
+
+`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
 Do not create those packages before the corresponding code exists.
+
+The Domain-level `SystemStatus` is a dedicated component contained by one `TimingSystem`. It is a semantic aggregate, not a wrapper around
+concrete adapter objects and not merely an `OK` flag. It can represent current
+TimingNode state together with operational I/O state such as antenna/display
+connectivity, keypad/beeper availability, device-network health, storage,
+upstream connectivity and synchronisation. Concrete I/O components expose or
+publish semantic status inputs; `SystemStatus` must not depend on classes such
+as `DisplayRev1Can`, socket/session implementations or vendor antenna drivers.
 
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
@@ -198,7 +249,7 @@ application
   commands, queries and application-level ports
 
 domain
-  domain model and semantic ports
+  domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
 
 core
   runtime/execution contracts
@@ -212,6 +263,9 @@ infra
 runtime
   top-level composed runtime object and lifecycle mechanics
 
+infra
+  extension discovery/registry and framework bootstrap/composition
+
 platform
   execution-environment abstractions
 ```
@@ -224,7 +278,7 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
-io              --> application/domain ports + platform
+io              --> application/domain ports/contracts + platform
 runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
 core            --> reusable execution mechanics
@@ -453,6 +507,51 @@ private/product application
 
 These are consumer possibilities, not modules to create now.
 
+## Java 8 extension/provider mechanism
+
+A concrete public/private extension requirement now exists, so provider discovery
+is no longer merely a future possibility. Keep the mechanism narrow and
+composition-oriented:
+
+```text
+ApplicationBootstrap
+  -> discover built-in providers
+  -> discover external provider JARs
+  -> ExtensionRegistry
+       TimingDataProvider
+       UpstreamProtocolProvider
+       AntennaProvider
+       CanProtocolProvider
+       DisplayProtocolProvider
+  -> validate configured provider IDs
+  -> create normal typed implementations
+  -> compose TimingApplication
+```
+
+For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
+plus standard `ServiceLoader` SPI metadata. Discovery happens during startup;
+runtime hot reload/unload is deliberately out of scope. The provider registry
+combines built-in and external providers and rejects duplicate provider IDs.
+
+Provider contracts belong with the capability whose meaning they create;
+class-loader/discovery mechanics belong under framework bootstrap/infra. Domain,
+application and I/O runtime code must not depend on `URLClassLoader`,
+`ServiceLoader` or a generic `Plugin` interface.
+
+`SimulatedAntenna` and its provider are built into the public baseline and are
+always available. External antenna JARs add alternative `AntennaProvider`
+implementations. The same typed pattern is available for concrete TimingData,
+UpstreamProtocol, CAN-protocol and display-protocol implementations where a
+public/private or vendor boundary requires it.
+
+IF-11 selects providers by stable provider ID. Missing providers, duplicate IDs
+or an incompatible provider/configuration combination fail during validation or
+startup rather than silently falling back to another implementation.
+
+The exact external-JAR directory/layout, dependency isolation strategy and
+whether the provider contracts eventually justify a separately versioned SPI
+artifact remain implementation/evidence-driven decisions.
+
 ## Public/private composition
 
 Expected private/product-specific areas may include:
@@ -463,7 +562,7 @@ Expected private/product-specific areas may include:
 - production upstream/backoffice schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
-Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model or runtime plugin discovery unless a real requirement appears.
+Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model. The provider mechanism above is the explicit runtime-extension boundary; do not generalise it into arbitrary plugin access from domain/application code.
 
 ## Possible future artifacts
 
@@ -472,7 +571,7 @@ Create future artifacts only when a real boundary requires them. Candidates migh
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
 - public/private RFID/CAN I/O implementations;
-- stable Java API/SPI;
+- a separately versioned Java SPI artifact if binary compatibility/release evidence later justifies extracting the framework-owned provider contracts;
 - reusable test support.
 
 Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
@@ -487,6 +586,8 @@ Useful automated rules may include:
 - wire/protocol classes stay with their presentation or I/O capability;
 - semantic contracts are not moved into transport packages merely because transport code uses them;
 - public code contains no real deployment mappings or proprietary values;
+- domain/application/runtime components do not depend on extension class-loader mechanics;
+- duplicate provider IDs and unknown configured provider IDs fail deterministically;
 - the executable consumes `event-timing-framework` rather than copying/forking framework source;
 - the framework artifact does not carry a concrete SLF4J provider/backend transitively;
 - an executable runtime contains exactly one intended SLF4J provider.
@@ -496,9 +597,9 @@ Useful automated rules may include:
 - exact package granularity after real application/domain classes exist;
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
-- how applications select/inject presentation/I/O/platform implementations;
+- exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
-- version alignment between public framework and private implementations;
+- version alignment between public framework/provider contracts and private implementations;
 - which I/O capabilities eventually deserve independent artifacts;
-- whether and when a dedicated public Java API/SPI artifact becomes justified;
+- whether and when provider contracts deserve a dedicated independently versioned SPI artifact;
 - exact field logging configuration/rotation/retention policy in the default executable.

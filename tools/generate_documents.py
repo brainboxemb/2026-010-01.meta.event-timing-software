@@ -14,48 +14,67 @@ import shutil
 
 CONTEXT_DOCUMENTS = [
     "03-domain-baseline.md",
-    "04-UC-system-use-cases.md",
 ]
 
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-planning.md",
-    "12-SDE-software-development-environment.md",
-    "13-SDE-java-build-test-toolchain.md",
 ]
 
-REQUIREMENTS_DOCUMENTS = [
-    "20-01-SRD-timing-application-requirements.md",
+EXTERNAL_INPUT_DOCUMENTS = [
+    "20-EXT-external-system-inputs.md",
+]
+
+SYSTEM_SPEC_DOCUMENTS = [
+    "30-UC-system-use-cases.md",
+    "31-SSSD-software-system-specification-document.md",
+    "32-03-IDD-application-control-status.md",
+    "32-11-IDD-application-configuration.md",
+]
+
+SOFTWARE_ITEM_SPEC_DOCUMENTS = [
+    "41-01-SSD-timing-application-specification-document.md",
+    "41-02-SSD-gui-application-specification-document.md",
+]
+
+ENGINEERING_DOCUMENTS = [
+    "50-SDE-01-software-development-environment.md",
+    "50-SDE-02-java-build-test-toolchain.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
-    "30-SSAD-software-system-architecture.md",
-    "31-01-SAD-timing-application-architecture.md",
-    "31-01-SDD-02-java-component-design.md",
-    "31-02-SAD-gui-application-architecture.md",
+    "31-SSSD-software-system-specification-document.md",
+    "32-03-IDD-application-control-status.md",
+    "32-11-IDD-application-configuration.md",
+    "41-01-SSD-timing-application-specification-document.md",
+    "43-01-SDD-02-java-component-design.md",
+    "41-02-SSD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
-    "31-01-SDD-01-data-and-display-design.md",
-    "31-01-SDD-03-backoffice-transport-design.md",
-]
-
-INTERFACE_DOCUMENTS = [
-    "40-01-IDD-application-control-status.md",
+    "43-01-SDD-01-data-and-display-design.md",
+    "43-01-SDD-03-backoffice-transport-design.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
-    "50-SVP-software-verification-plan.md",
+    "60-SVP-software-verification-plan.md",
+]
+
+USER_DOCUMENTS = [
+    "70-01-SUM-headless-timing-application.md",
 ]
 
 DOCUMENTS = (
     CONTEXT_DOCUMENTS
     + PLANNING_DOCUMENTS
-    + REQUIREMENTS_DOCUMENTS
-    + ARCHITECTURE_DOCUMENTS
+    + EXTERNAL_INPUT_DOCUMENTS
+    + SYSTEM_SPEC_DOCUMENTS
+    + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + INTERFACE_DOCUMENTS
+    + ["43-01-SDD-02-java-component-design.md"]
+    + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
+    + USER_DOCUMENTS
 )
 
 
@@ -173,55 +192,69 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "architecture-book.md",
         "Software architecture document set",
-        "Generated review/output book containing the software-system architecture, software-item architectures, and only currently active focused detailed design.",
+        "Generated review/output book containing the SSSD, system interface contracts, software-item SSDs, and only currently active focused detailed design.",
         architecture_built,
     )
 
     write_book(
         documents_dir / "software-document-set.md",
         "Software engineering document set",
-        "Generated review/output book containing the current domain baseline, use cases, planning, requirements, development-environment, architecture, deferred design notes, interfaces and verification documents.",
+        "Generated review/output book containing the current context, planning, specifications, interfaces, detailed design and verification documents.",
         built,
     )
 
     doc_index = [
         "# Generated documents",
         "",
-        "## Domain context and use cases",
+        "## Working context",
         "",
     ]
     for name in CONTEXT_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Planning and development environment", ""])
+    doc_index.extend(["", "## Planning", ""])
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
     doc_index.append("- [Generated SIP roadmap and printable PDFs](../planning/README.md)")
 
-    doc_index.extend(["", "## Requirements", ""])
-    for name in REQUIREMENTS_DOCUMENTS:
+    doc_index.extend(["", "## External / parent-system inputs", ""])
+    for name in EXTERNAL_INPUT_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Architecture", ""])
-    for name in ARCHITECTURE_DOCUMENTS:
+    doc_index.extend(["", "## Software-system specification and design", ""])
+    for name in SYSTEM_SPEC_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Deferred detailed-design notes", ""])
+    doc_index.extend(["", "## Software-item specifications", ""])
+    for name in SOFTWARE_ITEM_SPEC_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## Software-item detailed design — active", ""])
+    _, title, _ = by_name["43-01-SDD-02-java-component-design.md"]
+    doc_index.append(f"- [{title}](./43-01-SDD-02-java-component-design.md)")
+
+    doc_index.extend(["", "## Software-item detailed design — deferred notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Interfaces", ""])
-    for name in INTERFACE_DOCUMENTS:
+    doc_index.extend(["", "## Development environment / engineering", ""])
+    for name in ENGINEERING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Verification", ""])
+    doc_index.extend(["", "## Verification and validation", ""])
     for name in VERIFICATION_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
+
+    doc_index.extend(["", "## User / operational documentation", ""])
+    for name in USER_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 

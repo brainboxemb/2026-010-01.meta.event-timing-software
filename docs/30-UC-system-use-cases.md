@@ -4,30 +4,43 @@ Status: working draft / non-authoritative
 
 This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
 
-Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SRDs and verification cases may reference these use cases.
+Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SSDs and verification cases may reference these use cases.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
 ## Relationship to other documents
 
+System use cases are part of the software-system specification/design family. They express behaviour of the **software system as a whole** before that behaviour is decomposed across software items.
+
+Relevant parent-system/external inputs are registered in `20-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
+
 ```text
-03 Domain baseline
-      |
-      v
-04 System use cases
-      |
-      +--> system requirements / IDDs
-      |          |
-      |          v
-      |      software-item SRDs
-      |          |
-      |          v
-      |       SAD / SDD
-      |
-      +--> SVP / ST-* verification scenarios
+00-04 Domain baseline -----------+
+                                 |
+20-01 External/parent inputs ----+--> 30-UC System use cases
+                                              |
+                                              v
+                                         31-SSSD
+                                              |
+                                  allocates items/interfaces
+                                              |
+                              +---------------+---------------+
+                              |                               |
+                              v                               v
+                    32-<IF> system IDDs             optional software-item UC
+                              |                               |
+                              +---------------+---------------+
+                                              |
+                                              v
+                                         40-<N>-SSD
+                                              |
+                                              v
+                                         41-<N>-SDD
 ```
 
-A use case is not a test case. One use case may be verified by several unit, interface, system, fault-injection and hardware tests.
+A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SSD clearer. It should reference the originating system use case and must not merely copy it.
+
+A use case is not a test case. One use case may be realised by several requirements and verified by several unit, interface, system, fault-injection and hardware tests.
 
 ## Use-case format
 
@@ -459,7 +472,7 @@ When requirements are promoted, prefer explicit references such as:
 UC-003
   -> SYS-REG-xxx
   -> IDD-... where external behaviour applies
-  -> SI01-SRD-...
+  -> SI01-REQ-...
   -> SDD registration/RFID/`TimingNodeId`-routing elements
   -> VC-... / ST-1, ST-2, ST-3, HIL evidence
 ```

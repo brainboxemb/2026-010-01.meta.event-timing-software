@@ -6,6 +6,16 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define a Java-8-compatible typed extension/provider boundary for implementation families that may be public, vendor-specific or private: `TimingDataProvider`, `UpstreamProtocolProvider`, `AntennaProvider`, `CanProtocolProvider` and `DisplayProtocolProvider`; keep `SimulatedAntenna` built in and always available, keep class-loader discovery in bootstrap/infra, add IF-11/SVP provider selection and verification rules, re-estimate the 11-step roadmap from 55d to 59d before reserve, and refresh the 29 September actual-effort indication to about 56.4 hours / 7.1 project days.
+
+- Refine the SI-01 domain architecture around recorded timing data: let one `TimingApplication` host 1..N internal `TimingSystem` aggregates with 1..N `TimingNode`s each, give both TimingSystem and TimingNode their own semantic `UpstreamMessagePort`, make `SystemStatus` a dedicated per-TimingSystem Domain component owning the complete operational overview, add a per-TimingSystem `TimeSource` for controllable simulation time, keep `LogBook` contained inside TimingNode, relate TimingNode explicitly to canonical `TimingData`/`TimingDataRecord`, scope `UpstreamProtocol` to one TimingSystem, and treat the logical I/O composition as per TimingSystem while keeping transport mechanics in I/O.
+
+- Rename the per-TimingNode `Journal` responsibility to `LogBook` across the current domain/architecture views, and add a transport-neutral `Beeper` role under SI-01 `Devices` without prematurely assigning it to CAN or another concrete device network.
+
+- Reorganized the authored documentation into numbered document ranges: 00–09 context, 10–19 planning, 20–29 external inputs, 30–39 software-system documents, software-item `40-<SI>-UC`, `41-<SI>-SRD/SSD`, `42-<SI>-SAD`, `43-<SI>-SDD-<N>`, 50–59 engineering environment, 60–69 verification and 70–79 user/operations.
+
+- Locally migrate document control to an acyclic specification hierarchy: reserve `32` for software-system IDDs with the stable interface ID as the second segment (`32-03-IDD`, `32-11-IDD`), use the stable software-item ID as the second segment for SI-owned document families, use a final sequence only when several documents share the same family/scope, and number the generic SDE family as `50-SDE-01`, `50-SDE-02`, ... . Planning and verification documents remain downstream/control references rather than requirement inputs.
+
 - Rename the future SI-01 messaging component family to upstream terminology: `UpstreamGateway`, `UpstreamMessageRouter` and `UpstreamMessagePort`. `Upstream` names the bidirectional relationship with the central/external system rather than a per-message direction; keep the I/O capability named `Messaging`. Also compact the three Application-layer cards in Figure SI01-01 without changing their label font size.
 
 - Complete Migration 013 Step 4 on the bounded 17-object / 34-relation
@@ -44,7 +54,7 @@ The repository is currently in its planning and research phase.
 
 - Refine SI-01 backend messaging architecture: add distinct `ApplicationId`, introduce `BackendGateway` over 1..N transport connectors, place `MessageHandler` with each TimingNode, and keep application-level message handling deferred until a concrete use case exists.
 
-- Track approximate git-derived actual effort per SIP step using explicit merged-PR boundaries; show original estimate, actual and remaining estimate as independent planning signals and refresh the current project snapshot to about 5.1 project days.
+- Track approximate git-derived actual effort per SIP step using explicit merged-PR boundaries; show original estimate, actual and remaining estimate as independent planning signals and at that point, refresh the project snapshot to about 5.1 project days.
 
 - Show concrete end dates for every SIP phase: keep actual completion dates for completed steps and round future cumulative forecast boundaries up to Monday for presentation without feeding that rounding into later calculations.
 
@@ -52,7 +62,7 @@ The repository is currently in its planning and research phase.
 
 - Make SIP actual-effort planning reproducible with a two-repository merged-PR commit-window calculator; use 30-minute overlapping activity windows, refresh the 26 September snapshot to about 38.2 hours / 4.8 project days, and add a manually dispatched GitHub Action that can create a draft snapshot-update PR.
 
-- Rework the SIP into a software-first 11-step roadmap: restore the planning horizon to 55 estimated project days before reserve, add a target-hardware/platform study before procurement, split platform study from target bring-up, defer real devices until after domain/simulation/GUI/backoffice work, apply planning reserve to forecast months, and keep planning-change history only on per-step detail boards.
+- Rework the SIP into a software-first 11-step roadmap: restore the initial planning horizon to 55 estimated project days before reserve, add a target-hardware/platform study before procurement, split platform study from target bring-up, defer real devices until after domain/simulation/GUI/backoffice work, apply planning reserve to forecast months, and keep planning-change history only on per-step detail boards.
 
 - Correct speculative planning/documentation: keep SI-02 as the planned real GUI with technology open, classify the current JavaFX client as manual engineering test tooling, remove SI-03/iPad as a committed product item, treat a web client only as optional Remote API test tooling, and make Raspberry Pi performance/resource concerns measurement-driven rather than assumed.
 

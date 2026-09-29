@@ -41,7 +41,17 @@ A registration entry is associated with both its source and its location.
 
 `TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
 
-## Registration ledger
+## LogBook and TimingData
+
+The runtime `LogBook` owns operational state as 0..N `LogBookItem` values.
+Those items are domain state and do not have to be shaped like the representation
+used outside the LogBook.
+
+`TimingData` defines the canonical persistent/interchange representation.
+`TimingDataRecord` is the record representation used for storage, Web exchange
+and as timing-data payload inside `UpstreamProtocol`. TimingData owns the
+validation and encode/decode compatibility rules so adapters can persist or
+transport encoded values without becoming owners of the record schema.
 
 The registration ledger contains timing/registration-domain and traceable operational records such as:
 
@@ -69,7 +79,7 @@ It is not scoped by location and it is not one global sequence across all regist
 Conceptually:
 
 ```text
-RegistrationRecordKey = (TimingNodeId, SequenceNumber)
+TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
 Example:
@@ -92,10 +102,14 @@ A receiving/upstream system can use the sequence for ordering and gap detection.
 
 ![Registration traceability — sequence per timing node](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
 
-### Illustrative record model
+### Illustrative TimingData record model
+
+The Java shape below is illustrative. The architectural boundary is that
+`TimingData` owns this representation and its codec/compatibility semantics;
+`LogBookItem` remains free to use a different internal shape.
 
 ```java
-final class RegistrationRecord {
+final class TimingDataRecord {
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
     private LocationID locationId;
@@ -104,11 +118,11 @@ final class RegistrationRecord {
     private Instant createdAt;
     private RegistrationOrigin origin;
     private TeamNumber teamNumber;              // when applicable
-    private RegistrationRecordKey reference;    // corrections/revocations
+    private TimingDataRecordKey reference;    // corrections/revocations
     private RegistrationPayload payload;         // type-specific data
 }
 
-final class RegistrationRecordKey {
+final class TimingDataRecordKey {
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
 }
@@ -130,19 +144,19 @@ Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    TimingNodeId timing node = candidate.timingNodeId();
-    long sequence = registrationSequence.next(timing node);
+    TimingNodeId timingNode = candidate.timingNodeId();
+    long sequence = registrationSequence.next(timingNode);
 
-    RegistrationRecord record = registrationFactory.create(
-        source,
+    LogBookItem item = logBookItemFactory.create(
         sequence,
         candidate.locationId(),
         candidate);
 
-    registrationRepository.append(record);
-    registrationState.apply(record);
-    backupCoordinator.registrationChanged(registrationRepository.snapshot());
-    outbox.enqueue(RegistrationCommitted.from(record));
+    logBook.append(item);
+
+    TimingDataRecord record = timingData.toRecord(timingNode, item);
+    storage.append(timingData.encode(record));
+    upstream.enqueue(record);
 }
 ```
 
@@ -248,27 +262,29 @@ The initial implementation direction is:
 ```text
 live application
     |
-    +-- TimingNodeJournal             source-ordered registration/history in memory
-    +-- RegistrationState           current/derived registration views
+    +-- TimingSystem (1..N)
+    |     +-- UpstreamProtocol      sync/reconcile/ping semantics
+    |     +-- TimingNode (1..N)
+    |           +-- LogBook         0..N LogBookItem in memory
+    |           +-- RegistrationState
+    |           +-- NextUpTeams
+    |           +-- StageStartTimes
+    |           +-- RaceData
+    |           +-- RegistrationSequenceState
     |
-    +-- PrepareTeamRegistry   current teams-to-prepare + traceable mutation history
-    |
-    +-- StageStartTimeRegistry      stage start-time reference data in memory
-    +-- RaceData                    participant/team/tag reference data in memory
-    |
-    +-- RegistrationSequenceState   next sequence per TimingNodeId
+    +-- TimingData                  canonical record + codec contract
     |
     +-- simple file backup / restore
 ```
 
-The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. Files provide persistence/recovery, not the primary domain API.
+The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. `LogBookItem` is the LogBook's internal state shape; `TimingDataRecord` is produced through the TimingData contract when data crosses the persistence, Web or upstream interchange boundary. Files provide persistence/recovery, not the primary domain API.
 
 Possible interfaces:
 
 ```java
-interface TimingNodeJournal {
-    void append(RegistrationRecord record);
-    List<RegistrationRecord> snapshot();
+interface LogBook {
+    void append(LogBookItem item);
+    List<LogBookItem> snapshot();
 }
 
 interface PrepareTeamRegistry {

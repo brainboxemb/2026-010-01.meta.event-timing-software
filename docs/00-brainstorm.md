@@ -258,7 +258,7 @@ The reusable framework should also permit several executable compositions. Examp
 
 Likewise, reusable event-timing domain behaviour can belong in the framework while one product/application can add specific domain policy through its own composition or extension library.
 
-This direction has been promoted as a **working/non-authoritative design** in PR #7 through `31-01-SDD-03`, `31-01-SDD-04`, and `31-01-SDD-05`. Future splits should be driven by implementation/consumer evidence rather than by keeping an architecture diagram visually symmetric.
+This direction has been promoted as a **working/non-authoritative design** in PR #7 through `40-01-SDD-03`, `40-01-SDD-04`, and `40-01-SDD-05`. Future splits should be driven by implementation/consumer evidence rather than by keeping an architecture diagram visually symmetric.
 
 ## Logging and observability
 

@@ -12,6 +12,15 @@ For AP-1 it defines only the first-executable subset needed to expose build/vers
 
 A simple browser-based test client may consume IF-03 later, just like the current JavaFX engineering client. It is not currently a separate product interface.
 
+## Inputs
+
+IF-03 is a system-owned interface allocated by
+`31-SSSD-software-system-specification-document.md`. Its detailed contract is
+therefore downstream of that allocation and upstream of both participating software-item
+specifications. Applicable system use cases supply operational intent.
+
+The SI-01/GUI SSDs and the SVP may trace to this IDD; they are not inputs to it.
+
 ## Parties
 
 ```text
@@ -125,8 +134,15 @@ The first-executable status representation is:
 The first executable does not expose a separate application lifecycle state in
 `/status`. A successful query already establishes that the IF-03 service is
 running; startup/shutdown process lifecycle remains an internal/runtime concern
-for this slice. Observable operational status is owned by the configured
-`TimingNode` objects and by structured problem entries.
+for this slice.
+
+Internally SI-01 may host 1..N `TimingSystem` aggregates, each with its own
+`SystemStatus`, but `TimingSystemId` is deliberately not part of this first
+external IF-03 shape. The `timingNodes` array is an application-facing
+aggregation of the configured TimingNodes; the current configuration baseline
+keeps `TimingNodeId` application-wide unique so that this flattened view is
+unambiguous. Structured problem entries carry additional observable operational
+problems.
 
 The first executable does not yet implement operational open/close commands. A
 configured minimal `TimingNode` therefore reports `CLOSED`; later SIP
@@ -322,7 +338,7 @@ Without explicit configuration the first-executable IF-03 service shall bind onl
 **IF03-REQ-010 — Compatible extension**  
 Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
 
-## Relationship to SI-01 SRD
+## Relationship to SI-01 SSD
 
 | IDD obligation | SI-01 requirement(s) |
 | --- | --- |
@@ -335,7 +351,7 @@ Clients shall be able to ignore unknown response members/event types within API 
 | IF03-REQ-009 | SI01-REQ-032 |
 | IF03-REQ-010 | SI01-REQ-033 |
 
-The SRD references this contract instead of duplicating transport schema details.
+The SI-01 SSD references this contract instead of duplicating transport schema details.
 
 ## First AP-1 verification case
 
@@ -356,7 +372,7 @@ Trace target:
 UC-001 / UC-008
   -> SI01-REQ-010/011/020/021/022/023/031/032/033
   -> IF03-REQ-001..010 as applicable
-  -> SI-01 status/application boundary from SAD/SDD
+  -> SI-01 status/application boundary from SSD/SDD
   -> VC-ST1-001
 ~~~
 ```
