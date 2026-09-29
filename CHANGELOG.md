@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Treat the Engineering Explorer as a full-width workspace: hide the persistent MkDocs navigation sidebar on that page only and replace it with a compact horizontal portal navigation row, leaving normal navigation unchanged elsewhere.
+
 - Improve the Engineering Explorer desktop balance by giving the SI01-01 architecture substantially more width and reducing supporting detail-panel typography while preserving the narrow-screen single-column layout.
 
 - Thin the executable boundary further by moving the default YAML `ApplicationConfig` loader and embedded build-identity interpretation into `event-timing-framework`; keep the executable-owned filtered provenance resource, provider selection and packaging as concrete app build concerns.
