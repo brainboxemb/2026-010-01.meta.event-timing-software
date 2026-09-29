@@ -12,8 +12,8 @@ CI treats these as graph-owned engineering objects:
 - every still-unmigrated formal `UC-NNN — ...` heading, so a newly added legacy-style use case cannot silently escape the graph;
 - every still-unmigrated formal `*-REQ-NNN — ...` requirement definition, for the same reason;
 - every formal `VC-* — ...` verification-case definition;
-- every diagram node or structured item carrying `object_id`; that identity must resolve to the same engineering object and the normalized graph must retain a diagram reference;
-- every semantic diagram node using `notation: class`, `component` or `packaging-component` must carry an `object_id`. Explanatory/layout-only nodes without semantic notation may remain non-clickable.
+- every diagram group, node or structured item carrying `object_id`; that identity must resolve to the same engineering object and the normalized graph must retain a diagram reference;
+- every semantic diagram group or node using `notation: class`, `component` or `packaging-component` must carry an `object_id`. Explanatory/layout-only elements without semantic notation may remain non-clickable.
 
 This makes migration completeness an invariant: adding a new stable engineering ID without putting it in the production authoring model makes documentation CI fail.
 
@@ -38,6 +38,6 @@ At the full-project Migration-013 cut-over the existing stable set consists of:
 - 13 Headless Timing Application requirements (`SI01-REQ-*`);
 - 10 IF-03 requirements (`IF03-REQ-*`);
 - the existing formal verification case `VC-ST1-001`;
-- all semantic class/component/packaging-component identities shown as top-level nodes in Figure SI01-01 (currently 27), plus selected nested software-component rows that carry explicit `object_id` metadata. Annotation/layout-only text, class attributes and descriptive implementation-category rows remain outside the engineering graph.
+- all semantic class/component/packaging-component identities shown as top-level elements in Figure SI01-01 (including semantic component containers), plus selected nested software-component rows that carry explicit `object_id` metadata. Annotation/layout-only text, aggregate header properties and descriptive implementation-category rows remain outside the engineering graph.
 
 The exact total is deliberately **not** hard-coded here or in CI. The validator derives it from current source so later promoted engineering objects cannot leave the project in another bounded-canary state.
