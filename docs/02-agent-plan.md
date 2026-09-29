@@ -271,9 +271,11 @@ Current stable state:
 - IF-03 owns the public application-control/status contract;
 - IF-11 owns deployment/application configuration;
 - `CommandHandler` is the current shared presentation/application boundary;
-- `BuildIdentity` remains separate from deployment configuration.
+- `BuildIdentity` remains separate from deployment configuration;
+- `VC-ST1-001` now runs as an automated separate-process black-box test on the normal Linux/native-Windows verification path;
+- all Step-3 functional Done criteria are satisfied; the accepted v0.2.2 release remains the closure gate.
 
-The next bounded cross-repository focus is the first real IF-11 configuration slice in SI-01: choose the concrete external configuration representation/library, load an effective `ApplicationConfig`, validate its references/settings, and use it to compose at least one internal `TimingSystem` containing at least one TimingNode plus the first presentation binding. Keep the implementation type set minimal and capability-driven.
+The next bounded cross-repository focus is **Step-3 release closure on v0.2.2**. The configuration, shared terminal, IF-03 HTTP/WebSocket, runtime logging, JavaFX engineering client and separate-process ST-1 verification slices are implemented. Do not start a new Step-3 capability slice before closure; complete the normal release qualification/publication path, then mark Step 3 complete only after the accepted v0.2.2 release exists.
 
 Do not add a new AP step merely to mirror SIP Step 3. Add one only when a distinct coordination deliverable needs its own plan.
 

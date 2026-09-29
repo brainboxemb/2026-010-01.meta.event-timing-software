@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Move SIP Step 3 to a v0.2.2 release-closure candidate: all functional/verification Done criteria are satisfied and the accepted v0.2.2 release remains the explicit closure gate.
+
 - Map the existing IF-03-owned `VC-ST1-001` into the ST-1 automated verification profile as a verification-only separate-process `system-test` that imports no product Java classes and runs on Linux/Windows verification paths.
 
 - Treat the Engineering Explorer as a full-width workspace: hide the persistent MkDocs navigation sidebar on that page only and replace it with a compact horizontal portal navigation row, leaving normal navigation unchanged elsewhere.
