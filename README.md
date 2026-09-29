@@ -77,11 +77,11 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 - [`docs/30-02-SSSD-software-system-specification-document.md`](docs/30-02-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
 - [`docs/30-03-IDD-03-application-control-status.md`](docs/30-03-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
 - [`docs/30-03-IDD-11-application-configuration.md`](docs/30-03-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
-- [`docs/40-01-01-SSD-timing-application-specification-document.md`](docs/40-01-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
-- [`docs/40-02-01-SSD-gui-application-specification-document.md`](docs/40-02-01-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
-- [`docs/40-01-02-SDD-data-and-display-design.md`](docs/40-01-02-SDD-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
-- [`docs/40-01-03-SDD-java-component-design.md`](docs/40-01-03-SDD-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
-- [`docs/40-01-04-SDD-backoffice-transport-design.md`](docs/40-01-04-SDD-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
+- [`docs/40-01-SSD-timing-application-specification-document.md`](docs/40-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
+- [`docs/40-02-SSD-gui-application-specification-document.md`](docs/40-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
+- [`docs/41-01-SDD-data-and-display-design.md`](docs/41-01-SDD-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
+- [`docs/41-02-SDD-java-component-design.md`](docs/41-02-SDD-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
+- [`docs/41-03-SDD-backoffice-transport-design.md`](docs/41-03-SDD-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
 - [`docs/50-01-SDE-software-development-environment.md`](docs/50-01-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
 - [`docs/50-02-SDE-java-build-test-toolchain.md`](docs/50-02-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/60-01-SVP-software-verification-plan.md`](docs/60-01-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
