@@ -41,7 +41,17 @@ A registration entry is associated with both its source and its location.
 
 `TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
 
-## Registration ledger
+## LogBook and TimingData
+
+The runtime `LogBook` owns operational state as 0..N `LogBookItem` values.
+Those items are domain state and do not have to be shaped like the representation
+used outside the LogBook.
+
+`TimingData` defines the canonical persistent/interchange representation.
+`TimingDataRecord` is the record representation used for storage, Web exchange
+and as timing-data payload inside `UpstreamProtocol`. TimingData owns the
+validation and encode/decode compatibility rules so adapters can persist or
+transport encoded values without becoming owners of the record schema.
 
 The registration ledger contains timing/registration-domain and traceable operational records such as:
 
@@ -69,7 +79,7 @@ It is not scoped by location and it is not one global sequence across all regist
 Conceptually:
 
 ```text
-RegistrationRecordKey = (TimingNodeId, SequenceNumber)
+TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
 Example:
@@ -92,10 +102,14 @@ A receiving/upstream system can use the sequence for ordering and gap detection.
 
 ![Registration traceability — sequence per timing node](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
 
-### Illustrative record model
+### Illustrative TimingData record model
+
+The Java shape below is illustrative. The architectural boundary is that
+`TimingData` owns this representation and its codec/compatibility semantics;
+`LogBookItem` remains free to use a different internal shape.
 
 ```java
-final class RegistrationRecord {
+final class TimingDataRecord {
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
     private LocationID locationId;
@@ -104,11 +118,11 @@ final class RegistrationRecord {
     private Instant createdAt;
     private RegistrationOrigin origin;
     private TeamNumber teamNumber;              // when applicable
-    private RegistrationRecordKey reference;    // corrections/revocations
+    private TimingDataRecordKey reference;    // corrections/revocations
     private RegistrationPayload payload;         // type-specific data
 }
 
-final class RegistrationRecordKey {
+final class TimingDataRecordKey {
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
 }
@@ -133,7 +147,7 @@ void acceptRegistration(RegistrationCandidate candidate) {
     TimingNodeId timing node = candidate.timingNodeId();
     long sequence = registrationSequence.next(timing node);
 
-    RegistrationRecord record = registrationFactory.create(
+    TimingDataRecord record = registrationFactory.create(
         source,
         sequence,
         candidate.locationId(),
@@ -267,8 +281,8 @@ Possible interfaces:
 
 ```java
 interface TimingNodeJournal {
-    void append(RegistrationRecord record);
-    List<RegistrationRecord> snapshot();
+    void append(TimingDataRecord record);
+    List<TimingDataRecord> snapshot();
 }
 
 interface PrepareTeamRegistry {
