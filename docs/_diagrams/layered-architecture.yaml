@@ -39,7 +39,7 @@ groups:
   label: "TimingNode (1..N)"
   kind: model
   notation: component
-  layout: {x: 325, y: 590, w: 540, h: 275}
+  layout: {x: 325, y: 590, w: 540, h: 285}
 - id: io-layer
   label: I/O
   kind: layer-infrastructure
@@ -338,6 +338,9 @@ edges:
   to: upstream-protocol-domain
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
+  route:
+    - {x: 885, y: 540}
+    - {x: 197.5, y: 540}
 
 - from: upstream-message-router
   to: messaging-io
