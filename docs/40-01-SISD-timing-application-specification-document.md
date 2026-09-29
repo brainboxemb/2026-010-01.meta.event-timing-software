@@ -1261,7 +1261,7 @@ external upstream system
                       UpstreamMessageRouter
                          |              |
                          v              +--> TimingNodeId
-                       System                  |
+                   TimingSystem                |
                   status / ping                v
                                          TimingNode
                                        UpstreamMessagePort
