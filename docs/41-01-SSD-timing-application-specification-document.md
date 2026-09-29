@@ -866,11 +866,11 @@ support such as `BuildIdentity`; it is not the I/O layer.
 ```{arch} Logging
 :id: Logging
 
-`Logging` is the executable-owned runtime logging infrastructure component. Reusable
-framework code emits records through SLF4J; the default executable selects
-`slf4j-jdk14 -> java.util.logging` and composes the configured console, retained-file
-and optional live-diagnostics sinks. Logging owns backend/sink lifecycle and the current
-global logging level; it does not own application or domain state.
+`Logging` is reusable runtime logging infrastructure owned by the framework artifact. Reusable
+framework/application code emits records through SLF4J; the default executable selects
+`slf4j-jdk14 -> java.util.logging` and starts the framework-provided logging composition.
+Logging owns backend/sink lifecycle and the current global logging level; it does not own
+application or domain state.
 ```
 
 ```{arch} LoggingServer
@@ -1448,7 +1448,7 @@ framework / application / domain code
       SLF4J API
         |
         v
-executable infrastructure: Logging
+framework infrastructure: Logging
         |
         +-- initial provider: slf4j-jdk14
                          |
@@ -1471,8 +1471,8 @@ Working decisions:
 - reusable framework code logs through the SLF4J API;
 - `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
 - the executable composition selects exactly one provider;
-- the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating to the JDK `java.util.logging` backend;
-- the default executable contributes `io.github.brainboxemb.eventtiming.infra.logging.Logging` and `LoggingServer`; provider-specific JUL classes remain executable-artifact concerns even though their Java package expresses infrastructure responsibility;
+- the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating SLF4J records to the JDK `java.util.logging` backend configured by the framework-provided `Logging` infrastructure;
+- `event-timing-framework.jar` provides the reusable `io.github.brainboxemb.eventtiming.infra.logging.Logging` and `LoggingServer` implementation, including the JDK JUL handler/server classes; these classes introduce no external backend dependency because JUL is part of the Java runtime;
 - the startup configuration defines one global semantic log level; the A08 baseline uses the normal `TRACE / DEBUG / INFO / WARN / ERROR` vocabulary and maps it to the selected backend;
 - `LoggingControl` owns the current global level and may apply a **temporary runtime override**. A runtime override is intentionally not written back to `application.yml` and resets to the configured level on restart;
 - the durable operational sink is a human-readable rotating `TimestampedFileLogHandler` with configured size limit and retained generations; its wall-clock filename is for operator readability, not uniqueness, so stale/repeated Raspberry Pi startup time must never overwrite an existing log or cause retention to prune the active file;
