@@ -30,8 +30,8 @@ groups:
       - {x: 0.7203390, y: 0.775}
       - {x: 0.6694915, y: 1.0}
       - {x: 0.0, y: 1.0}
-- id: timing-node-aggregate
-  label: "TimingNode (1..N)"
+- id: timing-system-aggregate
+  label: "TimingSystem (1..N)"
   kind: model
   notation: component
   layout: {x: 55, y: 570, w: 820, h: 310}
@@ -60,17 +60,29 @@ groups:
   layout: {x: 1180, y: 85, w: 230, h: 1175}
 
 nodes:
+- id: timing-system-root
+  object_id: TimingSystem
+  group: timing-system-aggregate
+  label: "TimingSystem"
+  items:
+    - TimingSystemId
+    - SystemStatus
+    - heartbeat / ping
+  kind: model
+  notation: class
+  layout: {x: 75, y: 610, w: 245, h: 155}
+
 - id: timing-node-root
   object_id: TimingNode
-  group: timing-node-aggregate
-  label: "TimingNode"
+  group: timing-system-aggregate
+  label: "TimingNode (1..N)"
   items:
-    - TimingNodeID
+    - TimingNodeId
     - LocationID
     - State
   kind: model
   notation: class
-  layout: {x: 75, y: 610, w: 245, h: 155}
+  layout: {x: 340, y: 610, w: 245, h: 155}
 
 - id: local-console
   group: presentation-layer
@@ -134,57 +146,48 @@ nodes:
   layout: {x: 710, y: 390, w: 350, h: 75}
 
 - id: upstream-message-port
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "UpstreamMessagePort"
   subtitle: "bidirectional upstream messages"
   kind: service
   notation: component
-  layout: {x: 340, y: 610, w: 245, h: 70}
+  layout: {x: 605, y: 610, w: 245, h: 70}
 
 - id: tag-processor
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 605, y: 610, w: 245, h: 70}
+  layout: {x: 605, y: 695, w: 245, h: 70}
 - id: stage-start-times
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 340, y: 695, w: 245, h: 70}
+  layout: {x: 75, y: 780, w: 245, h: 70}
 - id: next-up-teams
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 605, y: 695, w: 245, h: 70}
+  layout: {x: 340, y: 780, w: 245, h: 70}
 - id: race-data
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 340, y: 780, w: 245, h: 70}
+  layout: {x: 605, y: 780, w: 245, h: 70}
 - id: stage-timing
-  group: timing-node-aggregate
+  group: timing-system-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 605, y: 780, w: 245, h: 70}
-
-- id: system-domain
-  object_id: TimingSystem
-  group: domain-layer
-  label: "TimingSystem"
-  subtitle: "SystemStatus • heartbeat / ping semantics"
-  kind: service
-  notation: component
-  layout: {x: 900, y: 550, w: 230, h: 55}
+  layout: {x: 75, y: 695, w: 245, h: 70}
 
 - id: logbook-domain
   object_id: LogBook
@@ -291,6 +294,12 @@ nodes:
   layout: {x: 1210, y: 1180, w: 170, h: 70}
 
 edges:
+- from: timing-system-root
+  to: timing-node-root
+  label: contains 1..N
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
+
 - from: local-console
   to: shared-terminal
   from_anchor: {side: bottom, position: 0.50}
@@ -372,11 +381,11 @@ edges:
     - {x: 875, y: 725.75}
 
 - from: upstream-protocol-domain
-  to: system-domain
+  to: timing-system-root
   label: ping / status
   dashed: true
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: right, position: 0.50}
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 1140, y: 787.5}
-    - {x: 1140, y: 577.5}
+    - {x: 1015, y: 540}
+    - {x: 197.5, y: 540}
