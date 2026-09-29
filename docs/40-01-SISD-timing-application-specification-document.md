@@ -1230,8 +1230,8 @@ they do not become owners of TimingData fields or upstream protocol semantics.
 `UpstreamMessageRouter` owns application-level target resolution after semantic
 protocol decoding. A TimingNode-targeted operation is resolved by
 `TimingNodeId`, submitted through that TimingNode's serial boundary and
-enters/leaves through its bidirectional `UpstreamMessagePort`. Application-wide
-operations such as heartbeat/status semantics target `TimingSystem`.
+enters/leaves through its bidirectional `UpstreamMessagePort`. Protocol-level
+operations such as heartbeat/status semantics stay with the configured `TimingSystem`.
 
 ```text
 external upstream system
