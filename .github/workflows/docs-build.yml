@@ -130,7 +130,7 @@ jobs:
           cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
           cp docs/30-01-UC-system-use-cases.md bld/sphinx-needs/source/docs/
-          cp docs/40-01-SISD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
+          cp docs/40-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
           cp docs/30-03-IDD-03-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
@@ -156,7 +156,7 @@ jobs:
           :maxdepth: 2
 
           docs/30-01-UC-system-use-cases
-          docs/40-01-SISD-timing-application-specification-document
+          docs/40-01-SSD-timing-application-specification-document
           docs/30-03-IDD-03-application-control-status
           ~~~
           EOF
@@ -430,7 +430,7 @@ jobs:
               if token not in text:
                   raise SystemExit(f"generated reader Markdown missing {token}")
 
-          sisd = (root / "40-01-SISD-timing-application-specification-document.md").read_text(
+          sisd = (root / "40-01-SSD-timing-application-specification-document.md").read_text(
               encoding="utf-8"
           )
           start = sisd.index('<a id="SI01-REQ-003"></a>')
@@ -488,8 +488,8 @@ jobs:
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/50-01-SDE-software-development-environment.md
           test -f bld/docs/documents/50-02-SDE-java-build-test-toolchain.md
-          test -f bld/docs/documents/40-01-SISD-timing-application-specification-document.md
-          test -f bld/docs/documents/40-01-SDD-02-java-component-design.md
+          test -f bld/docs/documents/40-01-SSD-timing-application-specification-document.md
+          test -f bld/docs/documents/41-02-SDD-java-component-design.md
           test -f bld/docs/documents/60-01-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
           test -f bld/docs/assets/architecture/system-overview.drawio
