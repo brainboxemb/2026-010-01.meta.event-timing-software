@@ -634,10 +634,10 @@ io/
       Antenna (0..N)
         SimulatedAntenna
     Display
-      DisplayRev1Can
-      DisplayRev2Wifi
+      Rev1CanDisplay
+      Rev2WifiDisplay
     Keypad
-      KeypadRev1Can
+      Rev1CanKeypad
     Beeper
 
   DeviceNetworks
@@ -744,6 +744,12 @@ role.
 development, simulation and hardware-independent verification.
 ```
 
+`VendorAntenna` is shown in Figure SI01-01 only as an illustrative
+extension-provided production implementation beside the built-in simulator. It is
+not a stable implementation identity or required concrete class name; an actual
+vendor integration receives its project-owned name when that implementation is
+selected.
+
 ```{arch} Display
 :id: Display
 
@@ -752,17 +758,17 @@ information without coupling Domain/Application behaviour to one physical
 display generation or transport.
 ```
 
-```{arch} DisplayRev1Can
-:id: DisplayRev1Can
+```{arch} Rev1CanDisplay
+:id: Rev1CanDisplay
 
-`DisplayRev1Can` is the CAN-connected revision-1 implementation of the Display
+`Rev1CanDisplay` is the CAN-connected revision-1 implementation of the Display
 role.
 ```
 
-```{arch} DisplayRev2Wifi
-:id: DisplayRev2Wifi
+```{arch} Rev2WifiDisplay
+:id: Rev2WifiDisplay
 
-`DisplayRev2Wifi` is the network-attached revision-2 implementation of the
+`Rev2WifiDisplay` is the network-attached revision-2 implementation of the
 Display role.
 ```
 
@@ -773,10 +779,10 @@ Display role.
 events without making the timing domain depend on a concrete bus implementation.
 ```
 
-```{arch} KeypadRev1Can
-:id: KeypadRev1Can
+```{arch} Rev1CanKeypad
+:id: Rev1CanKeypad
 
-`KeypadRev1Can` is the CAN-connected revision-1 implementation of the Keypad
+`Rev1CanKeypad` is the CAN-connected revision-1 implementation of the Keypad
 role.
 ```
 
@@ -975,10 +981,10 @@ responsibilities that serve them:
 ```text
 Devices
   +-- Antenna (0..N)
-  +-- DisplayRev1Can
+  +-- Rev1CanDisplay
   +-- Keypad
   +-- Beeper
-  +-- DisplayRev2Wifi
+  +-- Rev2WifiDisplay
 
 Device Networks
   +-- CanNetworkController
@@ -998,7 +1004,7 @@ device/domain object itself to know about sockets, discovery or transport
 sessions.
 
 The current smart-display direction remains client initiated: SI-01 makes its
-service discoverable and DisplayRev2Wifi connects to it. The exact discovery,
+service discoverable and Rev2WifiDisplay connects to it. The exact discovery,
 listener/session and packet-framing design belongs below this high-level view.
 
 #### Configuration, routing and identity mapping
@@ -1012,10 +1018,10 @@ TimingApplication
 Devices
     +-- Antenna (0..N)
     |     +-- each Antenna -> 1..N TimingNodeId
-    +-- DisplayRev1Can
+    +-- Rev1CanDisplay
     +-- Keypad
     +-- Beeper
-    +-- DisplayRev2Wifi
+    +-- Rev2WifiDisplay
 
 Device Networks
     +-- CanNetworkController
@@ -1622,20 +1628,20 @@ device online state and communication. CAN/device callbacks do not mutate
 TimingNode state directly; accepted work crosses the normal application/serial
 boundary.
 
-`DisplayRev1Can` is the passive CAN display generation. SI-01 owns the
+`Rev1CanDisplay` is the passive CAN display generation. SI-01 owns the
 display-specific `DisplayModel` for this path and actively translates that model
 into CAN/device commands. The display does not own the ready-team/domain model.
 
-`DisplayRev2Wifi` is deliberately different. It is a smart external client with
+`Rev2WifiDisplay` is deliberately different. It is a smart external client with
 its own rendering and synchronisation behaviour. `NetworkDeviceService` provides the bidirectional network-device boundary.
 In the current IF-09 design it makes the SI-01 data service discoverable and
-accepts the session initiated by DisplayRev2Wifi. DisplayRev2Wifi owns
+accepts the session initiated by Rev2WifiDisplay. Rev2WifiDisplay owns
 reconnect/resynchronisation behaviour. The concrete discovery/listener/session
 mechanics are detailed below the high-level architecture rather than represented
 as additional peer components.
 
 SI-01 therefore publishes current timing/status/reference data to smart clients;
-it does **not** drive DisplayRev2Wifi through the passive-display `DisplayModel`
+it does **not** drive Rev2WifiDisplay through the passive-display `DisplayModel`
 and does not need to know how that smart display renders the data. Exact mDNS
 service names and the application protocol (for example TCP/WebSocket) remain
 deferred until IF-09 implementation needs them.
@@ -1708,7 +1714,9 @@ unknown configured IDs are startup/configuration errors.
 
 Built-in reference/simulation implementations remain part of the normal public
 software where they are needed for development and verification. In particular,
-`SimulatedAntenna` is always built in. A deployment can select an
+`SimulatedAntenna` is always built in. Figure SI01-01 labels the generic
+extension-provided alternative `VendorAntenna`; that label is illustrative, not
+a fixed public implementation type. A deployment can select an
 extension-provided implementation without changing the application/domain path
 used by the built-in implementation. IF-11 owns provider selection in deployment
 configuration; the concrete external-JAR packaging/search path remains a detailed
