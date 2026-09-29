@@ -220,6 +220,18 @@ inspection, but it does not replace automated ST-1 evidence. The current A06 dir
 uses a small JavaFX client for manual version/status inspection while automated tests
 continue to own pass/fail verification.
 
+#### Current first ST-1 case
+
+`VC-ST1-001 — Query and resynchronise first-executable status` is authored in
+`32-03-IDD-application-control-status.md`, because that IDD owns the exact IF-03
+transport procedure and acceptance semantics. The SVP does not duplicate that procedure.
+
+For Step 3 the implementation should realise `VC-ST1-001` as a verification-only
+`system-test` environment that starts the packaged SI-01 JAR as a separate JVM process.
+The test driver must not depend on product Java classes; it observes HTTP/WebSocket and
+the supported controlled-shutdown interface only. This module is verification
+infrastructure, not a third SI-01 release artifact, and should run in the normal Linux
+and native Windows Maven verification paths.
 ### ST-2 — Socket loop/network profile
 
 Purpose: add a real process/network communication boundary for the backoffice while remaining lightweight.
@@ -485,7 +497,7 @@ The exact traceability tooling is still open; initially this can remain Markdown
 - whether any measured Pi behaviour warrants a numeric acceptance limit;
 - standard test framework/version compatible with Java 8;
 - architecture-test tooling compatible with the Java baseline;
-- exact public test-driver protocol/API for ST-1 automation;
+- public test-driver API beyond the first `VC-ST1-001` HTTP/WebSocket/remote-terminal slice;
 - exact simple socket framing for ST-2;
 - Docker/Compose version/image-pinning conventions for ST-3;
 - hardware-runner setup and how ST-4 is triggered;

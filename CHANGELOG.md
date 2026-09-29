@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Map the existing IF-03-owned `VC-ST1-001` into the ST-1 automated verification profile as a verification-only separate-process `system-test` that imports no product Java classes and runs on Linux/Windows verification paths.
+
 - Treat the Engineering Explorer as a full-width workspace: hide the persistent MkDocs navigation sidebar on that page only and replace it with a compact horizontal portal navigation row, leaving normal navigation unchanged elsewhere.
 
 - Improve the Engineering Explorer desktop balance by giving the SI01-01 architecture substantially more width and reducing supporting detail-panel typography while preserving the narrow-screen single-column layout.
