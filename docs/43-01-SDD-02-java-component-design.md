@@ -85,6 +85,7 @@ io.github.brainboxemb.eventtiming/
   infra/
     bootstrap/
       config/
+    logging/
   runtime/
   platform/
 ```
@@ -299,14 +300,18 @@ event-timing-framework.jar
   -> slf4j-api only
   -> provider-neutral LoggingConfig values
 
-event-timing-app.jar / runtime composition
+event-timing-app.jar / executable infrastructure
   -> selects exactly one SLF4J provider
   -> initial provider: slf4j-jdk14
   -> backend: java.util.logging
-  -> RuntimeLogging / LoggingControl
-       +-- ConsoleHandler
-       +-- TimestampedFileLogHandler + CompactLogFormatter
-       +-- LiveLogHandler + DiagnosticLogServer
+  -> io.github.brainboxemb.eventtiming.infra.logging
+       +-- Logging
+       |    +-- LoggingControl
+       |    +-- ConsoleHandler
+       |    +-- TimestampedFileLogHandler + CompactLogFormatter
+       |    +-- LiveLogHandler
+       +-- LoggingServer
+            +-- client-initiated live diagnostics + temporary level control
 ```
 
 Working rules:
@@ -316,6 +321,9 @@ Working rules:
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay in the executable implementation, not in reusable domain/framework contracts;
+- the executable module places those concrete classes under `io.github.brainboxemb.eventtiming.infra.logging`: package responsibility follows the infrastructure role even though the provider-specific implementation remains in the `event-timing-app` artifact;
+- `Logging` is the primary runtime logging infrastructure component and owns backend setup, handler composition and the temporary global-level control;
+- `LoggingServer` is the separate externally reachable live-diagnostics component; it owns only the logging-specific socket/protocol boundary and is not a Presentation/IF-03 endpoint;
 - the default retained file sink uses a local start/rotation timestamp as its filename, normally `yyyyMMdd-HHmmss.txt`; a collision suffix may be added only when more than one file must be opened in the same second;
 - retained text records use the compact operator-facing form `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`; exception stack traces follow the record line when present;
 - `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
@@ -376,7 +384,9 @@ objects; it is **not** an additional architecture layer or box in Figure SI01-01
 The figure already describes the contents/responsibilities of that running
 `TimingApplication`.
 
-The executable artifact is deliberately thin:
+The executable artifact is deliberately thin. Its launcher/input adapters remain under
+`...eventtiming.app`, while concrete runtime logging is placed by infrastructure
+responsibility rather than under the application package:
 
 ```text
 io.github.brainboxemb.eventtiming.app/
@@ -384,13 +394,19 @@ io.github.brainboxemb.eventtiming.app/
   bootstrap/
     YamlApplicationConfigLoader.java
     EmbeddedBuildIdentityLoader.java
-  logging/
-    RuntimeLogging.java
-    TimestampedFileLogHandler.java
-    CompactLogFormatter.java
-    LiveLogHandler.java
-    DiagnosticLogServer.java
+
+io.github.brainboxemb.eventtiming.infra.logging/
+  Logging.java
+  LoggingServer.java
+  LoggingControl.java
+  TimestampedFileLogHandler.java
+  CompactLogFormatter.java
+  LiveLogHandler.java
 ```
+
+This is intentionally **not** a move of JUL/provider classes into
+`event-timing-framework.jar`. The Maven artifact boundary stays provider-neutral:
+the concrete `infra.logging` package above is contributed by the executable module.
 
 The executable startup flow is:
 
@@ -399,8 +415,9 @@ main()
   -> EmbeddedBuildIdentityLoader
   -> YamlApplicationConfigLoader
        -> validated ApplicationConfig
-  -> RuntimeLogging
-       -> configure JUL level + console/file/live handlers
+  -> Logging
+       -> configure JUL level + console/file handlers
+       -> start optional LoggingServer for live diagnostics
   -> framework ApplicationBootstrap
        -> select/construct concrete presentation/I/O/platform implementations
        -> create reusable application/domain/runtime objects
