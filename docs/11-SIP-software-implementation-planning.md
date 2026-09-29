@@ -132,7 +132,9 @@ Create the Java repository and prove that it builds and runs independently.
 
 ## Step 3 — Application and Remote API foundation
 
-Status: active — release closure candidate
+Status: active
+
+Closure state: **release closure candidate**
 
 ### Purpose
 
