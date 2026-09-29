@@ -6,7 +6,7 @@ System interface: **IF-11 — Application Configuration**
 
 ## Purpose
 
-This Interface Design/Description Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
+This Interface Design/Description Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies internal TimingSystems and their TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
 
 It deliberately does **not** define domain behaviour, a Java class hierarchy, a specific YAML library or production secret values.
 
@@ -45,7 +45,10 @@ The logical configuration root is:
 ```text
 ApplicationConfig
 ├── applicationId
-├── timingNodes
+├── timingSystems
+│   └── <timingSystem>
+│       ├── timingSystemId
+│       └── timingNodes
 ├── io
 │   ├── devices
 │   │   └── antennaManager
@@ -83,24 +86,33 @@ Representative direction:
 applicationId: timing-node-01
 ```
 
-### TimingNodes
+### TimingSystems and TimingNodes
 
-Each configured TimingNode has its own stable identity and deployment context.
+The application composes 1..N internal `TimingSystem` contexts. Each
+TimingSystem owns 1..N TimingNodes plus its own system-status/upstream-protocol
+state. `TimingSystemId` is a local composition/simulation identity and is not
+part of the upstream functional addressing contract.
 
 Representative fields:
 
 ```text
-timingNodes
-  timing-node-01
-    timingNodeId
-    locationId
+timingSystems
+  timing-system-01
+    timingSystemId
+    timingNodes
+      timing-node-01
+        timingNodeId
+        locationId
 ```
 
 Rules:
 
-- `TimingNodeId` identifies the logical TimingNode;
+- `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
+- each TimingSystem contains 1..N TimingNodes;
+- `TimingNodeId` identifies the logical TimingNode and remains applicaton-wide unique in the current configuration baseline;
 - `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
-- presentation transport settings such as HTTP ports do not belong to the TimingNode.
+- presentation transport settings such as HTTP ports do not belong to the TimingNode;
+- the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
 
 ### I/O
 
@@ -154,11 +166,10 @@ configuration model.
 perspective; it does not define the direction of each message. The relationship
 is bidirectional.
 
-When upstream messaging is enabled, SI-01 composes one `UpstreamGateway` using
-1..N connectors plus one application-level `UpstreamMessageRouter`.
-Configuration selects the concrete transports and any transport-specific
-addressing/mapping needed at the external boundary; target resolution to
-application/domain responsibilities remains an application concern.
+When upstream messaging is enabled, configuration associates each upstream
+gateway/protocol context with exactly one internal `TimingSystem`. That context
+may use 1..N connectors. Lower transport resources may later be shared when that
+does not blur the semantic system boundary.
 
 Representative direction:
 
@@ -166,20 +177,23 @@ Representative direction:
 io
   messaging
     upstream
-      connectors
-        connector-01
-          type: rabbitmq
-          credentials: rabbitmq-main
-        connector-02
-          type: socket
+      gateways
+        upstream-01
+          timingSystem: timing-system-01
+          connectors
+            connector-01
+              type: rabbitmq
+              credentials: rabbitmq-main
+            connector-02
+              type: socket
 ```
 
-`UpstreamGateway` owns the external upstream-system boundary after a connector has
-converted external protocol data into an application-facing message.
-`UpstreamMessageRouter` resolves the internal target: `ApplicationId` can
-address an application-scoped Domain responsibility, while `TimingNodeId`
-resolves to the corresponding TimingNode's bidirectional
-`UpstreamMessagePort`.
+The `timingSystem` reference is local composition information; it is not added
+to the upstream protocol merely for routing. `UpstreamGateway` owns the
+external transport/session boundary. The associated Domain `UpstreamProtocol`
+handles system-level protocol semantics such as ping/synchronisation, while
+`UpstreamMessageRouter` resolves TimingNode-targeted messages by
+`TimingNodeId` to the corresponding bidirectional `UpstreamMessagePort`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or a
 socket session. It does not own Domain/TimingNode selection or message
@@ -360,8 +374,10 @@ SI-01 validates the complete effective configuration before normal application c
 Validation includes, where applicable:
 
 - missing/invalid `ApplicationId`;
-- duplicate `TimingNodeId` values;
-- references to unknown TimingNodes;
+- missing/invalid or duplicate internal `TimingSystemId` values;
+- TimingSystems without at least one configured TimingNode;
+- duplicate application-wide `TimingNodeId` values;
+- references to unknown TimingSystems or TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
 - invalid CAN device-network settings when CAN is enabled;
@@ -409,7 +425,7 @@ At minimum, Step 3 needs enough configuration to:
 
 - start from external configuration;
 - construct the application with a stable `ApplicationId`;
-- construct at least one configured TimingNode with a stable `TimingNodeId`;
+- construct at least one internal TimingSystem containing at least one configured TimingNode with a stable `TimingNodeId`;
 - bind the first IF-03 presentation endpoint safely;
 - report configuration/startup failures through the first executable behaviour.
 
@@ -420,7 +436,7 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 | IF-11 concern | SI-01 SISD requirement / architecture |
 | --- | --- |
 | external effective configuration | SI01-REQ-001 |
-| configured TimingNode identity | SI01-REQ-003 |
+| configured TimingSystem/TimingNode composition | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
 | deployment/composition separation | SI-01 SISD configuration/composition architecture |
 | Java composition/type growth | SI-01 Java component SDD |
