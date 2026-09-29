@@ -23,6 +23,7 @@ groups:
   # The right shoulder remains slightly shallower so the Domain/I/O relation is
   # visible without making Devices look embedded in Domain.
   outline:
+    corner_radius: 10
     points:
       - {x: 0.0, y: 0.0}
       - {x: 1.0, y: 0.0}
@@ -58,6 +59,7 @@ groups:
   # The shallower right shoulder remains part of I/O itself. It starts further
   # left and follows Domain with a constant visible gap.
   outline:
+    corner_radius: 10
     points:
       - {x: 0.0, y: 0.3461538}
       - {x: 0.6779661, y: 0.3461538}
