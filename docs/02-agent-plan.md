@@ -26,7 +26,7 @@ Scope:
 - `AGENTS.md`;
 - `CHANGELOG.md`;
 - this agent plan;
-- reusable handoff document;
+- reusable session-handoff entrypoint (the original project-local copy was later superseded by the shared BrainboxEmb handoff);
 - brainstorm document;
 - ordered software-document convention;
 - reference-material area;
@@ -37,7 +37,7 @@ Scope:
 Exit criteria:
 
 - the core documents exist and have clearly separated responsibilities;
-- a new chat can continue from `AGENTS.md`, this plan, `docs/01-handoff.md`, and the current PR state;
+- a new chat can continue from the shared BrainboxEmb handoff, `AGENTS.md`, this plan and the current PR state;
 - early software discussion has a defined landing place in `docs/00-brainstorm.md`;
 - the document set has a predictable numbering/type convention;
 - software-item numbering and system/software-item document ownership are understandable;

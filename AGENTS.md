@@ -8,14 +8,16 @@ belongs in the implementation repositories.
 Before substantial work:
 
 1. read [README.md](README.md) for repository purpose/navigation;
-2. read [docs/02-agent-plan.md](docs/02-agent-plan.md) and, when continuing work,
-   [docs/01-handoff.md](docs/01-handoff.md);
+2. read [docs/02-agent-plan.md](docs/02-agent-plan.md);
 3. read the current shared BrainboxEmb agent entrypoint:
-   [brainboxemb.meta/AGENTS.md](https://github.com/brainboxemb/brainboxemb.meta/blob/main/AGENTS.md).
+   [brainboxemb.meta/AGENTS.md](https://github.com/brainboxemb/brainboxemb.meta/blob/main/AGENTS.md);
+4. for a fresh or transferred session, use the shared
+   [new-session handoff](https://github.com/brainboxemb/brainboxemb.meta/blob/main/docs/20-20-new-session-handoff.md).
 
 The shared entrypoint owns current generic Git/commit/PR/CI working rules and
 routes to portfolio repository-tooling conventions such as GitHub Actions
-workflow naming.
+workflow naming. The shared handoff owns session-start navigation; this repository
+does not maintain a second project-local handoff.
 
 Do not inherit `AGENTS.md` from pinned tools or implementation dependencies as
 working policy for this repository. Exact pinned dependency behaviour comes from
@@ -121,8 +123,8 @@ inventory/configuration stays in private/external sources.
 - use shared BrainboxEmb guidance for generic Git/commit/CI/tooling conventions;
 - read the relevant architecture/verification documents before changing their
   domain;
-- update the agent plan/handoff when a substantial work-session materially
-  changes active progress;
+- update the agent plan or owning project document only when its durable state
+  materially changes; keep detailed current execution/evidence in the active PR;
 - inspect generated `dev/pr-N/docs` output when visual/generated behaviour is
   part of the review question.
 

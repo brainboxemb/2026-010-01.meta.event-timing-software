@@ -315,7 +315,7 @@ AI is an engineering tool inside the repository process, not an alternative proc
 Before substantial work an agent should:
 
 1. read `AGENTS.md`;
-2. read handoff/active plan where present;
+2. use the shared `brainboxemb.meta/docs/20-20-new-session-handoff.md` when starting or transferring a session, then read the active local plan;
 3. inspect the current open/draft PR;
 4. inspect predecessor PR context when relevant;
 5. identify the active SIP/AP scope;
@@ -333,6 +333,11 @@ An agent must not:
 ## AI/session handoff environment
 
 A new session should reconstruct current state from repository artifacts rather than requiring hidden conversation state.
+
+The portfolio-wide session entrypoint is
+`brainboxemb.meta/docs/20-20-new-session-handoff.md`. This repository does not
+maintain a project-local handoff document: project-specific state belongs in the
+sources below and in current GitHub evidence rather than in a duplicated handoff.
 
 Preferred sources include:
 

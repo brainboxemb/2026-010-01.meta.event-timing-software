@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Remove the project-local `docs/01-handoff.md` and use the shared `brainboxemb.meta/docs/20-20-new-session-handoff.md` as the single session-start handoff; keep project state in the owning plan/specification documents, active PRs and CI/generated evidence rather than duplicating it in a second operating manual.
+
 - Define a Java-8-compatible typed extension/provider boundary for implementation families that may be public, vendor-specific or private: `TimingDataProvider`, `UpstreamProtocolProvider`, `AntennaProvider`, `CanProtocolProvider` and `DisplayProtocolProvider`; keep `SimulatedAntenna` built in and always available, keep class-loader discovery in bootstrap/infra, add IF-11/SVP provider selection and verification rules, re-estimate the 11-step roadmap from 55d to 59d before reserve, and refresh the 29 September actual-effort indication to about 56.4 hours / 7.1 project days.
 
 - Refine the SI-01 domain architecture around recorded timing data: let one `TimingApplication` host 1..N internal `TimingSystem` aggregates with 1..N `TimingNode`s each, give both TimingSystem and TimingNode their own semantic `UpstreamMessagePort`, make `SystemStatus` a dedicated per-TimingSystem Domain component owning the complete operational overview, add a per-TimingSystem `TimeSource` for controllable simulation time, keep `LogBook` contained inside TimingNode, relate TimingNode explicitly to canonical `TimingData`/`TimingDataRecord`, scope `UpstreamProtocol` to one TimingSystem, and treat the logical I/O composition as per TimingSystem while keeping transport mechanics in I/O.
