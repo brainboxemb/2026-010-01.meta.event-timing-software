@@ -17,7 +17,7 @@ Conceptually, one timing application owns one or more independently addressed ti
 ```text
 TimingApplication
   |
-  +-- System
+  +-- TimingSystem
   |     +-- SystemStatus
   |     +-- heartbeat / ping semantics
   |
@@ -112,7 +112,7 @@ decomposition and I/O/configuration routing answer different questions.
 ```text
 TimingApplication
   |
-  +-- System
+  +-- TimingSystem
   |     +-- SystemStatus
   |     +-- heartbeat / ping semantics
   |
@@ -137,7 +137,7 @@ LogBook
 The exact component/class boundaries remain design work, but the TimingNode is
 the software/domain aggregate being operated.
 
-The application-wide `System` domain object owns `SystemStatus` and
+The application-wide `TimingSystem` domain object owns `SystemStatus` and
 system-level heartbeat/ping semantics that do not belong to one TimingNode.
 
 Each TimingNode owns the lifecycle of one `LogBook`. The LogBook owns its
