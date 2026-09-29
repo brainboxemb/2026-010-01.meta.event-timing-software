@@ -132,7 +132,7 @@ def timing_node_routing_mapping() -> Diagram:
 
     return Diagram(
         "timing-node-routing-mapping",
-        "TimingSystem/TIimingNode I/O mapping — internal system context with TimingNode-oriented upstream addressing",
+        "TimingSystem/TimingNode I/O mapping — internal system context with TimingNode-oriented upstream addressing",
         1400,
         950,
         nodes,
