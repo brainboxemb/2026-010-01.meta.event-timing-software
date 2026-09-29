@@ -19,9 +19,11 @@ TimingApplication
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId
+        +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus
-        +-- heartbeat / ping semantics
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
@@ -37,9 +39,8 @@ TimingApplication
 LogBook
   +-- 0..N LogBookItem
 
-Domain contracts used across those aggregates:
+Shared Domain contract:
   +-- TimingData
-  +-- UpstreamProtocol
 ```
 
 `ApplicationId`, internal `TimingSystemId`, `TimingNodeId` and `LocationID` are distinct concepts. `ApplicationId` identifies the running process/runtime. `TimingSystemId` is an internal composition/simulation identity used to distinguish multiple TimingSystem instances in one process; it is not part of the upstream functional addressing contract. `TimingNodeId` is the functional identity exposed to timing-data/upstream semantics, and `LocationID` identifies the physical event location where that node is configured or deployed.
@@ -114,9 +115,11 @@ TimingApplication
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId
+        +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus
-        +-- heartbeat / ping semantics
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
@@ -132,9 +135,8 @@ TimingApplication
 LogBook
   +-- 0..N LogBookItem
 
-Domain contracts used across those aggregates:
+Shared Domain contract:
   +-- TimingData
-  +-- UpstreamProtocol
 ```
 
 The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates.
