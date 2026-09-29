@@ -109,7 +109,7 @@ Rules:
 
 - `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
-- `TimingNodeId` identifies the logical TimingNode and remains applicaton-wide unique in the current configuration baseline;
+- `TimingNodeId` identifies the logical TimingNode and remains application-wide unique in the current configuration baseline;
 - `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
 - the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
