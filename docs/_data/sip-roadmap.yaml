@@ -95,7 +95,7 @@ steps:
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: working, completeness: 40}
       - {name: 50-02-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 25}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 25}
       - {name: 40-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 45}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
@@ -112,7 +112,7 @@ steps:
       verification: {level: working, scope: "ST-1 plus manual engineering-client inspection"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: working, completeness: 55}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 35}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 35}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 65}
       - {name: 30-03-IDD-11, title: Application configuration interface, maturity: review, completeness: 55}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
@@ -128,7 +128,7 @@ steps:
     documents:
       - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 80}
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 70}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 55}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 55}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 70}
       - {name: 60-01-SVP, title: Domain verification direction, maturity: working, completeness: 60}
 
@@ -142,7 +142,7 @@ steps:
       verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 80}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 70}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 80}
       - {name: 60-01-SVP, title: System-test scenarios, maturity: review, completeness: 70}
 
@@ -156,7 +156,7 @@ steps:
       verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 85}
-      - {name: 40-02-SISD, title: Desktop GUI specification, maturity: working, completeness: 60}
+      - {name: 40-02-SSD, title: Desktop GUI specification, maturity: working, completeness: 60}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 85}
       - {name: 60-01-SVP, title: GUI verification direction, maturity: review, completeness: 75}
 
@@ -170,7 +170,7 @@ steps:
       verification: {level: working, scope: "integration and outage/reconnect tests"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 90}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 85}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
       - {name: 40-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
       - {name: 60-01-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
 
@@ -211,7 +211,7 @@ steps:
       verification: {level: working, scope: "synthetic-to-real and HIL verification"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 95}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: review, completeness: 95}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 95}
       - {name: 60-01-SVP, title: Hardware verification direction, maturity: review, completeness: 95}
       - {name: 70-01-SUM, title: SI-01 user manual, maturity: working, completeness: 70}
 
@@ -225,7 +225,7 @@ steps:
       verification: {level: working, scope: "representative integrated and recovery scenarios"}
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: accepted, completeness: 95}
-      - {name: 40-01-SISD, title: SI-01 specification, maturity: accepted, completeness: 95}
+      - {name: 40-01-SSD, title: SI-01 specification, maturity: accepted, completeness: 95}
       - {name: 60-01-SVP, title: Integrated system verification, maturity: accepted, completeness: 95}
       - {name: 70-01-SUM, title: SI-01 user manual, maturity: accepted, completeness: 90}
       - {name: 10-02-SIP, title: Software Implementation Planning, maturity: review, completeness: 95}
