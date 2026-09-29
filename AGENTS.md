@@ -34,9 +34,9 @@ Use the numbered project documents for their specific roles:
 - [docs/10-02-SIP-software-implementation-planning.md](docs/10-02-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
 - [docs/50-01-SDE-software-development-environment.md](docs/50-01-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/30-02-SSSD-software-system-specification-document.md](docs/30-02-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
-- [docs/40-01-01-SSD-timing-application-specification-document.md](docs/40-01-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
-- [docs/40-01-03-SDD-java-component-design.md](docs/40-01-03-SDD-java-component-design.md) — active Java component/package/artifact design;
-- [docs/40-02-01-SSD-gui-application-specification-document.md](docs/40-02-01-SSD-gui-application-specification-document.md) — desktop GUI architecture;
+- [docs/40-01-SSD-timing-application-specification-document.md](docs/40-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
+- [docs/41-02-SDD-java-component-design.md](docs/41-02-SDD-java-component-design.md) — active Java component/package/artifact design;
+- [docs/40-02-SSD-gui-application-specification-document.md](docs/40-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
 - [docs/60-01-SVP-software-verification-plan.md](docs/60-01-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
