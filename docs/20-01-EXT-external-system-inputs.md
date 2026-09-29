@@ -47,7 +47,7 @@ parent / surrounding system
         |
         +--> 30-01 system use cases where applicable
         +--> 30-02 SSSD
-        +--> 40-<SI>-SISD when an obligation is already allocated directly
+        +--> 40-<N>-SSD when an obligation is already allocated directly
 ```
 
 System-owned interfaces are different: if the SSSD allocates and this project owns an interface contract, its IDD belongs in the category-30 system-design family, currently under `30-03-IDD-<IF>`.
