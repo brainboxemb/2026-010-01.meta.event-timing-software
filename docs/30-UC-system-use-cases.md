@@ -301,7 +301,7 @@ integration inspection, and there is no current requirement for a separate web p
 6. Status exposes version/freshness/health where required.
 
 ```
-```{uc} Synchronise `TimingNodeId`-scoped data to backoffice
+```{uc} Synchronise TimingNodeId-scoped data to backoffice
 :id: UC-011
 
 **Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
