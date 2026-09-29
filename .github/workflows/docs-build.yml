@@ -276,7 +276,7 @@ jobs:
 
           if provenance["source_revision"] != os.environ["SOURCE_REVISION"]:
               raise SystemExit("portal source revision mismatch")
-          if provenance["object_count"] != 17 or provenance["relation_count"] != 34:
+          if provenance["object_count"] != 21 or provenance["relation_count"] != 34:
               raise SystemExit("portal graph counts mismatch")
           if provenance["tool_eng_docs"] != {
               "ref": "v0.4.0",
@@ -284,7 +284,16 @@ jobs:
           }:
               raise SystemExit("portal tool provenance mismatch")
 
-          required_diagram_ids = {"TimingNode", "CommandHandler", "Conductor", "RemoteApi"}
+          required_diagram_ids = {
+              "TimingSystem",
+              "TimingNode",
+              "LogBook",
+              "TimingData",
+              "UpstreamProtocol",
+              "CommandHandler",
+              "Conductor",
+              "RemoteApi",
+          }
           if not required_diagram_ids.issubset(set(provenance["diagram_objects"])):
               raise SystemExit("portal clickable architecture identities incomplete")
 
