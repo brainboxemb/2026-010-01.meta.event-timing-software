@@ -13,7 +13,7 @@ groups:
     layout: {x: 70, y: 120, w: 300, h: 500}
 
   - id: logging
-    label: Executable logging composition
+    label: Executable infrastructure / logging
     kind: layer-crosscutting
     layout: {x: 410, y: 120, w: 610, h: 500}
 
@@ -29,35 +29,47 @@ nodes:
     group: code
     layout: {x: 110, y: 260, w: 220, h: 90}
 
+  - id: logging-component
+    label: "Logging\nruntime logging infrastructure"
+    kind: crosscutting
+    group: logging
+    layout: {x: 455, y: 160, w: 245, h: 80}
+
+  - id: logging-server
+    label: "LoggingServer\nexternal live-log interface"
+    kind: crosscutting
+    group: logging
+    layout: {x: 735, y: 160, w: 240, h: 80}
+
   - id: jul
     label: "slf4j-jdk14\njava.util.logging"
     kind: crosscutting
     group: logging
-    layout: {x: 455, y: 205, w: 245, h: 90}
+    layout: {x: 455, y: 275, w: 245, h: 80}
 
   - id: control
     label: "LoggingControl\nconfigured level + runtime override"
     kind: crosscutting
     group: logging
-    layout: {x: 735, y: 205, w: 240, h: 90}
+    layout: {x: 735, y: 275, w: 240, h: 80}
 
   - id: console
     label: "ConsoleHandler\nlocal diagnostics"
     kind: crosscutting
     group: logging
-    layout: {x: 455, y: 385, w: 210, h: 85}
+    layout: {x: 455, y: 405, w: 210, h: 85}
 
   - id: file
     label: "FileHandler\nsize rotation + retention"
     kind: storage
     group: logging
-    layout: {x: 690, y: 385, w: 245, h: 85}
+    layout: {x: 690, y: 405, w: 245, h: 85}
 
   - id: live
-    label: "LiveLogHandler + DiagnosticLogServer\nbest-effort stream"
+    label: "LiveLogHandler\nbest-effort publisher"
     kind: crosscutting
     group: logging
-    layout: {x: 545, y: 505, w: 345, h: 85}
+    layout: {x: 545, y: 525, w: 345, h: 65}
 
   - id: log-files
     label: "Operational log files\nretained history"
@@ -73,18 +85,22 @@ nodes:
 
 edges:
   - {from: slf4j-calls, to: jul}
+  - {from: logging-component, to: jul, label: "configures"}
+  - {from: logging-component, to: control, label: "owns"}
+  - {from: logging-component, to: logging-server, label: "starts / stops"}
   - {from: control, to: jul, label: "global level"}
   - {from: jul, to: console}
   - {from: jul, to: file}
   - {from: jul, to: live}
+  - {from: live, to: logging-server, label: "new records"}
   - {from: file, to: log-files, label: "retained"}
-  - from: live
+  - from: logging-server
     to: test-client
     label: "new log records"
     from_anchor: {side: right, position: 0.65}
     to_anchor: {side: left, position: 0.65}
   - from: test-client
-    to: live
+    to: logging-server
     label: "TCP connect + get/set level"
     from_anchor: {side: left, position: 0.30}
     to_anchor: {side: right, position: 0.30}
