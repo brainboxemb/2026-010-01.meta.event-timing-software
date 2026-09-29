@@ -146,7 +146,7 @@ The **Desktop GUI Application** (SI-02) is an IP network client of the **Headles
 
 ### **Headless Timing Application** (SI-01) ↔ backend
 
-The **Headless Timing Application** (SI-01) exchanges race/reference data, registration information, status and reconciliation information with the backend through a system-owned semantic interface. The concrete transport, codec and network route are implementation/integration design concerns for the **Headless Timing Application** (SI-01) unless they change the external system contract.
+The **Headless Timing Application** (SI-01) exchanges race/reference data, timing records, status and reconciliation information with the upstream system through a system-owned semantic interface. SI-01 owns the semantic `TimingData` representation and `UpstreamProtocol` behaviour; concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
 
 ### **Headless Timing Application** (SI-01) ↔ field devices
 
