@@ -705,6 +705,116 @@ reimplementing synchronisation rules; after protocol decoding,
 `UpstreamMessageRouter` owns application-level target resolution.
 ```
 
+### Nested I/O component identities
+
+The compact I/O cards in Figure SI01-01 keep their subordinate software
+components as structured rows rather than expanding each component into a
+separate box. The following rows are nevertheless stable architecture objects
+and use the same engineering identity model as top-level diagram nodes.
+
+```{arch} AntennaManager
+:id: AntennaManager
+
+`AntennaManager` coordinates the configured 0..N Antenna components that form
+one registration input path, including coordination across multiple physical
+readers where required by the selected implementation.
+```
+
+```{arch} Antenna
+:id: Antenna
+
+`Antenna` is the software-facing RFID antenna/reader role consumed by
+AntennaManager. Concrete vendor or simulated implementations remain behind this
+role.
+```
+
+```{arch} SimulatedAntenna
+:id: SimulatedAntenna
+
+`SimulatedAntenna` is the built-in controllable Antenna implementation used for
+development, simulation and hardware-independent verification.
+```
+
+```{arch} Display
+:id: Display
+
+`Display` is the software-facing output-device role for presenting timing
+information without coupling Domain/Application behaviour to one physical
+display generation or transport.
+```
+
+```{arch} DisplayRev1Can
+:id: DisplayRev1Can
+
+`DisplayRev1Can` is the CAN-connected revision-1 implementation of the Display
+role.
+```
+
+```{arch} DisplayRev2Wifi
+:id: DisplayRev2Wifi
+
+`DisplayRev2Wifi` is the network-attached revision-2 implementation of the
+Display role.
+```
+
+```{arch} Keypad
+:id: Keypad
+
+`Keypad` is the software-facing operator-input device role used for keypad
+events without making the timing domain depend on a concrete bus implementation.
+```
+
+```{arch} KeypadRev1Can
+:id: KeypadRev1Can
+
+`KeypadRev1Can` is the CAN-connected revision-1 implementation of the Keypad
+role.
+```
+
+```{arch} Beeper
+:id: Beeper
+
+`Beeper` is the transport-neutral audible-feedback device role. A concrete
+connection/implementation is selected only when required by deployment design.
+```
+
+```{arch} CanNetworkController
+:id: CanNetworkController
+
+`CanNetworkController` owns CAN-bus lifecycle, discovery/scanning, online state
+and CAN-device communication for the DeviceNetworks package.
+```
+
+```{arch} NetworkDeviceService
+:id: NetworkDeviceService
+
+`NetworkDeviceService` owns the bidirectional boundary for
+network-attached/smart devices, including data sent outward and device-originated
+messages/events received inward.
+```
+
+```{arch} UpstreamGateway
+:id: UpstreamGateway
+
+`UpstreamGateway` is the Messaging-owned external upstream transport/session
+boundary. It owns connector coordination but not UpstreamProtocol semantics.
+```
+
+```{arch} Connector
+:id: Connector
+
+`Connector` is the transport/session role used 1..N times by UpstreamGateway.
+Concrete connectors own transport resources, delivery/session mechanics and
+transport-specific addressing.
+```
+
+```{arch} RabbitMqConnector
+:id: RabbitMqConnector
+
+`RabbitMqConnector` is the RabbitMQ implementation of the Connector role for
+production-shaped upstream messaging.
+```
+
 #### Platform
 
 Platform contains low-level execution-environment facilities:
