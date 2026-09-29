@@ -48,12 +48,14 @@ indexes:
           - {document: software-system-specification}
           - {document: application-control-status}
           - {document: application-configuration}
-      - title: Software-item specification and design
+      - title: Software-item specifications
         items:
           - {document: timing-application-specification}
           - {document: gui-application-specification}
-          - {document: java-component-design}
+      - title: Software-item detailed design
+        items:
           - {document: data-display-design}
+          - {document: java-component-design}
           - {document: backoffice-transport-design}
       - title: Development environment / engineering
         items:
