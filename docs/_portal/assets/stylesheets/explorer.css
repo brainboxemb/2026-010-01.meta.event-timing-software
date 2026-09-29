@@ -2,6 +2,7 @@
   max-width: 104rem;
 }
 
+/* Keep the architecture as the primary desktop context; details are supporting content. */
 .eng-workspace {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
