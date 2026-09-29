@@ -1,4 +1,4 @@
-# Timing Application Specification Document (SISD)
+# Timing Application Specification Document (SSD)
 
 Status: working/review baseline
 
@@ -22,9 +22,9 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 `00-04-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
-The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SISD.
+The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SSD.
 
-When documents are independently released, each released SISD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
+When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
 ## Software-item requirements
 
@@ -155,7 +155,7 @@ This prevents the first version/status executable from inventing partial operati
 
 ### Explicitly deferred requirements
 
-The following areas are intentionally not made concrete by this SISD slice:
+The following areas are intentionally not made concrete by this SSD slice:
 
 - RFID power/read/filter/decryption behaviour;
 - registration and source-sequence behaviour beyond any minimal topology placeholder needed for configuration;
@@ -210,7 +210,7 @@ The following do **not** block this requirement baseline and belong in the imple
 - concrete code/package classes implementing the shared status model;
 - exact mechanism used to cause the first deterministic status transition in `VC-ST1-001`.
 
-A chosen implementation technology must satisfy this SISD and IF-03 rather than redefining them.
+A chosen implementation technology must satisfy this SSD and IF-03 rather than redefining them.
 
 ## Software-item architecture
 
@@ -233,7 +233,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 
 ### +1 scenarios used to validate the architecture
 
-The existing use cases in `30-01-UC-system-use-cases.md` are the scenario source. The SISD should not create a second competing use-case catalogue.
+The existing use cases in `30-01-UC-system-use-cases.md` are the scenario source. The SSD should not create a second competing use-case catalogue.
 
 Representative architecture-validation scenarios include:
 
@@ -760,7 +760,7 @@ router and its bidirectional port.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
-Stable domain facts behind these views are maintained in `00-04-domain-baseline.md`; this SISD owns their software-architecture composition and execution implications.
+Stable domain facts behind these views are maintained in `00-04-domain-baseline.md`; this SSD owns their software-architecture composition and execution implications.
 
 ### Command, query and event model
 
@@ -1081,7 +1081,7 @@ Logging records diagnostic/history information; status represents current operat
 
 ### Logging architecture
 
-Logging is a SISD architecture-level cross-cutting technology decision because it affects almost every
+Logging is a SSD architecture-level cross-cutting technology decision because it affects almost every
 component, operational diagnostics, footprint and engineering support.
 
 The A08 baseline keeps framework logging calls independent from the concrete runtime backend:
@@ -1251,7 +1251,7 @@ data/persistence SDD only when implementation reaches that complexity.
 
 ### Integration architecture
 
-The **external device and network topology is owned by the SSSD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SISD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSSD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SSD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 #### Upstream messaging
 
@@ -1378,7 +1378,7 @@ Private repositories may provide production RFID control, encrypted/proprietary 
 
 ### Technology decision register
 
-This table intentionally lives in the architecture section of this SISD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
+This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
@@ -1443,13 +1443,13 @@ Detailed verification strategy belongs in `60-01-SVP-software-verification-plan.
 
 ### Detailed-design documents
 
-Keep this SISD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
-implementation detail would make the architecture section of this SISD harder to read.
+Keep this SSD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
+implementation detail would make the architecture section of this SSD harder to read.
 
 Current active focused SDD:
 
 ```text
-40-01-SDD-02-java-component-design.md
+40-01-03-SDD-java-component-design.md
   Java packages, Maven artifacts and composition
 ```
 
