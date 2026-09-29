@@ -4,7 +4,7 @@ Status: working draft / non-authoritative
 
 This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
 
-Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SISDs and verification cases may reference these use cases.
+Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SSDs and verification cases may reference these use cases.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
@@ -27,18 +27,18 @@ Relevant parent-system/external inputs are registered in `20-01-EXT-external-sys
                               +---------------+---------------+
                               |                               |
                               v                               v
-                    30-03 system IDDs             optional 40-<SI>-UC
+                    30-03 system IDDs             optional 40-<N>-UC
                               |                               |
                               +---------------+---------------+
                                               |
                                               v
-                                         40-<SI>-SISD
+                                         40-<N>-SSD
                                               |
                                               v
-                                         40-<SI>-SDD
+                                         41-<N>-SDD
 ```
 
-A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SISD clearer. It should reference the originating system use case and must not merely copy it.
+A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SSD clearer. It should reference the originating system use case and must not merely copy it.
 
 A use case is not a test case. One use case may be realised by several requirements and verified by several unit, interface, system, fault-injection and hardware tests.
 
