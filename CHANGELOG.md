@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine the SI-01 domain architecture around recorded timing data: introduce application-wide `TimingSystem`, separate `LogBook`/`LogBookItem` operational state from canonical `TimingData`/`TimingDataRecord`, and make `UpstreamProtocol` a Domain responsibility for TimingData transfer, synchronisation/reconciliation and ping/pong while keeping storage, gateway and connectors as transport/persistence I/O.
+
 - Rename the per-TimingNode `Journal` responsibility to `LogBook` across the current domain/architecture views, and add a transport-neutral `Beeper` role under SI-01 `Devices` without prematurely assigning it to CAN or another concrete device network.
 
 - Reorganized the authored documentation into category-numbered families (00 context, 10 planning, 20 external inputs, 30 system specification/design, 40 software-item specification/design, 50 engineering environment, 60 verification, 70 user/operations), added an external/parent-system input baseline, and documented optional software-item use cases.
