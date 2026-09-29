@@ -1044,6 +1044,8 @@ Status should allow presentation and diagnostics to observe application, timing-
 - network/upstream connectivity;
 - inbound/outbound synchronisation state.
 
+Each `TimingSystem` owns its own `SystemStatus`. An application-facing status view may aggregate the 1..N TimingSystem statuses, their TimingNodes and application/runtime problems into one response; that aggregation does not move SystemStatus ownership back to the TimingApplication.
+
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
 Logging records diagnostic/history information; status represents current operational state. One must not be used as a substitute for the other.
