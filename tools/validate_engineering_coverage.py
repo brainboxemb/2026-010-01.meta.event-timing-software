@@ -13,7 +13,7 @@ NEED_BLOCK_RE = re.compile(
     r"^```\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n(?P<body>.*?)(?=^\```\s*$)",
     re.MULTILINE | re.DOTALL,
 )
-NEED_ID_RE = re.compile(r"^(?::id:|id:)\\s*(?P<id>[A-Za-z][A-Za-z0-9_-]*)\\s*$", re.MULTILINE)
+NEED_ID_RE = re.compile(r"^(?::id:|id:)\s*(?P<id>[A-Za-z][A-Za-z0-9_-]*)\s*$", re.MULTILINE)
 LEGACY_UC_RE = re.compile(r"^##\s+(?P<id>UC-\d{3})\s+—\s+", re.MULTILINE)
 LEGACY_REQ_RE = re.compile(
     r"^\*\*(?P<id>[A-Z][A-Z0-9]*-REQ-\d{3})\s+—\s+",
