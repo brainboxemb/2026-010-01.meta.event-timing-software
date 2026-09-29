@@ -96,7 +96,7 @@ steps:
       - {name: 30-01-UC, title: System use cases, maturity: working, completeness: 40}
       - {name: 50-02-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 25}
-      - {name: 40-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
+      - {name: 41-02-SDD, title: Java component/package design, maturity: working, completeness: 55}
       - {name: 30-03-IDD-03, title: Remote API interface, maturity: review, completeness: 45}
       - {name: 60-01-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
 
@@ -171,7 +171,7 @@ steps:
     documents:
       - {name: 30-01-UC, title: System use cases, maturity: review, completeness: 90}
       - {name: 40-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
-      - {name: 40-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
+      - {name: 41-03-SDD, title: Backoffice transport design, maturity: working, completeness: 60}
       - {name: 60-01-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
 
   "8":
