@@ -13,21 +13,21 @@ Reconstrueer de actuele toestand niet uit oude chatgeschiedenis. Controleer eers
 
 Lees eerst in de meta-repository:
 - `AGENTS.md`
-- `docs/00-02-handoff.md`
-- `docs/00-03-agent-plan.md`
-- `docs/00-01-brainstorm.md`
-- `docs/00-04-domain-baseline.md`
-- `docs/10-01-SDP-software-development-plan.md`
-- `docs/10-02-SIP-software-implementation-planning.md`
-- `docs/50-01-SDE-software-development-environment.md`
-- `docs/50-02-SDE-java-build-test-toolchain.md`
-- `docs/40-01-SSD-timing-application-specification-document.md`
+- `docs/01-handoff.md`
+- `docs/02-agent-plan.md`
+- `docs/00-brainstorm.md`
+- `docs/03-domain-baseline.md`
+- `docs/10-SDP-software-development-plan.md`
+- `docs/11-SIP-software-implementation-planning.md`
+- `docs/50-SDE-software-development-environment.md`
+- `docs/51-SDE-java-build-test-toolchain.md`
+- `docs/41-01-SSD-timing-application-specification-document.md`
 - `docs/31-SSSD-software-system-specification-document.md`
-- `docs/40-01-SSD-timing-application-specification-document.md`
-- `docs/41-01-SDD-02-java-component-design.md`
+- `docs/41-01-SSD-timing-application-specification-document.md`
+- `docs/43-01-SDD-02-java-component-design.md`
 - `docs/32-IDD-03-application-control-status.md`
 - `docs/33-IDD-11-application-configuration.md`
-- `docs/60-01-SVP-software-verification-plan.md`
+- `docs/60-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:
 - `brainboxemb/2026-010-01.meta.event-timing-software` — coordination, planning, requirements, architecture en verification direction;
@@ -88,7 +88,7 @@ Gebruik de repository die eigenaar is van het werk:
 - generieke Java tooling in `tool.java-project`;
 - generieke Git tooling in `tool.git-project`.
 
-Nieuwe software-ideeën, mogelijke requirements, architectuurkeuzes en onopgeloste vragen gaan eerst naar `docs/00-01-brainstorm.md` wanneer ze nog niet als besluit zijn gepromoveerd. Houd de projectdocumentatie generiek en noem niet het specifieke real-world event dat de aanleiding voor het project was.
+Nieuwe software-ideeën, mogelijke requirements, architectuurkeuzes en onopgeloste vragen gaan eerst naar `docs/00-brainstorm.md` wanneer ze nog niet als besluit zijn gepromoveerd. Houd de projectdocumentatie generiek en noem niet het specifieke real-world event dat de aanleiding voor het project was.
 
 Na ieder afgerond onderdeel:
 - controleer de afgesproken tests/evidence en generated output;
@@ -140,7 +140,7 @@ Before deciding what work is current:
 5. inspect generated `dev/pr-<N>/...` output when the PR produces review artifacts;
 6. inspect `prod/docs` or `prod/bld` when current main-branch output matters to the decision.
 
-If no relevant PR is open, use the most recently completed work together with `docs/00-03-agent-plan.md` and the SIP to determine the next bounded piece of work.
+If no relevant PR is open, use the most recently completed work together with `docs/02-agent-plan.md` and the SIP to determine the next bounded piece of work.
 
 ## Software-item register
 
@@ -156,8 +156,8 @@ The software-item number is stable across that item's SSD/SDD documents. It is n
 
 Use the sources consistently:
 
-- `docs/00-01-brainstorm.md` — unpromoted software ideas, possible requirements, architecture options and unresolved questions;
-- `docs/00-04-domain-baseline.md` — supplied domain facts and terminology;
+- `docs/00-brainstorm.md` — unpromoted software ideas, possible requirements, architecture options and unresolved questions;
+- `docs/03-domain-baseline.md` — supplied domain facts and terminology;
 - SDP — staged software-development governance and maturity/release direction;
 - SIP — implementation sequence, active step and step-exit expectations;
 - SDE — common development environment, repository/toolchain and workflow rules;

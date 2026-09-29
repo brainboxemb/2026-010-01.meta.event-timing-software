@@ -16,11 +16,11 @@ The SI-01 specification consumes the software-system allocation and the interfac
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
 - `32-IDD-03-application-control-status.md` for IF-03 obligations;
 - `33-IDD-11-application-configuration.md` for IF-11 obligations;
-- applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
+- applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
 `30-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
 
-`00-04-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
+`03-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
 The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SSD.
 
@@ -458,7 +458,7 @@ of a filesystem, RabbitMQ or HTTP implementation.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode.
 
-Detailed domain semantics belong in `00-04-domain-baseline.md`.
+Detailed domain semantics belong in `03-domain-baseline.md`.
 
 #### Reusable runtime mechanics
 
@@ -760,7 +760,7 @@ router and its bidirectional port.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
-Stable domain facts behind these views are maintained in `00-04-domain-baseline.md`; this SSD owns their software-architecture composition and execution implications.
+Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SSD owns their software-architecture composition and execution implications.
 
 ### Command, query and event model
 
@@ -1439,7 +1439,7 @@ Testability is an architecture property. Application/domain code should where pr
 
 Fault handling should preserve local operation, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
 
-Detailed verification strategy belongs in `60-01-SVP-software-verification-plan.md`.
+Detailed verification strategy belongs in `60-SVP-software-verification-plan.md`.
 
 ### Detailed-design documents
 
@@ -1449,7 +1449,7 @@ implementation detail would make the architecture section of this SSD harder to 
 Current active focused SDD:
 
 ```text
-41-01-SDD-02-java-component-design.md
+43-01-SDD-02-java-component-design.md
   Java packages, Maven artifacts and composition
 ```
 

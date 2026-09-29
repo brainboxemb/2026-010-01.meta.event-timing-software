@@ -6,15 +6,15 @@ This Software System Specification Document combines the current **software-syst
 
 It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Headless Timing Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
 
-Stable working domain facts and terminology are consolidated in `00-04-domain-baseline.md` and should not be silently reinterpreted here.
+Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
 ## Inputs
 
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
 
-- `00-04-domain-baseline.md` for stable domain terminology and facts;
+- `03-domain-baseline.md` for stable domain terminology and facts;
 - `30-UC-system-use-cases.md` for externally meaningful behaviour within this software-system scope;
-- `20-01-EXT-external-system-inputs.md` for the controlled register of applicable parent-system requirements, externally owned IDDs, protocols and standards;
+- `20-EXT-external-system-inputs.md` for the controlled register of applicable parent-system requirements, externally owned IDDs, protocols and standards;
 - the exact externally owned source revisions identified by that register when they impose requirements or interface obligations on this software system.
 
 The category-20 register does not replace an external authority. It records which external source/revision applies and where it constrains this system.
@@ -49,10 +49,10 @@ domain --------+----> 30-UC system use cases
                  +--------------+--------------+
                                 |
                                 v
-                         40-<SI>-SSD
+                         41-<SI>-SSD
                                 |
                                 v
-                         41-<SI>-SDD-<N>
+                         43-<SI>-SDD-<N>
 ```
 
 An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SSD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SSDs.

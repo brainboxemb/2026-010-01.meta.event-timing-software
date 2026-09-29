@@ -13,16 +13,16 @@ import shutil
 
 
 CONTEXT_DOCUMENTS = [
-    "00-04-domain-baseline.md",
+    "03-domain-baseline.md",
 ]
 
 PLANNING_DOCUMENTS = [
-    "10-01-SDP-software-development-plan.md",
-    "10-02-SIP-software-implementation-planning.md",
+    "10-SDP-software-development-plan.md",
+    "11-SIP-software-implementation-planning.md",
 ]
 
 EXTERNAL_INPUT_DOCUMENTS = [
-    "20-01-EXT-external-system-inputs.md",
+    "20-EXT-external-system-inputs.md",
 ]
 
 SYSTEM_SPEC_DOCUMENTS = [
@@ -33,31 +33,31 @@ SYSTEM_SPEC_DOCUMENTS = [
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
-    "40-01-SSD-timing-application-specification-document.md",
-    "40-02-SSD-gui-application-specification-document.md",
+    "41-01-SSD-timing-application-specification-document.md",
+    "41-02-SSD-gui-application-specification-document.md",
 ]
 
 ENGINEERING_DOCUMENTS = [
-    "50-01-SDE-software-development-environment.md",
-    "50-02-SDE-java-build-test-toolchain.md",
+    "50-SDE-software-development-environment.md",
+    "51-SDE-java-build-test-toolchain.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
     "31-SSSD-software-system-specification-document.md",
     "32-IDD-03-application-control-status.md",
     "33-IDD-11-application-configuration.md",
-    "40-01-SSD-timing-application-specification-document.md",
-    "41-01-SDD-02-java-component-design.md",
-    "40-02-SSD-gui-application-specification-document.md",
+    "41-01-SSD-timing-application-specification-document.md",
+    "43-01-SDD-02-java-component-design.md",
+    "41-02-SSD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
-    "41-01-SDD-01-data-and-display-design.md",
-    "41-01-SDD-03-backoffice-transport-design.md",
+    "43-01-SDD-01-data-and-display-design.md",
+    "43-01-SDD-03-backoffice-transport-design.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
-    "60-01-SVP-software-verification-plan.md",
+    "60-SVP-software-verification-plan.md",
 ]
 
 USER_DOCUMENTS = [
@@ -71,7 +71,7 @@ DOCUMENTS = (
     + SYSTEM_SPEC_DOCUMENTS
     + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + ["41-01-SDD-02-java-component-design.md"]
+    + ["43-01-SDD-02-java-component-design.md"]
     + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
     + USER_DOCUMENTS
@@ -235,8 +235,8 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Software-item detailed design — active", ""])
-    _, title, _ = by_name["41-01-SDD-02-java-component-design.md"]
-    doc_index.append(f"- [{title}](./41-01-SDD-02-java-component-design.md)")
+    _, title, _ = by_name["43-01-SDD-02-java-component-design.md"]
+    doc_index.append(f"- [{title}](./43-01-SDD-02-java-component-design.md)")
 
     doc_index.extend(["", "## Software-item detailed design — deferred notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:

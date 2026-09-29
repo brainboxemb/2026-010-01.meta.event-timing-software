@@ -8,8 +8,8 @@ belongs in the implementation repositories.
 Before substantial work:
 
 1. read [README.md](README.md) for repository purpose/navigation;
-2. read [docs/00-03-agent-plan.md](docs/00-03-agent-plan.md) and, when continuing work,
-   [docs/00-02-handoff.md](docs/00-02-handoff.md);
+2. read [docs/02-agent-plan.md](docs/02-agent-plan.md) and, when continuing work,
+   [docs/01-handoff.md](docs/01-handoff.md);
 3. read the current shared BrainboxEmb agent entrypoint:
    [brainboxemb.meta/AGENTS.md](https://github.com/brainboxemb/brainboxemb.meta/blob/main/AGENTS.md).
 
@@ -26,18 +26,18 @@ dependency's README, docs, source and tests.
 
 Use the numbered project documents for their specific roles:
 
-- [docs/00-01-brainstorm.md](docs/00-01-brainstorm.md) — ideas, alternatives and unresolved questions;
-- [docs/00-04-domain-baseline.md](docs/00-04-domain-baseline.md) — stable domain facts/terminology;
-- [docs/20-01-EXT-external-system-inputs.md](docs/20-01-EXT-external-system-inputs.md) — parent/external-system input baseline and revision register;
+- [docs/00-brainstorm.md](docs/00-brainstorm.md) — ideas, alternatives and unresolved questions;
+- [docs/03-domain-baseline.md](docs/03-domain-baseline.md) — stable domain facts/terminology;
+- [docs/20-EXT-external-system-inputs.md](docs/20-EXT-external-system-inputs.md) — parent/external-system input baseline and revision register;
 - [docs/30-UC-system-use-cases.md](docs/30-UC-system-use-cases.md) — operational goals/use cases;
-- [docs/10-01-SDP-software-development-plan.md](docs/10-01-SDP-software-development-plan.md) — development strategy/risks;
-- [docs/10-02-SIP-software-implementation-planning.md](docs/10-02-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
-- [docs/50-01-SDE-software-development-environment.md](docs/50-01-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
+- [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
+- [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
+- [docs/50-SDE-software-development-environment.md](docs/50-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
-- [docs/40-01-SSD-timing-application-specification-document.md](docs/40-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
-- [docs/41-01-SDD-02-java-component-design.md](docs/41-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
-- [docs/40-02-SSD-gui-application-specification-document.md](docs/40-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
-- [docs/60-01-SVP-software-verification-plan.md](docs/60-01-SVP-software-verification-plan.md) — verification strategy/evidence model;
+- [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
+- [docs/43-01-SDD-02-java-component-design.md](docs/43-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
+- [docs/41-02-SSD-gui-application-specification-document.md](docs/41-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
+- [docs/60-SVP-software-verification-plan.md](docs/60-SVP-software-verification-plan.md) — verification strategy/evidence model;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
 

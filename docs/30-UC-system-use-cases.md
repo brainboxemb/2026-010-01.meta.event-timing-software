@@ -12,7 +12,7 @@ The public repository uses generic/synthetic identities. Real deployment asset n
 
 System use cases are part of the software-system specification/design family. They express behaviour of the **software system as a whole** before that behaviour is decomposed across software items.
 
-Relevant parent-system/external inputs are registered in `20-01-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
+Relevant parent-system/external inputs are registered in `20-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
 
 ```text
 00-04 Domain baseline -----------+

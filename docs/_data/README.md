@@ -30,7 +30,7 @@ The same convention is intended for later declarative architecture-diagram sourc
 
 ## Separation of concerns
 
-`docs/10-02-SIP-software-implementation-planning.md` remains the human-readable implementation plan and owns the meaning, deliverable and demonstration of each SIP step.
+`docs/11-SIP-software-implementation-planning.md` remains the human-readable implementation plan and owns the meaning, deliverable and demonstration of each SIP step.
 
 `sip-roadmap.yaml` owns working planning metadata such as estimates, cadence and compact named-document indicators used by the overview roadmap.
 

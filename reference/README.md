@@ -13,7 +13,7 @@ For each collected source, record enough context to understand:
 - why it is relevant to the project;
 - any important limitations or interpretation notes.
 
-Prefer preserving original source material rather than rewriting it. Project interpretations, questions, and possible software consequences belong in `docs/00-01-brainstorm.md` until they are deliberately promoted.
+Prefer preserving original source material rather than rewriting it. Project interpretations, questions, and possible software consequences belong in `docs/00-brainstorm.md` until they are deliberately promoted.
 
 Do not use filenames or notes that identify the specific real-world event that motivated this project.
 

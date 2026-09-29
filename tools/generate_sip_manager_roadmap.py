@@ -656,7 +656,7 @@ def render_pdf(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sip", default="docs/10-02-SIP-software-implementation-planning.md")
+    parser.add_argument("--sip", default="docs/11-SIP-software-implementation-planning.md")
     parser.add_argument("--data-dir", default="docs/_data")
     parser.add_argument("--out", default="bld/docs/planning")
     args = parser.parse_args()

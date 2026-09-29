@@ -7,7 +7,7 @@ Agent-plan steps use the prefix `AP-` so they cannot be confused with numbered s
 ## Working rules
 
 - Work one agent-plan step at a time unless a later step is needed to correct the plan itself.
-- Record software ideas and unresolved design topics in `docs/00-01-brainstorm.md` before promoting them into authoritative documents.
+- Record software ideas and unresolved design topics in `docs/00-brainstorm.md` before promoting them into authoritative documents.
 - Keep this repository focused on planning, research, coordination, and decision preparation.
 - Keep project documentation generic and independent of any specific real-world event.
 - Keep detailed current-step work and evidence in the active pull request rather than expanding this plan into an activity log.
@@ -37,8 +37,8 @@ Scope:
 Exit criteria:
 
 - the core documents exist and have clearly separated responsibilities;
-- a new chat can continue from `AGENTS.md`, this plan, `docs/00-02-handoff.md`, and the current PR state;
-- early software discussion has a defined landing place in `docs/00-01-brainstorm.md`;
+- a new chat can continue from `AGENTS.md`, this plan, `docs/01-handoff.md`, and the current PR state;
+- early software discussion has a defined landing place in `docs/00-brainstorm.md`;
 - the document set has a predictable numbering/type convention;
 - software-item numbering and system/software-item document ownership are understandable;
 - generated documentation can be reviewed from `dev/pr-<N>/docs`;
@@ -71,7 +71,7 @@ This step is intentionally **just-in-time**. It does not attempt to formalise th
 Expected scope:
 
 - identify the use cases and behaviours needed by the first executable;
-- create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `40-01-SSD`);
+- create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `41-01-SSD`);
 - create the first system-level application-control/status IDD needed by the executable and later clients;
 - establish a traceable example from use case → SSSD/system IDD where applicable → SI-01 SSD requirement/architecture → SDD → verification case;
 - make the relevant ST-1/SVP verification material concrete enough for the first executable;
@@ -97,7 +97,7 @@ PR #2 established the first reviewable SI-01 requirements/IDD slice without expa
 
 At closure:
 
-- `40-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
+- `41-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
 - `32-IDD-03-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
 - IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
 - first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
@@ -146,7 +146,7 @@ Exit criteria:
 
 ### AP-2 closure evidence
 
-PR #3 established `50-02-SDE-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
+PR #3 established `51-SDE-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
 
 At closure:
 
@@ -286,7 +286,7 @@ When a current AP/SIP step needs source evidence:
 - collect relevant source documents;
 - index origin, date/version where known, and relevance;
 - identify conflicts, assumptions and missing information;
-- capture unresolved software questions in `docs/00-01-brainstorm.md`;
+- capture unresolved software questions in `docs/00-brainstorm.md`;
 - avoid collecting or formalising unrelated material merely for completeness.
 
 ## Later agent-plan steps

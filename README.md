@@ -6,7 +6,7 @@ Planning and research for a reusable Java framework for event timing and time re
 
 This repository is the coordination and research space for the project. It is used to collect source material, explore ideas, structure decisions, define the development/verification environment, and prepare implementation work before software-specific repositories are created or changed.
 
-Ideas and unresolved software topics belong in [`docs/00-01-brainstorm.md`](docs/00-01-brainstorm.md) first. Stable requirements and architecture should only be introduced after the relevant topics have been discussed and promoted deliberately. Early planning/design documents may contain explicitly marked working drafts used to prepare those later authoritative documents.
+Ideas and unresolved software topics belong in [`docs/00-brainstorm.md`](docs/00-brainstorm.md) first. Stable requirements and architecture should only be introduced after the relevant topics have been discussed and promoted deliberately. Early planning/design documents may contain explicitly marked working drafts used to prepare those later authoritative documents.
 
 ## Generated documentation
 
@@ -66,25 +66,25 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 ## Working documents
 
 - [`AGENTS.md`](AGENTS.md) — persistent guidance for coding and research agents.
-- [`docs/00-01-brainstorm.md`](docs/00-01-brainstorm.md) — working area for ideas, questions, alternatives and early software thoughts.
-- [`docs/00-02-handoff.md`](docs/00-02-handoff.md) — reusable context handoff for starting a new chat or agent session.
-- [`docs/00-03-agent-plan.md`](docs/00-03-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
-- [`docs/00-04-domain-baseline.md`](docs/00-04-domain-baseline.md) — working domain facts and terminology.
-- [`docs/10-01-SDP-software-development-plan.md`](docs/10-01-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
-- [`docs/10-02-SIP-software-implementation-planning.md`](docs/10-02-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
-- [`docs/20-01-EXT-external-system-inputs.md`](docs/20-01-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
+- [`docs/00-brainstorm.md`](docs/00-brainstorm.md) — working area for ideas, questions, alternatives and early software thoughts.
+- [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
+- [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
+- [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts and terminology.
+- [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
+- [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
+- [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
 - [`docs/32-IDD-03-application-control-status.md`](docs/32-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
 - [`docs/33-IDD-11-application-configuration.md`](docs/33-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
-- [`docs/40-01-SSD-timing-application-specification-document.md`](docs/40-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
-- [`docs/40-02-SSD-gui-application-specification-document.md`](docs/40-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
-- [`docs/41-01-SDD-01-data-and-display-design.md`](docs/41-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
-- [`docs/41-01-SDD-02-java-component-design.md`](docs/41-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
-- [`docs/41-01-SDD-03-backoffice-transport-design.md`](docs/41-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
-- [`docs/50-01-SDE-software-development-environment.md`](docs/50-01-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
-- [`docs/50-02-SDE-java-build-test-toolchain.md`](docs/50-02-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
-- [`docs/60-01-SVP-software-verification-plan.md`](docs/60-01-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
+- [`docs/41-01-SSD-timing-application-specification-document.md`](docs/41-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
+- [`docs/41-02-SSD-gui-application-specification-document.md`](docs/41-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
+- [`docs/43-01-SDD-01-data-and-display-design.md`](docs/43-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
+- [`docs/43-01-SDD-02-java-component-design.md`](docs/43-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
+- [`docs/43-01-SDD-03-backoffice-transport-design.md`](docs/43-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
+- [`docs/50-SDE-software-development-environment.md`](docs/50-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
+- [`docs/51-SDE-java-build-test-toolchain.md`](docs/51-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
+- [`docs/60-SVP-software-verification-plan.md`](docs/60-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
 - [`docs/70-01-SUM-headless-timing-application.md`](docs/70-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
@@ -96,40 +96,47 @@ Generated documentation for an active pull request is published to `dev/pr-<N>/d
 The leading number is a **document number/range**, not an encoded dependency order. The SDP owns the detailed rule; the repository uses these categories consistently:
 
 ```text
-00  working/project context
-10  planning
-20  external / parent-system inputs
+00–09  working/project context
+10–19  planning
+20–29  external / parent-system inputs
 30–39  software-system specification and design
-40  software-item specification
-41  software-item detailed design
-50  development environment / engineering
-60  verification and validation
-70  user / operational documentation
+40      software-item use cases
+41      software-item requirements / combined specification
+42      software-item architecture
+43      software-item detailed design
+50–59  development environment / engineering
+60–69  verification and validation
+70–79  user / operational documentation
 ```
 
 Examples:
 
 ```text
-10-01-SDP
-10-02-SIP
-20-01-EXT
+00-brainstorm
+01-handoff
+02-agent-plan
+03-domain-baseline
+10-SDP
+11-SIP
+20-EXT
 30-UC
 31-SSSD
 32-IDD-03
 33-IDD-11
-40-01-SSD
-40-02-SSD
-41-01-SDD-01
-41-01-SDD-02
-50-01-SDE
-50-02-SDE
-60-01-SVP
+40-01-UC        # reserved/optional SI-01 use-case document
+41-01-SSD
+41-02-SSD
+43-01-SDD-01
+43-01-SDD-02
+50-SDE
+51-SDE
+60-SVP
 70-01-SUM
 ```
 
-Document numbers `40` and `41` are reserved for software-item SSD and SDD documents. The segment after the document number is the stable software-item identifier (`01` for SI-01, `02` for SI-02). An SDD may then add a final sequence number, for example `41-01-SDD-02` for the second detailed-design document of SI-01. Optional software-item use cases receive a separate document number/range only when they are actually introduced.
+Software-item documents add the stable SI identifier after the document number. `40-<SI>-UC` is reserved for optional software-item use cases. A combined specification uses `41-<SI>-SSD`. A split specification uses `41-<SI>-SRD` plus `42-<SI>-SAD`. Detailed designs use `43-<SI>-SDD-<N>`. Thus `43-01-SDD-02` is the second detailed-design document of SI-01.
 
-Software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix keeps the interface identity, for example `32-IDD-03` for IF-03 and `33-IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the category-20 external-input baseline rather than being renumbered as locally owned interfaces.
+Software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix keeps the interface identity, for example `32-IDD-03` for IF-03 and `33-IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the document 20 external-input baseline rather than being renumbered as locally owned interfaces.
 
 ## Documentation levels
 
@@ -139,7 +146,7 @@ The project intentionally separates:
 - **planning** — SDP and SIP;
 - **external/parent-system inputs** — controlled requirements, interface contracts, protocols and standards owned outside the current software-system scope;
 - **software-system specification/design** — system use cases, SSSD and system-owned IDDs;
-- **software-item specification/design** — optional item use cases, SSD and focused SDDs;
+- **software-item specification/design** — optional item use cases; either a combined SSD or separate SRD + SAD; and focused SDDs;
 - **development environment/engineering** — SDE and toolchain/environment refinements;
 - **verification/validation** — SVP and later verification specifications/cases/reports where a distinct document is justified;
 - **user/operations** — release/user/operator guidance such as SUM;
@@ -156,13 +163,14 @@ domain baseline / system use cases / applicable parent-system inputs
                          -> SSSD
                          -> allocated system-owned IDD(s)
                          -> affected software-item use cases where useful
-                         -> affected SSD(s)
+                         -> affected software-item SRD/SSD
+                         -> SAD when architecture is separate
                          -> focused SDD(s)
                          -> implementation
                          -> verification evidence
 ```
 
-An externally owned requirement, IDD, protocol or standard remains upstream authority and may constrain the SSSD and, where allocated directly, an affected SSD. The category-20 register records that dependency without copying ownership into this repository.
+An externally owned requirement, IDD, protocol or standard remains upstream authority and may constrain the SSSD and, where allocated directly, an affected SSD. The document-20 register records that dependency without copying ownership into this repository.
 
 Planning, engineering-environment and verification documents may reference this chain without becoming upstream product authority merely because of their document number.
 
