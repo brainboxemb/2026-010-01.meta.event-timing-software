@@ -22,6 +22,7 @@ on:
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
+      - 'tools/generate_engineering_portal.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -47,6 +48,7 @@ on:
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
+      - 'tools/generate_engineering_portal.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -92,6 +94,7 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check -r tools/requirements-docs.txt
           python -m pip install --disable-pip-version-check -r docs/_sphinx-needs/requirements.txt
+          python -m pip install --disable-pip-version-check -r docs/_portal/requirements.txt
           python -m pip install --disable-pip-version-check ./tools/tool.eng-docs
 
       - name: Validate current SDD references
@@ -191,6 +194,140 @@ jobs:
             --out bld/engineering-graph.json \
             --review bld/engineering-graph-review.md
 
+      - name: Generate engineering portal
+        shell: bash
+        run: |
+          set -euo pipefail
+          publication_branch="prod/docs"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            publication_branch="dev/pr-${{ github.event.pull_request.number }}/docs"
+          fi
+
+          rm -rf bld/engineering-portal
+          python tools/generate_engineering_portal.py \
+            --graph bld/engineering-graph.json \
+            --architecture bld/docs/assets/architecture/layered-architecture.svg \
+            --output bld/engineering-portal/docs \
+            --assets docs/_portal/assets \
+            --repository brainboxemb/2026-010-01.meta.event-timing-software \
+            --publication-branch "$publication_branch" \
+            --tool-ref v0.4.0 \
+            --tool-sha 63af20a033d6295a28c844d12cb87f76165e69a5
+
+          mkdocs build --strict --config-file docs/_portal/mkdocs.yml
+
+      - name: Verify engineering portal
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("bld/engineering-portal")
+          site = root / "site"
+          graph = json.loads(Path("bld/engineering-graph.json").read_text(encoding="utf-8"))
+          provenance = json.loads(
+              (root / "docs/assets/provenance.json").read_text(encoding="utf-8")
+          )
+
+          expected_ids = {item["id"] for item in graph["objects"]}
+          actual_pages = {
+              path.parent.name for path in (site / "objects").glob("*/index.html")
+          }
+          if actual_pages != expected_ids:
+              raise SystemExit("portal object-page set does not match engineering graph")
+
+          if provenance["source_revision"] != os.environ["SOURCE_REVISION"]:
+              raise SystemExit("portal source revision mismatch")
+          if provenance["object_count"] != 17 or provenance["relation_count"] != 34:
+              raise SystemExit("portal graph counts mismatch")
+          if provenance["tool_eng_docs"] != {
+              "ref": "v0.4.0",
+              "sha": "63af20a033d6295a28c844d12cb87f76165e69a5",
+          }:
+              raise SystemExit("portal tool provenance mismatch")
+
+          required_diagram_ids = {"TimingNode", "CommandHandler", "Conductor", "RemoteApi"}
+          if not required_diagram_ids.issubset(set(provenance["diagram_objects"])):
+              raise SystemExit("portal clickable architecture identities incomplete")
+
+          explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
+          for object_id in required_diagram_ids:
+              if f'data-engineering-id="{object_id}"' not in explorer:
+                  raise SystemExit(
+                      f"portal explorer missing architecture identity: {object_id}"
+                  )
+
+          search = (site / "search/search_index.json").read_text(encoding="utf-8")
+          for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001"):
+              if object_id not in search:
+                  raise SystemExit(f"portal search index missing {object_id}")
+
+          if not (site / "index.html").is_file():
+              raise SystemExit("portal landing page missing")
+          PY
+
+      - name: Exercise engineering portal workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m http.server 8765 \
+            --bind 127.0.0.1 \
+            --directory bld/engineering-portal/site \
+            > bld/engineering-portal/browser-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          python - <<'PY'
+          import time
+          import urllib.request
+
+          url = "http://127.0.0.1:8765/explorer/"
+          for _ in range(20):
+              try:
+                  urllib.request.urlopen(url, timeout=1).read(1)
+                  break
+              except Exception:
+                  time.sleep(0.25)
+          else:
+              raise SystemExit("engineering portal preview server did not become ready")
+          PY
+
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$chrome" ]; then
+            echo "No Chrome/Chromium executable available on runner"
+            exit 1
+          fi
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/explorer/?object=TimingNode" \
+            > bld/engineering-portal/browser-explorer.html
+
+          grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
+          grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
+          grep -q 'Open object page' bld/engineering-portal/browser-explorer.html
+          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --window-size=1600,1000 \
+            --screenshot=bld/engineering-portal/explorer-TimingNode.png \
+            "http://127.0.0.1:8765/explorer/?object=TimingNode"
+
       - name: Render generated Markdown for human review
         shell: bash
         run: |
@@ -225,6 +362,7 @@ jobs:
 
           required = (
               '**SI01-REQ-003 — Minimal TimingNode composition**',
+              '— — —',
               '- **Type:** Requirement',
               '- **Derived from:**',
               '- **Satisfied by:**',
@@ -245,6 +383,7 @@ jobs:
           order = (
               block.index("**SI01-REQ-003 — Minimal TimingNode composition**"),
               block.index(body_text),
+              block.index("— — —"),
               block.index("- **Type:** Requirement"),
               block.index("- **Derived from:**"),
               block.index("- **Satisfied by:**"),
@@ -394,7 +533,7 @@ jobs:
           set -euo pipefail
           staging="$RUNNER_TEMP/software-docs-publication"
           rm -rf "$staging"
-          mkdir -p "$staging/orchestration" "$staging/evidence/traceability/native" "$staging/evidence/traceability/input"
+          mkdir -p "$staging/orchestration" "$staging/evidence/traceability/native" "$staging/evidence/traceability/input" "$staging/evidence/portal"
           cp -a bld/docs/. "$staging/"
           cp bld/engineering-graph.json "$staging/evidence/traceability/engineering-graph.json"
           cp bld/engineering-graph-review.md "$staging/evidence/traceability/review.md"
@@ -421,6 +560,11 @@ jobs:
           EOF
           cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
+          cp -a bld/engineering-portal/site "$staging/portal"
+          cp bld/engineering-portal/explorer-TimingNode.png "$staging/evidence/portal/explorer-TimingNode.png"
+          cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
+          cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"
+          cp docs/_portal/requirements.txt "$staging/evidence/portal/requirements.txt"
 
       - name: Upload prepared documentation publication
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
