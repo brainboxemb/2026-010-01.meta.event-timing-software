@@ -882,7 +882,7 @@ logging-specific TCP boundary is separate from the IF-03 Remote API/status/event
 interface and live delivery remains best effort.
 ```
 
-`ApplicationBootstrap` is shown in the cross-cutting area because startup composition touches several normal layers without becoming a layer itself. Concrete configuration-file parsing belongs to the executable input adapter. Normal runtime interactions do not route through bootstrap after composition is complete.
+`ApplicationBootstrap` is shown in the cross-cutting area because startup composition touches several normal layers without becoming a layer itself. The default YAML configuration loader is framework infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. Normal runtime interactions do not route through bootstrap after composition is complete.
 
 ### Principal runtime abstractions
 
@@ -1566,14 +1566,14 @@ Startup follows three distinct responsibilities:
 load sources -> effective typed configuration -> validate references/settings -> compose application
 ```
 
-Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
+Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. Framework `EmbeddedBuildIdentityLoader` interprets the standard embedded provenance resource, while the concrete executable owns and filters that resource with its own application/build values. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
 
 Working rules:
 
 - keep secrets/credentials out of committed configuration and store only secret references there;
 - prefer explicit/manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
 - keep overlay rules deliberately limited rather than creating general inheritance/includes;
-- keep the concrete file syntax/library open until the first Step-3 implementation selects it;
+- use YAML as the current default IF-11 file syntax and keep its SnakeYAML parser/mapping inside framework infrastructure; the logical IF-11 contract is not coupled to the SnakeYAML API;
 - create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
 
 ### Data and persistence architecture
