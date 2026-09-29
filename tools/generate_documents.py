@@ -26,8 +26,8 @@ PLANNING_DOCUMENTS = [
 
 SYSTEM_SPEC_DOCUMENTS = [
     "20-SSSD-software-system-specification-document.md",
-    "21-01-IDD-application-control-status.md",
-    "21-02-IDD-application-configuration.md",
+    "21-03-IDD-application-control-status.md",
+    "21-11-IDD-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
@@ -37,8 +37,8 @@ SOFTWARE_ITEM_SPEC_DOCUMENTS = [
 
 ARCHITECTURE_DOCUMENTS = [
     "20-SSSD-software-system-specification-document.md",
-    "21-01-IDD-application-control-status.md",
-    "21-02-IDD-application-configuration.md",
+    "21-03-IDD-application-control-status.md",
+    "21-11-IDD-application-configuration.md",
     "30-01-SISD-timing-application-specification-document.md",
     "31-01-SDD-02-java-component-design.md",
     "30-02-SISD-gui-application-specification-document.md",

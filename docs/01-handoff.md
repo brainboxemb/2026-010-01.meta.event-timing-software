@@ -25,8 +25,8 @@ Lees eerst in de meta-repository:
 - `docs/20-SSSD-software-system-specification-document.md`
 - `docs/30-01-SISD-timing-application-specification-document.md`
 - `docs/31-01-SDD-02-java-component-design.md`
-- `docs/21-01-IDD-application-control-status.md`
-- `docs/21-02-IDD-application-configuration.md`
+- `docs/21-03-IDD-application-control-status.md`
+- `docs/21-11-IDD-application-configuration.md`
 - `docs/50-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:

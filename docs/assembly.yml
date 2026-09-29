@@ -16,8 +16,8 @@ documents:
   - {id: software-development-environment, source: docs/12-SDE-software-development-environment.md}
   - {id: java-build-test-toolchain, source: docs/13-SDE-java-build-test-toolchain.md}
   - {id: software-system-specification, source: docs/20-SSSD-software-system-specification-document.md}
-  - {id: application-control-status, source: docs/21-01-IDD-application-control-status.md}
-  - {id: application-configuration, source: docs/21-02-IDD-application-configuration.md}
+  - {id: application-control-status, source: docs/21-03-IDD-application-control-status.md}
+  - {id: application-configuration, source: docs/21-11-IDD-application-configuration.md}
   - {id: timing-application-specification, source: docs/30-01-SISD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/30-02-SISD-gui-application-specification-document.md}
   - {id: data-display-design, source: docs/31-01-SDD-01-data-and-display-design.md}

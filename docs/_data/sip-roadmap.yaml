@@ -97,7 +97,7 @@ steps:
       - {name: 13-SDE, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 30-01-SISD, title: SI-01 specification, maturity: review, completeness: 25}
       - {name: 31-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
-      - {name: 21-01-IDD, title: Remote API interface, maturity: review, completeness: 45}
+      - {name: 21-03-IDD, title: Remote API interface, maturity: review, completeness: 45}
       - {name: 50-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
 
   "3":
@@ -113,8 +113,8 @@ steps:
     documents:
       - {name: 04-UC, title: System use cases, maturity: working, completeness: 55}
       - {name: 30-01-SISD, title: SI-01 specification, maturity: review, completeness: 35}
-      - {name: 21-01-IDD, title: Remote API interface, maturity: review, completeness: 65}
-      - {name: 21-02-IDD, title: Application configuration interface, maturity: review, completeness: 55}
+      - {name: 21-03-IDD, title: Remote API interface, maturity: review, completeness: 65}
+      - {name: 21-11-IDD, title: Application configuration interface, maturity: review, completeness: 55}
       - {name: 50-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
 
   "4":
@@ -129,7 +129,7 @@ steps:
       - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 80}
       - {name: 04-UC, title: System use cases, maturity: review, completeness: 70}
       - {name: 30-01-SISD, title: SI-01 specification, maturity: review, completeness: 55}
-      - {name: 21-01-IDD, title: Remote API interface, maturity: review, completeness: 70}
+      - {name: 21-03-IDD, title: Remote API interface, maturity: review, completeness: 70}
       - {name: 50-SVP, title: Domain verification direction, maturity: working, completeness: 60}
 
   "5":
@@ -143,7 +143,7 @@ steps:
     documents:
       - {name: 04-UC, title: System use cases, maturity: review, completeness: 80}
       - {name: 30-01-SISD, title: SI-01 specification, maturity: review, completeness: 70}
-      - {name: 21-01-IDD, title: Remote API interface, maturity: review, completeness: 80}
+      - {name: 21-03-IDD, title: Remote API interface, maturity: review, completeness: 80}
       - {name: 50-SVP, title: System-test scenarios, maturity: review, completeness: 70}
 
   "6":
@@ -157,7 +157,7 @@ steps:
     documents:
       - {name: 04-UC, title: System use cases, maturity: review, completeness: 85}
       - {name: 30-02-SISD, title: Desktop GUI specification, maturity: working, completeness: 60}
-      - {name: 21-01-IDD, title: Remote API interface, maturity: review, completeness: 85}
+      - {name: 21-03-IDD, title: Remote API interface, maturity: review, completeness: 85}
       - {name: 50-SVP, title: GUI verification direction, maturity: review, completeness: 75}
 
   "7":

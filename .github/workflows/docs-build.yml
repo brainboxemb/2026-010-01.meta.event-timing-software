@@ -131,7 +131,7 @@ jobs:
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
           cp docs/04-UC-system-use-cases.md bld/sphinx-needs/source/docs/
           cp docs/30-01-SISD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/21-01-IDD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/21-03-IDD-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -157,7 +157,7 @@ jobs:
 
           docs/04-UC-system-use-cases
           docs/30-01-SISD-timing-application-specification-document
-          docs/21-01-IDD-application-control-status
+          docs/21-03-IDD-application-control-status
           ~~~
           EOF
 
