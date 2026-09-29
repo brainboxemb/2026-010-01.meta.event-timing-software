@@ -155,7 +155,7 @@ io/
       SimulatedAntenna.java             built-in reference/simulation implementation
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
-      DisplayRev1Can.java               passive CAN display support when implemented
+      Rev1CanDisplay.java               passive CAN display support when implemented
     keypad/                        only when device-specific code justifies it
     beeper/                         transport-specific implementation only when justified
 
@@ -171,6 +171,7 @@ io/
     Connector.java                 only if multiple transports justify a shared contract
     rabbitmq/
       RabbitMqConnector.java
+      DebugConnector.java                 engineering/debug connector when implemented
 ```
 
 The names above record ownership/direction, not a requirement to create empty
@@ -202,7 +203,7 @@ connection/listener/session handling and protocol framing are lower-level design
 concerns below `NetworkDeviceService`. Likewise, a smart-display/domain handler
 should not acquire socket, mDNS or transport knowledge merely because it is
 reached through this service. The smart display remains an external client and
-therefore does not require a `DisplayRev2Wifi` class inside SI-01 merely to
+therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
 mirror the hardware name.
 
 `TimingNode` contains its `LogBook` as part of the TimingNode aggregate. The
@@ -219,7 +220,7 @@ contract used for persistence and interchange. Concrete storage, Web and
 messaging adapters may depend on that API and carry an encoded representation
 without knowing or switching on individual TimingData fields.
 
-`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
+`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -231,7 +232,7 @@ TimingNode state together with operational I/O state such as antenna/display
 connectivity, keypad/beeper availability, device-network health, storage,
 upstream connectivity and synchronisation. Concrete I/O components expose or
 publish semantic status inputs; `SystemStatus` must not depend on classes such
-as `DisplayRev1Can`, socket/session implementations or vendor antenna drivers.
+as `Rev1CanDisplay`, socket/session implementations or vendor antenna drivers.
 
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
