@@ -262,12 +262,14 @@ TimingApplication
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId
+        +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus
-        +-- heartbeat / ping semantics
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
         |
         +-- 1..N TimingNode
-              +-- TimingNodeId
+              +-- TimingNodeId   functional upstream/timing-data identity
               +-- LocationID
               +-- lifecycle / status
               +-- UpstreamMessagePort
@@ -281,9 +283,8 @@ TimingApplication
 LogBook
   +-- 0..N LogBookItem
 
-Domain contracts:
+Shared Domain contract:
   +-- TimingData
-  +-- UpstreamProtocol
 ```
 
 <a id="fig-si01-01"></a>
@@ -382,7 +383,7 @@ do not introduce messages merely to preserve a layer diagram. Upstream messaging
 is the explicit exception: `UpstreamMessageRouter` owns target resolution for
 messages exchanged with the upstream system at application scope. **Upstream**
 describes that external system relationship, not the direction of an individual
-message; the exchange is bidirectional. It routes TimingSystem-scoped upstream messages by `TimingSystemId` to the relevant `TimingSystem` responsibility and node-scoped messages to the addressed TimingNode within that system through its `UpstreamMessagePort`. It is deliberately **not** a generic application message
+message; the exchange is bidirectional. The upstream wire contract does not need to expose `TimingSystemId`. Each configured upstream protocol/gateway context belongs internally to one `TimingSystem`; node-scoped messages are then routed functionally by `TimingNodeId` to that system's addressed TimingNode. Protocol-level messages such as ping/heartbeat can be handled by `TimingSystem`/`UpstreamProtocol` without involving a TimingNode. `UpstreamMessageRouter` is deliberately **not** a generic application message
 bus or mediator for normal collaboration between domain components.
 
 #### Domain
@@ -393,11 +394,14 @@ one parent/child tree:
 
 ```text
 TimingSystem (1..N per TimingApplication)
-  TimingSystemId
+  TimingSystemId              internal only
   SystemStatus
-  heartbeat / ping semantics
+  UpstreamProtocol
+    TimingData transfer
+    synchronisation / reconciliation
+    ping / pong and other protocol messages
   1..N TimingNode
-    TimingNodeId
+    TimingNodeId              functional protocol/data identity
     LocationID
     State
     UpstreamMessagePort
@@ -415,14 +419,9 @@ TimingData
   TimingDataRecord
   canonical structure / validation
   encode / decode / compatibility
-
-UpstreamProtocol
-  TimingData transfer
-  synchronisation / reconciliation
-  ping / pong and other protocol messages
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns a stable `TimingSystemId`, its own `SystemStatus`, system-level heartbeat/ping semantics, and 1..N TimingNodes. This lets one process simulate or host multiple independent timing systems without merging their domain state.
+`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, its own `SystemStatus`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
@@ -456,11 +455,7 @@ semantics for that representation. This is a Domain contract because the meaning
 and compatibility of recorded timing data are product semantics, not a property
 of a filesystem, RabbitMQ or HTTP implementation.
 
-`UpstreamProtocol` is a second Domain-level protocol responsibility. It uses
-`TimingData` for timing-record transfer and additionally defines semantic
-messages needed for synchronisation, reconciliation, heartbeat/ping and other
-upstream-system exchanges. It is therefore broader than the TimingData record
-format itself.
+`UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode.
 
 Detailed domain semantics belong in `00-04-domain-baseline.md`.
 
@@ -551,7 +546,7 @@ The semantic `UpstreamProtocol` belongs to Domain. The gateway/connector path
 may transport an encoded protocol representation without interpreting
 TimingData fields or reimplementing synchronisation rules. After protocol
 decoding, `UpstreamMessageRouter` in the application layer owns target
-resolution to the application-wide `TimingSystem` or the addressed TimingNode.
+resolution within the configured `TimingSystem` context, with TimingNode-targeted work selected by `TimingNodeId`.
 
 #### Platform
 
@@ -603,12 +598,14 @@ TimingApplication
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId
+        +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus
-        +-- heartbeat / ping semantics
+        +-- UpstreamProtocol
+        |     +-- heartbeat / ping
+        |     +-- synchronisation / reconciliation
         |
         +-- 1..N TimingNode
-              +-- TimingNodeId
+              +-- TimingNodeId   functional upstream/timing-data identity
               +-- LocationID
               +-- lifecycle / status
               +-- UpstreamMessagePort
@@ -622,19 +619,11 @@ TimingApplication
 LogBook
   +-- 0..N LogBookItem
 
-Domain contracts:
+Shared Domain contract:
   +-- TimingData
-  +-- UpstreamProtocol
 ```
 
-`ApplicationId` identifies the running Headless Timing Application instance.
-`TimingNodeId` is the stable identity of a `TimingNode` and scopes its
-registration sequence, persistence and synchronisation semantics. The two
-identities remain separate types/namespaces even when their configured string
-values are equal. For the current single-TimingNode deployment style, using the
-same configured value for `ApplicationId` and `TimingNodeId` is the intended
-starting convention. `LocationID` is the separately configured physical event
-location.
+`ApplicationId` identifies the running Headless Timing Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationID` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
 
 <a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
@@ -701,8 +690,9 @@ Messaging
           +-- Connector (1..N)
 
 UpstreamMessageRouter
-    +-- application-scoped upstream target -> Domain responsibility
+    +-- protocol-level message -> owning TimingSystem / UpstreamProtocol
     +-- TimingNodeId -> TimingNode.UpstreamMessagePort
+    +-- TimingSystemId remains internal composition context
 ```
 
 <a id="fig-si01-03"></a>
@@ -718,25 +708,14 @@ I/O/device-network responsibilities. A keypad, beeper or display may interact wi
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges
-transport-neutral messages with its configured connectors but does not resolve
-those messages to application/domain targets. `UpstreamMessageRouter` owns that
-application-level target resolution: an application-scoped upstream message can
-be routed to the relevant Domain responsibility (for example `SystemStatus`),
-while a `TimingNodeId` target resolves to that TimingNode's
-`UpstreamMessagePort`.
+`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` then resolves TimingNode-targeted semantic messages by `TimingNodeId`; protocol-level operations such as ping/status remain with that TimingSystem's `UpstreamProtocol`/`SystemStatus`. No external `TimingSystemId` field is required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
-semantics. A connector-specific external name or routing key may participate in
-boundary mapping, but it does not replace `ApplicationId` or the stable
-internal `TimingNodeId`. One gateway may use multiple connectors and one
+semantics. A connector-specific external name or routing key may participate in boundary mapping, but it does not replace the stable functional `TimingNodeId`. Internal `TimingSystemId` is local composition context rather than a new upstream routing identity. One gateway may use multiple connectors and one
 TimingNode may exchange messages through more than one connector via the gateway,
 router and its bidirectional port.
 
-`ApplicationId` establishes the separate addressable identity for
-application-scoped upstream messages. That does not require a synthetic
-application-level `UpstreamMessagePort`; `UpstreamMessageRouter` can route such
-messages directly to the appropriate application/domain responsibility.
+`ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `TimingNodeId`.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
@@ -1269,11 +1248,7 @@ connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
 Public protocol semantics and TimingData compatibility remain owned by Domain.
 
-`ApplicationId` is used for application-scoped upstream addressing.
-`UpstreamMessageRouter` provides target resolution without becoming a generic
-internal message bus. Protocol messages that can be answered entirely by
-application-wide `TimingSystem` semantics do not need to be forced through a
-TimingNode.
+`TimingSystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that can be answered entirely by the configured TimingSystem's `UpstreamProtocol`/`SystemStatus` do not need to be forced through a TimingNode.
 
 #### RFID
 
