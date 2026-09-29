@@ -13,7 +13,7 @@ capability approaches implementation; no separate requirements/architecture docu
 The SI-02 specification consumes:
 
 - `31-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
-- `32-IDD-03-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- `32-03-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
 - a future system-owned GUI/HMI IDD when that contract is defined.
 

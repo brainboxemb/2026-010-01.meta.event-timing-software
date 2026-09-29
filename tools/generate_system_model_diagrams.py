@@ -53,18 +53,19 @@ def software_item_overview() -> Diagram:
 def timing_node_software_decomposition() -> Diagram:
     nodes = [
         Node("app", "SI-01 TimingApplication\\nApplicationId • one JVM/process", 505, 45, 390, 90, "core"),
-        Node("system", "TimingSystem (1..N hosted)\\ninternal TimingSystemId • SystemStatus • UpstreamProtocol", 430, 185, 540, 105, "service"),
-        Node("wp1", "TimingNode timing-node-A\\nTimingNodeId • Location X\\nUpstreamMessagePort", 120, 350, 420, 105, "service"),
-        Node("wp2", "TimingNode timing-node-B\\nTimingNodeId • Location Y\\nUpstreamMessagePort", 860, 350, 420, 105, "service"),
+        Node("system", "TimingSystem (1..N hosted)\\nTimingSystemId • complete SystemStatus\\nsystem UpstreamMessagePort • UpstreamProtocol • TimeSource", 430, 185, 540, 120, "service"),
+        Node("wp1", "TimingNode timing-node-A\\nTimingNodeId • Location X\\nUpstreamMessagePort • contains LogBook", 120, 360, 420, 105, "service"),
+        Node("wp2", "TimingNode timing-node-B\\nTimingNodeId • Location Y\\nUpstreamMessagePort • contains LogBook", 860, 360, 420, 105, "service"),
 
         Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 540, 280, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 345, 540, 280, 90, "service"),
         Node("start", "StageStartTimes\\nlocal stage start-time reference", 650, 540, 300, 90, "service"),
-        Node("logbook", "LogBook\\n0..N LogBookItem\\nTimingNode-owned lifecycle", 975, 540, 360, 90, "service"),
+        Node("logbook", "LogBook\\n0..N LogBookItem\\ncontained by TimingNode", 975, 540, 360, 90, "service"),
         Node("ready", "NextUpTeams\\nteams expected next", 80, 730, 300, 95, "service"),
         Node("race", "RaceData\\nparticipant/team/tag reference data", 425, 730, 300, 95, "service"),
         Node("stage", "StageTiming\\nrunning times + ranking", 770, 730, 280, 95, "service"),
-        Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 1080, 730, 260, 95, "interface"),
+        Node("timingdata", "TimingData\\ncanonical TimingDataRecord + codec", 1080, 730, 260, 95, "service"),
+        Node("shared", "Shared runtime infrastructure\\nHTTP • logging • executors • configuration", 1080, 855, 260, 95, "interface"),
     ]
 
     edges = [
@@ -78,6 +79,8 @@ def timing_node_software_decomposition() -> Diagram:
         Edge("wp1", "ready"),
         Edge("wp1", "race"),
         Edge("wp1", "stage"),
+        Edge("wp1", "timingdata", "uses / produces", True),
+        Edge("wp2", "timingdata", "uses / produces", True),
         Edge("app", "shared"),
         Edge("system", "shared", "uses shared facilities", True),
     ]
@@ -86,7 +89,7 @@ def timing_node_software_decomposition() -> Diagram:
         "timing-node-software-decomposition",
         "SI-01 software/domain decomposition — TimingApplication, TimingSystem and TimingNode responsibilities",
         1400,
-        930,
+        1050,
         nodes,
         edges,
     )
@@ -95,13 +98,13 @@ def timing_node_software_decomposition() -> Diagram:
 def timing_node_routing_mapping() -> Diagram:
     nodes = [
         Node("app", "TimingApplication\\nApplicationId", 520, 35, 360, 80, "core"),
-        Node("system", "TimingSystem context\\ninternal TimingSystemId • SystemStatus", 500, 145, 400, 90, "service"),
+        Node("system", "TimingSystem context\\nTimingSystemId • complete SystemStatus\\nUpstreamMessagePort • TimeSource", 500, 145, 400, 105, "service"),
         Node("protocol", "UpstreamProtocol\\nTimingData • sync • ping/pong", 500, 285, 400, 90, "service"),
 
         Node("ant1", "Devices / Antenna ANT1\\nAntennaId", 60, 195, 280, 80, "adapter"),
         Node("ant2", "Devices / Antenna ANT2\\nAntennaId", 60, 430, 280, 80, "adapter"),
 
-        Node("router", "UpstreamMessageRouter\\nTimingNodeId target resolution", 500, 430, 400, 100, "interface"),
+        Node("router", "UpstreamMessageRouter\\nsystem / TimingNode target resolution", 500, 430, 400, 100, "interface"),
 
         Node("node_a", "TimingNode timing-node-A\\nTimingNodeId\\nUpstreamMessagePort", 975, 205, 350, 105, "service"),
         Node("node_b", "TimingNode timing-node-B\\nTimingNodeId\\nUpstreamMessagePort", 975, 430, 350, 105, "service"),
@@ -124,8 +127,8 @@ def timing_node_routing_mapping() -> Diagram:
         Edge("conn1", "gateway", "transport"),
         Edge("conn2", "gateway", "transport"),
         Edge("gateway", "protocol", "encoded UpstreamProtocol"),
-        Edge("protocol", "router", "TimingNode messages"),
-        Edge("protocol", "system", "ping / status", True),
+        Edge("protocol", "router", "semantic messages"),
+        Edge("protocol", "system", "system messages via UpstreamMessagePort", True),
         Edge("router", "node_a", "TimingNodeId"),
         Edge("router", "node_b", "TimingNodeId"),
     ]

@@ -48,6 +48,8 @@ ApplicationConfig
 ├── timingSystems
 │   └── <timingSystem>
 │       ├── timingSystemId
+│       ├── timingDataProvider
+│       ├── upstreamProtocolProvider
 │       └── timingNodes
 ├── io
 │   ├── devices
@@ -99,6 +101,8 @@ Representative fields:
 timingSystems
   timing-system-01
     timingSystemId
+    timingDataProvider: reference
+    upstreamProtocolProvider: reference
     timingNodes
       timing-node-01
         timingNodeId
@@ -127,18 +131,22 @@ io
     antennaManager
       antennas
         ANT1
+          provider: simulated
           type: rfid
           timingNodes: [timing-node-01, timing-node-02]
         ANT2
+          provider: simulated
           type: rfid
           timingNodes: [timing-node-02]
 
   deviceNetworks
     can
       enabled: true
+      protocolProvider: reference
 
     network
       enabled: true
+      displayProtocolProvider: reference
 ```
 
 `AntennaManager` is the configured owner of the antenna set and may define 0..N antennas. `AntennaId` is distinct from
@@ -156,9 +164,16 @@ concrete. IF-09 remains an IP/network interface and does not require a physical
 Wi-Fi router or WLAN. Exact mDNS service naming and network application protocol
 remain deferred rather than being invented in IF-11 now.
 
-Concrete antenna configuration owns its driver/protocol/device settings. A
-separate registration-asset identity is not part of the active software
-configuration model.
+Concrete antenna configuration owns its driver/protocol/device settings. Its
+`provider` value selects a registered `AntennaProvider`; `simulated` is the
+built-in provider and therefore requires no external extension JAR. A separate
+registration-asset identity is not part of the active software configuration
+model.
+
+Provider IDs are implementation-selection keys, not domain/device identities.
+The same rule applies to configured TimingData, UpstreamProtocol, CAN-protocol
+and display-protocol providers. Public examples use generic/reference provider
+IDs; private provider names and protocol values remain outside this repository.
 
 ### Upstream messaging
 
@@ -361,11 +376,11 @@ Windows does not imply simulation.
 A simulation profile replaces concrete adapters while preserving the same application/domain model:
 
 ```text
-production: TimingNode -> real RFID adapter
-simulation: TimingNode -> simulated RFID adapter
+production: TimingNode -> configured Antenna provider
+simulation: TimingNode -> built-in SimulatedAntenna
 ```
 
-The same TimingNode identities, application commands and domain behaviour remain in use.
+The same TimingNode identities, application commands and domain behaviour remain in use. The built-in simulated antenna is always available and does not depend on external extension discovery.
 
 ## Validation
 
@@ -380,6 +395,9 @@ Validation includes, where applicable:
 - references to unknown TimingSystems or TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
+- duplicate discovered provider IDs;
+- unknown configured TimingData/UpstreamProtocol/Antenna/CAN/display provider IDs;
+- provider/configuration combinations rejected by the selected provider;
 - invalid CAN device-network settings when CAN is enabled;
 - invalid network-device service settings when the network device service is enabled;
 - duplicate/conflicting upstream connector identifiers;
@@ -401,9 +419,10 @@ main()
   -> obtain BuildIdentity from the built artifact
   -> load IF-11 configuration sources
   -> produce effective ApplicationConfig
-  -> validate effective configuration
+  -> discover built-in and configured external extension providers
+  -> validate effective configuration and provider references
   -> configure executable runtime logging
-  -> compose TimingApplication and selected adapters
+  -> compose TimingApplication and selected implementations
   -> start application lifecycle
 ```
 
@@ -415,7 +434,7 @@ Reusable application/runtime behaviour should be shared through composition. IF-
 
 Public configuration examples use synthetic identities and endpoints.
 
-Real deployment identities, production topology, credentials, encryption keys, proprietary mappings and private protocol values remain outside the public repositories.
+Real deployment identities, production topology, credentials, encryption keys, proprietary mappings, private provider names and private protocol values remain outside the public repositories. Public examples use only generic/reference provider IDs and synthetic configuration.
 
 ## First Step-3 implementation slice
 

@@ -14,8 +14,8 @@ requirements without creating a release dependency between a separate SRD and SA
 The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
-- `32-IDD-03-application-control-status.md` for IF-03 obligations;
-- `33-IDD-11-application-configuration.md` for IF-11 obligations;
+- `32-03-IDD-application-control-status.md` for IF-03 obligations;
+- `32-11-IDD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
 `30-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
@@ -97,7 +97,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 schema is defined by `32-IDD-03-application-control-status.md`.
+The concrete IF-03 schema is defined by `32-03-IDD-application-control-status.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -229,6 +229,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep public framework/reference code independent of private production source;
+- allow selected concrete implementations to be supplied through a small Java-8-compatible provider/extension mechanism without making normal domain/application code plugin-aware;
 - avoid framework complexity that is not justified by the application.
 
 ### +1 scenarios used to validate the architecture
@@ -264,10 +265,12 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
-        +-- SystemStatus
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
         |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
@@ -276,13 +279,12 @@ TimingApplication
               +-- UpstreamMessagePort
               +-- TagProcessor
               +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
-              +-- owns lifecycle -> LogBook
-
-LogBook
-  +-- 0..N LogBookItem
+              +-- uses / produces TimingData
 
 Shared Domain contract:
   +-- TimingData
@@ -334,7 +336,7 @@ and diagnostic operations grow inside the same functional
 interface.
 ```
 
-**Web** is modelled separately as the browser-facing presentation interface of SI-01. The intended runtime topology is one configured Web endpoint per TimingNode. Because one application may host 1..N TimingSystems and each TimingSystem 1..N TimingNodes, a Web binding resolves a TimingSystem/TimingNode target; bind address/port remains presentation configuration and is not a property of either domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
+**Web** is modelled separately as the browser-facing presentation interface of SI-01. The Web composition is per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints, normally one per TimingNode. A Web binding therefore resolves a TimingSystem/TimingNode target; bind address/port remains presentation configuration and is not a property of either domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
 
 **Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
 
@@ -389,32 +391,33 @@ bus or mediator for normal collaboration between domain components.
 
 #### Domain
 
-The domain owns timing semantics, application-wide system semantics and
+The domain owns timing semantics, per-TimingSystem system semantics and
 TimingNode state. The main responsibilities are deliberately not represented as
 one parent/child tree:
 
 ```text
 TimingSystem (1..N per TimingApplication)
   TimingSystemId              internal only
-  SystemStatus
+  SystemStatus                complete current system overview
+  UpstreamMessagePort         system-level upstream messages
   UpstreamProtocol
     TimingData transfer
     synchronisation / reconciliation
     ping / pong and other protocol messages
+  TimeSource                   absolute time / controllable test offset
   1..N TimingNode
     TimingNodeId              functional protocol/data identity
     LocationID
     State
-    UpstreamMessagePort
+    UpstreamMessagePort       TimingNode-level upstream messages
     TagProcessor
     StageStartTimes
+    LogBook
+      0..N LogBookItem
     NextUpTeams
     RaceData
     StageTiming
-    owns lifecycle -> LogBook
-
-LogBook
-  0..N LogBookItem
+    uses / produces TimingData
 
 TimingData
   TimingDataRecord
@@ -422,41 +425,54 @@ TimingData
   encode / decode / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, its own `SystemStatus`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
-components shown inside the TimingNode aggregate in Figure SI01-01. A TimingNode
-also owns the lifecycle of its `LogBook`, but the LogBook is shown as a separate
-Domain responsibility because its state model and persistence/interchange
-boundary are important architecture concepts in their own right.
+components shown inside the TimingNode aggregate in Figure SI01-01, including its
+`LogBook`. The LogBook therefore remains visibly part of the TimingNode aggregate
+while owning its own 0..N `LogBookItem` collection. `TimingNode` also has an
+explicit semantic relationship with the shared `TimingData` contract for the
+canonical data it produces or consumes.
 
-`UpstreamMessagePort` is the bidirectional upstream-message boundary of one
-TimingNode. Its name identifies the relationship with the upstream system; it
-does not imply that every message travels away from the TimingNode. Inbound messages have already been resolved first to the owning TimingSystem and then to that TimingNode by `UpstreamMessageRouter`; state-changing handling executes through the
-TimingNode's serial boundary and delegates to the relevant TimingNode
-responsibilities. Outbound TimingNode messages leave through the same semantic
-port and return to `UpstreamMessageRouter` for application/upstream routing. The
-port owns no transport connection, connector lifecycle or cross-node target
-resolution.
+Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
+`TimingSystem.UpstreamMessagePort` receives system-level operations such as
+status/heartbeat and synchronisation control that do not target one TimingNode.
+Each `TimingNode.UpstreamMessagePort` receives node-level operations after
+`UpstreamMessageRouter` has resolved the owning TimingSystem and target
+`TimingNodeId`. Outbound messages use the corresponding port in the reverse
+direction. Neither port owns transport connections, connector lifecycle or
+cross-aggregate target resolution.
 `TagProcessor` handles tag observations. `StageStartTimes` owns stage start
 references. `NextUpTeams` owns the teams expected next at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
 derives running times and ranking.
 
-`LogBook` owns the operational logbook state for one TimingNode and contains
-0..N `LogBookItem` values. `LogBookItem` is the LogBook's internal domain
-representation; it is intentionally not required to have the same shape as the
-persistent/interchange representation.
+`LogBook` is a contained responsibility of one TimingNode and owns that node's
+operational logbook state as 0..N `LogBookItem` values. `LogBookItem` is the
+LogBook's internal domain representation; it is intentionally not required to
+have the same shape as the persistent/interchange representation. The high-level
+architecture relates the TimingNode aggregate, rather than LogBook directly, to
+`TimingData`; the exact LogBookItem-to-TimingData mapping remains a lower-level
+design concern.
 
 `TimingData` owns the canonical persistent/interchange representation of
 timing information. `TimingDataRecord` is its principal record type.
 `TimingData` also owns the public encode/decode, validation and compatibility
 semantics for that representation. This is a Domain contract because the meaning
 and compatibility of recorded timing data are product semantics, not a property
-of a filesystem, RabbitMQ or HTTP implementation.
+of a filesystem, RabbitMQ or HTTP implementation. A selected
+`TimingDataProvider` may supply the concrete representation/codec implementation
+behind that stable contract when a deployment needs an extension-provided format;
+normal domain users depend on `TimingData`, not on provider discovery mechanics.
 
-`UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode.
+`UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
+
+`TimeSource` is the Domain-owned absolute-time source of one `TimingSystem`.
+Production composition may delegate it to the platform wall clock; simulation
+and tests can provide a controlled source with an independent offset or stepped
+time. This keeps simulated clock behaviour scoped to the TimingSystem rather
+than global to the Java process.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
@@ -474,14 +490,14 @@ asynchronous completion
 
 #### I/O
 
-I/O contains adapters that move data between the application and the outside world:
+I/O contains adapters that move data between the application and the outside world. Figure SI01-01 shows one logical I/O layer, but the runtime composition is per `TimingSystem`: with 1..N TimingSystems, the corresponding Storage/Devices/Messaging/DeviceNetworks composition is instantiated 1..N times unless a lower-level implementation explicitly multiplexes a shared physical resource.
 
 ```text
 io/
   Devices
     AntennaManager
       Antenna (0..N)
-        Vendor1Antenna
+        SimulatedAntenna
     Display
       DisplayRev1Can
       DisplayRev2Wifi
@@ -522,7 +538,7 @@ The high-level I/O view separates **Devices** from **DeviceNetworks**.
 `Devices` groups the software components that represent external device roles in
 SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
 coordination needed when multiple physical antennas form one registration input
-path. `Vendor1Antenna` is a concrete antenna implementation. `Display`, `Keypad` and `Beeper` name the software-facing device roles; `DisplayRev1Can`,
+path. `SimulatedAntenna` is the built-in reference/simulation implementation and is always available without an external extension JAR. Production/vendor antenna implementations may be supplied through `AntennaProvider`. `Display`, `Keypad` and `Beeper` name the software-facing device roles; `DisplayRev1Can`,
 `DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. `Beeper` remains transport-neutral until a concrete implementation/connection is required. These names
 describe software components/implementations, not the physical devices themselves.
 
@@ -584,10 +600,22 @@ composition is complete.
 A `TimingSystem` is an internal parent domain aggregate.
 One **Headless Timing Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
-simulation contexts. Each TimingSystem owns its own
-`SystemStatus`, `UpstreamProtocol` context and 1..N
-TimingNodes. Its internal `TimingSystemId` is not assumed
-to be part of the upstream wire contract.
+simulation contexts. Each TimingSystem owns a complete
+`SystemStatus` overview, a system-level
+`UpstreamMessagePort`, one `UpstreamProtocol` context, one
+`TimeSource` and 1..N TimingNodes. Its internal `TimingSystemId` is not
+assumed to be part of the upstream wire contract.
+```
+
+```{arch} SystemStatus
+:id: SystemStatus
+
+`SystemStatus` is a dedicated Domain component contained by one
+`TimingSystem`. It owns the complete current operational overview of that
+system, including TimingNode state plus semantic device, device-network,
+storage, upstream-connectivity and synchronisation status. Concrete adapter
+objects remain outside Domain and contribute status through typed semantic
+inputs.
 ```
 
 ```{arch} TimingNode
@@ -596,8 +624,10 @@ to be part of the upstream wire contract.
 
 A `TimingNode` is the independently addressed
 operational/domain aggregate at one timing location. It
-belongs to exactly one `TimingSystem`; the upstream and
-TimingData contracts remain functionally centred on
+belongs to exactly one `TimingSystem`, contains its
+`LogBook`, exposes its own `UpstreamMessagePort` and has
+an explicit relationship with `TimingData`; the upstream
+and TimingData contracts remain functionally centred on
 `TimingNodeId`.
 ```
 
@@ -605,10 +635,10 @@ TimingData contracts remain functionally centred on
 ```{arch} LogBook
 :id: LogBook
 
-A `LogBook` belongs to one TimingNode and is lifecycle-managed
-by that TimingNode. It owns the operational collection of
-`LogBookItem` values; those internal items are deliberately
-separate from the canonical TimingData interchange shape.
+A `LogBook` is contained by one TimingNode and owns that
+node's operational collection of `LogBookItem` values.
+Those internal items are deliberately separate from the
+canonical TimingData interchange shape.
 ```
 
 ```{arch} TimingData
@@ -630,6 +660,18 @@ synchronisation, reconciliation and ping/heartbeat semantics so
 those concerns do not leak into individual TimingNodes.
 ```
 
+
+```{arch} TimeSource
+:id: TimeSource
+
+`TimeSource` is owned by one `TimingSystem` and provides the absolute current
+time used by that system's timing semantics. Production composition can delegate
+to the platform wall clock; simulation/test composition can use a controlled
+source with an independently programmable offset or stepped time. Multiple
+TimingSystems in one process therefore do not have to share the same simulated
+wall-clock view.
+```
+
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
 #### Software/domain decomposition
@@ -640,10 +682,12 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
-        +-- SystemStatus
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
         |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
@@ -652,13 +696,12 @@ TimingApplication
               +-- UpstreamMessagePort
               +-- TagProcessor
               +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
-              +-- owns lifecycle -> LogBook
-
-LogBook
-  +-- 0..N LogBookItem
+              +-- uses / produces TimingData
 
 Shared Domain contract:
   +-- TimingData
@@ -731,7 +774,7 @@ Messaging
           +-- Connector (1..N)
 
 UpstreamMessageRouter
-    +-- protocol-level message -> owning TimingSystem / UpstreamProtocol
+    +-- system-level message -> TimingSystem.UpstreamMessagePort
     +-- TimingNodeId -> TimingNode.UpstreamMessagePort
     +-- TimingSystemId remains internal composition context
 ```
@@ -749,7 +792,7 @@ I/O/device-network responsibilities. A keypad, beeper or display may interact wi
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` then resolves TimingNode-targeted semantic messages by `TimingNodeId`; protocol-level operations such as ping/status remain with that TimingSystem's `UpstreamProtocol`/`SystemStatus`. No external `TimingSystemId` field is required.
+`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `TimingNodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `TimingSystemId` field is required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
 semantics. A connector-specific external name or routing key may participate in boundary mapping, but it does not replace the stable functional `TimingNodeId`. Internal `TimingSystemId` is local composition context rather than a new upstream routing identity. One gateway may use multiple connectors and one
@@ -837,7 +880,7 @@ The application boundary determines which TimingNode(s) receive the work:
 - configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
 - `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
 - `NetworkDeviceService` owns bidirectional network-device communication; discovery/session mechanics stay below this high-level responsibility;
-- `UpstreamMessageRouter` resolves upstream targets: application-scoped messages go to the relevant Domain responsibility and `TimingNodeId` messages go to the matching TimingNode's `UpstreamMessagePort`;
+- `UpstreamMessageRouter` resolves upstream targets: system-level messages go to `TimingSystem.UpstreamMessagePort` and `TimingNodeId` messages go to the matching `TimingNode.UpstreamMessagePort`;
 - a scheduled task keeps the TimingNode target it was registered for.
 
 Each resolved target is then submitted to that TimingNode's serial executor.
@@ -989,7 +1032,7 @@ The dedicated class may internally delegate to a suitable Java primitive such as
 
 #### Time sources
 
-Code that needs the current absolute time receives it through an injectable time-source/clock abstraction. Production composition can use the operating-system wall clock; deterministic tests can supply a controlled clock that can be advanced or stepped explicitly.
+Code that needs the current absolute time receives it through the Domain-level `TimeSource` owned by the relevant `TimingSystem`. Production composition can delegate that source to the operating-system wall clock; deterministic tests can supply a controlled source that can be advanced, stepped or given a per-system offset explicitly. This allows multiple TimingSystems hosted by one process to run against different simulated absolute times without changing TimingNode logic.
 
 Elapsed durations, retry intervals, filtering windows, scheduling delays and timeout measurements should use a **monotonic time source** where their semantics are duration-based. On Java 8 this can be backed by `System.nanoTime()` behind a small platform abstraction. A monotonic mark is process-local and is not a persisted event timestamp.
 
@@ -1073,7 +1116,19 @@ Status should allow presentation and diagnostics to observe application, timing-
 - network/upstream connectivity;
 - inbound/outbound synchronisation state.
 
-Each `TimingSystem` owns its own `SystemStatus`. An application-facing status view may aggregate the 1..N TimingSystem statuses, their TimingNodes and application/runtime problems into one response; that aggregation does not move SystemStatus ownership back to the TimingApplication.
+Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component. This is a complete current-state
+overview of that TimingSystem, not an `OK`/error flag. It aggregates the
+TimingSystem lifecycle and protocol state, its 1..N TimingNode statuses and the
+semantic status of composed I/O relevant to operation: for example antenna
+availability, whether a display is connected, keypad/beeper availability,
+device-network health, storage availability, upstream connectivity and
+synchronisation state. Domain owns the meaning of this overview; concrete CAN,
+socket, vendor-device and persistence implementations remain in I/O and report
+semantic status without leaking adapter classes into Domain.
+
+An application-facing status view may aggregate the 1..N TimingSystem statuses
+and application/runtime problems into one response; that aggregation does not
+move SystemStatus ownership back to the TimingApplication.
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
@@ -1146,7 +1201,7 @@ the API/provider patch version together through Maven dependency management.
 
 ### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `33-IDD-11-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `32-11-IDD-application-configuration.md`.
 
 The main configuration groups are:
 
@@ -1265,10 +1320,12 @@ as ping/pong.
 carry the encoded protocol representation and own transport/session resources;
 they do not become owners of TimingData fields or upstream protocol semantics.
 `UpstreamMessageRouter` owns application-level target resolution after semantic
-protocol decoding. A TimingNode-targeted operation is resolved by
-`TimingNodeId`, submitted through that TimingNode's serial boundary and
-enters/leaves through its bidirectional `UpstreamMessagePort`. Protocol-level
-operations such as heartbeat/status semantics stay with the configured `TimingSystem`.
+protocol decoding. A system-level operation is delivered through the owning
+`TimingSystem.UpstreamMessagePort`; a TimingNode-targeted operation is resolved
+by `TimingNodeId`, submitted through that TimingNode's serial boundary and
+enters/leaves through `TimingNode.UpstreamMessagePort`. Protocol-level
+operations such as heartbeat/status and synchronisation control therefore do
+not need to be forced through a TimingNode.
 
 ```text
 external upstream system
@@ -1286,8 +1343,8 @@ external upstream system
                          |              |
                          v              +--> TimingNodeId
                    TimingSystem                |
-                  status / ping                v
-                                         TimingNode
+              UpstreamMessagePort              v
+               status / ping              TimingNode
                                        UpstreamMessagePort
 ```
 
@@ -1296,7 +1353,7 @@ connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
 Public protocol semantics and TimingData compatibility remain owned by Domain.
 
-`TimingSystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that can be answered entirely by the configured TimingSystem's `UpstreamProtocol`/`SystemStatus` do not need to be forced through a TimingNode.
+`TimingSystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that belong to the configured TimingSystem use its `UpstreamMessagePort` and `UpstreamProtocol`/`SystemStatus`; they do not need to be forced through a TimingNode.
 
 #### RFID
 
@@ -1374,7 +1431,36 @@ Do not create future packages merely to mirror the architecture picture. Package
 
 #### Public/private extension model
 
-Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production upstream/backoffice codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
+Private repositories may provide production device control, protocol implementations, deployment mappings and production data/codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
+
+SI-01 uses one small **typed provider/extension mechanism** for implementation families that may cross the public/private boundary. The currently expected provider contracts are:
+
+```text
+TimingDataProvider
+UpstreamProtocolProvider
+AntennaProvider
+CanProtocolProvider
+DisplayProtocolProvider
+```
+
+The provider contracts are capability-specific; there is no generic domain-level
+`Plugin` abstraction. `ApplicationBootstrap` discovers built-in and external
+providers at startup, builds one registry, validates configured provider IDs and
+then performs normal composition. Runtime/domain components receive normal typed
+interfaces and never interact with class loaders or provider discovery.
+
+The Java 8 baseline can implement discovery with `ServiceLoader` plus a
+dedicated class loader for configured external JARs. Loading is a startup concern:
+hot reload/unload is not required. Provider IDs must be unique; duplicate or
+unknown configured IDs are startup/configuration errors.
+
+Built-in reference/simulation implementations remain part of the normal public
+software where they are needed for development and verification. In particular,
+`SimulatedAntenna` is always built in. A deployment can select an
+extension-provided implementation without changing the application/domain path
+used by the built-in implementation. IF-11 owns provider selection in deployment
+configuration; the concrete external-JAR packaging/search path remains a detailed
+implementation concern.
 
 ### Technology decision register
 
@@ -1383,10 +1469,11 @@ This table intentionally lives in the architecture section of this SSD because t
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
 | Java baseline | Java SE 8 is the current SI-01 baseline | accepted for current implementation; verify the selected runtime on the Pi target |
+| Extension mechanism | typed provider SPIs discovered at startup with Java 8 `ServiceLoader`; built-in and external-JAR providers share one registry | working direction; prove with public synthetic/reference providers before integrating private implementations |
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors | architecture baseline selected; keep defaults simple and tune only if evidence requires it |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
-| Time model | dedicated project-owned immutable `TimingTimestamp` + injectable absolute clock + separate monotonic duration source | working direction; define precision/serialisation, sync and clock-correction policy |
+| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | working direction; controlled per-system offset/stepping supports simulation; define precision/serialisation, sync and clock-correction policy |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |

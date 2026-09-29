@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -R -n -E '40-01-SISD-timing-application-specification-document\.md|40-02-SISD-gui-application-specification-document\.md|40-01-SDD-01-data-and-display-design\.md|40-01-SDD-02-java-component-design\.md|40-01-SDD-03-backoffice-transport-design\.md|40-01-01-SSD-timing-application-specification-document\.md|40-02-01-SSD-gui-application-specification-document\.md|30-01-UC-system-use-cases\.md|30-02-SSSD-software-system-specification-document\.md|30-03-IDD-03-application-control-status\.md|30-03-IDD-11-application-configuration\.md|41-01-SDD-data-and-display-design\.md|41-02-SDD-java-component-design\.md|41-03-SDD-backoffice-transport-design\.md|00-01-brainstorm\.md|00-02-handoff\.md|00-03-agent-plan\.md|00-04-domain-baseline\.md|10-01-SDP-software-development-plan\.md|10-02-SIP-software-implementation-planning\.md|20-01-EXT-external-system-inputs\.md|40-01-SSD-timing-application-specification-document\.md|40-02-SSD-gui-application-specification-document\.md|41-01-SDD-01-data-and-display-design\.md|41-01-SDD-02-java-component-design\.md|41-01-SDD-03-backoffice-transport-design\.md|50-01-SDE-software-development-environment\.md|50-02-SDE-java-build-test-toolchain\.md|60-01-SVP-software-verification-plan\.md' docs tools README.md CHANGELOG.md
+          ! grep -R -n -E '40-01-SISD-timing-application-specification-document\.md|40-02-SISD-gui-application-specification-document\.md|40-01-SDD-01-data-and-display-design\.md|40-01-SDD-02-java-component-design\.md|40-01-SDD-03-backoffice-transport-design\.md|40-01-01-SSD-timing-application-specification-document\.md|40-02-01-SSD-gui-application-specification-document\.md|30-01-UC-system-use-cases\.md|30-02-SSSD-software-system-specification-document\.md|30-03-IDD-03-application-control-status\.md|30-03-IDD-11-application-configuration\.md|41-01-SDD-data-and-display-design\.md|41-02-SDD-java-component-design\.md|41-03-SDD-backoffice-transport-design\.md|00-01-brainstorm\.md|00-02-handoff\.md|00-03-agent-plan\.md|00-04-domain-baseline\.md|10-01-SDP-software-development-plan\.md|10-02-SIP-software-implementation-planning\.md|20-01-EXT-external-system-inputs\.md|40-01-SSD-timing-application-specification-document\.md|40-02-SSD-gui-application-specification-document\.md|41-01-SDD-01-data-and-display-design\.md|41-01-SDD-02-java-component-design\.md|41-01-SDD-03-backoffice-transport-design\.md|50-01-SDE-software-development-environment\.md|50-02-SDE-java-build-test-toolchain\.md|32-IDD-03-application-control-status\.md|33-IDD-11-application-configuration\.md|50-SDE-software-development-environment\.md|51-SDE-java-build-test-toolchain\.md|60-01-SVP-software-verification-plan\.md' docs tools README.md CHANGELOG.md
 
       - name: Validate SIP actuals tool
         shell: bash
@@ -131,7 +131,7 @@ jobs:
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
           cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
           cp docs/41-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/32-IDD-03-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/32-03-IDD-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -157,7 +157,7 @@ jobs:
 
           docs/30-UC-system-use-cases
           docs/41-01-SSD-timing-application-specification-document
-          docs/32-IDD-03-application-control-status
+          docs/32-03-IDD-application-control-status
           ~~~
           EOF
 
@@ -276,7 +276,7 @@ jobs:
 
           if provenance["source_revision"] != os.environ["SOURCE_REVISION"]:
               raise SystemExit("portal source revision mismatch")
-          if provenance["object_count"] != 21 or provenance["relation_count"] != 34:
+          if provenance["object_count"] != 23 or provenance["relation_count"] != 34:
               raise SystemExit("portal graph counts mismatch")
           if provenance["tool_eng_docs"] != {
               "ref": "v0.4.0",
@@ -286,10 +286,12 @@ jobs:
 
           required_diagram_ids = {
               "TimingSystem",
+              "SystemStatus",
               "TimingNode",
               "LogBook",
               "TimingData",
               "UpstreamProtocol",
+              "TimeSource",
               "CommandHandler",
               "Conductor",
               "RemoteApi",
@@ -495,8 +497,8 @@ jobs:
           test -f bld/docs/documents/README.md
           test -f bld/docs/documents/software-document-set.md
           test -f bld/docs/documents/architecture-book.md
-          test -f bld/docs/documents/50-SDE-software-development-environment.md
-          test -f bld/docs/documents/51-SDE-java-build-test-toolchain.md
+          test -f bld/docs/documents/50-SDE-01-software-development-environment.md
+          test -f bld/docs/documents/50-SDE-02-java-build-test-toolchain.md
           test -f bld/docs/documents/41-01-SSD-timing-application-specification-document.md
           test -f bld/docs/documents/43-01-SDD-02-java-component-design.md
           test -f bld/docs/documents/60-SVP-software-verification-plan.md
@@ -578,17 +580,17 @@ jobs:
               "SI01-REQ-003", "SI01-REQ-020", "SI01-REQ-021",
               "SI01-REQ-022", "SI01-REQ-030", "SI01-REQ-031",
               "IF03-REQ-001", "IF03-REQ-002", "IF03-REQ-004",
-              "TimingSystem", "TimingNode", "LogBook", "TimingData", "UpstreamProtocol",
+              "TimingSystem", "SystemStatus", "TimingNode", "LogBook", "TimingData", "UpstreamProtocol", "TimeSource",
               "CommandHandler", "Conductor", "RemoteApi",
               "VC-ST1-001",
           }
           actual_ids = {item["id"] for item in graph["objects"]}
           if actual_ids != expected_ids:
               raise SystemExit("engineering graph bounded-slice object set mismatch")
-          if graph.get("object_count") != 21 or graph.get("relation_count") != 34:
+          if graph.get("object_count") != 23 or graph.get("relation_count") != 34:
               raise SystemExit("engineering graph bounded-slice counts mismatch")
           objects = {item["id"]: item for item in graph["objects"]}
-          for object_id in ("TimingNode", "CommandHandler", "Conductor", "RemoteApi"):
+          for object_id in ("TimingSystem", "SystemStatus", "TimingNode", "LogBook", "TimingData", "UpstreamProtocol", "TimeSource", "CommandHandler", "Conductor", "RemoteApi"):
               if not objects[object_id].get("diagram_refs"):
                   raise SystemExit(f"architecture object has no diagram reference: {object_id}")
           needs = json.loads((root / "bld/sphinx-needs/needs/needs.json").read_text(encoding="utf-8"))

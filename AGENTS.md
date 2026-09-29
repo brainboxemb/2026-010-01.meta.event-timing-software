@@ -32,7 +32,7 @@ Use the numbered project documents for their specific roles:
 - [docs/30-UC-system-use-cases.md](docs/30-UC-system-use-cases.md) — operational goals/use cases;
 - [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
 - [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
-- [docs/50-SDE-software-development-environment.md](docs/50-SDE-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
+- [docs/50-SDE-01-software-development-environment.md](docs/50-SDE-01-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
 - [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
 - [docs/43-01-SDD-02-java-component-design.md](docs/43-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
@@ -91,6 +91,17 @@ Figure identifiers are stable references: do **not** renumber existing figures w
 new diagram is inserted. Assign the next unused number in that document/scope. Where a
 generated diagram has an authored source/title, include the same figure label in the
 rendered title when practical.
+
+## SIP actual-effort refresh
+
+Use **Actions → Refresh SIP actuals** (`.github/workflows/sip-actuals.yml`) as the
+normal authority for refreshing the committed SIP actual-effort snapshot. Do not
+replace it with ad-hoc session heuristics. The workflow/calculator combines
+merged-PR commit activity from the meta and implementation repositories, assigns
+30-minute activity windows, merges overlap and divides by 8 hours per project
+day. If an agent cannot dispatch the workflow directly, it may reproduce the
+same calculator logic for analysis, but must say so and must not silently use a
+different effort model.
 
 ## Public/private boundary
 

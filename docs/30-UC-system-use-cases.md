@@ -27,7 +27,7 @@ Relevant parent-system/external inputs are registered in `20-EXT-external-system
                               +---------------+---------------+
                               |                               |
                               v                               v
-                    32/33 system IDDs             optional software-item UC
+                    32-<IF> system IDDs             optional software-item UC
                               |                               |
                               +---------------+---------------+
                                               |

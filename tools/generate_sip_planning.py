@@ -207,6 +207,7 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     remaining_days = sum(step.remaining_days for step in steps)
     actuals = plan["actuals"]
     actual_days = float(actuals["estimated_project_days"])
+    actual_hours = float(actuals["estimated_hours"])
     through = date.fromisoformat(str(actuals["through_date"]))
     cadence = float(plan["cadence_project_days_per_week"])
     reserve = float(plan.get("planning_reserve_fraction", 0.0))
@@ -217,7 +218,7 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     )
     actual_date = through.strftime("%d %b").lstrip("0")
     return (
-        f"Plan: {baseline_days:g}d original · ~{actual_days:g}d actual to "
+        f"Plan: {baseline_days:g}d original · ~{actual_days:g}d / ~{actual_hours:g}h actual to "
         f"{actual_date} · ~{remaining_days:g}d remaining · "
         f"~{cadence_text} · +{reserve * 100:g}% reserve"
     )

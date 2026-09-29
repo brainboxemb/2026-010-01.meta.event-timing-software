@@ -168,21 +168,28 @@ Generated output should not be manually edited as if it were source.
 
 ## Documentation layout
 
-Use predictable numbered document families in the meta/engineering documentation where applicable:
+The SDP owns the repository-wide document numbering convention. The SDE follows
+that convention rather than maintaining a second category map.
+
+For document families relevant to the engineering environment:
 
 ```text
-00-09  working context, brainstorm, use cases and domain baseline
-10-19  development planning/environment
-20-29  requirements / SRDs
-30-39  architecture and detailed design
-40-49  system-level IDDs
-50-59  verification planning
+32-<IF>-IDD       system-owned interface documents; <IF> is the interface ID
+41-<SI>-SSD       software-item combined specification; <SI> is the software-item ID
+43-<SI>-SDD-<N>   detailed design; final <N> sequences several SDDs in one SI scope
+50-SDE-<N>        generic SDE family; <N> sequences documents because no scope ID applies
+60-SVP            singular verification plan
 ```
 
-Established abbreviations include `SDP`, `SIP`, `SDE`, `SRD`, `SSAD`, `SAD`, `SDD`, `IDD`, `SVP` and `UC`.
+Scope identifiers and document sequences are deliberately different concepts.
+For example, `32-03-IDD` identifies IF-03, while `50-SDE-02` identifies the
+second document in the generic SDE family.
 
-Software-item numbers remain stable across requirement/design documents.
+Established abbreviations include `SDP`, `SIP`, `SDE`, `SRD`, `SSSD`,
+`SSD`, `SAD`, `SDD`, `IDD`, `SVP` and `UC`.
 
+Software-item and interface identifiers remain stable across the document
+families that use them.
 ## GitHub issue → branch → pull-request workflow
 
 Normal development follows a PR-first workflow:

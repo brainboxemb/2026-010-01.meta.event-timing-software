@@ -98,7 +98,7 @@ PR #2 established the first reviewable SI-01 requirements/IDD slice without expa
 At closure:
 
 - `41-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
-- `32-IDD-03-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
+- `32-03-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
 - IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
 - first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
 - the first operational timing instance remains `CLOSED`; open/close and later domain behaviour are not partially invented for this baseline;
@@ -146,7 +146,7 @@ Exit criteria:
 
 ### AP-2 closure evidence
 
-PR #3 established `51-SDE-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
+PR #3 established `50-SDE-02-java-build-test-toolchain.md` as the Java-specific refinement of the engineering environment.
 
 At closure:
 

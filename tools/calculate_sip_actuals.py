@@ -165,6 +165,7 @@ def update_snapshot(
     path: Path,
     through: date,
     project_days: float,
+    total_hours: float,
     step_project_days: dict[int, float],
 ) -> None:
     text = path.read_text(encoding="utf-8")
@@ -185,6 +186,20 @@ def update_snapshot(
         body,
         count=1,
     )
+    hours_line = re.search(r"(?m)^  estimated_hours:\s*.*$", body)
+    hours_replacement = f"  estimated_hours: {total_hours:.1f}"
+    if hours_line:
+        body = (
+            body[: hours_line.start()]
+            + hours_replacement
+            + body[hours_line.end() :]
+        )
+    else:
+        days_line = re.search(r"(?m)^  estimated_project_days:\s*.*$", body)
+        if not days_line:
+            raise SystemExit(f"Missing estimated_project_days in {path}")
+        insert_at = days_line.end()
+        body = body[:insert_at] + "\n" + hours_replacement + body[insert_at:]
     text = text[: actuals.start("body")] + body + text[actuals.end("body") :]
 
     for step, value in sorted(step_project_days.items()):
@@ -303,11 +318,18 @@ def main() -> None:
             step: round(values[3], 1)
             for step, values in step_results.items()
         }
-        update_snapshot(args.plan, args.through, rounded, rounded_steps)
+        update_snapshot(
+            args.plan,
+            args.through,
+            rounded,
+            round(total_hours, 1),
+            rounded_steps,
+        )
         print()
         print(
             f"Updated {args.plan}: through_date={args.through}, "
-            f"estimated_project_days={rounded:.1f}"
+            f"estimated_project_days={rounded:.1f}, "
+            f"estimated_hours={total_hours:.1f}"
         )
         for step, value in rounded_steps.items():
             print(f"  Step {step}: actual_estimated_project_days={value:.1f}")

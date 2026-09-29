@@ -43,8 +43,8 @@ Current examples are:
 
 30-UC-system-use-cases
 31-SSSD-software-system-specification-document
-32-IDD-03-application-control-status
-33-IDD-11-application-configuration
+32-03-IDD-application-control-status
+32-11-IDD-application-configuration
 
 40-01-UC                         reserved / optional for SI-01
 41-01-SSD-timing-application-specification-document
@@ -54,8 +54,8 @@ Current examples are:
 43-01-SDD-02-java-component-design
 43-01-SDD-03-backoffice-transport-design
 
-50-SDE-software-development-environment
-51-SDE-java-build-test-toolchain
+50-SDE-01-software-development-environment
+50-SDE-02-java-build-test-toolchain
 
 60-SVP-software-verification-plan
 
@@ -64,18 +64,21 @@ Current examples are:
 
 Numbering rules:
 
-- the leading two-digit value is the stable document **number/range**;
-- project/system/control documents use one leading document number; the number itself identifies the document within its range, for example `00-brainstorm`, `10-SDP`, `20-EXT`, `31-SSSD`, `50-SDE` and `60-SVP`;
+- the leading two-digit value identifies the document category or reserved document family; it is not a dependency-order number;
+- where a reserved family has a natural stable scope identifier, that scope is the second segment. Software-item families use the software-item ID, for example `41-01-SSD` and `43-01-SDD-02`;
+- document family `32` is reserved for software-system-owned IDDs. Its second segment is the stable interface ID, so IF-03 is `32-03-IDD` and IF-11 is `32-11-IDD`; the number is not a document sequence;
 - document number `40` is reserved for optional software-item use cases, for example `40-01-UC` for SI-01;
 - document number `41` is reserved for software-item requirements/specification: use `41-<SI>-SSD` when requirements and architecture are combined, or `41-<SI>-SRD` when they are split;
 - document number `42` is reserved for a separate software-item architecture document `42-<SI>-SAD`; omit it when `41-<SI>-SSD` already combines requirements and architecture;
-- document number `43` is reserved for software-item detailed design; a final sequence distinguishes multiple SDDs for the same item, for example `43-01-SDD-01`, `43-01-SDD-02`, ...;
-- software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix retains the interface identity, for example `32-IDD-03-...` for IF-03 and `33-IDD-11-...` for IF-11;
-- range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM-...` for SI-01;
+- document number `43` is reserved for software-item detailed design. When several SDDs share the same software-item scope, a final sequence follows the type: `43-01-SDD-01`, `43-01-SDD-02`, ...;
+- a repeatable generic family without a natural scope identifier puts its sequence after the type. The generic SDE family therefore uses `50-SDE-01`, `50-SDE-02`, ...;
+- a singular generic document does not gain a synthetic sequence merely for symmetry, for example `60-SVP`;
+- range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM` for SI-01;
 - an externally owned document keeps the identifier/version assigned by its owner. Document 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
 
-A new document should fit an existing category before another category is invented. The numbering structure is intentionally roomy enough for later verification specifications/reports and additional engineering-environment documents without mixing them into planning or product design.
-
+A new document should fit an existing category/family before another one is
+invented. Scope identifiers and document sequences have different meanings and
+must not trade places merely to keep filenames numerically contiguous.
 ### External and parent-system inputs
 
 The software system defined here is itself a subsystem of a larger operational system. Some requirements and interface contracts can therefore be defined **above the current software-system scope**.
@@ -107,7 +110,7 @@ domain baseline ---------+------> 30 system use cases
                       +--------------------+--------------------+
                       |                                         |
                       v                                         v
-          32/33 system-owned IDD(s)             40-<SI>-UC(s)
+          32-<IF>-IDD(s)             40-<SI>-UC(s)
                       |                                         |
                       +--------------------+--------------------+
                                            |

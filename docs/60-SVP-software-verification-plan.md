@@ -435,7 +435,17 @@ The public framework must be verifiable without proprietary source or deployment
 
 Private implementations should use the same public contracts where applicable; detailed private-repository verification is added when such an implementation actually exists.
 
-Production asset names, source IDs, broker mappings, proprietary message schemas and credentials must not be copied into public verification fixtures.
+The public baseline should verify the Java-8 provider mechanism without requiring
+private source. Verification should cover at least:
+
+- built-in-provider discovery and selection;
+- `SimulatedAntenna` availability with no external extension JARs;
+- loading a synthetic external test provider through the same startup path intended for production extensions;
+- typed conformance for TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider contracts as those contracts are implemented;
+- deterministic failure for duplicate provider IDs, unknown configured provider IDs and incompatible provider configuration;
+- proof that domain/application behaviour receives normal typed contracts and does not depend on extension-loader classes.
+
+Production asset names, source IDs, broker mappings, proprietary message schemas, private provider names and credentials must not be copied into public verification fixtures.
 
 ## Generated evidence
 

@@ -14,11 +14,11 @@ documents:
   - {id: software-development-plan, source: docs/10-SDP-software-development-plan.md}
   - {id: software-implementation-planning, source: docs/11-SIP-software-implementation-planning.md}
   - {id: external-system-inputs, source: docs/20-EXT-external-system-inputs.md}
-  - {id: software-development-environment, source: docs/50-SDE-software-development-environment.md}
-  - {id: java-build-test-toolchain, source: docs/51-SDE-java-build-test-toolchain.md}
+  - {id: software-development-environment, source: docs/50-SDE-01-software-development-environment.md}
+  - {id: java-build-test-toolchain, source: docs/50-SDE-02-java-build-test-toolchain.md}
   - {id: software-system-specification, source: docs/31-SSSD-software-system-specification-document.md}
-  - {id: application-control-status, source: docs/32-IDD-03-application-control-status.md}
-  - {id: application-configuration, source: docs/33-IDD-11-application-configuration.md}
+  - {id: application-control-status, source: docs/32-03-IDD-application-control-status.md}
+  - {id: application-configuration, source: docs/32-11-IDD-application-configuration.md}
   - {id: timing-application-specification, source: docs/41-01-SSD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/41-02-SSD-gui-application-specification-document.md}
   - {id: data-display-design, source: docs/43-01-SDD-01-data-and-display-design.md}

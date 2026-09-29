@@ -28,8 +28,8 @@ EXTERNAL_INPUT_DOCUMENTS = [
 SYSTEM_SPEC_DOCUMENTS = [
     "30-UC-system-use-cases.md",
     "31-SSSD-software-system-specification-document.md",
-    "32-IDD-03-application-control-status.md",
-    "33-IDD-11-application-configuration.md",
+    "32-03-IDD-application-control-status.md",
+    "32-11-IDD-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
@@ -38,14 +38,14 @@ SOFTWARE_ITEM_SPEC_DOCUMENTS = [
 ]
 
 ENGINEERING_DOCUMENTS = [
-    "50-SDE-software-development-environment.md",
-    "51-SDE-java-build-test-toolchain.md",
+    "50-SDE-01-software-development-environment.md",
+    "50-SDE-02-java-build-test-toolchain.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
     "31-SSSD-software-system-specification-document.md",
-    "32-IDD-03-application-control-status.md",
-    "33-IDD-11-application-configuration.md",
+    "32-03-IDD-application-control-status.md",
+    "32-11-IDD-application-configuration.md",
     "41-01-SSD-timing-application-specification-document.md",
     "43-01-SDD-02-java-component-design.md",
     "41-02-SSD-gui-application-specification-document.md",

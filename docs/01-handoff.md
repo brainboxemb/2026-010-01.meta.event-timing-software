@@ -19,14 +19,14 @@ Lees eerst in de meta-repository:
 - `docs/03-domain-baseline.md`
 - `docs/10-SDP-software-development-plan.md`
 - `docs/11-SIP-software-implementation-planning.md`
-- `docs/50-SDE-software-development-environment.md`
-- `docs/51-SDE-java-build-test-toolchain.md`
+- `docs/50-SDE-01-software-development-environment.md`
+- `docs/50-SDE-02-java-build-test-toolchain.md`
 - `docs/41-01-SSD-timing-application-specification-document.md`
 - `docs/31-SSSD-software-system-specification-document.md`
 - `docs/41-01-SSD-timing-application-specification-document.md`
 - `docs/43-01-SDD-02-java-component-design.md`
-- `docs/32-IDD-03-application-control-status.md`
-- `docs/33-IDD-11-application-configuration.md`
+- `docs/32-03-IDD-application-control-status.md`
+- `docs/32-11-IDD-application-configuration.md`
 - `docs/60-SVP-software-verification-plan.md`
 
 Los daarna de actieve work repository op vanuit het actuele plan en GitHub-state. Belangrijke repositories zijn:

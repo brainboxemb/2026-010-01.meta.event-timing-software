@@ -75,15 +75,15 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
-- [`docs/32-IDD-03-application-control-status.md`](docs/32-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
-- [`docs/33-IDD-11-application-configuration.md`](docs/33-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
+- [`docs/32-03-IDD-application-control-status.md`](docs/32-03-IDD-application-control-status.md) — system-owned IF-03 Remote API contract.
+- [`docs/32-11-IDD-application-configuration.md`](docs/32-11-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/41-01-SSD-timing-application-specification-document.md`](docs/41-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/41-02-SSD-gui-application-specification-document.md`](docs/41-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
 - [`docs/43-01-SDD-01-data-and-display-design.md`](docs/43-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
 - [`docs/43-01-SDD-02-java-component-design.md`](docs/43-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
 - [`docs/43-01-SDD-03-backoffice-transport-design.md`](docs/43-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
-- [`docs/50-SDE-software-development-environment.md`](docs/50-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
-- [`docs/51-SDE-java-build-test-toolchain.md`](docs/51-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
+- [`docs/50-SDE-01-software-development-environment.md`](docs/50-SDE-01-software-development-environment.md) — repository/workflow/tooling/environment conventions.
+- [`docs/50-SDE-02-java-build-test-toolchain.md`](docs/50-SDE-02-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/60-SVP-software-verification-plan.md`](docs/60-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
 - [`docs/70-01-SUM-headless-timing-application.md`](docs/70-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
@@ -121,23 +121,36 @@ Examples:
 20-EXT
 30-UC
 31-SSSD
-32-IDD-03
-33-IDD-11
+32-03-IDD
+32-11-IDD
 40-01-UC        # reserved/optional SI-01 use-case document
 41-01-SSD
 41-02-SSD
 43-01-SDD-01
 43-01-SDD-02
-50-SDE
-51-SDE
+50-SDE-01
+50-SDE-02
 60-SVP
 70-01-SUM
 ```
 
-Software-item documents add the stable SI identifier after the document number. `40-<SI>-UC` is reserved for optional software-item use cases. A combined specification uses `41-<SI>-SSD`. A split specification uses `41-<SI>-SRD` plus `42-<SI>-SAD`. Detailed designs use `43-<SI>-SDD-<N>`. Thus `43-01-SDD-02` is the second detailed-design document of SI-01.
+The segment immediately after a reserved document-family number identifies the
+**scope** when that family has a natural stable scope identifier. Software-item
+families therefore use the SI identifier: `40-<SI>-UC`, `41-<SI>-SSD/SRD`,
+`42-<SI>-SAD`, `43-<SI>-SDD[-<N>]` and `70-<SI>-SUM`. System-owned IDDs
+use the same rule with the interface identifier, so IF-03 is `32-03-IDD` and
+IF-11 is `32-11-IDD`.
 
-Software-system documents use one leading document number each. System-owned IDDs therefore receive their own document number while the IDD suffix keeps the interface identity, for example `32-IDD-03` for IF-03 and `33-IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the document 20 external-input baseline rather than being renumbered as locally owned interfaces.
+When a repeatable generic family has no natural scope identifier, a document
+sequence follows the type instead. The SDE family therefore uses
+`50-SDE-01`, `50-SDE-02`, ... . A singular generic document such as
+`60-SVP` does not need a synthetic sequence.
 
+A final sequence distinguishes multiple documents that share the same family
+and scope, for example `43-01-SDD-01`, `43-01-SDD-02`, ... for SI-01.
+External/parent-system documents keep the identifier/version assigned by their
+owner and are registered through document 20 rather than being locally
+renumbered.
 ## Documentation levels
 
 The project intentionally separates:

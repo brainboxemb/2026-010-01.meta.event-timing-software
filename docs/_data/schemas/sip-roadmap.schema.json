@@ -77,6 +77,7 @@
       "required": [
         "through_date",
         "estimated_project_days",
+        "estimated_hours",
         "method",
         "step_pr_attribution"
       ],
@@ -86,6 +87,10 @@
           "format": "date"
         },
         "estimated_project_days": {
+          "type": "number",
+          "minimum": 0
+        },
+        "estimated_hours": {
           "type": "number",
           "minimum": 0
         },

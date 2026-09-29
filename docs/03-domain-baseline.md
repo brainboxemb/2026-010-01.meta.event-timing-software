@@ -20,24 +20,26 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
-        +-- SystemStatus
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationID
               +-- lifecycle / status
+              +-- UpstreamMessagePort
               +-- TagProcessor
               +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
-              +-- owns lifecycle -> LogBook
-
-LogBook
-  +-- 0..N LogBookItem
+              +-- uses / produces TimingData
 
 Shared Domain contract:
   +-- TimingData
@@ -71,7 +73,10 @@ each Antenna
 An `Antenna` is the configured registration input. Reader/protocol/device
 details belong to the concrete antenna implementation/configuration and are not
 separate software identities unless implementation evidence later requires that
-distinction.
+distinction. `SimulatedAntenna` is the built-in baseline implementation and is
+always available for development/simulation. Other concrete antenna
+implementations may be selected through the application extension/provider
+mechanism without changing `AntennaId` or TimingNode semantics.
 
 One antenna may intentionally feed more than one TimingNode. Each target
 TimingNode keeps its own `TimingNodeId`, sequence and state; `AntennaId`
@@ -105,6 +110,14 @@ public repository.
 
 ## Separate software, I/O and configuration views
 
+The logical I/O layer is repeated as part of each `TimingSystem` runtime
+composition. A process hosting 1..N TimingSystems therefore normally composes
+1..N corresponding I/O sets (Storage, Devices, Messaging and DeviceNetworks).
+A lower-level implementation may multiplex a shared physical resource when that
+is explicitly designed, but that does not merge the TimingSystem ownership
+contexts.
+
+
 Do not express the complete system as one parent/child tree. The software/domain
 decomposition and I/O/configuration routing answer different questions.
 
@@ -116,24 +129,26 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
-        +-- SystemStatus
+        +-- SystemStatus          complete current system overview
+        +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
+        +-- TimeSource             absolute time / controllable test offset
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationID
               +-- lifecycle / status
+              +-- UpstreamMessagePort
               +-- TagProcessor
               +-- StageStartTimes
+              +-- LogBook
+              |     +-- 0..N LogBookItem
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
-              +-- owns lifecycle -> LogBook
-
-LogBook
-  +-- 0..N LogBookItem
+              +-- uses / produces TimingData
 
 Shared Domain contract:
   +-- TimingData
@@ -141,12 +156,28 @@ Shared Domain contract:
 
 The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates.
 
-Each `TimingSystem` owns its own `SystemStatus` and system-level heartbeat/ping semantics. Those semantics are therefore isolated per simulated/hosted system rather than being application-global.
+Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
+`UpstreamMessagePort`, `TimeSource` and heartbeat/ping semantics. `SystemStatus` is the
+complete current operational overview of that TimingSystem, not a single health
+flag. It may include its TimingNode states, antenna/device availability, whether
+a display is connected, keypad/beeper availability, device-network health,
+storage state, upstream connectivity and synchronisation state. Concrete I/O
+implementations report semantic status into this overview without becoming part
+of the Domain model. Those semantics remain isolated per simulated/hosted system
+rather than being application-global.
 
-Each TimingNode owns the lifecycle of one `LogBook`. The LogBook owns its
-operational state as 0..N `LogBookItem` values. A `LogBookItem` is the
-internal logbook-domain representation and is not required to match the
-persistent/interchange representation one-for-one.
+`TimeSource` is also per TimingSystem. In production it can delegate to the
+platform wall clock. In simulation/test it may be controlled independently,
+including a programmable offset or stepped time, so several TimingSystems hosted
+in one process can intentionally observe different absolute times. Duration and
+timeout semantics remain separate and use a monotonic source where appropriate.
+
+Each TimingNode contains one `LogBook`. The LogBook owns its operational state
+as 0..N `LogBookItem` values and remains visibly part of the TimingNode
+aggregate. A `LogBookItem` is the internal logbook-domain representation and
+is not required to match the persistent/interchange representation one-for-one.
+The TimingNode aggregate has the architectural relationship to `TimingData`;
+the exact LogBookItem-to-record mapping is a lower-level design decision.
 
 `TimingData` defines the canonical persistent/interchange timing-data contract.
 Its principal record is `TimingDataRecord`; the TimingData responsibility also
@@ -154,7 +185,14 @@ owns the public validation, encode/decode and compatibility semantics. Storage,
 Web and upstream communication may consume that contract without becoming owners
 of its field semantics.
 
-`UpstreamProtocol` is a Domain protocol owned in the context of one `TimingSystem`. It covers transfer of TimingData plus synchronization/reconciliation and internal system-level handling such as ping/pong. The upstream peer can remain functionally TimingNode-oriented; a ping does not require exposing `TimingSystemId`. Transport/session mechanics remain I/O concerns.
+`UpstreamProtocol` is a Domain protocol owned in the context of one
+`TimingSystem`. It covers transfer of TimingData plus
+synchronization/reconciliation and protocol-level handling such as ping/pong.
+System-level semantic operations enter/leave through
+`TimingSystem.UpstreamMessagePort`; node-level operations use the addressed
+`TimingNode.UpstreamMessagePort`. The upstream peer can remain functionally
+TimingNode-oriented; a ping does not require exposing `TimingSystemId`.
+Transport/session mechanics remain I/O concerns.
 
 ### I/O routing view
 
