@@ -13,12 +13,6 @@ import markdown
 import shutil
 import xml.etree.ElementTree as ET
 
-REQUIRED_DIAGRAM_OBJECTS = {
-    "TimingNode",
-    "CommandHandler",
-    "Conductor",
-    "RemoteApi",
-}
 SOURCE_RE = re.compile(r"^(?P<path>.+):(?P<line>[0-9]+)$")
 SVG_NS = "http://www.w3.org/2000/svg"
 XLINK_NS = "http://www.w3.org/1999/xlink"
@@ -143,12 +137,8 @@ def prepare_inline_svg(
         element.set("tabindex", "0")
         element.set("aria-label", f"Open {object_id}")
 
-    missing = REQUIRED_DIAGRAM_OBJECTS - seen
-    if missing:
-        raise PortalError(
-            "required clickable architecture object(s) missing: "
-            + ", ".join(sorted(missing))
-        )
+    if not seen:
+        raise PortalError("generated architecture contains no clickable engineering identities")
 
     return ET.tostring(root, encoding="unicode"), seen
 
@@ -185,7 +175,7 @@ def render_relation_table(
 ) -> list[str]:
     lines = [f"## {title}", ""]
     if not relations:
-        return [*lines, "None in this production slice.", ""]
+        return [*lines, "None in the current engineering graph.", ""]
 
     heading = "Target" if endpoint == "target" else "Source"
     lines.extend([f"| Relation | {heading} |", "| --- | --- |"])
@@ -257,9 +247,9 @@ def render_object_page(obj: dict, view: dict) -> str:
 def render_index(view: dict) -> str:
     return f"""# Event Timing Engineering Portal
 
-This is the Migration 013 production portal canary. It is a **derived reader**
-over the same engineering source that produces the existing Book and
-traceability evidence.
+This is the event-timing engineering portal. It is a **derived reader** over
+the same engineering source that produces the existing Book and traceability
+evidence.
 
 - **Source revision:** `{view['source_revision']}`
 - **Engineering objects:** {view['object_count']}
