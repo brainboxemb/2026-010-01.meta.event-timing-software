@@ -268,7 +268,8 @@ nodes:
           items:
             - label: SimulatedAntenna
               object_id: SimulatedAntenna
-            - VendorAntenna
+            - label: VendorAntenna
+              object_id: VendorAntenna
     - label: Display
       object_id: Display
       items:
@@ -313,9 +314,11 @@ nodes:
           items:
             - label: RabbitMqConnector
               object_id: RabbitMqConnector
+            - label: DebugConnector
+              object_id: DebugConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1066, w: 260, h: 105}
+  layout: {x: 535, y: 1066, w: 260, h: 120}
 
 - id: platform-primitives
   group: platform-layer
