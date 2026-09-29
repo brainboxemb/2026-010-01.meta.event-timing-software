@@ -330,6 +330,13 @@ Shared Domain contract:
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
+In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as UML-style
+component/aggregate containers. They are the architecture identities themselves,
+not UML class declarations. The compact text beneath each heading lists important
+identity/state concepts owned by that aggregate; it does not prescribe Java
+fields or a concrete class shape. Geometric containment plus the
+`TimingNode (1..N)` label expresses that one TimingSystem owns 1..N TimingNodes.
+
 The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
 layer cake**. Domain has extra space below its contained components and yields
 through a lower-right polygon cut-away. I/O uses a complementary polygon with a
@@ -373,13 +380,14 @@ interface.
 ```{arch} Web
 :id: Web
 
-**Web** is the browser-facing presentation interface of SI-01. Its composition is
-per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints,
-normally one per TimingNode. A Web binding resolves a TimingSystem/TimingNode
-target; bind address/port remains presentation configuration and is not a
-property of either domain object. Web may reuse application queries/events and
-transport facilities, but it is not collapsed into the Remote API merely because
-both can use HTTP/WebSocket technology.
+**Web** is the browser-facing presentation interface of SI-01. Each configured
+`TimingNode` has exactly one Web binding and therefore one configured Web
+listener port. The binding targets that TimingNode; its bind address/port remains
+Presentation configuration and is not a property of the TimingNode domain
+aggregate. A multi-TimingNode process therefore exposes 1..N Web ports. Web may
+reuse application queries/events and transport facilities, but it is not
+collapsed into the Remote API merely because both can use HTTP/WebSocket
+technology.
 ```
 
 ```{arch} Console
