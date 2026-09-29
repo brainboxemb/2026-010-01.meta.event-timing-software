@@ -116,7 +116,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 75, y: 390, w: 280, h: 75}
+  layout: {x: 90, y: 390, w: 260, h: 75}
 - id: command-handler
   object_id: CommandHandler
   group: application-layer
@@ -124,19 +124,19 @@ nodes:
   subtitle: "presentation commands / queries"
   kind: application
   notation: component
-  layout: {x: 375, y: 390, w: 310, h: 75}
-- id: backend-message-router
+  layout: {x: 390, y: 390, w: 280, h: 75}
+- id: upstream-message-router
   group: application-layer
-  label: "BackendMessageRouter"
-  subtitle: "backend target resolution / routing"
+  label: "UpstreamMessageRouter"
+  subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 705, y: 390, w: 405, h: 75}
+  layout: {x: 710, y: 390, w: 350, h: 75}
 
-- id: backend-message-port
+- id: upstream-message-port
   group: timing-node-aggregate
-  label: "BackendMessagePort"
-  subtitle: "inbound / outbound backend messages"
+  label: "UpstreamMessagePort"
+  subtitle: "bidirectional upstream messages"
   kind: service
   notation: component
   layout: {x: 340, y: 610, w: 245, h: 70}
@@ -235,7 +235,7 @@ nodes:
   group: io-layer
   label: "Messaging"
   items:
-    - label: "BackendGateway"
+    - label: "UpstreamGateway"
       items:
         - label: "Connector (1..N)"
           items:
@@ -299,12 +299,12 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
 
-- from: backend-message-router
+- from: upstream-message-router
   to: domain-layer
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.86}
 
-- from: backend-message-router
+- from: upstream-message-router
   to: messaging-io
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: top, position: 0.50}

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename the future SI-01 messaging component family to upstream terminology: `UpstreamGateway`, `UpstreamMessageRouter` and `UpstreamMessagePort`. `Upstream` names the bidirectional relationship with the central/external system rather than a per-message direction; keep the I/O capability named `Messaging`. Also compact the three Application-layer cards in Figure SI01-01 without changing their label font size.
+
 - Requalify Migration 013 traceability authoring on the bounded 17-object /
   34-relation slice using native MyST/Sphinx-Needs: graph-exposed engineering
   objects now own their stable ID and outgoing relations directly in typed

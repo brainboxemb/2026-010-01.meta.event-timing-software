@@ -76,7 +76,7 @@ TimingApplication
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
-        +-- BackendMessagePort
+        +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -151,8 +151,8 @@ application/
   CommandHandler
     shared presentation command/query boundary
 
-  BackendMessageRouter
-    backend-only application/domain target resolution and routing
+  UpstreamMessageRouter
+    upstream-only application/domain target resolution and routing
 ```
 
 ```{arch} Conductor
@@ -182,12 +182,14 @@ TimingNode-scoped work.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce messages merely to preserve a layer diagram. Backend messaging
-is the explicit exception: `BackendMessageRouter` owns target resolution for
-backend-originated and backend-bound messages at application scope. It routes
-application-scoped backend messages to the relevant domain responsibility and
+do not introduce messages merely to preserve a layer diagram. Upstream messaging
+is the explicit exception: `UpstreamMessageRouter` owns target resolution for
+messages exchanged with the upstream system at application scope. **Upstream**
+describes that external system relationship, not the direction of an individual
+message; the exchange is bidirectional. It routes
+application-scoped upstream messages to the relevant domain responsibility and
 TimingNode-scoped messages by `TimingNodeId` to that node's
-`BackendMessagePort`. It is deliberately **not** a generic application message
+`UpstreamMessagePort`. It is deliberately **not** a generic application message
 bus or mediator for normal collaboration between domain components.
 
 ### Domain
@@ -199,7 +201,7 @@ TimingNode
   TimingNodeId
   LocationID
   State
-  BackendMessagePort
+  UpstreamMessagePort
   TagProcessor
   StageStartTimes
   Journal
@@ -212,12 +214,13 @@ TimingNode
 identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
 components shown beneath it in Figure SI01-01.
 
-`BackendMessagePort` is the bidirectional backend-message boundary of one
-TimingNode. Inbound messages have already been resolved to that TimingNode by
-`BackendMessageRouter`; state-changing handling executes through the
+`UpstreamMessagePort` is the bidirectional upstream-message boundary of one
+TimingNode. Its name identifies the relationship with the upstream system; it
+does not imply that every message travels away from the TimingNode. Inbound messages have already been resolved to that TimingNode by
+`UpstreamMessageRouter`; state-changing handling executes through the
 TimingNode's serial boundary and delegates to the relevant TimingNode
 responsibilities. Outbound TimingNode messages leave through the same semantic
-port and return to `BackendMessageRouter` for application/backend routing. The
+port and return to `UpstreamMessageRouter` for application/upstream routing. The
 port owns no transport connection, connector lifecycle or cross-node target
 resolution.
 `TagProcessor` handles tag observations. `StageStartTimes` owns stage start references. `Journal` owns
@@ -260,7 +263,7 @@ io/
     NetworkDeviceService
 
   Messaging
-    BackendGateway
+    UpstreamGateway
       Connector (1..N)
         RabbitMqConnector
         SocketConnector
@@ -281,7 +284,7 @@ DeviceNetworks elements carry
 packaging-component notation where the package-like ownership/decomposition
 semantics are meaningful. For compactness, Figure SI01-01 shows their contained
 software components as an indented hierarchy rather than as nested component
-boxes; `BackendGateway` remains a software component owned by Messaging.
+boxes; `UpstreamGateway` remains a software component owned by Messaging.
 
 The high-level I/O view separates **Devices** from **DeviceNetworks**.
 
@@ -305,11 +308,11 @@ the high-level architecture. The current IF-09 direction may use mDNS and a
 client-initiated IP session, but `NetworkDeviceService` itself is not Wi-Fi
 specific and does not own smart-display rendering/domain behaviour.
 
-When backend messaging is configured, SI-01 composes one `BackendGateway`
+When upstream messaging is configured, SI-01 composes one `UpstreamGateway`
 inside I/O/Messaging. The gateway uses 1..N connectors and owns the external
-backend boundary plus connector-facing message exchange. A concrete connector
+upstream-system boundary plus connector-facing message exchange. A concrete connector
 owns its transport resources and protocol/session mechanics.
-`BackendMessageRouter` in the application layer owns application/domain target
+`UpstreamMessageRouter` in the application layer owns application/domain target
 resolution instead of placing that responsibility in I/O.
 
 ### Platform
@@ -366,7 +369,7 @@ TimingApplication
         +-- TimingNodeId
         +-- LocationID
         +-- lifecycle / status
-        +-- BackendMessagePort
+        +-- UpstreamMessagePort
         +-- TagProcessor
         +-- StageStartTimes
         +-- Journal
@@ -443,17 +446,17 @@ Device Networks
     +-- NetworkDeviceService
 
 Messaging
-    +-- BackendGateway
+    +-- UpstreamGateway
           +-- Connector (1..N)
 
-BackendMessageRouter
-    +-- application-scoped backend target -> Domain responsibility
-    +-- TimingNodeId -> TimingNode.BackendMessagePort
+UpstreamMessageRouter
+    +-- application-scoped upstream target -> Domain responsibility
+    +-- TimingNodeId -> TimingNode.UpstreamMessagePort
 ```
 
 <a id="fig-si01-03"></a>
-![TimingNode, hardware and backend messaging routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
-*Figure SI01-03 — TimingNode, hardware and backend messaging routing.*
+![TimingNode, hardware and upstream-system messaging routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
+*Figure SI01-03 — TimingNode, hardware and upstream-system messaging routing.*
 
 `TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
 
@@ -464,13 +467,13 @@ I/O/device-network responsibilities. A keypad or display may present information
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`BackendGateway` is the I/O backend-messaging boundary. It exchanges
+`UpstreamGateway` is the I/O backend-messaging boundary. It exchanges
 transport-neutral messages with its configured connectors but does not resolve
-those messages to application/domain targets. `BackendMessageRouter` owns that
-application-level target resolution: an application-scoped backend message can
+those messages to application/domain targets. `UpstreamMessageRouter` owns that
+application-level target resolution: an application-scoped upstream message can
 be routed to the relevant Domain responsibility (for example `SystemStatus`),
 while a `TimingNodeId` target resolves to that TimingNode's
-`BackendMessagePort`.
+`UpstreamMessagePort`.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
 semantics. A connector-specific external name or routing key may participate in
@@ -480,8 +483,8 @@ TimingNode may exchange messages through more than one connector via the gateway
 router and its bidirectional port.
 
 `ApplicationId` establishes the separate addressable identity for
-application-scoped backend messages. That does not require a synthetic
-application-level `BackendMessagePort`; `BackendMessageRouter` can route such
+application-scoped upstream messages. That does not require a synthetic
+application-level `UpstreamMessagePort`; `UpstreamMessageRouter` can route such
 messages directly to the appropriate application/domain responsibility.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
@@ -563,7 +566,7 @@ The application boundary determines which TimingNode(s) receive the work:
 - configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
 - `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
 - `NetworkDeviceService` owns bidirectional network-device communication; discovery/session mechanics stay below this high-level responsibility;
-- `BackendMessageRouter` resolves backend targets: application-scoped messages go to the relevant Domain responsibility and `TimingNodeId` messages go to the matching TimingNode's `BackendMessagePort`;
+- `UpstreamMessageRouter` resolves upstream targets: application-scoped messages go to the relevant Domain responsibility and `TimingNodeId` messages go to the matching TimingNode's `UpstreamMessagePort`;
 - a scheduled task keeps the TimingNode target it was registered for.
 
 Each resolved target is then submitted to that TimingNode's serial executor.
@@ -571,10 +574,11 @@ When one observation fans out to two TimingNodes, both receive their own queued
 work and keep independent TimingNode-scoped state/sequence semantics.
 
 There is no central generic `TimingSystemDispatcher`. `CommandHandler`,
-antenna mapping and backend messaging remain separate boundary responsibilities.
-`BackendMessageRouter` is specifically for backend-message target resolution;
-it is not a generic message bus or all-purpose mediator. `BackendGateway`
-remains the I/O/backend boundary and connector owner.
+antenna mapping and upstream messaging remain separate boundary responsibilities.
+`UpstreamMessageRouter` is specifically for target resolution on the
+bidirectional upstream-system relationship; it is not a generic message bus or
+all-purpose mediator. `UpstreamGateway` remains the I/O upstream-system
+boundary and connector owner.
 
 ```text
 operator endpoint
@@ -885,7 +889,7 @@ ApplicationConfig
 │   │   └── network
 │   ├── registrationRouting
 │   ├── backend
-│   │   └── connectors (1..N when BackendGateway is configured)
+│   │   └── connectors (1..N when UpstreamGateway is configured)
 │   └── storage
 ├── presentation
 ├── logging
@@ -902,7 +906,7 @@ The identity boundaries are deliberate:
 - Devices names the functional device endpoints/concepts, including antennas, passive CAN devices and smart network devices;
 - the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
 - Device Networks contains `CanNetworkController` for the actively managed CAN network and `NetworkDeviceService` for bidirectional network-device communication;
-- when backend messaging is configured, the application composes one `BackendGateway` using 1..N connectors;
+- when upstream messaging is configured, the application composes one `UpstreamGateway` using 1..N connectors;
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
@@ -950,7 +954,7 @@ Keep these concepts distinct:
 4. race/reference data — locally available participant/team/tag-reference input received from external sources;
 5. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
 6. local backup/restore — restart/power-loss recovery;
-7. backend outbox/synchronisation — pending external delivery/reconciliation.
+7. upstream outbox/synchronisation — pending external delivery/reconciliation.
 
 Registration identity remains TimingNode-scoped; the current stable conceptual key is `(TimingNodeId, SequenceNumber)`.
 
@@ -960,29 +964,29 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and backend are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
-### Backend messaging
+### Upstream messaging
 
-Backend messaging is a semantic application boundary, not a RabbitMQ API.
-`BackendGateway` owns the external backend boundary across 1..N transport
-connectors. `BackendMessageRouter` owns application/domain target resolution.
+Upstream messaging is a semantic application boundary, not a RabbitMQ API.
+`UpstreamGateway` owns the external upstream-system boundary across 1..N transport
+connectors. `UpstreamMessageRouter` owns application/domain target resolution.
 A TimingNode-targeted message is resolved by `TimingNodeId`, submitted through
 that TimingNode's serial boundary and enters/leaves the TimingNode through its
-bidirectional `BackendMessagePort`.
+bidirectional `UpstreamMessagePort`.
 
 ```text
-external backend system
+external upstream system
         |
         +--> RabbitMqConnector --+
-        +--> SocketConnector ----+--> BackendGateway
+        +--> SocketConnector ----+--> UpstreamGateway
                                       |
                                       v
-                               BackendMessageRouter
+                               UpstreamMessageRouter
                                   |             |
                       application/domain       +--> TimingNodeId
                             target                     |
                               |                        v
                               v                  TimingNode
-                         SystemStatus              BackendMessagePort
+                         SystemStatus              UpstreamMessagePort
 ```
 
 Connectors own transport/session mechanics and protocol-specific mapping at the
@@ -992,7 +996,7 @@ implementation is active. Product/deployment-specific backend names and private
 wire details remain outside the public architecture documentation.
 
 `ApplicationId` is used for application-scoped backend addressing.
-`BackendMessageRouter` provides that application-level routing without adding a
+`UpstreamMessageRouter` provides that application-level routing without adding a
 generic application message handler merely to complete the symmetry. Additional
 domain handling is introduced only when a concrete application-scoped
 message capability is actually implemented.

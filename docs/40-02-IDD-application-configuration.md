@@ -140,10 +140,14 @@ Concrete antenna configuration owns its driver/protocol/device settings. A
 separate registration-asset identity is not part of the active software
 configuration model.
 
-### Backend messaging
+### Upstream messaging
 
-When backend messaging is enabled, SI-01 composes one `BackendGateway` using
-1..N connectors plus one application-level `BackendMessageRouter`.
+**Upstream** identifies the central/external system relationship from SI-01's
+perspective; it does not define the direction of each message. The relationship
+is bidirectional.
+
+When upstream messaging is enabled, SI-01 composes one `UpstreamGateway` using
+1..N connectors plus one application-level `UpstreamMessageRouter`.
 Configuration selects the concrete transports and any transport-specific
 addressing/mapping needed at the external boundary; target resolution to
 application/domain responsibilities remains an application concern.
@@ -152,25 +156,26 @@ Representative direction:
 
 ```text
 io
-  backend
-    connectors
-      connector-01
-        type: rabbitmq
-        credentials: rabbitmq-main
-      connector-02
-        type: socket
+  messaging
+    upstream
+      connectors
+        connector-01
+          type: rabbitmq
+          credentials: rabbitmq-main
+        connector-02
+          type: socket
 ```
 
-`BackendGateway` owns the external backend boundary after a connector has
+`UpstreamGateway` owns the external upstream-system boundary after a connector has
 converted external protocol data into an application-facing message.
-`BackendMessageRouter` resolves the internal target: `ApplicationId` can
+`UpstreamMessageRouter` resolves the internal target: `ApplicationId` can
 address an application-scoped Domain responsibility, while `TimingNodeId`
 resolves to the corresponding TimingNode's bidirectional
-`BackendMessagePort`.
+`UpstreamMessagePort`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or a
 socket session. It does not own Domain/TimingNode selection or message
-semantics. The router is backend-specific and is not used as a generic internal
+semantics. The router is upstream-specific and is not used as a generic internal
 application message bus.
 
 Storage settings remain under I/O because they configure external persistence.
@@ -354,7 +359,7 @@ Validation includes, where applicable:
 - invalid CAN device-network settings when CAN is enabled;
 - invalid network-device service settings when the network device service is enabled;
 - duplicate/conflicting backend connector identifiers;
-- backend message mappings/targets that reference unknown TimingNodes;
+- upstream message mappings/targets that reference unknown TimingNodes;
 - conflicting presentation/logging listener bind address/port combinations;
 - invalid logging level, file rotation/retention values or live-listener settings;
 - unsupported adapter/driver types;
