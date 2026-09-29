@@ -199,7 +199,7 @@ nodes:
   object_id: TimingData
   group: domain-layer
   label: "TimingData"
-  subtitle: "TimingDataRecord • encode / decode"
+  subtitle: "record + codec • Web / storage / upstream"
   kind: service
   notation: component
   layout: {x: 900, y: 690, w: 230, h: 55}
@@ -241,7 +241,7 @@ nodes:
     - Beeper
   kind: integration
   notation: packaging-component
-  # Aligned with SystemStatus above and fully enclosed by the shallower I/O
+  # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
   layout: {x: 910, y: 885, w: 220, h: 195}
 - id: device-network-io
@@ -344,3 +344,39 @@ edges:
   to: domain-layer
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.65}
+
+
+- from: timing-node-root
+  to: logbook-domain
+  label: owns lifecycle
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
+  route:
+    - {x: 880, y: 687.5}
+    - {x: 880, y: 647.5}
+
+- from: logbook-domain
+  to: timing-data-domain
+  label: maps to
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
+- from: upstream-protocol-domain
+  to: timing-data-domain
+  label: uses
+  dashed: true
+  from_anchor: {side: left, position: 0.35}
+  to_anchor: {side: left, position: 0.65}
+  route:
+    - {x: 875, y: 779.25}
+    - {x: 875, y: 725.75}
+
+- from: upstream-protocol-domain
+  to: system-domain
+  label: ping / status
+  dashed: true
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: right, position: 0.50}
+  route:
+    - {x: 1140, y: 787.5}
+    - {x: 1140, y: 577.5}
