@@ -18,7 +18,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 - `30-03-IDD-11-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
-`30-01-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional `40-01-UC-...` document and referenced here; it is not required merely to duplicate a system use case.
+`30-01-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
 
 `00-04-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
