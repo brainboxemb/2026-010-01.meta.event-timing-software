@@ -601,6 +601,35 @@ TimingData contracts remain functionally centred on
 `TimingNodeId`.
 ```
 
+
+```{arch} LogBook
+:id: LogBook
+
+A `LogBook` belongs to one TimingNode and is lifecycle-managed
+by that TimingNode. It owns the operational collection of
+`LogBookItem` values; those internal items are deliberately
+separate from the canonical TimingData interchange shape.
+```
+
+```{arch} TimingData
+:id: TimingData
+
+`TimingData` is the shared Domain contract for canonical
+persistent/interchange timing records, including
+`TimingDataRecord`, validation and encode/decode compatibility.
+Storage, Web and upstream protocol code consume this contract
+without owning its field semantics.
+```
+
+```{arch} UpstreamProtocol
+:id: UpstreamProtocol
+
+Each TimingSystem owns one `UpstreamProtocol` context. It uses
+TimingData for timing-record transfer and owns protocol-level
+synchronisation, reconciliation and ping/heartbeat semantics so
+those concerns do not leak into individual TimingNodes.
+```
+
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
 #### Software/domain decomposition
