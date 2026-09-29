@@ -17,7 +17,7 @@ The SI-02 specification consumes:
 - applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
 - a future system-owned GUI/HMI IDD when that contract is defined.
 
-`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate `40-02-UC-...` document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer.
+`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
 
 The SIP may schedule SI-02 work but is not requirement/design authority.
 
