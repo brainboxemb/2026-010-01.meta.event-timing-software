@@ -21,7 +21,7 @@ def timing_node_internals() -> Diagram:
         Node("rfid", "RFID observations", 340, 90, 220, 80, "external"),
         Node("can", "CAN observations\\nkeypad + discovery", 600, 90, 240, 80, "external"),
         Node("timers", "Scheduled events\\nheartbeat • scans", 880, 90, 220, 80, "external"),
-        Node("backoffice", "Backend input\\nrace/reference data", 1140, 90, 230, 80, "external"),
+        Node("backoffice", "Upstream input\\nrace/reference data", 1140, 90, 230, 80, "external"),
 
         Node("messages", "Immutable TimingNodeMessage\\nsource timestamp + TimingNodeId", 390, 230, 610, 90, "interface"),
         Node("queue", "Per-TimingNode ingress queue", 505, 370, 380, 75, "queue"),
@@ -87,7 +87,7 @@ def rfid_pipeline() -> Diagram:
         Node("accepted", "AcceptedTag\\nwith evidence + observation time", 1040, 350, 300, 85, "queue"),
         Node("registration", "Registration candidate", 1040, 540, 300, 80, "core"),
         Node("store", "RegistrationStore", 820, 720, 250, 70, "port"),
-        Node("outbox", "Backend outbox", 1110, 720, 250, 70, "queue"),
+        Node("outbox", "Upstream outbox", 1110, 720, 250, 70, "queue"),
         Node("ui", "Status / WebSocket update", 1400, 720, 250, 70, "interface"),
     ]
 
