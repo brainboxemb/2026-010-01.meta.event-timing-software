@@ -18,7 +18,7 @@ groups:
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 30, y: 496, w: 1120, h: 465}
+  layout: {x: 30, y: 496, w: 1120, h: 485}
   # Domain keeps a compact, regular gap below the aggregate and TimingData.
   # The right shoulder remains slightly shallower so the Domain/I/O relation is
   # visible without making Devices look embedded in Domain.
@@ -98,7 +98,7 @@ nodes:
   subtitle: "browser-facing interface"
   kind: presentation
   notation: component
-  layout: {x: 515, y: 125, w: 240, h: 65}
+  layout: {x: 515, y: 125, w: 280, h: 65}
 - id: remote-api
   object_id: RemoteApi
   group: presentation-layer
@@ -106,7 +106,7 @@ nodes:
   subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
   notation: component
-  layout: {x: 775, y: 125, w: 340, h: 65}
+  layout: {x: 815, y: 125, w: 300, h: 65}
 - id: shared-terminal
   object_id: SharedTerminalHandler
   group: presentation-layer
@@ -225,7 +225,7 @@ nodes:
   subtitle: "record + codec • Web / storage / upstream"
   kind: service
   notation: component
-  layout: {x: 300, y: 886, w: 380, h: 60}
+  layout: {x: 300, y: 906, w: 380, h: 60}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
@@ -366,7 +366,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.45}
   route:
-    - {x: 635, y: 250}
+    - {x: 655, y: 250}
     - {x: 516, y: 250}
 
 - from: remote-api
@@ -374,7 +374,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.75}
   route:
-    - {x: 945, y: 290}
+    - {x: 965, y: 290}
     - {x: 600, y: 290}
 
 - from: command-handler
@@ -418,8 +418,8 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.68}
   route:
-    - {x: 830, y: 871}
-    - {x: 558.4, y: 871}
+    - {x: 830, y: 886}
+    - {x: 558.4, y: 886}
 
 - from: upstream-protocol-domain
   to: timing-data-domain
