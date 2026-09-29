@@ -77,11 +77,11 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 - [`docs/30-02-SSSD-software-system-specification-document.md`](docs/30-02-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
 - [`docs/30-03-IDD-03-application-control-status.md`](docs/30-03-IDD-03-application-control-status.md) — system-owned IF-03 Remote API contract.
 - [`docs/30-03-IDD-11-application-configuration.md`](docs/30-03-IDD-11-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
-- [`docs/40-01-SISD-timing-application-specification-document.md`](docs/40-01-SISD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
-- [`docs/40-02-SISD-gui-application-specification-document.md`](docs/40-02-SISD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
-- [`docs/40-01-SDD-01-data-and-display-design.md`](docs/40-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
-- [`docs/40-01-SDD-02-java-component-design.md`](docs/40-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
-- [`docs/40-01-SDD-03-backoffice-transport-design.md`](docs/40-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
+- [`docs/40-01-01-SSD-timing-application-specification-document.md`](docs/40-01-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
+- [`docs/40-02-01-SSD-gui-application-specification-document.md`](docs/40-02-01-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
+- [`docs/40-01-02-SDD-data-and-display-design.md`](docs/40-01-02-SDD-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
+- [`docs/40-01-03-SDD-java-component-design.md`](docs/40-01-03-SDD-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
+- [`docs/40-01-04-SDD-backoffice-transport-design.md`](docs/40-01-04-SDD-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
 - [`docs/50-01-SDE-software-development-environment.md`](docs/50-01-SDE-software-development-environment.md) — repository/workflow/tooling/environment conventions.
 - [`docs/50-02-SDE-java-build-test-toolchain.md`](docs/50-02-SDE-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/60-01-SVP-software-verification-plan.md`](docs/60-01-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
@@ -116,9 +116,9 @@ Examples:
 30-02-SSSD
 30-03-IDD-03
 30-03-IDD-11
-40-01-SISD
+40-01-01-SSD
 40-01-SDD-01
-40-02-SISD
+40-02-01-SSD
 50-01-SDE
 50-02-SDE
 60-01-SVP
@@ -137,7 +137,7 @@ The project intentionally separates:
 - **planning** — SDP and SIP;
 - **external/parent-system inputs** — controlled requirements, interface contracts, protocols and standards owned outside the current software-system scope;
 - **software-system specification/design** — system use cases, SSSD and system-owned IDDs;
-- **software-item specification/design** — optional item use cases, SISD and focused SDDs;
+- **software-item specification/design** — optional item use cases, SSD and focused SDDs;
 - **development environment/engineering** — SDE and toolchain/environment refinements;
 - **verification/validation** — SVP and later verification specifications/cases/reports where a distinct document is justified;
 - **user/operations** — release/user/operator guidance such as SUM;
@@ -154,13 +154,13 @@ domain baseline / system use cases / applicable parent-system inputs
                          -> SSSD
                          -> allocated system-owned IDD(s)
                          -> affected software-item use cases where useful
-                         -> affected SISD(s)
+                         -> affected SSD(s)
                          -> focused SDD(s)
                          -> implementation
                          -> verification evidence
 ```
 
-An externally owned requirement, IDD, protocol or standard remains upstream authority and may constrain the SSSD and, where allocated directly, an affected SISD. The category-20 register records that dependency without copying ownership into this repository.
+An externally owned requirement, IDD, protocol or standard remains upstream authority and may constrain the SSSD and, where allocated directly, an affected SSD. The category-20 register records that dependency without copying ownership into this repository.
 
 Planning, engineering-environment and verification documents may reference this chain without becoming upstream product authority merely because of their document number.
 
