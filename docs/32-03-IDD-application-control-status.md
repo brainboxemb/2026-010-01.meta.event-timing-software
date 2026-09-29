@@ -368,18 +368,12 @@ Clients shall be able to ignore unknown response members/event types within API 
 
 ## Relationship to SI-01 SSD
 
-| IDD obligation | SI-01 requirement(s) |
-| --- | --- |
-| IF03-REQ-001 | SI01-REQ-022, SI01-REQ-030 |
-| IF03-REQ-002 | SI01-REQ-031 |
-| IF03-REQ-003 | SI01-REQ-010, SI01-REQ-011 |
-| IF03-REQ-004 | SI01-REQ-020, SI01-REQ-021, SI01-REQ-022 |
-| IF03-REQ-005/006 | SI01-REQ-023 |
-| IF03-REQ-007/008 | SI01-REQ-031 |
-| IF03-REQ-009 | SI01-REQ-032 |
-| IF03-REQ-010 | SI01-REQ-033 |
+Each IF-03 requirement owns its upstream SI-01 traceability through its
+`derived_from` relation. That relation is authored once with the requirement and
+the generated engineering reader/graph provides the inverse context back to IF-03.
 
-The SI-01 SSD references this contract instead of duplicating transport schema details.
+The SI-01 SSD references this contract instead of duplicating transport-level
+requirements.
 
 ## First AP-1 verification case
 
