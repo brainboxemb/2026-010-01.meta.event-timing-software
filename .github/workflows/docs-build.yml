@@ -462,7 +462,7 @@ jobs:
               encoding="utf-8"
           )
           uc_start = use_cases.index('<a id="UC-001"></a>')
-          uc_end = use_cases.index("## UC-002 —", uc_start)
+          uc_end = use_cases.index('<a id="UC-002"></a>', uc_start)
           uc_block = use_cases[uc_start:uc_end]
           uc_order = (
               uc_block.index("**UC-001 — Start and prepare a TimingNode**"),
@@ -477,6 +477,29 @@ jobs:
               raise SystemExit(
                   "generated reader Markdown does not retain full UC-001 narrative before metadata"
               )
+
+          for number in range(1, 20):
+              object_id = f"UC-{number:03d}"
+              if f'<a id="{object_id}"></a>' not in use_cases:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          si01_ids = (
+              "SI01-REQ-001", "SI01-REQ-002", "SI01-REQ-003",
+              "SI01-REQ-010", "SI01-REQ-011",
+              "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
+              "SI01-REQ-030", "SI01-REQ-031", "SI01-REQ-032", "SI01-REQ-033",
+          )
+          for object_id in si01_ids:
+              if f'<a id="{object_id}"></a>' not in ssd:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          idd = (root / "32-03-IDD-application-control-status.md").read_text(
+              encoding="utf-8"
+          )
+          for number in range(1, 11):
+              object_id = f"IF03-REQ-{number:03d}"
+              if f'<a id="{object_id}"></a>' not in idd:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
           PY
 
       - name: Verify generated output and retained producer evidence
