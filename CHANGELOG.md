@@ -15,7 +15,8 @@ The repository is currently in its planning and research phase.
 - Add the Migration 013 Step-5 production engineering portal canary: derive a
   Material static site from the normalized engineering graph and real generated
   SI-01 SVG, with search, generated object pages, one-hop context, exact source
-  links, clickable architecture and browser-qualified workspace behavior while
+  links, clickable architecture, full selected use-case narratives and
+  browser-qualified workspace behavior while
   retaining the existing Book as a separate first-class output.
 
 - Retain the Migration 013 Step-3 production result as the behaviour baseline:

@@ -235,6 +235,41 @@ jobs:
           )
 
           expected_ids = {item["id"] for item in graph["objects"]}
+          objects = {item["id"]: item for item in graph["objects"]}
+
+          use_case_narrative = {
+              "UC-001": (
+                  "**Preconditions:**",
+                  "**Main flow:**",
+                  "**Alternative/failure flows:**",
+                  "The actor selects/addresses a TimingNode.",
+              ),
+              "UC-008": (
+                  "**Main flow:**",
+                  "SI-02 connects through the system-defined application-control/status interface.",
+              ),
+              "UC-014": (
+                  "**Main flow:**",
+                  "Settings describe several independently addressed",
+              ),
+          }
+          for object_id, tokens in use_case_narrative.items():
+              content = objects[object_id].get("content", "")
+              for token in tokens:
+                  if token not in content:
+                      raise SystemExit(
+                          f"engineering graph missing use-case narrative {object_id}: {token}"
+                      )
+
+              page = (site / "objects" / object_id / "index.html").read_text(
+                  encoding="utf-8"
+              )
+              for token in ("Main flow",):
+                  if token not in page:
+                      raise SystemExit(
+                          f"portal object page missing use-case narrative {object_id}: {token}"
+                      )
+
           actual_pages = {
               path.parent.name for path in (site / "objects").glob("*/index.html")
           }
@@ -263,9 +298,18 @@ jobs:
                   )
 
           search = (site / "search/search_index.json").read_text(encoding="utf-8")
-          for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001"):
+          for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
               if object_id not in search:
                   raise SystemExit(f"portal search index missing {object_id}")
+          for narrative in (
+              "The actor selects/addresses a TimingNode.",
+              "SI-02 connects through the system-defined application-control/status interface.",
+              "Settings describe several independently addressed",
+          ):
+              if narrative not in search:
+                  raise SystemExit(
+                      f"portal search index missing use-case narrative: {narrative}"
+                  )
 
           if not (site / "index.html").is_file():
               raise SystemExit("portal landing page missing")
@@ -317,6 +361,21 @@ jobs:
           grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
           grep -q 'Open object page' bld/engineering-portal/browser-explorer.html
           grep -q 'Authoritative source' bld/engineering-portal/browser-explorer.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/explorer/?object=UC-001" \
+            > bld/engineering-portal/browser-explorer-UC-001.html
+
+          grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
+          grep -q 'Preconditions' bld/engineering-portal/browser-explorer-UC-001.html
+          grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-001.html
+          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer-UC-001.html
 
           "$chrome" \
             --headless \
@@ -393,6 +452,26 @@ jobs:
           if order != tuple(sorted(order)):
               raise SystemExit(
                   "generated reader Markdown does not render Need body before metadata/separator"
+              )
+
+          use_cases = (root / "04-UC-system-use-cases.md").read_text(
+              encoding="utf-8"
+          )
+          uc_start = use_cases.index('<a id="UC-001"></a>')
+          uc_end = use_cases.index("## UC-002 —", uc_start)
+          uc_block = use_cases[uc_start:uc_end]
+          uc_order = (
+              uc_block.index("**UC-001 — Start and prepare a TimingNode**"),
+              uc_block.index("**Preconditions:**"),
+              uc_block.index("**Main flow:**"),
+              uc_block.index("**Alternative/failure flows:**"),
+              uc_block.index("— — —"),
+              uc_block.index("- **Type:** Use Case"),
+              uc_block.index("\n---\n"),
+          )
+          if uc_order != tuple(sorted(uc_order)):
+              raise SystemExit(
+                  "generated reader Markdown does not retain full UC-001 narrative before metadata"
               )
           PY
 
