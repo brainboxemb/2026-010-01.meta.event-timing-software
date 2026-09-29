@@ -33,17 +33,21 @@ groups:
 - id: timing-system-aggregate
   object_id: TimingSystem
   label: "TimingSystem (1..N)"
-  note: "TimingSystemId (internal)"
+  properties:
+    - "TimingSystemId (internal)"
   kind: model
   notation: component
-  layout: {x: 55, y: 536, w: 1080, h: 355}
+  layout: {x: 55, y: 536, w: 1080, h: 375}
 - id: timing-node-aggregate
   object_id: TimingNode
   label: "TimingNode (1..N)"
-  note: "TimingNodeId • LocationID • State"
+  properties:
+    - TimingNodeId
+    - LocationID
+    - State
   kind: model
   notation: component
-  layout: {x: 550, y: 556, w: 560, h: 330}
+  layout: {x: 550, y: 556, w: 560, h: 350}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
@@ -160,7 +164,7 @@ nodes:
   subtitle: "node-level upstream"
   kind: service
   notation: component
-  layout: {x: 850, y: 626, w: 240, h: 55}
+  layout: {x: 850, y: 670, w: 240, h: 55}
 
 - id: tag-processor
   object_id: TagProcessor
@@ -169,7 +173,7 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 570, y: 626, w: 240, h: 50}
+  layout: {x: 570, y: 670, w: 240, h: 50}
 - id: stage-start-times
   object_id: StageStartTimes
   group: timing-node-aggregate
@@ -177,7 +181,7 @@ nodes:
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 686, w: 240, h: 50}
+  layout: {x: 570, y: 730, w: 240, h: 50}
 - id: next-up-teams
   object_id: NextUpTeams
   group: timing-node-aggregate
@@ -185,7 +189,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 570, y: 686, w: 240, h: 50}
+  layout: {x: 850, y: 730, w: 240, h: 50}
 - id: race-data
   object_id: RaceData
   group: timing-node-aggregate
@@ -193,7 +197,7 @@ nodes:
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 746, w: 240, h: 50}
+  layout: {x: 570, y: 790, w: 240, h: 50}
 - id: stage-timing
   object_id: StageTiming
   group: timing-node-aggregate
@@ -201,7 +205,7 @@ nodes:
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 570, y: 746, w: 240, h: 50}
+  layout: {x: 850, y: 790, w: 240, h: 50}
 
 - id: logbook-domain
   object_id: LogBook
@@ -210,7 +214,7 @@ nodes:
   subtitle: "0..N LogBookItem"
   kind: service
   notation: component
-  layout: {x: 850, y: 806, w: 240, h: 50}
+  layout: {x: 850, y: 850, w: 240, h: 50}
 
 - id: timing-data-domain
   object_id: TimingData
