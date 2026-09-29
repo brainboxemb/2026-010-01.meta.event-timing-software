@@ -70,7 +70,7 @@ nodes:
     - heartbeat / ping
   kind: model
   notation: class
-  layout: {x: 75, y: 610, w: 245, h: 155}
+  layout: {x: 75, y: 610, w: 245, h: 100}
 
 - id: timing-node-root
   object_id: TimingNode
@@ -82,7 +82,7 @@ nodes:
     - State
   kind: model
   notation: class
-  layout: {x: 340, y: 610, w: 245, h: 155}
+  layout: {x: 340, y: 610, w: 245, h: 100}
 
 - id: local-console
   group: presentation-layer
@@ -187,7 +187,7 @@ nodes:
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 75, y: 695, w: 245, h: 70}
+  layout: {x: 75, y: 715, w: 245, h: 50}
 
 - id: logbook-domain
   object_id: LogBook
