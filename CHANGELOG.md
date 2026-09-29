@@ -8,15 +8,15 @@ The repository is currently in its planning and research phase.
 
 - Rename the future SI-01 messaging component family to upstream terminology: `UpstreamGateway`, `UpstreamMessageRouter` and `UpstreamMessagePort`. `Upstream` names the bidirectional relationship with the central/external system rather than a per-message direction; keep the I/O capability named `Messaging`. Also compact the three Application-layer cards in Figure SI01-01 without changing their label font size.
 
-- Requalify Migration 013 traceability authoring on the bounded 17-object /
-  34-relation slice using native MyST/Sphinx-Needs: graph-exposed engineering
-  objects now own their stable ID and outgoing relations directly in typed
-  directives, consumer-owned Needs schemas validate relation types, Needs
-  generates inverse/backlinks, and `needs.json` feeds the reusable
-  `tool.eng-docs` normalization/review boundary. Architecture diagram
-  `object_id` values reference the same Needs objects rather than define a
-  second engineering graph. This qualification branch pins the exact unreleased
-  owner PR head and must move to immutable `v0.4.0` before merge.
+- Complete Migration 013 Step 4 on the bounded 17-object / 34-relation
+  native MyST/Sphinx-Needs slice, pin released `tool.eng-docs v0.4.0`, retain
+  generated inverse/backlinks and shared diagram engineering identities, and
+  qualify the released graph boundary through the merged real consumer.
+- Add the Migration 013 Step-5 production engineering portal canary: derive a
+  Material static site from the normalized engineering graph and real generated
+  SI-01 SVG, with search, generated object pages, one-hop context, exact source
+  links, clickable architecture and browser-qualified workspace behavior while
+  retaining the existing Book as a separate first-class output.
 
 - Retain the Migration 013 Step-3 production result as the behaviour baseline:
   requirements own `derived_from`, design owns `satisfies`, verification owns

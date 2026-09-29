@@ -134,7 +134,7 @@ def render_need(
 
     metadata = [f"**Type:** {label}", *relation_items(need, needs)]
     if metadata:
-        output.append("")
+        output.extend(["", "— — —", ""])
         output.extend(f"- {item}" for item in metadata)
 
     output.extend(["", "---", ""])
