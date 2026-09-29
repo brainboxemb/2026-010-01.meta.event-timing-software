@@ -64,8 +64,8 @@ The software-item SISDs define the requirements and architecture of each softwar
 
 ## Software-system requirements baseline
 
-The current migrated baseline records only obligations already present in the former
-SSSD/use-case model; it does not invent a new capability set merely because requirements
+The current migrated baseline records only obligations already present in the
+pre-migration architecture/use-case model; it does not invent a new capability set merely because requirements
 and architecture now share one document.
 
 - The **Headless Timing Application** (SI-01) keeps local timing/registration state.
@@ -85,7 +85,7 @@ The software-system architecture is driven by these system-level concerns:
 - the **Headless Timing Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
 - the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the Remote API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
-- external devices and backend systems are explicit system interfaces rather than hidden implementation dependencies;
+- external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
 - deployments should support the intended field target and normal development/test hosts; target limits are measured rather than assumed;
 - system interfaces and software-item ownership should remain stable even when internal implementation technology changes;
@@ -93,11 +93,11 @@ The software-system architecture is driven by these system-level concerns:
 
 ## Software-item register
 
-The second-level number used in SRD/SAD/SDD filenames identifies the software item.
+The software-item segment in `30-xx-SISD` and `31-xx-SDD-yy` filenames identifies the software item.
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
-| **SI-01** | Headless Timing Application | working architecture | Local timing/registration runtime, device integration, state, status, persistence and backend synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
+| **SI-01** | Headless Timing Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the Remote API | Operator workstation/laptop |
 
 Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX Remote API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
@@ -254,7 +254,7 @@ The architecture must support constrained field deployment and normal Linux/Wind
 
 ## Relationship to software-item architecture
 
-The SAD for the **Headless Timing Application** (SI-01) owns, among other things:
+The SISD for the **Headless Timing Application** (SI-01) owns, among other things:
 
 - layered application responsibilities;
 - `TimingNode` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;
@@ -264,10 +264,10 @@ The SAD for the **Headless Timing Application** (SI-01) owns, among other things
 - logging/configuration/composition choices;
 - Java/framework/library decisions;
 - RFID/CAN/display adapter architecture behind the system device interfaces;
-- backend transport implementation behind IF-06;
+- upstream transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
-The SAD for the planned **Desktop GUI Application** (SI-02) owns its internal architecture while conforming to the Remote API and applicable IDDs.
+The SISD for the planned **Desktop GUI Application** (SI-02) owns its requirements/internal architecture while conforming to the Remote API and applicable IDDs.
 
 ## Architecture review model
 

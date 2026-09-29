@@ -172,20 +172,20 @@ The following areas are intentionally not made concrete by this SISD slice:
 - production authentication/authorisation and final security policy;
 - browser-specific CORS/origin policy.
 
-These areas remain governed by the working architecture/use cases until a later SIP/document-maturity gate requires formalisation.
+These areas remain in the use-case/working-specification baseline until a later planned increment promotes their requirements.
 
 ### Traceability view
 
-| Requirement | Current source | Interface/design allocation | Planned verification |
+| Requirement | Upstream authority | Interface/design allocation | Planned verification |
 | --- | --- | --- | --- |
-| SI01-REQ-001/002 | SIP framework/version-status increments | IF-11 + SI-01 composition/runtime | build/start/stop + ST-1 process control |
-| SI01-REQ-003 | UC-001; SSAD runtime topology | IF-11 + SI-01 runtime composition | `VC-ST1-001` status inspection |
-| SI01-REQ-010/011 | UC-008/009; SIP first executable | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
-| SI01-REQ-020/021/022 | UC-001/008/009; SSAD/SAD status model | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
-| SI01-REQ-023 | first executable live status need | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
-| SI01-REQ-030/031 | SAD testability; SVP ST-1 | shared application boundary | architecture/component checks + `VC-ST1-001` |
-| SI01-REQ-032 | AP-1 controlled development exposure | IF03-REQ-002/009 | configuration/interface verification |
-| SI01-REQ-033 | AP-1 interface evolution policy | IF03-REQ-010 | contract/component verification |
+| SI01-REQ-001/002 | UC-001; SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime | build/start/stop + ST-1 process control |
+| SI01-REQ-003 | UC-001/014; SSSD software-item topology | IF-11 + SI-01 runtime composition | `VC-ST1-001` status inspection |
+| SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-020/021/022 | UC-001/008/009; SSSD status/control allocation | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
+| SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary | architecture/component checks + `VC-ST1-001` |
+| SI01-REQ-032 | IF03-REQ-002/009 | Remote API binding/configuration | configuration/interface verification |
+| SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
 
 ### AP-1 decisions resolved by this baseline
 
@@ -1157,7 +1157,7 @@ Persistence durability semantics, file format, atomic-write strategy and corrupt
 
 ### Integration architecture
 
-The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SISD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSSD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SISD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 #### Upstream messaging
 
@@ -1316,7 +1316,7 @@ Development/test host
     may host larger multi-TimingNode simulation topology
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSAD rather than duplicated here.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSSD rather than duplicated here.
 
 ### Testability and failure/recovery architecture
 

@@ -365,7 +365,7 @@ Trace target:
 UC-001 / UC-008
   -> SI01-REQ-010/011/020/021/022/023/031/032/033
   -> IF03-REQ-001..010 as applicable
-  -> SI-01 status/application boundary from SAD/SDD
+  -> SI-01 status/application boundary from SISD/SDD
   -> VC-ST1-001
 ~~~
 ```

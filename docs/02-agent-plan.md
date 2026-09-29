@@ -71,7 +71,7 @@ This step is intentionally **just-in-time**. It does not attempt to formalise th
 Expected scope:
 
 - identify the use cases and behaviours needed by the first executable;
-- create the initial `20-01-SRD` scope for SI-01 startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour;
+- create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `30-01-SISD`);
 - create the first system-level application-control/status IDD needed by the executable and later clients;
 - establish a traceable example from use case → SSSD/system IDD where applicable → SI-01 SISD requirement/architecture → SDD → verification case;
 - make the relevant ST-1/SVP verification material concrete enough for the first executable;
