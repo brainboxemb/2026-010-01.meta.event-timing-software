@@ -17,7 +17,12 @@ Conceptually, one timing application owns one or more independently addressed ti
 ```text
 TimingApplication
   |
-  +-- SystemStatus
+  +-- System
+  |     +-- SystemStatus
+  |     +-- heartbeat / ping semantics
+  |
+  +-- TimingData
+  +-- UpstreamProtocol
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
@@ -25,10 +30,13 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimes
-        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
+        +-- owns lifecycle -> LogBook
+
+LogBook
+  +-- 0..N LogBookItem
 ```
 
 `TimingNodeId` is the stable identity of the `TimingNode`; `LocationID` identifies the physical event location where that timing node is configured or deployed.
@@ -104,7 +112,12 @@ decomposition and I/O/configuration routing answer different questions.
 ```text
 TimingApplication
   |
-  +-- SystemStatus
+  +-- System
+  |     +-- SystemStatus
+  |     +-- heartbeat / ping semantics
+  |
+  +-- TimingData
+  +-- UpstreamProtocol
   |
   +-- 1..N TimingNode
         +-- TimingNodeId
@@ -112,14 +125,36 @@ TimingApplication
         +-- lifecycle / status
         +-- TagProcessor
         +-- StageStartTimes
-        +-- LogBook
         +-- NextUpTeams
         +-- RaceData
         +-- StageTiming
+        +-- owns lifecycle -> LogBook
+
+LogBook
+  +-- 0..N LogBookItem
 ```
 
 The exact component/class boundaries remain design work, but the TimingNode is
 the software/domain aggregate being operated.
+
+The application-wide `System` domain object owns `SystemStatus` and
+system-level heartbeat/ping semantics that do not belong to one TimingNode.
+
+Each TimingNode owns the lifecycle of one `LogBook`. The LogBook owns its
+operational state as 0..N `LogBookItem` values. A `LogBookItem` is the
+internal logbook-domain representation and is not required to match the
+persistent/interchange representation one-for-one.
+
+`TimingData` defines the canonical persistent/interchange timing-data contract.
+Its principal record is `TimingDataRecord`; the TimingData responsibility also
+owns the public validation, encode/decode and compatibility semantics. Storage,
+Web and upstream communication may consume that contract without becoming owners
+of its field semantics.
+
+`UpstreamProtocol` is a separate domain protocol built partly on TimingData. It
+covers transfer of TimingData plus synchronization/reconciliation and
+system-level messages such as ping/pong. Transport/session mechanics remain I/O
+concerns.
 
 ### I/O routing view
 
