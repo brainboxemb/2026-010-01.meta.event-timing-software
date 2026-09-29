@@ -65,9 +65,14 @@ The roadmap deliberately treats **original estimate**, **actual** and **remainin
 
 ## Working documents
 
+For a fresh ChatGPT/agent session, use the shared
+[BrainboxEmb new-session handoff](https://github.com/brainboxemb/brainboxemb.meta/blob/main/docs/20-20-new-session-handoff.md).
+This repository deliberately does not maintain a project-local handoff copy; current
+state is reconstructed from the repository, active PRs, CI/evidence and the owning
+project documents.
+
 - [`AGENTS.md`](AGENTS.md) — persistent guidance for coding and research agents.
 - [`docs/00-brainstorm.md`](docs/00-brainstorm.md) — working area for ideas, questions, alternatives and early software thoughts.
-- [`docs/01-handoff.md`](docs/01-handoff.md) — reusable context handoff for starting a new chat or agent session.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts and terminology.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
@@ -113,7 +118,6 @@ Examples:
 
 ```text
 00-brainstorm
-01-handoff
 02-agent-plan
 03-domain-baseline
 10-SDP
@@ -155,7 +159,7 @@ renumbered.
 
 The project intentionally separates:
 
-- **working context** — brainstorm, handoff, agent coordination and domain baseline;
+- **working context** — brainstorm, agent coordination and domain baseline;
 - **planning** — SDP and SIP;
 - **external/parent-system inputs** — controlled requirements, interface contracts, protocols and standards owned outside the current software-system scope;
 - **software-system specification/design** — system use cases, SSSD and system-owned IDDs;
