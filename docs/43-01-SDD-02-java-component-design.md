@@ -305,7 +305,7 @@ event-timing-app.jar / runtime composition
   -> backend: java.util.logging
   -> RuntimeLogging / LoggingControl
        +-- ConsoleHandler
-       +-- FileHandler
+       +-- TimestampedFileLogHandler + CompactLogFormatter
        +-- LiveLogHandler + DiagnosticLogServer
 ```
 
@@ -315,7 +315,9 @@ Working rules:
 - provider-neutral deployment values such as semantic level, log-file path/rotation and optional live-listener bind/port may live in the framework-owned effective configuration model;
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
-- concrete JUL types such as `FileHandler`, `Handler`, backend `Level` and socket lifecycle stay in the executable implementation, not in reusable domain/framework contracts;
+- concrete JUL types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay in the executable implementation, not in reusable domain/framework contracts;
+- the default retained file sink uses a local start/rotation timestamp as its filename, normally `yyyyMMdd-HHmmss.txt`; a collision suffix may be added only when more than one file must be opened in the same second;
+- retained text records use the compact operator-facing form `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`; exception stack traces follow the record line when present;
 - `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
 - the optional diagnostic listener is a logging-specific engineering facility. The test client initiates its TCP connection, log delivery is best effort, and network failure must not be allowed to block ordinary log publishers;
 - the live diagnostics protocol is separate from the IF-03 status/event wire model;
@@ -384,6 +386,8 @@ io.github.brainboxemb.eventtiming.app/
     EmbeddedBuildIdentityLoader.java
   logging/
     RuntimeLogging.java
+    TimestampedFileLogHandler.java
+    CompactLogFormatter.java
     LiveLogHandler.java
     DiagnosticLogServer.java
 ```

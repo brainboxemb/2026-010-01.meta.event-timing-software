@@ -278,7 +278,7 @@ Representative direction:
 logging:
   level: INFO
   file:
-    path: logs/event-timing.log
+    path: logs
     rotateBytes: 1048576
     retainedFiles: 5
   live:
@@ -290,10 +290,15 @@ Rules:
 
 - `level` is the configured global startup level; the implementation accepts the
   semantic levels `TRACE`, `DEBUG`, `INFO`, `WARN` and `ERROR`;
-- `file.path` identifies the operational log-file pattern/location; its parent
-  directory may be created by the executable;
-- `rotateBytes` and `retainedFiles` define basic size rotation/retention and
-  must be positive;
+- `file.path` identifies the directory used for retained operational text logs;
+  the executable creates it when needed;
+- each new runtime log file uses local wall-clock date/time in the filename,
+  normally `yyyyMMdd-HHmmss.txt` (for example `20250514-101657.txt`);
+- retained log records use `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`
+  as the compact first-line format; exception stack traces follow when present;
+- `rotateBytes` starts a new timestamped file when the current file reaches the configured size,
+  and `retainedFiles` limits the number of timestamped files kept in the configured directory;
+  both values must be positive;
 - `live` is optional and owns its own bind address/listen port. The development
   example is loopback-only;
 - an engineering client initiates the live connection to SI-01 and may query/set
