@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Locally migrate document control to an acyclic specification hierarchy: introduce `20-SSSD` for combined software-system requirements/architecture, move system-owned IDDs to `21-xx`, combine the SI-01 SRD + SAD into `30-01-SISD`, migrate the SI-02 SAD to `30-02-SISD`, and define normative input/release-order rules in the SDP. Planning and verification documents remain downstream/control references rather than requirement inputs.
+
 - Rename the future SI-01 messaging component family to upstream terminology: `UpstreamGateway`, `UpstreamMessageRouter` and `UpstreamMessagePort`. `Upstream` names the bidirectional relationship with the central/external system rather than a per-message direction; keep the I/O capability named `Messaging`. Also compact the three Application-layer cards in Figure SI01-01 without changing their label font size.
 
 - Complete Migration 013 Step 4 on the bounded 17-object / 34-relation

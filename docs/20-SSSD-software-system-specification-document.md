@@ -1,41 +1,82 @@
-# Software System Architecture Document (SSAD)
+# Software System Specification Document (SSSD)
 
 Status: working draft / non-authoritative
 
-This document defines the architecture of the software system as a whole. Its purpose is to show the software items, their responsibilities and relationships, the system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
+This Software System Specification Document combines the current **software-system requirements baseline** with the **software-system architecture**. It defines the software items, their allocated responsibilities, system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
 
-It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Headless Timing Application** (SI-01). Those concerns belong in the applicable software-item SAD and, only where justified later, a focused detailed-design document.
+It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Headless Timing Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
 
 Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
+## Inputs
+
+The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
+
+- `03-domain-baseline.md` for stable domain terminology and facts;
+- `04-UC-system-use-cases.md` for externally meaningful software-system behaviour;
+- externally imposed interface/protocol specifications or IDDs, when such a contract exists before the software-system architecture.
+
+A system-owned IDD that is created **from an interface allocation made by this SSSD** is downstream of the SSSD. Once released, that IDD becomes an input to the software-item specification(s) that implement or consume the interface.
+
+The SIP, software-item SISDs/SDDs and SVP may reference the SSSD, but they are not inputs to it.
+
 ## Document role
 
-The intended architecture hierarchy is:
+The normal product-document authority direction is:
 
 ```text
-system/domain source knowledge
-        |
-        v
-system requirements + system interfaces
-        |
-        v
-30-SSAD  software-system architecture
-        |
-        +--> 31-01-SAD  SI-01 Timing Application Architecture
-        +--> 31-02-SAD  SI-02 Desktop GUI Application Architecture
-                    |
-                    +--> focused SDD only when separate detailed design is useful
+domain / system use cases / externally imposed interface specifications
+                              |
+                              v
+                 20-SSSD software-system specification
+                              |
+                    allocates software items/interfaces
+                              |
+                  +-----------+-----------+
+                  |                       |
+                  v                       v
+        21-xx system-owned IDDs     30-xx software-item SISDs
+                  |                       ^
+                  +-----------------------+
+                              |
+                              v
+                         31-xx focused SDDs
 ```
 
-The SSAD answers questions such as:
+An externally imposed/protocol IDD may legitimately precede and constrain the SSSD.
+An IDD for an interface first allocated by the SSSD normally follows the initial SSSD
+baseline and is then a normative input to the affected software-item SISDs.
 
-- which software items exist and what does each own;
+Planning (SDP/SIP/SDE) and verification planning (SVP) are separate control/evidence
+documents. They may schedule or verify this specification but do not define its product
+requirements or architecture.
+
+The SSSD answers questions such as:
+
+- which software-system requirements must be allocated;
+- which software items exist and what each owns;
 - how the software items communicate;
 - which external systems/devices form system boundaries;
 - where the software items execute;
 - which architectural constraints must remain consistent across software items.
 
-The software-item SADs answer how each software item is internally structured and implemented.
+The software-item SISDs define the requirements and architecture of each software item.
+
+## Software-system requirements baseline
+
+The current migrated baseline records only obligations already present in the former
+SSSD/use-case model; it does not invent a new capability set merely because requirements
+and architecture now share one document.
+
+- The **Headless Timing Application** (SI-01) keeps local timing/registration state.
+- The planned **Desktop GUI Application** (SI-02) is a separate software item and uses
+  a system-owned interface rather than SI-01 internals.
+- Local timing/device operation shall not depend on a connected GUI or engineering/test client.
+- External devices and the upstream system are explicit software-system boundaries.
+- Public/reference and private/proprietary implementations shall meet the same supported
+  system contracts without requiring private source in public framework code.
+- Software-system interfaces shall remain independent of incidental deployment topology
+  where the interface itself only requires an available IP/network path.
 
 ## Architecture drivers
 
@@ -113,14 +154,14 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `40-01-IDD-application-control-status.md` candidate |
+| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `21-01-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
-| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `40-02-IDD-application-configuration.md` |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `21-02-IDD-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 
@@ -191,7 +232,7 @@ At minimum distinguish:
 
 These states must not be conflated. For example, local timing and direct local clients may remain fully operational while the router, external uplink or backend is unavailable. Conversely, a configured field deployment may need to report that it has lost its expected router/AP even before external reachability is tested.
 
-The exact process/thread topology, internal runtime cardinality, queueing model, service composition, connectivity probing mechanism and adapter implementation are intentionally outside this SSAD.
+The exact process/thread topology, internal runtime cardinality, queueing model, service composition, connectivity probing mechanism and adapter implementation are intentionally outside this SSSD.
 
 ## Cross-system architectural constraints
 
@@ -230,7 +271,7 @@ The SAD for the planned **Desktop GUI Application** (SI-02) owns its internal ar
 
 ## Architecture review model
 
-The project uses the 4+1 architectural view model as a review aid, not as a requirement for five documents. At system level, the SSAD primarily provides system context and deployment/relationship views. The software-item SADs provide the coherent logical, process, development and deployment views of each item and reference selected use cases as scenarios.
+The project uses the 4+1 architectural view model as a review aid, not as a requirement for five documents. At system level, the SSSD primarily provides system context and deployment/relationship views. The software-item SISDs provide the coherent logical, process, development and deployment views of each item and reference selected use cases as scenarios.
 
 Reference: `reference/README.md`.
 

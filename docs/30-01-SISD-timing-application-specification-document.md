@@ -1,29 +1,223 @@
-# Timing Application Architecture (SAD)
+# Timing Application Specification Document (SISD)
 
-Status: working draft / non-authoritative
+Status: working/review baseline
 
-Software item: **Headless Timing Application** (SI-01)
+Software item: **SI-01 — Headless Timing Application**
 
-This Software Architecture Document describes the **Headless Timing Application** (SI-01). It sits below `30-SSAD-software-system-architecture.md` and is the primary technical design document for this application at the current project stage.
+This Software Item Specification Document combines the SI-01 software requirements and
+software-item architecture in one versionable baseline. Requirement identifiers remain
+`SI01-REQ-...`; architecture elements and focused SDDs remain traceable to those
+requirements without creating a release dependency between a separate SRD and SAD.
 
-The SAD is expected to contain concrete architecture decisions such as threading, concurrency, internal messaging, framework/library choices, logging, configuration, persistence, composition and integration structure. A separate SDD is created only when a topic genuinely needs implementation detail that would make this SAD harder to use.
+## Inputs
 
-## Document relationship
+The SI-01 specification is derived from upstream software-system authority:
+
+- `04-UC-system-use-cases.md` for applicable operational intent;
+- `20-SSSD-software-system-specification-document.md` for SI-01 allocation,
+  software-system constraints and interface ownership;
+- `21-01-IDD-application-control-status.md` for IF-03 obligations;
+- `21-02-IDD-application-configuration.md` for IF-11 obligations.
+
+`03-domain-baseline.md` supplies shared terminology/domain facts. It is supporting
+source knowledge rather than a substitute for a released requirement/interface baseline.
+
+The **SIP is not an input** to this specification: it chooses when accepted capability is
+implemented. The **SVP is not an input** either: it defines how accepted requirements and
+interfaces are verified. Focused SDDs are downstream design refinements of this SISD.
+
+When documents are independently released, each released SISD shall identify the exact
+revision/version of its SSSD and IDD inputs. While this repository releases the document
+set together, the repository release/tag/commit is the shared baseline identifier.
+
+## Software-item requirements
+
+### Requirement identifier convention
+
+Requirements in this slice use:
 
 ```text
-30-SSAD  Software-system architecture
-    |
-    v
-31-01-SAD  SI-01 Timing Application Architecture
-    |
-    +-- focused SDD only when separate detailed design is useful
-    +-- system IDDs for externally owned interface semantics
-    +-- SVP/test material for verification strategy and evidence
+SI01-REQ-<number>
 ```
 
-At this stage the intended bias is **towards one coherent SAD rather than early SDD decomposition**.
+Identifiers in this review candidate are intended to remain stable. A later capability should add requirements without renumbering these merely for document neatness.
 
-## Architecture drivers
+### First-executable requirements
+
+#### Process lifecycle and configuration
+
+**SI01-REQ-001 — Start from external configuration**  
+SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
+
+**SI01-REQ-002 — Clean process shutdown**  
+SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
+
+```{req} Minimal TimingNode composition
+:id: SI01-REQ-003
+:derived_from: UC-001, UC-014
+
+The first executable shall support configuration of at least
+one `TimingNode` with a stable `TimingNodeId` that can be
+represented in application status.
+```
+
+IF-11 defines how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingNodeId`, registration-asset identity and antenna identity distinct. Detailed operational RFID behaviour remains outside this first slice.
+
+#### Build and version identity
+
+**SI01-REQ-010 — Single application build identity**  
+A running SI-01 process shall expose one authoritative application build/version identity derived from the produced application artifact/build.
+
+**SI01-REQ-011 — Consistent identity across interfaces**  
+The build/version identity exposed through supported first-executable operator/application interfaces shall represent the same underlying build identity rather than interface-specific copies.
+
+The public representation and required fields are defined by IF-03.
+
+#### Status
+
+```{req} Authoritative current status snapshot
+:id: SI01-REQ-020
+:derived_from: UC-001, UC-008
+
+SI-01 shall maintain an authoritative current application
+status model that is separate from log output.
+```
+
+```{req} Minimum first-executable status content
+:id: SI01-REQ-021
+:derived_from: UC-001, UC-008
+
+The first-executable status shall expose enough information
+to determine at least:
+
+- application/build identity;
+- application state;
+- configured `TimingNode` `TimingNodeId` value(s);
+- the current minimal lifecycle state represented for those
+  TimingNodes;
+- explicit degraded/error information for first-executable
+  configuration/startup failures that remain observable
+  while the process can continue serving status.
+```
+
+The concrete IF-03 schema is defined by `21-01-IDD-application-control-status.md`.
+
+```{req} Equivalent status semantics across first interfaces
+:id: SI01-REQ-022
+:derived_from: UC-008
+
+Local console, remote-shell and IF-03
+application-control/status representations shall be derived
+from the same application status semantics. A transport
+adapter shall not maintain a separate authoritative status
+model.
+```
+
+**SI01-REQ-023 — Status-change publication**  
+SI-01 shall publish first-executable status-change information through IF-03 WebSocket/event delivery from the same authoritative status model used for status queries.
+
+On connection/reconnection the client shall be able to recover a complete authoritative snapshot according to the IF-03 contract.
+
+#### Application boundary and testability
+
+```{req} Shared application behaviour
+:id: SI01-REQ-030
+
+Transport-specific adapters shall invoke shared SI-01
+application commands/queries rather than implementing
+independent copies of version/status behaviour.
+```
+
+```{req} Externally testable executable
+:id: SI01-REQ-031
+
+The produced SI-01 application shall support ST-1
+verification as a separate running process through its
+public application interface without direct test mutation of
+internal application/domain state.
+```
+
+**SI01-REQ-032 — Safe default network exposure**  
+The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
+
+**SI01-REQ-033 — Compatible first API evolution**  
+SI-01 shall implement IF-03 `v1` such that compatible additions can be made without requiring clients to understand every newly added JSON member or event type; breaking interface semantics shall not silently redefine the existing `v1` contract.
+
+### First-executable lifecycle interpretation
+
+The first executable is not yet an operational timing implementation.
+
+Therefore:
+
+- application state may move through `STARTING`, `RUNNING`, `DEGRADED` and `STOPPING` according to IF-03;
+- at least one configured minimal `TimingNode` is represented;
+- that TimingNode reports lifecycle `CLOSED` in this slice;
+- operational open/close commands and resulting registration-stream events remain deferred to the later domain increment.
+
+This prevents the first version/status executable from inventing partial operational semantics merely to make a demo look more complete.
+
+### Explicitly deferred requirements
+
+The following areas are intentionally not made concrete by this SISD slice:
+
+- RFID power/read/filter/decryption behaviour;
+- registration and source-sequence behaviour beyond any minimal topology placeholder needed for configuration;
+- ready-team/start/penalty behaviour;
+- CAN/keypad/Display V1;
+- smart Display V2;
+- persistence/backup of operational timing data;
+- backoffice semantic/protocol behaviour;
+- RabbitMQ-specific behaviour;
+- target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
+- production authentication/authorisation and final security policy;
+- browser-specific CORS/origin policy.
+
+These areas remain governed by the working architecture/use cases until a later SIP/document-maturity gate requires formalisation.
+
+### Traceability view
+
+| Requirement | Current source | Interface/design allocation | Planned verification |
+| --- | --- | --- | --- |
+| SI01-REQ-001/002 | SIP framework/version-status increments | IF-11 + SI-01 composition/runtime | build/start/stop + ST-1 process control |
+| SI01-REQ-003 | UC-001; SSAD runtime topology | IF-11 + SI-01 runtime composition | `VC-ST1-001` status inspection |
+| SI01-REQ-010/011 | UC-008/009; SIP first executable | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-020/021/022 | UC-001/008/009; SSAD/SAD status model | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
+| SI01-REQ-023 | first executable live status need | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
+| SI01-REQ-030/031 | SAD testability; SVP ST-1 | shared application boundary | architecture/component checks + `VC-ST1-001` |
+| SI01-REQ-032 | AP-1 controlled development exposure | IF03-REQ-002/009 | configuration/interface verification |
+| SI01-REQ-033 | AP-1 interface evolution policy | IF03-REQ-010 | contract/component verification |
+
+### AP-1 decisions resolved by this baseline
+
+The following are now fixed for the first-executable contract:
+
+- build/version identity fields are owned by IF-03: `application`, `version`, `revision`, `buildTime`, `apiVersion`;
+- minimal application status/lifecycle semantics are defined in IF-03 and the lifecycle interpretation above;
+- IF-03 HTTP resources are `/api/v1/version` and `/api/v1/status`;
+- IF-03 WebSocket endpoint is `/api/v1/events`;
+- WebSocket connect/reconnect starts with a complete status snapshot;
+- first-executable change events carry complete current status rather than a patch/replay protocol;
+- explicit JSON error responses and initial HTTP status mapping are defined in the IDD;
+- authentication/authorisation is explicitly deferred for the first executable while default network binding remains loopback-only;
+- verification-case identifiers use `VC-<profile>-<number>` for the first baseline;
+- no separate remote-shell IDD is required by AP-1 because that adapter reuses shared version/status semantics and is not yet a stable software-to-software contract.
+
+### Remaining implementation/toolchain choices
+
+The following do **not** block this requirement baseline and belong in the implementation/toolchain increments:
+
+- concrete Java HTTP/WebSocket library;
+- concrete remote-shell implementation;
+- JSON/configuration/logging libraries;
+- Maven/JDK provisioning details;
+- concrete code/package classes implementing the shared status model;
+- exact mechanism used to cause the first deterministic status transition in `VC-ST1-001`.
+
+A chosen implementation technology must satisfy this SISD and IF-03 rather than redefining them.
+
+## Software-item architecture
+
+### Architecture drivers
 
 The **Headless Timing Application** (SI-01) architecture is driven by these concerns:
 
@@ -40,9 +234,9 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 - keep public framework/reference code independent of private production source;
 - avoid framework complexity that is not justified by the application.
 
-## +1 scenarios used to validate the architecture
+### +1 scenarios used to validate the architecture
 
-The existing use cases in `04-UC-system-use-cases.md` are the scenario source. The SAD should not create a second competing use-case catalogue.
+The existing use cases in `04-UC-system-use-cases.md` are the scenario source. The SISD should not create a second competing use-case catalogue.
 
 Representative architecture-validation scenarios include:
 
@@ -57,9 +251,9 @@ Representative architecture-validation scenarios include:
 
 These scenarios are used to check the logical, process, development and deployment views below.
 
-## Logical view
+### Logical view
 
-### Layered application architecture
+#### Layered application architecture
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
@@ -99,7 +293,7 @@ layer outlines, so neither responsibility appears to overlap the other. This
 expresses architectural proximity/cohesion only; it does not permit Domain to
 depend on concrete I/O.
 
-### Presentation
+#### Presentation
 
 Presentation owns client-facing interfaces and their external representations. Its structure is **functional interface first, transport second**:
 
@@ -139,7 +333,7 @@ interface.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
-### Application
+#### Application
 
 The application responsibility coordinates use cases:
 
@@ -192,7 +386,7 @@ TimingNode-scoped messages by `TimingNodeId` to that node's
 `UpstreamMessagePort`. It is deliberately **not** a generic application message
 bus or mediator for normal collaboration between domain components.
 
-### Domain
+#### Domain
 
 The domain owns timing rules and TimingNode state:
 
@@ -231,7 +425,7 @@ derives running times and ranking.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
-### Core runtime support
+#### Core runtime support
 
 Core contains reusable execution mechanics, not business behaviour:
 
@@ -242,7 +436,7 @@ scheduling
 asynchronous completion
 ```
 
-### I/O
+#### I/O
 
 I/O contains adapters that move data between the application and the outside world:
 
@@ -315,7 +509,7 @@ owns its transport resources and protocol/session mechanics.
 `UpstreamMessageRouter` in the application layer owns application/domain target
 resolution instead of placing that responsibility in I/O.
 
-### Platform
+#### Platform
 
 Platform contains low-level execution-environment facilities:
 
@@ -327,7 +521,7 @@ process/runtime information
 network / OS primitives
 ```
 
-### Cross-cutting concerns
+#### Cross-cutting concerns
 
 Cross-cutting technical concerns include logging, diagnostics, metrics and
 build/version identity. In Java, `infra` is reserved for concrete cross-cutting
@@ -342,7 +536,7 @@ handling. Concrete configuration-file parsing belongs to the executable input
 adapter. Normal runtime interactions do not route through bootstrap after
 composition is complete.
 
-## Principal runtime abstractions
+### Principal runtime abstractions
 
 ```{arch} TimingNode
 :id: TimingNode
@@ -358,7 +552,7 @@ status rather than belonging to one TimingNode.
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
-### Software/domain decomposition
+#### Software/domain decomposition
 
 ```text
 TimingApplication
@@ -393,7 +587,7 @@ location.
 
 The exact Java class/package boundaries may evolve as implementation evidence appears, but the `TimingNode` aggregate is the semantic owner of the operational TimingNode state. The physical registration asset is not a child component of this software tree.
 
-### Devices and device-network topology
+#### Devices and device-network topology
 
 The high-level I/O model separates device concepts from the communication
 responsibilities that serve them:
@@ -426,7 +620,7 @@ The current smart-display direction remains client initiated: SI-01 makes its
 service discoverable and DisplayRev2Wifi connects to it. The exact discovery,
 listener/session and packet-framing design belongs below this high-level view.
 
-### Configuration, routing and identity mapping
+#### Configuration, routing and identity mapping
 
 Configuration connects identities without collapsing them:
 
@@ -489,9 +683,9 @@ messages directly to the appropriate application/domain responsibility.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
-Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SAD owns their software-architecture composition and execution implications.
+Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SISD owns their software-architecture composition and execution implications.
 
-## Command, query and event model
+### Command, query and event model
 
 All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `CommandHandler.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
 
@@ -514,7 +708,7 @@ Working rules:
 
 The initial architecture uses explicit typed routing because the flow is easier to reason about, test and keep lightweight on the Pi Zero. A third-party messaging/event framework should only be introduced when it solves a demonstrated problem better than explicit routing and JDK concurrency primitives.
 
-## Process view: threading and concurrency
+### Process view: threading and concurrency
 
 The domain model is intentionally kept simple. Code working on one `TimingNode`
 should be able to behave as if it is single-threaded.
@@ -523,7 +717,7 @@ That guarantee is provided by the application around the domain code. Domain
 objects are not expected to add locks everywhere to protect themselves from
 normal application callbacks.
 
-### The rule for one TimingNode
+#### The rule for one TimingNode
 
 For each `TimingNode`:
 
@@ -553,7 +747,7 @@ The initial constrained composition may use one shared worker. A desktop or
 simulation composition may use more workers so different TimingNodes can run in
 parallel.
 
-### Where input enters
+#### Where input enters
 
 External libraries may call the application from their own threads. Examples are HTTP,
 WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
@@ -600,7 +794,7 @@ I/O mappings / timers resolve targets
 The source for this process view is
 `docs/_diagrams/runtime-dispatch-process.yaml`.
 
-### Reads
+#### Reads
 
 A read does not automatically need the TimingNode serial executor.
 
@@ -618,7 +812,7 @@ application. The architecture does not require a Java class called
 `ApplicationStatusSnapshot`, `ApplicationStatusModel` or any other specific
 status helper merely to satisfy this rule.
 
-### Blocking I/O
+#### Blocking I/O
 
 Do not block the TimingNode serial executor on network, device or slow file I/O.
 
@@ -642,7 +836,7 @@ If a domain transition depends on successful I/O, represent that pending state
 explicitly and finish the transition when the completion comes back. Do not keep
 the TimingNode blocked while waiting for the external operation.
 
-### Queue and failure behaviour
+#### Queue and failure behaviour
 
 The queue in front of a TimingNode must be bounded in field use.
 
@@ -652,7 +846,7 @@ The queue in front of a TimingNode must be bounded in field use.
 - queue depth/high-water information should be observable for diagnostics;
 - exact queue sizes remain a configuration/verification decision.
 
-### Shutdown
+#### Shutdown
 
 Normal shutdown follows the same ownership rules:
 
@@ -663,7 +857,7 @@ Normal shutdown follows the same ownership rules:
 5. stop scheduler/I/O/state executors;
 6. report failure if graceful shutdown cannot finish in time.
 
-### Architecture review cases
+#### Architecture review cases
 
 The concurrency design is reviewed against concrete cases rather than by adding
 placeholder classes:
@@ -686,7 +880,7 @@ placeholder classes:
 These cases are the basis for implementation tests of the serial-execution
 mechanism and its callers.
 
-### Concurrency technology baseline
+#### Concurrency technology baseline
 
 The selected baseline is deliberately small:
 
@@ -698,11 +892,11 @@ The selected baseline is deliberately small:
 - no actor, reactive-stream or generic event-bus framework unless a later
   measured need justifies one.
 
-## Time and clock architecture
+### Time and clock architecture
 
 Time is an explicit architecture concern rather than an incidental use of `Date`, `Calendar`, `LocalDateTime`, Java/SQL timestamp classes or raw millisecond values throughout the codebase.
 
-### `TimingTimestamp` value
+#### `TimingTimestamp` value
 
 The **Headless Timing Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
 
@@ -716,7 +910,7 @@ Working semantics:
 
 The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing, time-only strings and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. This keeps the domain type independent of one protocol, storage format or deployment time zone.
 
-### Time sources
+#### Time sources
 
 Code that needs the current absolute time receives it through an injectable time-source/clock abstraction. Production composition can use the operating-system wall clock; deterministic tests can supply a controlled clock that can be advanced or stepped explicitly.
 
@@ -740,7 +934,7 @@ TimingNodeId + SequenceNumber
 
 A source sequence is not derived from a timestamp. Two registrations may have equal timestamps, and a wall-clock correction may even make a later observation carry an earlier absolute timestamp; source ordering must remain recoverable from source sequence semantics.
 
-### Architecture risk — wall-clock discontinuity and local-time ambiguity
+#### Architecture risk — wall-clock discontinuity and local-time ambiguity
 
 This is an explicit architecture risk because timing software can produce plausible but incorrect results when local civil time and elapsed time are conflated.
 
@@ -755,7 +949,7 @@ Daylight-saving time by itself does **not** change UTC/absolute time; the ambigu
 
 Before physical timing behaviour is accepted, the project must decide how an active timing system reacts to a material clock correction: whether it is merely diagnosed, blocks/marks the system degraded, records an audit event, or uses an explicit correction/offset mechanism. That policy needs requirements and verification evidence rather than being hidden inside the `TimingTimestamp` class.
 
-## Internal messaging direction
+### Internal messaging direction
 
 Internal messaging exists at asynchronous/ownership boundaries; it is **not** a requirement to turn ordinary in-lane Java calls into messages.
 
@@ -784,7 +978,7 @@ Rules:
 
 Choose concrete command/query return types when the first real consumers need them.
 
-## Status and diagnostics architecture
+### Status and diagnostics architecture
 
 Status is a first-class current-state model and is distinct from logging.
 
@@ -806,9 +1000,9 @@ Status returned to a client is read-only from that client's point of view. The t
 
 Logging records diagnostic/history information; status represents current operational state. One must not be used as a substitute for the other.
 
-## Logging architecture
+### Logging architecture
 
-Logging is a SAD-level cross-cutting technology decision because it affects almost every
+Logging is a SISD architecture-level cross-cutting technology decision because it affects almost every
 component, operational diagnostics, footprint and engineering support.
 
 The A08 baseline keeps framework logging calls independent from the concrete runtime backend:
@@ -871,9 +1065,9 @@ diagnostics framework are outside A08.
 SLF4J 2.0.x is compatible with the Java-8 baseline; the implementation repository should pin
 the API/provider patch version together through Maven dependency management.
 
-## Configuration and composition architecture
+### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `40-02-IDD-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `21-02-IDD-application-configuration.md`.
 
 The main configuration groups are:
 
@@ -943,7 +1137,7 @@ Working rules:
 - keep the concrete file syntax/library open until the first Step-3 implementation selects it;
 - create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
 
-## Data and persistence architecture
+### Data and persistence architecture
 
 The initial architecture keeps application/domain state in memory and uses simple file-based persistence/restore rather than requiring an embedded database.
 
@@ -961,11 +1155,11 @@ Registration identity remains TimingNode-scoped; the current stable conceptual k
 
 Persistence durability semantics, file format, atomic-write strategy and corruption/recovery rules remain open decisions and may justify a focused data/persistence SDD only when implementation reaches that complexity.
 
-## Integration architecture
+### Integration architecture
 
-The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SAD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSAD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SISD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
-### Upstream messaging
+#### Upstream messaging
 
 Upstream messaging is a semantic application boundary, not a RabbitMQ API.
 `UpstreamGateway` owns the external upstream-system boundary across 1..N transport
@@ -1002,7 +1196,7 @@ generic application message handler merely to complete the symmetry. Additional
 domain handling is introduced only when a concrete application-scoped
 message capability is actually implemented.
 
-### RFID
+#### RFID
 
 RFID integration is an adapter boundary. Raw callbacks/protocol data do not directly mutate application state. The adapter is responsible for protocol/device interaction and turns accepted observations/health changes into typed application-facing messages.
 
@@ -1010,7 +1204,7 @@ Decoding must retain public semantic tag classification (normal/reserve/test) ev
 
 Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
 
-### CAN, keypad and displays
+#### CAN, keypad and displays
 
 `CanNetworkController` owns the active CAN network: bus lifecycle, discovery/scanning,
 device online state and communication. CAN/device callbacks do not mutate
@@ -1035,13 +1229,13 @@ and does not need to know how that smart display renders the data. Exact mDNS
 service names and the application protocol (for example TCP/WebSocket) remain
 deferred until IF-09 implementation needs them.
 
-### Connectivity
+#### Connectivity
 
 Status must distinguish at least local network reachability from external/upstream session health where those distinctions affect operator decisions. Temporary external connectivity loss must not silently invalidate otherwise available local operation.
 
-## Development view
+### Development view
 
-### Maven artifact boundary
+#### Maven artifact boundary
 
 The current implementation baseline deliberately starts with one reusable framework library and one executable application:
 
@@ -1053,7 +1247,7 @@ app/       -> event-timing-app.jar
 
 Architecture layers/packages are **not automatically Maven artifacts**. A new artifact is justified by an actual consumer, reuse, dependency, lifecycle, deployment, public/private or release boundary.
 
-### Package direction
+#### Package direction
 
 Likely package responsibilities may evolve toward areas such as:
 
@@ -1076,13 +1270,13 @@ Within presentation, functional interfaces own their transport-specific subpacka
 
 Do not create future packages merely to mirror the architecture picture. Package structure becomes explicit only as real classes make ownership and dependency rules enforceable.
 
-### Public/private extension model
+#### Public/private extension model
 
 Private repositories may provide production RFID control, encrypted/proprietary protocol implementations, deployment mappings and production upstream/backoffice codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
 
-## Technology decision register
+### Technology decision register
 
-This table intentionally lives in the SAD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
+This table intentionally lives in the architecture section of this SISD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
@@ -1103,7 +1297,7 @@ This table intentionally lives in the SAD because these choices shape the whole 
 
 Technology choices should fit the actual application and target. Pi compatibility is verified on real hardware; memory/thread footprint becomes a design concern only when measurements make it one.
 
-## Physical/deployment view
+### Physical/deployment view
 
 Representative **Headless Timing Application** (SI-01) deployments are:
 
@@ -1124,7 +1318,7 @@ Development/test host
 
 The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSAD rather than duplicated here.
 
-## Testability and failure/recovery architecture
+### Testability and failure/recovery architecture
 
 
 Testability is an architecture property. Application/domain code should where practical:
@@ -1144,10 +1338,10 @@ Fault handling should preserve local operation, traceability and explicit status
 
 Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`.
 
-## Detailed-design documents
+### Detailed-design documents
 
-Keep this SAD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
-implementation detail would make the SAD harder to read.
+Keep this SISD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
+implementation detail would make the architecture section of this SISD harder to read.
 
 Current active focused SDD:
 
@@ -1159,7 +1353,7 @@ Current active focused SDD:
 Persistence/data and upstream transport notes remain deferred until their
 implementation needs focused design.
 
-## Open architecture decisions
+### Open architecture decisions
 
 The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
 

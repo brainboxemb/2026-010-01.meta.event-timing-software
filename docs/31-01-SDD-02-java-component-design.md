@@ -6,7 +6,7 @@ Software item: **SI-01 — Headless Timing Application**
 
 This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
 
-The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by `31-01-SAD-timing-application-architecture.md`.
+The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `30-01-SISD-timing-application-specification-document.md`.
 
 ## Why this SDD exists
 
@@ -18,7 +18,7 @@ The central rule is:
 
 Keep these concepts distinct:
 
-1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SAD.
+1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SISD architecture.
 2. **Java package** — cohesive source organisation and enforceable dependency discipline.
 3. **Maven artifact** — reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
 4. **Application composition** — assembly of framework code and selected implementations into an executable.

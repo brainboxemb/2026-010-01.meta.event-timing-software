@@ -25,29 +25,38 @@ Verification should provide evidence that:
 
 ## Traceability direction
 
-The intended traceability chain is:
+The intended traceability chain follows the product-authority direction established in
+the SDP:
 
 ```text
-system requirement
-      |
-      +--> system-level IDD requirement/section where applicable
-      |
-      v
-software-item requirement (SRD)
-      |
-      v
-SAD / SDD design element
-      |
-      v
-implementation
-      |
-      v
-verification case + evidence
+system use case / external interface obligation
+             |
+             v
+            SSSD
+             |
+      +------+------+
+      |             |
+      v             v
+system IDD        SISD requirement
+      |             |
+      +------> SISD architecture
+                    |
+                    v
+               focused SDD
+                    |
+                    v
+              implementation
+                    |
+                    v
+          verification case + evidence
 ```
 
-An IDD remains software-system-owned. A software-item requirement references the relevant IDD obligation rather than duplicating the interface definition.
+An IDD remains software-system-owned. A software-item requirement references the
+applicable IDD obligation rather than duplicating its interface definition. The SVP and
+verification cases are downstream coverage/evidence artifacts; they are deliberately not
+normative inputs to the requirements they verify.
 
-Verification identifiers and exact requirement-reference syntax are still to be defined.
+Verification identifiers and exact requirement-reference syntax are still to be refined.
 
 ## Verification levels
 

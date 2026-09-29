@@ -4,11 +4,15 @@ Status: working draft / non-authoritative
 
 This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
 
-Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SRDs and verification cases may reference these use cases.
+Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SISDs and verification cases may reference these use cases.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
 ## Relationship to other documents
+
+Use cases express upstream operational intent. They may feed the system specification
+and interface definition, but they do not depend on later planning/design/verification
+documents.
 
 ```text
 03 Domain baseline
@@ -16,18 +20,20 @@ The public repository uses generic/synthetic identities. Real deployment asset n
       v
 04 System use cases
       |
-      +--> system requirements / IDDs
-      |          |
-      |          v
-      |      software-item SRDs
-      |          |
-      |          v
-      |       SAD / SDD
+      +--> 20 SSSD
+      |       |
+      |       +--> 21-xx system IDDs
+      |       |          |
+      |       +----------+--> 30-xx software-item SISDs
+      |                              |
+      |                              v
+      |                         31-xx focused SDDs
       |
-      +--> SVP / ST-* verification scenarios
+      +--> 50 SVP / verification scenarios (coverage, not authority)
 ```
 
-A use case is not a test case. One use case may be verified by several unit, interface, system, fault-injection and hardware tests.
+A use case is not a test case. One use case may be realised by several requirements and
+verified by several unit, interface, system, fault-injection and hardware tests.
 
 ## Use-case format
 
@@ -459,7 +465,7 @@ When requirements are promoted, prefer explicit references such as:
 UC-003
   -> SYS-REG-xxx
   -> IDD-... where external behaviour applies
-  -> SI01-SRD-...
+  -> SI01-REQ-...
   -> SDD registration/RFID/`TimingNodeId`-routing elements
   -> VC-... / ST-1, ST-2, ST-3, HIL evidence
 ```

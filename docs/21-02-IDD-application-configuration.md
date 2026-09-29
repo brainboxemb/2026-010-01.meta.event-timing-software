@@ -10,6 +10,13 @@ This Interface Design/Description Document defines the deployment/configuration 
 
 It deliberately does **not** define domain behaviour, a Java class hierarchy, a specific YAML library or production secret values.
 
+## Inputs
+
+IF-11 is a system-owned deployment/configuration interface allocated by
+`20-SSSD-software-system-specification-document.md`. Applicable system use cases and
+deployment constraints provide upstream intent. The SI-01 SISD consumes this contract;
+its internal architecture and Java SDD are downstream and are not inputs to the IDD.
+
 ## Boundary
 
 ```text
@@ -410,11 +417,11 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 
 ## Traceability
 
-| IF-11 concern | SI-01 requirement / architecture |
+| IF-11 concern | SI-01 SISD requirement / architecture |
 | --- | --- |
 | external effective configuration | SI01-REQ-001 |
 | configured TimingNode identity | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
-| deployment/composition separation | SI-01 SAD configuration/composition architecture |
+| deployment/composition separation | SI-01 SISD configuration/composition architecture |
 | Java composition/type growth | SI-01 Java component SDD |
 

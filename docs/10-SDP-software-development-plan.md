@@ -8,6 +8,77 @@ should distinguish decisions from things that still need discussion or evidence.
 The SIP owns the implementation steps. The SDE owns the development/release environment.
 The SVP owns verification detail.
 
+## Document dependency and release discipline
+
+Product-document `Inputs` are **authority/release dependencies**, not a list of every
+document that was useful while writing. Ordinary downstream references belong under
+traceability/related-document sections and do not make the referenced document an input.
+
+The generic document-type direction is:
+
+```text
+domain / use cases / externally imposed interface specifications
+                         |
+                         v
+                 SSSD (system)
+        requirements + system architecture
+                         |
+                  allocates interfaces
+                         |
+             +-----------+-----------+
+             |                       |
+             v                       v
+ system-owned IDD(s)          SISD(s) (software item)
+             |              requirements + architecture
+             +-----------+-----------+
+                         |
+                         v
+                  focused SDD(s)
+                         |
+                         v
+                  implementation
+                         |
+                         v
+               verification evidence
+```
+
+Rules:
+
+- **SSSD** — Software System Specification Document; combines software-system
+  requirements and software-system architecture.
+- **IDD** — system-owned interface contract. An externally imposed/protocol IDD may
+  already exist and be an input to the SSSD. An IDD for an interface allocated by the
+  SSSD normally follows that allocation and then becomes an input to every affected SISD.
+- **SISD** — Software Item Specification Document; combines a software item's
+  requirements and architecture. It consumes the SSSD and applicable released IDDs.
+- **SDD** — focused detailed design; consumes the owning SISD and applicable IDDs.
+- **SVP/verification cases** consume requirements and interface contracts for coverage;
+  verification planning is not an input to SSSD/SISD requirements.
+- **SDP/SIP/SDE** are project/development-control documents. They may plan when a
+  capability or document is produced, but they do not define product requirements or
+  architecture by being listed as an input.
+- **SUM** is release/user guidance and is downstream of the released software/configuration
+  baseline.
+
+For independently released documents, a released document records the exact
+version/revision of every normative input. In the current repository-wide release model,
+one repository release/tag/commit may identify the coherent document baseline, but the
+dependency graph must still remain acyclic so independent document release remains
+possible later.
+
+A normal release order for internally defined contracts is therefore:
+
+```text
+SSSD baseline
+  -> allocated system IDDs
+  -> affected SISDs
+  -> focused SDDs
+  -> implementation / verification evidence
+```
+
+External/protocol IDDs are the deliberate exception: because their contract originates
+outside this decomposition, they may precede and constrain the SSSD.
+
 ## Current direction
 
 The project currently centres on the **Headless Timing Application** (SI-01):

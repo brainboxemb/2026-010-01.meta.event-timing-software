@@ -1,6 +1,29 @@
-# GUI Application Architecture (SAD)
+# Desktop GUI Application Specification Document (SISD)
 
 Status: working draft / non-authoritative
+
+Software item: **SI-02 — Desktop GUI Application**
+
+This SISD is intentionally architecture-heavy today because SI-02 implementation has not
+started. Software-item requirements will be promoted into this same document as the GUI
+capability approaches implementation; no separate SISD/SISD pair is planned.
+
+## Inputs
+
+- `20-SSSD-software-system-specification-document.md` for SI-02 allocation and
+  software-system constraints;
+- `21-01-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- applicable system use cases and a future system-owned GUI/HMI IDD when that contract
+  is defined.
+
+The SIP may schedule SI-02 work but is not requirement/design authority.
+
+## Software-item requirements status
+
+No stable SI-02 requirement set has yet been promoted. The existing text below remains
+the working specification/architecture direction until that requirement slice is ready.
+
+## Software-item architecture
 
 Software item: **Desktop GUI Application** (SI-02)
 
@@ -89,7 +112,7 @@ A system-level GUI IDD can define items such as:
 - terminology and identifiers;
 - interaction flows for open/close/start/RFID recovery and later registration operations.
 
-The future SRD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
+The future SISD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
 
 ## Software-to-software interface IDD
 
