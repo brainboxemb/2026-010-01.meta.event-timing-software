@@ -21,10 +21,10 @@ Lees eerst in de meta-repository:
 - `docs/10-02-SIP-software-implementation-planning.md`
 - `docs/50-01-SDE-software-development-environment.md`
 - `docs/50-02-SDE-java-build-test-toolchain.md`
-- `docs/40-01-SISD-timing-application-specification-document.md`
+- `docs/40-01-SSD-timing-application-specification-document.md`
 - `docs/30-02-SSSD-software-system-specification-document.md`
-- `docs/40-01-SISD-timing-application-specification-document.md`
-- `docs/40-01-SDD-02-java-component-design.md`
+- `docs/40-01-SSD-timing-application-specification-document.md`
+- `docs/41-02-SDD-java-component-design.md`
 - `docs/30-03-IDD-03-application-control-status.md`
 - `docs/30-03-IDD-11-application-configuration.md`
 - `docs/60-01-SVP-software-verification-plan.md`
@@ -150,7 +150,7 @@ SI-02  Desktop GUI Application
 SI-03  Web Operator Application (React/browser/iPad)
 ```
 
-The software-item number is stable across that item's SISD/SDD documents. It is not a document sequence number. The SSSD owns software-item/interface allocation; system-owned interfaces are documented through IDDs where applicable.
+The software-item number is stable across that item's SSD/SDD documents. It is not a document sequence number. The SSSD owns software-item/interface allocation; system-owned interfaces are documented through IDDs where applicable.
 
 ## Document roles
 
@@ -161,7 +161,7 @@ Use the sources consistently:
 - SDP — staged software-development governance and maturity/release direction;
 - SIP — implementation sequence, active step and step-exit expectations;
 - SDE — common development environment, repository/toolchain and workflow rules;
-- SSSD/SISD/SDD — accepted specification/design at the appropriate level;
+- SSSD/SSD/SDD — accepted specification/design at the appropriate level;
 - SVP — common verification strategy and evidence expectations;
 - active implementation/tool PR — detailed change/evidence record for current work.
 
