@@ -318,11 +318,14 @@ event-timing-app.jar
 Working rules:
 
 - framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- provider-neutral deployment values such as semantic level, log-file path/rotation and optional live-listener bind/port may live in the framework-owned effective configuration model;
+- provider-neutral deployment values are owned by the logging component itself: `LoggingConfig` contains `LoggingLevel`, `LoggingFileConfig` and optional `LoggingServerConfig`; `ApplicationConfig` may reference that component configuration as composition data;
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL implementation types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay isolated under framework infrastructure `io.github.brainboxemb.eventtiming.infra.logging`; they are not domain/application contracts;
-- the framework artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus framework-owned logging configuration;
+- `infra.logging` must not depend on `infra.bootstrap.config`; bootstrap/composition may depend on the logging component and pass its configuration into it, never the reverse;
+- `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
+- `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
+- the framework artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
 - `Logging` is the primary runtime logging infrastructure component and owns backend setup, handler composition and the temporary global-level control;
 - `LoggingServer` is the separate externally reachable live-diagnostics component; it owns only the logging-specific socket/protocol boundary and is not a Presentation/IF-03 endpoint;
 - the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
@@ -376,9 +379,17 @@ io.github.brainboxemb.eventtiming/
         RemoteApiConfig.java
         RemoteApiHttpConfig.java
         RemoteApiWebSocketConfig.java
-        LoggingConfig.java
-        LoggingFileConfig.java
-        LoggingLiveConfig.java
+    logging/
+      Logging.java
+      LoggingConfig.java
+      LoggingLevel.java
+      LoggingFileConfig.java
+      LoggingServer.java
+      LoggingServerConfig.java
+      LoggingControl.java
+      TimestampedFileLogHandler.java
+      CompactLogFormatter.java
+      LiveLogHandler.java
 ```
 
 `runtime/` is a Java source-organisation package for the top-level runtime
@@ -393,7 +404,11 @@ The executable artifact is deliberately thin. Its launcher/input adapters remain
 event-timing-framework.jar
   io.github.brainboxemb.eventtiming.infra.logging/
     Logging.java
+    LoggingConfig.java
+    LoggingLevel.java
+    LoggingFileConfig.java
     LoggingServer.java
+    LoggingServerConfig.java
     LoggingControl.java
     TimestampedFileLogHandler.java
     CompactLogFormatter.java
