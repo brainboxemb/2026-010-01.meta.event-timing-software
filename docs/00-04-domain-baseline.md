@@ -42,7 +42,7 @@ Domain contracts used across those aggregates:
   +-- UpstreamProtocol
 ```
 
-`ApplicationId`, `TimingSystemId`, `TimingNodeId` and `LocationID` are distinct concepts. `ApplicationId` identifies the running process/runtime, `TimingSystemId` identifies one logical timing system hosted by that process, `TimingNodeId` identifies a node within that system context, and `LocationID` identifies the physical event location where that node is configured or deployed.
+`ApplicationId`, internal `TimingSystemId`, `TimingNodeId` and `LocationID` are distinct concepts. `ApplicationId` identifies the running process/runtime. `TimingSystemId` is an internal composition/simulation identity used to distinguish multiple TimingSystem instances in one process; it is not part of the upstream functional addressing contract. `TimingNodeId` is the functional identity exposed to timing-data/upstream semantics, and `LocationID` identifies the physical event location where that node is configured or deployed.
 
 Operational state such as `OPEN` / `CLOSED` belongs to the TimingNode software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the timing node.
 
@@ -54,7 +54,7 @@ The previous working name `TimingSystemInstance` was rejected as a name for an i
 
 `ApplicationId`, `TimingSystemId`, `TimingNodeId`, `AntennaId` and `LocationID` are separate namespaces.
 
-`TimingSystemId` is the stable identity of one logical `TimingSystem` inside a `TimingApplication`. `TimingNodeId` identifies a node inside that system context and scopes that node's registration sequence, persistence and synchronisation semantics. `LocationID` separately identifies the event location where the TimingNode is configured or deployed.
+`TimingSystemId` identifies one logical `TimingSystem` inside a `TimingApplication` for internal composition, diagnostics and simulation isolation. The upstream system need not know that this grouping exists. `TimingNodeId` remains the functional identity of a node and scopes that node's registration sequence and synchronisation semantics. `LocationID` separately identifies the event location where the TimingNode is configured or deployed.
 
 The I/O boundary owns antenna configuration and mapping:
 
@@ -152,10 +152,7 @@ owns the public validation, encode/decode and compatibility semantics. Storage,
 Web and upstream communication may consume that contract without becoming owners
 of its field semantics.
 
-`UpstreamProtocol` is a separate domain protocol built partly on TimingData. It
-covers transfer of TimingData plus synchronization/reconciliation and
-system-level messages such as ping/pong. Transport/session mechanics remain I/O
-concerns.
+`UpstreamProtocol` is a Domain protocol owned in the context of one `TimingSystem`. It covers transfer of TimingData plus synchronization/reconciliation and internal system-level handling such as ping/pong. The upstream peer can remain functionally TimingNode-oriented; a ping does not require exposing `TimingSystemId`. Transport/session mechanics remain I/O concerns.
 
 ### I/O routing view
 
@@ -180,27 +177,28 @@ LocationID = 1..25
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
-A `TimingDataRecord` is associated with the owning timing system, timing node and physical location:
+A `TimingDataRecord` is associated with the functional timing-node identity and physical location:
 
 ```text
-TimingSystemId
 TimingNodeId
 LocationID
 ```
+
+The containing `TimingSystem` is local runtime/composition context and is not required to be serialized into TimingData.
 
 This lets a logical timing node preserve one ordered stream while records still state where the registration occurred. Moving or reconfiguring a producing system must not silently redefine either namespace.
 
 ## Registration sequence
 
-Every timing node registration stream has a monotonically increasing sequence number scoped by the **`TimingSystemId` + `TimingNodeId`** node identity.
+Every timing node registration stream has a monotonically increasing sequence number scoped by **`TimingNodeId`** in the TimingData/upstream contract.
 
 Conceptually:
 
 ```text
-TimingDataRecordKey = (TimingSystemId, TimingNodeId, SequenceNumber)
+TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 ```
 
-The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope. Including `TimingSystemId` in the stable key keeps records unambiguous when one process hosts multiple simulated or real TimingSystems.
+The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope. When one process hosts multiple TimingSystems, local storage/composition keeps their runtime contexts separated without changing the functional TimingData key.
 
 Generic example:
 
@@ -254,7 +252,6 @@ A working minimal envelope is therefore conceptually:
 
 ```text
 TimingDataRecord
-  timingSystemId
   timingNodeId
   locationId
   sequenceNumber
