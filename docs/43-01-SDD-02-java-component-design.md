@@ -453,9 +453,9 @@ presentation/
     shell/
       RemoteShellServer
     remoteapi/
-      RemoteApiHttpServer
-      RemoteApiWebSocketServer
-      RemoteApiMessageWriter
+      HttpEndpoint
+      WebSocketEndpoint
+      MessageWriter
   common/
     terminal/
       TerminalSession
@@ -468,21 +468,23 @@ the same `CommandHandler` and shutdown callback.
 A06/A07 are the first slice of the functional **Remote API**:
 
 ```text
-RemoteApiHttpServer
+HttpEndpoint
   +-- GET /api/v1/version
   +-- GET /api/v1/status
             \
              +--> CommandHandler.version() / status()
             /
-RemoteApiWebSocketServer
+WebSocketEndpoint
   +-- WS /api/v1/events
   +-- STATUS_SNAPSHOT on connect/reconnect
   +-- STATUS_CHANGED only for real status changes
 ```
 
-`RemoteApiMessageWriter` owns the IF-03 wire/JSON representation shared by the Remote
+`MessageWriter` owns the IF-03 wire/JSON representation shared by the Remote
 API HTTP and WebSocket transports. It is not application/control logic and therefore
 does not live in the application layer or in global presentation common code.
+
+The local class names deliberately omit the `RemoteApi` prefix because the enclosing `presentation.interfaces.remoteapi` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
 
 The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
 framework and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
