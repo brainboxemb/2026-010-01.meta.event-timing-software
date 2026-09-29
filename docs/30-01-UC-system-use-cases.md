@@ -10,30 +10,37 @@ The public repository uses generic/synthetic identities. Real deployment asset n
 
 ## Relationship to other documents
 
-Use cases express upstream operational intent. They may feed the system specification
-and interface definition, but they do not depend on later planning/design/verification
-documents.
+System use cases are part of the software-system specification/design family. They express behaviour of the **software system as a whole** before that behaviour is decomposed across software items.
+
+Relevant parent-system/external inputs are registered in `20-01-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
 
 ```text
-03 Domain baseline
-      |
-      v
-04 System use cases
-      |
-      +--> 20 SSSD
-      |       |
-      |       +--> 21-xx system IDDs
-      |       |          |
-      |       +----------+--> 30-xx software-item SISDs
-      |                              |
-      |                              v
-      |                         31-xx focused SDDs
-      |
-      +--> 50 SVP / verification scenarios (coverage, not authority)
+00-04 Domain baseline -----------+
+                                 |
+20-01 External/parent inputs ----+--> 30-01 System use cases
+                                              |
+                                              v
+                                         30-02 SSSD
+                                              |
+                                  allocates items/interfaces
+                                              |
+                              +---------------+---------------+
+                              |                               |
+                              v                               v
+                    30-03 system IDDs             optional 40-<SI>-UC
+                              |                               |
+                              +---------------+---------------+
+                                              |
+                                              v
+                                         40-<SI>-SISD
+                                              |
+                                              v
+                                         40-<SI>-SDD
 ```
 
-A use case is not a test case. One use case may be realised by several requirements and
-verified by several unit, interface, system, fault-injection and hardware tests.
+A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SISD clearer. It should reference the originating system use case and must not merely copy it.
+
+A use case is not a test case. One use case may be realised by several requirements and verified by several unit, interface, system, fault-injection and hardware tests.
 
 ## Use-case format
 

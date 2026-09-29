@@ -6,50 +6,58 @@ This Software System Specification Document combines the current **software-syst
 
 It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Headless Timing Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
 
-Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
+Stable working domain facts and terminology are consolidated in `00-04-domain-baseline.md` and should not be silently reinterpreted here.
 
 ## Inputs
 
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
 
-- `03-domain-baseline.md` for stable domain terminology and facts;
-- `04-UC-system-use-cases.md` for externally meaningful software-system behaviour;
-- externally imposed interface/protocol specifications or IDDs, when such a contract exists before the software-system architecture.
+- `00-04-domain-baseline.md` for stable domain terminology and facts;
+- `30-01-UC-system-use-cases.md` for externally meaningful behaviour within this software-system scope;
+- `20-01-EXT-external-system-inputs.md` for the controlled register of applicable parent-system requirements, externally owned IDDs, protocols and standards;
+- the exact externally owned source revisions identified by that register when they impose requirements or interface obligations on this software system.
+
+The category-20 register does not replace an external authority. It records which external source/revision applies and where it constrains this system.
 
 A system-owned IDD that is created **from an interface allocation made by this SSSD** is downstream of the SSSD. Once released, that IDD becomes an input to the software-item specification(s) that implement or consume the interface.
 
-The SIP, software-item SISDs/SDDs and SVP may reference the SSSD, but they are not inputs to it.
+The SIP, SDE, software-item SISDs/SDDs and SVP may reference the SSSD, but they are not inputs to it merely because they discuss the same capability.
 
 ## Document role
 
 The normal product-document authority direction is:
 
 ```text
-domain / system use cases / externally imposed interface specifications
-                              |
-                              v
-                 20-SSSD software-system specification
-                              |
-                    allocates software items/interfaces
-                              |
-                  +-----------+-----------+
-                  |                       |
-                  v                       v
-        21-xx system-owned IDDs     30-xx software-item SISDs
-                  |                       ^
-                  +-----------------------+
-                              |
-                              v
-                         31-xx focused SDDs
+parent / external system contracts
+              |
+              v
+20-01 external-input baseline
+              |
+domain --------+----> 30-01 system use cases
+              |                 |
+              +-----------------+
+                                v
+                         30-02 SSSD
+                                |
+                    allocates items/interfaces
+                                |
+                 +--------------+--------------+
+                 |                             |
+                 v                             v
+      30-03 system-owned IDDs       optional 40-<SI>-UC
+                 |                             |
+                 +--------------+--------------+
+                                |
+                                v
+                         40-<SI>-SISD
+                                |
+                                v
+                         40-<SI>-SDD-xx
 ```
 
-An externally imposed/protocol IDD may legitimately precede and constrain the SSSD.
-An IDD for an interface first allocated by the SSSD normally follows the initial SSSD
-baseline and is then a normative input to the affected software-item SISDs.
+An externally imposed/parent-system contract may legitimately precede and constrain the SSSD and, where its allocation is already explicit, an affected SISD. An IDD first allocated and owned by this SSSD follows the SSSD and then becomes a normative input to the affected software-item SISDs.
 
-Planning (SDP/SIP/SDE) and verification planning (SVP) are separate control/evidence
-documents. They may schedule or verify this specification but do not define its product
-requirements or architecture.
+Planning, engineering-environment and verification documents are separate control/evidence documents. They may schedule, enable or verify this specification but do not define its product requirements or architecture by document order.
 
 The SSSD answers questions such as:
 
@@ -93,7 +101,7 @@ The software-system architecture is driven by these system-level concerns:
 
 ## Software-item register
 
-The software-item segment in `30-xx-SISD` and `31-xx-SDD-yy` filenames identifies the software item.
+The software-item segment in `40-<SI>-SISD` and `40-<SI>-SDD-<N>` filenames identifies the software item.
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
@@ -154,14 +162,14 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `21-03-IDD-application-control-status.md` candidate |
+| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `30-03-IDD-03-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
-| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `21-11-IDD-application-configuration.md` |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `30-03-IDD-11-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 
