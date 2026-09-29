@@ -234,11 +234,11 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Active focused detailed design", ""])
+    doc_index.extend(["", "## Software-item detailed design — active", ""])
     _, title, _ = by_name["41-02-SDD-java-component-design.md"]
     doc_index.append(f"- [{title}](./41-02-SDD-java-component-design.md)")
 
-    doc_index.extend(["", "## Deferred detailed-design notes", ""])
+    doc_index.extend(["", "## Software-item detailed design — deferred notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
