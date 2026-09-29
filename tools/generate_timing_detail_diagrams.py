@@ -29,14 +29,14 @@ def timing_node_internals() -> Diagram:
 
         Node("coordinator", "TimingNode coordinator\\nlifecycle + command orchestration", 30, 675, 270, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 320, 675, 280, 90, "service"),
-        Node("logbook", "LogBook\\nregistration/history", 620, 675, 280, 90, "service"),
+        Node("logbook", "LogBook\\n0..N LogBookItem", 620, 675, 280, 90, "service"),
         Node("prepare", "PrepareTeamRegistry\\nteams to prepare + internal history", 920, 675, 330, 90, "service"),
         Node("status", "TimingNode status\\nimmutable snapshots", 1270, 675, 260, 90, "service"),
 
         Node("race_data", "RaceData\\nparticipants • teams • tag references", 180, 850, 330, 90, "service"),
         Node("start_times", "StageStartTimeRegistry\\nlocal stage start-time reference", 540, 850, 340, 90, "service"),
-        Node("store", "RegistrationStore\\ndurable local records", 910, 850, 280, 90, "port"),
-        Node("outbox", "Backend outbox\\npending committed data", 1220, 850, 280, 90, "queue"),
+        Node("store", "TimingData storage\\ndurable encoded records", 910, 850, 280, 90, "port"),
+        Node("outbox", "Upstream outbox\\npending protocol data", 1220, 850, 280, 90, "queue"),
         Node("events", "UI / WebSocket events\\nstatus + registrations + prepare teams", 585, 1015, 410, 90, "interface"),
     ]
 
@@ -57,8 +57,8 @@ def timing_node_internals() -> Diagram:
         Edge("race_data", "logbook", "reference lookup", True),
         Edge("start_times", "logbook", "start-time lookup", True),
         Edge("tag", "logbook", "accepted observation"),
-        Edge("logbook", "store", "append"),
-        Edge("logbook", "outbox", "after commit"),
+        Edge("logbook", "store", "TimingDataRecord"),
+        Edge("logbook", "outbox", "TimingDataRecord after commit"),
         Edge("logbook", "events"),
         Edge("prepare", "events"),
         Edge("status", "events"),
