@@ -122,7 +122,8 @@ usable state.
 
 ```
 
-## UC-002 — Open a TimingNode
+```{uc} Open a TimingNode
+:id: UC-002
 
 **Goal:** enter normal timing operation in a traceable way.
 
@@ -144,7 +145,9 @@ usable state.
 - degraded devices exist but policy still permits open;
 - duplicate/open-again command.
 
-## UC-003 — Register a participant through RFID
+```
+```{uc} Register a participant through RFID
+:id: UC-003
 
 **Goal:** create a valid traceable registration from RFID observations without treating the first raw observation as automatically accepted.
 
@@ -174,7 +177,9 @@ usable state.
 - local persistence fails;
 - backoffice is unavailable after local commit.
 
-## UC-004 — Recover or reinitialise RFID equipment
+```
+```{uc} Recover or reinitialise RFID equipment
+:id: UC-004
 
 **Goal:** allow explicit operator/system recovery of an RFID device while keeping timing-system state and committed registrations intact.
 
@@ -189,7 +194,9 @@ usable state.
 5. Device state returns through `INITIALISING` to `READY`, or remains in an explicit error state.
 6. Existing committed registration/source sequence state is not reset or rewritten by device recovery.
 
-## UC-005 — Manage ready teams through keypad/operator input
+```
+```{uc} Manage ready teams through keypad/operator input
+:id: UC-005
 
 **Goal:** maintain the current registry of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
 
@@ -205,7 +212,9 @@ usable state.
 
 The `PrepareTeamRegistry` history is separate from participant/timing `RegistrationRecord` streams.
 
-## UC-006 — Drive a passive CAN display from current system state
+```
+```{uc} Drive a passive CAN display from current system state
+:id: UC-006
 
 **Goal:** ensure the passive DisplayRev1Can shows the current ready-team/display model.
 
@@ -219,7 +228,9 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 4. On state change or CAN-device rediscovery, SI-01 actively refreshes the display as required.
 5. The passive display itself does not own ready-team/domain state.
 
-## UC-007 — Provide data to a smart network display
+```
+```{uc} Provide data to a smart network display
+:id: UC-007
 
 **Goal:** expose current timing/status/reference data so a smart display can render and synchronise itself without SI-01 owning its presentation logic.
 
@@ -235,6 +246,7 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 
 SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
 
+```
 ```{uc} Operate SI-01 through a desktop GUI
 :id: UC-008
 
@@ -253,7 +265,8 @@ Remote API.
 
 ```
 
-## UC-009 — Exercise the Remote API through an optional web test client
+```{uc} Exercise the Remote API through an optional web test client
+:id: UC-009
 
 **Goal:** provide a simple browser-based way to inspect or exercise the Remote API when
 that is useful during development.
@@ -270,8 +283,9 @@ that is useful during development.
 This use case is optional. The current JavaFX engineering client already provides manual
 integration inspection, and there is no current requirement for a separate web product.
 
-
-## UC-010 — Synchronise reference data from backoffice
+```
+```{uc} Synchronise reference data from backoffice
+:id: UC-010
 
 **Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
 
@@ -286,7 +300,9 @@ integration inspection, and there is no current requirement for a separate web p
 5. Backup/restore state is updated according to persistence policy.
 6. Status exposes version/freshness/health where required.
 
-## UC-011 — Synchronise `TimingNodeId`-scoped data to backoffice
+```
+```{uc} Synchronise TimingNodeId-scoped data to backoffice
+:id: UC-011
 
 **Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
 
@@ -301,7 +317,9 @@ integration inspection, and there is no current requirement for a separate web p
 5. Successful acknowledgement/reconciliation advances the pending state according to the final protocol.
 6. Source ordering and gap detection remain possible at higher levels.
 
-## UC-012 — Continue local operation during backoffice outage
+```
+```{uc} Continue local operation during backoffice outage
+:id: UC-012
 
 **Goal:** preserve required local timing functionality and traceability while external connectivity is unavailable.
 
@@ -315,7 +333,9 @@ integration inspection, and there is no current requirement for a separate web p
 4. Outbound items remain pending.
 5. After transport recovery, synchronisation resumes without inventing/reusing committed sequence numbers.
 
-## UC-013 — Restart and restore local state
+```
+```{uc} Restart and restore local state
+:id: UC-013
 
 **Goal:** recover a coherent timing application after restart/power interruption.
 
@@ -330,6 +350,7 @@ integration inspection, and there is no current requirement for a separate web p
 5. Status reports restore health/errors before normal operation is presented as healthy.
 6. Backoffice/outbox recovery resumes independently from local startup.
 
+```
 ```{uc} Run multiple TimingNodes in one process
 :id: UC-014
 
@@ -349,7 +370,8 @@ while preserving independent lifecycle, state and
 
 ```
 
-## UC-015 — Simulate a complete field toward backoffice
+```{uc} Simulate a complete field toward backoffice
+:id: UC-015
 
 **Goal:** exercise realistic multi-TimingNode/multi-source behaviour from one test application.
 
@@ -363,7 +385,9 @@ while preserving independent lifecycle, state and
 4. A backoffice simulator or broker fixture observes all source streams.
 5. Tests validate isolation, ordering, recovery and status across the simulated field.
 
-## UC-016 — Replace real devices with controllable stubs
+```
+```{uc} Replace real devices with controllable stubs
+:id: UC-016
 
 **Goal:** make hardware-dependent application behaviour testable without duplicating business logic.
 
@@ -376,7 +400,9 @@ while preserving independent lifecycle, state and
 3. The application processes those events through normal queues/domain handlers.
 4. Tests observe behaviour only through supported state/interfaces/evidence points.
 
-## UC-017 — Use an alternative backoffice transport for loop testing
+```
+```{uc} Use an alternative backoffice transport for loop testing
+:id: UC-017
 
 **Goal:** test real process/network communication and `TimingNodeId`-scoped stream routing without RabbitMQ.
 
@@ -393,7 +419,9 @@ while preserving independent lifecycle, state and
 
 This use case is intentionally protocol-neutral and does not reproduce private production RabbitMQ message schemas.
 
-## UC-018 — Verify production-shaped messaging through RabbitMQ
+```
+```{uc} Verify production-shaped messaging through RabbitMQ
+:id: UC-018
 
 **Goal:** verify broker/client lifecycle and source-specific messaging using a real disposable broker.
 
@@ -410,7 +438,9 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 
 Production names, source IDs, schemas and credentials remain outside the public fixture.
 
-## UC-019 — Process a test RFID tag
+```
+```{uc} Process a test RFID tag
+:id: UC-019
 
 **Goal:** recognise a test-tag observation and apply deliberate test-specific behaviour without allowing the tag to masquerade as a normal or reserve participant tag.
 
@@ -442,6 +472,7 @@ Production names, source IDs, schemas and credentials remain outside the public 
 
 This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
 
+```
 ## Cross-cutting alternative/failure scenarios
 
 The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:

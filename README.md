@@ -14,7 +14,7 @@ The merged/default-branch documentation build is published to the generated [`pr
 
 - [architecture book](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/prod/docs/documents/architecture-book.md) — assembled architecture/design view with generated diagrams;
 - [complete software document set](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/prod/docs/documents/software-document-set.md) — assembled generated document set;
-- [engineering portal publication](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/portal) — derived Material static site with search, generated object pages and a clickable SI-01 engineering explorer;
+- [live engineering portal](https://brainboxemb.github.io/2026-010-01.meta.event-timing-software/) — derived Material site with search, generated object pages and the clickable SI-01 engineering explorer; [retained generated publication](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/portal);
 - [planning output](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/planning) — continuous SIP roadmap, four A4-landscape roadmap pages/PDF and A4-portrait step details;
 - [generated architecture diagrams](https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/tree/prod/docs/architecture) — SVG and editable draw.io outputs.
 

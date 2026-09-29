@@ -23,6 +23,7 @@ on:
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
       - 'tools/generate_engineering_portal.py'
+      - 'tools/validate_engineering_coverage.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   push:
@@ -49,6 +50,7 @@ on:
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
       - 'tools/generate_engineering_portal.py'
+      - 'tools/validate_engineering_coverage.py'
       - 'tools/requirements-docs.txt'
       - '.github/workflows/docs-build.yml'
   workflow_dispatch:
@@ -150,7 +152,7 @@ jobs:
           PY
 
           cat > bld/sphinx-needs/source/index.md <<'EOF'
-          # Migration 013 traceability canary
+          # Migration 013 engineering traceability
 
           ~~~{toctree}
           :maxdepth: 2
@@ -191,6 +193,14 @@ jobs:
             --source-revision "$SOURCE_REVISION" \
             --out bld/engineering-graph.json \
             --review bld/engineering-graph-review.md
+
+      - name: Validate full-project engineering coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/validate_engineering_coverage.py \
+            --needs bld/sphinx-needs/needs/needs.json \
+            --graph bld/engineering-graph.json
 
       - name: Generate engineering portal
         shell: bash
@@ -235,38 +245,28 @@ jobs:
           expected_ids = {item["id"] for item in graph["objects"]}
           objects = {item["id"]: item for item in graph["objects"]}
 
-          use_case_narrative = {
-              "UC-001": (
-                  "**Preconditions:**",
-                  "**Main flow:**",
-                  "**Alternative/failure flows:**",
-                  "The actor selects/addresses a TimingNode.",
-              ),
-              "UC-008": (
-                  "**Main flow:**",
-                  "SI-02 connects through the system-defined application-control/status interface.",
-              ),
-              "UC-014": (
-                  "**Main flow:**",
-                  "Settings describe several independently addressed",
-              ),
+          use_cases = {
+              object_id: item
+              for object_id, item in objects.items()
+              if item.get("type") == "uc"
           }
-          for object_id, tokens in use_case_narrative.items():
-              content = objects[object_id].get("content", "")
-              for token in tokens:
+          if len(use_cases) != 19:
+              raise SystemExit(f"expected 19 current system use cases, got {len(use_cases)}")
+          for object_id, item in sorted(use_cases.items()):
+              content = item.get("content", "")
+              for token in ("**Goal:**", "**Main flow:**"):
                   if token not in content:
                       raise SystemExit(
-                          f"engineering graph missing use-case narrative {object_id}: {token}"
+                          f"engineering graph missing full use-case narrative {object_id}: {token}"
                       )
 
               page = (site / "objects" / object_id / "index.html").read_text(
                   encoding="utf-8"
               )
-              for token in ("Main flow",):
-                  if token not in page:
-                      raise SystemExit(
-                          f"portal object page missing use-case narrative {object_id}: {token}"
-                      )
+              if "Main flow" not in page:
+                  raise SystemExit(
+                      f"portal object page missing use-case narrative {object_id}: Main flow"
+                  )
 
           actual_pages = {
               path.parent.name for path in (site / "objects").glob("*/index.html")
@@ -276,8 +276,10 @@ jobs:
 
           if provenance["source_revision"] != os.environ["SOURCE_REVISION"]:
               raise SystemExit("portal source revision mismatch")
-          if provenance["object_count"] != 23 or provenance["relation_count"] != 34:
-              raise SystemExit("portal graph counts mismatch")
+          if provenance["object_count"] != graph["object_count"]:
+              raise SystemExit("portal object count does not match engineering graph")
+          if provenance["relation_count"] != graph["relation_count"]:
+              raise SystemExit("portal relation count does not match engineering graph")
           if provenance["tool_eng_docs"] != {
               "ref": "v0.4.0",
               "sha": "63af20a033d6295a28c844d12cb87f76165e69a5",
@@ -285,19 +287,12 @@ jobs:
               raise SystemExit("portal tool provenance mismatch")
 
           required_diagram_ids = {
-              "TimingSystem",
-              "SystemStatus",
-              "TimingNode",
-              "LogBook",
-              "TimingData",
-              "UpstreamProtocol",
-              "TimeSource",
-              "CommandHandler",
-              "Conductor",
-              "RemoteApi",
+              object_id
+              for object_id, item in objects.items()
+              if item.get("diagram_refs")
           }
-          if not required_diagram_ids.issubset(set(provenance["diagram_objects"])):
-              raise SystemExit("portal clickable architecture identities incomplete")
+          if set(provenance["diagram_objects"]) != required_diagram_ids:
+              raise SystemExit("portal clickable architecture identities do not match graph diagram references")
 
           explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
           for object_id in required_diagram_ids:
@@ -467,7 +462,7 @@ jobs:
               encoding="utf-8"
           )
           uc_start = use_cases.index('<a id="UC-001"></a>')
-          uc_end = use_cases.index("## UC-002 —", uc_start)
+          uc_end = use_cases.index('<a id="UC-002"></a>', uc_start)
           uc_block = use_cases[uc_start:uc_end]
           uc_order = (
               uc_block.index("**UC-001 — Start and prepare a TimingNode**"),
@@ -482,6 +477,29 @@ jobs:
               raise SystemExit(
                   "generated reader Markdown does not retain full UC-001 narrative before metadata"
               )
+
+          for number in range(1, 20):
+              object_id = f"UC-{number:03d}"
+              if f'<a id="{object_id}"></a>' not in use_cases:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          si01_ids = (
+              "SI01-REQ-001", "SI01-REQ-002", "SI01-REQ-003",
+              "SI01-REQ-010", "SI01-REQ-011",
+              "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
+              "SI01-REQ-030", "SI01-REQ-031", "SI01-REQ-032", "SI01-REQ-033",
+          )
+          for object_id in si01_ids:
+              if f'<a id="{object_id}"></a>' not in ssd:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          idd = (root / "32-03-IDD-application-control-status.md").read_text(
+              encoding="utf-8"
+          )
+          for number in range(1, 11):
+              object_id = f"IF03-REQ-{number:03d}"
+              if f'<a id="{object_id}"></a>' not in idd:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
           PY
 
       - name: Verify generated output and retained producer evidence
@@ -575,28 +593,21 @@ jobs:
               "version": "migration-013",
           }:
               raise SystemExit("unexpected Sphinx-Needs graph provenance")
-          expected_ids = {
-              "UC-001", "UC-008", "UC-014",
-              "SI01-REQ-003", "SI01-REQ-020", "SI01-REQ-021",
-              "SI01-REQ-022", "SI01-REQ-030", "SI01-REQ-031",
-              "IF03-REQ-001", "IF03-REQ-002", "IF03-REQ-004",
-              "TimingSystem", "SystemStatus", "TimingNode", "LogBook", "TimingData", "UpstreamProtocol", "TimeSource",
-              "CommandHandler", "Conductor", "RemoteApi",
-              "VC-ST1-001",
-          }
           actual_ids = {item["id"] for item in graph["objects"]}
-          if actual_ids != expected_ids:
-              raise SystemExit("engineering graph bounded-slice object set mismatch")
-          if graph.get("object_count") != 23 or graph.get("relation_count") != 34:
-              raise SystemExit("engineering graph bounded-slice counts mismatch")
+          if graph.get("object_count") != len(actual_ids):
+              raise SystemExit("engineering graph object count mismatch")
+          if graph.get("relation_count") != len(graph["relations"]):
+              raise SystemExit("engineering graph relation count mismatch")
           objects = {item["id"]: item for item in graph["objects"]}
-          for object_id in ("TimingSystem", "SystemStatus", "TimingNode", "LogBook", "TimingData", "UpstreamProtocol", "TimeSource", "CommandHandler", "Conductor", "RemoteApi"):
-              if not objects[object_id].get("diagram_refs"):
-                  raise SystemExit(f"architecture object has no diagram reference: {object_id}")
+          diagram_ids = {
+              object_id for object_id, item in objects.items() if item.get("diagram_refs")
+          }
+          if not diagram_ids:
+              raise SystemExit("engineering graph contains no diagram-linked architecture objects")
           needs = json.loads((root / "bld/sphinx-needs/needs/needs.json").read_text(encoding="utf-8"))
           current = needs.get("current_version")
-          if set(needs["versions"][current]["needs"]) != expected_ids:
-              raise SystemExit("Sphinx-Needs bounded-slice object set mismatch")
+          if set(needs["versions"][current]["needs"]) != actual_ids:
+              raise SystemExit("Sphinx-Needs object set does not match normalized graph")
 
           materialization = json.loads(
               (root / ".moon/invocations/software_docs.assemble/materialization.json").read_text(encoding="utf-8")
@@ -663,6 +674,12 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload engineering portal for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: bld/engineering-portal/site
+
   # Publication is deliberately outside the Moon task graph: it must run for the
   # current event even when every producer was hydrated from cache.
   publish-documentation:
@@ -673,3 +690,24 @@ jobs:
     with:
       artifact_name: software-docs-publication
       branch_suffix: docs
+
+
+  deploy-engineering-portal:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: documentation
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+      actions: read
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Deploy engineering portal
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
