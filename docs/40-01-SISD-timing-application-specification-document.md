@@ -260,7 +260,7 @@ The compact software/domain ownership model is intentionally also kept as copyab
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- System
+  +-- TimingSystem
   |     +-- SystemStatus
   |     +-- heartbeat / ping semantics
   +-- TimingData
@@ -396,7 +396,7 @@ TimingNode state. The main responsibilities are deliberately not represented as
 one parent/child tree:
 
 ```text
-System
+TimingSystem
   SystemStatus
   heartbeat / ping semantics
 
@@ -426,7 +426,7 @@ UpstreamProtocol
   ping / pong and other protocol messages
 ```
 
-`System` is the application-wide domain object. It owns `SystemStatus` and
+`TimingSystem` is the application-wide domain object. It owns `SystemStatus` and
 system-wide protocol semantics such as heartbeat/ping handling that do not belong
 to one TimingNode.
 
@@ -608,7 +608,7 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ```text
 TimingApplication
   +-- ApplicationId
-  +-- System
+  +-- TimingSystem
   |     +-- SystemStatus
   |     +-- heartbeat / ping semantics
   +-- TimingData
@@ -1244,7 +1244,7 @@ they do not become owners of TimingData fields or upstream protocol semantics.
 protocol decoding. A TimingNode-targeted operation is resolved by
 `TimingNodeId`, submitted through that TimingNode's serial boundary and
 enters/leaves through its bidirectional `UpstreamMessagePort`. Application-wide
-operations such as heartbeat/status semantics target `System`.
+operations such as heartbeat/status semantics target `TimingSystem`.
 
 ```text
 external upstream system
@@ -1275,7 +1275,7 @@ Public protocol semantics and TimingData compatibility remain owned by Domain.
 `ApplicationId` is used for application-scoped upstream addressing.
 `UpstreamMessageRouter` provides target resolution without becoming a generic
 internal message bus. Protocol messages that can be answered entirely by
-application-wide `System` semantics do not need to be forced through a
+application-wide `TimingSystem` semantics do not need to be forced through a
 TimingNode.
 
 #### RFID
