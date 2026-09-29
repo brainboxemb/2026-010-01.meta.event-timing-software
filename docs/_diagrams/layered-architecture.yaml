@@ -88,6 +88,7 @@ nodes:
   layout: {x: 570, y: 586, w: 240, h: 105}
 
 - id: local-console
+  object_id: Console
   group: presentation-layer
   label: "Console"
   subtitle: "local text interface"
@@ -95,6 +96,7 @@ nodes:
   notation: component
   layout: {x: 55, y: 125, w: 200, h: 65}
 - id: remote-shell
+  object_id: RemoteShell
   group: presentation-layer
   label: "RemoteShell"
   subtitle: "remote text interface"
@@ -102,6 +104,7 @@ nodes:
   notation: component
   layout: {x: 275, y: 125, w: 220, h: 65}
 - id: web-interface
+  object_id: Web
   group: presentation-layer
   label: "Web (1..N per TimingSystem)"
   subtitle: "per TimingNode • own port"
@@ -117,6 +120,7 @@ nodes:
   notation: component
   layout: {x: 775, y: 125, w: 340, h: 65}
 - id: shared-terminal
+  object_id: SharedTerminalHandler
   group: presentation-layer
   label: "SharedTerminalHandler"
   subtitle: "command parsing • terminal session behaviour"
@@ -141,6 +145,7 @@ nodes:
   notation: component
   layout: {x: 390, y: 373, w: 280, h: 75}
 - id: upstream-message-router
+  object_id: UpstreamMessageRouter
   group: application-layer
   label: "UpstreamMessageRouter"
   subtitle: "upstream target resolution / routing"
@@ -149,6 +154,7 @@ nodes:
   layout: {x: 710, y: 373, w: 350, h: 75}
 
 - id: system-upstream-message-port
+  object_id: SystemUpstreamMessagePort
   group: timing-system-aggregate
   label: "UpstreamMessagePort"
   subtitle: "system-level upstream"
@@ -166,6 +172,7 @@ nodes:
   layout: {x: 315, y: 676, w: 220, h: 55}
 
 - id: upstream-message-port
+  object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
   label: "UpstreamMessagePort"
   subtitle: "node-level upstream"
@@ -174,6 +181,7 @@ nodes:
   layout: {x: 850, y: 586, w: 240, h: 55}
 
 - id: tag-processor
+  object_id: TagProcessor
   group: timing-node-aggregate
   label: "TagProcessor"
   subtitle: "RFID/tag processing"
@@ -181,6 +189,7 @@ nodes:
   notation: component
   layout: {x: 570, y: 706, w: 240, h: 50}
 - id: stage-start-times
+  object_id: StageStartTimes
   group: timing-node-aggregate
   label: "StageStartTimes"
   subtitle: "start-time reference"
@@ -188,6 +197,7 @@ nodes:
   notation: component
   layout: {x: 850, y: 706, w: 240, h: 50}
 - id: next-up-teams
+  object_id: NextUpTeams
   group: timing-node-aggregate
   label: "NextUpTeams"
   subtitle: "teams expected next"
@@ -195,6 +205,7 @@ nodes:
   notation: component
   layout: {x: 570, y: 766, w: 240, h: 50}
 - id: race-data
+  object_id: RaceData
   group: timing-node-aggregate
   label: "RaceData"
   subtitle: "participant/team/tag reference"
@@ -202,6 +213,7 @@ nodes:
   notation: component
   layout: {x: 850, y: 766, w: 240, h: 50}
 - id: stage-timing
+  object_id: StageTiming
   group: timing-node-aggregate
   label: "StageTiming"
   subtitle: "running times + ranking"
@@ -246,6 +258,7 @@ nodes:
   layout: {x: 75, y: 816, w: 220, h: 55}
 
 - id: storage-io
+  object_id: Storage
   group: io-layer
   label: "Storage"
   items:
@@ -255,6 +268,7 @@ nodes:
   notation: packaging-component
   layout: {x: 55, y: 1066, w: 200, h: 95}
 - id: devices-io
+  object_id: Devices
   group: io-layer
   label: "Devices"
   items:
@@ -277,6 +291,7 @@ nodes:
   # shoulder.
   layout: {x: 910, y: 961, w: 220, h: 195}
 - id: device-network-io
+  object_id: DeviceNetworks
   group: io-layer
   label: "DeviceNetworks"
   items:
@@ -286,6 +301,7 @@ nodes:
   notation: packaging-component
   layout: {x: 275, y: 1066, w: 240, h: 95}
 - id: messaging-io
+  object_id: Messaging
   group: io-layer
   label: "Messaging"
   items:
@@ -305,6 +321,7 @@ nodes:
   layout: {x: 180, y: 1249, w: 880, h: 45}
 
 - id: application-bootstrap
+  object_id: ApplicationBootstrap
   group: crosscutting-layer
   label: "ApplicationBootstrap"
   subtitle: "config • composition"
