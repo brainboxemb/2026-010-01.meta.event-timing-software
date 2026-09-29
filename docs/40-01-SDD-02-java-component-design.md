@@ -127,7 +127,7 @@ application/
 
 domain/
   system/
-    System.java                         application-wide status/protocol semantics when justified
+    TimingSystem.java                   application-wide status/protocol semantics when justified
   timing/
     TimingNode.java
     TimingNodeId.java
@@ -201,7 +201,7 @@ after semantic protocol decoding; it is not a generic internal message bus.
 `TimingNode.UpstreamMessagePort` remains the bidirectional semantic
 upstream-message port of one TimingNode. Here **upstream** identifies the system
 relationship, not a one-way message direction. Application-scoped messages can
-target the application-wide Domain `System` without inventing a
+target the application-wide Domain `TimingSystem` without inventing a
 TimingNode-level handler.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
