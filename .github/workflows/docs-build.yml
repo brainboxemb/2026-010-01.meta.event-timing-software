@@ -130,9 +130,8 @@ jobs:
           cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
           cp docs/04-UC-system-use-cases.md bld/sphinx-needs/source/docs/
-          cp docs/20-01-SRD-timing-application-requirements.md bld/sphinx-needs/source/docs/
-          cp docs/31-01-SAD-timing-application-architecture.md bld/sphinx-needs/source/docs/
-          cp docs/40-01-IDD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/30-01-SISD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
+          cp docs/21-01-IDD-application-control-status.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -157,9 +156,8 @@ jobs:
           :maxdepth: 2
 
           docs/04-UC-system-use-cases
-          docs/20-01-SRD-timing-application-requirements
-          docs/31-01-SAD-timing-application-architecture
-          docs/40-01-IDD-application-control-status
+          docs/30-01-SISD-timing-application-specification-document
+          docs/21-01-IDD-application-control-status
           ~~~
           EOF
 
@@ -435,9 +433,9 @@ jobs:
           srd = (root / "20-01-SRD-timing-application-requirements.md").read_text(
               encoding="utf-8"
           )
-          start = srd.index('<a id="SI01-REQ-003"></a>')
-          end = srd.index('<a id="SI01-REQ-020"></a>', start)
-          block = srd[start:end]
+          start = sisd.index('<a id="SI01-REQ-003"></a>')
+          end = sisd.index('<a id="SI01-REQ-020"></a>', start)
+          block = sisd[start:end]
           body_text = "The first executable shall support configuration of at least"
           order = (
               block.index("**SI01-REQ-003 — Minimal TimingNode composition**"),
@@ -490,7 +488,7 @@ jobs:
           test -f bld/docs/documents/architecture-book.md
           test -f bld/docs/documents/12-SDE-software-development-environment.md
           test -f bld/docs/documents/13-SDE-java-build-test-toolchain.md
-          test -f bld/docs/documents/31-01-SAD-timing-application-architecture.md
+          test -f bld/docs/documents/30-01-SISD-timing-application-specification-document.md
           test -f bld/docs/documents/31-01-SDD-02-java-component-design.md
           test -f bld/docs/documents/50-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
