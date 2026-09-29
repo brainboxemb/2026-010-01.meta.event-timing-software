@@ -1,12 +1,12 @@
-# Desktop GUI Application Specification Document (SISD)
+# Desktop GUI Application Specification Document (SSD)
 
 Status: working draft / non-authoritative
 
 Software item: **SI-02 — Desktop GUI Application**
 
-This SISD is intentionally architecture-heavy today because SI-02 implementation has not
+This SSD is intentionally architecture-heavy today because SI-02 implementation has not
 started. Software-item requirements will be promoted into this same document as the GUI
-capability approaches implementation; no separate SISD/SISD pair is planned.
+capability approaches implementation; no separate requirements/architecture document pair is planned.
 
 ## Inputs
 
@@ -17,7 +17,7 @@ The SI-02 specification consumes:
 - applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
 - a future system-owned GUI/HMI IDD when that contract is defined.
 
-`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate `40-02-UC-...` document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SISD clearer.
+`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate `40-02-UC-...` document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer.
 
 The SIP may schedule SI-02 work but is not requirement/design authority.
 
@@ -115,7 +115,7 @@ A system-level GUI IDD can define items such as:
 - terminology and identifiers;
 - interaction flows for open/close/start/RFID recovery and later registration operations.
 
-The future SISD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
+The future SSD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
 
 ## Software-to-software interface IDD
 
