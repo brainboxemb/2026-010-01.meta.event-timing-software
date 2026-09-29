@@ -299,11 +299,6 @@ Logging follows the same library-versus-executable composition boundary.
 event-timing-framework.jar
   -> slf4j-api only
   -> provider-neutral LoggingConfig values
-
-event-timing-app.jar / executable infrastructure
-  -> selects exactly one SLF4J provider
-  -> initial provider: slf4j-jdk14
-  -> backend: java.util.logging
   -> io.github.brainboxemb.eventtiming.infra.logging
        +-- Logging
        |    +-- LoggingControl
@@ -312,16 +307,25 @@ event-timing-app.jar / executable infrastructure
        |    +-- LiveLogHandler
        +-- LoggingServer
             +-- client-initiated live diagnostics + temporary level control
+
+event-timing-app.jar
+  -> selects exactly one SLF4J provider
+  -> initial provider: slf4j-jdk14
+  -> delegates SLF4J records to java.util.logging
+  -> starts/stops framework-provided Logging
 ```
 
 Working rules:
 
 - framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- provider-neutral deployment values such as semantic level, log-file path/rotation and optional live-listener bind/port may live in the framework-owned effective configuration model;
+- provider-neutral deployment values are owned by the logging component itself: `LoggingConfig` contains `LoggingLevel`, `LoggingFileConfig` and optional `LoggingServerConfig`; `ApplicationConfig` may reference that component configuration as composition data;
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
-- concrete JUL types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay in the executable implementation, not in reusable domain/framework contracts;
-- the executable module places those concrete classes under `io.github.brainboxemb.eventtiming.infra.logging`: package responsibility follows the infrastructure role even though the provider-specific implementation remains in the `event-timing-app` artifact;
+- concrete JUL implementation types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay isolated under framework infrastructure `io.github.brainboxemb.eventtiming.infra.logging`; they are not domain/application contracts;
+- `infra.logging` must not depend on `infra.bootstrap.config`; bootstrap/composition may depend on the logging component and pass its configuration into it, never the reverse;
+- `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
+- `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
+- the framework artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
 - `Logging` is the primary runtime logging infrastructure component and owns backend setup, handler composition and the temporary global-level control;
 - `LoggingServer` is the separate externally reachable live-diagnostics component; it owns only the logging-specific socket/protocol boundary and is not a Presentation/IF-03 endpoint;
 - the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
@@ -334,8 +338,8 @@ Working rules:
 - exactly one provider should be present in a runtime composition;
 - provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
 
-This keeps logging technology replaceable at the executable boundary while giving reusable
-framework code one consistent facade and one small provider-neutral configuration contract.
+This keeps provider selection replaceable at the executable boundary while allowing the reusable
+framework to provide the default JUL logging infrastructure and its configuration contract.
 
 ## Default executable application
 
@@ -375,9 +379,17 @@ io.github.brainboxemb.eventtiming/
         RemoteApiConfig.java
         RemoteApiHttpConfig.java
         RemoteApiWebSocketConfig.java
-        LoggingConfig.java
-        LoggingFileConfig.java
-        LoggingLiveConfig.java
+    logging/
+      Logging.java
+      LoggingConfig.java
+      LoggingLevel.java
+      LoggingFileConfig.java
+      LoggingServer.java
+      LoggingServerConfig.java
+      LoggingControl.java
+      TimestampedFileLogHandler.java
+      CompactLogFormatter.java
+      LiveLogHandler.java
 ```
 
 `runtime/` is a Java source-organisation package for the top-level runtime
@@ -386,28 +398,31 @@ The figure already describes the contents/responsibilities of that running
 `TimingApplication`.
 
 The executable artifact is deliberately thin. Its launcher/input adapters remain under
-`...eventtiming.app`, while concrete runtime logging is placed by infrastructure
-responsibility rather than under the application package:
+`...eventtiming.app`; reusable runtime logging belongs to framework infrastructure:
 
 ```text
-io.github.brainboxemb.eventtiming.app/
-  TimingApplicationMain.java
-  bootstrap/
-    YamlApplicationConfigLoader.java
-    EmbeddedBuildIdentityLoader.java
+event-timing-framework.jar
+  io.github.brainboxemb.eventtiming.infra.logging/
+    Logging.java
+    LoggingConfig.java
+    LoggingLevel.java
+    LoggingFileConfig.java
+    LoggingServer.java
+    LoggingServerConfig.java
+    LoggingControl.java
+    TimestampedFileLogHandler.java
+    CompactLogFormatter.java
+    LiveLogHandler.java
 
-io.github.brainboxemb.eventtiming.infra.logging/
-  Logging.java
-  LoggingServer.java
-  LoggingControl.java
-  TimestampedFileLogHandler.java
-  CompactLogFormatter.java
-  LiveLogHandler.java
+event-timing-app.jar
+  io.github.brainboxemb.eventtiming.app/
+    TimingApplicationMain.java
+    bootstrap/
+      YamlApplicationConfigLoader.java
+      EmbeddedBuildIdentityLoader.java
 ```
 
-This is intentionally **not** a move of JUL/provider classes into
-`event-timing-framework.jar`. The Maven artifact boundary stays provider-neutral:
-the concrete `infra.logging` package above is contributed by the executable module.
+`event-timing-framework.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
 
 The executable startup flow is:
 

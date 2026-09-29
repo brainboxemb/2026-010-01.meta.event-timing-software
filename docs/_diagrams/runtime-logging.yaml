@@ -13,7 +13,7 @@ groups:
     layout: {x: 70, y: 120, w: 300, h: 500}
 
   - id: logging
-    label: Executable infrastructure / logging
+    label: Framework infrastructure / logging
     kind: layer-crosscutting
     layout: {x: 410, y: 120, w: 610, h: 500}
 
