@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -R -n -E '40-01-SDD-02-data-and-display-design\.md|40-01-SDD-03-java-component-design\.md|31-01-SDD-05-backoffice-transport-design\.md' docs tools README.md CHANGELOG.md
+          ! grep -R -n -E '40-01-SISD-timing-application-specification-document\.md|40-02-SISD-gui-application-specification-document\.md|40-01-SDD-01-data-and-display-design\.md|40-01-SDD-02-java-component-design\.md|40-01-SDD-03-backoffice-transport-design\.md|40-01-01-SSD-timing-application-specification-document\.md|40-02-01-SSD-gui-application-specification-document\.md' docs tools README.md CHANGELOG.md
 
       - name: Validate SIP actuals tool
         shell: bash
