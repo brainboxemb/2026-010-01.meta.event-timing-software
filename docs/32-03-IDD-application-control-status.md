@@ -309,8 +309,12 @@ configured, so a client can run on a workstation while SI-01
 runs on another host such as a Raspberry Pi.
 ```
 
-**IF03-REQ-003 — Version query**  
+```{ifreq} Version query
+:id: IF03-REQ-003
+:derived_from: SI01-REQ-010, SI01-REQ-011
+
 The interface shall provide `GET /api/v1/version` representing `IF03-OP-001`.
+```
 
 ```{ifreq} Status query
 :id: IF03-REQ-004
@@ -320,23 +324,47 @@ The interface shall provide `GET /api/v1/status`
 representing `IF03-OP-002`.
 ```
 
-**IF03-REQ-005 — Live status/event delivery**  
+```{ifreq} Live status/event delivery
+:id: IF03-REQ-005
+:derived_from: SI01-REQ-023
+
 The interface shall provide WebSocket `/api/v1/events` representing `IF03-OP-003` for the first executable.
+```
 
-**IF03-REQ-006 — Reconnect to current state**  
+```{ifreq} Reconnect to current state
+:id: IF03-REQ-006
+:derived_from: SI01-REQ-023
+
 A client that connects/reconnects shall receive a complete current status snapshot before relying on subsequent live events.
+```
 
-**IF03-REQ-007 — Machine-readable representation**  
+```{ifreq} Machine-readable representation
+:id: IF03-REQ-007
+:derived_from: SI01-REQ-031
+
 The HTTP query representation shall be machine-readable JSON suitable for SI-02, engineering clients and automated ST-1 verification.
+```
 
-**IF03-REQ-008 — Explicit failure response**  
+```{ifreq} Explicit failure response
+:id: IF03-REQ-008
+:derived_from: SI01-REQ-031
+
 Unsupported or invalid HTTP requests shall produce the explicit JSON failure outcome defined in this IDD rather than a successful response containing silently invalid data.
+```
 
-**IF03-REQ-009 — Safe default listen scope**  
+```{ifreq} Safe default listen scope
+:id: IF03-REQ-009
+:derived_from: SI01-REQ-032
+
 Without explicit configuration the first-executable IF-03 service shall bind only to a local/loopback interface.
+```
 
-**IF03-REQ-010 — Compatible extension**  
+```{ifreq} Compatible extension
+:id: IF03-REQ-010
+:derived_from: SI01-REQ-033
+
 Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
+```
 
 ## Relationship to SI-01 SSD
 
