@@ -33,8 +33,8 @@ SYSTEM_SPEC_DOCUMENTS = [
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
-    "40-01-SISD-timing-application-specification-document.md",
-    "40-02-SISD-gui-application-specification-document.md",
+    "40-01-SSD-timing-application-specification-document.md",
+    "40-02-SSD-gui-application-specification-document.md",
 ]
 
 ENGINEERING_DOCUMENTS = [
@@ -46,14 +46,14 @@ ARCHITECTURE_DOCUMENTS = [
     "30-02-SSSD-software-system-specification-document.md",
     "30-03-IDD-03-application-control-status.md",
     "30-03-IDD-11-application-configuration.md",
-    "40-01-SISD-timing-application-specification-document.md",
-    "40-01-SDD-02-java-component-design.md",
-    "40-02-SISD-gui-application-specification-document.md",
+    "40-01-SSD-timing-application-specification-document.md",
+    "41-02-SDD-java-component-design.md",
+    "40-02-SSD-gui-application-specification-document.md",
 ]
 
 DEFERRED_DESIGN_DOCUMENTS = [
-    "40-01-SDD-01-data-and-display-design.md",
-    "40-01-SDD-03-backoffice-transport-design.md",
+    "41-01-SDD-data-and-display-design.md",
+    "41-03-SDD-backoffice-transport-design.md",
 ]
 
 VERIFICATION_DOCUMENTS = [
@@ -71,7 +71,7 @@ DOCUMENTS = (
     + SYSTEM_SPEC_DOCUMENTS
     + SOFTWARE_ITEM_SPEC_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + ["40-01-SDD-02-java-component-design.md"]
+    + ["41-02-SDD-java-component-design.md"]
     + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
     + USER_DOCUMENTS
@@ -192,7 +192,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
     write_book(
         documents_dir / "architecture-book.md",
         "Software architecture document set",
-        "Generated review/output book containing the SSSD, system interface contracts, software-item SISDs, and only currently active focused detailed design.",
+        "Generated review/output book containing the SSSD, system interface contracts, software-item SSDs, and only currently active focused detailed design.",
         architecture_built,
     )
 
@@ -235,8 +235,8 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Active focused detailed design", ""])
-    _, title, _ = by_name["40-01-SDD-02-java-component-design.md"]
-    doc_index.append(f"- [{title}](./40-01-SDD-02-java-component-design.md)")
+    _, title, _ = by_name["41-02-SDD-java-component-design.md"]
+    doc_index.append(f"- [{title}](./41-02-SDD-java-component-design.md)")
 
     doc_index.extend(["", "## Deferred detailed-design notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:
