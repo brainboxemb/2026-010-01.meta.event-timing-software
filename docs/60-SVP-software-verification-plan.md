@@ -220,49 +220,18 @@ inspection, but it does not replace automated ST-1 evidence. The current A06 dir
 uses a small JavaFX client for manual version/status inspection while automated tests
 continue to own pass/fail verification.
 
-#### VC-ST1-001 — First executable public-interface black-box
+#### Current first ST-1 case
 
-Purpose: prove that the first Step-3 application artifact behaves correctly when treated
-as an external process rather than as a set of Java classes.
+`VC-ST1-001 — Query and resynchronise first-executable status` is authored in
+`32-03-IDD-application-control-status.md`, because that IDD owns the exact IF-03
+transport procedure and acceptance semantics. The SVP does not duplicate that procedure.
 
-Automated composition:
-
-```text
-system-test driver
-      |
-      +-- HTTP GET /api/v1/version
-      +-- HTTP GET /api/v1/status
-      +-- WebSocket /api/v1/events
-      +-- remote terminal quit
-      |
-      v
-separate JVM process
-  java -jar event-timing-app-<version>.jar <temporary application.yml>
-```
-
-Verification rules:
-
-- the driver must not depend on or import `event-timing-framework` or
-  `event-timing-app` Java classes;
-- the packaged application JAR is launched as a child JVM with deterministic
-  loopback-only temporary configuration;
-- `/api/v1/version` returns the executable build identity, including the expected
-  application/version/API-version fields and an exact revision;
-- `/api/v1/status` reports the configured TimingNode as `RUNNING`;
-- a fresh WebSocket connection receives a complete `STATUS_SNAPSHOT`;
-- after disconnect/reconnect, a second fresh connection again receives a complete
-  `STATUS_SNAPSHOT`;
-- shutdown is requested through the external remote terminal `quit` command rather
-  than by invoking application methods or force-killing the process;
-- the child JVM exits successfully; captured process output is retained as failure
-  diagnostics;
-- the same test is suitable for the normal Linux Maven verification and native
-  Windows Maven verification.
-
-The implementation repository may realise this as a verification-only Maven
-`system-test` module in the reactor. Such a module is test infrastructure, not a
-third SI-01 product/release artifact.
-
+For Step 3 the implementation should realise `VC-ST1-001` as a verification-only
+`system-test` environment that starts the packaged SI-01 JAR as a separate JVM process.
+The test driver must not depend on product Java classes; it observes HTTP/WebSocket and
+the supported controlled-shutdown interface only. This module is verification
+infrastructure, not a third SI-01 release artifact, and should run in the normal Linux
+and native Windows Maven verification paths.
 ### ST-2 — Socket loop/network profile
 
 Purpose: add a real process/network communication boundary for the backoffice while remaining lightweight.
