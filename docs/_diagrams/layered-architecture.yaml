@@ -166,7 +166,7 @@ nodes:
   subtitle: "node-level upstream"
   kind: service
   notation: component
-  layout: {x: 850, y: 596, w: 240, h: 55}
+  layout: {x: 850, y: 607, w: 240, h: 55}
 
 - id: tag-processor
   object_id: TagProcessor
