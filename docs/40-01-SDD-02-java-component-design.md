@@ -127,7 +127,8 @@ application/
 
 domain/
   system/
-    TimingSystem.java                   application-wide status/protocol semantics when justified
+    TimingSystem.java                   parent aggregate for 1..N TimingNodes
+    TimingSystemId.java                 internal composition/simulation identity
   timing/
     TimingNode.java
     TimingNodeId.java
@@ -163,9 +164,7 @@ io/
       RabbitMqConnector.java
 ```
 
-The names above record ownership/direction, not a requirement to create empty
-types early. `ApplicationId` is a separate Java type from `TimingNodeId` even
-when a single-TimingNode deployment configures the same string value for both.
+The names above record ownership/direction, not a requirement to create empty types early. `ApplicationId`, internal `TimingSystemId` and functional `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes multiple hosted/simulated systems locally; it is not automatically serialized into TimingData or exposed as an upstream address.
 
 `CanNetworkController` owns CAN-network lifecycle/discovery and CAN-device
 communication. `NetworkDeviceService` owns the general bidirectional
@@ -191,18 +190,7 @@ Concrete storage, Web and messaging adapters may depend on that API and carry an
 encoded representation without knowing or switching on individual TimingData
 fields.
 
-`UpstreamProtocol` is a separate Domain capability built partly on
-`TimingData`. It adds synchronization/reconciliation and system-level messages
-such as ping/pong. `UpstreamGateway` owns the external transport boundary and
-uses 1..N concrete connectors. A connector such as `RabbitMqConnector` owns
-transport/session mechanics, not TimingData or UpstreamProtocol semantics.
-`UpstreamMessageRouter` in the application package owns target resolution
-after semantic protocol decoding; it is not a generic internal message bus.
-`TimingNode.UpstreamMessagePort` remains the bidirectional semantic
-upstream-message port of one TimingNode. Here **upstream** identifies the system
-relationship, not a one-way message direction. Application-scoped messages can
-target the application-wide Domain `TimingSystem` without inventing a
-TimingNode-level handler.
+`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `UpstreamMessageRouter` resolves semantic TimingNode-targeted work by `TimingNodeId` inside the already selected TimingSystem context; `TimingSystemId` is not required on the wire. `TimingNode.UpstreamMessagePort` remains the bidirectional semantic upstream-message port of one TimingNode.
 
 If the TimingNode capability later grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
