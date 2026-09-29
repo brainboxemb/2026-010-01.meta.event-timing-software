@@ -2,6 +2,27 @@
   max-width: 104rem;
 }
 
+.eng-workspace-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: -0.25rem 0 0.85rem;
+  font-size: 0.72rem;
+}
+
+.eng-workspace-nav a {
+  display: inline-block;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-default-bg-color);
+}
+
+.eng-workspace-nav a:hover,
+.eng-workspace-nav a:focus {
+  border-color: var(--md-accent-fg-color);
+}
+
 /* Keep the architecture as the primary desktop context; details are supporting content. */
 .eng-workspace {
   display: grid;
