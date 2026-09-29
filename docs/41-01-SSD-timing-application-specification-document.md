@@ -42,11 +42,17 @@ Identifiers in this review candidate are intended to remain stable. A later capa
 
 #### Process lifecycle and configuration
 
-**SI01-REQ-001 — Start from external configuration**  
-SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
+```{req} Start from external configuration
+:id: SI01-REQ-001
 
-**SI01-REQ-002 — Clean process shutdown**  
+SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
+```
+
+```{req} Clean process shutdown
+:id: SI01-REQ-002
+
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
+```
 
 ```{req} Minimal TimingSystem / TimingNode composition
 :id: SI01-REQ-003
@@ -62,11 +68,17 @@ IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and h
 
 #### Build and version identity
 
-**SI01-REQ-010 — Single application build identity**  
-A running SI-01 process shall expose one authoritative application build/version identity derived from the produced application artifact/build.
+```{req} Single application build identity
+:id: SI01-REQ-010
 
-**SI01-REQ-011 — Consistent identity across interfaces**  
+A running SI-01 process shall expose one authoritative application build/version identity derived from the produced application artifact/build.
+```
+
+```{req} Consistent identity across interfaces
+:id: SI01-REQ-011
+
 The build/version identity exposed through supported first-executable operator/application interfaces shall represent the same underlying build identity rather than interface-specific copies.
+```
 
 The public representation and required fields are defined by IF-03.
 
@@ -110,8 +122,11 @@ adapter shall not maintain a separate authoritative status
 model.
 ```
 
-**SI01-REQ-023 — Status-change publication**  
+```{req} Status-change publication
+:id: SI01-REQ-023
+
 SI-01 shall publish first-executable status-change information through IF-03 WebSocket/event delivery from the same authoritative status model used for status queries.
+```
 
 On connection/reconnection the client shall be able to recover a complete authoritative snapshot according to the IF-03 contract.
 
@@ -134,11 +149,17 @@ public application interface without direct test mutation of
 internal application/domain state.
 ```
 
-**SI01-REQ-032 — Safe default network exposure**  
-The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
+```{req} Safe default network exposure
+:id: SI01-REQ-032
 
-**SI01-REQ-033 — Compatible first API evolution**  
+The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
+```
+
+```{req} Compatible first API evolution
+:id: SI01-REQ-033
+
 SI-01 shall implement IF-03 `v1` such that compatible additions can be made without requiring clients to understand every newly added JSON member or event type; breaking interface semantics shall not silently redefine the existing `v1` contract.
+```
 
 ### First-executable lifecycle interpretation
 
