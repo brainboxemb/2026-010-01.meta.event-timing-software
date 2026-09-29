@@ -430,7 +430,7 @@ jobs:
               if token not in text:
                   raise SystemExit(f"generated reader Markdown missing {token}")
 
-          srd = (root / "20-01-SRD-timing-application-requirements.md").read_text(
+          sisd = (root / "30-01-SISD-timing-application-specification-document.md").read_text(
               encoding="utf-8"
           )
           start = sisd.index('<a id="SI01-REQ-003"></a>')
