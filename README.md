@@ -127,7 +127,7 @@ Examples:
 70-01-SUM
 ```
 
-Category 40 is the software-item specification range and category 41 is the software-item detailed-design range. Their numeric suffixes are document sequences, not software-item identifiers; SI-01/SI-02 ownership is stated in the document and traceability metadata. Optional software-item use cases use the next available category-40 document number when item-level behavioural decomposition adds value.
+Category 40 is the software-item specification (SSD) range and category 41 is the software-item detailed-design (SDD) range. Their numeric suffixes are document sequences, not software-item identifiers; SI-01/SI-02 ownership is stated in the document and traceability metadata. Optional software-item use cases receive a separate range only when they are actually introduced.
 
 For system-owned IDDs, `30-03` identifies the IDD subgroup and the IDD suffix keeps the system interface identity, for example `IDD-03` for IF-03 and `IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the category-20 external-input baseline rather than being renumbered as locally owned interfaces.
 
