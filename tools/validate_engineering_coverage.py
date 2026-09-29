@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import sys
 
+import yaml
+
 NEED_BLOCK_RE = re.compile(
     r"^```\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n(?P<body>.*?)(?=^\```\s*$)",
     re.MULTILINE | re.DOTALL,
@@ -54,9 +56,30 @@ def discover_expected(root: Path) -> tuple[dict[str, set[str]], set[str]]:
             for match in regex.finditer(text):
                 add(found, match.group("id"), f"{rel}:{label}")
 
+    semantic_notations = {"class", "component", "packaging-component"}
     for path in sorted((root / "docs" / "_diagrams").glob("*.yaml")):
         text = path.read_text(encoding="utf-8")
         rel = path.relative_to(root).as_posix()
+
+        data = yaml.safe_load(text)
+        nodes = data.get("nodes", []) if isinstance(data, dict) else []
+        missing_identity: list[str] = []
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            notation = node.get("notation")
+            object_id = node.get("object_id")
+            if notation in semantic_notations and not object_id:
+                missing_identity.append(
+                    f"{node.get('id', '<unnamed>')} ({node.get('label', '<unlabelled>')})"
+                )
+
+        if missing_identity:
+            raise ValueError(
+                f"{rel} has semantic architecture node(s) without object_id: "
+                + ", ".join(missing_identity)
+            )
+
         for match in DIAGRAM_OBJECT_RE.finditer(text):
             object_id = match.group("id")
             diagram_ids.add(object_id)

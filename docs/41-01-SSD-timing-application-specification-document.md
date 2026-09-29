@@ -276,7 +276,20 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-`TimingApplication` is the top-level framework runtime object. The cross-cutting `ApplicationBootstrap` framework component owns startup composition from an already parsed/validated deployment configuration: it constructs the selected presentation/I/O/platform implementations and reusable application/domain objects, and then starts the runtime. The runnable `event-timing-app` artifact remains a thin launcher/input adapter that reads concrete YAML/build-resource inputs and delegates to the framework. `TimingApplication` is therefore not itself a component inside the application layer, and bootstrap is not a normal runtime layer or mandatory call path.
+```{arch} ApplicationBootstrap
+:id: ApplicationBootstrap
+
+`ApplicationBootstrap` is the cross-cutting framework component that owns startup
+composition from an already parsed and validated deployment configuration. It
+constructs the selected presentation, I/O and platform implementations plus the
+reusable application/domain objects, then starts the runtime. The runnable
+`event-timing-app` artifact remains a thin launcher/input adapter that reads
+concrete YAML/build-resource inputs and delegates to the framework.
+```
+
+`TimingApplication` is the top-level framework runtime object. It is not itself a
+component inside the application layer, and bootstrap is not a normal runtime
+layer or mandatory call path.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -357,11 +370,49 @@ and diagnostic operations grow inside the same functional
 interface.
 ```
 
-**Web** is modelled separately as the browser-facing presentation interface of SI-01. The Web composition is per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints, normally one per TimingNode. A Web binding therefore resolves a TimingSystem/TimingNode target; bind address/port remains presentation configuration and is not a property of either domain object. Web may reuse application queries/events and transport facilities, but it is not collapsed into the Remote API merely because both can use HTTP/WebSocket technology.
+```{arch} Web
+:id: Web
 
-**Console** and **RemoteShell** also remain separate presentation interfaces. They share a common terminal-handling responsibility for command parsing/session behaviour where that behaviour is genuinely identical; the shared `SharedTerminalHandler` component then converges on the same `CommandHandler` as the other presentation interfaces.
+**Web** is the browser-facing presentation interface of SI-01. Its composition is
+per `TimingSystem`: each TimingSystem may expose 1..N configured Web endpoints,
+normally one per TimingNode. A Web binding resolves a TimingSystem/TimingNode
+target; bind address/port remains presentation configuration and is not a
+property of either domain object. Web may reuse application queries/events and
+transport facilities, but it is not collapsed into the Remote API merely because
+both can use HTTP/WebSocket technology.
+```
 
-`presentation.common` is reserved for behaviour genuinely shared across presentation interfaces. Terminal behaviour shared by Console and RemoteShell belongs under `presentation.common.terminal`. Remote API HTTP, WebSocket and wire-message mapping remain together at the `interfaces.remoteapi` component package root while that implementation is still small; deeper transport/message subpackages are introduced only when they contain a real cohesive decomposition.
+```{arch} Console
+:id: Console
+
+`Console` is the local text presentation interface. It delegates common
+terminal parsing/session behaviour to `SharedTerminalHandler` and reaches
+application behaviour through the shared `CommandHandler`; it does not own
+application/domain state.
+```
+
+```{arch} RemoteShell
+:id: RemoteShell
+
+`RemoteShell` is the remote text presentation interface. It shares terminal
+session behaviour with Console through `SharedTerminalHandler` while remaining
+a separate external interface and transport concern.
+```
+
+```{arch} SharedTerminalHandler
+:id: SharedTerminalHandler
+
+`SharedTerminalHandler` owns command parsing and terminal-session behaviour that
+is genuinely shared by Console and RemoteShell. It converges those interfaces on
+the same `CommandHandler` used by other presentation interfaces.
+```
+
+`presentation.common` is reserved for behaviour genuinely shared across
+presentation interfaces. Terminal behaviour shared by Console and RemoteShell
+belongs under `presentation.common.terminal`. Remote API HTTP, WebSocket and
+wire-message mapping remain together at the `interfaces.remoteapi` component
+package root while that implementation is still small; deeper transport/message
+subpackages are introduced only when they contain a real cohesive decomposition.
 
 Presentation converts external requests to application calls and application results to client representations. It does not own mutable application/domain state.
 
@@ -403,12 +454,24 @@ required. When a presentation command or query targets a TimingNode, `CommandHan
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
-do not introduce messages merely to preserve a layer diagram. Upstream messaging
-is the explicit exception: `UpstreamMessageRouter` owns target resolution for
-messages exchanged with the upstream system at application scope. **Upstream**
-describes that external system relationship, not the direction of an individual
-message; the exchange is bidirectional. The upstream wire contract does not need to expose `TimingSystemId`. Each configured upstream protocol/gateway context belongs internally to one `TimingSystem`; node-scoped messages are then routed functionally by `TimingNodeId` to that system's addressed TimingNode. Protocol-level messages such as ping/heartbeat can be handled by `TimingSystem`/`UpstreamProtocol` without involving a TimingNode. `UpstreamMessageRouter` is deliberately **not** a generic application message
-bus or mediator for normal collaboration between domain components.
+do not introduce messages merely to preserve a layer diagram.
+
+```{arch} UpstreamMessageRouter
+:id: UpstreamMessageRouter
+
+`UpstreamMessageRouter` owns target resolution for messages exchanged with the
+upstream system at application scope. **Upstream** describes that external
+system relationship, not the direction of an individual message; the exchange is
+bidirectional. The upstream wire contract does not need to expose
+`TimingSystemId`. Each configured upstream protocol/gateway context belongs
+internally to one `TimingSystem`; node-scoped messages are routed functionally
+by `TimingNodeId` to that system's addressed TimingNode. Protocol-level
+messages such as ping/heartbeat can be handled by
+`TimingSystem`/`UpstreamProtocol` without involving a TimingNode.
+
+The router is deliberately **not** a generic application message bus or mediator
+for normal collaboration between domain components.
+```
 
 #### Domain
 
@@ -457,17 +520,59 @@ explicit semantic relationship with the shared `TimingData` contract for the
 canonical data it produces or consumes.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
-`TimingSystem.UpstreamMessagePort` receives system-level operations such as
-status/heartbeat and synchronisation control that do not target one TimingNode.
-Each `TimingNode.UpstreamMessagePort` receives node-level operations after
-`UpstreamMessageRouter` has resolved the owning TimingSystem and target
-`TimingNodeId`. Outbound messages use the corresponding port in the reverse
-direction. Neither port owns transport connections, connector lifecycle or
+The two roles share the same semantic concept but have distinct engineering
+identities in Figure SI01-01 so interactive selection remains unambiguous.
+
+```{arch} TimingSystem UpstreamMessagePort
+:id: SystemUpstreamMessagePort
+
+The TimingSystem-level `UpstreamMessagePort` receives and emits system-level
+operations such as status/heartbeat and synchronisation control that do not
+target one TimingNode. It does not own transport connections, connector
+lifecycle or cross-aggregate target resolution.
+```
+
+```{arch} TimingNode UpstreamMessagePort
+:id: TimingNodeUpstreamMessagePort
+
+The TimingNode-level `UpstreamMessagePort` receives and emits node-scoped
+operations after `UpstreamMessageRouter` has resolved the owning TimingSystem
+and target `TimingNodeId`. It does not own transport connections or
 cross-aggregate target resolution.
-`TagProcessor` handles tag observations. `StageStartTimes` owns stage start
-references. `NextUpTeams` owns the teams expected next at the TimingNode.
-`RaceData` contains participant/team/tag reference data. `StageTiming`
-derives running times and ranking.
+```
+
+```{arch} TagProcessor
+:id: TagProcessor
+
+`TagProcessor` owns TimingNode-local processing of decoded tag observations and
+the domain decisions that follow from those observations.
+```
+
+```{arch} StageStartTimes
+:id: StageStartTimes
+
+`StageStartTimes` owns the stage-start reference values used by one TimingNode.
+```
+
+```{arch} NextUpTeams
+:id: NextUpTeams
+
+`NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
+```
+
+```{arch} RaceData
+:id: RaceData
+
+`RaceData` owns participant, team and tag reference data needed by one
+TimingNode's timing behaviour.
+```
+
+```{arch} StageTiming
+:id: StageTiming
+
+`StageTiming` derives running-time and ranking results from the TimingNode's
+accepted timing state and reference data.
+```
 
 `LogBook` is a contained responsibility of one TimingNode and owns that node's
 operational logbook state as 0..N `LogBookItem` values. `LogBookItem` is the
@@ -548,43 +653,57 @@ Devices, so Devices remains completely inside its owning layer while being drawn
 beside the lower Domain area. The normal I/O band and its Storage, Messaging and
 DeviceNetworks cards stay compact because they no longer need to inherit the
 height required by Devices. The contained Storage, Devices, Messaging and
-DeviceNetworks elements carry
-packaging-component notation where the package-like ownership/decomposition
-semantics are meaningful. For compactness, Figure SI01-01 shows their contained
-software components as an indented hierarchy rather than as nested component
-boxes; `UpstreamGateway` remains a software component owned by Messaging.
+DeviceNetworks elements carry packaging-component notation where the
+package-like ownership/decomposition semantics are meaningful. For compactness,
+Figure SI01-01 shows their contained software components as an indented hierarchy
+rather than as nested component boxes.
 
-The high-level I/O view separates **Devices** from **DeviceNetworks**.
+```{arch} Storage
+:id: Storage
+
+`Storage` owns I/O adapters for persistence plus backup/restore mechanics.
+Concrete file/database implementations consume Domain contracts such as
+`TimingData`; Storage does not own timing-record field semantics.
+```
+
+```{arch} Devices
+:id: Devices
 
 `Devices` groups the software components that represent external device roles in
 SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
 coordination needed when multiple physical antennas form one registration input
-path. `SimulatedAntenna` is the built-in reference/simulation implementation and is always available without an external extension JAR. Production/vendor antenna implementations may be supplied through `AntennaProvider`. `Display`, `Keypad` and `Beeper` name the software-facing device roles; `DisplayRev1Can`,
-`DisplayRev2Wifi` and `KeypadRev1Can` are concrete variants. `Beeper` remains transport-neutral until a concrete implementation/connection is required. These names
-describe software components/implementations, not the physical devices themselves.
+path. `SimulatedAntenna` is the built-in reference/simulation implementation.
+`Display`, `Keypad` and `Beeper` name software-facing device roles; their
+concrete variants remain subordinate to this package/component boundary.
+```
 
-`DeviceNetworks` owns the communication/network responsibilities used to reach
-those devices. `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning,
+```{arch} DeviceNetworks
+:id: DeviceNetworks
+
+`DeviceNetworks` owns communication/network responsibilities used to reach
+devices. `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning,
 online state and CAN-device communication. `NetworkDeviceService` owns the
-bidirectional network-device boundary for smart/network-attached devices: SI-01
-can expose data outward and receive device-originated messages/events inward.
+bidirectional network-device boundary for smart/network-attached devices.
 
 Service discovery, connection/session handling and protocol framing are
-subordinate design concerns of `NetworkDeviceService`, not peer components in
-the high-level architecture. The current IF-09 direction may use mDNS and a
-client-initiated IP session, but `NetworkDeviceService` itself is not Wi-Fi
-specific and does not own smart-display rendering/domain behaviour.
+subordinate design concerns of `NetworkDeviceService`, not peer high-level
+components. The boundary is not Wi-Fi specific and does not own smart-display
+rendering/domain behaviour.
+```
 
-When upstream messaging is configured, SI-01 composes one `UpstreamGateway`
-inside I/O/Messaging. The gateway uses 1..N connectors and owns the external
-transport/session boundary. A concrete connector owns transport resources,
+```{arch} Messaging
+:id: Messaging
+
+`Messaging` owns the external upstream transport/session package. When upstream
+messaging is configured it contains one `UpstreamGateway`; the gateway uses
+1..N connectors and concrete connectors own transport resources,
 delivery/session mechanics and transport-specific addressing.
 
-The semantic `UpstreamProtocol` belongs to Domain. The gateway/connector path
-may transport an encoded protocol representation without interpreting
-TimingData fields or reimplementing synchronisation rules. After protocol
-decoding, `UpstreamMessageRouter` in the application layer owns target
-resolution within the configured `TimingSystem` context, with TimingNode-targeted work selected by `TimingNodeId`.
+The semantic `UpstreamProtocol` remains in Domain. Messaging may transport an
+encoded protocol representation without interpreting `TimingData` fields or
+reimplementing synchronisation rules; after protocol decoding,
+`UpstreamMessageRouter` owns application-level target resolution.
+```
 
 #### Platform
 
@@ -604,14 +723,7 @@ Cross-cutting technical concerns include logging, diagnostics, metrics and
 build/version identity. In Java, `infra` is reserved for concrete cross-cutting
 support such as `BuildIdentity`; it is not the I/O layer.
 
-`ApplicationBootstrap` is shown as a small concrete framework component inside the
-cross-cutting area because startup composition touches several normal layers
-without becoming a layer itself. It consumes the effective `ApplicationConfig`,
-selects and wires concrete presentation, I/O and platform implementations,
-creates the reusable application/domain objects, and initiates startup/shutdown
-handling. Concrete configuration-file parsing belongs to the executable input
-adapter. Normal runtime interactions do not route through bootstrap after
-composition is complete.
+`ApplicationBootstrap` is shown in the cross-cutting area because startup composition touches several normal layers without becoming a layer itself. Concrete configuration-file parsing belongs to the executable input adapter. Normal runtime interactions do not route through bootstrap after composition is complete.
 
 ### Principal runtime abstractions
 
