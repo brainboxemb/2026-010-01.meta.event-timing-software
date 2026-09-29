@@ -100,7 +100,8 @@ The first two digits are a **document category**, not an encoded dependency orde
 10  planning
 20  external / parent-system inputs
 30  software-system specification and design
-40  software-item specification and design
+40  software-item specification
+41  software-item detailed design
 50  development environment / engineering
 60  verification and validation
 70  user / operational documentation
@@ -116,16 +117,17 @@ Examples:
 30-02-SSSD
 30-03-IDD-03
 30-03-IDD-11
-40-01-01-SSD
-40-01-SDD-01
-40-02-01-SSD
+40-01-SSD
+40-02-SSD
+41-01-SDD
+41-02-SDD
 50-01-SDE
 50-02-SDE
 60-01-SVP
 70-01-SUM
 ```
 
-For software-item documents, the software-item segment remains stable: `40-01-...` belongs to SI-01 and `40-02-...` to SI-02. Optional software-item use cases may use the same item segment, for example `40-01-UC-...`, when item-level behavioural decomposition adds value.
+Category 40 is the software-item specification range and category 41 is the software-item detailed-design range. Their numeric suffixes are document sequences, not software-item identifiers; SI-01/SI-02 ownership is stated in the document and traceability metadata. Optional software-item use cases use the next available category-40 document number when item-level behavioural decomposition adds value.
 
 For system-owned IDDs, `30-03` identifies the IDD subgroup and the IDD suffix keeps the system interface identity, for example `IDD-03` for IF-03 and `IDD-11` for IF-11. External/parent-system IDDs keep their external identity and are registered under the category-20 external-input baseline rather than being renumbered as locally owned interfaces.
 
