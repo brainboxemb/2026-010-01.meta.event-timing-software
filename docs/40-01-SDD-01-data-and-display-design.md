@@ -144,19 +144,19 @@ Conceptual processing:
 
 ```java
 void acceptRegistration(RegistrationCandidate candidate) {
-    TimingNodeId timing node = candidate.timingNodeId();
-    long sequence = registrationSequence.next(timing node);
+    TimingNodeId timingNode = candidate.timingNodeId();
+    long sequence = registrationSequence.next(timingNode);
 
-    TimingDataRecord record = registrationFactory.create(
-        source,
+    LogBookItem item = logBookItemFactory.create(
         sequence,
         candidate.locationId(),
         candidate);
 
-    registrationRepository.append(record);
-    registrationState.apply(record);
-    backupCoordinator.registrationChanged(registrationRepository.snapshot());
-    outbox.enqueue(RegistrationCommitted.from(record));
+    logBook.append(item);
+
+    TimingDataRecord record = timingData.toRecord(timingNode, item);
+    storage.append(timingData.encode(record));
+    upstream.enqueue(record);
 }
 ```
 
@@ -262,27 +262,29 @@ The initial implementation direction is:
 ```text
 live application
     |
-    +-- TimingNodeJournal             source-ordered registration/history in memory
-    +-- RegistrationState           current/derived registration views
+    +-- TimingSystem (1..N)
+    |     +-- UpstreamProtocol      sync/reconcile/ping semantics
+    |     +-- TimingNode (1..N)
+    |           +-- LogBook         0..N LogBookItem in memory
+    |           +-- RegistrationState
+    |           +-- NextUpTeams
+    |           +-- StageStartTimes
+    |           +-- RaceData
+    |           +-- RegistrationSequenceState
     |
-    +-- PrepareTeamRegistry   current teams-to-prepare + traceable mutation history
-    |
-    +-- StageStartTimeRegistry      stage start-time reference data in memory
-    +-- RaceData                    participant/team/tag reference data in memory
-    |
-    +-- RegistrationSequenceState   next sequence per TimingNodeId
+    +-- TimingData                  canonical record + codec contract
     |
     +-- simple file backup / restore
 ```
 
-The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. Files provide persistence/recovery, not the primary domain API.
+The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. `LogBookItem` is the LogBook's internal state shape; `TimingDataRecord` is produced through the TimingData contract when data crosses the persistence, Web or upstream interchange boundary. Files provide persistence/recovery, not the primary domain API.
 
 Possible interfaces:
 
 ```java
-interface TimingNodeJournal {
-    void append(TimingDataRecord record);
-    List<TimingDataRecord> snapshot();
+interface LogBook {
+    void append(LogBookItem item);
+    List<LogBookItem> snapshot();
 }
 
 interface PrepareTeamRegistry {
