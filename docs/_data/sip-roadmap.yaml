@@ -105,7 +105,7 @@ steps:
   "3":
     estimate_project_days: 3
     actual_estimated_project_days: 4.9
-    remaining_estimate_project_days: 2
+    completed_date: "2026-09-29"
     workstream: application
     docs:
       requirements: {level: working, scope: "configuration, lifecycle and public interface behaviour"}
