@@ -43,11 +43,11 @@ Current examples are:
 30-03-IDD-03-application-control-status
 30-03-IDD-11-application-configuration
 
-40-01-SISD-timing-application-specification-document
-40-01-SDD-01-data-and-display-design
-40-01-SDD-02-java-component-design
-40-01-SDD-03-backoffice-transport-design
-40-02-SISD-gui-application-specification-document
+40-01-01-SSD-timing-application-specification-document
+40-01-02-SDD-data-and-display-design
+40-01-03-SDD-java-component-design
+40-01-04-SDD-backoffice-transport-design
+40-02-01-SSD-gui-application-specification-document
 
 50-01-SDE-software-development-environment
 50-02-SDE-java-build-test-toolchain
@@ -105,7 +105,7 @@ domain baseline ---------+------> 30-01 system use cases
                       +--------------------+--------------------+
                                            |
                                            v
-                                     40-<SI>-SISD
+                                     40-<SI>-SSD
                                            |
                                            v
                                      40-<SI>-SDD(s)
@@ -117,15 +117,15 @@ domain baseline ---------+------> 30-01 system use cases
                                   verification evidence
 ```
 
-The diagram shows the normal internal decomposition, not a rule that every input must pass through every box. An externally imposed requirement/IDD/protocol may directly constrain the SSSD and an affected SISD when the allocation is already explicit.
+The diagram shows the normal internal decomposition, not a rule that every input must pass through every box. An externally imposed requirement/IDD/protocol may directly constrain the SSSD and an affected SSD when the allocation is already explicit.
 
 Document roles:
 
 - **SSSD** — combines software-system requirements and software-system architecture and owns software-item/interface allocation.
-- **System-owned IDD** — defines a contract allocated/owned by this software system. Once released, it constrains every affected SISD.
+- **System-owned IDD** — defines a contract allocated/owned by this software system. Once released, it constrains every affected SSD.
 - **Software-item UC** — optional behavioural decomposition of one or more system use cases after responsibility has been allocated to a software item.
-- **SISD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
-- **SDD** — focused detailed design downstream of the owning SISD.
+- **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
+- **SDD** — focused detailed design downstream of the owning SSD.
 - **SVP/verification cases** — consume requirements and interface contracts for coverage; verification planning is not a requirement input.
 - **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
 - **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
