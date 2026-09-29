@@ -37,9 +37,9 @@ system use case / external interface obligation
       +------+------+
       |             |
       v             v
-system IDD        SISD requirement
+system IDD        SSD requirement
       |             |
-      +------> SISD architecture
+      +------> SSD architecture
                     |
                     v
                focused SDD
