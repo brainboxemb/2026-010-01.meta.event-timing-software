@@ -856,7 +856,7 @@ Working decisions:
 - the live diagnostics channel is **separate from IF-03 `/api/v1/events`**. Log records are diagnostics, not application/domain status events;
 - high-frequency observations should not automatically produce one INFO record per observation; detailed per-observation diagnostics belong at controlled diagnostic levels while current health/counters remain part of status/metrics;
 - stable TimingNode/data-source/device/correlation identifiers should be represented consistently in diagnostic messages/context, without making logging context the owner of application state;
-- logging is not the mechanism for application status, registration history, audit/domain records or backend synchronisation state;
+- logging is not the mechanism for application status, registration history, audit/domain records or upstream synchronisation state;
 - Logback/reload4j or another backend is not part of the baseline unless later operational requirements justify it.
 
 <a id="fig-si01-05"></a>
