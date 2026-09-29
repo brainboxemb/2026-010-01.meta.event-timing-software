@@ -10,11 +10,14 @@ capability approaches implementation; no separate SISD/SISD pair is planned.
 
 ## Inputs
 
-- `20-SSSD-software-system-specification-document.md` for SI-02 allocation and
-  software-system constraints;
-- `21-03-IDD-application-control-status.md` for the SI-01/SI-02 Remote API contract;
-- applicable system use cases and a future system-owned GUI/HMI IDD when that contract
-  is defined.
+The SI-02 specification consumes:
+
+- `30-02-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
+- `30-03-IDD-03-application-control-status.md` for the SI-01/SI-02 Remote API contract;
+- applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
+- a future system-owned GUI/HMI IDD when that contract is defined.
+
+`30-01-UC-system-use-cases.md` provides system-level operational traceability. A separate `40-02-UC-...` document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SISD clearer.
 
 The SIP may schedule SI-02 work but is not requirement/design authority.
 

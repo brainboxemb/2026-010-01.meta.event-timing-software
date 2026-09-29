@@ -6,7 +6,7 @@ Software item: **SI-01 — Headless Timing Application**
 
 This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
 
-The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `30-01-SISD-timing-application-specification-document.md`.
+The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `40-01-SISD-timing-application-specification-document.md`.
 
 ## Why this SDD exists
 

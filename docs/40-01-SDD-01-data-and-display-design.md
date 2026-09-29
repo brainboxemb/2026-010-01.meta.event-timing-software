@@ -8,7 +8,7 @@ This document refines local data ownership, backup/restore, traceable registrati
 
 The initial design does **not** require a conventional embedded database. Runtime state is held in typed Java data structures/repositories and is backed up to simple files so the application can restore its state after restart.
 
-Domain identifiers and known ranges are captured in `03-domain-baseline.md`. This SDD translates those facts into software/data-design direction.
+Domain identifiers and known ranges are captured in `00-04-domain-baseline.md`. This SDD translates those facts into software/data-design direction.
 
 ## Core distinction: two traceable information models
 

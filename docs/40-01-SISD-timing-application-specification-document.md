@@ -11,24 +11,20 @@ requirements without creating a release dependency between a separate SRD and SA
 
 ## Inputs
 
-The SI-01 specification is derived from upstream software-system authority:
+The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
 
-- `04-UC-system-use-cases.md` for applicable operational intent;
-- `20-SSSD-software-system-specification-document.md` for SI-01 allocation,
-  software-system constraints and interface ownership;
-- `21-03-IDD-application-control-status.md` for IF-03 obligations;
-- `21-11-IDD-application-configuration.md` for IF-11 obligations.
+- `30-02-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
+- `30-03-IDD-03-application-control-status.md` for IF-03 obligations;
+- `30-03-IDD-11-application-configuration.md` for IF-11 obligations;
+- applicable parent/external-system inputs registered by `20-01-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
-`03-domain-baseline.md` supplies shared terminology/domain facts. It is supporting
-source knowledge rather than a substitute for a released requirement/interface baseline.
+`30-01-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional `40-01-UC-...` document and referenced here; it is not required merely to duplicate a system use case.
 
-The **SIP is not an input** to this specification: it chooses when accepted capability is
-implemented. The **SVP is not an input** either: it defines how accepted requirements and
-interfaces are verified. Focused SDDs are downstream design refinements of this SISD.
+`00-04-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
-When documents are independently released, each released SISD shall identify the exact
-revision/version of its SSSD and IDD inputs. While this repository releases the document
-set together, the repository release/tag/commit is the shared baseline identifier.
+The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SISD.
+
+When documents are independently released, each released SISD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
 ## Software-item requirements
 
@@ -100,7 +96,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 schema is defined by `21-03-IDD-application-control-status.md`.
+The concrete IF-03 schema is defined by `30-03-IDD-03-application-control-status.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -236,7 +232,7 @@ The **Headless Timing Application** (SI-01) architecture is driven by these conc
 
 ### +1 scenarios used to validate the architecture
 
-The existing use cases in `04-UC-system-use-cases.md` are the scenario source. The SISD should not create a second competing use-case catalogue.
+The existing use cases in `30-01-UC-system-use-cases.md` are the scenario source. The SISD should not create a second competing use-case catalogue.
 
 Representative architecture-validation scenarios include:
 
@@ -423,7 +419,7 @@ expected next at the TimingNode.
 `RaceData` contains participant/team/tag reference data. `StageTiming`
 derives running times and ranking.
 
-Detailed domain semantics belong in `03-domain-baseline.md`.
+Detailed domain semantics belong in `00-04-domain-baseline.md`.
 
 #### Core runtime support
 
@@ -683,7 +679,7 @@ messages directly to the appropriate application/domain responsibility.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
 
-Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SISD owns their software-architecture composition and execution implications.
+Stable domain facts behind these views are maintained in `00-04-domain-baseline.md`; this SISD owns their software-architecture composition and execution implications.
 
 ### Command, query and event model
 
@@ -1067,7 +1063,7 @@ the API/provider patch version together through Maven dependency management.
 
 ### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `21-11-IDD-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `30-03-IDD-11-application-configuration.md`.
 
 The main configuration groups are:
 
@@ -1336,7 +1332,7 @@ Testability is an architecture property. Application/domain code should where pr
 
 Fault handling should preserve local operation, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
 
-Detailed verification strategy belongs in `50-SVP-software-verification-plan.md`.
+Detailed verification strategy belongs in `60-01-SVP-software-verification-plan.md`.
 
 ### Detailed-design documents
 
@@ -1346,7 +1342,7 @@ implementation detail would make the architecture section of this SISD harder to
 Current active focused SDD:
 
 ```text
-31-01-SDD-02-java-component-design.md
+40-01-SDD-02-java-component-design.md
   Java packages, Maven artifacts and composition
 ```
 
