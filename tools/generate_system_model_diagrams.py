@@ -59,7 +59,7 @@ def timing_node_software_decomposition() -> Diagram:
         Node("life", "TimingNode lifecycle / status\\nOPEN • CLOSED • health", 40, 440, 280, 90, "service"),
         Node("tag", "TagProcessor\\nRFID/tag observation processing", 345, 440, 280, 90, "service"),
         Node("start", "StageStartTimes\\nlocal stage start-time reference", 650, 440, 300, 90, "service"),
-        Node("logbook", "LogBook\\nregistrations + TimingNodeId sequence/persistence", 975, 440, 360, 90, "service"),
+        Node("logbook", "LogBook\\n0..N LogBookItem\\nTimingNode-owned lifecycle", 975, 440, 360, 90, "service"),
         Node("ready", "NextUpTeams\\nteams expected next", 80, 650, 300, 95, "service"),
         Node("race", "RaceData\\nparticipant/team/tag reference data", 425, 650, 300, 95, "service"),
         Node("stage", "StageTiming\\nrunning times + ranking", 770, 650, 280, 95, "service"),
