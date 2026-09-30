@@ -251,7 +251,7 @@ tests and make its public results inspectable through the existing Engineering C
 ### Result
 
 - TimingNode state and TimingData are deterministic and testable.
-- Public contracts expose Step-4 behaviour without production services.
+- Public contracts expose Step-4 without production services.
 - Engineering Client inspects state and drives DebugConnector.
 
 ### Demo
