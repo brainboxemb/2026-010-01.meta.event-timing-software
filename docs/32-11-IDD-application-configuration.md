@@ -219,8 +219,16 @@ model.
 
 Provider IDs are implementation-selection keys, not domain/device identities.
 The same rule applies to configured TimingData, UpstreamProtocol, CAN-protocol
-and display-protocol providers. Public examples use generic/reference provider
-IDs; private provider names and protocol values remain outside this repository.
+and display-protocol providers.
+
+For `timingDataProvider`, `reference` selects the built-in implementation of
+the canonical IF-05 representation. An alternate/private TimingData provider may
+select another external representation/translator, but it still realises the
+same IF-05 `TimingDataRecord` semantics; provider selection does not select a
+different public record model.
+
+Public examples use generic/reference provider IDs; private provider names and
+protocol values remain outside this repository.
 
 ### Upstream messaging
 
