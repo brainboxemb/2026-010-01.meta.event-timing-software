@@ -36,7 +36,7 @@ nodes:
 
   - id: candidate
     label: "immutable TimingDataIntent\nreturns immediately after enqueue"
-    kind: message
+    kind: model
     group: producer-context
     layout: {x: 85, y: 405, w: 270, h: 86}
 
