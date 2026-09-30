@@ -326,13 +326,13 @@ For RabbitMQ, connection status can additionally expose broker/authentication/re
 Working package direction inside the reusable framework:
 
 ```text
-io.github.brainboxemb.eventtiming.domain.backoffice
+io.github.brainboxemb.eventtiming.timingpoint.domain.backoffice
     semantic backoffice contracts/state/outbox concepts
 
-io.github.brainboxemb.eventtiming.comm.socket
+io.github.brainboxemb.eventtiming.timingpoint.io.messaging.socket
     socket session/framing/test transport
 
-io.github.brainboxemb.eventtiming.comm.rabbitmq
+io.github.brainboxemb.eventtiming.timingpoint.io.messaging.rabbitmq
     RabbitMQ connection/channel/consumer/publisher implementation
 ```
 

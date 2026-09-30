@@ -241,13 +241,13 @@ The improved working direction is:
 
 ```text
 event-timing-framework.jar
-  io.github.brainboxemb.eventtiming.domain
-  io.github.brainboxemb.eventtiming.core
-  io.github.brainboxemb.eventtiming.platform
-  io.github.brainboxemb.eventtiming.comm
+  io.github.brainboxemb.eventtiming.timingpoint.domain
+  io.github.brainboxemb.eventtiming.timingpoint.core
+  io.github.brainboxemb.eventtiming.timingpoint.platform
+  io.github.brainboxemb.eventtiming.timingpoint.io.messaging
 
 event-timing-app.jar
-  io.github.brainboxemb.eventtiming.app
+  io.github.brainboxemb.eventtiming.timingpoint.app
 ```
 
 The reasoning is that an architecture layer/package and a Maven publication boundary answer different questions. A separate artifact should have a concrete consumer or lifecycle reason, for example independent reuse, an optional heavy dependency, deployment/release ownership, or a public/private boundary.

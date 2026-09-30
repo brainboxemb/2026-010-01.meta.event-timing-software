@@ -239,7 +239,7 @@ Final bootstrap baseline:
 - generic repository tooling is restored through `brainboxemb/tool.git-project` pinned at `5db2b23b95ad0a230ab5d5d2bed725927328fcfe`;
 - Java build/test tooling is consumed through `brainboxemb/tool.java-project` pinned at `35d26ba14e3f3d5c5e65b97b9e01881496295edb`;
 - repository baseline includes `README.md`, `AGENTS.md`, `CHANGELOG.md`, Maven Wrapper and root bootstrap/update launchers;
-- Maven/Java namespace is `io.github.brainboxemb.eventtiming`;
+- Maven `groupId` remains `io.github.brainboxemb.eventtiming`; SI-01 Java packages use `io.github.brainboxemb.eventtiming.timingpoint`;
 - the reactor proves one reusable `event-timing-framework` library plus one `event-timing-app` executable consumer;
 - `domain`, `core`, `platform` and `comm` are architecture/package responsibilities inside the framework library rather than speculative separate artifacts;
 - the executable depends on the reusable framework library and remains free of substantive timing-domain behaviour in the bootstrap increment;

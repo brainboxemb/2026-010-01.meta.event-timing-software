@@ -106,10 +106,11 @@ activities:
     state: done
     depends_on: [A03]
     note: >-
-      Framework infra.logging owns the reusable JUL logging implementation and
-      component configuration while the executable selects slf4j-jdk14. Retained
-      timestamped files, live diagnostics and temporary runtime level control are
-      implemented and remain separate from IF-03 application/status events.
+      Framework infra.logging owns reusable JUL backend/console/file logging while
+      sibling infra.loggingserver owns the optional live-diagnostics listener. The
+      executable selects slf4j-jdk14 and composes both components separately.
+      Retained timestamped files, live diagnostics and temporary runtime level
+      control remain separate from IF-03 application/status events.
 
   - id: V01
     lane: verification
