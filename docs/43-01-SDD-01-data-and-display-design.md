@@ -58,6 +58,115 @@ External/proprietary formats are translations at the edge. A
 and encode records back when required, but it does not own or change the public
 record schema.
 
+
+### TimingData v1 — first registration slice
+
+This section is the consolidated first-slice TimingData contract. Later record
+types may extend it compatibly; they shall not silently redefine these meanings.
+
+#### Common record envelope
+
+Every committed v1 record has:
+
+```text
+TimingDataRecord
+  version = 1
+  timingNodeId
+  sequenceNumber
+  locationId
+  recordType
+  effectiveTime
+  recordedAt
+  type-specific data
+```
+
+Rules:
+
+- `timingNodeId + sequenceNumber` is the stable record key;
+- a new TimingNode stream starts at sequence **1**;
+- sequence **0 is reserved** and is never a normal committed record;
+- sequence ordering is per `TimingNodeId`, independent of `LocationID`;
+- `locationId` is captured on the record and does not change when the
+  TimingNode is reconfigured later;
+- `effectiveTime` is when the represented timing fact applies;
+- `recordedAt` is when this record/fact was committed by SI-01;
+- records are append-only historical facts.
+
+#### Record types in v1
+
+```text
+TIMING_NODE_STATE
+  state = OPEN | CLOSED
+
+REGISTRATION
+  registrationIdentity
+  origin = AUTOMATIC | MANUAL
+  timeSource = OBSERVED | SYSTEM_ASSIGNED | OPERATOR_ENTERED
+
+REGISTRATION_REVOKED
+  registrationIdentity
+  reference = TimingDataRecordKey of original REGISTRATION
+  origin/timeSource = semantics of referenced registration
+```
+
+For `REGISTRATION_REVOKED`:
+
+- the original record remains unchanged;
+- the revocation receives its own sequence number and `recordedAt`;
+- `effectiveTime` is equal to the effective time of the referenced
+  registration, not the time at which the revocation command is entered;
+- the reference must identify an earlier registration in the applicable source
+  history.
+
+#### Registration identity in v1
+
+```text
+RegistrationIdentity
+  type = STANDARD | WOMEN | MEN
+  number = 1..350
+```
+
+Location compatibility:
+
+```text
+STANDARD  -> LocationID 1..23
+WOMEN     -> LocationID 24
+MEN       -> LocationID 25
+```
+
+A reserve transponder is not a `RegistrationIdentity.type`. It is an input
+`TagIdentity` that resolves through reserve mapping data to a canonical
+`RegistrationIdentity`.
+
+Automatic and manual input paths therefore converge before commit:
+
+```text
+TagIdentity  -----\
+                 +--> RegistrationIdentity --> REGISTRATION
+TeamIdentity -----/
+```
+
+The public v1 contract does not yet define legacy/unknown-team identity classes;
+those are deferred until their required business semantics are verified.
+
+#### Canonical reference file encoding
+
+The public/reference v1 file codec is append-only UTF-8 JSON Lines:
+
+- one complete TimingData record per line;
+- canonical writer line ending is LF (`0x0A`);
+- a reader may accept CRLF input for interoperability;
+- every line is independently decodable;
+- a trailing incomplete line after interrupted/power-loss write is not a
+  committed record;
+- valid complete records before such an incomplete tail remain readable and
+  sequence consistency is checked during recovery.
+
+This canonical file encoding is part of the public/reference implementation.
+A proprietary provider may use a different external representation, including a
+fixed-field format and CRLF, while translating to/from the same v1 semantic
+records.
+
 The registration ledger contains timing/registration-domain and traceable operational records. The first concretely promoted operational record is a **TimingNode lifecycle/state-change record**:
 
 ```text
@@ -167,8 +276,8 @@ source B:   551,  552,  553, ...
 The location remains explicit data on each record:
 
 ```text
-source=A  sequence=1042  location=7   type=PASSAGE  ...
-source=A  sequence=1043  location=7   type=SYSTEM_OPEN ...
+source=A  sequence=1042  location=7   type=REGISTRATION ...
+source=A  sequence=1043  location=7   type=TIMING_NODE_STATE state=CLOSED ...
 ```
 
 If the source is later associated with another location, the source sequence does not implicitly restart. This preserves one consistent source stream for higher-level synchronisation.
@@ -186,6 +295,7 @@ proprietary providers only translate at the boundary.
 
 ```java
 final class TimingDataRecord {
+    private int version;                         // v1 = 1
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
     private LocationID locationId;
