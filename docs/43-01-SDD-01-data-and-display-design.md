@@ -115,8 +115,14 @@ For `REGISTRATION_REVOKED`:
 - the revocation receives its own sequence number and `recordedAt`;
 - `effectiveTime` is equal to the effective time of the referenced
   registration, not the time at which the revocation command is entered;
-- the reference must identify an earlier registration in the applicable source
-  history.
+- `reference` identifies the registration that the revocation concerns.
+
+TimingData does not maintain a derived "currently active registrations" list and
+does not prescribe how a client presents a referenced revocation. A consumer may
+hide the registration, strike it through, mark it revoked, or apply another
+appropriate presentation/state projection. Handling of a dangling reference in
+a partial/imported stream is a consumer/application policy rather than a reason
+for the codec to rewrite history.
 
 #### Registration identity in v1
 
@@ -239,8 +245,9 @@ REGISTRATION_REVOKED
 ```
 
 This preserves the append-only history needed for audit and synchronisation:
-the original registration remains present, and the later revocation changes its
-effective status through an additional ordered record.
+the original registration remains present and the later revocation is another
+ordered fact that references it. Any derived visible/current registration state
+belongs to the consuming client/application, not to the TimingData record model.
 
 A proprietary TimingData translator may map these generic semantics to its own
 legacy fields (for example add/remove markers), but those external encodings are
@@ -818,7 +825,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
 - **CAND-REG-009** — Participant registrations shall distinguish automatic versus manual entry origin without using different record-identity rules.
 - **CAND-REG-010** — Manual registrations shall distinguish a system-assigned effective time from an operator-entered effective time.
-- **CAND-REG-011** — Revoking a participant registration shall append a new record that references the original registration record key.
+- **CAND-REG-011** — A participant-registration revocation shall be represented as a new append-only record that references the original registration record key; TimingData shall not prescribe the consuming client's visibility/presentation behaviour for that registration.
 - **CAND-REG-012** — A registration-revocation record shall retain the effective registration/race time, entry origin and time source of the referenced registration while separately recording when the revocation record itself was committed.
 
 ### Tag/team identity
