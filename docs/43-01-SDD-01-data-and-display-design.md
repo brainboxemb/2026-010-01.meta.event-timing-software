@@ -75,9 +75,47 @@ TimingData protocol remains unchanged. Any additional status invented by
 a higher-level system to describe synchronisation state is not automatically a
 TimingNode lifecycle value.
 
-Additional record types such as participant passages, starts, manual registrations,
-penalties and revocations are introduced only when their domain requirements are
-promoted.
+The next promoted TimingData concept is participant registration. The public
+protocol distinguishes **how** a registration originated from **what later
+happens to it**:
+
+- `AUTOMATIC` — accepted through the normal electronic/observation path;
+- `MANUAL` — entered deliberately by an operator/client through a supported
+  application command;
+- `REGISTRATION` — creates one effective participant registration;
+- `REGISTRATION_REVOKED` — appends a new record that revokes one earlier
+  registration without modifying or deleting that historical record.
+
+A revocation shall carry an explicit reference to the stable
+`TimingDataRecordKey` of the registration being revoked. Its effective
+registration/race time is the **same effective time as the referenced
+registration**, not the wall-clock time at which the operator performs the
+revocation. A separate record/commit timestamp records when the revocation fact
+itself was created.
+
+Conceptually:
+
+```text
+REGISTRATION
+  origin = AUTOMATIC | MANUAL
+  effectiveTime = accepted registration/race time
+
+REGISTRATION_REVOKED
+  reference = (TimingNodeId, SequenceNumber)
+  effectiveTime = referenced registration effectiveTime
+  recordedAt = time at which the revocation record was committed
+```
+
+This preserves the append-only history needed for audit and synchronisation:
+the original registration remains present, and the later revocation changes its
+effective status through an additional ordered record.
+
+A proprietary TimingData translator may map these generic semantics to its own
+legacy fields (for example add/remove markers), but those external encodings are
+not part of the framework-owned protocol.
+
+Additional record types such as starts, penalties and penalty revocations are
+introduced only when their domain requirements are promoted.
 
 Records are historical facts and are not silently overwritten when corrected or revoked.
 
@@ -125,13 +163,13 @@ final class TimingDataRecord {
     private TimingNodeId timingNodeId;
     private long sequenceNumber;
     private LocationID locationId;
-    private RegistrationType type;
-    private Instant observedAt;
-    private Instant createdAt;
-    private RegistrationOrigin origin;
-    private TeamNumber teamNumber;              // when applicable
-    private TimingDataRecordKey reference;    // corrections/revocations
-    private RegistrationPayload payload;         // type-specific data
+    private TimingDataRecordType type;
+    private TimingTimestamp effectiveTime;
+    private TimingTimestamp recordedAt;
+    private RegistrationOrigin origin;            // AUTOMATIC | MANUAL when applicable
+    private TeamNumber teamNumber;                // when applicable
+    private TimingDataRecordKey reference;         // revocation/correction target
+    private TimingDataRecordPayload payload;       // type-specific semantic data
 }
 
 final class TimingDataRecordKey {
@@ -140,7 +178,10 @@ final class TimingDataRecordKey {
 }
 ```
 
-Names are illustrative; the important design is the TimingNode-scoped sequence and explicit location association.
+Names are illustrative; the important design is the TimingNode-scoped sequence,
+explicit location association, append-only correction/revocation model, and the
+distinction between an event's effective time and the time at which a later
+record such as a revocation is committed.
 
 ### Sequence allocation
 
@@ -596,6 +637,9 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
 - **CAND-REG-007** — Opening and closing a TimingNode shall each create a traceable TimingData state-change record with generic semantic state `OPEN` or `CLOSED`; provider-specific encodings belong to the selected TimingData implementation.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
+- **CAND-REG-009** — Participant registrations shall distinguish automatic versus manual origin without using different record-identity rules.
+- **CAND-REG-010** — Revoking a participant registration shall append a new record that references the original registration record key.
+- **CAND-REG-011** — A registration-revocation record shall retain the effective registration/race time of the referenced registration while separately recording when the revocation record itself was committed.
 
 ### Tag/team identity
 
