@@ -110,6 +110,8 @@ Software-item identity is stated by the document and traceability metadata; the 
 
 Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
 
+`standard` and `finish` are deployment/composition profiles of **the same SI-01 Timing Point Application**. They select different default topology/capabilities; they are not separate software items and do not create different TimingNode/domain semantics.
+
 ## System context
 
 ```text
@@ -119,7 +121,7 @@ Supporting framework modules, adapters and engineering/test clients are not auto
                     SI-02 Desktop GUI
                             |
                             v
-                    SI-01 Timing Application
+                    SI-01 Timing Point Application
                        ^            ^
                        |            |
               engineering/test   scripts / optional
@@ -171,7 +173,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device IDD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system IDD candidate |
 | **IF-10 Test Control** | test/reference tooling ↔ public stubs | development-only | Inject device/network/fault behaviour through supported boundaries | SDE/SVP/test design |
-| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | external configuration + platform/profile overlays + secret references | Define deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `32-11-IDD-application-configuration.md` |
+| **IF-11 Application Configuration** | Deployment/configuration source → SI-01 | built-in profile/platform/mode defaults + explicit deployment overrides + secret references | Resolve deployed TimingNodes, I/O assets, presentation bindings and runtime composition inputs | `32-11-IDD-application-configuration.md` |
 
 System-level IDDs own interface semantics. Software-item SRDs and SADs reference those obligations rather than redefining the wire/system contract independently.
 
