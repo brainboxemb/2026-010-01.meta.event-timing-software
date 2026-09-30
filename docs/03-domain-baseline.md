@@ -317,12 +317,23 @@ The public TimingData model supports both **automatic** and **manual**
 participant registrations. These are the same semantic registration concept and
 use the same sequence/key rules.
 
-The canonical participant identity of a registration is `TeamId`.
+Every participant registration stored in TimingData has one canonical
+`RegistrationIdentity`. `TagIdentity` and `TeamIdentity` are source-domain
+identities from which that registration identity is derived:
 
-- an automatic registration starts with a decoded/normalised `TagIdentity` and
-  resolves that identity to a `TeamId`;
-- a manual registration receives `TeamId` directly from the operator/client,
-  together with the effective registration time.
+- an automatic registration starts with a decoded/normalised `TagIdentity`;
+- a manual registration starts with a `TeamIdentity` selected/entered by the
+  operator/client;
+- both paths resolve to a `RegistrationIdentity` before the TimingData record is
+  committed.
+
+Conceptually:
+
+```text
+TagIdentity  -----\
+                 +--> RegistrationIdentity --> TimingData REGISTRATION
+TeamIdentity -----/
+```
 
 For manual registrations the model separately records whether the effective time
 was assigned automatically by SI-01 or explicitly entered by the operator.
@@ -358,17 +369,26 @@ A timestamp is **not** the source-ordering mechanism. Registration timing node s
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
-## Team identity
+## Team and registration identity
 
-The domain participant identity is `TeamId`. In the current race model that
-identity is derived from/represented by the known numeric team number range:
+`TeamIdentity` is the participant/team identity used by operator-facing and
+race-reference behaviour. A manual registration is entered using this identity.
+
+`RegistrationIdentity` is the canonical participant identity stored on a
+TimingData registration record. It is deliberately distinct from both
+`TeamIdentity` and `TagIdentity`.
+
+The registration identity supports a semantic **type + number** structure:
 
 ```text
-TeamId = team number 0..999
+RegistrationIdentity
+  type
+  number
 ```
 
-Using a dedicated `TeamId` value keeps registration semantics independent from
-how a UI, RFID encoding or external protocol happens to represent that number.
+This is compatible with existing systems that split a participant identifier
+into a type discriminator and a numeric team number, without copying their
+proprietary one-character type codes into the public protocol.
 
 ## Race data
 
