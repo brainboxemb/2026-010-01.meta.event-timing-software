@@ -96,7 +96,7 @@ reading order or implementation sequence.
 
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-009 | Exercise SI-01 through the Engineering Client | Test/developer | Inspect and exercise supported public interfaces without becoming another source of domain state. |
+| UC-009 | Exercise the registration system through the Engineering Client | Test/developer | Inspect and exercise supported public behaviour without becoming another source of domain state. |
 | UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-TimingNode/source behaviour without real production hardware or private deployment identities. |
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
@@ -443,43 +443,42 @@ specified mapping rule, not accidental cross-instance sharing.
 
 ### Engineering, simulation and verification
 
-```{uc} Exercise SI-01 through the Engineering Client
+```{uc} Exercise the registration system through the Engineering Client
 :id: UC-009
 
 **Goal:** provide one engineering application for inspecting and exercising the
-public SI-01 boundaries during development and integration.
+public registration-system behaviour during development and integration.
 
 **Primary actor:** test/developer.
 
-**Preconditions:** SI-01 exposes the relevant public interfaces, or the client can
-make their unavailability visible. Optional engineering controls require an
-explicitly advertised **supported and enabled** capability.
+**Preconditions:** the registration system exposes the relevant public interfaces,
+or the client can make their unavailability visible. Optional engineering controls
+require an explicitly advertised **supported and enabled** capability.
 
 **Main flow:**
 
-1. The Engineering Client connects to supported public SI-01 interfaces and shows build/version identity, current status, connection state and event information.
-2. For the first registration slice, it shows the addressed TimingNode identity, assigned/unassigned location state and `CLOSED`/`OPEN` lifecycle.
-3. While the node is `CLOSED`, the developer may set/change its location through the public command boundary.
-4. The developer may issue `open` and `close`; invalid lifecycle/location combinations remain explicit rather than being repaired silently by the client.
-5. When the direct-registration simulation capability is supported and enabled, the developer may submit an accepted semantic participant registration, with a deterministic observation time when supported.
-6. That simulation enters the TimingNode registration operation after the antenna/filtering boundary; the client cannot supply a completed TimingData record, source sequence or substitute source/location identity.
-7. The client shows the resulting registration history/TimingData and subsequent live update separately from the command-submission result.
-8. On disconnect the client marks cached information stale. After reconnect it rebuilds current TimingNode state and registration data before treating subsequent live updates as current.
-9. The Engineering Client remains test/engineering tooling and does not become another owner of timing/domain state.
+1. The Engineering Client connects to the registration system through its public interfaces.
+2. It shows build/version identity, connection state, the configured source identity, current `LocationId` if any, and `OPEN`/`CLOSED` state.
+3. While registration is `CLOSED`, the developer may set or change the operational location through the public command boundary.
+4. The developer may request `OPEN` and `CLOSE`; invalid lifecycle/location combinations remain explicit.
+5. When direct-registration simulation is supported and enabled, the developer may submit an already-accepted semantic participant registration, with a deterministic observation time when supported.
+6. The registration system applies the same registration operation used after normal antenna/filtering acceptance and supplies its own source identity, active location and next source sequence.
+7. The client shows the command outcome separately from the resulting TimingData/history and live update.
+8. On disconnect the client marks cached information stale. After reconnect it rebuilds current state and registration data before treating subsequent updates as live.
+9. The Engineering Client remains engineering tooling and does not become another owner of registration/domain state.
 
 **Alternative/failure flows:**
 
-- IF-03 unavailable or the live update connection is lost;
-- invalid/unassigned location when `open` is requested;
-- location change requested while `OPEN`;
-- registration injection requested while `CLOSED`;
-- unsupported/disabled engineering capability or invalid semantic registration input;
+- a required public interface is unavailable or the live update connection is lost;
+- `OPEN` is requested without a valid location;
+- a location change is requested while registration is `OPEN`;
+- direct registration is requested while registration is `CLOSED`;
+- the engineering capability is unsupported/disabled or semantic input is invalid;
 - a command was submitted but its resulting state cannot yet be confirmed after connection loss.
 
-**Observable result:** the engineering client can demonstrate
+**Observable result:** the Engineering Client can demonstrate
 `location -> open -> accepted registration -> observable TimingData -> close`
-through public boundaries without requiring RFID hardware, filtering or a real
-backoffice.
+through public boundaries without RFID hardware, filtering or a real backoffice.
 
 A separate lightweight browser test client is not part of this slice. Broader
 upstream/reference-data simulation is deferred to a later increment.
