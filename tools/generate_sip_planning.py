@@ -69,10 +69,10 @@ MATURITY = {
 
 LANES = {
     "tooling": ("Tooling / engineering environment", "#eaf2f8", "#5b9bd5"),
+    "documentation": ("Documentation / decisions", "#fff4df", "#c49a3a"),
     "application": ("Application / product", "#edf6e9", "#70ad47"),
     "verification": ("Verification / test", "#f0ebf7", "#8064a2"),
     "platform": ("Deployment / target environment", "#f2f2f2", "#7f7f7f"),
-    "documentation": ("Documentation / decisions", "#fff4df", "#c49a3a"),
 }
 
 STATE_STYLE = {
