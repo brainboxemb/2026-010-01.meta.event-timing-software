@@ -596,6 +596,8 @@ jobs:
                   "a5224de7d62973a1836ec023801324adaa6ebebd",
                   # Immutable v0.6.6 release may still appear in older cached evidence.
                   "d619e97020afd343000ff90288555970c5cb32a7",
+                  # Temporary sequence-renderer qualification evidence may remain cached.
+                  "93e63aeeb990cbad1f00c63ed947c3287e3ffdce",
                   # Immutable v0.7.0 release used by this consumer.
                   "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
               }
