@@ -614,8 +614,8 @@ called `TimingDataJournal` or a separate `TimingDataProjection` beside the
 LogBook.
 
 The first Java implementation keeps the asynchronous record path **inside the
-owning TimingNode**. Separate public/application components named
-`LogBookRecorder` and `LogBookCommitter` are not required:
+owning TimingNode**. No extra public/application component is required merely to
+split queue ownership from the ordered commit flow:
 
 ```text
 TimingNode
@@ -724,9 +724,8 @@ continue with the same next sequence.
 
 The commit method can be tested with an in-memory `TimingDataStore`, fake
 `TimeSource`, deterministic sequence state, a small real `LogBook` and fake
-committed sinks. Tests do not need to make `LogBookRecorder` or
-`LogBookCommitter` production types. If testing later benefits from extracting
-a small helper, that remains an implementation refactor.
+committed sinks. If testing later benefits from extracting a small helper, that
+remains an implementation refactor rather than a new architecture component.
 
 ### LogBook reads and long-running queries
 

@@ -219,10 +219,10 @@ CommittedLogBookItem commitCandidate(LogBookEntryCandidate candidate) {
 }
 ```
 
-This does not require separate architectural components called
-`LogBookRecorder` or `LogBookCommitter`. If small private helper methods or
-classes later make the Java code easier to maintain, SDD-02 may introduce them
-as implementation details without changing TimingNode ownership.
+This does not require extra architectural components around the queue and
+commit flow. If small private helper methods or classes later make the Java code
+easier to maintain, SDD-02 may introduce them as implementation details without
+changing TimingNode ownership.
 
 `recordedAt` is captured immediately before the definitive record is encoded
 for the append attempt; it is metadata rather than the durability marker.

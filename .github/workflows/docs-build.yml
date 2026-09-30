@@ -60,11 +60,6 @@ jobs:
   documentation:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    # Temporary qualification pin for the reviewed sequence-diagram capability.
-    # Replace this SHA with the immutable v0.7.0 release tag/SHA before merge.
-    env:
-      TOOL_ENG_DOCS_REF: 93e63aeeb990cbad1f00c63ed947c3287e3ffdce
-      TOOL_ENG_DOCS_SHA: 93e63aeeb990cbad1f00c63ed947c3287e3ffdce
     steps:
       # Moon affected/cache decisions need Git history, but blobless checkout avoids
       # downloading repository content that the task never opens.
@@ -75,14 +70,14 @@ jobs:
           filter: blob:none
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Bootstrap repository and pinned documentation tooling
+      - name: Bootstrap released repository and documentation tooling
         shell: bash
         run: |
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "$TOOL_ENG_DOCS_SHA"
-          grep -F "ref: $TOOL_ENG_DOCS_REF" project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "a9b6dcf94f9a0b5986b1cadd76bde47102566977"
+          grep -F 'ref: v0.7.0' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -223,8 +218,8 @@ jobs:
             --assets docs/_portal/assets \
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
-            --tool-ref "$TOOL_ENG_DOCS_REF" \
-            --tool-sha "$TOOL_ENG_DOCS_SHA"
+            --tool-ref v0.7.0 \
+            --tool-sha a9b6dcf94f9a0b5986b1cadd76bde47102566977
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
@@ -285,8 +280,8 @@ jobs:
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
           if provenance["tool_eng_docs"] != {
-              "ref": os.environ["TOOL_ENG_DOCS_REF"],
-              "sha": os.environ["TOOL_ENG_DOCS_SHA"],
+              "ref": "v0.7.0",
+              "sha": "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
           }:
               raise SystemExit("portal tool provenance mismatch")
 
@@ -601,8 +596,8 @@ jobs:
                   "a5224de7d62973a1836ec023801324adaa6ebebd",
                   # Immutable v0.6.6 release may still appear in older cached evidence.
                   "d619e97020afd343000ff90288555970c5cb32a7",
-                  # Current sequence-diagram qualification pin.
-                  os.environ["TOOL_ENG_DOCS_SHA"],
+                  # Immutable v0.7.0 release used by this consumer.
+                  "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
               }
               if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
