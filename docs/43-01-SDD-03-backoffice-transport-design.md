@@ -1,10 +1,15 @@
 # Backoffice transport detailed design
 
-Status: working draft / non-authoritative
+Status: working draft / focused detailed design
 
-Software item: **SI-01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
-This SDD defines the transport-independent backoffice boundary and two intended communication implementations:
+This SDD owns the **transport realisation design below the upstream semantic
+boundary**. The SSD owns SI-01 integration responsibilities and IF-06/other
+applicable interface baselines own externally visible semantics. This document
+does not redefine those contracts.
+
+It refines that boundary into two intended communication implementations:
 
 - a lightweight **socket implementation** for automated loop/network system tests;
 - a **RabbitMQ implementation** for production-shaped integration and deployment.

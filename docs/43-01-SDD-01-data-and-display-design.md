@@ -1,11 +1,16 @@
 # Data and display detailed design
 
-Status: working draft / non-authoritative
+Status: working draft / focused detailed design
 
-Software item: **01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
-This document refines SI-01 data ownership and runtime processing for TimingData,
-prepare-team state, reference data and the two display generations.
+This SDD owns the **internal data/runtime design** below the SI-01 architecture:
+LogBook recording and commit ordering, TimingData persistence/recovery algorithms,
+query isolation, prepare-team/reference state and display-data behaviour.
+
+It does not redefine SI-01 component responsibilities from the SSD, and it does
+not redefine the IF-05 record/file contract. Concrete Java classes, packages,
+queue implementations and worker/executor choices are owned by SDD-02.
 
 The initial design does **not** require a conventional embedded database.
 Committed LogBook state is persisted through the append-only IF-05 TimingData

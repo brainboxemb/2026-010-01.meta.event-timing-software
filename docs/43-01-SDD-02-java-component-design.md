@@ -1,12 +1,18 @@
 # Java component, package and artifact detailed design
 
-Status: working draft / non-authoritative
+Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
-This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
+This SDD owns the **concrete Java realisation** of the SI-01 architecture:
+Maven artifacts, packages, classes/interfaces, composition, queue/thread/executor
+choices, provider discovery and enforceable dependency direction.
 
-The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `41-01-SSD-timing-application-specification-document.md`.
+The SSD remains authoritative for software-item responsibilities and architecture
+constraints. SDD-01 owns the technology-independent LogBook/data runtime
+algorithms. Applicable IDDs, including IF-05, remain authoritative for external
+contracts. This SDD selects Java mechanisms that realise those inputs rather than
+restating them.
 
 ## Why this SDD exists
 
@@ -28,15 +34,19 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 
 ## Initial Maven reactor
 
-The current implementation deliberately proves only one reusable library and one executable application:
+The current reactor has two reusable artifacts plus one executable application.
+The separate TimingData API artifact is justified by the independent SI-01 and
+Engineering Client consumers:
 
 ```text
 event-timing-framework/
-├── pom.xml                  event-timing-parent
+├── pom.xml                    event-timing-parent
+├── timing-data-api/
+│   └── pom.xml                event-timing-data-api.jar
 ├── framework/
-│   └── pom.xml              event-timing-framework.jar
+│   └── pom.xml                event-timing-framework.jar
 └── app/
-    └── pom.xml              event-timing-app.jar
+    └── pom.xml                event-timing-app.jar
 ```
 
 Working coordinates:
@@ -44,9 +54,10 @@ Working coordinates:
 ```text
 groupId: io.github.brainboxemb.eventtiming
 
-parent:     event-timing-parent
-library:    event-timing-framework
-executable: event-timing-app
+parent:          event-timing-parent
+TimingData API:  event-timing-data-api
+framework:       event-timing-framework
+executable:      event-timing-app
 ```
 
 The root parent POM is build/aggregation metadata, not a deployed product component.
