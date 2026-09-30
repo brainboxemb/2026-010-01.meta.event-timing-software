@@ -352,11 +352,13 @@ A committed registration may later be revoked. Revocation is append-only:
 - origin and time-source remain those of the referenced registration;
 - the revocation record separately carries its own commit/record time.
 
-This preserves the complete audit/order history. TimingData itself does not own
-or maintain a derived "visible/current registrations" projection. A consuming
-client/application interprets the registration plus later revocation records and
-decides whether the original is hidden, struck through, marked revoked or shown
-in another way.
+This preserves the complete audit/order history. TimingData itself does not own or maintain a derived effective-registration
+projection. Domain/application business logic may reconstruct that state from
+registration and revocation records and shall honour it for calculations such as
+classification, ranking or other race-result logic.
+
+A consuming client/presentation layer separately decides whether a revoked
+registration is hidden, struck through, marked revoked or shown in another way.
 
 External proprietary formats may represent the same facts with
 implementation-specific markers, but those markers are not part of the public
