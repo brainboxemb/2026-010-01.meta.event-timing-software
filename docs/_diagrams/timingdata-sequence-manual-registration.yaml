@@ -3,7 +3,7 @@ diagram:
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
   width: 1560
-  height: 880
+  height: 980
   description: Manual operator input is resolved inside SI-01 and joins the common LogBook commit path.
   note: The client does not construct the canonical IF-05 RegistrationIdentity itself.
 
