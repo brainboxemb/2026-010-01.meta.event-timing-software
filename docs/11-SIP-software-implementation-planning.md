@@ -255,9 +255,9 @@ registration, inspect the resulting TimingData, and close it again.
 
 ### Demo
 
-- Set a location while closed, open registration and verify the open state.
-- Inject one deterministic accepted registration and inspect TimingData/history plus the live update.
-- Verify location change is rejected while open; close registration and then change location.
+- Set location while closed; open registration.
+- Inject a registration; inspect TimingData.
+- Reject location change while open; close and change it.
 
 ### Done
 
