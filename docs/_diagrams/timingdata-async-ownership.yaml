@@ -35,7 +35,7 @@ nodes:
     layout: {x: 85, y: 220, w: 270, h: 105}
 
   - id: candidate
-    label: "immutable TimingDataIntent\nreturns immediately after enqueue"
+    label: "immutable TimingDataIntent\nnode/location context captured\nreturns after enqueue"
     kind: model
     group: producer-context
     layout: {x: 85, y: 405, w: 270, h: 86}
