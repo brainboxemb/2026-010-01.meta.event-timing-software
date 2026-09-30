@@ -218,12 +218,12 @@ cohesive implementation together; package placement does not make LogBook a
 separate top-level aggregate.
 
 `TimingData` is also a Domain capability, not an I/O codec package. `TimingNode`
-has the explicit semantic relationship with this contract for timing data it
-produces or consumes. TimingData owns the canonical `TimingDataRecord`
-representation plus the public validation, encode/decode and compatibility
-contract used for persistence and interchange. Concrete storage, Web and
-messaging adapters may depend on that API and carry an encoded representation
-without knowing or switching on individual TimingData fields.
+has the explicit semantic relationship with this capability for timing data it
+produces or consumes. The Java `TimingDataRecord` model and validation/codec
+services realise the system-owned IF-05 contract; they do not create a second
+public protocol authority. Concrete storage, Web and messaging adapters may
+depend on that API and carry an encoded representation without knowing or
+switching on individual TimingData fields.
 
 `UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
