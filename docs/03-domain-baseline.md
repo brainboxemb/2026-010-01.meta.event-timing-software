@@ -284,9 +284,16 @@ The exact file names, external IDs and deployment mappings are configuration/pri
 
 A `TimingDataRecord` is not limited to participant RFID passage data. Operational events can also be represented as TimingData records when they must participate in the traceable/synchronised stream.
 
-Known example:
+First promoted operational example:
 
-- opening a location/timing node is itself a TimingData entry.
+- WP-status record characteristic `W`;
+- status `O` records that the TimingNode/WP was opened;
+- status `D` records that the TimingNode/WP was closed.
+
+The normal source-stream ordering is therefore a `W/O` record followed later by a
+`W/D` record. Legacy lowercase `d` ("closed, more data expected") is not
+produced by SI-01 and is not a TimingNode lifecycle state; a higher-level system
+may derive/add such an indication from its own synchronisation knowledge.
 
 A working minimal envelope is therefore conceptually:
 
