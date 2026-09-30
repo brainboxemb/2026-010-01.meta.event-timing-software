@@ -606,15 +606,19 @@ architecture relates the TimingNode aggregate, rather than LogBook directly, to
 `TimingData`; the exact LogBookItem-to-TimingData mapping remains a lower-level
 design concern.
 
-`TimingData` owns the canonical persistent/interchange representation of
-timing information. `TimingDataRecord` is its principal record type.
-`TimingData` also owns the public encode/decode, validation and compatibility
-semantics for that representation. This is a Domain contract because the meaning
-and compatibility of recorded timing data are product semantics, not a property
-of a filesystem, RabbitMQ or HTTP implementation. A selected
-`TimingDataProvider` may supply the concrete representation/codec implementation
-behind that stable contract when a deployment needs an extension-provided format;
-normal domain users depend on `TimingData`, not on provider discovery mechanics.
+`TimingData` owns the framework-defined canonical semantic protocol for timing
+information. `TimingDataRecord` is its principal record type. TimingData owns
+record meaning, validation, protocol versioning and the canonical
+public/reference codec. This is a Domain contract because the meaning and
+compatibility of recorded timing data are product semantics, not a property of a
+filesystem, RabbitMQ or HTTP implementation.
+
+A `TimingDataProvider` is a translation/extension boundary. A public or
+proprietary provider may translate an external representation to/from the
+framework-owned `TimingDataRecord` model, but it does not redefine public field
+semantics. The same provider contract is reusable by SI-01 and engineering tools
+such as the JavaFX Engineering Client; normal domain users remain unaware of
+provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
