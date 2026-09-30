@@ -317,6 +317,13 @@ The public TimingData model supports both **automatic** and **manual**
 participant registrations. These are the same semantic registration concept and
 use the same sequence/key rules.
 
+The canonical participant identity of a registration is `TeamId`.
+
+- an automatic registration starts with a decoded/normalised `TagIdentity` and
+  resolves that identity to a `TeamId`;
+- a manual registration receives `TeamId` directly from the operator/client,
+  together with the effective registration time.
+
 For manual registrations the model separately records whether the effective time
 was assigned automatically by SI-01 or explicitly entered by the operator.
 
@@ -351,13 +358,17 @@ A timestamp is **not** the source-ordering mechanism. Registration timing node s
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
-## Team number
+## Team identity
 
-The decoded participant/team identity contains a team number in the range:
+The domain participant identity is `TeamId`. In the current race model that
+identity is derived from/represented by the known numeric team number range:
 
 ```text
-TeamNumber = 0..999
+TeamId = team number 0..999
 ```
+
+Using a dedicated `TeamId` value keeps registration semantics independent from
+how a UI, RFID encoding or external protocol happens to represent that number.
 
 ## Race data
 
