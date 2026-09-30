@@ -1559,27 +1559,55 @@ The identity boundaries are deliberate:
 - connector-specific external names/routing identities do not replace `TimingNodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
-Deployment composition is intentionally small:
+Deployment composition is intentionally small and default-driven:
 
 ```text
-base application configuration
+built-in application profile defaults
         +
-one platform overlay
+platform defaults
         +
-optional one profile overlay
+operating-mode defaults
+        +
+explicit deployment overrides
         +
 resolved secret values
         =
 effective ApplicationConfig
 ```
 
-A profile such as `simulation` changes composition by selecting simulated adapters in place of real hardware/integration adapters. It does not introduce a second domain model or simulation-specific TimingNode semantics. Platform selection and profile selection remain separate concerns; for example, Windows does not imply simulation.
+The selected **application profile** defines the normal topology/capability template
+for the Timing Point Application. The first architecture-level examples are:
 
-Startup follows three distinct responsibilities:
+- `standard`: one TimingNode by default, CAN enabled by default and display capability present;
+- `finish`: two TimingNodes by default, CAN disabled by default and no display by default.
+
+These profiles do not create different application/domain models. They resolve to
+the same TimingSystem/TimingNode architecture and may be overridden by explicit
+deployment configuration.
+
+Platform and operating mode are separate dimensions. For example, a Finish
+composition may run on Pi Zero with normal adapters or on Windows with simulated
+adapters. Windows does not imply simulation and Finish does not imply a special
+TimingNode implementation.
+
+Console, Remote Shell and API form the baseline control/automation capability set
+of the Timing Point Application and are not selected by the application profile.
+Deployment configuration still controls concrete listener/binding settings. Web
+remains a separate per-TimingNode browser-facing capability.
+
+Startup follows distinct responsibilities:
 
 ```text
-load sources -> effective typed configuration -> validate references/settings -> compose application
+select defaults
+  -> apply explicit deployment overrides
+  -> resolve effective typed configuration
+  -> validate references/settings
+  -> ApplicationBootstrap composes the runtime
 ```
+
+Profile/platform/mode resolution is configuration infrastructure. It is complete
+before `ApplicationBootstrap` receives the effective `ApplicationConfig`; bootstrap
+does not contain profile-specific branches.
 
 Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. Framework `EmbeddedBuildIdentityLoader` interprets the standard embedded provenance resource, while the concrete executable owns and filters that resource with its own application/build values. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
 
