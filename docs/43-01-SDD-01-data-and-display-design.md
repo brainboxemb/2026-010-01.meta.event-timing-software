@@ -696,13 +696,14 @@ TimingData producers
  [committed-record queue]
           |
           v
- ReadModel / Projection updater
+ CommittedRecordDispatcher
+          |
+          +--> LogBook / business projection
+          |          |
+          |          +--> queryable state/snapshot --> query workers
           |
           +--> notifications/events
-          +--> queryable state/snapshot
-                         |
-                         v
-                    query workers
+          +--> independent downstream delivery
 ```
 
 The `RecordHandler` is the single ordered commit authority for each
@@ -710,10 +711,16 @@ The `RecordHandler` is the single ordered commit authority for each
 TimingData representation has been durably appended. Only then is the sequence
 considered consumed and the committed record published to downstream consumers.
 
-The second queue carries **committed facts** only. Its fast consumer updates
-derived/read state. Potentially expensive client queries execute against that
-state or an immutable snapshot on separate query workers; they do not execute on
-the RecordHandler and do not delay later commits.
+The second queue carries **committed facts** only and has one ordered
+`CommittedRecordDispatcher` consumer per TimingNode stream. That dispatcher
+applies the fast LogBook/business projection and fans committed facts out toward
+independent signalling/downstream delivery paths. It is not a competing-consumer
+queue in which different subscribers would receive different records.
+
+Potentially expensive client queries execute against the resulting read state or
+an immutable snapshot on separate query workers; they do not execute on the
+RecordHandler or committed dispatcher and therefore do not delay normal commit
+or projection work.
 
 Both queues are bounded operational resources. Queue depth/high-water and write
 failure must be observable. Exact capacities and whether workers are dedicated
@@ -792,9 +799,10 @@ current TimingData v1 slice.
 | --- | --- | --- |
 | producer task | normal short domain work + enqueue | file persistence, client query, network delivery |
 | record worker | ordered local durable append | long query, client rendering, upstream/network retry |
-| projection worker | short deterministic projection update | long-running query/report |
-| query worker | its own calculation/read workload | record commit or producer ingress |
-| signalling/upstream consumer | its own delivery/retry policy | record commit |
+| committed dispatcher | ordered fan-out + short projection dispatch | long query, network retry |
+| projection worker | short deterministic LogBook/business update | long-running query/report |
+| query worker | its own calculation/read workload | record commit, committed dispatch or producer ingress |
+| signalling/upstream consumer | its own delivery/retry policy | record commit / projection dispatch |
 
 For the initial implementation the record worker and read/query work use
 separate execution contexts. This is stronger than merely using different Java
@@ -803,7 +811,7 @@ methods: a slow query cannot occupy the worker that commits TimingData records.
 ## IF-05 realisation constraints
 
 The TimingData record/file contract is not re-specified here. SI-01 design shall
-conform to **IF05-REQ-001..012** in
+conform to **IF05-REQ-001..015** in
 `32-05-IDD-timingdata-interchange.md`.
 
 The following temporary design constraints cover only the internal realisation
@@ -817,9 +825,12 @@ needed around that interface:
 - **CAND-PIPE-002** — The record-commit path shall publish an IF-05 record to
   downstream consumers only after the complete local record is durably appended
   and its sequence is committed.
-- **CAND-PIPE-003** — Committed records shall feed read-model/projection work
-  through a separate asynchronous boundary so potentially long client queries
-  cannot block TimingData record commit.
+- **CAND-PIPE-003** — Committed records shall feed one ordered committed-record
+  dispatcher per TimingNode stream through a separate asynchronous boundary.
+- **CAND-PIPE-004** — The committed-record dispatcher shall apply/fan out every
+  committed record in sequence order; potentially long queries and network
+  delivery/retry shall execute outside that dispatcher and shall not consume
+  competing subsets of the committed-record queue.
 
 ### Identity resolution before IF-05 commit
 
@@ -839,9 +850,14 @@ needed around that interface:
 
 ### Local data and backup
 
-- **CAND-DATA-001** — The initial implementation shall maintain active registration, ready-team and reference state in application data structures without requiring an external database engine.
-- **CAND-DATA-002** — The system shall back up locally required traceable history/state to simple persistent files and shall be able to restore that information during startup.
-- **CAND-DATA-003** — Backup/restore failures shall be represented in system status.
+- **CAND-DATA-001** — The initial implementation shall maintain committed
+  TimingData-derived projections, ready-team state and reference state in typed
+  application data structures without requiring an external database engine.
+- **CAND-DATA-002** — The per-TimingNode append-only IF-05 journal shall be the
+  authoritative committed TimingData history and sequence-recovery source; its
+  projections shall be reconstructable by replay.
+- **CAND-DATA-003** — TimingData recovery faults and other persistent-state
+  backup/restore failures shall be represented explicitly in system status.
 - **CAND-DATA-004** — The local start-time data set shall be synchronisable from the backoffice and remain available after loss of live backoffice connectivity.
 - **CAND-DATA-005** — The system shall track enough reference-data synchronisation metadata to determine whether local data is current/stale relative to the latest accepted update.
 
