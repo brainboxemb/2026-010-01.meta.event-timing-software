@@ -179,11 +179,11 @@ is not required to match the persistent/interchange representation one-for-one.
 The TimingNode aggregate has the architectural relationship to `TimingData`;
 the exact LogBookItem-to-record mapping is a lower-level design decision.
 
-`TimingData` defines the canonical persistent/interchange timing-data contract.
-Its principal record is `TimingDataRecord`; the TimingData responsibility also
-owns the public validation, encode/decode and compatibility semantics. Storage,
-Web and upstream communication may consume that contract without becoming owners
-of its field semantics.
+The system-owned IF-05 interface defines the canonical persistent/interchange
+TimingData contract. Inside SI-01, the `TimingData` Domain capability realises
+that contract through `TimingDataRecord`, validation and codec services.
+Storage, Web and upstream communication may consume that API without becoming
+alternative owners of IF-05 field or compatibility semantics.
 
 `UpstreamProtocol` is a Domain protocol owned in the context of one
 `TimingSystem`. It covers transfer of TimingData plus
