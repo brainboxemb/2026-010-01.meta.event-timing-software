@@ -1,0 +1,129 @@
+diagram:
+  id: timingdata-producer-pipeline
+  title: Figure SDD01-TD01 — TimingData producers and canonical commit pipeline
+  width: 1640
+  height: 980
+  description: Multiple domain producers converge on one canonical TimingData intent and ordered commit path before committed records fan out to read-side and integration consumers.
+  note: Start-procedure and penalty/correction producers are shown as later record families. Their payload semantics are not part of the first TimingData v1 slice.
+
+groups:
+  - id: producers
+    label: TimingData producers
+    kind: layer-domain
+    layout: {x: 55, y: 105, w: 410, h: 760}
+
+  - id: commit
+    label: Ordered TimingData commit
+    kind: layer-application
+    layout: {x: 505, y: 105, w: 560, h: 760}
+
+  - id: consumers
+    label: Committed-record consumers
+    kind: layer-infrastructure
+    layout: {x: 1105, y: 105, w: 480, h: 760}
+
+nodes:
+  - id: tag-processor
+    label: "TagProcessor\nautomatic RFID registration"
+    kind: model
+    group: producers
+    layout: {x: 105, y: 165, w: 310, h: 82}
+
+  - id: manual-registration
+    label: "Manual registration\nTeamIdentity -> RegistrationIdentity"
+    kind: application
+    group: producers
+    layout: {x: 105, y: 285, w: 310, h: 88}
+
+  - id: lifecycle
+    label: "TimingNode lifecycle\nOPEN / CLOSED"
+    kind: model
+    group: producers
+    layout: {x: 105, y: 405, w: 310, h: 82}
+
+  - id: start-procedure
+    label: "Start procedure\nlater TimingData record family"
+    kind: model
+    group: producers
+    layout: {x: 105, y: 545, w: 310, h: 82}
+
+  - id: penalty-correction
+    label: "Penalty / correction logic\nlater TimingData record family"
+    kind: model
+    group: producers
+    layout: {x: 105, y: 665, w: 310, h: 82}
+
+  - id: intent
+    label: "TimingDataIntent\nimmutable semantic intent\nNO sequence • NOT committed"
+    kind: message
+    group: commit
+    layout: {x: 565, y: 215, w: 440, h: 100}
+
+  - id: record-queue
+    label: "Record queue\nbounded FIFO / ordered per TimingNode"
+    kind: service
+    group: commit
+    layout: {x: 620, y: 365, w: 330, h: 82}
+
+  - id: record-handler
+    label: "RecordHandler\nassign sequence • capture envelope\nencode • durable append • commit"
+    kind: application
+    group: commit
+    layout: {x: 600, y: 500, w: 370, h: 112}
+
+  - id: local-log
+    label: "Local TimingData file\nappend-only canonical history"
+    kind: storage
+    group: commit
+    layout: {x: 620, y: 680, w: 330, h: 82}
+
+  - id: committed-queue
+    label: "Committed-record queue\nTimingDataRecord facts only"
+    kind: service
+    group: consumers
+    layout: {x: 1165, y: 215, w: 360, h: 82}
+
+  - id: projection
+    label: "Projection / ReadModel updater\neffective business state"
+    kind: application
+    group: consumers
+    layout: {x: 1165, y: 345, w: 360, h: 88}
+
+  - id: read-model
+    label: "Queryable read model / snapshots\nregistrations • ranking inputs • status"
+    kind: model
+    group: consumers
+    layout: {x: 1165, y: 485, w: 360, h: 90}
+
+  - id: signalling
+    label: "Event / client signalling\nfrom committed facts"
+    kind: presentation
+    group: consumers
+    layout: {x: 1165, y: 625, w: 360, h: 82}
+
+  - id: downstream
+    label: "Upstream / export / outbox\nindependent downstream delivery"
+    kind: integration
+    group: consumers
+    layout: {x: 1165, y: 745, w: 360, h: 82}
+
+edges:
+  - {from: tag-processor, to: intent}
+  - {from: manual-registration, to: intent}
+  - {from: lifecycle, to: intent}
+  - {from: start-procedure, to: intent, dashed: true, label: "later"}
+  - {from: penalty-correction, to: intent, dashed: true, label: "later"}
+
+  - {from: intent, to: record-queue}
+  - {from: record-queue, to: record-handler}
+  - {from: record-handler, to: local-log, label: "durable append"}
+  - from: record-handler
+    to: committed-queue
+    label: "publish only after commit"
+    from_anchor: {side: right, position: 0.45}
+    to_anchor: {side: left, position: 0.50}
+
+  - {from: committed-queue, to: projection}
+  - {from: projection, to: read-model}
+  - {from: committed-queue, to: signalling}
+  - {from: committed-queue, to: downstream}
