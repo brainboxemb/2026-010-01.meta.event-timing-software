@@ -223,6 +223,27 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     )
 
 
+def planning_basis_bullets(steps: List[Step], plan: dict) -> List[str]:
+    baseline_days = sum(step.estimate_days for step in steps)
+    remaining_days = sum(step.remaining_days for step in steps)
+    actuals = plan["actuals"]
+    actual_days = float(actuals["estimated_project_days"])
+    actual_hours = float(actuals["estimated_hours"])
+    through = date.fromisoformat(str(actuals["through_date"]))
+    cadence = float(plan["cadence_project_days_per_week"])
+    reserve = float(plan.get("planning_reserve_fraction", 0.0))
+    actual_date = through.strftime("%d %b").lstrip("0")
+    total_estimate_days = actual_days + remaining_days
+    return [
+        f"Original: {baseline_days:g}d",
+        f"Actual through {actual_date}: ~{actual_days:g}d / ~{actual_hours:g}h",
+        f"Remaining: ~{remaining_days:g}d",
+        f"Total estimate: ~{total_estimate_days:g}d",
+        f"Cadence: ~{cadence:g}d/week",
+        f"Reserve: +{reserve * 100:g}%",
+    ]
+
+
 def step_effort_text(step: Step) -> str:
     actual_days = step.actual_days if step.actual_days is not None else 0.0
     parts = [f"orig ~{step.estimate_days:g}d"]
@@ -355,10 +376,6 @@ def compact_doc_label(document: dict) -> str:
     return f"{document['name']} {suffix}"
 
 
-def step_demo_id(step_number: int) -> str:
-    return f"SIP-STP{step_number:02d}-DEMO"
-
-
 def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
     grouped: Dict[str, List[dict]] = {}
     for activity in board["activities"]:
@@ -404,7 +421,7 @@ def step_board_view(board: dict, step: Step) -> dict:
     if step.demo_bullets:
         sections.append(
             {
-                "heading": f"END DEMO · {step_demo_id(step.number)}",
+                "heading": "END DEMO",
                 "bullets": list(step.demo_bullets),
             }
         )
@@ -436,11 +453,15 @@ def step_board_view(board: dict, step: Step) -> dict:
 
     view = {
         "board": {
-            "title": f"SIP Step {step.number} — {step.title}",
+            "marker": str(step.number),
+            "title": step.title,
             "meta": [
                 f"{step.status.upper()} · {step_effort_text(step)} · {step_schedule_text(step)}",
-                step.goal,
             ],
+            "summary": {
+                "heading": "GOAL",
+                "text": step.goal,
+            },
             "sections": sections,
             "groups": groups,
         }

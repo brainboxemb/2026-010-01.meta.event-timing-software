@@ -41,7 +41,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
                 "sections": [
                     {
                         "heading": "PLAN",
-                        "bullets": [base.planning_basis_text(steps, plan)],
+                        "bullets": base.planning_basis_bullets(steps, plan),
                     },
                     {
                         "heading": "TERMS",
@@ -74,7 +74,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
                     "bullets": list(step.result_bullets),
                 },
                 {
-                    "heading": f"DEMO · SIP-STP{step.number:02d}-DEMO",
+                    "heading": "DEMO",
                     "bullets": list(step.demo_bullets),
                 },
             ],
