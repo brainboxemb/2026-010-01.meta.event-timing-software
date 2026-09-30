@@ -83,18 +83,14 @@ The current principal services are:
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
 | `LiveLogClient` | `LoggingServer` | live diagnostic records and temporary runtime log-level control |
 
-Step 4 adds an engineering role rather than a second backend transport client:
-the Engineering Client uses IF-03 test-control/capability semantics to drive an
-SI-01 `DebugConnector`. The injected message must then travel through the normal
-`DebugConnector -> UpstreamGateway -> UpstreamProtocol` path. The Engineering
-Client does not write directly into `RaceData`, `StageStartTimes`, `TimingData`
-or other domain state.
+Step 4 adds one narrowly scoped engineering capability through IF-03:
+direct injection of an **already accepted semantic registration**. That control
+enters the normal TimingNode registration operation after antenna/decoding/filtering.
+The Engineering Client does not construct or write TimingData directly and does
+not choose the TimingNode-owned source identity, active location or sequence.
 
-A configured `DebugConnector` may be the only upstream connector in a development
-composition or may coexist with a real connector such as `RabbitMqConnector`.
-The exact IF-03 test-control resources, capability representation and
-UpstreamProtocol message schemas are intentionally deferred to the Step-4 contract
-work after use-case and existing-web-application compatibility review.
+Backend/upstream injection through a `DebugConnector` remains a useful later
+engineering capability, but it is not required by this first registration slice.
 
 ## Current UI baseline
 
@@ -141,102 +137,57 @@ new log records and can query/change the temporary runtime-global logging level.
 Live logs are not IF-03 application events and do not become TimingNode state merely
 because they are visible in the same Engineering Client.
 
-## Step-4 UI direction
+## Step-4 UI direction — first registration slice
 
-The Step-4 UI should grow only enough to inspect and exercise the domain/protocol slice
-being implemented. The working layout is:
+The Step-4 UI grows only enough to exercise and inspect the first registration
+slice. The existing **Status**, **Events**, **Terminal** and **Logs** tabs remain
+the implemented baseline. A small **Timing** view may be added; a broad
+Upstream/reference-data editor is not part of this slice.
 
-```text
-Engineering Client
-┌────────────────────────────────────────────────────────────┐
-│ endpoint / connection / advertised engineering capabilities│
-├────────────────────────────────────────────────────────────┤
-│ Status | Events | Timing | Upstream | Terminal | Logs      │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│ selected engineering view                                  │
-│                                                            │
-│ parsed state + identifiers + records                        │
-│ raw/public representation where useful                     │
-│                                                            │
-├────────────────────────────────────────────────────────────┤
-│ connection / command / validation feedback                  │
-└────────────────────────────────────────────────────────────┘
-```
+The first Timing view should expose:
 
-The exact tab names remain working UI terminology until the Step-4 use cases and public
-contracts have been reviewed.
+- the configured TimingNode identity as read-only state;
+- the assigned/unassigned location state;
+- location editing only while the TimingNode is `CLOSED`;
+- explicit `open` and `close` actions with visible accepted/rejected outcomes;
+- a capability-gated direct accepted-registration simulation control;
+- optional deterministic observation time for repeatable engineering tests;
+- committed registration/TimingData history with source sequence;
+- raw public representations where useful for interface diagnosis.
 
-### Timing view
+The client must not construct or inject a completed TimingData record. Direct
+registration simulation enters the public TimingNode registration operation
+**after** antenna/decoding/filtering, so the TimingNode remains responsible for
+its configured identity, active location, lifecycle validation and source
+sequence. A later simulated-antenna increment will enter earlier in the normal
+registration path and exercise filtering before reaching the same operation.
 
-The Step-4 Timing view is expected to make at least the implemented subset of these
-concepts inspectable:
+### First-slice UI review scenarios
 
-- TimingSystem / TimingNode selection where more than one exists;
-- TimingNode lifecycle/status;
-- `StageStartTimes`;
-- `NextUpTeams`;
-- `RaceData` reference state relevant to the current slice;
-- registration / LogBook history;
-- `TimingData` identity such as `TimingNodeId` + sequence;
-- raw/public representations useful for interface debugging.
+| Scenario | Planned Engineering Client behaviour | Use case |
+| --- | --- | --- |
+| Inspect a closed TimingNode | Show configured identity, lifecycle and whether a location is assigned. | UC-001, UC-009 |
+| Set/change location | Allow only while `CLOSED`; show explicit validation/rejection. | UC-001, UC-002, UC-009 |
+| Open/close | Reject open without a valid location; keep the active location fixed until close. | UC-002, UC-009 |
+| Inject an accepted registration | When capability-enabled, submit semantic participant identity plus supported observation time; do not supply sequence/source/location fields owned by the node. | UC-003, UC-009 |
+| Inspect registration result | Show committed TimingData/history and source sequence separately from the command-submission result. | UC-003, UC-009, UC-011 |
+| Lose/re-establish event connection | Mark cached information stale, rebuild current node state and registration data, then resume live updates. | UC-009 |
 
-The Engineering Client may keep a display model or temporary cache for rendering, but
-SI-01 remains the authoritative owner of the operational state.
-
-### Upstream view
-
-The working Upstream view is an engineering control/inspection surface, not a second
-production backend implementation.
-
-It should be able to show:
-
-- whether SI-01 advertises support for backend/upstream simulation;
-- whether DebugConnector test control is enabled;
-- relevant configured connector/status information exposed by public contracts;
-- a controlled way to inject supported semantic upstream test messages;
-- observable results/traffic needed to understand what SI-01 emitted or accepted;
-- validation/error feedback.
-
-A useful Step-4 example is injecting a synthetic reserve-transponder mapping or other
-reference-data message as an upstream message and then observing the resulting SI-01
-state through normal public queries/events.
-
-The exact message editor and message types follow the reviewed IF-06/UpstreamProtocol
-contract. The UI must not invent fields solely because they are convenient to display.
+D03 owns the actual routes, JSON fields, identifier formats, capability
+representation and TimingData schema.
 
 ## Capability-driven engineering controls
 
-The Engineering Client must not assume every SI-01 build/deployment supports every
-engineering action.
+The Engineering Client must not assume that direct registration simulation is
+available in every SI-01 deployment. The running application advertises whether
+that engineering capability is supported and enabled; otherwise the control is
+disabled or absent.
 
-The intended pattern is:
-
-```text
-Engineering Client
-        |
-        | query public capabilities
-        v
-      IF-03
-        |
-        +-- ordinary status/query capabilities
-        +-- optional debug/upstream-test capability
-                         |
-                         v
-                  DebugConnector
-                         |
-                  UpstreamGateway
-                         |
-                  UpstreamProtocol
-```
-
-The UI enables an engineering control only when the running application advertises the
-corresponding supported/enabled capability.
-
-Debug/upstream injection should be disabled or absent by default in normal production
-compositions unless explicitly enabled. It may remain useful next to a real RabbitMQ
-connector for targeted testing, but debug-origin traffic must remain diagnosable and
-must still pass through the supported upstream semantic boundary.
+For this first slice the engineering control is deliberately a **direct accepted
+registration** input. It is not antenna simulation and it is not an upstream
+backend message. Broader DebugConnector/upstream simulation is deferred until a
+later slice needs inbound backoffice behaviour such as start-time/reference-data
+updates.
 
 ## Existing web-application compatibility
 
@@ -297,8 +248,8 @@ CI should initially prove one stable screenshot before multiplying the number of
 Candidate generated views are:
 
 1. Status / connection baseline;
-2. Step-4 Timing view with two synthetic TimingNodes;
-3. Upstream view with DebugConnector capability enabled;
+2. Step-4 Timing view for one closed/open TimingNode;
+3. direct accepted-registration simulation with resulting TimingData/history;
 4. Logs/Terminal only where those screenshots materially improve user documentation.
 
 The user manual may reference these generated screenshots once this pipeline exists.
@@ -312,8 +263,8 @@ The Engineering Client remains independently testable:
 - service/client classes are unit tested without JavaFX handlers;
 - UI presentation can use deterministic fixture models;
 - interface integration uses a real running SI-01 through its public interfaces;
-- DebugConnector injection enters SI-01 through IF-03 test control and the normal
-  upstream path, never through package-private/internal mutation;
+- direct accepted-registration simulation enters SI-01 through IF-03 and the normal
+  TimingNode registration operation, never through package-private/internal mutation;
 - screenshot generation verifies stable rendering, not business correctness.
 
 ## Step-4 boundary
@@ -326,5 +277,4 @@ The first Step-4 protocol documents must therefore be sufficient to support:
 - the Engineering Client;
 - headless black-box/system verification;
 - straightforward compatibility with the existing web application where practical;
-- later production connector implementations without changing the core TimingData and
-  UpstreamProtocol semantics.
+- later upstream/connector increments without changing the first committed TimingData identity semantics.

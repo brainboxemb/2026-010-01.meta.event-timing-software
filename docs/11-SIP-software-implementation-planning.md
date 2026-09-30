@@ -198,80 +198,82 @@ controlled remote-terminal shutdown.
 
 ---
 
-## Step 4 — TimingNode state and domain foundation
+## Step 4 — First registration-system slice
 
 Status: active
 
 ### Purpose
 
-Put useful timing concepts into software while the environment is still completely
-controlled. Before implementing those concepts, bring the Engineering Client and
-the TimingData/upstream semantic contracts up to the same maturity as the current
-architecture so domain code is driven by reviewed behaviour rather than by diagrams alone.
+Implement the smallest useful timing-domain vertical slice before introducing
+reference data, keypad/display behaviour or production transports.
 
 ### Goal
 
-Define and implement the main local TimingNode data/state model with deterministic
-tests and make its public results inspectable through the existing Engineering Client.
+Operate one TimingNode through a complete controlled registration flow:
+configure its location while closed, open it, inject an already-accepted
+registration, inspect the resulting TimingData, and close it again.
 
 ### Scope
 
-- Engineering Client architecture and UI specification for Step-4 inspection;
-- relevant system/use-case review and promotion of Step-4 requirements;
-- first focused TimingData/interchange contract;
-- first IF-06 / UpstreamProtocol semantic contract;
-- registrations, TimingData identity and source sequence/history;
-- StageStartTimes;
-- NextUpTeams;
-- RaceData/reference data;
-- TimingNode lifecycle/status needed by these capabilities;
-- clear state-change ownership and observable results;
-- compatible IF-03 additions needed by the existing JavaFX Engineering Client;
-- an API-controlled DebugConnector for exercising UpstreamProtocol without requiring
-  RabbitMQ/backend infrastructure, while still allowing debug injection to coexist
-  with a real RabbitMQ connector when configured.
+- Engineering Client architecture/UI baseline already established;
+- focused review of UC-001, UC-002, UC-003, UC-009 and the outbound-registration part of UC-011;
+- configured non-empty TimingNode identity;
+- LocationId assigned/changed only while `CLOSED`;
+- valid LocationId required before `OPEN` and fixed while `OPEN`;
+- direct accepted-registration simulation at the TimingNode boundary after antenna/filtering;
+- TimingNode-owned source sequence and capture of active TimingNodeId/LocationId in committed TimingData;
+- registration snapshot/history plus live public observation;
+- reconnect/rebuild semantics sufficient for the Engineering Client;
+- first TimingData/IDD definitions for TimingNodeId, LocationId, registration identity and observation time;
+- minimal outbound semantic registration contract, without requiring a production transport.
 
 ### Not in this step
 
-- production RFID/CAN hardware;
-- production RabbitMQ/backend implementation work beyond defining how the
-  API-controlled DebugConnector can coexist with configured real connectors;
-- target-platform deployment;
-- full persistence/recovery and end-to-end event simulation;
-- the optional lightweight browser/web test client;
-- the planned SI-02 Desktop GUI Application.
+- simulated or physical antenna input;
+- RFID decoding, observation accumulation or filtering;
+- reserve/test-tag behaviour;
+- StageStartTimes and inbound upstream/reference-data handling;
+- RaceData;
+- NextUpTeams, keypad or display behaviour;
+- multi-TimingNode isolation;
+- RabbitMQ;
+- durable outbox/replay and persistence/recovery;
+- SI-02 or a new browser client.
 
 ### Needs
 
-- representative synthetic domain/protocol examples;
-- reviewed Step-4 use cases;
+- reviewed first-slice use cases;
 - current JavaFX Engineering Client;
-- initial TimingData and IF-06/UpstreamProtocol document baselines.
+- deterministic direct-registration examples;
+- first TimingData and IF-03/IDD contract decisions.
 
 ### Result
 
-- TimingNode state and TimingData are deterministic and testable.
-- Public contracts expose Step-4 without production services.
-- Engineering Client inspects state and drives DebugConnector.
+- One registration point has explicit location and open/close invariants.
+- A direct semantic registration reaches the normal registration operation after the antenna/filtering boundary.
+- TimingData captures stable source identity, active location and source sequence.
+- The Engineering Client can reconstruct current state/history and observe subsequent live updates.
 
 ### Demo
 
-- Inspect synthetic TimingNodes with the Engineering Client.
-- Change reference state and show independent histories.
-- Inject UpstreamProtocol messages through DebugConnector.
+- Start with the registration point closed and no operational location assigned.
+- Assign a valid location.
+- Open registration.
+- Inject one accepted semantic registration with a deterministic observation time.
+- Inspect the resulting TimingData/history and live update.
+- Verify that changing location while open is rejected.
+- Close registration and then change the location successfully.
 
 ### Done
 
-- Engineering Client architecture/UI baseline is documented;
-- Step-4-relevant use cases and requirements have been reviewed/promoted;
-- TimingData and IF-06/UpstreamProtocol contracts are established at the required Step-4 level;
-- core state transitions have deterministic tests;
-- source identity/sequence rules are represented consistently;
-- Step-4 state is observable through IF-03 and the Engineering Client;
-- representative UpstreamProtocol exchange works through the API-controlled
-  DebugConnector without direct domain mutation, both standalone and alongside a
-  configured real connector where supported;
-- the running-system demo uses the Engineering Client rather than a new web test client.
+- D02 first-slice use-case review is accepted;
+- private compatibility input has been translated only into safe behavioural conclusions needed by the slice;
+- D03 defines the first TimingData and public-control contract without copying a legacy wire contract;
+- location/lifecycle invariants have deterministic tests;
+- direct registration simulation cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
+- committed registration data is observable as current/history state and live updates through IF-03;
+- reconnect rebuild does not present stale cached state as live;
+- the running-system demo succeeds without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
 ---
 

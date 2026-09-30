@@ -27,11 +27,9 @@ Where an external input can be published safely, link/reference its exact contro
 
 ## Registered inputs
 
-No concrete external/parent-system document has yet been promoted into this public baseline.
-
 | Local reference | External owner / scope | External document or contract | Revision / baseline | Applies to | Notes |
 | --- | --- | --- | --- | --- | --- |
-| _None registered_ |  |  |  |  | Add entries only when a real controlled input is identified. |
+| LEGACY-WEB | Private legacy-system input | Private legacy web/interface design baseline | Controlled private baseline | Legacy client/interface compatibility review before Step-4 public-contract decisions | Private compatibility input only. Keep source identity, content and protocol detail outside the public repository. Record only abstract behavioural conclusions that are safe and necessary for the new-system design. It is not automatically normative for the new software system. |
 
 ## Relationship to local documents
 
@@ -54,4 +52,16 @@ System-owned interfaces are different: if the SSSD allocates and this project ow
 
 ## Entry discipline
 
-For each real input, record the strongest stable identity available: document identifier, title, owner, version/revision/date and immutable reference where possible. If a newer external revision appears, review impact deliberately rather than silently moving the baseline.
+For publishable or unrestricted inputs, record the strongest stable identity
+available: document identifier, title, owner, version/revision/date and immutable
+reference where possible. If a newer external revision appears, review impact
+deliberately rather than silently moving the baseline.
+
+**Exception — `LEGACY-WEB`:** the public register intentionally holds only
+the local generic identifier, a private-input category and a controlled-private
+baseline designation. Do not add a source title, authors, institution, year,
+source/repository location or other identifying metadata. Do not reproduce
+private endpoints, message formats, structures or wire examples in public
+documents, issues, PR text or normally reachable commit history. A separate
+private review may yield only abstract functional compatibility conclusions;
+the controlled source itself stays outside this repository.

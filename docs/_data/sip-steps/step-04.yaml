@@ -3,155 +3,118 @@ step: 4
 planning_changes:
   - date: '2026-09-30'
     change: >-
-      Step 4 now starts by bringing the Engineering Client documentation/UI baseline
-      up to date, then reviews use cases and establishes TimingData/UpstreamProtocol contracts.
+      Step 4 narrowed to location, open/close, direct registration and observable TimingData.
   - date: '2026-09-30'
     change: >-
-      Use-case and requirement alignment gates domain implementation because the
-      architecture is ahead of the promoted functional baseline.
+      Start times, next-up/display, antenna filtering, multi-node and inbound upstream simulation moved later.
 
 activities:
   - id: D01
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: active
+    state: done
     note: >-
       Document the existing JavaFX Engineering Client as a standalone engineering
-      tool in the same repository: component architecture, current tabs/functions,
-      Step-4 inspection surfaces and a reproducible CI screenshot/documentation
-      direction. Keep the module name test-client for now.
+      tool in the same repository. Keep the module name test-client for now.
 
   - id: D02
     lane: documentation
     kind: documentation
-    title: Review use cases + existing web-app contract
-    state: planned
+    title: Review first-registration operational use cases
+    state: active
     depends_on: [D01]
     note: >-
-      Review UC-001, UC-002, UC-003, UC-005, UC-008, UC-010, UC-011 and UC-014
-      from operational intent. Also inspect the existing web application's status,
-      snapshot/event, identifier and timing-data expectations as compatibility input.
-      Determine what Step-4 state/actions must be visible through IF-03 and the
-      Engineering Client. UC-009 stays optional; no new lightweight browser client
-      is introduced in Step 4.
+      Review only UC-001, UC-002, UC-003, UC-009 and the outbound-registration
+      aspect of UC-011 for the first slice. Establish location/lifecycle rules,
+      the direct accepted-registration path and observable registration state.
+
+  - id: D02W
+    lane: documentation
+    kind: documentation
+    title: Translate private compatibility behaviour
+    state: planned
+    depends_on: [D02]
+    note: >-
+      Translate only safe abstract client-behaviour conclusions needed by the
+      first slice, such as current state, registration history/live updates and
+      reconnect/rebuild. Keep source identity and private protocol details outside
+      the public repository.
 
   - id: D03
     lane: documentation
     kind: decision
-    title: Establish TimingData + public protocol contracts
+    title: Establish first TimingData + public control contracts
     state: planned
-    depends_on: [D02]
+    depends_on: [D02, D02W]
     note: >-
-      Create the first focused TimingData/domain interchange design, define the
-      Step-4 IF-03 client-facing representation needed by Engineering Client/web
-      compatibility, and establish IF-06 Backend Integration / UpstreamProtocol.
-      Keep client/API and backend/upstream protocols distinct while mapping both to
-      shared TimingData semantics where appropriate. Reconcile architecture and
-      terminology against the resulting contracts.
+      Define TimingNodeId and LocationId once in the TimingData/IDD contract,
+      including the unassigned-location state while CLOSED; define registration
+      TimingData, source sequence, observation time, IF-03 location/open/close and
+      capability-gated direct accepted-registration simulation. Define only the
+      minimal outbound semantic registration contract needed for later transport.
 
   - id: V01
     lane: verification
     kind: verification
-    title: Define deterministic Step-4 acceptance examples
+    title: Define deterministic first-slice examples
     state: planned
     depends_on: [D03]
     note: >-
-      Turn the reviewed use cases and promoted contracts into small synthetic
-      examples and expected state transitions before implementation. Include
-      TimingData identity/sequence examples and Engineering Client-visible outcomes.
+      Cover unassigned location, location set while CLOSED, open, rejected location
+      change while OPEN, direct registration with deterministic time, observable
+      TimingData, close and location change after close.
 
   - id: A01
     lane: application
     kind: implementation
-    title: TimingNode lifecycle and state foundation
+    title: TimingNode location and lifecycle
     state: planned
     depends_on: [V01]
     note: >-
-      Implement only lifecycle/state semantics justified by the reviewed use cases
-      and requirements, including observable state needed by later capabilities.
+      Implement configured TimingNode identity, optional location while CLOSED,
+      location validation, OPEN/CLOSED lifecycle and the invariant that active
+      location cannot change while OPEN.
 
   - id: A02
     lane: application
     kind: implementation
-    title: Registration history + TimingData
+    title: Direct registration + TimingData
     state: planned
     depends_on: [A01]
     note: >-
-      Implement hardware-independent accepted registration state, monotonic
-      TimingNodeId-scoped sequence/history and the first public TimingData
-      representation required by the Step-4 contract. RFID decoding/filtering,
-      durable recovery and real upstream transport remain outside this activity.
+      Implement the accepted-registration operation after the antenna/filtering
+      boundary. TimingNode owns its source identity, active location and next
+      sequence. Preserve accepted observation time and expose committed history.
 
   - id: A03
     lane: application
-    kind: implementation
-    title: StageStartTimes and RaceData
-    state: planned
-    depends_on: [A01]
-    note: >-
-      Implement local reference-state semantics needed by one TimingNode, with
-      clear ownership and deterministic update behaviour but without backoffice
-      transport or persistence concerns.
-
-  - id: A04
-    lane: application
-    kind: implementation
-    title: NextUpTeams state and mutations
-    state: planned
-    depends_on: [A01]
-    note: >-
-      Implement reviewed team-preparation semantics independently from keypad,
-      CAN and display adapters. Preserve history only where promoted functional
-      requirements require it.
-
-  - id: A05
-    lane: application
     kind: integration
-    title: Engineering Client Step-4 inspection
+    title: Engineering Client first-slice control
     state: planned
-    depends_on: [A02, A03, A04]
+    depends_on: [A02]
     note: >-
-      Extend IF-03 and the existing JavaFX Engineering Client only as required to
-      inspect the Step-4 TimingNode/TimingData/reference/next-up state. Keep the
-      client external to SI-01 and do not introduce the optional web client.
-
-  - id: A06
-    lane: application
-    kind: integration
-    title: API-controlled DebugConnector
-    state: planned
-    depends_on: [D03, A02, A05]
-    note: >-
-      Add a lightweight DebugConnector under UpstreamGateway and expose its
-      engineering/test-control surface through IF-03. The API advertises whether
-      backend simulation/debug injection is supported and enabled. The Engineering
-      Client can inject semantic UpstreamProtocol messages and inspect DebugConnector
-      traffic through the normal API/event channel. DebugConnector may coexist with
-      RabbitMqConnector so targeted test messages can still be injected while a real
-      backend transport is active. Test control must enter through DebugConnector
-      rather than mutating domain/reference state directly.
+      Add IF-03/client support for location, open/close, capability-gated direct
+      registration simulation, registration history and live updates. Rebuild
+      current state/history after reconnect before presenting data as live.
 
   - id: V02
     lane: verification
     kind: verification
-    title: Deterministic domain and isolation verification
+    title: First-slice domain verification
     state: planned
-    depends_on: [A02, A03, A04]
+    depends_on: [A02]
     note: >-
-      Verify state-transition/invariant requirements with controlled synthetic
-      data, including several TimingNodes to prove mutable state and sequence
-      isolation without production hardware, network or persistence.
+      Verify lifecycle/location invariants, sequence ownership, historical
+      LocationId capture and rejection of direct registration while CLOSED.
 
   - id: V03
     lane: verification
     kind: verification
-    title: Step-4 running-system demonstration
+    title: First-registration running-system demo
     state: planned
-    depends_on: [A05, A06, V02]
+    depends_on: [A03, V02]
     note: >-
-      Run SI-01 with synthetic data and use the JavaFX Engineering Client to show
-      TimingNode state, TimingData/registration history, reference/next-up changes
-      and isolation across multiple TimingNodes. Use IF-03 test-control/capability
-      support to inject representative UpstreamProtocol messages through
-      DebugConnector and inspect the resulting traffic, with or without RabbitMQ.
+      Demonstrate location -> open -> direct accepted registration -> observable
+      TimingData -> close using the Engineering Client, without RFID hardware,
+      filtering, RabbitMQ or backoffice infrastructure.

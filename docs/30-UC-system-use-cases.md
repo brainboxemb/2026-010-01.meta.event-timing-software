@@ -65,119 +65,173 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 ## Use-case catalogue
 
+The catalogue is grouped by operational purpose for readability. Use-case IDs
+remain stable traceability identifiers; their numeric order does not define the
+reading order or implementation sequence.
+
+### Normal operation
+
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-001 | Start and prepare a TimingNode | Operator | Bring one configured TimingNode into a usable operational state. |
-| UC-002 | Open a TimingNode | Operator | Start accepting/processing normal timing operation and create the required traceable open event(s). |
+| UC-001 | Connect to a registration system | Operator | Connect to a known registration system and view its current operational state. |
+| UC-002 | Configure, open and close a registration point | Operator | Set the operational location, open registration, and close it again without changing location while open. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
-| UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
+| UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
 | UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the API. |
-| UC-009 | Exercise the API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
+
+### System, backoffice and recovery
+
+| ID | Name | Primary actor | Goal |
+| --- | --- | --- | --- |
 | UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
 | UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
+
+### Engineering, simulation and verification
+
+| ID | Name | Primary actor | Goal |
+| --- | --- | --- | --- |
+| UC-009 | Exercise the registration system through the Engineering Client | Test/developer | Inspect and exercise supported public behaviour without becoming another source of domain state. |
 | UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-TimingNode/source behaviour without real production hardware or private deployment identities. |
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
 | UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
 
-```{uc} Start and prepare a TimingNode
+### Normal operation
+
+```{uc} Connect to a registration system
 :id: UC-001
 
-**Goal:** bring one configured `TimingNode` into a known
-usable state.
-
-**Primary actor:** operator or automated startup policy.
-
-**Preconditions:**
-
-- SI-01 has loaded and validated configuration;
-- the target instance exists;
-- required local state has been restored or an explicit restore fault is visible.
-
-**Main flow:**
-
-1. The actor selects/addresses a TimingNode.
-2. SI-01 reports current instance and subsystem status.
-3. Required devices are started according to configuration/policy.
-4. RFID equipment that is required for the instance goes through power-on and initialisation.
-5. SI-01 reports individual device/subsystem readiness rather than hiding startup progress behind one boolean.
-6. The instance becomes ready for the operator to open when required operational prerequisites are satisfied.
-
-**Alternative/failure flows:**
-
-- an RFID device does not boot or initialise;
-- a CAN device is not discovered;
-- required reference data is unavailable/stale;
-- persistence/restore is unhealthy;
-- network/backoffice is unavailable while local operation may still remain possible.
-
-**Relevant interfaces:** IF-01/02/03, IF-07, IF-08, status model.
-
-```
-
-```{uc} Open a TimingNode
-:id: UC-002
-
-**Goal:** enter normal timing operation in a traceable way.
+**Goal:** allow an operator application to connect to a known registration
+system and show its current operational state.
 
 **Primary actor:** operator.
 
+**Preconditions:**
+
+- the registration system is running and reachable;
+- the operator application knows the address of the registration system.
+
 **Main flow:**
 
-1. The operator issues `open` through an authorised operator interface.
-2. The command is translated to the shared application command boundary.
-3. The addressed `TimingNode` processes the command through its serialized state boundary.
-4. The lifecycle becomes `OPEN` if preconditions are met.
-5. The required operational open event is written as a traceable registration-stream entry for the applicable source(s) according to the final requirements.
-6. Status/event consumers receive the new lifecycle state.
+1. The operator application connects to the registration system.
+2. The application requests the current operational state.
+3. The application shows the system identity, current `LocationId` if configured, and whether the registration point is `OPEN` or `CLOSED`.
+4. The operator can continue with the operations permitted for the reported state.
+
+The operator does not need to select or understand an internal `TimingNode`
+before using the registration system. The public state may expose the configured
+TimingNode identity so the connected source can be identified, but the domain
+structure remains an implementation/interface concern rather than an operator
+navigation concept.
 
 **Alternative/failure flows:**
 
-- invalid lifecycle transition;
-- required persistence cannot commit the open event;
-- degraded devices exist but policy still permits open;
-- duplicate/open-again command.
+- the registration system cannot be reached;
+- the connection is lost;
+- the current state cannot be retrieved.
+
+**Observable result:** the operator can identify the connected registration
+system and see its current location and open/closed state.
 
 ```
+
+```{uc} Configure, open and close a registration point
+:id: UC-002
+
+**Goal:** let an operator prepare a registration point for one location, open it
+for registrations, and close it again.
+
+**Primary actor:** operator.
+
+**Preconditions:**
+
+- the operator application is connected to the registration system;
+- the current registration state is available.
+
+**Main flow:**
+
+1. While the registration point is `CLOSED`, the operator sets or changes the operational `LocationId`.
+2. The application shows the selected location and current `CLOSED` state.
+3. The operator requests `OPEN`.
+4. The registration system accepts the request only when a valid operational location is configured and other required open conditions are satisfied.
+5. The application shows the registration point as `OPEN` with that location.
+6. Registrations may now be accepted for that location.
+7. The operator requests `CLOSE`.
+8. The application shows the registration point as `CLOSED`.
+9. The last selected location may remain visible after close and can then be changed before a later open.
+
+The operational location is fixed while registration is `OPEN`. Changing the
+location therefore requires closing first.
+
+Whether open/close actions are themselves represented in TimingData or sent
+upstream is a later interface/protocol decision.
+
+**Alternative/failure flows:**
+
+- `OPEN` is requested without a valid operational location;
+- a location change is requested while registration is `OPEN`;
+- another required open condition is not satisfied;
+- the command cannot be completed or its resulting state cannot be confirmed.
+
+**Observable result:** the operator application shows the selected location and
+the resulting `OPEN` or `CLOSED` state explicitly.
+
+```
+
 ```{uc} Register a participant through RFID
 :id: UC-003
 
-**Goal:** create a valid traceable registration from RFID observations without treating the first raw observation as automatically accepted.
+**Goal:** turn an accepted participant observation into one traceable registration
+for the location that is currently open.
 
 **Primary actor:** RFID subsystem.
 
+**Preconditions:**
+
+- registration is `OPEN`;
+- a valid operational location is active.
+
 **Main flow:**
 
-1. The RFID adapter captures raw tag data, antenna identity and observation time.
-2. The RFID integration supplies the observation with its configured hardware/antenna context and SI-01 routes it into the addressed `TimingNode`.
-3. Proprietary/private decoding/decryption translates the raw tag into a public semantic identity representation while retaining whether the tag is normal, reserve or test-class.
-4. Filtering/observation accumulation determines whether the observation is accepted.
-5. Reserve-tag resolution is applied when applicable using locally available reference data.
-6. A test-tag identity branches to the explicit test-tag behaviour in UC-019 rather than silently continuing as a normal participant registration.
-7. The configured producer/data mapping determines the applicable `TimingNodeId` used for the committed ordered stream.
-8. Each committed source record receives the next monotonic source sequence number.
-9. The record is persisted in that source's registration file/repository.
-10. Derived local state/calculations and status are updated.
-11. Outbound synchronisation is queued independently from local commit.
+1. The RFID subsystem observes a participant tag and captures the observation time.
+2. Tag interpretation and observation filtering determine whether the observation represents an accepted participant registration.
+3. An accepted semantic registration is submitted to the registration point.
+4. The registration system captures its own source identity and the active `LocationId`.
+5. It assigns the next source sequence and creates the committed TimingData registration.
+6. The registration retains the active location and accepted observation time even if the registration point is later closed or configured for another location.
+7. The committed registration becomes available in registration history/current state and as a live update where supported.
+8. Outbound synchronisation may consume the committed registration independently when that capability is implemented.
+
+**Step-4 engineering path:** for the first slice, an engineering capability may
+inject the already-accepted semantic registration at step 3. This bypasses the
+antenna/tag/filtering stages but uses the **same registration operation** from
+that point onward. The engineering caller does not provide the final TimingData,
+source sequence, configured source identity or active location.
+
+A later antenna-simulation slice enters at step 1 so the tag interpretation and
+filtering behaviour can be tested as well.
 
 **Alternative/failure flows:**
 
-- decryption/validation fails;
-- tag is observed but filtering does not yet accept it;
-- reserve mapping is unavailable;
-- a test-tag policy does not permit the requested/observed operation;
-- source routing is ambiguous/invalid;
-- local persistence fails;
-- backoffice is unavailable after local commit.
+- the observation is invalid or not accepted by filtering;
+- an accepted-registration request arrives while registration is `CLOSED`;
+- the semantic participant identity is invalid;
+- the registration cannot be committed;
+- outbound/backoffice synchronisation is unavailable after local commit.
+
+**Observable result:** one accepted participant observation produces one committed
+registration associated with the source and location that were active at the
+time of acceptance.
 
 ```
+
 ```{uc} Recover or reinitialise RFID equipment
 :id: UC-004
 
@@ -195,10 +249,11 @@ usable state.
 6. Existing committed registration/source sequence state is not reset or rewritten by device recovery.
 
 ```
+
 ```{uc} Manage ready teams through keypad/operator input
 :id: UC-005
 
-**Goal:** maintain the current registry of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
+**Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
 
 **Primary actor:** keypad or operator client.
 
@@ -206,13 +261,14 @@ usable state.
 
 1. A team-number add/remove action enters through a normal input adapter.
 2. SI-01 routes the command to the applicable TimingNode.
-3. `PrepareTeamRegistry` records the traceable add/remove mutation and updates its current set.
+3. `NextUpTeams` records the traceable add/remove mutation and updates its current set.
 4. Display state is rebuilt/updated from the current prepare-team state.
 5. Operator/status clients can observe the resulting state.
 
-The `PrepareTeamRegistry` history is separate from participant/timing `RegistrationRecord` streams.
+Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
 
 ```
+
 ```{uc} Drive a passive CAN display from current system state
 :id: UC-006
 
@@ -229,6 +285,7 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 5. The passive display itself does not own ready-team/domain state.
 
 ```
+
 ```{uc} Provide data to a smart network display
 :id: UC-007
 
@@ -247,6 +304,7 @@ The `PrepareTeamRegistry` history is separate from participant/timing `Registrat
 SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
 
 ```
+
 ```{uc} Operate SI-01 through a desktop GUI
 :id: UC-008
 
@@ -262,28 +320,19 @@ API.
 3. The operator performs permitted commands such as open/close/device recovery and later registration-related operations.
 4. SI-02 shows command outcome and live/stale/disconnected status explicitly.
 5. Timing state remains in SI-01 rather than being stored only in the GUI.
+6. After event-stream reconnect, the GUI rebuilds its view from current SI-01 state instead of presenting an old cache as live.
+
+**Alternative/failure flows:** an unknown or no-longer-present target, rejected
+lifecycle transition, unsupported command, lost connection with unknown command
+outcome, or stale cached state must all remain explicit to the operator.
+
+The planned SI-02 GUI is not built in Step 4; the existing Engineering Client
+may inspect these same public state semantics without claiming to implement SI-02.
 
 ```
 
-```{uc} Exercise the API through an optional web test client
-:id: UC-009
+### System, backoffice and recovery
 
-**Goal:** provide a simple browser-based way to inspect or exercise the API when
-that is useful during development.
-
-**Primary actor:** test/developer.
-
-**Main flow:**
-
-1. A small web client connects to the existing API.
-2. It shows a small set of API data such as version/status.
-3. It may exercise supported commands/events needed for manual integration testing.
-4. It remains test tooling; it does not become another source of timing/domain state.
-
-This use case is optional. The current JavaFX engineering client already provides manual
-integration inspection, and there is no current requirement for a separate web product.
-
-```
 ```{uc} Synchronise reference data from backoffice
 :id: UC-010
 
@@ -296,11 +345,16 @@ integration inspection, and there is no current requirement for a separate web p
 1. Source-aware inbound backoffice communication receives a reference-data update.
 2. The transport adapter translates private/wire representation into public semantic data.
 3. SI-01 validates and applies the update.
-4. Start times/reserve-tag mappings and related metadata are stored in in-memory repositories.
-5. Backup/restore state is updated according to persistence policy.
-6. Status exposes version/freshness/health where required.
+4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) for the addressed TimingNode, without silently updating another target.
+5. SI-01 makes accepted/rejected update outcomes and current reference state observable through the public semantics required by the slice.
+6. Backup/restore state is updated according to later persistence policy; status exposes freshness/health where required.
+
+**Alternative/failure flows:** unknown target, invalid or conflicting reference
+update, or unavailable upstream transport. Message submission alone must not
+be presented as proof that the target's reference state changed.
 
 ```
+
 ```{uc} Synchronise TimingNodeId-scoped data to backoffice
 :id: UC-011
 
@@ -310,14 +364,22 @@ integration inspection, and there is no current requirement for a separate web p
 
 **Main flow:**
 
-1. A source record is committed locally with `(TimingNodeId, SequenceNumber)` identity.
-2. A corresponding outbound item becomes pending in the outbox/synchronisation state.
-3. The selected `BackofficeTransportPort` sends the semantic message through its configured transport.
-4. RabbitMQ production-shaped transport may map the source to its configured exchange/routing endpoint; a test socket adapter may use a simpler synthetic framing.
-5. Successful acknowledgement/reconciliation advances the pending state according to the final protocol.
+1. A committed TimingData record contains the source `TimingNodeId`, the `LocationId` active when that record was accepted, and its source sequence identity.
+2. A corresponding outbound item becomes pending in the outbox/synchronisation state when that capability is implemented.
+3. `UpstreamProtocol` represents the semantic message and `UpstreamGateway` carries it through the configured connector.
+4. A production connector such as RabbitMQ may later map that semantic message to its transport.
+5. Successful acknowledgement/reconciliation advances pending state according to the final protocol.
 6. Source ordering and gap detection remain possible at higher levels.
 
+**First-registration slice:** D03 defines the identity and outbound semantic
+representation needed for committed registration TimingData. The exact
+`TimingNodeId`/`LocationId` wire types and validation belong to the
+TimingData/IDD contract. Real RabbitMQ delivery, durable outbox/restart,
+acknowledgement/reconciliation and inbound reference-data simulation are later
+increments.
+
 ```
+
 ```{uc} Continue local operation during backoffice outage
 :id: UC-012
 
@@ -334,6 +396,7 @@ integration inspection, and there is no current requirement for a separate web p
 5. After transport recovery, synchronisation resumes without inventing/reusing committed sequence numbers.
 
 ```
+
 ```{uc} Restart and restore local state
 :id: UC-013
 
@@ -351,6 +414,7 @@ integration inspection, and there is no current requirement for a separate web p
 6. Backoffice/outbox recovery resumes independently from local startup.
 
 ```
+
 ```{uc} Run multiple TimingNodes in one process
 :id: UC-014
 
@@ -367,6 +431,57 @@ while preserving independent lifecycle, state and
 3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
 4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
 5. Public interfaces can address each instance explicitly.
+6. An engineering query, change or synthetic upstream input for one TimingNode
+   identifies its target and does not accidentally change another node's state.
+
+**Observable result:** two synthetic TimingNodes have separately inspectable
+lifecycle, reference/next-up state and independently ordered TimingData. Any
+intentional fan-out from one observation to several streams is a separately
+specified mapping rule, not accidental cross-instance sharing.
+
+```
+
+### Engineering, simulation and verification
+
+```{uc} Exercise the registration system through the Engineering Client
+:id: UC-009
+
+**Goal:** provide one engineering application for inspecting and exercising the
+public registration-system behaviour during development and integration.
+
+**Primary actor:** test/developer.
+
+**Preconditions:** the registration system exposes the relevant public interfaces,
+or the client can make their unavailability visible. Optional engineering controls
+require an explicitly advertised **supported and enabled** capability.
+
+**Main flow:**
+
+1. The Engineering Client connects to the registration system through its public interfaces.
+2. It shows build/version identity, connection state, the configured source identity, current `LocationId` if any, and `OPEN`/`CLOSED` state.
+3. While registration is `CLOSED`, the developer may set or change the operational location through the public command boundary.
+4. The developer may request `OPEN` and `CLOSE`; invalid lifecycle/location combinations remain explicit.
+5. When direct-registration simulation is supported and enabled, the developer may submit an already-accepted semantic participant registration, with a deterministic observation time when supported.
+6. The registration system applies the same registration operation used after normal antenna/filtering acceptance and supplies its own source identity, active location and next source sequence.
+7. The client shows the command outcome separately from the resulting TimingData/history and live update.
+8. On disconnect the client marks cached information stale. After reconnect it rebuilds current state and registration data before treating subsequent updates as live.
+9. The Engineering Client remains engineering tooling and does not become another owner of registration/domain state.
+
+**Alternative/failure flows:**
+
+- a required public interface is unavailable or the live update connection is lost;
+- `OPEN` is requested without a valid location;
+- a location change is requested while registration is `OPEN`;
+- direct registration is requested while registration is `CLOSED`;
+- the engineering capability is unsupported/disabled or semantic input is invalid;
+- a command was submitted but its resulting state cannot yet be confirmed after connection loss.
+
+**Observable result:** the Engineering Client can demonstrate
+`location -> open -> accepted registration -> observable TimingData -> close`
+through public boundaries without RFID hardware, filtering or a real backoffice.
+
+A separate lightweight browser test client is not part of this slice. Broader
+upstream/reference-data simulation is deferred to a later increment.
 
 ```
 
@@ -386,6 +501,7 @@ while preserving independent lifecycle, state and
 5. Tests validate isolation, ordering, recovery and status across the simulated field.
 
 ```
+
 ```{uc} Replace real devices with controllable stubs
 :id: UC-016
 
@@ -401,6 +517,7 @@ while preserving independent lifecycle, state and
 4. Tests observe behaviour only through supported state/interfaces/evidence points.
 
 ```
+
 ```{uc} Use an alternative backoffice transport for loop testing
 :id: UC-017
 
@@ -420,6 +537,7 @@ while preserving independent lifecycle, state and
 This use case is intentionally protocol-neutral and does not reproduce private production RabbitMQ message schemas.
 
 ```
+
 ```{uc} Verify production-shaped messaging through RabbitMQ
 :id: UC-018
 
@@ -439,6 +557,7 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 Production names, source IDs, schemas and credentials remain outside the public fixture.
 
 ```
+
 ```{uc} Process a test RFID tag
 :id: UC-019
 
@@ -473,6 +592,45 @@ Production names, source IDs, schemas and credentials remain outside the public 
 This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
 
 ```
+
+## Step-4 operational review: first registration slice
+
+This review deliberately narrows Step 4 to the smallest useful vertical slice.
+It identifies behaviour that needs a public representation before D03 designs
+the interfaces. It is not a new set of API paths and does not expose any private
+compatibility-source protocol.
+
+| Use case | First-slice inspection/control need | Explicitly later |
+| --- | --- | --- |
+| UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, set or change location while `CLOSED`, open registration only with a valid location, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
+| UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, tag decoding, observation accumulation/filtering, reserve/test-tag behaviour and persistence/recovery. |
+| UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
+| UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |
+
+For this slice the behavioural identity rules are:
+
+- every TimingNode already has a configured, non-empty `TimingNodeId`; there is no runtime "unset TimingNodeId" state;
+- a `LocationId` may be unassigned while `CLOSED`, but a valid operational location is required before `OPEN`;
+- changing location while `OPEN` is rejected;
+- committed TimingData captures the active location at acceptance time, so later reconfiguration cannot change historical records;
+- the exact public types, allowed formats/values and null/unassigned representation are defined once in the TimingData/IDD contract rather than duplicated here.
+
+The first protocol review (D03) must resolve:
+
+- the compact public `TimingNodeId` representation and validation;
+- the positive operational `LocationId` representation and how "unassigned while CLOSED" is represented without treating a non-location sentinel as a valid location;
+- the first registration TimingData shape, including source sequence and accepted observation time;
+- the IF-03 commands/results for location, open/close and direct accepted-registration simulation;
+- current snapshot/history versus live-update semantics, including reconnect/rebuild;
+- the minimal outbound semantic registration representation for later upstream transport.
+
+`StageStartTimes`, `RaceData`, `NextUpTeams`, keypad/display behaviour,
+simulated antenna/filtering, inbound DebugConnector messages and multi-node
+isolation are intentionally outside this first slice.
+
+The accepted first-executable IF-03 version/status/WebSocket semantics remain
+the Step-3 baseline. D03 extends them only as required by this smaller slice.
+
 ## Cross-cutting alternative/failure scenarios
 
 The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:
@@ -516,7 +674,6 @@ This allows one operational goal to remain visible even when implementation resp
 - What exact preconditions are required before a TimingNode may be opened?
 - Which subsystem failures should block `OPEN`, and which should only mark the instance degraded?
 - Which operational events besides `OPEN` must become registration-stream records?
-- Can a timing node change location during one operational session, or is `LocationID` fixed until the timing node is closed/reconfigured?
 - What operator roles/authorisation distinctions will exist for local, desktop and web clients?
 - Which reference-data updates are automatically accepted versus requiring operator acknowledgement?
 - What exact local behaviour is required if reference data is stale but backoffice is unavailable?

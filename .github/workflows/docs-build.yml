@@ -18,7 +18,6 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/calculate_sip_actuals.py'
       - 'tools/generate_sip_planning.py'
-      - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
@@ -45,7 +44,6 @@ on:
       - 'tools/generate_system_model_diagrams.py'
       - 'tools/calculate_sip_actuals.py'
       - 'tools/generate_sip_planning.py'
-      - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/render_needs_reader_markdown.py'
@@ -79,8 +77,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "f037635d400ddf8596b24b44da05dda00f76256d"
-          grep -F 'ref: v0.4.5' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "d619e97020afd343000ff90288555970c5cb32a7"
+          grep -F 'ref: v0.6.6' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -219,8 +217,8 @@ jobs:
             --assets docs/_portal/assets \
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
-            --tool-ref v0.4.5 \
-            --tool-sha f037635d400ddf8596b24b44da05dda00f76256d
+            --tool-ref v0.6.6 \
+            --tool-sha d619e97020afd343000ff90288555970c5cb32a7
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
@@ -281,8 +279,8 @@ jobs:
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
           if provenance["tool_eng_docs"] != {
-              "ref": "v0.4.5",
-              "sha": "f037635d400ddf8596b24b44da05dda00f76256d",
+              "ref": "v0.6.6",
+              "sha": "d619e97020afd343000ff90288555970c5cb32a7",
           }:
               raise SystemExit("portal tool provenance mismatch")
 
@@ -306,7 +304,7 @@ jobs:
               if object_id not in search:
                   raise SystemExit(f"portal search index missing {object_id}")
           for narrative in (
-              "The actor selects/addresses a TimingNode.",
+              "The operator application connects to the registration system.",
               "SI-02 connects through the system-defined application-control/status interface.",
               "Settings describe several independently addressed",
           ):
@@ -483,7 +481,7 @@ jobs:
           uc_end = use_cases.index('<a id="UC-002"></a>', uc_start)
           uc_block = use_cases[uc_start:uc_end]
           uc_order = (
-              uc_block.index("**UC-001 — Start and prepare a TimingNode**"),
+              uc_block.index("**UC-001 — Connect to a registration system**"),
               uc_block.index("**Preconditions:**"),
               uc_block.index("**Main flow:**"),
               uc_block.index("**Alternative/failure flows:**"),
@@ -586,8 +584,8 @@ jobs:
               allowed_tool_eng_docs_producers = {
                   # Pre-release owner head used to produce the reusable cached Book tree.
                   "a5224de7d62973a1836ec023801324adaa6ebebd",
-                  # Immutable v0.4.5 release currently pinned by this consumer.
-                  "f037635d400ddf8596b24b44da05dda00f76256d",
+                  # Immutable v0.6.6 release currently pinned by this consumer.
+                  "d619e97020afd343000ff90288555970c5cb32a7",
               }
               if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
