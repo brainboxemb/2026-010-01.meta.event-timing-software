@@ -3,54 +3,59 @@ step: 4
 planning_changes:
   - date: '2026-09-30'
     change: >-
-      Initial Step-4 activity board: use-case and requirement alignment now gates
-      domain implementation because architecture is ahead of the promoted functional baseline.
+      Step 4 now starts by bringing the Engineering Client documentation/UI baseline
+      up to date, then reviews use cases and establishes TimingData/UpstreamProtocol contracts.
+  - date: '2026-09-30'
+    change: >-
+      Use-case and requirement alignment gates domain implementation because the
+      architecture is ahead of the promoted functional baseline.
 
 activities:
   - id: D01
     lane: documentation
     kind: documentation
-    title: Review Step-4 operational use cases
+    title: Engineering Client architecture + UI baseline
     state: next
     note: >-
-      Review UC-001, UC-002, UC-003, UC-005, UC-010 and UC-014 from operational
-      intent rather than fitting them to the current architecture. Inspect UC-013
-      and UC-019 only to establish the recovery and test-tag boundaries.
+      Document the existing JavaFX Engineering Client as a standalone engineering
+      tool in the same repository: component architecture, current tabs/functions,
+      Step-4 inspection surfaces and a reproducible CI screenshot/documentation
+      direction. Keep the module name test-client for now.
 
   - id: D02
     lane: documentation
     kind: documentation
-    title: Promote Step-4 domain requirements
+    title: Review Step-4 and client-facing use cases
     state: planned
     depends_on: [D01]
     note: >-
-      Derive concrete SI-01 requirements for TimingNode lifecycle/state,
-      registration sequence/history, StageStartTimes, NextUpTeams, RaceData,
-      multi-TimingNode isolation and observable state changes. Keep hardware and
-      Step-5 persistence/recovery detail out unless required by functional behaviour.
+      Review UC-001, UC-002, UC-003, UC-005, UC-008, UC-010, UC-011 and UC-014
+      from operational intent. Determine what Step-4 state/actions must be visible
+      through IF-03 and the Engineering Client. UC-009 stays optional; no lightweight
+      browser client is introduced in Step 4.
 
   - id: D03
     lane: documentation
     kind: decision
-    title: Reconcile domain architecture and terminology
+    title: Establish TimingData + UpstreamProtocol contracts
     state: planned
     depends_on: [D02]
     note: >-
-      Check the existing TimingNode decomposition against the promoted
-      requirements. Change component names, ownership or relationships when the
-      behaviour requires it; do not rewrite use cases merely to preserve the
-      current architecture diagram.
+      Create the first focused TimingData/domain interchange design and IF-06
+      Backend Integration / UpstreamProtocol documents. Promote only the semantics
+      justified by reviewed use cases, then reconcile the existing architecture and
+      terminology against those contracts.
 
   - id: V01
     lane: verification
     kind: verification
     title: Define deterministic Step-4 acceptance examples
     state: planned
-    depends_on: [D02, D03]
+    depends_on: [D03]
     note: >-
-      Turn the promoted requirements into small synthetic examples and expected
-      state transitions before implementation. These examples become the
-      acceptance reference for the domain tests.
+      Turn the reviewed use cases and promoted contracts into small synthetic
+      examples and expected state transitions before implementation. Include
+      TimingData identity/sequence examples and Engineering Client-visible outcomes.
 
   - id: A01
     lane: application
@@ -59,20 +64,20 @@ activities:
     state: planned
     depends_on: [V01]
     note: >-
-      Implement only the lifecycle/state semantics justified by the reviewed use
-      cases and requirements, including observable state needed by later domain
-      capabilities.
+      Implement only lifecycle/state semantics justified by the reviewed use cases
+      and requirements, including observable state needed by later capabilities.
 
   - id: A02
     lane: application
     kind: implementation
-    title: Registration sequence and history
+    title: Registration history + TimingData
     state: planned
     depends_on: [A01]
     note: >-
       Implement hardware-independent accepted registration state, monotonic
-      TimingNodeId-scoped sequence semantics and traceable history/LogBook
-      behaviour. RFID decoding/filtering and durable recovery remain outside this activity.
+      TimingNodeId-scoped sequence/history and the first public TimingData
+      representation required by the Step-4 contract. RFID decoding/filtering,
+      durable recovery and real upstream transport remain outside this activity.
 
   - id: A03
     lane: application
@@ -81,9 +86,9 @@ activities:
     state: planned
     depends_on: [A01]
     note: >-
-      Implement the local reference-state semantics needed by one TimingNode,
-      with clear ownership and deterministic update behaviour but without
-      backoffice transport or persistence concerns.
+      Implement local reference-state semantics needed by one TimingNode, with
+      clear ownership and deterministic update behaviour but without backoffice
+      transport or persistence concerns.
 
   - id: A04
     lane: application
@@ -92,39 +97,39 @@ activities:
     state: planned
     depends_on: [A01]
     note: >-
-      Implement the reviewed team-preparation semantics independently from keypad,
-      CAN and display adapters. Preserve history only where the promoted
-      functional requirements require it.
+      Implement reviewed team-preparation semantics independently from keypad,
+      CAN and display adapters. Preserve history only where promoted functional
+      requirements require it.
 
   - id: A05
     lane: application
     kind: integration
-    title: Multi-TimingNode isolation and observable results
+    title: Engineering Client Step-4 inspection
     state: planned
     depends_on: [A02, A03, A04]
     note: >-
-      Compose several TimingNodes in-memory and prove that lifecycle, sequence,
-      reference and next-up state remain isolated while shared runtime
-      infrastructure does not leak mutable state between nodes.
+      Extend IF-03 and the existing JavaFX Engineering Client only as required to
+      inspect the Step-4 TimingNode/TimingData/reference/next-up state. Keep the
+      client external to SI-01 and do not introduce the optional web client.
 
   - id: V02
     lane: verification
     kind: verification
-    title: Deterministic domain unit verification
+    title: Deterministic domain and isolation verification
     state: planned
     depends_on: [A02, A03, A04]
     note: >-
-      Cover the promoted state-transition and invariant requirements with
-      deterministic tests using controlled synthetic data and no production
-      hardware, network or persistence dependency.
+      Verify state-transition/invariant requirements with controlled synthetic
+      data, including several TimingNodes to prove mutable state and sequence
+      isolation without production hardware, network or persistence.
 
   - id: V03
     lane: verification
     kind: verification
-    title: Step-4 domain scenario demonstration
+    title: Step-4 running-system demonstration
     state: planned
     depends_on: [A05, V02]
     note: >-
-      Demonstrate the SIP Step-4 end scenario: create TimingNodes, apply
-      registration/reference/next-up changes and inspect isolated histories and
-      resulting state through supported in-process application/domain boundaries.
+      Run SI-01 with synthetic data and use the JavaFX Engineering Client to show
+      TimingNode state, TimingData/registration history, reference/next-up changes
+      and isolation across multiple TimingNodes through supported public interfaces.
