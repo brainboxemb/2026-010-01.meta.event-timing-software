@@ -287,9 +287,24 @@ reusable application/domain objects, then starts the runtime. The runnable
 concrete YAML/build-resource inputs and delegates to the framework.
 ```
 
-`TimingApplication` is the top-level framework runtime object. It is not itself a
-component inside the application layer, and bootstrap is not a normal runtime
-layer or mandatory call path.
+```{arch} TimingApplication
+:id: TimingApplication
+
+`TimingApplication` is the top-level reusable framework runtime object for one
+running SI-01 composition. It owns the application runtime lifecycle and the
+currently composed application/domain runtime state. It is deliberately shown
+in a separate **Runtime** block rather than inside the Application layer:
+Runtime is the running container/assembly context, not application/business
+behaviour.
+```
+
+`ApplicationBootstrap` constructs and starts that runtime from validated
+configuration. In the current Step-3 implementation bootstrap still owns the
+startup/cleanup scope of concrete presentation endpoints around
+`TimingApplication`; normal application/domain interactions do not route
+through bootstrap after startup. As the implementation grows, additional
+long-lived runtime resources may move under the runtime composition without
+changing their semantic layer ownership.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -882,7 +897,7 @@ logging-specific TCP boundary is separate from the IF-03 API/status/event
 interface and live delivery remains best effort.
 ```
 
-`ApplicationBootstrap` is shown in the cross-cutting area because startup composition touches several normal layers without becoming a layer itself. The default YAML configuration loader is framework infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. Normal runtime interactions do not route through bootstrap after composition is complete.
+`ApplicationBootstrap` remains in Infrastructure / cross-cutting because startup composition touches several normal layers without becoming a normal runtime call path. The separate Runtime block shows the resulting running `TimingApplication`. The default YAML configuration loader is framework infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` runtime surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
 
 ### Principal runtime abstractions
 

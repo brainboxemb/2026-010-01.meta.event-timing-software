@@ -392,10 +392,14 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` is a Java source-organisation package for the top-level runtime
-objects; it is **not** an additional architecture layer or box in Figure SI01-01.
-The figure already describes the contents/responsibilities of that running
-`TimingApplication`.
+`runtime/` is the Java source-organisation package for the top-level running
+composition and lifecycle objects. Figure SI01-01 now shows this explicitly as a
+separate **Runtime** block containing `TimingApplication`. Runtime is not an
+additional business/domain layer: it is the execution container that holds the
+running application/domain composition. In the current implementation
+`ApplicationBootstrap` still owns startup/cleanup of concrete presentation
+endpoints around that runtime; those endpoints retain their Presentation
+ownership even if their lifecycle is later retained directly by the runtime.
 
 The executable artifact is deliberately thin. Its launcher/input adapters remain under
 `...eventtiming.app`; reusable runtime logging belongs to framework infrastructure:
