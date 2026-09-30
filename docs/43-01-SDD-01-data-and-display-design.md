@@ -582,7 +582,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`.
 - **CAND-REG-005** — The stable registration record identity shall include `TimingNodeId` and sequence number so upstream systems can order records and detect gaps per timing node.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
-- **CAND-REG-007** — Opening a location/timing node shall create a traceable registration-stream entry.
+- **CAND-REG-007** — Opening and closing a location/timing node shall each create a traceable WP-status registration-stream entry: characteristic `W` with status `O` for open and `D` for closed. SI-01 shall not emit legacy lowercase `d`; any such higher-level "closed, more data expected" indication is outside the TimingNode lifecycle and SI-01 TimingData contract.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
 
 ### Tag/team identity
@@ -625,8 +625,8 @@ Temporary identifiers only; these are not yet formal requirements.
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
 - What sequence numeric width/wraparound policy is required?
-- Which operational events besides `SYSTEM_OPEN` belong in the registration stream?
-- What payload is required on a `SYSTEM_OPEN` entry?
+- Which operational events besides the promoted WP-status `W/O` and `W/D` records belong in the registration stream?
+- Which additional fields, if any, are required on the WP-status record beyond its normal TimingData identity/location/sequence/time fields plus `W` and `O|D`?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
 - Which state must survive restart: all registration history, all ready-team history, current ready-team snapshot, start times, reserve tags, display revision, outbox, or all of these?
 - Is snapshot-only backup sufficient for registrations/ready-team events, or should traceable changes use an append journal plus periodic snapshot?
