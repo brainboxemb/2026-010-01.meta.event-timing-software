@@ -132,6 +132,7 @@ jobs:
           cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
           cp docs/41-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
           cp docs/32-03-IDD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/32-05-IDD-timingdata-interchange.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
 
@@ -158,6 +159,7 @@ jobs:
           docs/30-UC-system-use-cases
           docs/41-01-SSD-timing-application-specification-document
           docs/32-03-IDD-application-control-status
+          docs/32-05-IDD-timingdata-interchange
           ~~~
           EOF
 
@@ -516,6 +518,14 @@ jobs:
               object_id = f"IF03-REQ-{number:03d}"
               if f'<a id="{object_id}"></a>' not in idd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          timingdata_idd = (root / "32-05-IDD-timingdata-interchange.md").read_text(
+              encoding="utf-8"
+          )
+          for number in range(1, 16):
+              object_id = f"IF05-REQ-{number:03d}"
+              if f'<a id="{object_id}"></a>' not in timingdata_idd:
+                  raise SystemExit(f"generated reader Markdown missing {object_id}")
           PY
 
       - name: Verify generated output and retained producer evidence
@@ -534,6 +544,7 @@ jobs:
           test -f bld/docs/documents/50-SDE-01-software-development-environment.md
           test -f bld/docs/documents/50-SDE-02-java-build-test-toolchain.md
           test -f bld/docs/documents/41-01-SSD-timing-application-specification-document.md
+          test -f bld/docs/documents/32-05-IDD-timingdata-interchange.md
           test -f bld/docs/documents/43-01-SDD-02-java-component-design.md
           test -f bld/docs/documents/60-SVP-software-verification-plan.md
           test -f bld/docs/assets/architecture/system-overview.svg
