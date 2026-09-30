@@ -330,9 +330,30 @@ a public `RegistrationIdentity` value/state is defined for them.
 
 TimingData event/registration timestamps are absolute `TimingTimestamp` values.
 
-The concrete public serialization precision/format shall be fixed before IF-05 v1
-is released as stable; it shall not be inherited accidentally from a Java API or
-a proprietary codec.
+The canonical IF-05 v1 text representation is:
+
+```text
+YYYY-MM-DDTHH:mm:ss.nnnnnnnnnZ
+```
+
+Rules:
+
+- the value is an absolute UTC instant and always uses the literal `Z`;
+- fractional seconds contain exactly **9 digits**;
+- offsets such as `+02:00`, implicit local time and time-zone names are not
+  canonical IF-05 values;
+- the nine-digit representation defines interchange resolution/capacity, not the
+  accuracy of the underlying hardware or operating-system clock;
+- chronological comparison is by represented absolute instant, not by source
+  sequence;
+- provider-specific/external formats may use another timestamp representation
+  but must translate without silently changing the represented instant.
+
+Example:
+
+```text
+2026-09-30T20:01:39.123000000Z
+```
 
 Race/stage start reference data may separately be defined as time-of-day only.
 That reference-data concept is not forced into an absolute TimingData timestamp by
@@ -379,8 +400,8 @@ Lifecycle example:
   "sequenceNumber": 1,
   "locationId": 7,
   "recordType": "TIMING_NODE_STATE",
-  "effectiveTime": "<TimingTimestamp>",
-  "recordedAt": "<TimingTimestamp>",
+  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
+  "recordedAt": "2026-09-30T20:01:39.123000000Z",
   "state": "OPEN"
 }
 ```
@@ -394,8 +415,8 @@ Registration example:
   "sequenceNumber": 2,
   "locationId": 7,
   "recordType": "REGISTRATION",
-  "effectiveTime": "<TimingTimestamp>",
-  "recordedAt": "<TimingTimestamp>",
+  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
+  "recordedAt": "2026-09-30T20:01:39.123000000Z",
   "registrationIdentity": {
     "type": "STANDARD",
     "number": 42
@@ -414,8 +435,8 @@ Revocation example:
   "sequenceNumber": 3,
   "locationId": 7,
   "recordType": "REGISTRATION_REVOKED",
-  "effectiveTime": "<same effective time as sequence 2>",
-  "recordedAt": "<later TimingTimestamp>",
+  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
+  "recordedAt": "2026-09-30T20:02:05.456000000Z",
   "registrationIdentity": {
     "type": "STANDARD",
     "number": 42
@@ -464,7 +485,6 @@ TimingData v1 is identified by `version = 1`.
 
 Before promotion to a stable released interface, D03 shall still fix:
 
-- exact `TimingTimestamp` serialized precision/text representation;
 - sequence numeric width/wraparound policy;
 - compatible-addition/unknown-field handling rules;
 - exact validation behaviour for malformed/imported records where relevant.
@@ -500,6 +520,8 @@ Breaking semantic changes shall not silently redefine v1.
 - **IF05-REQ-012** — The same provider contract shall be reusable by SI-01 and
   engineering/test tooling where that tooling inspects or converts external
   TimingData representations.
+- **IF05-REQ-013** — Canonical IF-05 TimingTimestamp text shall use UTC `Z`
+  form with exactly nine fractional-second digits as defined by this IDD.
 
 ## Deferred from this first slice
 
@@ -507,7 +529,6 @@ Breaking semantic changes shall not silently redefine v1.
 - penalty/correction record families and payloads;
 - unknown-team registration semantics;
 - source `TagIdentity` provenance exposure;
-- exact timestamp serialization precision;
 - compatibility rules for unknown/additional JSON fields;
 - file naming, retention, rotation and filesystem-specific durability primitives;
 - upstream transport/session/reconciliation semantics owned by IF-06;
