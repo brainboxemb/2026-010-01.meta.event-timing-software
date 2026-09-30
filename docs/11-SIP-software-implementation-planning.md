@@ -277,7 +277,7 @@ registration, inspect the resulting TimingData, and close it again.
 
 ---
 
-## Step 5 — Simulated timing flow and recovery## Step 5 — Simulated timing flow and recovery
+## Step 5 — Simulated timing flow and recovery
 
 Status: planned
 
