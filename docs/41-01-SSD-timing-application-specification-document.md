@@ -958,11 +958,12 @@ canonical TimingData interchange shape.
 ```{arch} TimingData
 :id: TimingData
 
-`TimingData` is the shared Domain contract for canonical
-persistent/interchange timing records, including
-`TimingDataRecord`, validation and encode/decode compatibility.
-Storage, Web and upstream protocol code consume this contract
-without owning its field semantics.
+`TimingData` is the shared Domain capability that realises
+system-owned IF-05 inside SI-01. It exposes the typed
+`TimingDataRecord` model plus validation/codec services needed
+by application code. Canonical record/file semantics and
+compatibility remain defined by IF-05; Storage, Web and upstream
+protocol code consume that contract without redefining it.
 ```
 
 ```{arch} UpstreamProtocol
@@ -1670,7 +1671,7 @@ Keep these concepts distinct:
 
 1. ingress/ordering — concurrency ownership;
 2. `LogBook` / `LogBookItem` — operational domain state and history owned for a TimingNode;
-3. `TimingData` / `TimingDataRecord` — framework-owned canonical semantic protocol, record model, validation, versioning and reference encoding;
+3. `TimingData` / `TimingDataRecord` — SI-01/domain realisation of the system-owned IF-05 record model, validation and codec boundary;
 4. prepare-team state/history — operational teams-to-prepare behaviour distinct from timing records;
 5. race/reference data — locally available participant/team/tag-reference input received from external sources;
 6. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
@@ -1680,11 +1681,12 @@ Keep these concepts distinct:
 TimingData identity remains TimingNode-scoped; the current stable conceptual key is
 `(TimingNodeId, SequenceNumber)`.
 
-Storage consumes the TimingData representation/codec contract. A storage adapter
-may persist and recover encoded records without understanding their individual
-domain fields. The same principle applies to transport adapters: they move a
-representation owned by Domain instead of becoming an alternative owner of the
-record schema.
+Storage consumes the IF-05 TimingData representation through the SI-01
+TimingData/codec boundary. A storage adapter may persist and recover encoded
+records without understanding their individual domain fields. The same principle
+applies to transport adapters: they move a representation defined by IF-05 and
+realised by Domain instead of becoming an alternative owner of the record
+schema.
 
 Persistence durability semantics, concrete file format, atomic-write strategy
 and corruption/recovery rules remain open decisions and may justify a focused
