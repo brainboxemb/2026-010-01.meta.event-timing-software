@@ -54,14 +54,15 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
         label = base.STATE_STYLE[step.status][0]
         item = {
             "id": str(step.number),
-            "title": f"Step {step.number} — {step.title}",
+            "marker": str(step.number),
+            "title": step.title,
             "state": {
                 "label": label,
                 "tone": STATE_TONES.get(step.status, "neutral"),
             },
             "meta": [
-                base.step_effort_text(step),
                 base.roadmap_end_text(step),
+                base.step_effort_text(step),
             ],
             "sections": [
                 {
@@ -75,6 +76,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
             ],
         }
         if step.documents:
+            item["badge_heading"] = "DOCUMENT STATUS"
             item["badges"] = [
                 {
                     "label": base.compact_doc_label(document),
