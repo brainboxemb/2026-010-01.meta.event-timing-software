@@ -62,19 +62,25 @@ nodes:
     label: "Q2 — committed-record queue\nno uncommitted candidates"
     kind: service
     group: projection-context
-    layout: {x: 965, y: 180, w: 270, h: 82}
+    layout: {x: 965, y: 160, w: 270, h: 78}
+
+  - id: committed-dispatcher
+    label: "CommittedRecordDispatcher\nordered fan-out"
+    kind: application
+    group: projection-context
+    layout: {x: 965, y: 280, w: 270, h: 78}
 
   - id: projection-worker
     label: "Projection worker\nfast deterministic state update"
     kind: application
     group: projection-context
-    layout: {x: 965, y: 330, w: 270, h: 86}
+    layout: {x: 965, y: 400, w: 270, h: 82}
 
   - id: snapshot
     label: "Read model / immutable snapshot"
     kind: model
     group: projection-context
-    layout: {x: 965, y: 505, w: 270, h: 76}
+    layout: {x: 965, y: 535, w: 270, h: 76}
 
   - id: query-worker
     label: "Query worker(s)\nmay perform long filtering / calculations"
@@ -103,7 +109,8 @@ edges:
       - {x: 900, y: 366}
       - {x: 900, y: 221}
 
-  - {from: q2, to: projection-worker}
+  - {from: q2, to: committed-dispatcher}
+  - {from: committed-dispatcher, to: projection-worker}
   - {from: projection-worker, to: snapshot}
   - {from: snapshot, to: query-worker, label: "snapshot/read"}
   - {from: query-worker, to: client-result}
