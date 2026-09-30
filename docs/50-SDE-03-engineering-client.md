@@ -141,123 +141,59 @@ new log records and can query/change the temporary runtime-global logging level.
 Live logs are not IF-03 application events and do not become TimingNode state merely
 because they are visible in the same Engineering Client.
 
-## Step-4 UI direction
+## Step-4 UI direction — first registration slice
 
-The Step-4 UI should grow only enough to inspect and exercise the domain/protocol slice
-being implemented. The working layout is:
+The Step-4 UI grows only enough to exercise and inspect the first registration
+slice. The existing **Status**, **Events**, **Terminal** and **Logs** tabs remain
+the implemented baseline. A small **Timing** view may be added; a broad
+Upstream/reference-data editor is not part of this slice.
 
-```text
-Engineering Client
-┌────────────────────────────────────────────────────────────┐
-│ endpoint / connection / advertised engineering capabilities│
-├────────────────────────────────────────────────────────────┤
-│ Status | Events | Timing | Upstream | Terminal | Logs      │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│ selected engineering view                                  │
-│                                                            │
-│ parsed state + identifiers + records                        │
-│ raw/public representation where useful                     │
-│                                                            │
-├────────────────────────────────────────────────────────────┤
-│ connection / command / validation feedback                  │
-└────────────────────────────────────────────────────────────┘
-```
+The first Timing view should expose:
 
-The exact tab names remain working UI terminology until the Step-4 use cases and public
-contracts have been reviewed.
+- the configured TimingNode identity as read-only state;
+- the assigned/unassigned location state;
+- location editing only while the TimingNode is `CLOSED`;
+- explicit `open` and `close` actions with visible accepted/rejected outcomes;
+- a capability-gated direct accepted-registration simulation control;
+- optional deterministic observation time for repeatable engineering tests;
+- committed registration/TimingData history with source sequence;
+- raw public representations where useful for interface diagnosis.
 
-### Timing view
+The client must not construct or inject a completed TimingData record. Direct
+registration simulation enters the public TimingNode registration operation
+**after** antenna/decoding/filtering, so the TimingNode remains responsible for
+its configured identity, active location, lifecycle validation and source
+sequence. A later simulated-antenna increment will enter earlier in the normal
+registration path and exercise filtering before reaching the same operation.
 
-The Step-4 Timing view is expected to make at least the implemented subset of these
-concepts inspectable:
-
-- TimingSystem / TimingNode selection where more than one exists;
-- TimingNode lifecycle/status;
-- `StageStartTimes`;
-- `NextUpTeams`;
-- `RaceData` reference state relevant to the current slice;
-- registration / LogBook history;
-- `TimingData` identity such as `TimingNodeId` + sequence;
-- raw/public representations useful for interface debugging.
-
-The Engineering Client may keep a display model or temporary cache for rendering, but
-SI-01 remains the authoritative owner of the operational state.
-
-### Upstream view
-
-The working Upstream view is an engineering control/inspection surface, not a second
-production backend implementation.
-
-It should be able to show:
-
-- whether SI-01 advertises support for backend/upstream simulation;
-- whether DebugConnector test control is enabled;
-- relevant configured connector/status information exposed by public contracts;
-- a controlled way to inject supported semantic upstream test messages;
-- observable results/traffic needed to understand what SI-01 emitted or accepted;
-- validation/error feedback.
-
-A useful Step-4 example is injecting a synthetic reserve-transponder mapping or other
-reference-data message as an upstream message and then observing the resulting SI-01
-state through normal public queries/events.
-
-The exact message editor and message types follow the reviewed IF-06/UpstreamProtocol
-contract. The UI must not invent fields solely because they are convenient to display.
-
-### Use-case-driven Step-4 UI review scenarios
-
-The existing **Status**, **Events**, **Terminal** and **Logs** tabs are the
-implemented JavaFX baseline. The planned **Timing** and **Upstream** views
-are review targets, not currently implemented screens.
+### First-slice UI review scenarios
 
 | Scenario | Planned Engineering Client behaviour | Use case |
 | --- | --- | --- |
-| Select another TimingNode | Replace the selected instance's displayed state/history instead of combining separate nodes' data. | UC-001, UC-005, UC-009, UC-014 |
-| Lose/re-establish event connection | Mark cached information stale/disconnected and rebuild the view from current SI-01 state after reconnect. | UC-008, UC-009 |
-| Inspect ordered registration data | Display the owning TimingNode and source sequence separately from WebSocket delivery order, with raw public data available for diagnosis. | UC-003, UC-009, UC-011 |
-| Inspect advertised capabilities | Disable or hide unsupported test controls; ordinary status inspection works without DebugConnector. | UC-009 |
-| Inject synthetic reference input | Submit only supported semantic input; show submission feedback separately from resulting state/events. | UC-009, UC-010 |
-| Run alongside a real connector | Identify engineering-origin traffic without requiring a second independent backend implementation in the client. | UC-009, UC-011 |
+| Inspect a closed TimingNode | Show configured identity, lifecycle and whether a location is assigned. | UC-001, UC-009 |
+| Set/change location | Allow only while `CLOSED`; show explicit validation/rejection. | UC-001, UC-002, UC-009 |
+| Open/close | Reject open without a valid location; keep the active location fixed until close. | UC-002, UC-009 |
+| Inject an accepted registration | When capability-enabled, submit semantic participant identity plus supported observation time; do not supply sequence/source/location fields owned by the node. | UC-003, UC-009 |
+| Inspect registration result | Show committed TimingData/history and source sequence separately from the command-submission result. | UC-003, UC-009, UC-011 |
+| Lose/re-establish event connection | Mark cached information stale, rebuild current node state and registration data, then resume live updates. | UC-009 |
 
-D03 owns the actual routes, JSON fields, capability representation, message
-schemas and any additional replay/retention policy. This section only specifies
-the UI behaviours that should be reviewable when those contracts exist.
+D03 owns the actual routes, JSON fields, identifier formats, capability
+representation and TimingData schema.
 
 ## Capability-driven engineering controls
 
-The Engineering Client must not assume every SI-01 build/deployment supports every
-engineering action.
+The Engineering Client must not assume that direct registration simulation is
+available in every SI-01 deployment. The running application advertises whether
+that engineering capability is supported and enabled; otherwise the control is
+disabled or absent.
 
-The intended pattern is:
+For this first slice the engineering control is deliberately a **direct accepted
+registration** input. It is not antenna simulation and it is not an upstream
+backend message. Broader DebugConnector/upstream simulation is deferred until a
+later slice needs inbound backoffice behaviour such as start-time/reference-data
+updates.
 
-```text
-Engineering Client
-        |
-        | query public capabilities
-        v
-      IF-03
-        |
-        +-- ordinary status/query capabilities
-        +-- optional debug/upstream-test capability
-                         |
-                         v
-                  DebugConnector
-                         |
-                  UpstreamGateway
-                         |
-                  UpstreamProtocol
-```
-
-The UI enables an engineering control only when the running application advertises the
-corresponding supported/enabled capability.
-
-Debug/upstream injection should be disabled or absent by default in normal production
-compositions unless explicitly enabled. It may remain useful next to a real RabbitMQ
-connector for targeted testing, but debug-origin traffic must remain diagnosable and
-must still pass through the supported upstream semantic boundary.
-
-## Existing web-application compatibility
+## Existing web-application compatibility## Existing web-application compatibility
 
 Before Step-4 IF-03/TimingData representations are fixed, the project will inspect the
 existing web application's current expectations for:
