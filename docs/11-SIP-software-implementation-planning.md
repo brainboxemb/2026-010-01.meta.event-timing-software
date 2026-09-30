@@ -226,12 +226,15 @@ tests and make its public results inspectable through the existing Engineering C
 - RaceData/reference data;
 - TimingNode lifecycle/status needed by these capabilities;
 - clear state-change ownership and observable results;
-- compatible IF-03 additions needed by the existing JavaFX Engineering Client.
+- compatible IF-03 additions needed by the existing JavaFX Engineering Client;
+- a lightweight DebugConnector plus Engineering Client upstream-simulator endpoint
+  for exercising UpstreamProtocol without RabbitMQ or the real backend.
 
 ### Not in this step
 
 - production RFID/CAN hardware;
-- RabbitMQ or production backend transport implementation;
+- RabbitMQ or production backend transport implementation beyond the lightweight
+  public DebugConnector/simulator loop;
 - target-platform deployment;
 - full persistence/recovery and end-to-end event simulation;
 - the optional lightweight browser/web test client;
@@ -251,6 +254,8 @@ tests and make its public results inspectable through the existing Engineering C
 - State changes are deterministic and testable.
 - Domain behaviour has no production-hardware or transport dependency.
 - The existing Engineering Client can inspect the Step-4 state through public interfaces.
+- The Engineering Client can emulate the upstream peer over DebugConnector so
+  UpstreamProtocol semantics can be exercised without RabbitMQ/backend infrastructure.
 
 ### Demo
 
@@ -259,6 +264,8 @@ tests and make its public results inspectable through the existing Engineering C
 - Apply/update starts, teams and reference data through supported Step-4 paths.
 - Show TimingData/registration history and state changes.
 - Show that multiple TimingNodes retain independent state/sequence histories.
+- Use the Engineering Client upstream simulator to exchange representative
+  UpstreamProtocol messages through DebugConnector.
 
 ### Done
 
@@ -268,6 +275,8 @@ tests and make its public results inspectable through the existing Engineering C
 - core state transitions have deterministic tests;
 - source identity/sequence rules are represented consistently;
 - Step-4 state is observable through IF-03 and the Engineering Client;
+- representative UpstreamProtocol exchange works through the dedicated
+  DebugConnector/Engineering Client simulator loop without RabbitMQ;
 - the running-system demo uses the Engineering Client rather than a new web test client.
 
 ---

@@ -116,6 +116,20 @@ activities:
       inspect the Step-4 TimingNode/TimingData/reference/next-up state. Keep the
       client external to SI-01 and do not introduce the optional web client.
 
+  - id: A06
+    lane: application
+    kind: integration
+    title: DebugConnector + upstream simulator loop
+    state: planned
+    depends_on: [D03, A02, A05]
+    note: >-
+      Add a lightweight DebugConnector under UpstreamGateway and a matching
+      DebugUpstreamServer role in the Engineering Client. SI-01 connects to this
+      dedicated engineering endpoint so the client can emulate the upstream
+      server, inject semantic UpstreamProtocol messages and inspect outbound
+      messages without RabbitMQ or a real backend. Keep this separate from IF-03
+      API ports/contracts.
+
   - id: V02
     lane: verification
     kind: verification
@@ -132,8 +146,10 @@ activities:
     kind: verification
     title: Step-4 running-system demonstration
     state: planned
-    depends_on: [A05, V02]
+    depends_on: [A05, A06, V02]
     note: >-
       Run SI-01 with synthetic data and use the JavaFX Engineering Client to show
       TimingNode state, TimingData/registration history, reference/next-up changes
-      and isolation across multiple TimingNodes through supported public interfaces.
+      and isolation across multiple TimingNodes. Use its upstream-simulator role
+      to exchange representative UpstreamProtocol messages through DebugConnector
+      without RabbitMQ or a real backend.
