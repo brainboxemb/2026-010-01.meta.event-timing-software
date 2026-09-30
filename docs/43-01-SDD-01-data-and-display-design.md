@@ -194,8 +194,7 @@ final class TimingDataRecord {
     private TimingTimestamp recordedAt;
     private RegistrationOrigin origin;            // AUTOMATIC | MANUAL when applicable
     private RegistrationTimeSource timeSource;     // OBSERVED | SYSTEM_ASSIGNED | OPERATOR_ENTERED
-    private TeamId teamId;                         // canonical participant identity
-    private TagIdentity tagIdentity;               // automatic registrations; null for manual
+    private RegistrationIdentity registrationIdentity; // canonical stored participant identity
     private TimingDataRecordKey reference;         // revocation/correction target
     private TimingDataRecordPayload payload;       // type-specific semantic data
 }
@@ -336,22 +335,34 @@ RegistrationTag = prefix + number
 The postfix/copy suffix is deliberately removed from the registration identity;
 the prefix is retained so normal and reserve tags remain distinguishable.
 
-Registration processing resolves the normalised `TagIdentity` to the canonical
-`TeamId`:
+All participant registrations are committed with one canonical
+`RegistrationIdentity`.
+
+Automatic path:
 
 ```text
-TagIdentityResolver
-  normal TagIdentity  -> TeamId by removing the normal prefix/class
-  reserve TagIdentity -> TeamId through RaceData reserve mapping
+TagIdentity
+  normal  -> deterministic registration-identity translation
+  reserve -> RaceData-backed reserve translation
+       -> RegistrationIdentity
 ```
 
-A manual registration does not fabricate a tag identity; it receives `TeamId`
-directly.
+Manual path:
 
-For an automatic registration the canonical record retains both the resolved
-`TeamId` and the observed normalised `TagIdentity` so provenance is not lost.
-Which of those fields a particular client/interface exposes remains a separate
-interface decision.
+```text
+TeamIdentity
+  -> UI/application registration-identity translation
+  -> RegistrationIdentity
+```
+
+`RegistrationIdentity` supports a semantic type discriminator plus number. A
+proprietary translator may map that to/from an external split representation such
+as a one-character number type plus numeric team number, but those external codes
+are not public TimingData values.
+
+Source identities such as `TagIdentity` may be retained/exposed separately when
+an interface needs provenance or diagnostics; they are not substitutes for the
+canonical registration identity stored by TimingData.
 
 ## In-memory authoritative state with file backup
 
@@ -692,8 +703,9 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-TAG-001** — The registration path shall use a normalised RFID identity consisting of prefix plus decoded number.
 - **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
 - **CAND-TAG-003** — The physical tag postfix/copy identifier shall be removed from the canonical registration identity.
-- **CAND-TAG-004** — A normalised `TagIdentity` shall resolve to the canonical `TeamId`; normal tags resolve deterministically from their contained number while reserve tags use locally available backoffice-synchronised mapping data.
-- **CAND-TAG-005** — Automatic registrations shall retain the observed normalised `TagIdentity` alongside the resolved `TeamId`; manual registrations shall use the operator-supplied `TeamId` without fabricating a tag identity.
+- **CAND-TAG-004** — A normalised `TagIdentity` shall resolve to the canonical `RegistrationIdentity`; normal tags resolve deterministically while reserve tags use locally available backoffice-synchronised mapping data.
+- **CAND-TAG-005** — A manual registration shall resolve its operator-supplied `TeamIdentity` to the same canonical `RegistrationIdentity` used by automatic registrations.
+- **CAND-TAG-006** — `RegistrationIdentity` shall support a semantic type discriminator plus registration/team number without exposing proprietary one-character type codes in the public protocol.
 
 ### Local data and backup
 
@@ -727,7 +739,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
 - What sequence numeric width/wraparound policy is required?
-- For an automatic registration, should each public client/interface receive the observed normalised `TagIdentity`, the resolved `TeamId`, or both?
+- Which public clients/interfaces, if any, need source `TagIdentity` provenance in addition to the canonical `RegistrationIdentity`?
 - Which operational events besides the promoted TimingNode `OPEN` / `CLOSED` state-change records belong in the registration stream?
 - Which additional generic fields, if any, are required on a lifecycle/state-change record beyond its normal TimingData identity/location/sequence/time fields and semantic state?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
