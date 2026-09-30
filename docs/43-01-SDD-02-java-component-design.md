@@ -144,9 +144,10 @@ domain/
     LogBook.java
     LogBookItem.java                    internal logbook-domain representation
   timingdata/
-    TimingData.java                     canonical record/codec contract
-    TimingDataRecord.java               persistent/interchange record
-    TimingDataProvider.java             typed extension provider contract
+    TimingData.java                     framework-owned semantic protocol API
+    TimingDataRecord.java               canonical persistent/interchange record
+    TimingDataCodec.java                canonical public/reference codec
+    TimingDataProvider.java             external-format translation provider
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
