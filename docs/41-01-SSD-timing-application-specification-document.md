@@ -1861,7 +1861,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Build | Maven | accepted |
 | Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors | architecture baseline selected; keep defaults simple and tune only if evidence requires it |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
-| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | working direction; controlled per-system offset/stepping supports simulation; define precision/serialisation, sync and clock-correction policy |
+| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
@@ -1939,7 +1939,6 @@ The next useful architecture work is to resolve concrete implementation choices,
 - field logging handlers, level defaults and rotation/retention;
 - remote-shell technology;
 - first concrete command/query submission/result API signatures;
-- `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;
 - wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
 - concrete configuration file syntax/library and first Java configuration type boundaries;
 - persistence commit/durability/atomic-write/recovery policy;
