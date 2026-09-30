@@ -332,8 +332,10 @@ The registration path normalises it to:
 RegistrationTag = prefix + number
 ```
 
-The postfix/copy suffix is deliberately removed from the registration identity;
-the prefix is retained so normal and reserve tags remain distinguishable.
+The postfix/copy suffix, when present, is deliberately removed from the
+registration identity; the prefix is retained so normal and reserve tags remain
+distinguishable. Finish-side tag representations are allowed to have no postfix,
+so parsing/normalisation shall not require one globally.
 
 All participant registrations are committed with one canonical
 `RegistrationIdentity`.
@@ -355,10 +357,21 @@ TeamIdentity
   -> RegistrationIdentity
 ```
 
-`RegistrationIdentity` supports a semantic type discriminator plus number. A
-proprietary translator may map that to/from an external split representation such
-as a one-character number type plus numeric team number, but those external codes
-are not public TimingData values.
+`RegistrationIdentity` supports a semantic type discriminator plus number. The
+first supported values are:
+
+```text
+STANDARD   number 1..350   allowed at LocationID 1..23
+WOMEN      number 1..350   allowed at LocationID 24
+MEN        number 1..350   allowed at LocationID 25
+```
+
+A proprietary translator may map these to/from its external split representation,
+but external one-character codes are not public TimingData values.
+
+Reserve transponders remain a `TagIdentity` concern and resolve to one of these
+canonical registration identities; they do not add another
+`RegistrationIdentity.type`.
 
 Source identities such as `TagIdentity` may be retained/exposed separately when
 an interface needs provenance or diagnostics; they are not substitutes for the
@@ -705,7 +718,10 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-TAG-003** — The physical tag postfix/copy identifier shall be removed from the canonical registration identity.
 - **CAND-TAG-004** — A normalised `TagIdentity` shall resolve to the canonical `RegistrationIdentity`; normal tags resolve deterministically while reserve tags use locally available backoffice-synchronised mapping data.
 - **CAND-TAG-005** — A manual registration shall resolve its operator-supplied `TeamIdentity` to the same canonical `RegistrationIdentity` used by automatic registrations.
-- **CAND-TAG-006** — `RegistrationIdentity` shall support a semantic type discriminator plus registration/team number without exposing proprietary one-character type codes in the public protocol.
+- **CAND-TAG-006** — `RegistrationIdentity` shall support semantic types `STANDARD`, `WOMEN` and `MEN` plus registration/team number without exposing proprietary one-character type codes in the public protocol.
+- **CAND-TAG-007** — `STANDARD` registrations shall use numbers 1..350 at locations 1..23; `WOMEN` registrations shall use numbers 1..350 at location 24; `MEN` registrations shall use numbers 1..350 at location 25.
+- **CAND-TAG-008** — Reserve transponders shall remain reserve `TagIdentity` values and resolve to a canonical `RegistrationIdentity`; reserve shall not become a separate RegistrationIdentity type.
+- **CAND-TAG-009** — RFID normalisation shall not require a physical postfix on every tag; when a postfix is present it is physical tag-copy detail and shall not form part of `RegistrationIdentity`.
 
 ### Local data and backup
 
@@ -740,6 +756,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
 - What sequence numeric width/wraparound policy is required?
 - Which public clients/interfaces, if any, need source `TagIdentity` provenance in addition to the canonical `RegistrationIdentity`?
+- Verify the legacy "unknown team" registration semantics before deciding whether the public model needs an explicit unknown-registration identity/state; do not promote legacy location-specific codes directly.
 - Which operational events besides the promoted TimingNode `OPEN` / `CLOSED` state-change records belong in the registration stream?
 - Which additional generic fields, if any, are required on a lifecycle/state-change record beyond its normal TimingData identity/location/sequence/time fields and semantic state?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
