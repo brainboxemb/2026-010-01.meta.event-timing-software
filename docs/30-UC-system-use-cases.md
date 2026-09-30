@@ -565,7 +565,7 @@ compatibility-source protocol.
 
 | Use case | First-slice inspection/control need | Explicitly later |
 | --- | --- | --- |
-| UC-001 / UC-002 | Inspect one configured TimingNode identity, assigned/unassigned location and lifecycle; set/change location only while `CLOSED`; reject `OPEN` without a valid location; keep location fixed while `OPEN`; close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
+| UC-001 / UC-002 | Connect to a known registration system, inspect its reported identity, assigned/unassigned location and open/closed state; set/change location only while `CLOSED`; reject `OPEN` without a valid location; keep location fixed while `OPEN`; close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
 | UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, tag decoding, observation accumulation/filtering, reserve/test-tag behaviour and persistence/recovery. |
 | UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
 | UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |
