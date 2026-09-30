@@ -53,20 +53,20 @@ and as timing-data payload inside `UpstreamProtocol`. TimingData owns the
 validation and encode/decode compatibility rules so adapters can persist or
 transport encoded values without becoming owners of the record schema.
 
-The registration ledger contains timing/registration-domain and traceable operational records such as:
+The registration ledger contains timing/registration-domain and traceable operational records. The first concretely promoted operational record is the **WP status** record, compatible with the legacy `W` characteristic:
 
 ```text
-SYSTEM_OPEN
-PASSAGE
-START
-MANUAL_REGISTRATION
-PENALTY
-PENALTY_REVOKED
+characteristic = W
+
+status O = registration point / TimingNode opened
+status D = registration point / TimingNode closed
 ```
 
-`SYSTEM_OPEN` is explicitly part of the registration stream: opening a location/timing node is not merely a transient status change; it produces a synchronisable traceable entry.
+The normal SI-01 sequence is therefore an opening `W/O` record followed later by a closing `W/D` record for the same TimingNode stream.
 
-Additional operational record types may be added only when domain requirements justify them.
+Legacy lowercase `d` ("closed, but more data is still expected") is **not produced by SI-01 and is not a TimingNode lifecycle value**. A higher-level/backoffice system may derive or add such an indication from its own knowledge of incomplete synchronisation. SI-01 itself records the operational close as `W/D`; transport backlog/pending-data state remains a separate synchronisation concern.
+
+Opening and closing are thus traceable TimingData facts, not merely transient status changes. Additional record types such as participant passages, starts, manual registrations, penalties and revocations are introduced only when their domain requirements are promoted.
 
 Records are historical facts and are not silently overwritten when corrected or revoked.
 
