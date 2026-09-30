@@ -198,7 +198,7 @@ controlled remote-terminal shutdown.
 
 ---
 
-## Step 4 — First TimingNode registration slice
+## Step 4 — First registration-system slice
 
 Status: active
 
