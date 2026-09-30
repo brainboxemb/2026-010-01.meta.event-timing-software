@@ -4,7 +4,7 @@ Status: working draft / non-authoritative
 
 This Software System Specification Document combines the current **software-system requirements baseline** with the **software-system architecture**. It defines the software items, their allocated responsibilities, system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
 
-It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Headless Timing Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
+It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Timing Point Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
 
 Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
@@ -76,7 +76,7 @@ The current migrated baseline records only obligations already present in the
 pre-migration architecture/use-case model; it does not invent a new capability set merely because requirements
 and architecture now share one document.
 
-- The **Headless Timing Application** (SI-01) keeps local timing/registration state.
+- The **Timing Point Application** (SI-01) keeps local timing/registration state.
 - The planned **Desktop GUI Application** (SI-02) is a separate software item and uses
   a system-owned interface rather than SI-01 internals.
 - Local timing/device operation shall not depend on a connected GUI or engineering/test client.
@@ -90,8 +90,8 @@ and architecture now share one document.
 
 The software-system architecture is driven by these system-level concerns:
 
-- the **Headless Timing Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
-- the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the API;
+- the **Timing Point Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
+- the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Timing Point Application through the API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
 - external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
@@ -105,7 +105,7 @@ Software-item identity is stated by the document and traceability metadata; the 
 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
-| **SI-01** | Headless Timing Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
+| **SI-01** | Timing Point Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the API | Operator workstation/laptop |
 
 Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
@@ -131,7 +131,7 @@ Supporting framework modules, adapters and engineering/test clients are not auto
              / displays
 ```
 
-GUI and engineering/test clients may disconnect without changing where timing state is kept: it remains in the **Headless Timing Application** (SI-01).
+GUI and engineering/test clients may disconnect without changing where timing state is kept: it remains in the **Timing Point Application** (SI-01).
 
 <a id="fig-sys-01"></a>
 ![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
@@ -139,18 +139,18 @@ GUI and engineering/test clients may disconnect without changing where timing st
 
 ## Software-item relationships
 
-### **Headless Timing Application** (SI-01) ↔ **Desktop GUI Application** (SI-02)
+### **Timing Point Application** (SI-01) ↔ **Desktop GUI Application** (SI-02)
 
-The **Desktop GUI Application** (SI-02) is an IP network client of the **Headless Timing Application** (SI-01). It presents operator status and control but does not access the application's memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
+The **Desktop GUI Application** (SI-02) is an IP network client of the **Timing Point Application** (SI-01). It presents operator status and control but does not access the application's memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
 
 
-### **Headless Timing Application** (SI-01) ↔ backend
+### **Timing Point Application** (SI-01) ↔ backend
 
-The **Headless Timing Application** (SI-01) exchanges race/reference data, timing records, status and reconciliation information with the upstream system through a system-owned semantic interface. SI-01 owns the semantic `TimingData` representation and `UpstreamProtocol` behaviour; concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
+The **Timing Point Application** (SI-01) exchanges race/reference data, timing records, status and reconciliation information with the upstream system through a system-owned semantic interface. SI-01 owns the semantic `TimingData` representation and `UpstreamProtocol` behaviour; concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
 
-### **Headless Timing Application** (SI-01) ↔ field devices
+### **Timing Point Application** (SI-01) ↔ field devices
 
-RFID, CAN, keypad, beeper and display equipment are external device boundaries of the **Headless Timing Application** (SI-01). Device semantics belong in system/device interfaces; internal device/network-controller lifecycle, discovery, threads and processing pipelines belong in the **Headless Timing Application** (SI-01) architecture/design.
+RFID, CAN, keypad, beeper and display equipment are external device boundaries of the **Timing Point Application** (SI-01). Device semantics belong in system/device interfaces; internal device/network-controller lifecycle, discovery, threads and processing pipelines belong in the **Timing Point Application** (SI-01) architecture/design.
 
 The beeper is currently a transport-neutral device role; its concrete transport/interface allocation remains deferred rather than being assumed to be CAN.
 
@@ -180,8 +180,8 @@ System-level IDDs own interface semantics. Software-item SRDs and SADs reference
 The following rules apply across software-item boundaries:
 
 - operator and engineering clients should use shared application semantics rather than implement different business rules per client;
-- network clients read state from and send commands to the **Headless Timing Application** (SI-01); timing state remains in that application;
-- loss of the **Desktop GUI Application** (SI-02) or an engineering/test client must not by itself stop local operation of the **Headless Timing Application** (SI-01);
+- network clients read state from and send commands to the **Timing Point Application** (SI-01); timing state remains in that application;
+- loss of the **Desktop GUI Application** (SI-02) or an engineering/test client must not by itself stop local operation of the **Timing Point Application** (SI-01);
 - IF-03 and IF-09 are endpoint-to-endpoint logical interfaces and must not make a physical Wi-Fi router an architectural prerequisite;
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
@@ -190,7 +190,7 @@ The following rules apply across software-item boundaries:
 
 ## System deployment view
 
-The principal device/interface relationships are a **software-system concern** because they show where the **Headless Timing Application** (SI-01), the operator software items, external field devices and backend meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
+The principal device/interface relationships are a **software-system concern** because they show where the **Timing Point Application** (SI-01), the operator software items, external field devices and backend meet. The lines in this view are logical system-interface relationships: they deliberately do not force traffic through a router node.
 
 <a id="fig-sys-02"></a>
 ![System device and logical interface topology](../../../raw/prod/docs/assets/architecture/system-device-network-topology.svg)
@@ -203,7 +203,7 @@ Deployment/configuration source
   +-- IF-11 --> SI-01
 
 Field host
-  SI-01 Headless Timing Application
+  SI-01 Timing Point Application
     |
     +-- IF-07 --> RFID subsystem
     +-- IF-08 --> CAN devices / keypad / DisplayRev1Can
@@ -235,7 +235,7 @@ Network health is not one boolean and should not be modeled as one mandatory cha
 
 At minimum distinguish:
 
-- **local IP connectivity** — network interface/link of the **Headless Timing Application** (SI-01) and its ability to communicate with local peers;
+- **local IP connectivity** — network interface/link of the **Timing Point Application** (SI-01) and its ability to communicate with local peers;
 - **configured router/AP connectivity** — whether the deployment is connected/associated with the configured local router or access point; this may legitimately be **N/A** for direct/development/test compositions;
 - **external network reachability** — whether connectivity beyond the local network is available;
 - **backend connectivity** — whether the configured backend endpoint/transport/session is healthy.
@@ -248,7 +248,7 @@ The exact process/thread topology, internal runtime cardinality, queueing model,
 
 ### State ownership and disconnected operation
 
-The **Headless Timing Application** (SI-01) keeps the local operational state. Losing a GUI/test client or external connection must not move that state elsewhere or make synchronisation appear healthy when it is not.
+The **Timing Point Application** (SI-01) keeps the local operational state. Losing a GUI/test client or external connection must not move that state elsewhere or make synchronisation appear healthy when it is not.
 
 ### Public/private implementation boundary
 
@@ -266,7 +266,7 @@ The architecture must support constrained field deployment and normal Linux/Wind
 
 ## Relationship to software-item architecture
 
-The SSD for the **Headless Timing Application** (SI-01) owns, among other things:
+The SSD for the **Timing Point Application** (SI-01) owns, among other things:
 
 - layered application responsibilities;
 - `TimingNode` software/domain decomposition, separate registration-hardware topology, and their configuration/data-source identity mapping;

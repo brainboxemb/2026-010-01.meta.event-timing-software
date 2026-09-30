@@ -54,7 +54,7 @@ Define the first architecture baseline for the timing software.
 ### Scope
 
 - domain and TimingNode baseline;
-- Headless Timing Application boundary;
+- Timing Point Application boundary;
 - initial interface catalogue;
 - Java/Maven and verification direction.
 
@@ -142,7 +142,7 @@ backoffice and hardware work can all use without reaching into SI-01 internals.
 
 ### Goal
 
-Build the first useful **Headless Timing Application** (SI-01) on the development host.
+Build the first useful **Timing Point Application** (SI-01) on the development host.
 
 ### Scope
 
