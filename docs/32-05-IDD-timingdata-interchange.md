@@ -394,8 +394,8 @@ deployment/software-item concerns and are not defined by IF-05.
 
 ## Reference JSON shape
 
-The following illustrates the canonical semantic shape; exact timestamp text
-precision remains to be fixed before stable release.
+The following examples illustrate the canonical v1 semantic shape and timestamp
+representation.
 
 Lifecycle example:
 
