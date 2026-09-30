@@ -54,7 +54,7 @@ nodes:
     layout: {x: 105, y: 665, w: 310, h: 82}
 
   - id: intent
-    label: "TimingDataIntent\nimmutable semantic intent\nNO sequence • NOT committed"
+    label: "TimingDataIntent\nTimingNode + Location snapshot\nNO sequence • NOT committed"
     kind: model
     group: commit
     layout: {x: 565, y: 215, w: 440, h: 100}
