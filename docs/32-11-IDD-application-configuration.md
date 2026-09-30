@@ -80,14 +80,32 @@ separate software item.
 
 The first architecture-level profile set is:
 
-| Profile | Intended default composition |
-| --- | --- |
-| `standard` | Normal Timing Point: one TimingNode by default, CAN device network enabled by default, display capability present by default, normal field-device composition. |
-| `finish` | Finish Timing Point: two TimingNodes by default, CAN disabled by default, no display by default; finish-specific field I/O is added only when its implementation requirements are concrete. |
+| Profile | Intended default composition | Location compatibility |
+| --- | --- | --- |
+| `standard` | Normal Timing Point: one TimingNode by default, CAN device network enabled by default, display capability present by default, normal field-device composition. | No profile-specific `LocationID` restriction; generic `LocationID` validity rules still apply. |
+| `finish` | Finish Timing Point: two TimingNodes by default, CAN disabled by default, no display by default; finish-specific field I/O is added only when its implementation requirements are concrete. | Each configured TimingNode must use `LocationID` 24 or 25. |
 
-These are defaults, not restrictions. Explicit deployment configuration may
-override profile-owned defaults. A profile must not silently redefine functional
-identity semantics such as what a `TimingNodeId` or `LocationID` means.
+A built-in profile may define both **defaults** and **compatibility constraints**.
+Explicit deployment configuration may override profile-owned defaults, but it
+must not widen or bypass profile compatibility constraints. The initial
+`finish` constraint therefore rejects a configured TimingNode whose
+`LocationID` is not 24 or 25; `standard` adds no profile-specific location
+restriction.
+
+Conceptually, the built-in profile metadata includes:
+
+```text
+standard
+  allowedLocationIds: any
+
+finish
+  allowedLocationIds: [24, 25]
+```
+
+`allowedLocationIds` is profile-definition metadata versioned with the
+software. It is not a deployment-configurable observation/tag filter and does
+not change what `LocationID` means. It constrains which configured location
+identities are compatible with the selected application profile.
 
 Console, Remote Shell and API are **baseline Timing Point Application
 capabilities**, not profile-specific features. Their command/status semantics
@@ -143,6 +161,7 @@ Rules:
 - each TimingSystem contains 1..N TimingNodes;
 - `TimingNodeId` identifies the logical TimingNode and remains application-wide unique in the current configuration baseline;
 - `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
+- each configured `LocationID` must satisfy any compatibility constraint of the selected built-in application profile;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
 - the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
 
@@ -372,7 +391,8 @@ This baseline does not require a general `SecretProvider` hierarchy.
 ## Configuration sources and precedence
 
 The application resolves configuration **from defaults toward explicit deployment
-intent**. Explicit deployment values always win over built-in defaults.
+intent**. Explicit deployment values win over built-in default values, but they
+do not override built-in profile compatibility constraints.
 
 ```text
 selected built-in application profile defaults
@@ -450,10 +470,12 @@ simulation: TimingNode -> built-in SimulatedAntenna
 The same TimingNode identity rules, application commands, API semantics and
 domain behaviour remain in use.
 
-A profile may provide a topology skeleton/cardinality and capability defaults.
-Deployment-specific externally meaningful identities and locations must either
-be supplied explicitly or follow a separately specified deterministic default
-rule; profile resolution must not invent ambiguous functional identities.
+A profile may provide a topology skeleton/cardinality, capability defaults and
+compatibility constraints. Deployment-specific externally meaningful identities
+and locations must either be supplied explicitly or follow a separately
+specified deterministic default rule; profile resolution must not invent
+ambiguous functional identities. Profile location constraints validate an
+explicitly resolved `LocationID`; they do not supply that identity implicitly.
 
 The exact selector syntax is deferred until the configuration resolver is
 implemented. A compact deployment should ultimately be able to select a profile
@@ -469,6 +491,7 @@ Validation includes, where applicable:
 - missing/invalid or duplicate internal `TimingSystemId` values;
 - TimingSystems without at least one configured TimingNode;
 - duplicate application-wide `TimingNodeId` values;
+- a configured TimingNode `LocationID` that is not allowed by the selected built-in application profile (initially, `finish` allows only 24 and 25 while `standard` adds no profile-specific restriction);
 - references to unknown TimingSystems or TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
@@ -499,7 +522,7 @@ main()
   -> resolve secrets
   -> produce effective ApplicationConfig
   -> discover built-in and configured external extension providers
-  -> validate effective configuration and provider references
+  -> validate effective configuration, profile constraints and provider references
   -> configure executable runtime logging
   -> ApplicationBootstrap composes TimingApplication and selected implementations
   -> start application lifecycle
