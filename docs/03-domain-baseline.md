@@ -312,8 +312,17 @@ Asset and antenna context may additionally be retained where useful for diagnost
 ### Participant registration semantics
 
 The public TimingData model supports both **automatic** and **manual**
-participant registrations. These are the same semantic registration concept with
-different origin metadata; they do not use different sequence/key rules.
+participant registrations. These are the same semantic registration concept and
+use the same sequence/key rules.
+
+For manual registrations the model separately records whether the effective time
+was assigned automatically by SI-01 or explicitly entered by the operator. The
+model also supports a semantic **finish-only** purpose: such a registration may
+count as a finish result but shall never become the start time/registration for a
+following stage. This purpose is independent of how the time was obtained.
+
+A proprietary format may collapse origin, time-source and purpose into compact
+codes; the public TimingData protocol keeps them as separate semantic fields.
 
 A committed registration may later be revoked. Revocation is append-only:
 
@@ -323,6 +332,7 @@ A committed registration may later be revoked. Revocation is append-only:
   `(TimingNodeId, SequenceNumber)`;
 - the effective registration/race time on the revocation is copied from the
   original registration rather than replaced by the operator's current time;
+- origin, time-source and purpose remain those of the referenced registration;
 - the revocation record separately carries its own commit/record time.
 
 This allows a receiver to reconstruct both the effective registration state and
