@@ -569,7 +569,10 @@ cross-aggregate target resolution.
 :id: TagProcessor
 
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
-the domain decisions that follow from those observations.
+the domain decisions needed to produce an immutable registration candidate. It
+does not perform durable TimingData writes and does not wait for slow
+persistence/query work. Accepted candidates cross an asynchronous record-commit
+boundary owned by the registration/TimingData handling path.
 ```
 
 ```{arch} StageStartTimes
@@ -1235,45 +1238,79 @@ The source for this process view is
 
 #### Reads
 
-A read does not automatically need the TimingNode serial executor.
+A read does not automatically need the TimingNode serial executor and a
+potentially long-running query must not stall the registration/record-commit
+path.
 
 Use the simplest rule that preserves correctness:
 
 - application data that does not depend on mutable TimingNode state, such as the
   build/version identity, may be read directly;
-- a read that must see an exact combination of mutable TimingNode values is run
-  through that TimingNode's serial executor;
+- committed TimingData may feed a separate projection/read-model updater through
+  an asynchronous committed-record queue;
+- normal client queries read that projection/read model rather than the mutable
+  write path;
+- a query that needs an exact combination of mutable TimingNode values may take
+  a small immutable snapshot through the TimingNode serial executor, then perform
+  expensive filtering/calculation outside that executor;
 - presentation code must not gain write access to domain state just because it
   can read it.
 
-The HTTP/status representation may later be built from values returned by the
-application. The architecture does not require a Java class called
-`ApplicationStatusSnapshot`, `ApplicationStatusModel` or any other specific
-status helper merely to satisfy this rule.
+This separates write ordering from read workload. A slow query cannot delay tag
+processing, durable record commit or publication of later committed records.
 
-#### Blocking I/O
+#### Blocking I/O and TimingData commit
 
-Do not block the TimingNode serial executor on network, device or slow file I/O.
+Do not block the TimingNode serial executor on network, device, slow file I/O or
+client queries.
 
-A normal flow is:
+TimingData registration commit uses a dedicated asynchronous producer/consumer
+boundary:
 
 ```text
-TimingNode task
-   |
-   +--> request I/O
-            |
-            v
-      I/O executor / external library
-            |
-            v
-      completion/failure
-            |
-            +--> submit follow-up task to the owning TimingNode
+TagProcessor / manual command
+          |
+          v
+ immutable RegistrationCandidate
+          |
+          v
+ [bounded record queue]
+          |
+          v
+ RecordHandler / commit worker
+    +-- assign next sequence for this TimingNode
+    +-- build TimingDataRecord
+    +-- append complete record durably
+    +-- mark sequence/record committed
+          |
+          v
+ [bounded committed-record queue]
+          |
+          v
+ Projection / ReadModel updater
+          |
+          +--> client/event signalling
+          +--> queryable snapshot/read state
+                         |
+                         v
+                   query executor(s)
 ```
 
-If a domain transition depends on successful I/O, represent that pending state
-explicitly and finish the transition when the completion comes back. Do not keep
-the TimingNode blocked while waiting for the external operation.
+The first asynchronous boundary isolates RFID/operator ingress from persistence.
+The second isolates durable ordered record handling from read-side work and
+notification. A long query therefore cannot hold up record commit.
+
+The record queue and committed-record queue are logical ownership boundaries;
+their concrete implementation may use dedicated workers or executors, but FIFO
+ordering per `TimingNodeId` must be preserved. The commit worker owns sequence
+allocation and advances the committed sequence only after a complete record has
+been durably appended. If the append fails before commit, the same tentative
+sequence may be retried and later records for that TimingNode must not overtake
+it.
+
+Other asynchronous I/O may still use the general pattern of scheduling work on
+an I/O executor and submitting a small completion task back to the owning
+TimingNode when mutable domain state must change.
 
 #### Queue and failure behaviour
 
