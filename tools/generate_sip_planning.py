@@ -383,18 +383,18 @@ def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
     return [(lane, grouped[lane]) for lane in LANES if grouped.get(lane)]
 
 
-def step_card_meta(activity: dict) -> str:
-    if activity.get("state") == "done":
-        return ""
-
+def step_card_header_meta(activity: dict) -> List[str]:
     parts: List[str] = []
     if activity.get("estimate_project_days"):
         parts.append(f"~{activity['estimate_project_days']}d")
     if activity.get("depends_on"):
-        parts.append("after " + ",".join(activity["depends_on"]))
-    if activity.get("note"):
-        parts.append(concise(activity["note"], 30))
-    return " | ".join(parts)
+        parts.append("after " + " ".join(activity["depends_on"]))
+    return parts
+
+
+def step_card_note(activity: dict) -> str:
+    note = activity.get("note")
+    return concise(note, 30) if note else ""
 
 
 def step_board_view(board: dict, step: Step) -> dict:
@@ -436,7 +436,8 @@ def step_board_view(board: dict, step: Step) -> dict:
         lane_title = LANES[lane][0]
         cards = []
         for activity in activities:
-            meta = step_card_meta(activity)
+            header_meta = step_card_header_meta(activity)
+            note = step_card_note(activity)
             cards.append(
                 {
                     "id": activity["id"],
@@ -445,7 +446,8 @@ def step_board_view(board: dict, step: Step) -> dict:
                         "label": STATE_STYLE[activity["state"]][0],
                         "tone": state_tones.get(activity["state"], "neutral"),
                     },
-                    **({"meta": [meta]} if meta else {}),
+                    **({"header_meta": header_meta} if header_meta else {}),
+                    **({"meta": [note]} if note else {}),
                 }
             )
         groups.append(
@@ -461,7 +463,9 @@ def step_board_view(board: dict, step: Step) -> dict:
             "marker": str(step.number),
             "title": step.title,
             "meta": [
-                f"{step.status.upper()} · {step_effort_text(step)} · {step_schedule_text(step)}",
+                step.status.upper(),
+                step_effort_text(step),
+                step_schedule_text(step),
             ],
             "summary": {
                 "heading": "GOAL",
