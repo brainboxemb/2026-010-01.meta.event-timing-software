@@ -363,8 +363,9 @@ jobs:
 
           grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
           grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
-          grep -q 'Open object page' bld/engineering-portal/browser-explorer.html
-          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer.html
+          grep -q 'Open details & relations' bld/engineering-portal/browser-explorer.html
+          grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
+          grep -q '?plain=1#L' bld/engineering-portal/browser-explorer.html
 
           "$chrome" \
             --headless \
@@ -379,7 +380,7 @@ jobs:
           grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
           grep -q 'Preconditions' bld/engineering-portal/browser-explorer-UC-001.html
           grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-001.html
-          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer-UC-001.html
+          grep -q 'Open source definition' bld/engineering-portal/browser-explorer-UC-001.html
 
           grep -q 'data-engineering-id="AntennaManager"' bld/engineering-portal/site/explorer/index.html
           grep -q 'aria-label="Open AntennaManager"' bld/engineering-portal/site/explorer/index.html
@@ -396,7 +397,7 @@ jobs:
 
           grep -q '<code>AntennaManager</code>' bld/engineering-portal/browser-explorer-AntennaManager.html
           grep -q 'coordinates the configured 0..N Antenna components' bld/engineering-portal/browser-explorer-AntennaManager.html
-          grep -q 'Authoritative source' bld/engineering-portal/browser-explorer-AntennaManager.html
+          grep -q 'Open source definition' bld/engineering-portal/browser-explorer-AntennaManager.html
 
           "$chrome" \
             --headless \
