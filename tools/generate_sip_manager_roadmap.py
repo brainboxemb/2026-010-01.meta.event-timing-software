@@ -36,16 +36,20 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     if terms:
         items.append(
             {
-                "id": "terms",
-                "title": "Terms",
+                "id": "overview",
+                "title": "Planning overview",
                 "sections": [
+                    {
+                        "heading": "PLAN",
+                        "bullets": [base.planning_basis_text(steps, plan)],
+                    },
                     {
                         "heading": "TERMS",
                         "bullets": [
                             f"{item['term']} — {item['meaning']}"
                             for item in terms
                         ],
-                    }
+                    },
                 ],
             }
         )
@@ -91,7 +95,6 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     return {
         "roadmap": {
             "title": "Software Implementation Planning — roadmap",
-            "subtitle": base.planning_basis_text(steps, plan),
             "items": items,
         }
     }
