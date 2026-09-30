@@ -114,10 +114,10 @@
         '<div class="eng-detail__actions">' +
         '<a class="md-button md-button--primary" href="../objects/' +
         encodeURIComponent(object.id) +
-        '/">Open object page</a>' +
+        '/">Open details & relations</a>' +
         '<a class="md-button" href="' +
         escapeHtml(object.source_url) +
-        '">Authoritative source</a>' +
+        '">Open source definition</a>' +
         "</div>" +
         relationSection("Outgoing", object.outgoing, "target") +
         relationSection("Incoming", object.incoming, "source") +

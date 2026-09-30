@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify Engineering Portal navigation: exact Markdown source links now force GitHub source view (`?plain=1#L…`), explorer actions are named `Open details & relations` / `Open source definition`, and the explorer/object pages explain the distinction between derived portal views and authored engineering source.
+
 - Define built-in Timing Point application profiles (`standard`, `finish`) as versioned default-composition templates resolved before `ApplicationBootstrap`; separate application profile, platform and operating mode so combinations such as Finish-on-Windows simulation remain possible, and make explicit deployment configuration override all non-secret defaults.
 
 - Show **Runtime** explicitly in Figure SI01-01 with `TimingApplication` above Infrastructure / cross-cutting; order infrastructure as `LoggingServer -> Logging -> ApplicationBootstrap -> Build/version identity` and align the logging dependency arrow with the current Java dependency direction.
