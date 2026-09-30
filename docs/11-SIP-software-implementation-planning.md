@@ -255,16 +255,9 @@ registration, inspect the resulting TimingData, and close it again.
 
 ### Demo
 
-1. Start with `TN-01` closed and no operational location assigned.
-2. Assign a valid location.
-3. Open the TimingNode.
-4. Inject one accepted semantic registration with a deterministic observation time.
-5. Inspect the resulting TimingData/history and live update.
-6. Close the TimingNode.
-7. Demonstrate that changing location while open is rejected and becomes possible again after close.
-
-The concrete identifier formats/values in the demo follow D03; examples do not
-replace the IDD definitions.
+- Set a location while closed, open registration and verify the open state.
+- Inject one deterministic accepted registration and inspect TimingData/history plus the live update.
+- Verify location change is rejected while open; close registration and then change location.
 
 ### Done
 
