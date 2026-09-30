@@ -321,16 +321,6 @@ hide:
   <a href="../objects/">Object index</a>
 </div>
 
-The real generated SI-01 architecture stays visible while the selected
-engineering object and its traceability context are inspected.
-
-**Purpose.** Use this page to inspect architecture and traceability without losing
-the surrounding diagram. The diagram, detail panel and object pages are generated
-reader views pinned to one source revision; they do not own engineering meaning.
-Use **Open details & relations** to stay inside the portal and inspect the object's
-full relation context. Use **Open source definition** to open the hand-authored
-Markdown definition at the exact pinned source line in GitHub.
-
 <div class="eng-workspace" data-eng-explorer>
   <section class="eng-context">
     <div class="eng-diagram">
@@ -344,6 +334,17 @@ Markdown definition at the exact pinned source line in GitHub.
     Select an engineering object.
   </aside>
 </div>
+
+## About this view
+
+The generated SI-01 architecture stays visible while the selected engineering
+object and its traceability context are inspected. The diagram, detail panel and
+object pages are derived reader views pinned to one source revision; they do not
+own engineering meaning.
+
+Use **Open details & relations** to stay inside the portal and inspect the object's
+full relation context. Use **Open source definition** to open the hand-authored
+Markdown definition at the exact pinned source line in GitHub.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """
