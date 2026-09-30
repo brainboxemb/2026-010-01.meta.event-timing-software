@@ -3,7 +3,7 @@ diagram:
   type: sequence
   title: Figure SDD01-TD05 — LogBook query isolation
   width: 1450
-  height: 820
+  height: 900
   description: Query work uses a short LogBook read view while new candidates continue through the record path.
   note: Concrete Pi-friendly read mechanics remain in SDD-02.
 
