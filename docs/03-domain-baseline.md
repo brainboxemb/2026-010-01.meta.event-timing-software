@@ -251,6 +251,8 @@ This allows receiving/upstream systems to reason about stream consistency indepe
 
 Important intended properties:
 
+- committed sequence numbering starts at **1** for a new `TimingNodeId` stream;
+- sequence number **0 is reserved** and shall never identify a normal committed TimingData record;
 - the number is monotonic per `TimingNodeId`-scoped stream;
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
@@ -367,32 +369,47 @@ Stage start-time data remains a separate concern owned by `StageStartTimes`.
 
 ## RFID tag identity structure
 
-The tag ultimately represents a structured identity containing:
+A decoded physical RFID tag contains:
 
 ```text
-prefix + team number + postfix
+prefix + number + postfix
 ```
 
-Known semantics:
+For registration semantics SI-01 normalises this to:
 
-- `team number` is `0..999`;
-- prefix semantics distinguish at least normal, reserve and test tag classes;
-- a dedicated prefix indicates that a tag is a reserve tag;
-- a dedicated prefix indicates that a tag is a test tag;
-- there are two physical tags for a team/identity;
-- a postfix distinguishes the two tag copies.
+```text
+RegistrationTag = prefix + number
+```
 
-The exact encoded prefix/postfix values, encryption details and protocol representation are proprietary and are not defined here.
+The postfix distinguishes physical tag copies and is removed from the canonical
+registration identity. The prefix is retained because it carries semantic tag
+class information.
 
-A working public semantic representation should preserve the tag class after decoding rather than immediately flattening every tag into one normal participant identity. The exact class/type API remains an implementation/design decision.
+For the first registration slice the relevant classes are:
+
+- normal tag;
+- reserve tag.
+
+The exact encoded prefix/postfix values, encryption details and device/protocol
+representation are proprietary and are not defined here. Test-tag behaviour is
+handled separately and is not needed to define the first normal/reserve
+registration identity.
 
 ## Reserve tags
 
 Reserve tags require conversion/mapping data supplied by the backoffice.
 
-The local timing application therefore needs to be able to resolve a decoded reserve-tag identity through locally synchronised reference data before treating it as the intended team identity.
+The local timing application therefore needs to retain the **observed normalised
+reserve-tag identity** and resolve it through locally available mapping data to
+the registration identity required for normal race processing.
 
-The mapping must remain available locally when live backoffice connectivity is temporarily unavailable, subject to later freshness/validity requirements.
+The mapping must remain available locally when live backoffice connectivity is
+temporarily unavailable, subject to later freshness/validity requirements.
+
+The first TimingData slice deliberately does **not** yet decide what every public
+client sees for a reserve registration: the observed reserve tag, the resolved
+identity, or both. That projection belongs to the relevant public interface
+contract and must not be guessed by an RFID adapter.
 
 ## Test tags
 
@@ -465,7 +482,7 @@ Corrections/revocations should remain traceable rather than silently rewriting e
 
 - Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
 - How are reserve/virtual TimingNodes represented in registration-routing rules when they share a physical producer with normal TimingNodes?
-- Does sequence numbering start at a defined value for a new timing node?
+- Sequence numbering starts at 1; 0 is reserved.
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
 - Which operational events besides `OPEN` must be part of a timing node registration stream (for example close/reinitialisation/configuration changes)?
