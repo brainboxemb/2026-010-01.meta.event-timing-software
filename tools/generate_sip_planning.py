@@ -217,19 +217,25 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
         else f"{cadence:g}d/week"
     )
     actual_date = through.strftime("%d %b").lstrip("0")
+    total_estimate_days = actual_days + remaining_days
     return (
         f"Plan: {baseline_days:g}d original · ~{actual_days:g}d / ~{actual_hours:g}h actual to "
         f"{actual_date} · ~{remaining_days:g}d remaining · "
+        f"~{total_estimate_days:g}d total estimate · "
         f"~{cadence_text} · +{reserve * 100:g}% reserve"
     )
 
 
 def step_effort_text(step: Step) -> str:
+    actual_days = step.actual_days if step.actual_days is not None else 0.0
     parts = [f"orig ~{step.estimate_days:g}d"]
-    if step.actual_days is not None:
-        parts.append(f"act ~{step.actual_days:g}d")
+    if step.actual_days is not None or step.status == "active":
+        parts.append(f"act ~{actual_days:g}d")
     if step.status == "active":
         parts.append(f"rem ~{step.remaining_days:g}d")
+        parts.append(f"total est ~{actual_days + step.remaining_days:g}d")
+    elif step.status == "done" and step.actual_days is not None:
+        parts.append(f"total est ~{step.actual_days:g}d")
     return " · ".join(parts)
 
 
@@ -834,14 +840,19 @@ def render_step_svg(board: dict, step: Step, path: Path) -> None:
             (
                 f"{step.status.upper()} | original estimate ~{step.estimate_days:g}d"
                 + (
-                    f" | actual ~{step.actual_days:g}d"
-                    if step.actual_days is not None
+                    f" | actual ~{(step.actual_days if step.actual_days is not None else 0.0):g}d"
+                    if step.actual_days is not None or step.status == "active"
                     else ""
                 )
                 + (
-                    f" | remaining estimate ~{step.remaining_days:g}d"
+                    f" | remaining ~{step.remaining_days:g}d"
+                    f" | total estimate ~{((step.actual_days if step.actual_days is not None else 0.0) + step.remaining_days):g}d"
                     if step.status == "active"
-                    else ""
+                    else (
+                        f" | total estimate ~{step.actual_days:g}d"
+                        if step.status == "done" and step.actual_days is not None
+                        else ""
+                    )
                 )
                 + f" | {step_schedule_text(step)}"
             )
