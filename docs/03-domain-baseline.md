@@ -309,6 +309,27 @@ TimingDataRecord
 
 Asset and antenna context may additionally be retained where useful for diagnostics/audit, but the exact storage/wire schema is not yet fixed.
 
+### Participant registration semantics
+
+The public TimingData model supports both **automatic** and **manual**
+participant registrations. These are the same semantic registration concept with
+different origin metadata; they do not use different sequence/key rules.
+
+A committed registration may later be revoked. Revocation is append-only:
+
+- the original registration remains immutable in the stream;
+- a new revocation record receives its own sequence number;
+- the revocation record references the original
+  `(TimingNodeId, SequenceNumber)`;
+- the effective registration/race time on the revocation is copied from the
+  original registration rather than replaced by the operator's current time;
+- the revocation record separately carries its own commit/record time.
+
+This allows a receiver to reconstruct both the effective registration state and
+the complete audit/order history. External proprietary formats may represent the
+same semantics with implementation-specific markers, but those markers are not
+part of the public TimingData protocol.
+
 ## Time semantics
 
 Recorded **event time** needs one unambiguous absolute-time meaning independent of how a local clock is displayed. Race/stage start reference data is different: an external definition may contain only a local time-of-day and no date.
