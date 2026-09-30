@@ -8,7 +8,7 @@ This document refines SI-01 data ownership and runtime processing for TimingData
 prepare-team state, reference data and the two display generations.
 
 The initial design does **not** require a conventional embedded database.
-Committed TimingData history is persisted as the append-only IF-05 journal and
+Committed TimingData history is persisted as the append-only IF-05 persistent file and
 replayed into typed in-memory projections. Other operational/reference state uses
 its own persistence or synchronisation mechanism as defined below.
 
@@ -228,7 +228,7 @@ RFID processing or later query execution to file latency. The logical stream is
 per TimingNode even if a concrete implementation shares worker threads across
 several node-specific serial lanes.
 
-### Authoritative journal and in-memory projections
+### LogBook domain state and durable TimingData persistence
 
 The first implementation separates durable committed history from runtime
 read/business state:
@@ -238,14 +238,14 @@ TimingSystem (1..N)
   |
   +-- TimingNode (1..N)
         |
-        +-- TimingData journal        authoritative committed IF-05 stream
-        |     +-- sequence recovery
-        |     +-- audit/history replay
-        |
-        +-- committed projections
-        |     +-- LogBook / registration history view
-        |     +-- effective registration state
+        +-- LogBook                       operational Domain state/history
+        |     +-- 0..N LogBookItem
+        |     +-- effective registration state/indexes
         |     +-- ranking/result inputs
+        |
+        +-- TimingData / IF-05 persistence
+              +-- append-only durable representation
+              +-- sequence/recovery source
         |
         +-- other state families
               +-- NextUpTeams         separate operational state/history
@@ -254,9 +254,10 @@ TimingSystem (1..N)
 ```
 
 The application does not repeatedly parse the file for every normal query.
-Committed TimingData records are applied to typed in-memory projections after
-durable commit. Those projections are the efficient runtime read/business view;
-the append-only journal is the durable authority from which they can be rebuilt.
+After the durable IF-05 append succeeds, the corresponding `LogBookItem` is
+committed into the TimingNode's LogBook. The LogBook is the Domain owner of the
+operational history/state used by local business logic; the append-only IF-05
+file is its durable persistence/recovery representation.
 
 A registration or revocation shall not become authoritative LogBook/business
 state merely because a producer created an intent. The normal state transition is:
@@ -264,8 +265,8 @@ state merely because a producer created an intent. The normal state transition i
 ```text
 TimingDataIntent
   -> durable IF-05 commit
-  -> committed-record dispatch
-  -> LogBook / business projection update
+  -> LogBook.commit(LogBookItem)
+  -> non-blocking external committed-data hand-off
 ```
 
 This makes crash recovery deterministic: an intent that was never durably
@@ -286,36 +287,34 @@ The concrete `LogBookItem` shape may remain different from
 `TimingDataRecord`; projection code performs that mapping. This keeps IF-05
 interchange semantics separate from internal query-friendly structures.
 
-### Committed-record dispatch
+### External committed-data dispatch
 
-The second asynchronous boundary is an ordered **committed-record dispatch
-lane**, not a competing-consumer work queue where different consumers would see
-different subsets of records.
+There is no second queue between durable commit and LogBook state. The
+`LogBookCommitter` updates the LogBook synchronously after persistence
+succeeds. Only external signalling/upstream delivery crosses another async
+boundary.
 
 Conceptually:
 
 ```text
-RecordHandler
+LogBookCommitter
      |
-     v
-[ committed-record queue ]
+     +-- TimingDataStore.append(record)      durable
+     +-- LogBook.commit(item)                synchronous domain state
      |
-     v
-CommittedRecordDispatcher        one ordered consumer per TimingNode stream
-     |
-     +-- apply LogBook/business projections
-     +-- publish client/event signalling
-     +-- enqueue independent downstream/upstream delivery work
+     +--> CommittedTimingDataSink.offer(record)
+              |
+              +-- signalling/network/outbox worker(s)
 ```
 
-Every committed record reaches the dispatcher in source-sequence order. Slow
-queries never execute on this dispatcher. Downstream network delivery/retry also
-uses its own queue/outbox boundary and cannot reinterpret or reorder the
-authoritative TimingData stream.
+Slow queries read LogBook/domain state and execute outside the recorder worker.
+Downstream network delivery/retry uses its own queue/outbox boundary and cannot
+block the LogBook commit path.
 
-If the process crashes after durable append but before dispatch completes, startup
-replay from the TimingData journal reconstructs the projection. The durable file,
-not successful in-memory notification, is the recovery boundary.
+If the process crashes after durable append but before the in-memory LogBook
+update completes, startup recovery decodes the committed IF-05 file and rebuilds
+the LogBook. The durable file, not successful notification, is the crash-recovery
+boundary.
 
 The exact live queue capacity remains a deployment/verification choice. A full
 queue is explicit backpressure/diagnostic state, never permission to silently
@@ -458,7 +457,7 @@ methods: a slow query cannot occupy the worker that commits TimingData records.
 
 ## TimingData persistence and recovery
 
-### Sequence recovery from the TimingData journal
+### Sequence recovery from the TimingData file
 
 Sequence allocation is a domain consistency mechanism, not merely an in-memory
 counter.
@@ -501,10 +500,11 @@ TimingData has a stronger persistence rule than ordinary cache/reference state:
 - a TimingData record is committed only after its complete IF-05 line is durably
   appended;
 - its sequence is consumed only by that successful commit;
-- the TimingData journal is authoritative for committed timing history and
-  sequence recovery;
-- optional later snapshots may accelerate replay but are derived/cache state and
-  must reconcile to the journal.
+- the LogBook remains the Domain owner of operational timing history/state;
+- the persistent IF-05 TimingData file is the durable recovery representation
+  and sequence-recovery source;
+- optional later snapshots may accelerate LogBook rebuild but are cache state and
+  must reconcile to the persistent TimingData file.
 
 Other state families remain separate:
 
@@ -522,11 +522,10 @@ recoverability take priority over introducing a database engine.
 Status should eventually expose at least:
 
 ```text
-TimingData journal / recovery health
+persistent IF-05 TimingData file / recovery health
 last committed sequence per TimingNode
-record queue depth/high-water
-committed-dispatch queue depth/high-water
-last projection/replay result
+LogBook ingress queue depth/high-water
+last LogBook rebuild/recovery result
 reference-data synchronisation time/version
 other-state backup/recovery health
 ```
@@ -542,7 +541,7 @@ start process
 load configuration
    |
    v
-open each configured TimingNode journal
+open each configured TimingNode persistent file
    |
    v
 validate IF-05 records + single source identity + contiguous committed sequence
@@ -555,7 +554,7 @@ validate IF-05 records + single source identity + contiguous committed sequence
 derive nextSequence = last committed sequence + 1
    |
    v
-replay committed TimingData into LogBook/business projections
+rebuild LogBook from committed TimingData records
    |
    v
 load other operational/reference snapshots
@@ -567,7 +566,7 @@ start interfaces/devices
 connect/synchronise with upstream when available
 ```
 
-A new/empty journal starts with next sequence 1.
+A new/empty TimingData file starts with next sequence 1.
 
 Replay reconstructs TimingData-derived history and effective business state. It
 does **not** by itself define the post-restart operational lifecycle policy. In
@@ -577,7 +576,7 @@ a process/power restart; that recovery/open policy belongs to the lifecycle
 requirements and control design.
 
 For prepare-team state, restoration can independently restore a snapshot or
-replay its own traceable journal. Reference-data recovery likewise restores the
+replay its own traceable persistent file. Reference-data recovery likewise restores the
 latest locally accepted snapshot/version. Corrupt/inconsistent persistent state
 must produce explicit status rather than silently looking healthy.
 
@@ -839,12 +838,12 @@ needed around that interface:
 - **CAND-PIPE-002** — The record-commit path shall publish an IF-05 record to
   downstream consumers only after the complete local record is durably appended
   and its sequence is committed.
-- **CAND-PIPE-003** — Committed records shall feed one ordered committed-record
-  dispatcher per TimingNode stream through a separate asynchronous boundary.
-- **CAND-PIPE-004** — The committed-record dispatcher shall apply/fan out every
-  committed record in sequence order; potentially long queries and network
-  delivery/retry shall execute outside that dispatcher and shall not consume
-  competing subsets of the committed-record queue.
+- **CAND-PIPE-003** — After durable IF-05 append, the commit path shall apply the
+  corresponding `LogBookItem` synchronously to the owning TimingNode LogBook
+  before external publication.
+- **CAND-PIPE-004** — Potentially long queries and network delivery/retry shall
+  execute outside the LogBook recorder worker; only slow external delivery
+  requires an additional asynchronous queue/outbox boundary.
 
 ### Identity resolution before IF-05 commit
 
@@ -867,9 +866,9 @@ needed around that interface:
 - **CAND-DATA-001** — The initial implementation shall maintain committed
   TimingData-derived projections, ready-team state and reference state in typed
   application data structures without requiring an external database engine.
-- **CAND-DATA-002** — The per-TimingNode append-only IF-05 journal shall be the
-  authoritative committed TimingData history and sequence-recovery source; its
-  projections shall be reconstructable by replay.
+- **CAND-DATA-002** — The per-TimingNode LogBook shall own operational committed
+  history/state; the append-only IF-05 TimingData file shall provide its durable
+  recovery representation and sequence-recovery source.
 - **CAND-DATA-003** — TimingData recovery faults and other persistent-state
   backup/restore failures shall be represented explicitly in system status.
 - **CAND-DATA-004** — The local start-time data set shall be synchronisable from the backoffice and remain available after loss of live backoffice connectivity.
@@ -899,7 +898,7 @@ needed around that interface:
 - What exact filesystem durability primitive/policy is required before a completed append is considered durable on each deployment platform?
 - Which additional producer/domain paths should emit future IF-05 record families after their requirements are promoted?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
-- Should ready-team recovery use an append journal, a current-state snapshot, or both?
+- Should ready-team recovery use an append persistent file, a current-state snapshot, or both?
 - How frequently may simple backup files be written without unnecessary SD-card wear?
 - Should reference data use one combined backup snapshot or separate files per data set?
 - Is start-time synchronisation always a full snapshot, or can the backoffice send deltas/corrections?
