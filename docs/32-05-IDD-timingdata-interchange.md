@@ -143,9 +143,15 @@ Sequence rules:
 - a new source stream starts at **1**;
 - sequence number **0 is reserved** and shall not identify a normal committed
   TimingData record;
+- canonical v1 `SequenceNumber` values are positive JSON-safe integers in the
+  range `1..9007199254740991` (`2^53 - 1`);
+- the canonical JSON writer emits the value as a plain decimal integer, without a
+  fractional part or exponent notation;
 - changing `LocationID` does not reset the sequence;
 - sequence is an ordering/traceability value, not a timestamp;
-- a committed record key shall not be reused.
+- a committed record key shall not be reused;
+- the sequence does not wrap. Exhaustion of the defined range is an explicit
+  source failure and shall not restart or reuse earlier values.
 
 The internal mechanism that tentatively allocates and durably commits the next
 sequence belongs to SI-01 design. IF-05 only defines the externally observable
@@ -483,11 +489,26 @@ Rules:
 
 TimingData v1 is identified by `version = 1`.
 
-Before promotion to a stable released interface, D03 shall still fix:
+Compatibility rules:
 
-- sequence numeric width/wraparound policy;
-- compatible-addition/unknown-field handling rules;
-- exact validation behaviour for malformed/imported records where relevant.
+- a canonical writer emits only members defined by the IF-05 version it
+  implements;
+- a v1 reader shall tolerate and ignore additional JSON object members on a
+  record whose required v1 fields and known semantics remain valid;
+- a reader encountering an unknown `recordType` within a supported major
+  version shall retain/report the common envelope and sequence position as an
+  unsupported record rather than silently reinterpreting it as a known type;
+- business projections may skip an unsupported record type only with explicit
+  unsupported-data status/diagnostics; they shall not pretend the stream is fully
+  understood;
+- malformed JSON, a missing required field, an invalid field type/value or a
+  sequence violation is an invalid-record condition and shall be reported
+  explicitly during authoritative recovery/import;
+- an unsupported major `version` is an explicit compatibility failure for
+  semantic decoding. The raw line may be retained/exported, but shall not be
+  interpreted using v1 semantics;
+- compatible additions must not change the meaning of already-defined v1 fields
+  or enum values.
 
 Breaking semantic changes shall not silently redefine v1.
 
@@ -522,6 +543,12 @@ Breaking semantic changes shall not silently redefine v1.
   TimingData representations.
 - **IF05-REQ-013** — Canonical IF-05 TimingTimestamp text shall use UTC `Z`
   form with exactly nine fractional-second digits as defined by this IDD.
+- **IF05-REQ-014** — Canonical v1 SequenceNumber shall be a positive JSON-safe
+  integer in the range `1..2^53-1`, shall not wrap and shall not reuse committed
+  values.
+- **IF05-REQ-015** — v1 readers shall tolerate additional JSON members while
+  treating malformed records, sequence violations and unsupported major versions
+  as explicit compatibility/validation conditions according to this IDD.
 
 ## Deferred from this first slice
 
