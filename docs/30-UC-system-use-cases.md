@@ -68,7 +68,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
 | UC-001 | Connect to a registration system | Operator | Connect to a known registration system and view its current operational state. |
-| UC-002 | Open and close a TimingNode | Operator | Control the TimingNode operational session while keeping its active location fixed. |
+| UC-002 | Configure, open and close a registration point | Operator | Set the operational location, open registration, and close it again without changing location while open. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
@@ -124,89 +124,93 @@ system and see its current location and open/closed state.
 
 ```
 
-```{uc} Open and close a TimingNode
+```{uc} Configure, open and close a registration point
 :id: UC-002
 
-**Goal:** control one TimingNode operational session in a traceable way while
-keeping its active location stable.
+**Goal:** let an operator prepare a registration point for one location, open it
+for registrations, and close it again.
 
 **Primary actor:** operator.
 
 **Preconditions:**
 
-- the addressed TimingNode exists and is `CLOSED`;
-- a valid operational `LocationId` has been assigned.
+- the operator application is connected to the registration system;
+- the current registration state is available.
 
 **Main flow:**
 
-1. The operator issues `open` through an authorised operator interface.
-2. The command is translated to the shared application command boundary.
-3. The addressed TimingNode validates its lifecycle and location preconditions through its serialized state boundary.
-4. The lifecycle becomes `OPEN`.
-5. The current `LocationId` is fixed for the duration of this open session.
-6. Status/event consumers receive the new lifecycle and active-location state.
-7. Normal registration operations may now be accepted.
-8. When the operator issues `close`, the lifecycle returns to `CLOSED`.
-9. The last assigned `LocationId` may remain visible after close, but it can only be changed while the node is `CLOSED`.
+1. While the registration point is `CLOSED`, the operator sets or changes the operational `LocationId`.
+2. The application shows the selected location and current `CLOSED` state.
+3. The operator requests `OPEN`.
+4. The registration system accepts the request only when a valid operational location is configured and other required open conditions are satisfied.
+5. The application shows the registration point as `OPEN` with that location.
+6. Registrations may now be accepted for that location.
+7. The operator requests `CLOSE`.
+8. The application shows the registration point as `CLOSED`.
+9. The last selected location may remain visible after close and can then be changed before a later open.
 
-Whether `OPEN`/`CLOSE` transitions themselves become TimingData or are
-reported upstream is a protocol/design decision; the lifecycle rule does not
-depend on that choice.
+The operational location is fixed while registration is `OPEN`. Changing the
+location therefore requires closing first.
+
+Whether open/close actions are themselves represented in TimingData or sent
+upstream is a later interface/protocol decision.
 
 **Alternative/failure flows:**
 
-- `open` without a valid assigned location is rejected;
-- changing `LocationId` while `OPEN` is rejected;
-- duplicate/open-again or close-again commands receive an explicit outcome;
-- another required operational prerequisite blocks `OPEN`.
+- `OPEN` is requested without a valid operational location;
+- a location change is requested while registration is `OPEN`;
+- another required open condition is not satisfied;
+- the command cannot be completed or its resulting state cannot be confirmed.
+
+**Observable result:** the operator application shows the selected location and
+the resulting `OPEN` or `CLOSED` state explicitly.
 
 ```
 
 ```{uc} Register a participant through RFID
 :id: UC-003
 
-**Goal:** create a valid traceable registration from an accepted participant
-observation without treating the first raw RFID observation as automatically
-accepted.
+**Goal:** turn an accepted participant observation into one traceable registration
+for the location that is currently open.
 
 **Primary actor:** RFID subsystem.
 
+**Preconditions:**
+
+- registration is `OPEN`;
+- a valid operational location is active.
+
 **Main flow:**
 
-1. The RFID adapter captures raw tag data, antenna identity and observation time.
-2. The RFID integration supplies the observation with its configured hardware/antenna context and routes it toward the addressed TimingNode.
-3. Proprietary/private decoding/decryption translates the raw tag into a public semantic identity representation while retaining whether the tag is normal, reserve or test-class.
-4. Filtering/observation accumulation determines whether the observation is accepted.
-5. Reserve-tag resolution is applied when applicable using locally available reference data.
-6. A test-tag identity branches to the explicit test-tag behaviour in UC-019 rather than silently continuing as a normal participant registration.
-7. The accepted semantic registration enters the TimingNode registration operation.
-8. The TimingNode accepts the registration only while `OPEN`, captures its own configured `TimingNodeId` and the active `LocationId`, and assigns the next source sequence number.
-9. The committed TimingData retains that location even if the TimingNode is later closed and configured for another location.
-10. The accepted observation time is retained; engineering/test input may supply a deterministic observation time where the public test contract permits it.
-11. The committed registration becomes visible through the public registration state/history and subsequent live update semantics.
-12. Outbound synchronisation, when implemented, consumes the committed TimingData independently from local acceptance.
+1. The RFID subsystem observes a participant tag and captures the observation time.
+2. Tag interpretation and observation filtering determine whether the observation represents an accepted participant registration.
+3. An accepted semantic registration is submitted to the registration point.
+4. The registration system captures its own source identity and the active `LocationId`.
+5. It assigns the next source sequence and creates the committed TimingData registration.
+6. The registration retains the active location and accepted observation time even if the registration point is later closed or configured for another location.
+7. The committed registration becomes available in registration history/current state and as a live update where supported.
+8. Outbound synchronisation may consume the committed registration independently when that capability is implemented.
 
-**Step-4 engineering path:** the first registration slice may bypass antenna,
-decoding and filtering by injecting an **already accepted semantic registration**
-through an explicit engineering capability. That input enters the same TimingNode
-registration operation at step 7. It does not inject a completed TimingData record,
-does not choose its own source sequence, `TimingNodeId` or active `LocationId`,
-and does not bypass the `OPEN` lifecycle rule.
+**Step-4 engineering path:** for the first slice, an engineering capability may
+inject the already-accepted semantic registration at step 3. This bypasses the
+antenna/tag/filtering stages but uses the **same registration operation** from
+that point onward. The engineering caller does not provide the final TimingData,
+source sequence, configured source identity or active location.
 
-A later simulated-antenna slice enters earlier in this use case so decoding,
-observation accumulation and filtering can be exercised before reaching the same
-accepted-registration operation.
+A later antenna-simulation slice enters at step 1 so the tag interpretation and
+filtering behaviour can be tested as well.
 
 **Alternative/failure flows:**
 
-- decryption/validation fails;
-- tag is observed but filtering does not yet accept it;
-- reserve mapping is unavailable;
-- a test-tag policy does not permit the requested/observed operation;
-- accepted-registration input arrives while the TimingNode is `CLOSED`;
-- source routing is ambiguous/invalid;
-- local commit fails;
-- backoffice is unavailable after local commit.
+- the observation is invalid or not accepted by filtering;
+- an accepted-registration request arrives while registration is `CLOSED`;
+- the semantic participant identity is invalid;
+- the registration cannot be committed;
+- outbound/backoffice synchronisation is unavailable after local commit.
+
+**Observable result:** one accepted participant observation produces one committed
+registration associated with the source and location that were active at the
+time of acceptance.
 
 ```
 
@@ -565,7 +569,7 @@ compatibility-source protocol.
 
 | Use case | First-slice inspection/control need | Explicitly later |
 | --- | --- | --- |
-| UC-001 / UC-002 | Connect to a known registration system, inspect its reported identity, assigned/unassigned location and open/closed state; set/change location only while `CLOSED`; reject `OPEN` without a valid location; keep location fixed while `OPEN`; close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
+| UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, set or change location while `CLOSED`, open registration only with a valid location, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
 | UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, tag decoding, observation accumulation/filtering, reserve/test-tag behaviour and persistence/recovery. |
 | UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
 | UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |

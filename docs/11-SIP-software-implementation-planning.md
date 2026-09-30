@@ -249,9 +249,8 @@ registration, inspect the resulting TimingData, and close it again.
 
 ### Result
 
-- One TimingNode has explicit location/lifecycle invariants.
-- A direct semantic registration reaches the normal TimingNode registration operation.
-- TimingData captures stable source identity, active location and source sequence.
+- One registration point has explicit location/open-close invariants.
+- Direct semantic registration produces TimingData with stable source identity, active location and source sequence.
 - The Engineering Client can reconstruct current state/history and observe subsequent updates.
 
 ### Demo
