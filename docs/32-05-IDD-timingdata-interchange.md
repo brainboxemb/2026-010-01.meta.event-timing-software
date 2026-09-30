@@ -556,7 +556,6 @@ Breaking semantic changes shall not silently redefine v1.
 - penalty/correction record families and payloads;
 - unknown-team registration semantics;
 - source `TagIdentity` provenance exposure;
-- compatibility rules for unknown/additional JSON fields;
 - file naming, retention, rotation and filesystem-specific durability primitives;
 - upstream transport/session/reconciliation semantics owned by IF-06;
 - IF-03 control/query resources that create or inspect these records.
