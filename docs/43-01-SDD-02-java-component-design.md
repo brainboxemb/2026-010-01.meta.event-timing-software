@@ -577,15 +577,52 @@ test-client/
         SI-01
 ```
 
-`test-client/` is a standalone Java-17 Maven project, not a module in the Java-8
-SI-01 reactor. It has no dependency on `event-timing-framework` or
-`event-timing-app`; this preserves the external-client boundary and makes later
-extraction to a dedicated repository straightforward if the tool grows. It is engineering support rather than the planned SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
+`test-client/` is a standalone Java-17 application and does not depend on
+`event-timing-framework` or `event-timing-app` implementation code. It may,
+however, depend on the separately reusable `timing-data-api` artifact because
+TimingData codec/provider reuse is now a real cross-executable requirement. This
+preserves the external-client boundary while allowing SI-01 and the Engineering
+Client to exercise the exact same public or proprietary TimingData translator.
+
+The Engineering Client remains engineering support rather than the planned SI-02
+GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared presentation/application boundary remains small:
 `CommandHandler.version()` returns build identity and
 `CommandHandler.status()` returns the current TimingNode status used by the
 current presentation adapters.
+
+## Shared TimingData API artifact
+
+The Engineering Client is a second real consumer of the TimingData model and
+provider SPI. That reuse justifies a small independently reusable artifact rather
+than forcing the Java-17 test client to depend on the SI-01 framework artifact.
+
+Conceptually:
+
+```text
+timing-data-api
+  TimingDataRecord / TimingDataRecordKey
+  RegistrationIdentity and TimingData value types
+  TimingDataCodec
+  TimingDataProvider / translator SPI
+
+event-timing-framework  ---> timing-data-api
+test-client             ---> timing-data-api
+
+reference TimingData provider  ---> timing-data-api
+private eBART provider         ---> timing-data-api
+                                  |
+                                  +-- optional native/proprietary DLL
+```
+
+Both executables may discover/select the same provider implementation. The
+provider translates between an external format and the framework-owned TimingData
+model; it does not redefine TimingData field semantics.
+
+This artifact contains no SI-01 runtime/application classes and no JavaFX code.
+Its Java API must remain usable from both the Java-8 SI-01 baseline and the
+Java-17 Engineering Client.
 
 ## Derived consumers
 
@@ -664,7 +701,7 @@ Create future artifacts only when a real boundary requires them. Candidates migh
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
 - public/private RFID/CAN I/O implementations;
-- a separately versioned Java SPI artifact if binary compatibility/release evidence later justifies extracting the framework-owned provider contracts;
+- separately versioning `timing-data-api` if binary compatibility/release evidence later requires an independent release cycle;
 - reusable test support.
 
 Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
