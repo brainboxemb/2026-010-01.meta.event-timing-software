@@ -431,6 +431,7 @@ TimingData v1 is identified by `version = 1`.
 Before promotion to a stable released interface, D03 shall still fix:
 
 - exact `TimingTimestamp` serialized precision/text representation;
+- sequence numeric width/wraparound policy;
 - compatible-addition/unknown-field handling rules;
 - exact validation behaviour for malformed/imported records where relevant.
 
