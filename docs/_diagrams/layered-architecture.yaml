@@ -71,10 +71,14 @@ groups:
   label: Platform abstractions / execution environment
   kind: layer-platform
   layout: {x: 30, y: 1206, w: 1120, h: 87}
+- id: runtime-layer
+  label: Runtime
+  kind: layer-crosscutting
+  layout: {x: 1180, y: 85, w: 230, h: 145}
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1180, y: 85, w: 230, h: 1208}
+  layout: {x: 1180, y: 250, w: 230, h: 1043}
 
 nodes:
 - id: local-console
@@ -328,22 +332,14 @@ nodes:
   kind: platform
   layout: {x: 180, y: 1236, w: 880, h: 45}
 
-- id: application-bootstrap
-  object_id: ApplicationBootstrap
-  group: crosscutting-layer
-  label: "ApplicationBootstrap"
-  subtitle: "config • composition"
+- id: timing-application-runtime
+  object_id: TimingApplication
+  group: runtime-layer
+  label: "TimingApplication"
+  subtitle: "top-level runtime • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 165, w: 170, h: 80}
-- id: logging-infra
-  object_id: Logging
-  group: crosscutting-layer
-  label: "Logging"
-  subtitle: "levels • console • retained file"
-  kind: crosscutting
-  notation: component
-  layout: {x: 1210, y: 285, w: 170, h: 85}
+  layout: {x: 1210, y: 125, w: 170, h: 75}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -351,12 +347,28 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 390, w: 170, h: 85}
+  layout: {x: 1210, y: 305, w: 170, h: 85}
+- id: logging-infra
+  object_id: Logging
+  group: crosscutting-layer
+  label: "Logging"
+  subtitle: "levels • console • retained file"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 410, w: 170, h: 85}
+- id: application-bootstrap
+  object_id: ApplicationBootstrap
+  group: crosscutting-layer
+  label: "ApplicationBootstrap"
+  subtitle: "config • composition"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 515, w: 170, h: 80}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1210, y: 495, w: 170, h: 80}
+  layout: {x: 1210, y: 615, w: 170, h: 80}
 - id: boundary-note
   group: crosscutting-layer
   label: "Responsibility view only\n≠ Maven artifact split"
@@ -364,8 +376,8 @@ nodes:
   layout: {x: 1210, y: 1213, w: 170, h: 70}
 
 edges:
-- from: logging-infra
-  to: logging-server
+- from: logging-server
+  to: logging-infra
   dashed: true
 
 - from: local-console
