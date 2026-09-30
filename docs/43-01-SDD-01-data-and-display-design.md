@@ -68,7 +68,9 @@ The common hand-off object is conceptually a `TimingDataIntent`:
 
 ```text
 TimingDataIntent
-  semantic record family / payload
+  timingNodeId
+  locationId              immutable location snapshot for this fact
+  semantic record family / data
   effectiveTime
   producer-derived domain data
 
@@ -77,8 +79,15 @@ TimingDataIntent
   not yet committed
 ```
 
-The producer owns the **business meaning** needed to create the intent. The
-record pipeline owns the **generic commit envelope**.
+The producer owns the **business meaning** needed to create the intent and
+captures the TimingNode/location context applicable to that fact before enqueue.
+The record pipeline owns the **generic commit envelope**.
+
+The location snapshot is deliberate: `RecordHandler` shall not look up a
+possibly newer/current `LocationID` when an older queued intent is committed.
+For a revocation intent, the producer copies the original registration's
+location, effective time, registration identity, origin and time source as
+required by IF-05 rather than using the TimingNode's current configuration.
 
 Current and expected producers include:
 
@@ -122,9 +131,12 @@ void submit(TimingDataIntent intent) {
 
 void commitNext(TimingDataIntent intent) {
     long sequence = sequenceState.peekNext(intent.timingNodeId());
+    TimingTimestamp recordedAt = timeSource.now();
 
-    TimingDataRecord record = recordFactory.create(intent, sequence);
-    storage.appendCompleteRecord(timingData.encode(record));
+    TimingDataRecord record =
+        recordFactory.create(intent, sequence, recordedAt);
+
+    storage.appendCompleteRecord(intent.timingNodeId(), timingData.encode(record));
 
     sequenceState.commit(sequence);
     committedRecordQueue.add(record);
@@ -132,35 +144,56 @@ void commitNext(TimingDataIntent intent) {
 ```
 
 `peekNext` in this example represents a tentative value, not a consumed number.
-The committed sequence advances only after the complete encoded record has been
-durably appended. If the write fails before commit, later records for the same
-TimingNode do not overtake the candidate and the tentative number may be retried.
+`recordedAt` is captured immediately before the definitive IF-05 record is
+encoded for the append attempt; it is metadata, not the durability marker.
+
+The committed sequence advances only after the complete encoded record including
+its terminating line ending has been durably appended. If the write fails before
+commit, later records for the same TimingNode do not overtake the candidate and
+the tentative number is retained for retry. A partial failed append must be
+rolled back/truncated to the last committed file boundary before that retry is
+written.
 
 This gives one ordered write/commit stream per `TimingNodeId` without coupling
-RFID processing or later query execution to file latency.
+RFID processing or later query execution to file latency. The logical stream is
+per TimingNode even if a concrete implementation shares worker threads across
+several node-specific serial lanes.
 
-## Sequence persistence and synchronisation
+## Sequence persistence and recovery
 
-Sequence allocation is a domain consistency mechanism, not a storage implementation detail.
+Sequence allocation is a domain consistency mechanism, not merely an in-memory
+counter.
 
-Required direction:
-
-- never reuse a committed `(TimingNodeId, SequenceNumber)` after restart;
-- preserve monotonic order independently for each `TimingNode`;
-- persist enough allocator state that restore cannot accidentally restart a source sequence;
-- expose source + sequence in synchronisation/support data;
-- support upstream gap/consistency detection;
-- corrections/revocations refer to a stable earlier record key rather than mutating history.
-
-Backup metadata should therefore be source-keyed, for example:
+For the first append-only implementation, the authoritative per-TimingNode
+TimingData file is also sufficient to recover the committed sequence state:
 
 ```text
-registration.nextSequence.A  = 1045
-registration.nextSequence.B  = 554
-registration.nextSequence.R1 = ...   # exact reserve identifier form TBD
+no committed records       -> nextSequence = 1
+last committed sequence N  -> nextSequence = N + 1
 ```
 
-Whether sequence gaps are allowed is still a formal requirement question. **No reuse and monotonicity** are already known; contiguity across failed/aborted persistence still needs definition.
+Recovery rules:
+
+- scan only complete line-terminated IF-05 records;
+- validate that the file contains one TimingNode stream and a contiguous,
+  increasing committed sequence;
+- an unterminated trailing record is not committed;
+- before normal appends resume, truncate/repair that incomplete tail back to the
+  last complete committed line boundary so a retry cannot be concatenated onto
+  partial bytes;
+- an invalid complete record, duplicate, regression or unexpected sequence gap
+  in the authoritative local source file is an explicit recovery fault; do not
+  silently skip/renumber it and then continue writing as if the stream were
+  healthy;
+- never reuse a committed `(TimingNodeId, SequenceNumber)`;
+- expose source + last committed sequence in support/status data so
+  synchronization can diagnose gaps;
+- corrections/revocations keep their stable earlier IF-05 record reference.
+
+A separate persisted allocator metadata file is therefore **not required** for
+the first implementation merely to know the next sequence. If an optimization
+later adds such metadata, it is secondary/cached state and must be reconciled
+against the authoritative committed TimingData stream rather than overriding it.
 
 ## Prepare-team registry
 
