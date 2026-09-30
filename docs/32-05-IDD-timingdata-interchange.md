@@ -155,12 +155,20 @@ ordered stream and stable key.
 
 ### TIMING_NODE_STATE
 
-Represents a traceable TimingNode lifecycle fact.
+Represents a traceable TimingNode lifecycle **transition**.
 
 ```text
 recordType = TIMING_NODE_STATE
 state = OPEN | CLOSED
 ```
+
+For this record family:
+
+- `effectiveTime` is the time at which the represented transition becomes effective;
+- `recordedAt` is the time at which that transition record is committed;
+- `locationId` is the location associated with the transition;
+- an initial process/runtime state of CLOSED with no assigned LocationID does not
+  by itself require a synthetic TimingData record.
 
 The public semantic states are `OPEN` and `CLOSED`. Legacy/proprietary status
 characters are not IF-05 values.
@@ -218,8 +226,11 @@ Rules:
 
 - the referenced registration remains present and unchanged;
 - the revocation is a new record with its own record key and `recordedAt`;
+- the referenced record key belongs to the same `TimingNodeId` stream;
 - `effectiveTime` equals the effective registration/race time of the referenced
   registration, not the later operator/command time;
+- `locationId` equals the location captured by the referenced registration,
+  even if the TimingNode has subsequently been reconfigured while CLOSED;
 - registration identity, origin and time-source semantics remain those of the
   registration being referred to.
 
@@ -231,6 +242,17 @@ registration is hidden, struck through, marked revoked or otherwise displayed.
 IF-05 does not impose a "maximum one revocation" rule. Behaviour of a command that
 would produce redundant or conflicting business facts belongs to the applicable
 application/use-case contract.
+
+## TimingData v1 record matrix
+
+| Record type | Common envelope | Type-specific required data |
+| --- | --- | --- |
+| `TIMING_NODE_STATE` | version, TimingNodeId, sequence, LocationID, effectiveTime, recordedAt | `state = OPEN | CLOSED` |
+| `REGISTRATION` | version, TimingNodeId, sequence, LocationID, effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource` |
+| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationID, original effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource`, `reference` |
+
+The matrix is a compact view of the same normative field semantics above; it does
+not define an alternative record shape.
 
 ## Registration identities
 
@@ -326,6 +348,7 @@ The canonical v1 reference file is append-only UTF-8 JSON Lines.
 
 Rules:
 
+- encoding is UTF-8 without a byte-order mark (BOM);
 - one complete TimingData record per line;
 - canonical writer line ending is **LF** (`0x0A`);
 - a reader may accept **CRLF** (`0x0D 0x0A`) for interoperability;
@@ -335,7 +358,9 @@ Rules:
 - an incomplete trailing line after interrupted/power-loss write is not a
   committed record;
 - valid complete records before an incomplete tail remain readable;
-- source sequence consistency is validated during recovery/import.
+- source sequence consistency is validated during recovery/import;
+- canonical JSON member names and enum text are the names shown by this IDD;
+- JSON object member ordering is not semantically significant.
 
 The exact file naming, rotation/retention and filesystem durability primitive are
 deployment/software-item concerns and are not defined by IF-05.
