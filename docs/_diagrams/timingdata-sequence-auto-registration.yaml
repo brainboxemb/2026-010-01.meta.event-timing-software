@@ -3,7 +3,7 @@ diagram:
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
   width: 1580
-  height: 900
+  height: 940
   description: Automatic registration crosses an async record boundary before durable TimingData commit.
   note: RFID/tag processing is free again after the immutable intent is queued.
 
