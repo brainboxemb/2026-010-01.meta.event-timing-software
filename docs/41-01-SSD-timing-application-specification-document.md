@@ -1629,7 +1629,7 @@ Keep these concepts distinct:
 
 1. ingress/ordering — concurrency ownership;
 2. `LogBook` / `LogBookItem` — operational domain state and history owned for a TimingNode;
-3. `TimingData` / `TimingDataRecord` — canonical persistent/interchange representation, validation and encode/decode compatibility;
+3. `TimingData` / `TimingDataRecord` — framework-owned canonical semantic protocol, record model, validation, versioning and reference encoding;
 4. prepare-team state/history — operational teams-to-prepare behaviour distinct from timing records;
 5. race/reference data — locally available participant/team/tag-reference input received from external sources;
 6. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
