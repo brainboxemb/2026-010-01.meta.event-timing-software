@@ -4,12 +4,12 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
-This SDD owns the **transport realisation design below the upstream semantic
-boundary**. The SSD owns SI-01 integration responsibilities and IF-06/other
-applicable interface baselines own externally visible semantics. This document
-does not redefine those contracts.
+This SDD explains **how the upstream connection is implemented**. The SSD still
+defines SI-01's integration responsibilities, and IF-06/other IDDs define what is
+visible on the external interface. This document does not create another protocol
+definition.
 
-It refines that boundary into two intended communication implementations:
+Two transport implementations are planned:
 
 - a lightweight **socket implementation** for automated loop/network system tests;
 - a **RabbitMQ implementation** for production-shaped integration and deployment.

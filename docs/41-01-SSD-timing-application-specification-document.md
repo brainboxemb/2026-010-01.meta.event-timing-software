@@ -4,10 +4,9 @@ Status: working/review baseline
 
 Software item: **SI-01 — Timing Point Application**
 
-This Software Item Specification Document combines the SI-01 software requirements and
-software-item architecture in one versionable baseline. Requirement identifiers remain
-`SI01-REQ-...`; architecture elements and focused SDDs remain traceable to those
-requirements without creating a release dependency between a separate SRD and SAD.
+This document combines the SI-01 requirements and architecture in one baseline.
+Requirements keep their `SI01-REQ-...` identifiers. Detailed SDDs build on this
+architecture instead of repeating it.
 
 ## Inputs
 
@@ -27,25 +26,24 @@ The **SIP is not an input** to this specification: it chooses when accepted capa
 
 When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
-## Design-document authority
+## Document roles
 
-This SSD owns the **software-item requirements and architecture** of SI-01:
-responsibilities, component relationships, architecture constraints and the
-technology-independent rules that detailed design must satisfy.
+Use this SSD for the **requirements and architecture** of SI-01: what the main
+parts are responsible for, how they relate, and which constraints detailed
+design must respect.
 
-Detailed design is intentionally split below this level:
+Implementation detail is split over focused SDDs:
 
-| Document | Detailed-design authority |
+| Document | What belongs there |
 | --- | --- |
 | `43-01-SDD-01-data-and-display-design.md` | internal data/runtime behaviour: LogBook recording, commit ordering, persistence/recovery algorithms, query isolation, prepare-team/reference/display data |
 | `43-01-SDD-02-java-component-design.md` | concrete Java realisation: modules, packages, classes/interfaces, queue/executor/thread choices, provider discovery and dependency enforcement |
 | `43-01-SDD-03-backoffice-transport-design.md` | concrete transport realisation below the system/upstream semantic boundary |
 | applicable IDD | externally visible interface/file/protocol contract; an SDD shall not redefine it |
 
-A focused SDD may choose a concrete mechanism only inside the constraints of this
-SSD and the applicable IDD. Conversely, this SSD should not duplicate class,
-queue, worker, file-recovery or package details merely because an SDD has chosen
-them.
+An SDD may choose the concrete mechanism, as long as it still fits this SSD and
+the applicable IDD. Keep class names, queue types, worker threads, file-recovery
+steps and package layout out of the SSD unless they change the architecture.
 
 ## Software-item requirements
 
@@ -1173,30 +1171,24 @@ The initial architecture uses explicit typed routing because the flow is easier 
 
 ### Process view: ordering and concurrency
 
-SI-01 accepts concurrent input from presentation, device, timer and upstream
-callbacks, but mutable state owned by one `TimingNode` shall have one
-well-defined ordered mutation path.
+SI-01 receives work from several places at once: operator interfaces, devices,
+timers and upstream connections. State changes for one `TimingNode` still have
+to happen in a clear order.
 
 Architecture rules:
 
-- an external callback shall not directly mutate TimingNode-owned state;
-- boundary logic resolves the target TimingNode before state-changing work enters
-  that node's ordered execution/commit boundary;
-- accepted state-changing work for one TimingNode shall not overlap or reorder;
-- independent TimingNodes may make progress concurrently;
-- producer/callback execution shall be isolated from blocking durable persistence;
-- potentially long queries/ranking calculations shall not occupy the ordered
-  LogBook commit path;
-- blocking/retrying external delivery shall not delay local durable commit;
-- asynchronous ingress/resource use shall be bounded and observable; overload is
-  explicit rather than a silent drop;
-- shutdown stops new ingress before giving already accepted work a bounded chance
-  to finish and persist.
+- callbacks do not change TimingNode state directly;
+- resolve the target TimingNode before state-changing work enters its ordered path;
+- two state changes for the same TimingNode do not run over each other;
+- different TimingNodes may make progress at the same time;
+- file writes must not hold up RFID/device/operator callbacks;
+- a slow query or ranking calculation must not hold up LogBook commits;
+- a slow network connection must not hold up a local commit;
+- queues/resources are bounded and overload is visible instead of silently dropping work;
+- during shutdown, stop new input first and give accepted work time to finish.
 
-These are architecture constraints, not a prescription of a particular Java
-executor/queue implementation. The logical LogBook recording/commit algorithm is
-defined by SDD-01; concrete Java queue, worker, executor and lifecycle choices are
-defined by SDD-02.
+The SSD only sets these rules. SDD-01 describes the LogBook commit flow.
+SDD-02 chooses the Java queue, worker/thread and lifecycle implementation.
 
 External ingress still keeps its functional routing responsibilities:
 
@@ -1511,28 +1503,28 @@ Working rules:
 
 ### Data and persistence architecture
 
-The architecture keeps these responsibilities distinct:
+Keep the data roles simple:
 
-- `LogBook` is the TimingNode Domain owner of committed operational traceable
-  state/history;
-- IF-05 `TimingData` is the system-owned persistent/interchange representation
-  of timing facts; SI-01 realises that contract without redefining it;
-- prepare-team state/history is separate operational state;
-- `RaceData` and start/reference data are externally sourced reference state;
-- long-running query/ranking work reads Domain state without becoming an
-  alternate owner;
-- local restart/recovery shall reconstruct required operational state from its
-  durable representation and surface corruption/recovery failures explicitly.
+- `LogBook` holds the committed timing history used by SI-01;
+- IF-05 `TimingData` is the file/interchange form of those timing facts;
+- prepare-team history is separate from timing registrations;
+- `RaceData` and start/reference data come from outside SI-01;
+- queries read this state but do not become another place that owns it;
+- after a restart, SI-01 rebuilds the state it needs and clearly reports a bad or
+  unreadable persisted file.
 
-For TimingData, record identity/order semantics and the canonical file contract
-are owned by IF-05. SDD-01 owns the internal LogBook commit, persistence and
-recovery algorithm. SDD-02 owns the concrete Java ports/classes and storage
-implementation boundary.
+IF-05 defines what a TimingData record/file looks like. SDD-01 describes how a
+LogBook change is committed and recovered. SDD-02 describes the Java classes and
+storage implementation.
 
-The architecture requires simple local persistence/recovery and does not require
-an embedded database. Exact filesystem durability primitives, file
-rotation/retention and compact read/index structures remain detailed-design and
-verification concerns unless measurements force an architecture change.
+The first implementation can use simple local files; an embedded database is not
+required.
+
+Practical things to work out in detailed design include a half-written last
+record after power loss, a corrupt file at startup, atomically replacing or
+truncating files where needed, durable flush/fsync behaviour, file rotation and
+small indexes for fast reads. Those choices belong in the SDD unless they force
+an architecture change.
 
 ### Integration architecture
 
@@ -1739,17 +1731,18 @@ Testability is an architecture property. Application/domain code should where pr
 - expose observable status for degraded/failure conditions;
 - avoid `Thread.sleep()` as a domain timing mechanism.
 
-Fault handling should preserve local operation, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
+Failures should stay visible and should not silently lose timing history. Retry
+counts, timeouts and the exact durability guarantee are detailed-design choices
+once we have real implementation/measurement evidence.
 
 Detailed verification strategy belongs in `60-SVP-software-verification-plan.md`.
 
 ### Detailed-design documents
 
-This SSD remains the authority for SI-01 software-item architecture. Focused SDDs
-own implementation detail that would otherwise make this architecture difficult
-to read or would be duplicated across sections.
+Keep this SSD at architecture level. Put implementation detail in the focused
+SDDs below instead of repeating it here.
 
-Current focused detailed design:
+Current focused SDDs:
 
 ```text
 43-01-SDD-01-data-and-display-design.md
@@ -1766,15 +1759,15 @@ Current focused detailed design:
   transport realisation below the upstream semantic boundary
 ```
 
-Applicable IDDs remain authoritative for their externally visible contracts; the
-SDDs consume those contracts rather than restating them.
+IDDs define the external/file/API contracts. The SDDs use those contracts; they
+do not define a second version of them.
 
 ### Open architecture decisions
 
-Only decisions that can still change the SI-01 architecture are tracked here.
-Implementation-level questions belong to the applicable SDD.
+Only keep questions here if the answer could change the SI-01 architecture.
+Implementation questions go in the relevant SDD.
 
-Current architecture-level open areas include:
+Open architecture questions include:
 
 - production authentication/authorisation and final network exposure policy;
 - operational policy for material wall-clock corrections when it affects timing
@@ -1785,6 +1778,5 @@ Current architecture-level open areas include:
 - any target-runtime limitation that forces a change to the Java-8/application
   architecture baseline.
 
-Queue capacities, Java class signatures, executor selection, filesystem
-durability calls, file rotation and compact LogBook read/index structures are
-tracked in SDD-01/SDD-02 rather than repeated here.
+Queue sizes, Java signatures, executor choice, fsync/atomic file operations,
+rotation and LogBook indexes belong in SDD-01/SDD-02, not here.

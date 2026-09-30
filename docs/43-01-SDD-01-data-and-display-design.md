@@ -4,21 +4,21 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
-This SDD owns the **internal data/runtime design** below the SI-01 architecture:
-LogBook recording and commit ordering, TimingData persistence/recovery algorithms,
-query isolation, prepare-team/reference state and display-data behaviour.
+This SDD explains **how the data flows inside SI-01**: how LogBook entries are
+recorded, when a TimingData record is committed, how restart/recovery works, and
+how queries, prepare-team data and display data use that state.
 
-It does not redefine SI-01 component responsibilities from the SSD, and it does
-not redefine the IF-05 record/file contract. Concrete Java classes, packages,
-queue implementations and worker/executor choices are owned by SDD-02.
+The SSD still defines the architecture. IF-05 still defines the TimingData
+record/file format. SDD-02 chooses the concrete Java classes, queues and worker
+threads.
 
-The initial design does **not** require a conventional embedded database.
-Committed LogBook state is persisted through the append-only IF-05 TimingData
-representation and rebuilt from that durable representation after restart. Other
-operational/reference state uses its own persistence or synchronisation
-mechanism as defined below.
+The first version does **not** need an embedded database. Committed LogBook
+entries are written as append-only IF-05 TimingData. After a restart, SI-01 can
+read those records back and rebuild the LogBook. Other state, such as RaceData or
+prepare-team state, can use its own simpler backup/sync mechanism.
 
-Domain identifiers and known ranges are captured in `03-domain-baseline.md`. This SDD translates those facts into software/data-design direction.
+Identifiers and known ranges come from `03-domain-baseline.md`. This SDD only
+describes how SI-01 uses them.
 
 ## Design scope and data ownership
 
@@ -55,17 +55,17 @@ A registration entry is associated with both its source and its location.
 
 ### LogBook versus IF-05 TimingData
 
-The runtime `LogBook` owns operational state as 0..N `LogBookItem` values.
-Those items are domain state and do not have to be shaped like the representation
-used outside the LogBook.
+The runtime `LogBook` stores 0..N `LogBookItem` entries used by SI-01.
+A `LogBookItem` does not have to look exactly like the IF-05 record written to
+file or sent elsewhere.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
 `32-05-IDD-timingdata-interchange.md`. That IDD is authoritative for
 `TimingDataRecord` field semantics, record kinds, `RegistrationIdentity`,
 record keys/sequences, versioning and canonical file encoding.
 
-This SDD deliberately does **not** repeat that external/file contract. It defines
-how SI-01 produces and commits IF-05 records internally.
+This SDD does not repeat the IF-05 field table. It only explains how SI-01 gets
+from a LogBook change to a committed IF-05 record.
 
 The runtime `LogBook` remains free to use a different internal representation.
 A `TimingDataProvider` is an edge translation mechanism and does not move
@@ -387,82 +387,73 @@ preserves independent FIFO commit order per TimingNode.
 
 ## TimingData persistence and recovery
 
-### Sequence recovery from the TimingData file
+### Recovering the next sequence
 
-Sequence allocation is a domain consistency mechanism, not merely an in-memory
-counter.
-
-For the first append-only implementation, the authoritative per-TimingNode
-TimingData file is also sufficient to recover the committed sequence state:
+We do not need a separate sequence-counter file in the first implementation.
+The TimingData file already tells us the last committed sequence:
 
 ```text
 no committed records       -> nextSequence = 1
 last committed sequence N  -> nextSequence = N + 1
 ```
 
-Recovery rules:
+At startup:
 
-- scan only complete line-terminated IF-05 records;
-- validate that the file contains one TimingNode stream and a contiguous,
-  increasing committed sequence;
-- an unterminated trailing record is not committed;
-- before normal appends resume, truncate/repair that incomplete tail back to the
-  last complete committed line boundary so a retry cannot be concatenated onto
-  partial bytes;
-- an invalid complete record, duplicate, regression or unexpected sequence gap
-  in the authoritative local source file is an explicit recovery fault; do not
-  silently skip/renumber it and then continue writing as if the stream were
-  healthy;
-- never reuse a committed `(TimingNodeId, SequenceNumber)`;
-- expose source + last committed sequence in support/status data so
-  synchronization can diagnose gaps;
-- corrections/revocations keep their stable earlier IF-05 record reference.
+- read complete IF-05 records in order;
+- check that the file belongs to one TimingNode;
+- check that the committed sequence increases without duplicates or unexpected gaps;
+- ignore/remove only a half-written final record that has no complete line ending;
+- never reuse a committed `(TimingNodeId, SequenceNumber)`.
 
-A separate persisted allocator metadata file is therefore **not required** for
-the first implementation merely to know the next sequence. If an optimization
-later adds such metadata, it is secondary/cached state and must be reconciled
-against the authoritative committed TimingData stream rather than overriding it.
+A half-written **last** record after power loss is recoverable: truncate back to
+the last complete record and continue from there.
 
-### Persistence policy by state family
+A corrupt **complete** record, duplicate sequence or gap is different. Do not
+silently skip or renumber it. Stop recovery for that TimingNode and report the
+problem so support/operator tooling can see it.
 
-TimingData has a stronger persistence rule than ordinary cache/reference state:
+If we later add a cached sequence-counter file for faster startup, it is only a
+cache. The committed TimingData file remains the source used to check/rebuild it.
 
-- a TimingData record is committed only after its complete IF-05 line is durably
-  appended;
-- its sequence is consumed only by that successful commit;
-- the LogBook remains the Domain owner of operational timing history/state;
-- the persistent IF-05 TimingData file is the durable recovery representation
-  and sequence-recovery source;
-- optional later snapshots may accelerate LogBook rebuild but are cache state and
-  must reconcile to the persistent TimingData file.
+### What must survive a restart
 
-Other state families remain separate:
+TimingData has the strongest persistence rule:
 
-- prepare-team/NextUpTeams state requires its own traceable persistence/recovery
-  policy;
-- StageStartTimes and RaceData are externally sourced reference data and may use
-  versioned local snapshots for offline availability;
-- display/read models are reconstructable state and need not become an
-  alternative TimingData authority.
+- a timing record counts as committed only after the complete IF-05 record has
+  been written successfully;
+- only then is its sequence consumed and the matching LogBook item made visible;
+- the TimingData file is used to rebuild the LogBook after restart.
 
-The exact filesystem durability primitive, file naming, rotation/retention and
-snapshot cadence still need platform/verification evidence. Correctness and
-recoverability take priority over introducing a database engine.
+Other state can use simpler mechanisms:
 
-Status should eventually expose at least:
+- prepare-team/NextUpTeams may use a small snapshot or its own history;
+- StageStartTimes and RaceData may cache the last accepted external version;
+- display/read data can normally be rebuilt and does not need its own durable copy.
+
+Implementation hints to verify on the target Pi:
+
+- what exact flush/fsync call is needed before we call a record durable;
+- what happens if power disappears halfway through the final line;
+- whether truncating the incomplete tail is atomic/safe on the target filesystem;
+- how we report a corrupt file instead of quietly starting with empty state;
+- when files need rotation/retention so they do not grow forever.
+
+We do not need a database just to solve these cases.
+
+Status should eventually show useful support information such as:
 
 ```text
-persistent IF-05 TimingData file / recovery health
+TimingData file / recovery health
 last committed sequence per TimingNode
 LogBook ingress queue depth/high-water
-last LogBook rebuild/recovery result
+last LogBook rebuild result
 reference-data synchronisation time/version
 other-state backup/recovery health
 ```
 
-### Startup recovery
+### Startup flow
 
-The first TimingData-oriented startup recovery flow is:
+The first startup flow is intentionally straightforward:
 
 ```text
 start process
@@ -471,44 +462,40 @@ start process
 load configuration
    |
    v
-open each configured TimingNode persistent file
+open TimingData file for each configured TimingNode
    |
    v
-validate IF-05 records + single source identity + contiguous committed sequence
+read and validate complete IF-05 records
    |
-   +--> incomplete tail: truncate to last committed line boundary + diagnose
+   +--> half-written final line: truncate to last complete record + report
    |
-   +--> invalid complete record/gap/regression: recovery fault; do not append
-   |
-   v
-derive nextSequence = last committed sequence + 1
+   +--> corrupt complete record / duplicate / gap: recovery error, do not append
    |
    v
-rebuild LogBook from committed TimingData records
+nextSequence = last committed sequence + 1
    |
    v
-load other operational/reference snapshots
+rebuild LogBook
+   |
+   v
+load other saved/reference state
    |
    v
 start interfaces/devices
    |
    v
-connect/synchronise with upstream when available
+connect/synchronise upstream when available
 ```
 
-A new/empty TimingData file starts with next sequence 1.
+A new/empty TimingData file starts at sequence 1.
 
-Replay reconstructs TimingData-derived history and effective business state. It
-does **not** by itself define the post-restart operational lifecycle policy. In
-particular, a historical last `TIMING_NODE_STATE = OPEN` record is not a
-sufficient reason to start accepting new timing observations automatically after
-a process/power restart; that recovery/open policy belongs to the lifecycle
-requirements and control design.
+Rebuilding the LogBook does **not** automatically reopen a TimingNode. For
+example, if the last historical state record says `OPEN`, a process restart must
+not start accepting new observations merely because that old record exists. The
+open/closed restart policy belongs to lifecycle/control requirements.
 
-For prepare-team state, restoration can independently restore a snapshot or
-replay its own traceable persistent file. Reference-data recovery likewise restores the
-latest locally accepted snapshot/version. Corrupt/inconsistent persistent state
-must produce explicit status rather than silently looking healthy.
+If prepare-team or reference-data backup is corrupt, report that explicitly too;
+do not silently present the system as healthy.
 
 ## Prepare-team and reference data
 
@@ -751,7 +738,7 @@ A team can be ready for display without having produced a registration, and a re
 
 Later interactions (for example automatically removing a team after a successful start/passage) must be explicit domain requirements rather than accidental display side effects.
 
-## IF-05 realisation constraints
+## Rules when implementing IF-05
 
 The TimingData record/file contract is not re-specified here. SI-01 design shall
 conform to **IF05-REQ-001..015** in

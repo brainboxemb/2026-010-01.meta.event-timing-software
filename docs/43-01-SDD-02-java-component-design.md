@@ -4,19 +4,18 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
-This SDD owns the **concrete Java realisation** of the SI-01 architecture:
-Maven artifacts, packages, classes/interfaces, composition, queue/thread/executor
-choices, provider discovery and enforceable dependency direction.
+This SDD describes the **Java implementation** of the SI-01 design: Maven
+modules, packages, classes/interfaces, composition, queues/threads and provider
+loading.
 
-The SSD remains authoritative for software-item responsibilities and architecture
-constraints. SDD-01 owns the technology-independent LogBook/data runtime
-algorithms. Applicable IDDs, including IF-05, remain authoritative for external
-contracts. This SDD selects Java mechanisms that realise those inputs rather than
-restating them.
+The SSD says what the architecture must do. SDD-01 describes the LogBook/data
+flow. IDDs such as IF-05 define external/file contracts. This document picks the
+Java mechanisms that implement those decisions.
 
 ## Why this SDD exists
 
-This detail is kept separate because artifact/package choices already affect source layout, dependency checks, public/private composition and release boundaries in the implementation repository.
+This detail is separate because module/package choices directly affect the Java
+repository, dependencies and what can be reused by other applications.
 
 The central rule is:
 
@@ -60,7 +59,7 @@ framework:       event-timing-framework
 executable:      event-timing-app
 ```
 
-The root parent POM is build/aggregation metadata, not a deployed product component.
+The root POM only groups/configures the build; it is not a runtime component.
 
 The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable framework and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
 
@@ -672,9 +671,10 @@ Reasons:
 - overload cannot grow memory without bound on the Raspberry Pi;
 - FIFO behaviour matches the serial TimingNode commit-order requirement.
 
-The exact capacity is a deployment/verification value selected from measured
-burst rate and worst-case durable-store latency. Queue-full behaviour is explicit
-backpressure/fault state; silently dropping a candidate is not permitted.
+Do not guess the production queue size yet. Measure how many observations can
+arrive in a burst and how long a worst-case file write takes on the Raspberry Pi.
+A full queue must be visible to the application/status; never silently drop a
+candidate.
 
 For the first single-TimingNode application a dedicated worker loop is clearer
 than wrapping the queue in a generic executor:
@@ -698,8 +698,8 @@ final class LogBookRecorder implements AutoCloseable {
 }
 ```
 
-The production class needs deliberate shutdown, interruption and worker-failure
-policy; this sketch only defines ownership.
+The real class still needs clear shutdown/interruption/error handling. The sketch
+only shows which object owns the queue and worker thread.
 
 ### Synchronous commit core
 
@@ -725,10 +725,10 @@ CommittedLogBookItem commit(LogBookEntryCandidate candidate) {
 }
 ```
 
-If `timingDataStore.append(record)` fails, neither sequence state nor LogBook
-state advances and the next candidate may not overtake the failed one. Recovery
-restores the persisted IF-05 stream to its last complete committed boundary,
-rebuilds the LogBook, and resumes with the next committed sequence.
+If `timingDataStore.append(record)` fails, do not advance the sequence and do
+not update the LogBook. The next candidate also has to wait. On restart/retry,
+first repair the file back to its last complete record, rebuild the LogBook, then
+continue with the same next sequence.
 
 This synchronous core is directly unit-testable with an in-memory
 `TimingDataStore`, fake `TimeSource`, deterministic sequence state, a real
@@ -741,9 +741,8 @@ Queries and ranking logic do not consume a second TimingData queue. They use the
 LogBook and the other Domain/reference components that own the required
 information.
 
-The LogBook implementation should support short, bounded read access without
-deep-copying the complete history/object graph. A long calculation must not hold
-a LogBook write/read lock while it runs.
+Keep LogBook reads short. A long ranking/report calculation should not hold a
+LogBook lock and should not deep-copy the complete history.
 
 Depending on the real first query, suitable Pi-friendly implementation patterns
 include:
@@ -755,8 +754,8 @@ include:
 - copy a small primitive/reference index when that is cheaper than retaining a
   lock.
 
-The design does not require a complete LogBook clone per query and rejects
-`CopyOnWriteArrayList` for high-frequency logbook state.
+Do not clone the complete LogBook for every query, and do not use
+`CopyOnWriteArrayList` for frequently changing registration/history data.
 
 ### External committed-data output
 
@@ -812,9 +811,9 @@ For the initial Pi-oriented runtime:
 
 ## Shared TimingData API artifact
 
-The Engineering Client is a second real consumer of the TimingData model and
-provider SPI. That reuse justifies a small independently reusable artifact rather
-than forcing the Java-17 test client to depend on the SI-01 framework artifact.
+Both SI-01 and the Engineering Client need the TimingData types/provider SPI.
+That is enough reason for a small shared artifact; the Java-17 Engineering Client
+should not have to depend on the whole SI-01 framework.
 
 Conceptually:
 
@@ -834,18 +833,14 @@ private eBART provider         ---> timing-data-api
                                   +-- optional native/proprietary DLL
 ```
 
-Both executables may discover/select the same provider implementation. The
-shared Java types and codec/provider SPI **realise IF-05**; the normative record,
-identity, ordering, versioning and file/interchange semantics remain owned by
-`32-05-IDD-timingdata-interchange.md`. The provider translates between an
-external format and that IF-05 model; it does not redefine TimingData field
-semantics.
+Both applications may load the same provider implementation. The shared Java
+types follow IF-05; IF-05 remains the place that defines the fields, ordering,
+versioning and file format. A provider only translates an external format to/from
+that model.
 
-The shared artifact models **interchange values**, not SI-01 Domain ownership.
-In particular, the framework keeps its existing strong Domain
-`TimingNodeId` value type. The IF-05 Java record carries the serialized
-`timingNodeId` value as a non-empty `String`, matching the IDD field
-contract:
+The shared artifact contains **interchange values**, not the whole SI-01 Domain
+model. For example, SI-01 keeps its strong `TimingNodeId` type, while the IF-05
+record carries the serialized `timingNodeId` value as a non-empty `String`:
 
 ```text
 SI-01 Domain
@@ -858,11 +853,10 @@ timing-data-api
   TimingDataRecordKey.timingNodeId : String
 ```
 
-The mapping is performed by the framework TimingData boundary. The Engineering
-Client therefore does not depend on SI-01 Domain packages merely to inspect or
-translate IF-05 files. Conversely, `timing-data-api` does not become the owner
-of general TimingNode identity semantics used by configuration, lifecycle and
-application status.
+The framework maps between those two forms at the TimingData boundary. That keeps
+the Engineering Client independent from SI-01 Domain packages, while
+`timing-data-api` stays a small file/interchange API rather than becoming a
+second Domain model.
 
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
