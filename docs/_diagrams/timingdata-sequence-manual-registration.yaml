@@ -1,0 +1,76 @@
+diagram:
+  id: timingdata-sequence-manual-registration
+  type: sequence
+  title: Figure SDD01-TD04 — Manual registration
+  width: 1600
+  height: 970
+  description: Manual input resolves TeamIdentity inside SI-01 before entering the same TimingData commit pipeline.
+  note: The client supplies participant identity/time input; SI-01 resolves the canonical IF-05 RegistrationIdentity.
+
+participants:
+  - id: client
+    label: "Operator / client"
+    kind: client
+  - id: api
+    label: "IF-03 / CommandHandler"
+    kind: interface
+  - id: manual
+    label: "Manual registration logic"
+    kind: application
+  - id: rq
+    label: "Record queue"
+    kind: service
+  - id: rh
+    label: "RecordHandler"
+    kind: application
+  - id: file
+    label: "TimingData file"
+    kind: storage
+  - id: cq
+    label: "Committed queue"
+    kind: service
+  - id: projection
+    label: "Projection updater"
+    kind: application
+
+messages:
+  - from: client
+    to: api
+    label: TeamIdentity + time input
+    kind: call
+  - from: api
+    to: manual
+    label: validated command
+    kind: call
+  - from: manual
+    to: rq
+    label: enqueue TimingDataIntent
+    kind: async
+  - from: manual
+    to: api
+    label: accepted for processing
+    kind: return
+  - from: api
+    to: client
+    label: command accepted
+    kind: return
+  - from: rq
+    to: rh
+    label: next intent
+    kind: async
+  - from: rh
+    to: file
+    label: append complete record
+    kind: call
+  - from: file
+    to: rh
+    label: durable append complete
+    kind: return
+  - from: rh
+    to: cq
+    label: publish committed record
+    kind: async
+  - from: cq
+    to: projection
+    label: committed registration
+    kind: async
