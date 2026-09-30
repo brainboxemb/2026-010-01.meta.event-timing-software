@@ -130,7 +130,7 @@ Create the Java repository and prove that it builds and runs independently.
 
 ---
 
-## Step 3 — Application and Remote API foundation
+## Step 3 — Application and API foundation
 
 Status: completed
 
@@ -149,11 +149,11 @@ Build the first useful **Headless Timing Application** (SI-01) on the developmen
 - external application configuration with at least one TimingNode;
 - shared command/query behaviour;
 - local console and remote shell;
-- Remote API over HTTP/JSON and WebSocket;
+- API over HTTP/JSON and WebSocket;
 - consistent version/status semantics;
 - runtime file logging;
 - black-box/application testing;
-- JavaFX engineering client for manual Remote API integration testing.
+- JavaFX engineering client for manual API integration testing.
 
 ### Not in this step
 
@@ -282,7 +282,7 @@ Run realistic synthetic timing scenarios through the normal SI-01 application pa
 - keep `SimulatedAntenna` built in and always available so simulation does not depend on external JARs.
 
 A small browser test client may be added here only if it materially improves manual
-Remote API testing; it is not a product/software item.
+API testing; it is not a product/software item.
 
 ### Needs
 
@@ -318,13 +318,13 @@ Status: planned
 ### Purpose
 
 Create the first real external user application once SI-01 has something useful to show.
-The GUI is both a product capability and an independent consumer test for the Remote API.
+The GUI is both a product capability and an independent consumer test for the API.
 
 The current JavaFX engineering client does **not** predetermine this GUI technology.
 
 ### Goal
 
-Create the first useful **Desktop GUI Application** (SI-02) as a separate Remote API
+Create the first useful **Desktop GUI Application** (SI-02) as a separate API
 client.
 
 ### Scope
@@ -341,14 +341,14 @@ First useful increment:
 
 ### Needs
 
-- stable enough Remote API and timing model from Steps 3-5;
+- stable enough API and timing model from Steps 3-5;
 - development workstation;
 - explicit GUI technology decision when the step starts.
 
 ### Result
 
 - Real independent desktop GUI exists.
-- GUI uses only the Remote API.
+- GUI uses only the API.
 - GUI technology is chosen explicitly.
 
 ### Demo
@@ -505,7 +505,7 @@ Run the representative software stack on the selected target platform.
 - acquire/assemble the selected target hardware;
 - install/provision the chosen OS/runtime;
 - deploy and start SI-01;
-- connect through the Remote API and desktop GUI;
+- connect through the API and desktop GUI;
 - record basic startup/memory/CPU/thread observations;
 - decide which deployment/update automation is actually useful.
 
@@ -524,7 +524,7 @@ Run the representative software stack on the selected target platform.
 ### Demo
 
 - Boot the target and start SI-01.
-- Connect through Remote API/GUI.
+- Connect through API/GUI.
 - Show runtime observations and restart.
 
 ### Done
@@ -646,7 +646,7 @@ Demonstrate the complete representative timing system as one integrated setup.
 
 These remain options until an earlier step creates a concrete need:
 
-- a small web client for exercising the Remote API;
+- a small web client for exercising the API;
 - more elaborate image/update/rollback automation;
 - a dedicated integration host;
 - additional extension families beyond the planned TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider boundaries;

@@ -202,7 +202,7 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-020/021/022 | UC-001/008/009; SSSD status/control allocation | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
 | SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
 | SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary | architecture/component checks + `VC-ST1-001` |
-| SI01-REQ-032 | IF03-REQ-002/009 | Remote API binding/configuration | configuration/interface verification |
+| SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
 
 ### AP-1 decisions resolved by this baseline
@@ -356,20 +356,20 @@ presentation/
     console/
     shell/
     web/
-    remoteapi/        primary Remote API transport/message classes
+    api/        primary API transport/message classes
   common/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
-```{arch} Remote API
+```{arch} API
 ---
-id: RemoteApi
+id: Api
 satisfies: >-
   SI01-REQ-031, IF03-REQ-001, IF03-REQ-002,
   IF03-REQ-004
 ---
 
-The **Remote API** is the general programmable interface of
+The **API** is the general programmable interface of
 the **Headless Timing Application** (SI-01) for remote
 clients, engineering tools and headless
 black-box/integration tests. A06/A07 implement only its
@@ -387,7 +387,7 @@ listener port. The binding targets that TimingNode; its bind address/port remain
 Presentation configuration and is not a property of the TimingNode domain
 aggregate. A multi-TimingNode process therefore exposes 1..N Web ports. Web may
 reuse application queries/events and transport facilities, but it is not
-collapsed into the Remote API merely because both can use HTTP/WebSocket
+collapsed into the API merely because both can use HTTP/WebSocket
 technology.
 ```
 
@@ -418,8 +418,8 @@ the same `CommandHandler` used by other presentation interfaces.
 
 `presentation.common` is reserved for behaviour genuinely shared across
 presentation interfaces. Terminal behaviour shared by Console and RemoteShell
-belongs under `presentation.common.terminal`. Remote API HTTP, WebSocket and
-wire-message mapping remain together at the `interfaces.remoteapi` component
+belongs under `presentation.common.terminal`. API HTTP, WebSocket and
+wire-message mapping remain together at the `interfaces.api` component
 package root while that implementation is still small; deeper transport/message
 subpackages are introduced only when they contain a real cohesive decomposition.
 
@@ -878,7 +878,7 @@ application or domain state.
 
 `LoggingServer` is the optional external engineering interface for live log records and
 temporary global-level control. The engineering client initiates the connection. This
-logging-specific TCP boundary is separate from the IF-03 Remote API/status/event
+logging-specific TCP boundary is separate from the IF-03 API/status/event
 interface and live delivery remains best effort.
 ```
 
@@ -1112,8 +1112,8 @@ All presentation transports should converge on one shared application model. The
 ```text
 local console ----------------+
 remote shell -----------------+
-Remote API HTTP/JSON ---------+--> typed command/query boundary --> application runtime
-Remote API WebSocket <---------+<--------------------------------------------+
+API HTTP/JSON ---------+--> typed command/query boundary --> application runtime
+API WebSocket <---------+<--------------------------------------------+
 future Web interface ----------+
 ```
 
@@ -1716,7 +1716,7 @@ domain
 core
 presentation
   interfaces
-    remoteapi
+    api
     console
     shell
     web          when implemented
@@ -1725,7 +1725,7 @@ io
 platform
 ```
 
-Within presentation, functional interfaces own their transport-specific subpackages. External GUI or engineering clients consume the Remote API rather than creating transport packages inside SI-01.
+Within presentation, functional interfaces own their transport-specific subpackages. External GUI or engineering clients consume the API rather than creating transport packages inside SI-01.
 
 Do not create future packages merely to mirror the architecture picture. Package structure becomes explicit only as real classes make ownership and dependency rules enforceable.
 
@@ -1780,8 +1780,8 @@ This table intentionally lives in the architecture section of this SSD because t
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | application/domain state + simple file persistence/restore | durability/file mechanics still open |
-| Remote API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the Remote API functional interface |
-| Remote API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
+| API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
+| API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Upstream messaging | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |

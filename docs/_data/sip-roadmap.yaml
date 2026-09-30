@@ -91,7 +91,7 @@ steps:
     workstream: framework
     docs:
       requirements: {level: review, scope: "first executable SI-01 scope"}
-      idd: {level: review, scope: "first Remote API version/status slice"}
+      idd: {level: review, scope: "first API version/status slice"}
       design: {level: working, scope: "module/package structure sufficient to code"}
       verification: {level: working, scope: "build/unit and first executable verification"}
     documents:
@@ -99,7 +99,7 @@ steps:
       - {name: 50-SDE-02, title: Java build/test toolchain, maturity: accepted, completeness: 100}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 25}
       - {name: 43-01-SDD-02, title: Java component/package design, maturity: working, completeness: 55}
-      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 45}
+      - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 45}
       - {name: 60-SVP, title: Software Verification Plan, maturity: working, completeness: 35}
 
   "3":
@@ -109,13 +109,13 @@ steps:
     workstream: application
     docs:
       requirements: {level: working, scope: "configuration, lifecycle and public interface behaviour"}
-      idd: {level: review, scope: "Remote API and application configuration"}
+      idd: {level: review, scope: "API and application configuration"}
       design: {level: review, scope: "SI-01 composition exercised by code"}
       verification: {level: working, scope: "ST-1 plus manual engineering-client inspection"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: working, completeness: 55}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 35}
-      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 65}
+      - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 65}
       - {name: 32-11-IDD, title: Application configuration interface, maturity: review, completeness: 55}
       - {name: 60-SVP, title: Software Verification Plan, maturity: working, completeness: 45}
 
@@ -131,7 +131,7 @@ steps:
       - {name: 03-DOM, title: Domain baseline, maturity: working, completeness: 80}
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 70}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 55}
-      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 70}
+      - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 70}
       - {name: 60-SVP, title: Domain verification direction, maturity: working, completeness: 60}
 
   "5":
@@ -145,7 +145,7 @@ steps:
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 80}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
-      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 80}
+      - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 80}
       - {name: 60-SVP, title: System-test scenarios, maturity: review, completeness: 70}
 
   "6":
@@ -153,13 +153,13 @@ steps:
     workstream: client
     docs:
       requirements: {level: working, scope: "first useful SI-02 behaviour"}
-      idd: {level: review, scope: "Remote API consumed by SI-02"}
+      idd: {level: review, scope: "API consumed by SI-02"}
       design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
       verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
       - {name: 41-02-SSD, title: Desktop GUI specification, maturity: working, completeness: 60}
-      - {name: 32-03-IDD, title: Remote API interface, maturity: review, completeness: 85}
+      - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 85}
       - {name: 60-SVP, title: GUI verification direction, maturity: review, completeness: 75}
 
   "7":
@@ -195,7 +195,7 @@ steps:
     workstream: platform
     docs:
       requirements: {level: working, scope: "selected target execution/deployment needs"}
-      idd: {level: review, scope: "Remote API used for target inspection"}
+      idd: {level: review, scope: "API used for target inspection"}
       design: {level: working, scope: "selected runtime/deployment path"}
       verification: {level: working, scope: "real target execution and measurements"}
     documents:

@@ -15,7 +15,7 @@ nodes:
   - {id: backend, label: "Backend system", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
   - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
   - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
-  - {id: web_adapter, label: "Remote API\nHTTP + WebSocket", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
+  - {id: web_adapter, label: "API\nHTTP + WebSocket", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
   - {id: backend_connector, label: "Connector\nRabbitMQ / other transport", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
   - {id: command_boundary, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}

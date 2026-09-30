@@ -102,9 +102,9 @@ nodes:
   notation: component
   layout: {x: 515, y: 125, w: 280, h: 65}
 - id: remote-api
-  object_id: RemoteApi
+  object_id: Api
   group: presentation-layer
-  label: "RemoteApi"
+  label: "Api"
   subtitle: "HTTP + WebSocket • tools / test / control"
   kind: presentation
   notation: component
@@ -366,7 +366,6 @@ nodes:
 edges:
 - from: logging-infra
   to: logging-server
-  label: live records / level control
   dashed: true
 
 - from: local-console

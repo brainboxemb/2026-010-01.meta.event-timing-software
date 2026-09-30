@@ -541,7 +541,7 @@ jobs:
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
           test -f bld/docs/assets/architecture/layered-architecture.drawio
-          for object_id in TimingNode CommandHandler Conductor RemoteApi; do
+          for object_id in TimingNode CommandHandler Conductor Api; do
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.svg
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.drawio
           done

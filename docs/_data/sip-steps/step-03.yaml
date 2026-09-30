@@ -82,7 +82,7 @@ activities:
   - id: A06
     lane: application
     kind: implementation
-    title: Remote API HTTP / JSON
+    title: API HTTP / JSON
     state: done
     depends_on: [A01, A02, A03]
     note: >-
@@ -93,7 +93,7 @@ activities:
   - id: A07
     lane: application
     kind: implementation
-    title: Remote API WebSocket events
+    title: API WebSocket events
     state: done
     depends_on: [A01, A03, A06]
     note: >-

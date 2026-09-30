@@ -158,19 +158,19 @@ The project currently centres on the **Headless Timing Application** (SI-01):
 
 - Java application with one or more `TimingNode` instances;
 - external configuration;
-- console, remote shell and a programmable Remote API;
+- console, remote shell and a programmable API;
 - timing/domain behaviour added incrementally;
 - hardware and backoffice adapters added when their contracts become concrete;
 - Windows as the convenient development host;
 - Raspberry Pi Zero / Zero W as a target to run and verify on real hardware.
 
-A separate **Desktop GUI Application** (SI-02) is planned as a real Remote API client.
+A separate **Desktop GUI Application** (SI-02) is planned as a real API client.
 Its implementation technology has not yet been selected.
 
 The current JavaFX application is **not SI-02**. It is an engineering tool for manual
-integration testing of the Remote API.
+integration testing of the API.
 
-A small web client may also be useful later for exercising the Remote API. That is
+A small web client may also be useful later for exercising the API. That is
 currently a test-tool idea, not a separate product/software item.
 
 ## Development approach
@@ -195,7 +195,7 @@ constraints only if measurements show a problem.
 
 ### Keep interfaces independently testable
 
-Console, shell, Remote API and later GUI behaviour should use the same application
+Console, shell, API and later GUI behaviour should use the same application
 semantics where appropriate.
 
 Engineering clients may use a different runtime or technology from SI-01. They should
@@ -216,7 +216,7 @@ Establish the useful domain/application boundaries and a buildable Java framewor
 
 ### B — First useful Headless Timing Application
 
-Grow SI-01 on the development host: configuration, lifecycle, Remote API, logging and
+Grow SI-01 on the development host: configuration, lifecycle, API, logging and
 basic black-box testing.
 
 ### C — Raspberry Pi target proof
@@ -226,7 +226,7 @@ the target requires in deployment or runtime design.
 
 ### D — Desktop GUI
 
-Build SI-02 as a real independent client of the Remote API. The GUI technology remains
+Build SI-02 as a real independent client of the API. The GUI technology remains
 an open choice until this phase becomes active.
 
 ### E — Timing/domain behaviour
