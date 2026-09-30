@@ -29,6 +29,9 @@ participants:
   - id: cq
     label: "Committed queue"
     kind: service
+  - id: dispatcher
+    label: "Committed dispatcher"
+    kind: application
   - id: projection
     label: "Projection updater"
     kind: application
@@ -71,6 +74,10 @@ messages:
     label: publish committed record
     kind: async
   - from: cq
-    to: projection
-    label: committed registration
+    to: dispatcher
+    label: next committed record
     kind: async
+  - from: dispatcher
+    to: projection
+    label: apply registration projection
+    kind: call
