@@ -830,6 +830,29 @@ identity, ordering, versioning and file/interchange semantics remain owned by
 external format and that IF-05 model; it does not redefine TimingData field
 semantics.
 
+The shared artifact models **interchange values**, not SI-01 Domain ownership.
+In particular, the framework keeps its existing strong Domain
+`TimingNodeId` value type. The IF-05 Java record carries the serialized
+`timingNodeId` value as a non-empty `String`, matching the IDD field
+contract:
+
+```text
+SI-01 Domain
+  TimingNodeId
+      |
+      | value()
+      v
+timing-data-api
+  TimingDataRecord.timingNodeId : String
+  TimingDataRecordKey.timingNodeId : String
+```
+
+The mapping is performed by the framework TimingData boundary. The Engineering
+Client therefore does not depend on SI-01 Domain packages merely to inspect or
+translate IF-05 files. Conversely, `timing-data-api` does not become the owner
+of general TimingNode identity semantics used by configuration, lifecycle and
+application status.
+
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
 Java-17 Engineering Client.
