@@ -83,18 +83,14 @@ The current principal services are:
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
 | `LiveLogClient` | `LoggingServer` | live diagnostic records and temporary runtime log-level control |
 
-Step 4 adds an engineering role rather than a second backend transport client:
-the Engineering Client uses IF-03 test-control/capability semantics to drive an
-SI-01 `DebugConnector`. The injected message must then travel through the normal
-`DebugConnector -> UpstreamGateway -> UpstreamProtocol` path. The Engineering
-Client does not write directly into `RaceData`, `StageStartTimes`, `TimingData`
-or other domain state.
+Step 4 adds one narrowly scoped engineering capability through IF-03:
+direct injection of an **already accepted semantic registration**. That control
+enters the normal TimingNode registration operation after antenna/decoding/filtering.
+The Engineering Client does not construct or write TimingData directly and does
+not choose the TimingNode-owned source identity, active location or sequence.
 
-A configured `DebugConnector` may be the only upstream connector in a development
-composition or may coexist with a real connector such as `RabbitMqConnector`.
-The exact IF-03 test-control resources, capability representation and
-UpstreamProtocol message schemas are intentionally deferred to the Step-4 contract
-work after use-case and existing-web-application compatibility review.
+Backend/upstream injection through a `DebugConnector` remains a useful later
+engineering capability, but it is not required by this first registration slice.
 
 ## Current UI baseline
 
@@ -193,7 +189,7 @@ backend message. Broader DebugConnector/upstream simulation is deferred until a
 later slice needs inbound backoffice behaviour such as start-time/reference-data
 updates.
 
-## Existing web-application compatibility## Existing web-application compatibility
+## Existing web-application compatibility
 
 Before Step-4 IF-03/TimingData representations are fixed, the project will inspect the
 existing web application's current expectations for:
@@ -252,8 +248,8 @@ CI should initially prove one stable screenshot before multiplying the number of
 Candidate generated views are:
 
 1. Status / connection baseline;
-2. Step-4 Timing view with two synthetic TimingNodes;
-3. Upstream view with DebugConnector capability enabled;
+2. Step-4 Timing view for one closed/open TimingNode;
+3. direct accepted-registration simulation with resulting TimingData/history;
 4. Logs/Terminal only where those screenshots materially improve user documentation.
 
 The user manual may reference these generated screenshots once this pipeline exists.
@@ -267,8 +263,8 @@ The Engineering Client remains independently testable:
 - service/client classes are unit tested without JavaFX handlers;
 - UI presentation can use deterministic fixture models;
 - interface integration uses a real running SI-01 through its public interfaces;
-- DebugConnector injection enters SI-01 through IF-03 test control and the normal
-  upstream path, never through package-private/internal mutation;
+- direct accepted-registration simulation enters SI-01 through IF-03 and the normal
+  TimingNode registration operation, never through package-private/internal mutation;
 - screenshot generation verifies stable rendering, not business correctness.
 
 ## Step-4 boundary
@@ -281,5 +277,4 @@ The first Step-4 protocol documents must therefore be sufficient to support:
 - the Engineering Client;
 - headless black-box/system verification;
 - straightforward compatibility with the existing web application where practical;
-- later production connector implementations without changing the core TimingData and
-  UpstreamProtocol semantics.
+- later upstream/connector increments without changing the first committed TimingData identity semantics.
