@@ -1,136 +1,117 @@
 diagram:
   id: timingdata-producer-pipeline
-  title: Figure SDD01-TD01 — TimingData producers and canonical commit pipeline
+  title: Figure SDD01-TD01 — LogBook producers and durable TimingData commit path
   width: 1640
   height: 980
-  description: Multiple domain producers converge on one canonical TimingData intent and ordered commit path before committed records fan out to read-side and integration consumers.
-  note: Start-procedure and penalty/correction producers are shown as later record families. Their payload semantics are not part of the first TimingData v1 slice.
+  description: Multiple domain producers converge on one bounded LogBook recording path; IF-05 TimingData is the durable/interchange representation.
+  note: Start-procedure and penalty/correction producers are shown as later record families.
 
 groups:
   - id: producers
-    label: TimingData producers
+    label: Traceable fact producers
     kind: layer-domain
-    layout: {x: 55, y: 105, w: 410, h: 760}
+    layout: {x: 55, y: 105, w: 390, h: 760}
 
   - id: commit
-    label: Ordered TimingData commit
+    label: Ordered LogBook commit
     kind: layer-application
-    layout: {x: 505, y: 105, w: 560, h: 760}
+    layout: {x: 485, y: 105, w: 650, h: 760}
 
   - id: consumers
-    label: Committed-record consumers
+    label: Reads and external delivery
     kind: layer-infrastructure
-    layout: {x: 1105, y: 105, w: 480, h: 760}
+    layout: {x: 1175, y: 105, w: 410, h: 760}
 
 nodes:
   - id: tag-processor
     label: "TagProcessor\nautomatic RFID registration"
     kind: model
     group: producers
-    layout: {x: 105, y: 165, w: 310, h: 82}
+    layout: {x: 95, y: 165, w: 310, h: 82}
 
   - id: manual-registration
-    label: "Manual registration\nTeamIdentity -> RegistrationIdentity"
+    label: "Manual registration\nTeamIdentity input"
     kind: application
     group: producers
-    layout: {x: 105, y: 285, w: 310, h: 88}
+    layout: {x: 95, y: 285, w: 310, h: 82}
 
   - id: lifecycle
     label: "TimingNode lifecycle\nOPEN / CLOSED"
     kind: model
     group: producers
-    layout: {x: 105, y: 405, w: 310, h: 82}
+    layout: {x: 95, y: 405, w: 310, h: 82}
 
-  - id: start-procedure
-    label: "Start procedure\nlater TimingData record family"
+  - id: later-producers
+    label: "Start / penalty / correction\nlater record families"
     kind: model
     group: producers
-    layout: {x: 105, y: 545, w: 310, h: 82}
+    layout: {x: 95, y: 555, w: 310, h: 90}
 
-  - id: penalty-correction
-    label: "Penalty / correction logic\nlater TimingData record family"
-    kind: model
-    group: producers
-    layout: {x: 105, y: 665, w: 310, h: 82}
-
-  - id: intent
-    label: "TimingDataIntent\nTimingNode + Location snapshot\nNO sequence • NOT committed"
+  - id: candidate
+    label: "LogBookEntryCandidate\nnode/location context captured\nNO sequence • NOT committed"
     kind: model
     group: commit
-    layout: {x: 565, y: 215, w: 440, h: 100}
+    layout: {x: 545, y: 165, w: 520, h: 100}
 
-  - id: record-queue
-    label: "Record queue\nbounded FIFO / ordered per TimingNode"
+  - id: queue
+    label: "Bounded LogBook ingress queue\nArrayBlockingQueue candidate"
     kind: service
     group: commit
-    layout: {x: 620, y: 365, w: 330, h: 82}
+    layout: {x: 625, y: 315, w: 360, h: 82}
 
-  - id: record-handler
-    label: "RecordHandler\nassign sequence • capture envelope\nencode • durable append • commit"
+  - id: recorder
+    label: "LogBookRecorder\nworker / FIFO ownership"
     kind: application
     group: commit
-    layout: {x: 600, y: 500, w: 370, h: 112}
+    layout: {x: 625, y: 445, w: 360, h: 82}
 
-  - id: local-log
-    label: "Local TimingData file\nappend-only canonical history"
+  - id: committer
+    label: "LogBookCommitter\nsequence • recordedAt • item/record mapping"
+    kind: application
+    group: commit
+    layout: {x: 605, y: 575, w: 400, h: 95}
+
+  - id: timingdata-store
+    label: "TimingDataStore\nappend-only IF-05 durable file"
     kind: storage
     group: commit
-    layout: {x: 620, y: 680, w: 330, h: 82}
+    layout: {x: 535, y: 735, w: 300, h: 82}
 
-  - id: committed-queue
-    label: "Committed-record queue\nTimingDataRecord facts only"
+  - id: logbook
+    label: "LogBook\n0..N committed LogBookItem"
+    kind: model
+    group: commit
+    layout: {x: 865, y: 735, w: 220, h: 82}
+
+  - id: query
+    label: "StageTiming / query services\nshort LogBook read capture"
     kind: service
     group: consumers
-    layout: {x: 1165, y: 155, w: 360, h: 78}
+    layout: {x: 1225, y: 255, w: 310, h: 90}
 
-  - id: committed-dispatcher
-    label: "CommittedRecordDispatcher\nordered single-consumer fan-out"
-    kind: application
+  - id: sink
+    label: "CommittedTimingDataSink\nnon-blocking hand-off"
+    kind: interface
     group: consumers
-    layout: {x: 1165, y: 270, w: 360, h: 82}
-
-  - id: projection
-    label: "Projection / LogBook updater\neffective business state"
-    kind: application
-    group: consumers
-    layout: {x: 1165, y: 390, w: 360, h: 82}
-
-  - id: read-model
-    label: "Queryable read model / snapshots\nregistrations • ranking inputs • status"
-    kind: model
-    group: consumers
-    layout: {x: 1165, y: 505, w: 360, h: 86}
-
-  - id: signalling
-    label: "Event / client signalling\nindependent delivery path"
-    kind: presentation
-    group: consumers
-    layout: {x: 1165, y: 625, w: 360, h: 76}
+    layout: {x: 1225, y: 485, w: 310, h: 82}
 
   - id: downstream
-    label: "Upstream / export / outbox\nindependent downstream delivery"
+    label: "Signalling / upstream worker\ncapability-specific queue or outbox"
     kind: integration
     group: consumers
-    layout: {x: 1165, y: 745, w: 360, h: 76}
+    layout: {x: 1225, y: 650, w: 310, h: 90}
 
 edges:
-  - {from: tag-processor, to: intent}
-  - {from: manual-registration, to: intent}
-  - {from: lifecycle, to: intent}
-  - {from: start-procedure, to: intent, dashed: true, label: "later"}
-  - {from: penalty-correction, to: intent, dashed: true, label: "later"}
+  - {from: tag-processor, to: candidate}
+  - {from: manual-registration, to: candidate}
+  - {from: lifecycle, to: candidate}
+  - {from: later-producers, to: candidate, dashed: true, label: "later"}
 
-  - {from: intent, to: record-queue}
-  - {from: record-queue, to: record-handler}
-  - {from: record-handler, to: local-log, label: "durable append"}
-  - from: record-handler
-    to: committed-queue
-    label: "publish only after commit"
-    from_anchor: {side: right, position: 0.45}
-    to_anchor: {side: left, position: 0.50}
-
-  - {from: committed-queue, to: committed-dispatcher}
-  - {from: committed-dispatcher, to: projection}
-  - {from: projection, to: read-model}
-  - {from: committed-dispatcher, to: signalling}
-  - {from: committed-dispatcher, to: downstream}
+  - {from: candidate, to: queue}
+  - {from: queue, to: recorder}
+  - {from: recorder, to: committer}
+  - {from: committer, to: timingdata-store, label: "durable append"}
+  - {from: committer, to: logbook, label: "commit after persistence"}
+  - {from: logbook, to: query, label: "read"}
+  - {from: committer, to: sink, label: "committed record"}
+  - {from: sink, to: downstream, label: "async delivery"}
