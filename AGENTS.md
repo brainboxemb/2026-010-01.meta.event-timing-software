@@ -67,7 +67,7 @@ should not become a second implementation source tree.
 ### Software-item naming in prose
 
 In running architecture text, prefer the readable software-item name first and keep the
-formal identifier after it, for example **Headless Timing Application** (SI-01),
+formal identifier after it, for example **Timing Point Application** (SI-01),
 **Desktop GUI Application** (SI-02). The current JavaFX client is engineering test tooling, not SI-02; an optional web test client is not a separate software item.
 Use bare SI identifiers mainly in compact tables, diagrams, filenames and other formal
 references.

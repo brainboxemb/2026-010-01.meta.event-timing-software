@@ -13,7 +13,7 @@ def software_item_overview() -> Diagram:
         Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
         Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
         Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..N TimingNodes", 500, 490, 450, 100, "core"),
+        Node("timing", "SI-01 Timing Point Application\\n1..N TimingNodes", 500, 490, 450, 100, "core"),
 
         Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),

@@ -90,7 +90,7 @@ project documents.
 - [`docs/50-SDE-01-software-development-environment.md`](docs/50-SDE-01-software-development-environment.md) — repository/workflow/tooling/environment conventions.
 - [`docs/50-SDE-02-java-build-test-toolchain.md`](docs/50-SDE-02-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/60-SVP-software-verification-plan.md`](docs/60-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
-- [`docs/70-01-SUM-headless-timing-application.md`](docs/70-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual.
+- [`docs/70-01-SUM-timing-point-application.md`](docs/70-01-SUM-timing-point-application.md) — release-oriented SI-01 user manual.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
 

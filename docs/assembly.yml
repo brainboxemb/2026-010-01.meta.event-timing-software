@@ -25,7 +25,7 @@ documents:
   - {id: java-component-design, source: docs/43-01-SDD-02-java-component-design.md}
   - {id: backoffice-transport-design, source: docs/43-01-SDD-03-backoffice-transport-design.md}
   - {id: software-verification-plan, source: docs/60-SVP-software-verification-plan.md}
-  - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
+  - {id: timing-application-user-manual, source: docs/70-01-SUM-timing-point-application.md}
 
 indexes:
   - output: documents/README.md

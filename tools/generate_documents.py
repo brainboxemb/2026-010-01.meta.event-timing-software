@@ -61,7 +61,7 @@ VERIFICATION_DOCUMENTS = [
 ]
 
 USER_DOCUMENTS = [
-    "70-01-SUM-headless-timing-application.md",
+    "70-01-SUM-timing-point-application.md",
 ]
 
 DOCUMENTS = (

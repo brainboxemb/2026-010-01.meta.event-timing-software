@@ -35,7 +35,7 @@ If one of those areas promotes a stable requirement, architecture or verificatio
 At the full-project Migration-013 cut-over the existing stable set consists of:
 
 - 19 system use cases (`UC-001` through `UC-019`);
-- 13 Headless Timing Application requirements (`SI01-REQ-*`);
+- 13 Timing Point Application requirements (`SI01-REQ-*`);
 - 10 IF-03 requirements (`IF03-REQ-*`);
 - the existing formal verification case `VC-ST1-001`;
 - all 27 semantic top-level class/component/packaging-component identities shown in Figure SI01-01, whether represented as nodes or semantic component groups, plus selected nested software-component rows that carry explicit `object_id` metadata. Annotation/layout-only text and descriptive implementation-category rows remain outside the engineering graph.
