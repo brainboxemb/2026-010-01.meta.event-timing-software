@@ -1,0 +1,69 @@
+diagram:
+  id: timingdata-sequence-query-isolation
+  type: sequence
+  title: Figure SDD01-TD05 — Query isolation from record commit
+  width: 1500
+  height: 930
+  description: A potentially expensive query uses an immutable read view while the record worker continues committing TimingData.
+  note: The query worker has no synchronous dependency on RecordHandler.
+
+participants:
+  - id: client
+    label: "Client"
+    kind: client
+  - id: query
+    label: "Query service"
+    kind: interface
+  - id: readmodel
+    label: "Read model"
+    kind: model
+  - id: queryworker
+    label: "Query worker"
+    kind: service
+  - id: rq
+    label: "Record queue"
+    kind: service
+  - id: rh
+    label: "RecordHandler"
+    kind: application
+  - id: file
+    label: "TimingData file"
+    kind: storage
+
+messages:
+  - from: client
+    to: query
+    label: expensive query
+    kind: call
+  - from: query
+    to: readmodel
+    label: obtain snapshot
+    kind: call
+  - from: readmodel
+    to: query
+    label: immutable read view
+    kind: return
+  - from: query
+    to: queryworker
+    label: execute on snapshot
+    kind: async
+  - from: rq
+    to: rh
+    label: next TimingDataIntent
+    kind: async
+  - from: rh
+    to: file
+    label: commit next record
+    kind: call
+  - from: file
+    to: rh
+    label: durable append complete
+    kind: return
+  - from: queryworker
+    to: query
+    label: query result
+    kind: return
+  - from: query
+    to: client
+    label: response
+    kind: return
