@@ -25,9 +25,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 import argparse
-import html
 import json
-import math
 import re
 import shutil
 import subprocess
@@ -35,10 +33,6 @@ import textwrap
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
-from reportlab.lib.colors import HexColor
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
 
 
 A4_L_W_MM = 297.0
@@ -354,18 +348,6 @@ def load_step_boards(data_dir: Path, schema: dict) -> Dict[int, dict]:
     return result
 
 
-def roadmap_groups(steps: List[Step]) -> List[List[Step]]:
-    groups = [
-        steps[index:index + ROADMAP_STEPS_PER_PAGE]
-        for index in range(0, len(steps), ROADMAP_STEPS_PER_PAGE)
-    ]
-    if len(groups) != ROADMAP_PAGE_COUNT:
-        raise SystemExit(
-            f"Current roadmap must render as {ROADMAP_PAGE_COUNT} A4 pages; got {len(groups)}"
-        )
-    return groups
-
-
 def compact_doc_label(document: dict) -> str:
     style = MATURITY[document["maturity"]]
     completeness = document.get("completeness")
@@ -373,422 +355,8 @@ def compact_doc_label(document: dict) -> str:
     return f"{document['name']} {suffix}"
 
 
-def svg_text(
-    parts: List[str],
-    x: float,
-    y: float,
-    lines: Iterable[str],
-    size: float,
-    anchor: str = "middle",
-    weight: str = "normal",
-    fill: str = "#222",
-) -> None:
-    parts.append(
-        f'<text x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" '
-        f'font-family="Arial,Helvetica,sans-serif" font-size="{size:.2f}" '
-        f'font-weight="{weight}" fill="{fill}">'
-    )
-    for index, line in enumerate(lines):
-        dy = 0 if index == 0 else size * 1.20
-        parts.append(
-            f'<tspan x="{x:.2f}" dy="{dy:.2f}">{html.escape(str(line))}</tspan>'
-        )
-    parts.append("</text>")
-
-
-def roadmap_positions(group: List[Step], page_x: float = 0.0) -> List[Tuple[Step, float, float]]:
-    usable = A4_L_W_MM - 2 * MARGIN_MM
-    cell = usable / ROADMAP_STEPS_PER_PAGE
-    return [
-        (step, page_x + MARGIN_MM + cell * (index + 0.5), cell - 5.0)
-        for index, step in enumerate(group)
-    ]
-
-
-def append_roadmap_svg_page(
-    parts: List[str],
-    group: List[Step],
-    planning_basis: str,
-    page_index: int,
-    page_x: float,
-    *,
-    standalone: bool,
-) -> None:
-    if not standalone:
-        parts.append(
-            f'<rect x="{page_x:.2f}" y="0" width="{A4_L_W_MM:.2f}" height="{A4_L_H_MM:.2f}" '
-            'fill="none" stroke="#d0d0d0" stroke-width="0.35"/>'
-        )
-
-    title_x = page_x + MARGIN_MM
-    svg_text(
-        parts,
-        title_x,
-        10.5,
-        ["Software Implementation Planning — roadmap"],
-        5.2,
-        anchor="start",
-        weight="bold",
-    )
-    svg_text(
-        parts,
-        title_x,
-        17.5,
-        [
-            f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
-            f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
-        ],
-        2.5,
-        anchor="start",
-        fill="#555",
-    )
-
-    parts.append(
-        f'<line x1="{page_x + MARGIN_MM:.2f}" y1="{TIMELINE_Y}" '
-        f'x2="{page_x + A4_L_W_MM - MARGIN_MM:.2f}" y2="{TIMELINE_Y}" '
-        'stroke="#333" stroke-width="0.65"/>'
-    )
-
-    for step, center_x, width in roadmap_positions(group, page_x):
-        radius = 3.4
-        points = (
-            f"{center_x},{TIMELINE_Y-radius} {center_x+radius},{TIMELINE_Y} "
-            f"{center_x},{TIMELINE_Y+radius} {center_x-radius},{TIMELINE_Y}"
-        )
-        parts.append(
-            f'<polygon points="{points}" fill="white" stroke="#333" stroke-width="0.55"/>'
-        )
-        svg_text(parts, center_x, TIMELINE_Y + 0.9, [str(step.number)], 2.7, weight="bold")
-        svg_text(
-            parts,
-            center_x,
-            24.0,
-            [step_effort_text(step), roadmap_end_text(step)],
-            2.3,
-            weight="bold",
-            fill="#555",
-        )
-        svg_text(
-            parts,
-            center_x,
-            41.0,
-            wrap(f"Step {step.number} — {step.title}", 29, 3),
-            2.85,
-            weight="bold",
-        )
-
-        x = center_x - width / 2
-        parts.append(
-            f'<rect x="{x:.2f}" y="{DELIVERABLE_TOP}" width="{width:.2f}" '
-            f'height="{DELIVERABLE_H}" rx="1.6" fill="#f6f8fa" '
-            'stroke="#6c8ebf" stroke-width="0.55"/>'
-        )
-        svg_text(
-            parts,
-            x + 2.7,
-            DELIVERABLE_TOP + 6.2,
-            ["DELIVERABLE"],
-            2.4,
-            anchor="start",
-            weight="bold",
-            fill="#4f81bd",
-        )
-        svg_text(
-            parts,
-            center_x,
-            DELIVERABLE_TOP + 13.2,
-            wrap(step.deliverable, max(22, int(width / 2.0)), 6),
-            2.35,
-        )
-
-        parts.append(
-            f'<rect x="{x:.2f}" y="{DEMO_TOP}" width="{width:.2f}" '
-            f'height="{DEMO_H}" rx="1.6" fill="#ffffff" '
-            'stroke="#6c8ebf" stroke-width="0.55"/>'
-        )
-        svg_text(
-            parts,
-            x + 2.7,
-            DEMO_TOP + 6.2,
-            ["DEMONSTRATION"],
-            2.4,
-            anchor="start",
-            weight="bold",
-            fill="#4f81bd",
-        )
-        svg_text(
-            parts,
-            center_x,
-            DEMO_TOP + 13.2,
-            wrap(step.demonstration, max(22, int(width / 2.0)), 6),
-            2.3,
-        )
-
-        parts.append(
-            f'<rect x="{x:.2f}" y="{DOC_TOP}" width="{width:.2f}" '
-            f'height="{DOC_H}" rx="1.6" fill="#fafafa" '
-            'stroke="#999" stroke-width="0.4"/>'
-        )
-        svg_text(
-            parts,
-            x + 2.7,
-            DOC_TOP + 6.2,
-            ["DOCUMENTS"],
-            2.3,
-            anchor="start",
-            weight="bold",
-            fill="#555",
-        )
-
-        for idx, document in enumerate(step.documents[:6]):
-            row, col = divmod(idx, 2)
-            chip_w = (width - 7.0) / 2
-            chip_x = x + 2.3 + col * (chip_w + 2.3)
-            chip_y = DOC_TOP + 10.5 + row * 8.1
-            style = MATURITY[document["maturity"]]
-            parts.append(
-                f'<rect x="{chip_x:.2f}" y="{chip_y:.2f}" width="{chip_w:.2f}" '
-                f'height="6.3" rx="1" fill="{style["fill"]}" stroke="{style["stroke"]}" '
-                'stroke-width="0.3"/>'
-            )
-            svg_text(
-                parts,
-                chip_x + chip_w / 2,
-                chip_y + 4.1,
-                [concise(compact_doc_label(document), 20)],
-                1.85,
-                weight="bold",
-                fill=style["stroke"],
-            )
-
-
-def render_roadmap_svgs(
-    groups: List[List[Step]], planning_basis: str, out_dir: Path
-) -> None:
-    page_dir = out_dir / "roadmap"
-    page_dir.mkdir(parents=True, exist_ok=True)
-
-    panorama_w = A4_L_W_MM * ROADMAP_PAGE_COUNT
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{panorama_w}mm" '
-        f'height="{A4_L_H_MM}mm" viewBox="0 0 {panorama_w} {A4_L_H_MM}">',
-        '<rect width="100%" height="100%" fill="white"/>',
-    ]
-    for page_index, group in enumerate(groups):
-        append_roadmap_svg_page(
-            parts,
-            group,
-            planning_basis,
-            page_index,
-            page_index * A4_L_W_MM,
-            standalone=False,
-        )
-    parts.append("</svg>")
-    (out_dir / "sip-roadmap.svg").write_text("\n".join(parts), encoding="utf-8")
-
-    for page_index, group in enumerate(groups):
-        page_parts = [
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{A4_L_W_MM}mm" '
-            f'height="{A4_L_H_MM}mm" viewBox="0 0 {A4_L_W_MM} {A4_L_H_MM}">',
-            '<rect width="100%" height="100%" fill="white"/>',
-        ]
-        append_roadmap_svg_page(
-            page_parts,
-            group,
-            planning_basis,
-            page_index,
-            0.0,
-            standalone=True,
-        )
-        page_parts.append("</svg>")
-        (page_dir / f"sip-roadmap-{page_index + 1}.svg").write_text(
-            "\n".join(page_parts), encoding="utf-8"
-        )
-
-
-def pdf_text(
-    c: canvas.Canvas,
-    x: float,
-    y: float,
-    lines: Iterable[str],
-    size: float,
-    *,
-    bold: bool = False,
-    center: bool = True,
-) -> None:
-    c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
-    for index, line in enumerate(lines):
-        y_pos = y - index * size * 1.25 / 2.83465
-        if center:
-            c.drawCentredString(x * mm, y_pos * mm, str(line))
-        else:
-            c.drawString(x * mm, y_pos * mm, str(line))
-
-
-def render_roadmap_pdf(
-    groups: List[List[Step]], planning_basis: str, path: Path
-) -> None:
-    c = canvas.Canvas(str(path), pagesize=landscape(A4))
-    page_w = A4_L_W_MM
-    page_h = A4_L_H_MM
-
-    for page_index, group in enumerate(groups):
-        c.setFillColor(HexColor("#222222"))
-        c.setStrokeColor(HexColor("#333333"))
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(MARGIN_MM * mm, (page_h - 10.5) * mm, "Software Implementation Planning — roadmap")
-        c.setFillColor(HexColor("#555555"))
-        c.setFont("Helvetica", 7)
-        c.drawString(
-            MARGIN_MM * mm,
-            (page_h - 17.5) * mm,
-            (
-                f"Page {page_index + 1}/{ROADMAP_PAGE_COUNT} — "
-                f"Steps {group[0].number}-{group[-1].number} · {planning_basis}"
-            ),
-        )
-        c.setStrokeColor(HexColor("#333333"))
-        c.setLineWidth(0.65)
-        c.line(
-            MARGIN_MM * mm,
-            (page_h - TIMELINE_Y) * mm,
-            (page_w - MARGIN_MM) * mm,
-            (page_h - TIMELINE_Y) * mm,
-        )
-
-        for step, center_x, width in roadmap_positions(group):
-            r = 3.4
-            c.setStrokeColor(HexColor("#333333"))
-            c.line(center_x * mm, (page_h - (TIMELINE_Y-r)) * mm,
-                   (center_x+r) * mm, (page_h-TIMELINE_Y) * mm)
-            c.line((center_x+r) * mm, (page_h-TIMELINE_Y) * mm,
-                   center_x * mm, (page_h-(TIMELINE_Y+r)) * mm)
-            c.line(center_x * mm, (page_h-(TIMELINE_Y+r)) * mm,
-                   (center_x-r) * mm, (page_h-TIMELINE_Y) * mm)
-            c.line((center_x-r) * mm, (page_h-TIMELINE_Y) * mm,
-                   center_x * mm, (page_h-(TIMELINE_Y-r)) * mm)
-            c.setFillColor(HexColor("#222222"))
-            c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(
-                center_x * mm,
-                (page_h - TIMELINE_Y - 1.0) * mm,
-                str(step.number),
-            )
-            c.setFillColor(HexColor("#555555"))
-            pdf_text(
-                c,
-                center_x,
-                page_h - 24.0,
-                [step_effort_text(step), roadmap_end_text(step)],
-                6.2,
-                bold=True,
-            )
-            c.setFillColor(HexColor("#222222"))
-            pdf_text(
-                c,
-                center_x,
-                page_h - 41.0,
-                wrap(f"Step {step.number} — {step.title}", 29, 3),
-                7.2,
-                bold=True,
-            )
-
-            x = center_x - width / 2
-            for top, height, heading, text, fill in [
-                (DELIVERABLE_TOP, DELIVERABLE_H, "DELIVERABLE", step.deliverable, "#f6f8fa"),
-                (DEMO_TOP, DEMO_H, "DEMONSTRATION", step.demonstration, "#ffffff"),
-            ]:
-                c.setStrokeColor(HexColor("#6c8ebf"))
-                c.setFillColor(HexColor(fill))
-                c.roundRect(
-                    x * mm,
-                    (page_h - top - height) * mm,
-                    width * mm,
-                    height * mm,
-                    1.6 * mm,
-                    stroke=1,
-                    fill=1,
-                )
-                c.setFillColor(HexColor("#4f81bd"))
-                c.setFont("Helvetica-Bold", 6.2)
-                c.drawString((x + 2.7) * mm, (page_h - top - 6.2) * mm, heading)
-                c.setFillColor(HexColor("#222222"))
-                pdf_text(
-                    c,
-                    center_x,
-                    page_h - top - 13.2,
-                    wrap(text, max(22, int(width / 2.0)), 6),
-                    5.9,
-                )
-
-            c.setStrokeColor(HexColor("#999999"))
-            c.setFillColor(HexColor("#fafafa"))
-            c.roundRect(
-                x * mm,
-                (page_h - DOC_TOP - DOC_H) * mm,
-                width * mm,
-                DOC_H * mm,
-                1.6 * mm,
-                stroke=1,
-                fill=1,
-            )
-            c.setFillColor(HexColor("#555555"))
-            c.setFont("Helvetica-Bold", 6.0)
-            c.drawString((x + 2.7) * mm, (page_h - DOC_TOP - 6.2) * mm, "DOCUMENTS")
-            for idx, document in enumerate(step.documents[:6]):
-                row, col = divmod(idx, 2)
-                chip_w = (width - 7.0) / 2
-                chip_x = x + 2.3 + col * (chip_w + 2.3)
-                chip_y = DOC_TOP + 10.5 + row * 8.1
-                style = MATURITY[document["maturity"]]
-                c.setStrokeColor(HexColor(style["stroke"]))
-                c.setFillColor(HexColor(style["fill"]))
-                c.roundRect(
-                    chip_x * mm,
-                    (page_h - chip_y - 6.3) * mm,
-                    chip_w * mm,
-                    6.3 * mm,
-                    1.0 * mm,
-                    stroke=1,
-                    fill=1,
-                )
-                c.setFillColor(HexColor(style["stroke"]))
-                c.setFont("Helvetica-Bold", 4.7)
-                c.drawCentredString(
-                    (chip_x + chip_w / 2) * mm,
-                    (page_h - chip_y - 4.3) * mm,
-                    concise(compact_doc_label(document), 20),
-                )
-
-        c.showPage()
-    c.save()
-
-
 def step_demo_id(step_number: int) -> str:
     return f"SIP-STP{step_number:02d}-DEMO"
-
-
-def planning_change_lines(change: dict) -> List[str]:
-    lines = textwrap.wrap(
-        change["change"],
-        width=70,
-        break_long_words=False,
-        break_on_hyphens=False,
-    )
-    if not lines or len(lines) > 3:
-        raise SystemExit(
-            f"Planning change does not fit a step card: {change['change']!r}"
-        )
-    return lines
-
-
-def planning_changes_height(changes: List[dict]) -> float:
-    if not changes:
-        return 0.0
-    body = 0.0
-    for change in changes:
-        body += max(5.4, len(planning_change_lines(change)) * 2.6 + 0.9)
-    return 8.5 + body + 2.0
 
 
 def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
@@ -796,17 +364,6 @@ def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
     for activity in board["activities"]:
         grouped.setdefault(activity["lane"], []).append(activity)
     return [(lane, grouped[lane]) for lane in LANES if grouped.get(lane)]
-
-
-def lane_height(activity_count: int) -> float:
-    rows = math.ceil(activity_count / STEP_CARD_COLS)
-    return (
-        STEP_LANE_HEADER_H
-        + 1.3
-        + rows * STEP_CARD_H
-        + max(0, rows - 1) * STEP_CARD_GAP
-        + 1.3
-    )
 
 
 def step_card_meta(activity: dict) -> str:
@@ -1000,7 +557,6 @@ def main() -> None:
         roadmap_source,
     )
     steps = parse_sip(Path(args.sip), plan)
-    groups = roadmap_groups(steps)
     planning_basis = planning_basis_text(steps, plan)
 
     boards = load_step_boards(
@@ -1016,9 +572,6 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "roadmap").mkdir(parents=True, exist_ok=True)
     (out_dir / "steps").mkdir(parents=True, exist_ok=True)
-
-    render_roadmap_svgs(groups, planning_basis, out_dir)
-    render_roadmap_pdf(groups, planning_basis, out_dir / "sip-roadmap.pdf")
 
     for number, board in sorted(boards.items()):
         render_step_board(
