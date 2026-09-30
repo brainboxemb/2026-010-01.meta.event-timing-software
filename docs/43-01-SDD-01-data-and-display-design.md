@@ -366,6 +366,8 @@ A missing/corrupt backup or inconsistent sequence metadata must result in explic
 
 Start times and reserve-tag mappings are backoffice-owned reference data that must also be available locally.
 
+The start-time semantic model must remain compatible with sources that define a race/stage start as **time-of-day only**. An optional date/race-day value may be carried when available, but consumers shall not require it. Accepted registration observations remain absolute `TimingTimestamp` values. For elapsed-time calculation, a time-only start is resolved in the configured event/race time zone to the most recent valid occurrence not after the registration timestamp, so a midnight crossing is handled as the next civil day rather than as a negative elapsed time.
+
 The application maintains local in-memory repositories and synchronises accepted data from the backoffice.
 
 A useful model is snapshot/version based:
