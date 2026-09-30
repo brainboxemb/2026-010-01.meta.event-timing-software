@@ -617,8 +617,11 @@ private eBART provider         ---> timing-data-api
 ```
 
 Both executables may discover/select the same provider implementation. The
-provider translates between an external format and the framework-owned TimingData
-model; it does not redefine TimingData field semantics.
+shared Java types and codec/provider SPI **realise IF-05**; the normative record,
+identity, ordering, versioning and file/interchange semantics remain owned by
+`32-05-IDD-timingdata-interchange.md`. The provider translates between an
+external format and that IF-05 model; it does not redefine TimingData field
+semantics.
 
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
