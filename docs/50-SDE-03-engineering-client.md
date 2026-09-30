@@ -48,15 +48,22 @@ Current placement:
 ├── framework/       SI-01 reusable Java-8 code
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
+├── timing-data-api/ shared TimingData model + codec/provider SPI
 └── test-client/     Engineering Client
-                    standalone Maven project
-                    Java 17 + JavaFX
-                    no framework/app dependency
+                    standalone Java 17 + JavaFX application
+                    may depend on timing-data-api only
+                    no SI-01 framework/app implementation dependency
 ```
 
-The Engineering Client communicates with a running SI-01 only through supported
-external interfaces. It does not import `event-timing-framework` or
+For live SI-01 operation the Engineering Client communicates only through
+supported external interfaces. It does not import `event-timing-framework` or
 `event-timing-app` implementation classes.
+
+TimingData inspection/conversion is a separate engineering capability. The
+Engineering Client may depend on the small shared `timing-data-api` artifact and
+load the same `TimingDataProvider` implementations that SI-01 can use. This
+allows an external/proprietary eBART codec to be exercised by the Engineering
+Client without copying its decoding rules into client code.
 
 Keeping it in the same repository is intentional while interface changes and
 engineering-client changes normally belong to the same development increment. A
@@ -86,8 +93,13 @@ The current principal services are:
 Step 4 adds one narrowly scoped engineering capability through IF-03:
 direct injection of an **already accepted semantic registration**. That control
 enters the normal TimingNode registration operation after antenna/decoding/filtering.
-The Engineering Client does not construct or write TimingData directly and does
-not choose the TimingNode-owned source identity, active location or sequence.
+When exercising a running SI-01 through IF-03, the Engineering Client does not
+construct committed TimingData directly and does not choose the TimingNode-owned
+source identity, active location or sequence.
+
+For offline/import/export/compatibility inspection, the Engineering Client may
+decode or encode TimingData through the shared TimingData API/provider boundary.
+That capability does not make the client an owner of live SI-01 domain state.
 
 Backend/upstream injection through a `DebugConnector` remains a useful later
 engineering capability, but it is not required by this first registration slice.
