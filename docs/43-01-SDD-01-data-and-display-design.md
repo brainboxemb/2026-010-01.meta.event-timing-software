@@ -76,12 +76,38 @@ a higher-level system to describe synchronisation state is not automatically a
 TimingNode lifecycle value.
 
 The next promoted TimingData concept is participant registration. The public
-protocol distinguishes **how** a registration originated from **what later
-happens to it**:
+protocol separates dimensions that legacy/proprietary formats may encode in one
+compact field:
 
-- `AUTOMATIC` — accepted through the normal electronic/observation path;
-- `MANUAL` — entered deliberately by an operator/client through a supported
-  application command;
+1. **entry origin** — how the registration entered SI-01;
+2. **time source** — how its effective registration time was obtained;
+3. **registration purpose** — how the resulting registration may be used.
+
+Initial semantic values are:
+
+```text
+entryOrigin
+  AUTOMATIC        normal electronic/observation path
+  MANUAL           explicit operator/client registration
+
+timeSource
+  OBSERVED         time supplied by the accepted automatic observation
+  SYSTEM_ASSIGNED  time assigned automatically when a manual registration is entered
+  OPERATOR_ENTERED time explicitly entered by the operator
+
+registrationPurpose
+  NORMAL           normal registration semantics
+  FINISH_ONLY      finish result only; never eligible as the start of a following stage
+```
+
+The dimensions are intentionally independent. For example, a manual registration
+may use a system-assigned current time or an operator-entered effective time. A
+finish-only registration is expressed by its semantic purpose rather than by a
+provider-specific one-character code. Which application profile/capability may
+create a finish-only registration is a separate command/capability rule.
+
+Record action is also explicit:
+
 - `REGISTRATION` — creates one effective participant registration;
 - `REGISTRATION_REVOKED` — appends a new record that revokes one earlier
   registration without modifying or deleting that historical record.
@@ -90,8 +116,11 @@ A revocation shall carry an explicit reference to the stable
 `TimingDataRecordKey` of the registration being revoked. Its effective
 registration/race time is the **same effective time as the referenced
 registration**, not the wall-clock time at which the operator performs the
-revocation. A separate record/commit timestamp records when the revocation fact
-itself was created.
+revocation. The revocation semantically retains the referenced registration's
+entry-origin, time-source and purpose; these values are obtained from the
+referenced record rather than reinterpreted from current operator input. A
+separate record/commit timestamp records when the revocation fact itself was
+created.
 
 Conceptually:
 
@@ -167,7 +196,9 @@ final class TimingDataRecord {
     private TimingTimestamp effectiveTime;
     private TimingTimestamp recordedAt;
     private RegistrationOrigin origin;            // AUTOMATIC | MANUAL when applicable
-    private TeamNumber teamNumber;                // when applicable
+    private RegistrationTimeSource timeSource;     // OBSERVED | SYSTEM_ASSIGNED | OPERATOR_ENTERED
+    private RegistrationPurpose purpose;           // NORMAL | FINISH_ONLY
+    private TeamNumber teamNumber;                 // when applicable
     private TimingDataRecordKey reference;         // revocation/correction target
     private TimingDataRecordPayload payload;       // type-specific semantic data
 }
@@ -637,9 +668,11 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
 - **CAND-REG-007** — Opening and closing a TimingNode shall each create a traceable TimingData state-change record with generic semantic state `OPEN` or `CLOSED`; provider-specific encodings belong to the selected TimingData implementation.
 - **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
-- **CAND-REG-009** — Participant registrations shall distinguish automatic versus manual origin without using different record-identity rules.
-- **CAND-REG-010** — Revoking a participant registration shall append a new record that references the original registration record key.
-- **CAND-REG-011** — A registration-revocation record shall retain the effective registration/race time of the referenced registration while separately recording when the revocation record itself was committed.
+- **CAND-REG-009** — Participant registrations shall distinguish automatic versus manual entry origin without using different record-identity rules.
+- **CAND-REG-010** — Manual registrations shall distinguish a system-assigned effective time from an operator-entered effective time.
+- **CAND-REG-011** — A registration may carry a semantic purpose such as `FINISH_ONLY`; a finish-only registration shall never be used as the start registration/time of a following stage.
+- **CAND-REG-012** — Revoking a participant registration shall append a new record that references the original registration record key.
+- **CAND-REG-013** — A registration-revocation record shall retain the effective registration/race time and semantic registration attributes of the referenced registration while separately recording when the revocation record itself was committed.
 
 ### Tag/team identity
 
