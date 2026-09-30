@@ -89,6 +89,7 @@ project documents.
 - [`docs/43-01-SDD-03-backoffice-transport-design.md`](docs/43-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
 - [`docs/50-SDE-01-software-development-environment.md`](docs/50-SDE-01-software-development-environment.md) — repository/workflow/tooling/environment conventions.
 - [`docs/50-SDE-02-java-build-test-toolchain.md`](docs/50-SDE-02-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
+- [`docs/50-SDE-03-engineering-client.md`](docs/50-SDE-03-engineering-client.md) — Engineering Client architecture, UI baseline and reproducible screenshot/documentation direction.
 - [`docs/60-SVP-software-verification-plan.md`](docs/60-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
 - [`docs/70-01-SUM-headless-timing-application.md`](docs/70-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
@@ -134,6 +135,7 @@ Examples:
 43-01-SDD-02
 50-SDE-01
 50-SDE-02
+50-SDE-03
 60-SVP
 70-01-SUM
 ```

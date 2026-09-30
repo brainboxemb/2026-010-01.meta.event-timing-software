@@ -1,0 +1,149 @@
+diagram:
+  id: engineering-client
+  title: Figure SDE03-01 — Engineering Client architecture
+  width: 1380
+  height: 820
+  description: Engineering Client UI and independent client services connected only through supported SI-01 external boundaries.
+  note: Dashed Step-4 relations are planned engineering controls; exact IF-03 resources and UpstreamProtocol schemas remain deferred to the applicable interface-contract work.
+
+groups:
+  - id: ui
+    label: Engineering Client / JavaFX presentation
+    kind: layer-presentation
+    layout: {x: 40, y: 90, w: 390, h: 650}
+
+  - id: services
+    label: Independent engineering client services
+    kind: layer-application
+    layout: {x: 465, y: 90, w: 380, h: 650}
+
+  - id: si01
+    label: Timing Point Application / external engineering boundaries
+    kind: layer-infrastructure
+    layout: {x: 880, y: 90, w: 455, h: 650}
+
+nodes:
+  - id: client-shell
+    label: "TestClientFxApplication\nJavaFX shell / presentation"
+    kind: client
+    group: ui
+    layout: {x: 85, y: 135, w: 300, h: 75}
+
+  - id: status-view
+    label: "Status\nversion + status + raw JSON"
+    kind: presentation
+    group: ui
+    layout: {x: 75, y: 255, w: 150, h: 70}
+
+  - id: events-view
+    label: "Events\nWebSocket inspection"
+    kind: presentation
+    group: ui
+    layout: {x: 245, y: 255, w: 150, h: 70}
+
+  - id: terminal-view
+    label: "Terminal\nRemote Shell"
+    kind: presentation
+    group: ui
+    layout: {x: 75, y: 350, w: 150, h: 70}
+
+  - id: logs-view
+    label: "Logs\nlive diagnostics"
+    kind: presentation
+    group: ui
+    layout: {x: 245, y: 350, w: 150, h: 70}
+
+  - id: timing-view
+    label: "Timing (Step 4)\nTimingNode / TimingData"
+    kind: presentation
+    group: ui
+    layout: {x: 75, y: 485, w: 150, h: 78}
+
+  - id: upstream-view
+    label: "Upstream (Step 4)\ncapability + test control"
+    kind: presentation
+    group: ui
+    layout: {x: 245, y: 485, w: 150, h: 78}
+
+  - id: doc-fixtures
+    label: "Documentation mode\ndeterministic public fixtures"
+    kind: client
+    group: ui
+    layout: {x: 120, y: 625, w: 230, h: 72}
+
+  - id: api-client
+    label: "ApiClient\nHTTP / JSON"
+    kind: service
+    group: services
+    layout: {x: 520, y: 205, w: 270, h: 70}
+
+  - id: event-client
+    label: "ApiEventClient\nWebSocket"
+    kind: service
+    group: services
+    layout: {x: 520, y: 305, w: 270, h: 70}
+
+  - id: shell-client
+    label: "RemoteShellClient\nline-oriented TCP"
+    kind: service
+    group: services
+    layout: {x: 520, y: 405, w: 270, h: 70}
+
+  - id: log-client
+    label: "LiveLogClient\ndiagnostics TCP"
+    kind: service
+    group: services
+    layout: {x: 520, y: 505, w: 270, h: 70}
+
+  - id: if03
+    label: "IF-03 API\nHTTP / JSON + WebSocket"
+    kind: interface
+    group: si01
+    layout: {x: 945, y: 185, w: 320, h: 80}
+
+  - id: remote-shell
+    label: "Remote Shell\nengineering terminal boundary"
+    kind: interface
+    group: si01
+    layout: {x: 945, y: 320, w: 320, h: 72}
+
+  - id: logging-server
+    label: "LoggingServer\nlive diagnostics boundary"
+    kind: crosscutting
+    group: si01
+    layout: {x: 945, y: 435, w: 320, h: 72}
+
+  - id: debug-connector
+    label: "DebugConnector (Step 4)\nunder UpstreamGateway"
+    kind: integration
+    group: si01
+    layout: {x: 945, y: 565, w: 320, h: 75}
+
+  - id: real-connector
+    label: "RabbitMqConnector\nmay coexist when configured"
+    kind: integration
+    group: si01
+    layout: {x: 945, y: 655, w: 320, h: 58}
+
+edges:
+  - {from: status-view, to: api-client}
+  - {from: timing-view, to: api-client, dashed: true, label: "Step-4 queries / commands"}
+  - {from: upstream-view, to: api-client, dashed: true, label: "capabilities / test control"}
+  - {from: events-view, to: event-client}
+  - {from: terminal-view, to: shell-client}
+  - {from: logs-view, to: log-client}
+  - {from: doc-fixtures, to: client-shell, dashed: true, label: "visual fixtures only"}
+
+  - {from: api-client, to: if03}
+  - {from: event-client, to: if03}
+  - {from: shell-client, to: remote-shell}
+  - {from: log-client, to: logging-server}
+
+  - from: if03
+    to: debug-connector
+    dashed: true
+    label: "API-controlled debug injection"
+  - from: debug-connector
+    to: if03
+    dashed: true
+    label: "observable result / status"
