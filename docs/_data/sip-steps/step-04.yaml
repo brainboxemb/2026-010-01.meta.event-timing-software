@@ -15,7 +15,7 @@ activities:
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: next
+    state: active
     note: >-
       Document the existing JavaFX Engineering Client as a standalone engineering
       tool in the same repository: component architecture, current tabs/functions,

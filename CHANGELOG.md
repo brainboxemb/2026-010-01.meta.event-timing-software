@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the JavaFX `test-client/` as the project **Engineering Client**: document its independent external-client architecture, current/Step-4 UI baseline, API-controlled DebugConnector role, same-repository boundary and deterministic CI screenshot/documentation direction.
+
 - Clarify Engineering Portal navigation: exact Markdown source links now force GitHub source view (`?plain=1#L…`), explorer actions are named `Open details & relations` / `Open source definition`, and the explorer/object pages explain the distinction between derived portal views and authored engineering source.
 
 - Define built-in Timing Point application profiles (`standard`, `finish`) as versioned default-composition templates resolved before `ApplicationBootstrap`; separate application profile, platform and operating mode so combinations such as Finish-on-Windows simulation remain possible, and make explicit deployment configuration override all non-secret defaults.

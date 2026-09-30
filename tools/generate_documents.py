@@ -40,6 +40,7 @@ SOFTWARE_ITEM_SPEC_DOCUMENTS = [
 ENGINEERING_DOCUMENTS = [
     "50-SDE-01-software-development-environment.md",
     "50-SDE-02-java-build-test-toolchain.md",
+    "50-SDE-03-engineering-client.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
