@@ -622,156 +622,63 @@ preserved.
 ### Runtime sequence views
 
 The structure diagrams above show responsibility and execution ownership. The
-following sequence diagrams show the same design over time. They deliberately
-show queue boundaries as participants because those boundaries are part of the
-architecture, not an incidental implementation detail.
+following UML-style sequence views show the same design over time. Queue
+boundaries are explicit participants because those asynchronous hand-offs are
+part of the architecture, not incidental implementation detail.
 
 #### Automatic RFID registration
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Antenna as Antenna / RFID adapter
-    participant TP as TagProcessor
-    participant RQ as Record queue
-    participant RH as RecordHandler
-    participant File as TimingData file
-    participant CQ as Committed-record queue
-    participant PJ as Projection updater
-    participant RM as Read model
+<a id="fig-sdd01-td03"></a>
+![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
 
-    Antenna->>TP: decoded tag observation
-    activate TP
-    TP->>TP: validate/filter/resolve TagIdentity
-    TP->>TP: build immutable TimingDataIntent
-    TP->>RQ: enqueue(intent)
-    deactivate TP
+*Figure SDD01-TD03 — Automatic RFID registration leaves the RFID/TagProcessor execution path before durable record commit.*
 
-    Note over TP,RQ: RFID path is free again; no file write here
-
-    RQ-->>RH: next intent
-    activate RH
-    RH->>RH: choose tentative sequence
-    RH->>RH: create canonical TimingDataRecord
-    RH->>File: append complete encoded record
-    File-->>RH: durable append completed
-    RH->>RH: commit sequence
-    RH->>CQ: publish committed record
-    deactivate RH
-
-    CQ-->>PJ: committed TimingDataRecord
-    activate PJ
-    PJ->>PJ: apply business projection
-    PJ->>RM: publish new snapshot/state
-    deactivate PJ
-```
-
-The producer has completed once the immutable intent has been accepted by the
-record queue. Persistence latency therefore does not hold the RFID callback or
-`TagProcessor` execution context.
+The `TagProcessor` applies its input-domain rules and produces an immutable
+`TimingDataIntent`. Once that intent has been accepted by the record queue,
+persistence latency no longer occupies the RFID processing context. The common
+record worker then completes the IF-05 record envelope, commits it durably and
+publishes only the committed fact.
 
 #### Manual registration
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Operator
-    participant Client as Engineering / operator client
-    participant API as IF-03 / CommandHandler
-    participant MR as Manual registration logic
-    participant RQ as Record queue
-    participant RH as RecordHandler
-    participant File as TimingData file
-    participant CQ as Committed-record queue
-    participant PJ as Projection updater
+<a id="fig-sdd01-td04"></a>
+![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
 
-    Operator->>Client: enter TeamIdentity + time
-    Client->>Client: translate to RegistrationIdentity
-    Client->>API: submit manual registration
-    API->>MR: validated command
-    activate MR
-    MR->>MR: determine origin/timeSource/effectiveTime
-    MR->>RQ: enqueue(TimingDataIntent)
-    deactivate MR
-    API-->>Client: command accepted for processing
+*Figure SDD01-TD04 — Manual registration resolves participant input inside SI-01 and joins the same record-commit path.*
 
-    RQ-->>RH: next intent
-    activate RH
-    RH->>RH: assign tentative sequence
-    RH->>File: append complete TimingDataRecord
-    File-->>RH: durable append completed
-    RH->>RH: commit sequence
-    RH->>CQ: publish committed record
-    deactivate RH
-
-    CQ-->>PJ: committed registration
-    PJ->>PJ: update effective registration projection
-```
-
-The manual path and RFID path differ only before `TimingDataIntent`. From the
-record queue onward they share the same ordering, sequence and durability
-semantics.
+The client supplies `TeamIdentity` plus the applicable time input. SI-01
+manual-registration/application logic resolves that input to the canonical IF-05
+`RegistrationIdentity`, determines origin/time-source semantics and produces
+the same kind of immutable `TimingDataIntent` used by other producers. From
+the record queue onward, automatic and manual registrations share ordering,
+durability and publication semantics.
 
 #### Query isolation
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client
-    participant QS as Query service / API
-    participant RM as Read model / snapshot
-    participant QW as Query worker
-    participant RH as RecordHandler
-    participant RQ as Record queue
+<a id="fig-sdd01-td05"></a>
+![Query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
 
-    Client->>QS: request potentially expensive query
-    QS->>RM: obtain immutable snapshot/read view
-    RM-->>QS: snapshot
-    QS->>QW: execute query(snapshot)
-    activate QW
+*Figure SDD01-TD05 — Potentially expensive queries run against a read view while the record worker continues committing TimingData.*
 
-    par registration commit continues independently
-        RQ-->>RH: next TimingDataIntent
-        activate RH
-        RH->>RH: commit next record
-        deactivate RH
-    and query calculation
-        QW->>QW: filter / calculate / rank
-    end
-
-    QW-->>QS: query result
-    deactivate QW
-    QS-->>Client: response
-
-    Note over QW,RH: No synchronous query dependency on RecordHandler
-```
-
-A long-running query uses a read view and its own execution context. It therefore
-cannot occupy the record worker or prevent later TimingData commits.
+A query obtains an immutable snapshot/read view and performs expensive filtering,
+ranking or reporting on its own query worker. The sequence intentionally shows a
+record commit occurring while that query work is still outstanding: there is no
+synchronous query dependency on `RecordHandler`.
 
 #### Other TimingData producers
 
 Start-procedure logic, penalty/correction logic and later record-producing
-features use the same hand-off pattern:
+features use the same hand-off pattern.
 
-```mermaid
-sequenceDiagram
-    participant Producer as Domain producer
-    participant RQ as Record queue
-    participant RH as RecordHandler
-    participant File as TimingData file
-    participant CQ as Committed-record queue
+<a id="fig-sdd01-td06"></a>
+![Generic TimingData producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
 
-    Producer->>Producer: apply producer-specific business rules
-    Producer->>RQ: enqueue(TimingDataIntent)
-    RQ-->>RH: next intent
-    RH->>File: append canonical record
-    File-->>RH: durable append completed
-    RH->>CQ: committed TimingDataRecord
-```
+*Figure SDD01-TD06 — Later domain producers reuse the same TimingData intent and ordered commit boundary.*
 
-Only the intent payload and producer-specific business rules vary. Sequence
-allocation, persistence, commit and downstream publication remain common.
+Only producer-specific business rules and the future IF-05 intent payload vary.
+Sequence allocation, durable append, commit and downstream publication remain
+common. The exact start/penalty/correction record families are not defined by the
+current TimingData v1 slice.
 
 ### Thread/ownership responsibilities
 
