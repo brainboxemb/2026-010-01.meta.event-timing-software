@@ -42,9 +42,12 @@ def load_graph(path: Path) -> dict:
 def source_url(repository: str, revision: str, source: str) -> str:
     match = SOURCE_RE.match(source)
     if match:
+        source_path = match.group("path")
+        line = match.group("line")
+        suffix = f"?plain=1#L{line}" if source_path.endswith(".md") else f"#L{line}"
         return (
             f"https://github.com/{repository}/blob/{revision}/"
-            f"{match.group('path')}#L{match.group('line')}"
+            f"{source_path}{suffix}"
         )
     return f"https://github.com/{repository}/blob/{revision}/{source}"
 
@@ -195,11 +198,18 @@ def render_object_page(obj: dict, view: dict) -> str:
         f"# {obj['id']} — {obj['title']}",
         "",
         f"**Type:** {obj['type_label']}  ",
-        f"**Authority:** [open exact source]({obj['source_url']})  ",
+        f"**Source definition:** [open authored source]({obj['source_url']})  ",
         (
-            "**Explorer:** "
+            "**Architecture context:** "
             f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
-            "open with context</a>"
+            "open in explorer</a>"
+        ),
+        "",
+        (
+            "This is a **derived portal page**. It combines the selected engineering "
+            "object with its incoming/outgoing relations and one-hop graph context. "
+            "Change engineering meaning in the authored source definition; the portal "
+            "is regenerated from that source."
         ),
         "",
     ]
@@ -313,6 +323,13 @@ hide:
 
 The real generated SI-01 architecture stays visible while the selected
 engineering object and its traceability context are inspected.
+
+**Purpose.** Use this page to inspect architecture and traceability without losing
+the surrounding diagram. The diagram, detail panel and object pages are generated
+reader views pinned to one source revision; they do not own engineering meaning.
+Use **Open details & relations** to stay inside the portal and inspect the object's
+full relation context. Use **Open source definition** to open the hand-authored
+Markdown definition at the exact pinned source line in GitHub.
 
 <div class="eng-workspace" data-eng-explorer>
   <section class="eng-context">
