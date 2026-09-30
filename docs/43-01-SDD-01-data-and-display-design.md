@@ -332,6 +332,55 @@ explicit location association, append-only correction/revocation model, and the
 distinction between an event's effective time and the time at which a later
 record such as a revocation is committed.
 
+### Record-producing responsibilities
+
+TimingData is not produced only by RFID. Multiple domain/application components
+may decide that a new traceable TimingData fact must be recorded.
+
+The common hand-off object is conceptually a `TimingDataIntent`:
+
+```text
+TimingDataIntent
+  semantic record family / payload
+  effectiveTime
+  producer-derived domain data
+
+  no sequenceNumber
+  no recordedAt
+  not yet committed
+```
+
+The producer owns the **business meaning** needed to create the intent. The
+record pipeline owns the **generic commit envelope**.
+
+Current and expected producers include:
+
+| Producer | Example intent | Status |
+| --- | --- | --- |
+| `TagProcessor` | automatic participant registration | first v1 slice |
+| manual registration command path | manual participant registration/revocation | first v1 slice |
+| TimingNode lifecycle handling | OPEN/CLOSED state fact | first v1 slice |
+| start procedure/domain logic | start-related TimingData fact | later record family |
+| penalty/correction domain logic | penalty/correction TimingData fact | later record family |
+
+The last two rows establish the architectural producer pattern only. Their exact
+record types and payloads are not defined by this first v1 slice.
+
+A producer shall **not**:
+
+- assign the persistent TimingData sequence;
+- write the TimingData file;
+- publish an uncommitted record to clients/upstream consumers;
+- depend on the physical file/wire representation.
+
+Likewise, `RecordHandler` shall not re-run or invent producer business logic. It
+validates generic commit preconditions, completes the common envelope, performs
+the ordered durable append and publishes the resulting committed fact.
+
+![TimingData producers and canonical commit pipeline](../../../raw/prod/docs/assets/architecture/timingdata-producer-pipeline.svg)
+
+*Figure SDD01-TD01 — Multiple domain producers converge on one canonical ordered TimingData commit path.*
+
 ### Sequence allocation and record commit
 
 Sequence allocation is owned by the asynchronous record-commit path, scoped per
@@ -340,14 +389,14 @@ Sequence allocation is owned by the asynchronous record-commit path, scoped per
 Conceptually:
 
 ```java
-void submit(RegistrationCandidate candidate) {
-    recordQueue.add(candidate);
+void submit(TimingDataIntent intent) {
+    recordQueue.add(intent);
 }
 
-void commitNext(RegistrationCandidate candidate) {
-    long sequence = sequenceState.peekNext(candidate.timingNodeId());
+void commitNext(TimingDataIntent intent) {
+    long sequence = sequenceState.peekNext(intent.timingNodeId());
 
-    TimingDataRecord record = recordFactory.create(candidate, sequence);
+    TimingDataRecord record = recordFactory.create(intent, sequence);
     storage.appendCompleteRecord(timingData.encode(record));
 
     sequenceState.commit(sequence);
@@ -770,13 +819,16 @@ A later optimisation may send deltas, but reconnect must always be recoverable t
 These flows remain separate:
 
 ```text
-RFID/manual/start/penalty/system-open
+RFID / manual / lifecycle / later start / penalty logic
           |
           v
- RegistrationLedger
+     TimingDataIntent
           |
-          +--> local results/ranking
-          +--> backoffice outbox
+          v
+ committed TimingData history
+          |
+          +--> effective business projections / ranking inputs
+          +--> downstream integration
 
 keypad/UI prepare/remove team
           |
@@ -794,12 +846,12 @@ Later interactions (for example automatically removing a team after a successful
 
 ## Synchronisation and threading
 
-Registration processing uses two explicit asynchronous producer/consumer
-boundaries so RFID ingress, durable record handling and read/query workloads do
-not block one another.
+TimingData processing uses two explicit asynchronous producer/consumer
+boundaries so RFID ingress, operator commands, lifecycle/start/penalty producers,
+durable record handling and read/query workloads do not block one another.
 
 ```text
-TagProcessor / manual registration
+TimingData producers
           |
           v
  [record queue]
@@ -839,6 +891,24 @@ failure must be observable. Exact capacities and whether workers are dedicated
 threads or backed by shared executors remain deployment/verification choices as
 long as per-TimingNode ordering and the non-blocking boundaries above are
 preserved.
+
+![TimingData asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
+
+*Figure SDD01-TD02 — The commit worker, projection updater and potentially slow query execution are isolated by explicit asynchronous boundaries.*
+
+### Thread/ownership responsibilities
+
+| Execution role | May block on | Must not block |
+| --- | --- | --- |
+| producer task | normal short domain work + enqueue | file persistence, client query, network delivery |
+| record worker | ordered local durable append | long query, client rendering, upstream/network retry |
+| projection worker | short deterministic projection update | long-running query/report |
+| query worker | its own calculation/read workload | record commit or producer ingress |
+| signalling/upstream consumer | its own delivery/retry policy | record commit |
+
+For the initial implementation the record worker and read/query work use
+separate execution contexts. This is stronger than merely using different Java
+methods: a slow query cannot occupy the worker that commits TimingData records.
 
 ## Candidate requirements
 
