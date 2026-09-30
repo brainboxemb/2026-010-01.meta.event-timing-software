@@ -249,9 +249,9 @@ registration, inspect the resulting TimingData, and close it again.
 
 ### Result
 
-- One registration point has explicit location/open-close invariants.
-- Direct semantic registration produces TimingData with stable source identity, active location and source sequence.
-- The Engineering Client can reconstruct current state/history and observe subsequent updates.
+- Location and open/close rules are explicit.
+- Direct registration produces identified TimingData.
+- Engineering Client shows state, history and live updates.
 
 ### Demo
 
