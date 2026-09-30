@@ -791,39 +791,42 @@ For the initial implementation the record worker and read/query work use
 separate execution contexts. This is stronger than merely using different Java
 methods: a slow query cannot occupy the worker that commits TimingData records.
 
-## Candidate requirements
+## IF-05 realisation constraints
 
-Temporary identifiers only; these are not yet formal requirements.
+The TimingData record/file contract is not re-specified here. SI-01 design shall
+conform to **IF05-REQ-001..012** in
+`32-05-IDD-timingdata-interchange.md`.
 
-### Registration identity and traceability
+The following temporary design constraints cover only the internal realisation
+needed around that interface:
 
-- **CAND-REG-001** — Each registration system/source shall have a stable `TimingNodeId`.
-- **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
-- **CAND-REG-003** — Each committed registration entry shall contain both `TimingNodeId` and `LocationID`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`; a new stream starts at 1 and sequence 0 is reserved.
-- **CAND-REG-005** — The stable registration record identity shall include `TimingNodeId` and sequence number so upstream systems can order records and detect gaps per timing node.
-- **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
-- **CAND-REG-007** — Opening and closing a TimingNode shall each create a traceable TimingData state-change record with generic semantic state `OPEN` or `CLOSED`; provider-specific encodings belong to the selected TimingData implementation.
-- **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
-- **CAND-REG-009** — Participant registrations shall distinguish automatic versus manual entry origin without using different record-identity rules.
-- **CAND-REG-010** — Manual registrations shall distinguish a system-assigned effective time from an operator-entered effective time.
-- **CAND-REG-011** — A participant-registration revocation shall be represented as a new append-only record that references the original registration record key; TimingData shall not prescribe the consuming client's visibility/presentation behaviour for that registration.
-- **CAND-REG-012** — A registration-revocation record shall retain the effective registration/race time, entry origin and time source of the referenced registration while separately recording when the revocation record itself was committed.
-- **CAND-REG-013** — Tag/manual registration ingress shall hand an immutable registration candidate to an asynchronous record queue; durable TimingData file I/O shall not execute on the TagProcessor/RFID callback path.
-- **CAND-REG-014** — The record-commit path shall publish a record to downstream consumers only after the complete local record is durably appended and its sequence is committed.
-- **CAND-REG-015** — Committed records shall feed read-model/projection work through a separate asynchronous boundary so potentially long client queries cannot block TimingData record commit.
+### Record pipeline
 
-### Tag/team identity
+- **CAND-PIPE-001** — TimingData-producing domain/application paths shall hand an
+  immutable `TimingDataIntent` to an asynchronous record queue; durable file I/O
+  shall not execute on RFID/device/operator ingress callbacks.
+- **CAND-PIPE-002** — The record-commit path shall publish an IF-05 record to
+  downstream consumers only after the complete local record is durably appended
+  and its sequence is committed.
+- **CAND-PIPE-003** — Committed records shall feed read-model/projection work
+  through a separate asynchronous boundary so potentially long client queries
+  cannot block TimingData record commit.
 
-- **CAND-TAG-001** — The registration path shall use a normalised RFID identity consisting of prefix plus decoded number.
-- **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
-- **CAND-TAG-003** — The physical tag postfix/copy identifier shall be removed from the canonical registration identity.
-- **CAND-TAG-004** — A normalised `TagIdentity` shall resolve to the canonical `RegistrationIdentity`; normal tags resolve deterministically while reserve tags use locally available backoffice-synchronised mapping data.
-- **CAND-TAG-005** — A manual registration shall resolve its operator-supplied `TeamIdentity` to the same canonical `RegistrationIdentity` used by automatic registrations.
-- **CAND-TAG-006** — `RegistrationIdentity` shall support semantic types `STANDARD`, `WOMEN` and `MEN` plus registration/team number without exposing proprietary one-character type codes in the public protocol.
-- **CAND-TAG-007** — `STANDARD` registrations shall use numbers 1..350 at locations 1..23; `WOMEN` registrations shall use numbers 1..350 at location 24; `MEN` registrations shall use numbers 1..350 at location 25.
-- **CAND-TAG-008** — Reserve transponders shall remain reserve `TagIdentity` values and resolve to a canonical `RegistrationIdentity`; reserve shall not become a separate RegistrationIdentity type.
-- **CAND-TAG-009** — RFID normalisation shall not require a physical postfix on every tag; when a postfix is present it is physical tag-copy detail and shall not form part of `RegistrationIdentity`.
+### Identity resolution before IF-05 commit
+
+- **CAND-ID-001** — The RFID path shall normalise physical tag input to the
+  `TagIdentity` form required for registration-identity resolution.
+- **CAND-ID-002** — The RFID path shall distinguish normal versus reserve-tag
+  semantics before creating a TimingData intent.
+- **CAND-ID-003** — A normal `TagIdentity` shall resolve deterministically to
+  the IF-05 `RegistrationIdentity`; a reserve `TagIdentity` shall resolve
+  through locally available race/reference mapping data.
+- **CAND-ID-004** — Manual registration shall resolve operator-supplied
+  `TeamIdentity` to the same IF-05 `RegistrationIdentity` used by automatic
+  registrations.
+- **CAND-ID-005** — Physical tag postfix/copy detail, when present, shall not be
+  carried into IF-05 `RegistrationIdentity`; parsing shall not require a
+  postfix globally.
 
 ### Local data and backup
 
@@ -855,11 +858,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - What exact identifiers represent virtual registration systems?
 - Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
 - What exact filesystem durability primitive/policy is required before a completed append is considered durable on each deployment platform?
-- What sequence numeric width/wraparound policy is required?
-- Which public clients/interfaces, if any, need source `TagIdentity` provenance in addition to the canonical `RegistrationIdentity`?
-- Verify the legacy "unknown team" registration semantics before deciding whether the public model needs an explicit unknown-registration identity/state; do not promote legacy location-specific codes directly.
-- Which operational events besides the promoted TimingNode `OPEN` / `CLOSED` state-change records belong in the registration stream?
-- Which additional generic fields, if any, are required on a lifecycle/state-change record beyond its normal TimingData identity/location/sequence/time fields and semantic state?
+- Which additional producer/domain paths should emit future IF-05 record families after their requirements are promoted?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
 - Which state must survive restart: all registration history, all ready-team history, current ready-team snapshot, start times, reserve tags, display revision, outbox, or all of these?
 - Is snapshot-only backup sufficient for registrations/ready-team events, or should traceable changes use an append journal plus periodic snapshot?
