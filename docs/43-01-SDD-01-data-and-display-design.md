@@ -332,37 +332,36 @@ explicit location association, append-only correction/revocation model, and the
 distinction between an event's effective time and the time at which a later
 record such as a revocation is committed.
 
-### Sequence allocation
+### Sequence allocation and record commit
 
-A sequence allocator is owned per `TimingNode`:
+Sequence allocation is owned by the asynchronous record-commit path, scoped per
+`TimingNodeId`. `TagProcessor` does not allocate a durable record sequence.
+
+Conceptually:
 
 ```java
-interface RegistrationSequence {
-    long next(TimingNodeId timingNodeId);
+void submit(RegistrationCandidate candidate) {
+    recordQueue.add(candidate);
+}
+
+void commitNext(RegistrationCandidate candidate) {
+    long sequence = sequenceState.peekNext(candidate.timingNodeId());
+
+    TimingDataRecord record = recordFactory.create(candidate, sequence);
+    storage.appendCompleteRecord(timingData.encode(record));
+
+    sequenceState.commit(sequence);
+    committedRecordQueue.add(record);
 }
 ```
 
-Conceptual processing:
+`peekNext` in this example represents a tentative value, not a consumed number.
+The committed sequence advances only after the complete encoded record has been
+durably appended. If the write fails before commit, later records for the same
+TimingNode do not overtake the candidate and the tentative number may be retried.
 
-```java
-void acceptRegistration(RegistrationCandidate candidate) {
-    TimingNodeId timingNode = candidate.timingNodeId();
-    long sequence = registrationSequence.next(timingNode);
-
-    LogBookItem item = logBookItemFactory.create(
-        sequence,
-        candidate.locationId(),
-        candidate);
-
-    logBook.append(item);
-
-    TimingDataRecord record = timingData.toRecord(timingNode, item);
-    storage.append(timingData.encode(record));
-    upstream.enqueue(record);
-}
-```
-
-The serialized timing node application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `TimingNodeId`.
+This gives one ordered write/commit stream per `TimingNodeId` without coupling
+RFID processing or later query execution to file latency.
 
 ## Sequence persistence and synchronisation
 
@@ -795,24 +794,51 @@ Later interactions (for example automatically removing a team after a successful
 
 ## Synchronisation and threading
 
-Registration records, ready-team events, reference-data updates and UI/device commands enter through controlled serialized state-change boundaries so in-memory transitions are deterministic.
-
-File writes/network sends should not stall those boundaries indefinitely. Durability semantics need explicit requirements, particularly for traceable registration records whose source sequence is used for upstream consistency checking.
-
-One possible pattern is:
+Registration processing uses two explicit asynchronous producer/consumer
+boundaries so RFID ingress, durable record handling and read/query workloads do
+not block one another.
 
 ```text
-serial handler
-   |
-   +-- allocate source sequence
-   +-- append in-memory ledger
-   +-- update derived state
-   +-- create immutable persistence work
-   +-- schedule durable file write
-   +-- create downstream backoffice work
+TagProcessor / manual registration
+          |
+          v
+ [record queue]
+          |
+          v
+ RecordHandler
+   assign tentative sequence
+   build canonical TimingDataRecord
+   append complete record
+   commit sequence
+          |
+          v
+ [committed-record queue]
+          |
+          v
+ ReadModel / Projection updater
+          |
+          +--> notifications/events
+          +--> queryable state/snapshot
+                         |
+                         v
+                    query workers
 ```
 
-However, because upstream systems depend on the sequence stream, formal requirements must decide when a sequence/record is considered committed and which failure gaps are legal.
+The `RecordHandler` is the single ordered commit authority for each
+`TimingNodeId` stream. A record becomes committed only after its complete local
+TimingData representation has been durably appended. Only then is the sequence
+considered consumed and the committed record published to downstream consumers.
+
+The second queue carries **committed facts** only. Its fast consumer updates
+derived/read state. Potentially expensive client queries execute against that
+state or an immutable snapshot on separate query workers; they do not execute on
+the RecordHandler and do not delay later commits.
+
+Both queues are bounded operational resources. Queue depth/high-water and write
+failure must be observable. Exact capacities and whether workers are dedicated
+threads or backed by shared executors remain deployment/verification choices as
+long as per-TimingNode ordering and the non-blocking boundaries above are
+preserved.
 
 ## Candidate requirements
 
@@ -832,6 +858,9 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-010** — Manual registrations shall distinguish a system-assigned effective time from an operator-entered effective time.
 - **CAND-REG-011** — A participant-registration revocation shall be represented as a new append-only record that references the original registration record key; TimingData shall not prescribe the consuming client's visibility/presentation behaviour for that registration.
 - **CAND-REG-012** — A registration-revocation record shall retain the effective registration/race time, entry origin and time source of the referenced registration while separately recording when the revocation record itself was committed.
+- **CAND-REG-013** — Tag/manual registration ingress shall hand an immutable registration candidate to an asynchronous record queue; durable TimingData file I/O shall not execute on the TagProcessor/RFID callback path.
+- **CAND-REG-014** — The record-commit path shall publish a record to downstream consumers only after the complete local record is durably appended and its sequence is committed.
+- **CAND-REG-015** — Committed records shall feed read-model/projection work through a separate asynchronous boundary so potentially long client queries cannot block TimingData record commit.
 
 ### Tag/team identity
 
@@ -874,8 +903,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
 - Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
-- Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
-- Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
+- What exact filesystem durability primitive/policy is required before a completed append is considered durable on each deployment platform?
 - What sequence numeric width/wraparound policy is required?
 - Which public clients/interfaces, if any, need source `TagIdentity` provenance in addition to the canonical `RegistrationIdentity`?
 - Verify the legacy "unknown team" registration semantics before deciding whether the public model needs an explicit unknown-registration identity/state; do not promote legacy location-specific codes directly.
