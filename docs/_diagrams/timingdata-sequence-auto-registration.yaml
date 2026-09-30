@@ -1,0 +1,68 @@
+diagram:
+  id: timingdata-sequence-auto-registration
+  type: sequence
+  title: Figure SDD01-TD03 — Automatic RFID registration
+  width: 1580
+  height: 900
+  description: Automatic registration crosses an async record boundary before durable TimingData commit.
+  note: RFID/tag processing is free again after the immutable intent is queued.
+
+participants:
+  - id: antenna
+    label: "RFID adapter"
+    kind: integration
+  - id: tag
+    label: "TagProcessor"
+    kind: model
+  - id: rq
+    label: "Record queue"
+    kind: service
+  - id: rh
+    label: "RecordHandler"
+    kind: application
+  - id: file
+    label: "TimingData file"
+    kind: storage
+  - id: cq
+    label: "Committed queue"
+    kind: service
+  - id: projection
+    label: "Projection updater"
+    kind: application
+  - id: readmodel
+    label: "Read model"
+    kind: model
+
+messages:
+  - from: antenna
+    to: tag
+    label: decoded observation
+    kind: call
+  - from: tag
+    to: rq
+    label: enqueue TimingDataIntent
+    kind: async
+  - from: rq
+    to: rh
+    label: next intent
+    kind: async
+  - from: rh
+    to: file
+    label: append complete record
+    kind: call
+  - from: file
+    to: rh
+    label: durable append complete
+    kind: return
+  - from: rh
+    to: cq
+    label: publish committed record
+    kind: async
+  - from: cq
+    to: projection
+    label: committed fact
+    kind: async
+  - from: projection
+    to: readmodel
+    label: update projection
+    kind: call
