@@ -389,7 +389,7 @@ def step_card_meta(activity: dict) -> str:
         parts.append(f"~{activity['estimate_project_days']}d")
     if activity.get("depends_on"):
         parts.append("after " + ",".join(activity["depends_on"]))
-    if activity.get("note"):
+    if activity.get("note") and activity.get("state") != "done":
         parts.append(concise(activity["note"], 30))
     return " | ".join(parts)
 
