@@ -55,7 +55,7 @@ nodes:
 
   - id: intent
     label: "TimingDataIntent\nimmutable semantic intent\nNO sequence • NOT committed"
-    kind: message
+    kind: model
     group: commit
     layout: {x: 565, y: 215, w: 440, h: 100}
 
