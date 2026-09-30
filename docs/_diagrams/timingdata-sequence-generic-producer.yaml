@@ -2,21 +2,24 @@ diagram:
   id: timingdata-sequence-generic-producer
   type: sequence
   title: Figure SDD01-TD06 — Generic LogBook producer
-  width: 1180
-  height: 700
-  description: Later traceable domain producers reuse the same candidate and durable commit boundary.
+  width: 1380
+  height: 900
+  description: Later traceable domain producers asynchronously enqueue candidates and reuse the same recorder and durable commit path.
   note: Exact start, penalty and correction record families remain deferred.
 
 participants:
   - {id: producer, label: Domain producer, kind: model}
+  - {id: queue, label: LogBook queue, kind: service}
   - {id: recorder, label: LogBookRecorder, kind: application}
   - {id: committer, label: LogBookCommitter, kind: application}
   - {id: store, label: TimingDataStore, kind: storage}
   - {id: logbook, label: LogBook, kind: model}
 
 messages:
-  - {from: producer, to: recorder, label: LogBookEntryCandidate, kind: async}
-  - {from: recorder, to: committer, label: next candidate, kind: async}
+  - {from: producer, to: queue, label: enqueue LogBookEntryCandidate, kind: async}
+  - {from: recorder, to: queue, label: take next candidate, kind: call}
+  - {from: queue, to: recorder, label: candidate, kind: return}
+  - {from: recorder, to: committer, label: commit candidate, kind: call}
   - {from: committer, to: store, label: append IF-05 record, kind: call}
   - {from: store, to: committer, label: durable, kind: return}
   - {from: committer, to: logbook, label: commit LogBookItem, kind: call}

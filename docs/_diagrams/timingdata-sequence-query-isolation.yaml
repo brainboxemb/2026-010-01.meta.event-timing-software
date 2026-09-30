@@ -2,15 +2,17 @@ diagram:
   id: timingdata-sequence-query-isolation
   type: sequence
   title: Figure SDD01-TD05 — LogBook query isolation
-  width: 1450
-  height: 900
-  description: Query work uses a short LogBook read view while new candidates continue through the record path.
-  note: Concrete Pi-friendly read mechanics remain in SDD-02.
+  width: 1880
+  height: 1120
+  description: A query uses a short LogBook read view while another producer asynchronously queues new work that the recorder commits independently.
+  note: The long calculation is outside the recorder path; registrations can continue through the bounded queue while it runs.
 
 participants:
   - {id: client, label: Query caller, kind: client}
   - {id: logbook, label: LogBook, kind: model}
   - {id: query, label: Query / StageTiming, kind: service}
+  - {id: producer, label: Registration producer, kind: model}
+  - {id: queue, label: LogBook queue, kind: service}
   - {id: recorder, label: LogBookRecorder, kind: application}
   - {id: committer, label: LogBookCommitter, kind: application}
   - {id: store, label: TimingDataStore, kind: storage}
@@ -18,8 +20,11 @@ participants:
 messages:
   - {from: client, to: logbook, label: capture small read view, kind: call}
   - {from: logbook, to: client, label: view, kind: return}
-  - {from: client, to: query, label: calculate, kind: call}
-  - {from: recorder, to: committer, label: next candidate, kind: async}
+  - {from: client, to: query, label: calculate on view, kind: call}
+  - {from: producer, to: queue, label: enqueue next candidate, kind: async}
+  - {from: recorder, to: queue, label: take next candidate, kind: call}
+  - {from: queue, to: recorder, label: candidate, kind: return}
+  - {from: recorder, to: committer, label: commit candidate, kind: call}
   - {from: committer, to: store, label: append next record, kind: call}
   - {from: store, to: committer, label: durable, kind: return}
   - {from: committer, to: logbook, label: commit next item, kind: call}

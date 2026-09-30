@@ -2,14 +2,15 @@ diagram:
   id: timingdata-sequence-auto-registration
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
-  width: 1480
-  height: 820
-  description: High-level interaction from RFID observation to durable TimingData and committed LogBook state.
-  note: Method-level details remain in the SDD pseudocode below the figure.
+  width: 1620
+  height: 960
+  description: High-level interaction from RFID observation through the bounded LogBook queue to durable TimingData and committed LogBook state.
+  note: The producer is free after async enqueue; the recorder later takes the candidate from the queue.
 
 participants:
   - {id: antenna, label: RFID adapter, kind: integration}
   - {id: tag, label: TagProcessor, kind: model}
+  - {id: queue, label: LogBook queue, kind: service}
   - {id: recorder, label: LogBookRecorder, kind: application}
   - {id: committer, label: LogBookCommitter, kind: application}
   - {id: store, label: TimingDataStore, kind: storage}
@@ -17,8 +18,10 @@ participants:
 
 messages:
   - {from: antenna, to: tag, label: observation, kind: call}
-  - {from: tag, to: recorder, label: LogBookEntryCandidate, kind: async}
-  - {from: recorder, to: committer, label: next candidate, kind: async}
+  - {from: tag, to: queue, label: enqueue LogBookEntryCandidate, kind: async}
+  - {from: recorder, to: queue, label: take next candidate, kind: call}
+  - {from: queue, to: recorder, label: candidate, kind: return}
+  - {from: recorder, to: committer, label: commit candidate, kind: call}
   - {from: committer, to: store, label: append IF-05 record, kind: call}
   - {from: store, to: committer, label: durable, kind: return}
   - {from: committer, to: logbook, label: commit LogBookItem, kind: call}
