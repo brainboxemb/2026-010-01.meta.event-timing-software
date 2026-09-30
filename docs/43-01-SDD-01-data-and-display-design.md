@@ -194,7 +194,8 @@ final class TimingDataRecord {
     private TimingTimestamp recordedAt;
     private RegistrationOrigin origin;            // AUTOMATIC | MANUAL when applicable
     private RegistrationTimeSource timeSource;     // OBSERVED | SYSTEM_ASSIGNED | OPERATOR_ENTERED
-    private RegistrationIdentity registrationIdentity; // RFID-derived identity; reserve projection TBD
+    private TeamId teamId;                         // canonical participant identity
+    private TagIdentity tagIdentity;               // automatic registrations; null for manual
     private TimingDataRecordKey reference;         // revocation/correction target
     private TimingDataRecordPayload payload;       // type-specific semantic data
 }
@@ -335,14 +336,22 @@ RegistrationTag = prefix + number
 The postfix/copy suffix is deliberately removed from the registration identity;
 the prefix is retained so normal and reserve tags remain distinguishable.
 
-For a normal tag, this normalised tag is directly usable as the registration
-identity. A reserve tag is resolved through locally available
-backoffice-synchronised mapping data before normal race processing.
+Registration processing resolves the normalised `TagIdentity` to the canonical
+`TeamId`:
 
-The application shall not discard the observed normalised reserve tag merely
-because a resolved identity becomes available. The exact public TimingData/API
-projection remains an explicit D03 decision: expose the observed tag, the
-resolved identity, or both.
+```text
+TagIdentityResolver
+  normal TagIdentity  -> TeamId by removing the normal prefix/class
+  reserve TagIdentity -> TeamId through RaceData reserve mapping
+```
+
+A manual registration does not fabricate a tag identity; it receives `TeamId`
+directly.
+
+For an automatic registration the canonical record retains both the resolved
+`TeamId` and the observed normalised `TagIdentity` so provenance is not lost.
+Which of those fields a particular client/interface exposes remains a separate
+interface decision.
 
 ## In-memory authoritative state with file backup
 
@@ -683,7 +692,8 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-TAG-001** — The registration path shall use a normalised RFID identity consisting of prefix plus decoded number.
 - **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
 - **CAND-TAG-003** — The physical tag postfix/copy identifier shall be removed from the canonical registration identity.
-- **CAND-TAG-004** — Reserve tags shall be resolvable using locally available mapping data synchronised from the backoffice without losing the observed normalised reserve-tag identity.
+- **CAND-TAG-004** — A normalised `TagIdentity` shall resolve to the canonical `TeamId`; normal tags resolve deterministically from their contained number while reserve tags use locally available backoffice-synchronised mapping data.
+- **CAND-TAG-005** — Automatic registrations shall retain the observed normalised `TagIdentity` alongside the resolved `TeamId`; manual registrations shall use the operator-supplied `TeamId` without fabricating a tag identity.
 
 ### Local data and backup
 
@@ -717,7 +727,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
 - What sequence numeric width/wraparound policy is required?
-- For a reserve-tag registration, should public TimingData/API consumers receive the observed normalised reserve tag, the resolved registration identity, or both?
+- For an automatic registration, should each public client/interface receive the observed normalised `TagIdentity`, the resolved `TeamId`, or both?
 - Which operational events besides the promoted TimingNode `OPEN` / `CLOSED` state-change records belong in the registration stream?
 - Which additional generic fields, if any, are required on a lifecycle/state-change record beyond its normal TimingData identity/location/sequence/time fields and semantic state?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
