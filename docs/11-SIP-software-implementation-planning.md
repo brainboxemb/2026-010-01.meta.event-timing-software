@@ -256,9 +256,9 @@ tests and make its public results inspectable through the existing Engineering C
 
 ### Demo
 
-- Inspect a synthetic multi-TimingNode SI-01 with the Engineering Client.
-- Change starts, teams and reference data; show independent histories.
-- Inject and inspect UpstreamProtocol messages through DebugConnector.
+- Inspect synthetic TimingNodes with the Engineering Client.
+- Change reference state and show independent histories.
+- Inject UpstreamProtocol messages through DebugConnector.
 
 ### Done
 
