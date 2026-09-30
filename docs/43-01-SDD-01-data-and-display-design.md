@@ -303,79 +303,139 @@ Source identities such as `TagIdentity` may be retained/exposed separately when
 an interface needs provenance or diagnostics; they are not substitutes for the
 canonical registration identity stored by TimingData.
 
-## In-memory authoritative state with file backup
+## Authoritative TimingData history and in-memory projections
 
-The initial implementation direction is:
+The first implementation separates durable committed history from runtime
+read/business state:
 
 ```text
-live application
-    |
-    +-- TimingSystem (1..N)
-    |     +-- UpstreamProtocol      sync/reconcile/ping semantics
-    |     +-- TimingNode (1..N)
-    |           +-- LogBook         0..N LogBookItem in memory
-    |           +-- RegistrationState
-    |           +-- NextUpTeams
-    |           +-- StageStartTimes
-    |           +-- RaceData
-    |           +-- RegistrationSequenceState
-    |
-    +-- TimingData                  canonical record + codec contract
-    |
-    +-- simple file backup / restore
+TimingSystem (1..N)
+  |
+  +-- TimingNode (1..N)
+        |
+        +-- TimingData journal        authoritative committed IF-05 stream
+        |     +-- sequence recovery
+        |     +-- audit/history replay
+        |
+        +-- committed projections
+        |     +-- LogBook / registration history view
+        |     +-- effective registration state
+        |     +-- ranking/result inputs
+        |
+        +-- other state families
+              +-- NextUpTeams         separate operational state/history
+              +-- StageStartTimes     reference data
+              +-- RaceData            reference data
 ```
 
-The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. `LogBookItem` is the LogBook's internal state shape; `TimingDataRecord` is produced through the TimingData contract when data crosses the persistence, Web or upstream interchange boundary. Files provide persistence/recovery, not the primary domain API.
+The application does not repeatedly parse the file for every normal query.
+Committed TimingData records are applied to typed in-memory projections after
+durable commit. Those projections are the efficient runtime read/business view;
+the append-only journal is the durable authority from which they can be rebuilt.
 
-Possible interfaces:
+A registration or revocation shall not become authoritative LogBook/business
+state merely because a producer created an intent. The normal state transition is:
+
+```text
+TimingDataIntent
+  -> durable IF-05 commit
+  -> committed-record dispatch
+  -> LogBook / business projection update
+```
+
+This makes crash recovery deterministic: an intent that was never durably
+committed is absent after restart, while a record that was committed before a
+crash can be replayed even if the process died before its in-memory projection or
+client signalling was updated.
+
+Conceptually, the read-side boundary may look like:
 
 ```java
-interface LogBook {
-    void append(LogBookItem item);
-    List<LogBookItem> snapshot();
-}
-
-interface PrepareTeamRegistry {
-    void add(TeamNumber team, InputSource source, Instant createdAt);
-    void remove(TeamNumber team, InputSource source, Instant createdAt);
-    List<TeamNumber> currentTeams();
-    List<PrepareTeamEvent> history();
-}
-
-interface StageStartTimeRegistry {
-    void replace(StartTimeSnapshot snapshot);
-    StartTime find(TeamNumber teamNumber);
-    StartTimeSnapshot snapshot();
+interface CommittedTimingDataProjection {
+    void apply(TimingDataRecord committedRecord);
+    TimingDataSnapshot snapshot();
 }
 ```
 
-Concrete implementations can use collections/maps appropriate to lookup patterns.
+The concrete `LogBookItem` shape may remain different from
+`TimingDataRecord`; projection code performs that mapping. This keeps IF-05
+interchange semantics separate from internal query-friendly structures.
 
-## Backup policy
+### Committed-record dispatch
 
-The exact write policy still needs evidence and requirements. Candidates include:
+The second asynchronous boundary is an ordered **committed-record dispatch
+lane**, not a competing-consumer work queue where different consumers would see
+different subsets of records.
 
-- persist every accepted traceable event before acknowledging it;
-- keep an append recovery journal plus periodic snapshots;
-- atomically write current-state/reference snapshots using temporary-file + rename/replace;
-- keep all source sequence allocator state in the same recoverable persistence set.
+Conceptually:
 
-For the initial implementation, correctness and recoverability are more important than introducing a database engine.
+```text
+RecordHandler
+     |
+     v
+[ committed-record queue ]
+     |
+     v
+CommittedRecordDispatcher        one ordered consumer per TimingNode stream
+     |
+     +-- apply LogBook/business projections
+     +-- publish client/event signalling
+     +-- enqueue independent downstream/upstream delivery work
+```
+
+Every committed record reaches the dispatcher in source-sequence order. Slow
+queries never execute on this dispatcher. Downstream network delivery/retry also
+uses its own queue/outbox boundary and cannot reinterpret or reorder the
+authoritative TimingData stream.
+
+If the process crashes after durable append but before dispatch completes, startup
+replay from the TimingData journal reconstructs the projection. The durable file,
+not successful in-memory notification, is the recovery boundary.
+
+The exact live queue capacity remains a deployment/verification choice. A full
+queue is explicit backpressure/diagnostic state, never permission to silently
+drop a committed record.
+
+## Persistence policy by state family
+
+TimingData has a stronger persistence rule than ordinary cache/reference state:
+
+- a TimingData record is committed only after its complete IF-05 line is durably
+  appended;
+- its sequence is consumed only by that successful commit;
+- the TimingData journal is authoritative for committed timing history and
+  sequence recovery;
+- optional later snapshots may accelerate replay but are derived/cache state and
+  must reconcile to the journal.
+
+Other state families remain separate:
+
+- prepare-team/NextUpTeams state requires its own traceable persistence/recovery
+  policy;
+- StageStartTimes and RaceData are externally sourced reference data and may use
+  versioned local snapshots for offline availability;
+- display/read projections are reconstructable state and need not become an
+  alternative TimingData authority.
+
+The exact filesystem durability primitive, file naming, rotation/retention and
+snapshot cadence still need platform/verification evidence. Correctness and
+recoverability take priority over introducing a database engine.
 
 Status should eventually expose at least:
 
 ```text
-backup state
-last successful backup time
-last restore result
-last registration sequence per timing node
-last ready-team sequence
-last reference-data synchronisation time/version
+TimingData journal / recovery health
+last committed sequence per TimingNode
+record queue depth/high-water
+committed-dispatch queue depth/high-water
+last projection/replay result
+reference-data synchronisation time/version
+other-state backup/recovery health
 ```
 
-## Startup restore
+## Startup recovery
 
-A possible startup sequence is:
+The first TimingData-oriented startup recovery flow is:
 
 ```text
 start process
@@ -384,31 +444,44 @@ start process
 load configuration
    |
    v
-load trace journals / snapshots / timing node sequence metadata
+open each configured TimingNode journal
    |
    v
-reconstruct in-memory repositories and derived state
+validate IF-05 records + single source identity + contiguous committed sequence
+   |
+   +--> incomplete tail: truncate to last committed line boundary + diagnose
+   |
+   +--> invalid complete record/gap/regression: recovery fault; do not append
    |
    v
-load reference-data backup
+derive nextSequence = last committed sequence + 1
    |
    v
-validate sequence state against restored records
+replay committed TimingData into LogBook/business projections
+   |
+   v
+load other operational/reference snapshots
    |
    v
 start interfaces/devices
    |
    v
-connect/synchronise with backoffice when available
+connect/synchronise with upstream when available
 ```
 
-For ready teams, restoration can restore a snapshot or replay the journal:
+A new/empty journal starts with next sequence 1.
 
-```java
-PrepareTeamRegistry prepareTeams = restorePrepareTeamRegistry(backup.prepareTeamRegistry());
-```
+Replay reconstructs TimingData-derived history and effective business state. It
+does **not** by itself define the post-restart operational lifecycle policy. In
+particular, a historical last `TIMING_NODE_STATE = OPEN` record is not a
+sufficient reason to start accepting new timing observations automatically after
+a process/power restart; that recovery/open policy belongs to the lifecycle
+requirements and control design.
 
-A missing/corrupt backup or inconsistent sequence metadata must result in explicit status rather than silently looking healthy.
+For prepare-team state, restoration can independently restore a snapshot or
+replay its own traceable journal. Reference-data recovery likewise restores the
+latest locally accepted snapshot/version. Corrupt/inconsistent persistent state
+must produce explicit status rather than silently looking healthy.
 
 ## Start-time and reserve-tag synchronisation
 
