@@ -123,7 +123,9 @@ First-slice field semantics:
 - `locationId` — location active for the fact represented by the record;
 - `recordType` — semantic record family;
 - `effectiveTime` — time at which the represented timing fact applies;
-- `recordedAt` — time at which the record/fact was committed by SI-01;
+- `recordedAt` — absolute time captured when SI-01 materializes the definitive
+  record for the commit attempt; durable commit itself is established only by a
+  successful complete append, not by this timestamp;
 - type-specific data — semantic payload required by the selected `recordType`.
 
 A record captures its `locationId`; later TimingNode reconfiguration does not
@@ -140,6 +142,9 @@ TimingDataRecordKey = (TimingNodeId, SequenceNumber)
 Sequence rules:
 
 - numbering is scoped per `TimingNodeId`;
+- the authoritative local source stream advances by exactly one for each
+  successfully committed record; failed/uncommitted append attempts do not
+  consume a sequence number;
 - a new source stream starts at **1**;
 - sequence number **0 is reserved** and shall not identify a normal committed
   TimingData record;
@@ -151,7 +156,10 @@ Sequence rules:
 - sequence is an ordering/traceability value, not a timestamp;
 - a committed record key shall not be reused;
 - the sequence does not wrap. Exhaustion of the defined range is an explicit
-  source failure and shall not restart or reuse earlier values.
+  source failure and shall not restart or reuse earlier values;
+- partial/imported/exported subsets may contain visible sequence gaps, but those
+  records are not renumbered and the gap shall not be presented as a contiguous
+  authoritative source stream.
 
 The internal mechanism that tentatively allocates and durably commits the next
 sequence belongs to SI-01 design. IF-05 only defines the externally observable
@@ -361,6 +369,12 @@ Example:
 2026-09-30T20:01:39.123000000Z
 ```
 
+The `recordedAt` value is metadata captured immediately before the definitive
+record is encoded/appended by the ordered commit handler. It is not a durable
+commit marker and need not equal the exact physical completion time of the file
+write. In particular, source sequence remains authoritative for record ordering
+when the wall clock is corrected.
+
 Race/stage start reference data may separately be defined as time-of-day only.
 That reference-data concept is not forced into an absolute TimingData timestamp by
 inventing a date.
@@ -371,23 +385,39 @@ race-day rules. That calculation is not part of the TimingData file encoding.
 
 ## Canonical public/reference file encoding
 
-The canonical v1 reference file is append-only UTF-8 JSON Lines.
+The canonical v1 reference file is append-only UTF-8 JSON Lines and represents
+records from exactly one `TimingNodeId` source stream.
 
 Rules:
 
 - encoding is UTF-8 without a byte-order mark (BOM);
-- one complete TimingData record per line;
+- there is no file header, footer or comment syntax; version is carried by each
+  record;
+- one complete TimingData record is encoded on one physical line;
+- all records in one canonical file use the same `timingNodeId`;
 - canonical writer line ending is **LF** (`0x0A`);
 - a reader may accept **CRLF** (`0x0D 0x0A`) for interoperability;
-- every complete line is independently decodable;
+- the line terminator is part of the complete-record boundary: valid JSON bytes
+  at EOF without the terminating LF/CRLF are an incomplete trailing record and
+  are not committed;
+- empty/blank lines are not canonical records and are reported as invalid input
+  rather than silently inventing sequence positions;
+- every complete record line is independently JSON-decodable;
+- the canonical writer emits compact single-line JSON; insignificant whitespace
+  and JSON object member ordering are not semantic to readers;
+- the canonical writer emits common envelope members in the order shown by this
+  IDD, followed by the applicable type-specific members; nested
+  `RegistrationIdentity` uses `type` then `number`, and `reference` uses
+  `timingNodeId` then `sequenceNumber`;
 - the file is append-only; existing records are not rewritten for revocation or
   correction;
 - an incomplete trailing line after interrupted/power-loss write is not a
   committed record;
 - valid complete records before an incomplete tail remain readable;
-- source sequence consistency is validated during recovery/import;
-- canonical JSON member names and enum text are the names shown by this IDD;
-- JSON object member ordering is not semantically significant.
+- a complete authoritative local file/stream keeps contiguous committed sequence
+  order; recovery/import validates ordering and reports gaps, duplicates or
+  regressions explicitly;
+- canonical JSON member names and enum text are the names shown by this IDD.
 
 The exact file naming, rotation/retention and filesystem durability primitive are
 deployment/software-item concerns and are not defined by IF-05.
@@ -579,7 +609,9 @@ writer output and one independently decodable record per complete line.
 ```{ifreq} Incomplete trailing line
 :id: IF05-REQ-010
 
-An incomplete trailing line shall not be interpreted as a committed record.
+A record shall be considered complete in the canonical file only when its JSON
+record bytes are followed by an accepted line terminator. An unterminated
+trailing record shall not be interpreted as committed.
 ```
 
 ```{ifreq} External codec semantic compatibility
