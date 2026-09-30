@@ -117,12 +117,16 @@ For `REGISTRATION_REVOKED`:
   registration, not the time at which the revocation command is entered;
 - `reference` identifies the registration that the revocation concerns.
 
-TimingData does not maintain a derived "currently active registrations" list and
-does not prescribe how a client presents a referenced revocation. A consumer may
-hide the registration, strike it through, mark it revoked, or apply another
-appropriate presentation/state projection. Handling of a dangling reference in
-a partial/imported stream is a consumer/application policy rather than a reason
-for the codec to rewrite history.
+TimingData does not itself maintain a derived "currently active registrations"
+list. Domain/application business logic may reconstruct effective registration
+state from the append-only stream and shall honour revocations when performing
+calculations such as classification, ranking or other race-result logic.
+
+Presentation remains separate: a client may hide the registration, strike it
+through, mark it revoked, or apply another visual representation without changing
+the underlying TimingData facts. Handling of a dangling reference in a
+partial/imported stream is a consumer/application policy rather than a reason for
+the codec to rewrite history.
 
 #### Registration identity in v1
 
@@ -246,8 +250,9 @@ REGISTRATION_REVOKED
 
 This preserves the append-only history needed for audit and synchronisation:
 the original registration remains present and the later revocation is another
-ordered fact that references it. Any derived visible/current registration state
-belongs to the consuming client/application, not to the TimingData record model.
+ordered fact that references it. Any derived effective registration state belongs to consuming
+domain/application business logic, while its visual representation belongs to
+the client/presentation layer; neither changes the TimingData record model.
 
 A proprietary TimingData translator may map these generic semantics to its own
 legacy fields (for example add/remove markers), but those external encodings are
