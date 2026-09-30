@@ -47,11 +47,16 @@ The runtime `LogBook` owns operational state as 0..N `LogBookItem` values.
 Those items are domain state and do not have to be shaped like the representation
 used outside the LogBook.
 
-`TimingData` defines the canonical persistent/interchange representation.
-`TimingDataRecord` is the record representation used for storage, Web exchange
-and as timing-data payload inside `UpstreamProtocol`. TimingData owns the
-validation and encode/decode compatibility rules so adapters can persist or
-transport encoded values without becoming owners of the record schema.
+`TimingData` defines the framework-owned canonical semantic protocol and
+persistent/interchange record model. `TimingDataRecord` is the semantic record
+used at storage, API and upstream boundaries. TimingData owns record kinds, field
+meaning, validation, protocol versioning and the canonical public/reference
+encoding.
+
+External/proprietary formats are translations at the edge. A
+`TimingDataProvider` may decode such a representation into `TimingDataRecord`
+and encode records back when required, but it does not own or change the public
+record schema.
 
 The registration ledger contains timing/registration-domain and traceable operational records. The first concretely promoted operational record is a **TimingNode lifecycle/state-change record**:
 
@@ -64,8 +69,9 @@ Opening and closing are traceable TimingData facts, not merely transient status
 changes. The public model deliberately does not prescribe a legacy characteristic
 code, one fixed-column record layout or transport-specific status character.
 
-A concrete `TimingDataProvider` may encode these semantic records into a
-deployment-specific/proprietary representation. Any additional status invented by
+A concrete `TimingDataProvider` may translate these semantic records to/from a
+deployment-specific/proprietary representation while the framework-owned
+TimingData protocol remains unchanged. Any additional status invented by
 a higher-level system to describe synchronisation state is not automatically a
 TimingNode lifecycle value.
 
@@ -110,8 +116,9 @@ A receiving/upstream system can use the sequence for ordering and gap detection.
 ### Illustrative TimingData record model
 
 The Java shape below is illustrative. The architectural boundary is that
-`TimingData` owns this representation and its codec/compatibility semantics;
-`LogBookItem` remains free to use a different internal shape.
+`TimingData` owns the public semantic record/protocol and its compatibility
+rules; `LogBookItem` remains free to use a different internal shape and
+proprietary providers only translate at the boundary.
 
 ```java
 final class TimingDataRecord {
