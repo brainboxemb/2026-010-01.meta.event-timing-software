@@ -1,0 +1,116 @@
+diagram:
+  id: timingdata-async-ownership
+  title: Figure SDD01-TD02 — TimingData asynchronous ownership and query isolation
+  width: 1680
+  height: 860
+  description: Process view of the asynchronous boundaries between producers, durable commit, projection updates and potentially slow queries.
+  note: The initial implementation uses separate execution contexts for record commit and read/query work. Exact pool sizes remain deployment choices.
+
+groups:
+  - id: producer-context
+    label: Producer execution
+    kind: layer-domain
+    layout: {x: 45, y: 105, w: 350, h: 620}
+
+  - id: record-context
+    label: Record commit execution
+    kind: layer-application
+    layout: {x: 435, y: 105, w: 445, h: 620}
+
+  - id: projection-context
+    label: Projection / signalling execution
+    kind: layer-application
+    layout: {x: 920, y: 105, w: 360, h: 620}
+
+  - id: query-context
+    label: Query execution
+    kind: layer-presentation
+    layout: {x: 1320, y: 105, w: 315, h: 620}
+
+nodes:
+  - id: producer
+    label: "Producer task\nTagProcessor • manual command\nlifecycle • later domain producers"
+    kind: model
+    group: producer-context
+    layout: {x: 85, y: 220, w: 270, h: 105}
+
+  - id: candidate
+    label: "immutable TimingDataIntent\nreturns immediately after enqueue"
+    kind: message
+    group: producer-context
+    layout: {x: 85, y: 405, w: 270, h: 86}
+
+  - id: q1
+    label: "Q1 — record queue\nbounded • FIFO"
+    kind: service
+    group: record-context
+    layout: {x: 485, y: 180, w: 345, h: 78}
+
+  - id: worker
+    label: "Record worker\nsequence + encode + append + commit"
+    kind: application
+    group: record-context
+    layout: {x: 485, y: 320, w: 345, h: 92}
+
+  - id: file
+    label: "TimingData file\ncomplete line = committed fact"
+    kind: storage
+    group: record-context
+    layout: {x: 485, y: 500, w: 345, h: 82}
+
+  - id: q2
+    label: "Q2 — committed-record queue\nno uncommitted candidates"
+    kind: service
+    group: projection-context
+    layout: {x: 965, y: 180, w: 270, h: 82}
+
+  - id: projection-worker
+    label: "Projection worker\nfast deterministic state update"
+    kind: application
+    group: projection-context
+    layout: {x: 965, y: 330, w: 270, h: 86}
+
+  - id: snapshot
+    label: "Read model / immutable snapshot"
+    kind: model
+    group: projection-context
+    layout: {x: 965, y: 505, w: 270, h: 76}
+
+  - id: query-worker
+    label: "Query worker(s)\nmay perform long filtering / calculations"
+    kind: service
+    group: query-context
+    layout: {x: 1355, y: 280, w: 245, h: 105}
+
+  - id: client-result
+    label: "Client result / view model\nnever blocks record commit"
+    kind: presentation
+    group: query-context
+    layout: {x: 1355, y: 495, w: 245, h: 86}
+
+edges:
+  - {from: producer, to: candidate}
+  - from: candidate
+    to: q1
+    label: "async enqueue"
+  - {from: q1, to: worker}
+  - {from: worker, to: file, label: "durable append"}
+  - from: worker
+    to: q2
+    label: "after commit"
+    route:
+      - {x: 860, y: 366}
+      - {x: 900, y: 366}
+      - {x: 900, y: 221}
+
+  - {from: q2, to: projection-worker}
+  - {from: projection-worker, to: snapshot}
+  - {from: snapshot, to: query-worker, label: "snapshot/read"}
+  - {from: query-worker, to: client-result}
+
+  - from: query-worker
+    to: worker
+    dashed: true
+    label: "NO blocking dependency"
+    from_anchor: {side: left, position: 0.20}
+    to_anchor: {side: right, position: 0.80}
