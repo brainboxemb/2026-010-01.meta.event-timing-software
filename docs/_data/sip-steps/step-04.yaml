@@ -15,7 +15,7 @@ activities:
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: active
+    state: done
     note: >-
       Document the existing JavaFX Engineering Client as a standalone engineering
       tool in the same repository: component architecture, current tabs/functions,
@@ -25,23 +25,37 @@ activities:
   - id: D02
     lane: documentation
     kind: documentation
-    title: Review use cases + existing web-app contract
-    state: planned
+    title: Review Step-4 operational use cases
+    state: active
     depends_on: [D01]
     note: >-
       Review UC-001, UC-002, UC-003, UC-005, UC-008, UC-010, UC-011 and UC-014
-      from operational intent. Also inspect the existing web application's status,
-      snapshot/event, identifier and timing-data expectations as compatibility input.
-      Determine what Step-4 state/actions must be visible through IF-03 and the
-      Engineering Client. UC-009 stays optional; no new lightweight browser client
-      is introduced in Step 4.
+      from operational intent. Determine what Step-4 state/actions must be visible
+      through IF-03 and the Engineering Client. Do not infer legacy-web compatibility
+      from memory; that code is reviewed separately before D03.
+
+  - id: D02W
+    lane: documentation
+    kind: documentation
+    title: Translate legacy web/API behaviour
+    state: planned
+    depends_on: [D02]
+    note: >-
+      Start from the controlled private legacy web/interface design baseline
+      (LEGACY-WEB) and later inspect the corresponding legacy implementation.
+      Translate only the functional compatibility characteristics needed by the
+      new design, such as observable state, event/update behaviour, identifiers,
+      reconnect/resynchronisation and timing-data handling. Keep private source
+      identity and protocol details out of the public repository. The legacy
+      baseline informs compatibility but does not automatically become a
+      new-system requirement.
 
   - id: D03
     lane: documentation
     kind: decision
     title: Establish TimingData + public protocol contracts
     state: planned
-    depends_on: [D02]
+    depends_on: [D02, D02W]
     note: >-
       Create the first focused TimingData/domain interchange design, define the
       Step-4 IF-03 client-facing representation needed by Engineering Client/web

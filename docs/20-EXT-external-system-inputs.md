@@ -27,11 +27,9 @@ Where an external input can be published safely, link/reference its exact contro
 
 ## Registered inputs
 
-No concrete external/parent-system document has yet been promoted into this public baseline.
-
 | Local reference | External owner / scope | External document or contract | Revision / baseline | Applies to | Notes |
 | --- | --- | --- | --- | --- | --- |
-| _None registered_ |  |  |  |  | Add entries only when a real controlled input is identified. |
+| LEGACY-WEB | Private legacy-system input | Private legacy web/interface design baseline | Controlled private baseline | Legacy client/interface compatibility review before Step-4 public-contract decisions | Private compatibility input only. Keep source identity, content and protocol detail outside the public repository. Record only abstract behavioural conclusions that are safe and necessary for the new-system design. It is not automatically normative for the new software system. |
 
 ## Relationship to local documents
 

@@ -71,11 +71,11 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-002 | Open a TimingNode | Operator | Start accepting/processing normal timing operation and create the required traceable open event(s). |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
-| UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
+| UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
 | UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the API. |
-| UC-009 | Exercise the API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
+| UC-009 | Exercise SI-01 through the Engineering Client | Test/developer | Inspect and exercise supported public interfaces without becoming another source of domain state. |
 | UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
@@ -198,7 +198,7 @@ usable state.
 ```{uc} Manage ready teams through keypad/operator input
 :id: UC-005
 
-**Goal:** maintain the current registry of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
+**Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
 
 **Primary actor:** keypad or operator client.
 
@@ -206,11 +206,11 @@ usable state.
 
 1. A team-number add/remove action enters through a normal input adapter.
 2. SI-01 routes the command to the applicable TimingNode.
-3. `PrepareTeamRegistry` records the traceable add/remove mutation and updates its current set.
+3. `NextUpTeams` records the traceable add/remove mutation and updates its current set.
 4. Display state is rebuilt/updated from the current prepare-team state.
 5. Operator/status clients can observe the resulting state.
 
-The `PrepareTeamRegistry` history is separate from participant/timing `RegistrationRecord` streams.
+Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
 
 ```
 ```{uc} Drive a passive CAN display from current system state
@@ -265,23 +265,22 @@ API.
 
 ```
 
-```{uc} Exercise the API through an optional web test client
+```{uc} Exercise SI-01 through the Engineering Client
 :id: UC-009
 
-**Goal:** provide a simple browser-based way to inspect or exercise the API when
-that is useful during development.
+**Goal:** provide one engineering application for inspecting and exercising the public SI-01 boundaries during development and integration.
 
 **Primary actor:** test/developer.
 
 **Main flow:**
 
-1. A small web client connects to the existing API.
-2. It shows a small set of API data such as version/status.
-3. It may exercise supported commands/events needed for manual integration testing.
-4. It remains test tooling; it does not become another source of timing/domain state.
+1. The Engineering Client connects to supported public SI-01 interfaces.
+2. It shows current version/status and live event information.
+3. It may exercise supported commands and Step-4 inspection/test-control capabilities.
+4. Upstream test injection, when supported, enters through IF-03 control of `DebugConnector` and follows the normal `UpstreamProtocol` path rather than mutating domain state directly.
+5. The Engineering Client remains test/engineering tooling and does not become another owner of timing/domain state.
 
-This use case is optional. The current JavaFX engineering client already provides manual
-integration inspection, and there is no current requirement for a separate web product.
+A separate lightweight browser test client is not part of Step 4. Existing legacy web-application behaviour is reviewed separately as compatibility input before new public representations are frozen.
 
 ```
 ```{uc} Synchronise reference data from backoffice
@@ -296,7 +295,7 @@ integration inspection, and there is no current requirement for a separate web p
 1. Source-aware inbound backoffice communication receives a reference-data update.
 2. The transport adapter translates private/wire representation into public semantic data.
 3. SI-01 validates and applies the update.
-4. Start times/reserve-tag mappings and related metadata are stored in in-memory repositories.
+4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) according to the promoted requirements.
 5. Backup/restore state is updated according to persistence policy.
 6. Status exposes version/freshness/health where required.
 
@@ -310,10 +309,10 @@ integration inspection, and there is no current requirement for a separate web p
 
 **Main flow:**
 
-1. A source record is committed locally with `(TimingNodeId, SequenceNumber)` identity.
+1. A committed `TimingData` record receives `(TimingNodeId, SequenceNumber)` identity.
 2. A corresponding outbound item becomes pending in the outbox/synchronisation state.
-3. The selected `BackofficeTransportPort` sends the semantic message through its configured transport.
-4. RabbitMQ production-shaped transport may map the source to its configured exchange/routing endpoint; a test socket adapter may use a simpler synthetic framing.
+3. `UpstreamProtocol` represents the semantic message and `UpstreamGateway` carries it through the configured connector.
+4. A production connector such as RabbitMQ may map that semantic message to its transport; `DebugConnector` may inject/inspect the same semantic path for engineering use.
 5. Successful acknowledgement/reconciliation advances the pending state according to the final protocol.
 6. Source ordering and gap detection remain possible at higher levels.
 
