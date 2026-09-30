@@ -67,7 +67,7 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-001 | Start and prepare a TimingNode | Operator | Bring one configured TimingNode into a usable operational state. |
+| UC-001 | Connect to a registration system | Operator | Connect to a known registration system and view its current operational state. |
 | UC-002 | Open and close a TimingNode | Operator | Control the TimingNode operational session while keeping its active location fixed. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
@@ -87,45 +87,40 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
 | UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
 
-```{uc} Start and prepare a TimingNode
+```{uc} Connect to a registration system
 :id: UC-001
 
-**Goal:** bring one configured `TimingNode` into a known usable state.
+**Goal:** allow an operator application to connect to a known registration
+system and show its current operational state.
 
-**Primary actor:** operator or automated startup policy.
+**Primary actor:** operator.
 
 **Preconditions:**
 
-- SI-01 has loaded and validated configuration;
-- the target instance exists with its configured, non-empty `TimingNodeId`;
-- required local state has been restored or an explicit restore fault is visible.
+- the registration system is running and reachable;
+- the operator application knows the address of the registration system.
 
 **Main flow:**
 
-1. The actor selects/addresses a TimingNode by its configured identity.
-2. SI-01 reports current instance and subsystem status, including whether a `LocationId` is currently assigned.
-3. While the TimingNode is `CLOSED`, the actor may assign or change its `LocationId`.
-4. Required devices are started according to configuration/policy.
-5. SI-01 reports individual device/subsystem readiness rather than hiding startup progress behind one boolean.
-6. The instance becomes ready for `OPEN` only when a valid operational `LocationId` is assigned and other required operational prerequisites are satisfied.
+1. The operator application connects to the registration system.
+2. The application requests the current operational state.
+3. The application shows the system identity, current `LocationId` if configured, and whether the registration point is `OPEN` or `CLOSED`.
+4. The operator can continue with the operations permitted for the reported state.
 
-A TimingNode does not have an "unset" runtime identity: its `TimingNodeId` comes
-from configuration and remains stable for that instance. A `LocationId` is
-different: it may be unassigned while `CLOSED`. A value representing
-"not configured" is not itself a valid operational location; the exact
-data/wire representation is owned by the TimingData/IDD contract.
+The operator does not need to select or understand an internal `TimingNode`
+before using the registration system. The public state may expose the configured
+TimingNode identity so the connected source can be identified, but the domain
+structure remains an implementation/interface concern rather than an operator
+navigation concept.
 
 **Alternative/failure flows:**
 
-- assigning an invalid location is rejected;
-- changing location while `OPEN` is rejected;
-- an RFID device does not boot or initialise;
-- a CAN device is not discovered;
-- required reference data is unavailable/stale;
-- persistence/restore is unhealthy;
-- network/backoffice is unavailable while local operation may still remain possible.
+- the registration system cannot be reached;
+- the connection is lost;
+- the current state cannot be retrieved.
 
-**Relevant interfaces:** IF-01/02/03, IF-07, IF-08, status model.
+**Observable result:** the operator can identify the connected registration
+system and see its current location and open/closed state.
 
 ```
 
