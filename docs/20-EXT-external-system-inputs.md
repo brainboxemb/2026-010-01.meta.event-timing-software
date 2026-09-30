@@ -52,4 +52,16 @@ System-owned interfaces are different: if the SSSD allocates and this project ow
 
 ## Entry discipline
 
-For each real input, record the strongest stable identity available: document identifier, title, owner, version/revision/date and immutable reference where possible. If a newer external revision appears, review impact deliberately rather than silently moving the baseline.
+For publishable or unrestricted inputs, record the strongest stable identity
+available: document identifier, title, owner, version/revision/date and immutable
+reference where possible. If a newer external revision appears, review impact
+deliberately rather than silently moving the baseline.
+
+**Exception — `LEGACY-WEB`:** the public register intentionally holds only
+the local generic identifier, a private-input category and a controlled-private
+baseline designation. Do not add a source title, authors, institution, year,
+source/repository location or other identifying metadata. Do not reproduce
+private endpoints, message formats, structures or wire examples in public
+documents, issues, PR text or normally reachable commit history. A separate
+private review may yield only abstract functional compatibility conclusions;
+the controlled source itself stays outside this repository.

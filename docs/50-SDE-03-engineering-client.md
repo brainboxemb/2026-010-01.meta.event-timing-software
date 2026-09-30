@@ -205,6 +205,25 @@ state through normal public queries/events.
 The exact message editor and message types follow the reviewed IF-06/UpstreamProtocol
 contract. The UI must not invent fields solely because they are convenient to display.
 
+### Use-case-driven Step-4 UI review scenarios
+
+The existing **Status**, **Events**, **Terminal** and **Logs** tabs are the
+implemented JavaFX baseline. The planned **Timing** and **Upstream** views
+are review targets, not currently implemented screens.
+
+| Scenario | Planned Engineering Client behaviour | Use case |
+| --- | --- | --- |
+| Select another TimingNode | Replace the selected instance's displayed state/history instead of combining separate nodes' data. | UC-001, UC-005, UC-009, UC-014 |
+| Lose/re-establish event connection | Mark cached information stale/disconnected and rebuild the view from current SI-01 state after reconnect. | UC-008, UC-009 |
+| Inspect ordered registration data | Display the owning TimingNode and source sequence separately from WebSocket delivery order, with raw public data available for diagnosis. | UC-003, UC-009, UC-011 |
+| Inspect advertised capabilities | Disable or hide unsupported test controls; ordinary status inspection works without DebugConnector. | UC-009 |
+| Inject synthetic reference input | Submit only supported semantic input; show submission feedback separately from resulting state/events. | UC-009, UC-010 |
+| Run alongside a real connector | Identify engineering-origin traffic without requiring a second independent backend implementation in the client. | UC-009, UC-011 |
+
+D03 owns the actual routes, JSON fields, capability representation, message
+schemas and any additional replay/retention policy. This section only specifies
+the UI behaviours that should be reviewable when those contracts exist.
+
 ## Capability-driven engineering controls
 
 The Engineering Client must not assume every SI-01 build/deployment supports every

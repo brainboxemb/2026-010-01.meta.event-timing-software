@@ -262,6 +262,14 @@ API.
 3. The operator performs permitted commands such as open/close/device recovery and later registration-related operations.
 4. SI-02 shows command outcome and live/stale/disconnected status explicitly.
 5. Timing state remains in SI-01 rather than being stored only in the GUI.
+6. After event-stream reconnect, the GUI rebuilds its view from current SI-01 state instead of presenting an old cache as live.
+
+**Alternative/failure flows:** an unknown or no-longer-present target, rejected
+lifecycle transition, unsupported command, lost connection with unknown command
+outcome, or stale cached state must all remain explicit to the operator.
+
+The planned SI-02 GUI is not built in Step 4; the existing Engineering Client
+may inspect these same public state semantics without claiming to implement SI-02.
 
 ```
 
@@ -272,13 +280,31 @@ API.
 
 **Primary actor:** test/developer.
 
+**Preconditions:** SI-01 exposes the relevant public interfaces, or the client can
+make their unavailability visible. Optional engineering controls require an
+explicitly advertised **supported and enabled** capability.
+
 **Main flow:**
 
-1. The Engineering Client connects to supported public SI-01 interfaces.
-2. It shows current version/status and live event information.
-3. It may exercise supported commands and Step-4 inspection/test-control capabilities.
-4. Upstream test injection, when supported, enters through IF-03 control of `DebugConnector` and follows the normal `UpstreamProtocol` path rather than mutating domain state directly.
-5. The Engineering Client remains test/engineering tooling and does not become another owner of timing/domain state.
+1. The Engineering Client connects to supported public SI-01 interfaces and shows build/version identity, current status, connection state and event information.
+2. For Step-4 state, the developer selects a TimingNode and inspects the published lifecycle, reference/next-up data, registration history and `TimingData` source identity/sequence where available, with raw public representations for diagnosis.
+3. On disconnect the client distinguishes cached/stale information from live state. After reconnect it obtains a complete current public snapshot before using subsequent updates.
+4. It may exercise supported commands and Step-4 inspection/test-control capabilities only when the running SI-01 advertises them.
+5. Upstream test injection, when enabled, sends a **semantic** upstream message through IF-03 control of `DebugConnector` and follows the normal `UpstreamGateway` / `UpstreamProtocol` path rather than mutating domain state directly.
+6. The client shows submission validation separately from the subsequently observed state change or outbound activity. Accepted injection is not itself evidence of successful processing or delivery.
+7. If several TimingNodes exist, the selected target and each exposed source stream remain identifiable; a test targeting one node cannot accidentally merge records with another.
+8. The Engineering Client remains test/engineering tooling and does not become another owner of timing/domain state.
+
+**Alternative/failure flows:**
+
+- IF-03 unavailable; WebSocket reconnect; displayed state becomes stale;
+- unsupported/disabled debug control, invalid semantic input or unknown target;
+- a debug message is accepted but normal-path processing rejects or fails it;
+- DebugConnector and a real upstream connector coexist; engineering-origin activity
+  remains diagnosable without bypassing normal domain rules.
+
+**Observable result:** the engineering client can inspect public state, source
+identity and supported test outcomes without touching internal SI-01 domain objects.
 
 A separate lightweight browser test client is not part of Step 4. Existing legacy web-application behaviour is reviewed separately as compatibility input before new public representations are frozen.
 
@@ -295,9 +321,13 @@ A separate lightweight browser test client is not part of Step 4. Existing legac
 1. Source-aware inbound backoffice communication receives a reference-data update.
 2. The transport adapter translates private/wire representation into public semantic data.
 3. SI-01 validates and applies the update.
-4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) according to the promoted requirements.
-5. Backup/restore state is updated according to persistence policy.
-6. Status exposes version/freshness/health where required.
+4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) for the addressed TimingNode, without silently updating another target.
+5. SI-01 makes accepted/rejected update outcomes and current reference state observable through the public semantics required by the slice.
+6. Backup/restore state is updated according to later persistence policy; status exposes freshness/health where required.
+
+**Alternative/failure flows:** unknown target, invalid or conflicting reference
+update, or unavailable upstream transport. Message submission alone must not
+be presented as proof that the target's reference state changed.
 
 ```
 ```{uc} Synchronise TimingNodeId-scoped data to backoffice
@@ -315,6 +345,11 @@ A separate lightweight browser test client is not part of Step 4. Existing legac
 4. A production connector such as RabbitMQ may map that semantic message to its transport; `DebugConnector` may inject/inspect the same semantic path for engineering use.
 5. Successful acknowledgement/reconciliation advances the pending state according to the final protocol.
 6. Source ordering and gap detection remain possible at higher levels.
+
+**Step-4 slice:** define and expose source identity/ordered committed
+`TimingData` and the upstream **semantic** contract. Durable outbox/restart
+and real RabbitMQ delivery belong to later increments; they must not be
+reported as Step-4 guarantees.
 
 ```
 ```{uc} Continue local operation during backoffice outage
@@ -366,6 +401,13 @@ while preserving independent lifecycle, state and
 3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
 4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
 5. Public interfaces can address each instance explicitly.
+6. An engineering query, change or synthetic upstream input for one TimingNode
+   identifies its target and does not accidentally change another node's state.
+
+**Observable result:** two synthetic TimingNodes have separately inspectable
+lifecycle, reference/next-up state and independently ordered TimingData. Any
+intentional fan-out from one observation to several streams is a separately
+specified mapping rule, not accidental cross-instance sharing.
 
 ```
 
@@ -472,6 +514,40 @@ Production names, source IDs, schemas and credentials remain outside the public 
 This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
 
 ```
+## Step-4 operational review: observable state and control
+
+This review table identifies the **Step-4 subset** that needs a public
+representation before D03 designs the interfaces. It is an input to the
+requirements, IDDs and Engineering Client UI; it is **not** a new set of API
+paths, an implementation claim or a substitute for the private D02W review.
+
+| Use case | Step-4 inspection/control need | Outside this slice |
+| --- | --- | --- |
+| UC-001 / UC-002 | Select a TimingNode, inspect modeled lifecycle/readiness, and see an explicit transition/rejection outcome if a command is promoted. | Real RFID/device readiness, complete operational open policy and durable open records. |
+| UC-003 | Inspect accepted synthetic semantic registrations with owning `TimingNodeId` and source sequence. | Hardware RFID, private decoding/decryption and observation filtering. |
+| UC-005 | Inspect current `NextUpTeams`, supported add/remove effects and any promoted separate history. | Physical keypad and CAN-display handling. |
+| UC-008 / UC-009 | Inspect status/events, selected target, live/stale/disconnected state, visible command result and raw **public** representation in the existing Engineering Client. | Building SI-02 or another browser test client. |
+| UC-010 | Inspect applied `StageStartTimes` / `RaceData` reference state and validated synthetic upstream outcomes. | Real backoffice connectivity and persistence/recovery. |
+| UC-011 | Inspect `TimingData` source identity/order and semantic upstream interchange, with debug-origin activity identifiable when enabled. | Production broker, durable outbox/ack and full replay. |
+| UC-014 | Inspect two synthetic TimingNodes and verify their state, ordered streams and targeted engineering inputs stay independent. | Field-scale equipment routing. |
+
+The first protocol review (D03) must resolve the following **without inventing a
+private legacy interface contract**:
+
+- which Step-4 data is supplied as a complete current snapshot and which
+  changes are delivered as live updates;
+- which public identifiers/source sequence values allow reconstruction and
+  distinguish source order from event-transport order;
+- how disconnected/reconnecting clients detect stale state and resynchronise;
+- how optional API capabilities advertise whether DebugConnector functions are
+  supported and enabled, and expose explicit rejection outcomes;
+- how semantic test input and its normal-path effect/traffic are inspected
+  with or without a configured real upstream connector.
+
+The accepted first-executable IF-03 version/status/WebSocket semantics remain
+the Step-3 baseline. D03 extends them as needed after D02W has independently
+produced non-sensitive abstract compatibility input.
+
 ## Cross-cutting alternative/failure scenarios
 
 The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:
