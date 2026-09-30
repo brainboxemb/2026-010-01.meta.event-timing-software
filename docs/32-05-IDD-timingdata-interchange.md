@@ -179,7 +179,8 @@ state = OPEN | CLOSED
 For this record family:
 
 - `effectiveTime` is the time at which the represented transition becomes effective;
-- `recordedAt` is the time at which that transition record is committed;
+- `recordedAt` is captured when the definitive transition record is
+  materialized for its commit attempt;
 - `locationId` is the location associated with the transition;
 - an initial process/runtime state of CLOSED with no assigned LocationID does not
   by itself require a synthetic TimingData record.
@@ -241,6 +242,12 @@ Rules:
 - the referenced registration remains present and unchanged;
 - the revocation is a new record with its own record key and `recordedAt`;
 - the referenced record key belongs to the same `TimingNodeId` stream;
+- in an authoritative complete source stream, `reference.sequenceNumber` is
+  lower than the revocation's own sequence and identifies a
+  `REGISTRATION` record;
+- a partial/imported subset may omit that earlier record; the reference remains
+  representable but is then explicitly unresolved rather than silently treated
+  as valid business state;
 - `effectiveTime` equals the effective registration/race time of the referenced
   registration, not the later operator/command time;
 - `locationId` equals the location captured by the referenced registration,
@@ -267,6 +274,67 @@ application/use-case contract.
 
 The matrix is a compact view of the same normative field semantics above; it does
 not define an alternative record shape.
+
+## Canonical JSON field contract
+
+Known v1 members use the following JSON types and validation rules:
+
+| Member | JSON type | Required | v1 rule |
+| --- | --- | --- | --- |
+| `version` | integer | every record | exactly `1` |
+| `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
+| `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
+| `locationId` | integer | every committed v1 record | `1..25`; record captures the applicable historical location |
+| `recordType` | string | every record | `TIMING_NODE_STATE`, `REGISTRATION` or `REGISTRATION_REVOKED` |
+| `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
+| `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
+| `state` | string | `TIMING_NODE_STATE` only | `OPEN` or `CLOSED` |
+| `registrationIdentity` | object | registration/revocation | canonical object defined below |
+| `origin` | string | registration/revocation | `AUTOMATIC` or `MANUAL` |
+| `timeSource` | string | registration/revocation | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
+| `reference` | object | `REGISTRATION_REVOKED` only | `TimingDataRecordKey` of the concerned registration |
+
+Nested objects:
+
+```text
+registrationIdentity
+  type            string: STANDARD | WOMEN | MEN
+  number          integer: 1..350
+
+reference
+  timingNodeId    non-empty string
+  sequenceNumber  integer: 1..9007199254740991
+```
+
+Validation rules:
+
+- every required known member is present and non-null;
+- a canonical writer omits non-applicable type-specific members rather than
+  emitting `null` placeholders;
+- a known type-specific member that contradicts the selected `recordType`
+  (for example `state` on a `REGISTRATION`) is invalid rather than treated
+  as an unknown compatible extension;
+- additional genuinely unknown object members are handled by the v1
+  compatibility rules below, including inside defined nested objects;
+- `timingNodeId` values are not normalized, case-folded or derived by IF-05;
+  they represent the same stable identity used by the surrounding application
+  contracts;
+- `AUTOMATIC` registrations use `timeSource = OBSERVED`;
+- `MANUAL` registrations use `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`;
+- a revocation repeats the original registration's `registrationIdentity`,
+  `origin`, `timeSource`, `locationId` and `effectiveTime`;
+- for a revocation, `reference.timingNodeId` equals the record's own
+  `timingNodeId`.
+
+The repeated registration fields on `REGISTRATION_REVOKED` are deliberate:
+each complete line remains independently decodable for identity/effective-time
+inspection, while `reference` preserves the historical relationship to the
+original registration.
+
+No chronological ordering invariant is inferred from `effectiveTime` or
+`recordedAt`. Operator-entered effective times and wall-clock corrections can
+make timestamp ordering differ from record ordering; `sequenceNumber` remains
+the authoritative source order.
 
 ## Registration identities
 
