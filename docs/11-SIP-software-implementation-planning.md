@@ -250,15 +250,15 @@ tests and make its public results inspectable through the existing Engineering C
 
 ### Result
 
-- Core TimingNode state and TimingData semantics exist and are deterministic/testable.
-- IF-03 and initial UpstreamProtocol boundaries expose the Step-4 behaviour without production hardware, RabbitMQ or backend infrastructure.
-- The Engineering Client can inspect TimingNode state and emulate the upstream peer through DebugConnector.
+- TimingNode state and TimingData are deterministic and testable.
+- Public contracts expose Step-4 behaviour without production services.
+- Engineering Client inspects state and drives DebugConnector.
 
 ### Demo
 
-- Start SI-01 with a synthetic multi-TimingNode composition and inspect its state through the JavaFX Engineering Client.
-- Apply starts/teams/reference changes and show independent TimingData/registration histories for multiple TimingNodes.
-- Exchange representative UpstreamProtocol messages between DebugConnector and the Engineering Client upstream simulator.
+- Inspect a synthetic multi-TimingNode SI-01 with the Engineering Client.
+- Change starts, teams and reference data; show independent histories.
+- Inject and inspect UpstreamProtocol messages through DebugConnector.
 
 ### Done
 
