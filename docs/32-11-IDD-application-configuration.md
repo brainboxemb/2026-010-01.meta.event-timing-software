@@ -40,7 +40,7 @@ Build provenance is outside IF-11. `BuildIdentity` comes from the built applicat
 
 ## Effective configuration model
 
-The logical configuration root is:
+The logical **effective** configuration root is:
 
 ```text
 ApplicationConfig
@@ -70,6 +70,34 @@ ApplicationConfig
 ```
 
 The structure is a contract for configuration ownership. It does not require one Java POJO for every node before a running slice needs it.
+
+### Application profile and baseline capabilities
+
+A Timing Point Application uses a selected **application profile** as a versioned
+default composition template. The profile supplies topology/capability defaults;
+it does not introduce a different domain model, Java application subclass or
+separate software item.
+
+The first architecture-level profile set is:
+
+| Profile | Intended default composition |
+| --- | --- |
+| `standard` | Normal Timing Point: one TimingNode by default, CAN device network enabled by default, display capability present by default, normal field-device composition. |
+| `finish` | Finish Timing Point: two TimingNodes by default, CAN disabled by default, no display by default; finish-specific field I/O is added only when its implementation requirements are concrete. |
+
+These are defaults, not restrictions. Explicit deployment configuration may
+override profile-owned defaults. A profile must not silently redefine functional
+identity semantics such as what a `TimingNodeId` or `LocationID` means.
+
+Console, Remote Shell and API are **baseline Timing Point Application
+capabilities**, not profile-specific features. Their command/status semantics
+remain the same for every profile. Deployment configuration still controls
+concrete listener/binding settings and may explicitly leave a network listener
+unbound/disabled where appropriate; that does not create another application
+profile.
+
+Web remains a separate browser-facing capability whose per-TimingNode bindings
+are composed when that capability is used.
 
 ### Application identity
 
@@ -262,9 +290,13 @@ presentation:
       port: 8082
 ```
 
-`remoteShell` and `api` are independently optional. Within `api`, HTTP
-and WebSocket listeners are independently optional; when present, each requires its
-`bindAddress` and `port`. The committed development example uses loopback for all listeners. External GUI/test clients connect to the API and do not require their own SI-01 presentation configuration section. These settings configure presentation listeners and do not become TimingNode fields.
+Remote Shell and API are baseline software capabilities. Their concrete network
+bindings are deployment settings rather than profile choices. A deployment may
+explicitly omit/disable a listener binding; when an API HTTP/WebSocket binding is
+present it requires its `bindAddress` and `port`. The committed development
+example uses loopback for all listeners. External GUI/test clients connect to the
+API and do not require their own SI-01 presentation configuration section. These
+settings configure presentation listeners and do not become TimingNode fields.
 
 ### Logging
 
@@ -339,53 +371,93 @@ This baseline does not require a general `SecretProvider` hierarchy.
 
 ## Configuration sources and precedence
 
-One deployment resolves at most these layers:
+The application resolves configuration **from defaults toward explicit deployment
+intent**. Explicit deployment values always win over built-in defaults.
 
 ```text
-base application configuration
+selected built-in application profile defaults
         ↓
-one platform override
+selected platform defaults
         ↓
-optional one profile override
+selected operating-mode defaults
+        ↓
+explicit deployment application.yml overrides
         ↓
 secret resolution
         ↓
 effective ApplicationConfig
 ```
 
-Typical source layout may be:
+This is deliberately not arbitrary inheritance. The three default sources answer
+orthogonal questions:
+
+- **application profile** — what Timing Point topology/capabilities are normally
+  composed, initially `standard` or `finish`;
+- **platform** — the execution/deployment environment, such as Pi Zero or Windows;
+- **operating mode** — how concrete adapters are realised, such as normal/real
+  operation versus simulation.
+
+A representative source layout may eventually be:
 
 ```text
-config/
-  application.yml
+built-in defaults/
+  profile/
+    standard.yml
+    finish.yml
   platform/
     pi-zero.yml
     windows.yml
-  profile/
+  mode/
+    normal.yml
     simulation.yml
+
+config/
+  application.yml       explicit deployment overrides
 ```
 
-The exact file format and parser/library remain implementation choices until the first real loader is selected.
+The default source files above are conceptual/versioned application resources;
+their exact storage form is an implementation decision. The external IF-11
+deployment contract remains independent of a particular YAML merge library.
 
-General recursive inheritance, arbitrary include graphs and Kubernetes-like overlay machinery are intentionally outside this baseline.
+General recursive inheritance, arbitrary include graphs, profile-to-profile
+inheritance and Kubernetes-like overlay machinery are intentionally outside this
+baseline.
 
-## Platform and profile semantics
+## Application profile, platform and operating-mode semantics
 
-Platform and profile answer different questions:
+The three selectors are intentionally independent.
 
-- **platform** — the execution/deployment environment, such as Pi Zero or Windows;
-- **profile** — a selected composition/behaviour variant, such as simulation or development.
-
-Windows does not imply simulation.
-
-A simulation profile replaces concrete adapters while preserving the same application/domain model:
+Examples:
 
 ```text
-production: TimingNode -> configured Antenna provider
+standard + pi-zero + normal
+finish   + pi-zero + normal
+finish   + windows + simulation
+standard + windows + simulation
+```
+
+Windows does not imply simulation, and Finish does not imply a different domain
+implementation.
+
+Simulation changes concrete adapter/provider defaults while preserving the same
+application/domain model:
+
+```text
+normal:     TimingNode -> configured Antenna provider
 simulation: TimingNode -> built-in SimulatedAntenna
 ```
 
-The same TimingNode identities, application commands and domain behaviour remain in use. The built-in simulated antenna is always available and does not depend on external extension discovery.
+The same TimingNode identity rules, application commands, API semantics and
+domain behaviour remain in use.
+
+A profile may provide a topology skeleton/cardinality and capability defaults.
+Deployment-specific externally meaningful identities and locations must either
+be supplied explicitly or follow a separately specified deterministic default
+rule; profile resolution must not invent ambiguous functional identities.
+
+The exact selector syntax is deferred until the configuration resolver is
+implemented. A compact deployment should ultimately be able to select a profile
+and specify only the values that differ from those defaults.
 
 ## Validation
 
@@ -422,12 +494,14 @@ Conceptually startup is:
 ```text
 main()
   -> obtain BuildIdentity from the built artifact
-  -> load IF-11 configuration sources
+  -> select built-in application profile / platform / operating-mode defaults
+  -> apply explicit IF-11 deployment overrides
+  -> resolve secrets
   -> produce effective ApplicationConfig
   -> discover built-in and configured external extension providers
   -> validate effective configuration and provider references
   -> configure executable runtime logging
-  -> compose TimingApplication and selected implementations
+  -> ApplicationBootstrap composes TimingApplication and selected implementations
   -> start application lifecycle
 ```
 
@@ -460,6 +534,7 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 | IF-11 concern | SI-01 SSD requirement / architecture |
 | --- | --- |
 | external effective configuration | SI01-REQ-001 |
+| built-in application-profile defaults + explicit deployment overrides | SI01-REQ-001 / configuration-composition architecture |
 | configured TimingSystem/TimingNode composition | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
 | deployment/composition separation | SI-01 SSD configuration/composition architecture |

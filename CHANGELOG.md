@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define built-in Timing Point application profiles (`standard`, `finish`) as versioned default-composition templates resolved before `ApplicationBootstrap`; separate application profile, platform and operating mode so combinations such as Finish-on-Windows simulation remain possible, and make explicit deployment configuration override all non-secret defaults.
+
 - Show **Runtime** explicitly in Figure SI01-01 with `TimingApplication` above Infrastructure / cross-cutting; order infrastructure as `LoggingServer -> Logging -> ApplicationBootstrap -> Build/version identity` and align the logging dependency arrow with the current Java dependency direction.
 
 - Rename SI-01 to **Timing Point Application**, define `io.github.brainboxemb.eventtiming.timingpoint` as its Java package root, and align the detailed design with separate `infra.logging` and `infra.loggingserver` components while preserving `TimingNode` as the internal domain aggregate.

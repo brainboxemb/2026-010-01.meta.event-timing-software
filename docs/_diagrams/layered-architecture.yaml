@@ -360,7 +360,7 @@ nodes:
   object_id: ApplicationBootstrap
   group: crosscutting-layer
   label: "ApplicationBootstrap"
-  subtitle: "config • composition"
+  subtitle: "effective config • composition"
   kind: crosscutting
   notation: component
   layout: {x: 1210, y: 515, w: 170, h: 80}
