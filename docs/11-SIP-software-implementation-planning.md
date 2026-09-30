@@ -227,14 +227,15 @@ tests and make its public results inspectable through the existing Engineering C
 - TimingNode lifecycle/status needed by these capabilities;
 - clear state-change ownership and observable results;
 - compatible IF-03 additions needed by the existing JavaFX Engineering Client;
-- a lightweight DebugConnector plus Engineering Client upstream-simulator endpoint
-  for exercising UpstreamProtocol without RabbitMQ or the real backend.
+- an API-controlled DebugConnector for exercising UpstreamProtocol without requiring
+  RabbitMQ/backend infrastructure, while still allowing debug injection to coexist
+  with a real RabbitMQ connector when configured.
 
 ### Not in this step
 
 - production RFID/CAN hardware;
-- RabbitMQ or production backend transport implementation beyond the lightweight
-  public DebugConnector/simulator loop;
+- production RabbitMQ/backend implementation work beyond defining how the
+  API-controlled DebugConnector can coexist with configured real connectors;
 - target-platform deployment;
 - full persistence/recovery and end-to-end event simulation;
 - the optional lightweight browser/web test client;
@@ -267,8 +268,9 @@ tests and make its public results inspectable through the existing Engineering C
 - core state transitions have deterministic tests;
 - source identity/sequence rules are represented consistently;
 - Step-4 state is observable through IF-03 and the Engineering Client;
-- representative UpstreamProtocol exchange works through the dedicated
-  DebugConnector/Engineering Client simulator loop without RabbitMQ;
+- representative UpstreamProtocol exchange works through the API-controlled
+  DebugConnector without direct domain mutation, both standalone and alongside a
+  configured real connector where supported;
 - the running-system demo uses the Engineering Client rather than a new web test client.
 
 ---
