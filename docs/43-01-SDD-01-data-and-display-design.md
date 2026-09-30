@@ -146,6 +146,9 @@ Records are historical facts and are not silently overwritten when corrected or 
 
 The registration sequence is **monotonically increasing per `TimingNodeId` / timing node**.
 
+A new source stream starts with sequence **1**. Sequence **0 is reserved** and
+shall not identify a normal committed TimingData record.
+
 It is not scoped by location and it is not one global sequence across all registration systems.
 
 Conceptually:
@@ -191,7 +194,7 @@ final class TimingDataRecord {
     private TimingTimestamp recordedAt;
     private RegistrationOrigin origin;            // AUTOMATIC | MANUAL when applicable
     private RegistrationTimeSource timeSource;     // OBSERVED | SYSTEM_ASSIGNED | OPERATOR_ENTERED
-    private TeamNumber teamNumber;                 // when applicable
+    private RegistrationIdentity registrationIdentity; // RFID-derived identity; reserve projection TBD
     private TimingDataRecordKey reference;         // revocation/correction target
     private TimingDataRecordPayload payload;       // type-specific semantic data
 }
@@ -317,20 +320,29 @@ Decoded team numbers are in the known range:
 TeamNumber = 0..999
 ```
 
-An RFID tag identity ultimately contains:
+A decoded physical RFID identity contains:
 
 ```text
-prefix + team number + postfix
+prefix + number + postfix
 ```
 
-Known semantics:
+The registration path normalises it to:
 
-- a dedicated prefix indicates a reserve tag;
-- two physical tags exist for the same team/identity;
-- the postfix distinguishes those two physical tag copies;
-- exact encoded prefix/postfix values and encryption/protocol format are not defined in this public design.
+```text
+RegistrationTag = prefix + number
+```
 
-Reserve-tag identities are resolved through locally available backoffice-synchronised mapping data before normal participant/team processing.
+The postfix/copy suffix is deliberately removed from the registration identity;
+the prefix is retained so normal and reserve tags remain distinguishable.
+
+For a normal tag, this normalised tag is directly usable as the registration
+identity. A reserve tag is resolved through locally available
+backoffice-synchronised mapping data before normal race processing.
+
+The application shall not discard the observed normalised reserve tag merely
+because a resolved identity becomes available. The exact public TimingData/API
+projection remains an explicit D03 decision: expose the observed tag, the
+resolved identity, or both.
 
 ## In-memory authoritative state with file backup
 
@@ -656,7 +668,7 @@ Temporary identifiers only; these are not yet formal requirements.
 - **CAND-REG-001** — Each registration system/source shall have a stable `TimingNodeId`.
 - **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
 - **CAND-REG-003** — Each committed registration entry shall contain both `TimingNodeId` and `LocationID`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`.
+- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`; a new stream starts at 1 and sequence 0 is reserved.
 - **CAND-REG-005** — The stable registration record identity shall include `TimingNodeId` and sequence number so upstream systems can order records and detect gaps per timing node.
 - **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
 - **CAND-REG-007** — Opening and closing a TimingNode shall each create a traceable TimingData state-change record with generic semantic state `OPEN` or `CLOSED`; provider-specific encodings belong to the selected TimingData implementation.
@@ -668,10 +680,10 @@ Temporary identifiers only; these are not yet formal requirements.
 
 ### Tag/team identity
 
-- **CAND-TAG-001** — Decoded team numbers shall support the known range `0..999`.
+- **CAND-TAG-001** — The registration path shall use a normalised RFID identity consisting of prefix plus decoded number.
 - **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
-- **CAND-TAG-003** — Tag decoding shall retain the postfix/copy identity needed to distinguish the two physical tags associated with one team identity.
-- **CAND-TAG-004** — Reserve tags shall be resolvable using locally available mapping data synchronised from the backoffice.
+- **CAND-TAG-003** — The physical tag postfix/copy identifier shall be removed from the canonical registration identity.
+- **CAND-TAG-004** — Reserve tags shall be resolvable using locally available mapping data synchronised from the backoffice without losing the observed normalised reserve-tag identity.
 
 ### Local data and backup
 
@@ -702,10 +714,10 @@ Temporary identifiers only; these are not yet formal requirements.
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
 - Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
-- At what value does a new source sequence start?
 - Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
 - Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
 - What sequence numeric width/wraparound policy is required?
+- For a reserve-tag registration, should public TimingData/API consumers receive the observed normalised reserve tag, the resolved registration identity, or both?
 - Which operational events besides the promoted TimingNode `OPEN` / `CLOSED` state-change records belong in the registration stream?
 - Which additional generic fields, if any, are required on a lifecycle/state-change record beyond its normal TimingData identity/location/sequence/time fields and semantic state?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
