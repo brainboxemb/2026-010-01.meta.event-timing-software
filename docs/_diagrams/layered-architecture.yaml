@@ -364,8 +364,8 @@ nodes:
   layout: {x: 1210, y: 1213, w: 170, h: 70}
 
 edges:
-- from: logging-infra
-  to: logging-server
+- from: logging-server
+  to: logging-infra
   dashed: true
 
 - from: local-console

@@ -59,7 +59,7 @@ Current examples are:
 
 60-SVP-software-verification-plan
 
-70-01-SUM-headless-timing-application
+70-01-SUM-timing-point-application
 ```
 
 Numbering rules:

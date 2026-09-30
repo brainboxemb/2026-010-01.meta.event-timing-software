@@ -4,7 +4,7 @@ diagram:
   width: 1420
   height: 760
   description: Cross-cutting logging flow from provider-neutral framework calls to retained file logging and optional engineering live diagnostics.
-  note: The configured level is the restart baseline. A temporary runtime override is process state only and is not written back to deployment configuration.
+  note: The executable composes Logging and optional LoggingServer separately. The configured level is the restart baseline; a temporary runtime override is process state only and is not written back to deployment configuration.
 
 groups:
   - id: code
@@ -13,7 +13,7 @@ groups:
     layout: {x: 70, y: 120, w: 300, h: 500}
 
   - id: logging
-    label: Framework infrastructure / logging
+    label: Framework infrastructure
     kind: layer-crosscutting
     layout: {x: 410, y: 120, w: 610, h: 500}
 
@@ -30,13 +30,13 @@ nodes:
     layout: {x: 110, y: 260, w: 220, h: 90}
 
   - id: logging-component
-    label: "Logging\nruntime logging infrastructure"
+    label: "Logging\ninfra.logging"
     kind: crosscutting
     group: logging
     layout: {x: 455, y: 160, w: 245, h: 80}
 
   - id: logging-server
-    label: "LoggingServer\nexternal live-log interface"
+    label: "LoggingServer\ninfra.loggingserver"
     kind: crosscutting
     group: logging
     layout: {x: 735, y: 160, w: 240, h: 80}
@@ -87,8 +87,8 @@ edges:
   - {from: slf4j-calls, to: jul}
   - {from: logging-component, to: jul, label: "configures"}
   - {from: logging-component, to: control, label: "owns"}
-  - {from: logging-component, to: logging-server, label: "starts / stops"}
   - {from: control, to: jul, label: "global level"}
+  - {from: logging-server, to: control, label: "level query / change"}
   - {from: jul, to: console}
   - {from: jul, to: file}
   - {from: jul, to: live}
