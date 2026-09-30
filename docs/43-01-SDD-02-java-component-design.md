@@ -65,7 +65,7 @@ io.github.brainboxemb.eventtiming/
   core/
   presentation/
     interfaces/
-      remoteapi/
+      api/
       console/
       shell/
       web/
@@ -90,7 +90,7 @@ io.github.brainboxemb.eventtiming/
   platform/
 ```
 
-Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and Remote API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary Remote API classes stay directly at `presentation.interfaces.remoteapi` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
+Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary API classes stay directly at `presentation.interfaces.api` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
 
 These are source-organisation boundaries, not automatically Maven modules.
 
@@ -357,9 +357,9 @@ io.github.brainboxemb.eventtiming.app/
     ApplicationConfigLoader.java
     PresentationConfig.java
     RemoteShellConfig.java
-    RemoteApiConfig.java
-    RemoteApiHttpConfig.java
-    RemoteApiWebSocketConfig.java
+    ApiConfig.java
+    ApiHttpConfig.java
+    ApiWebSocketConfig.java
 ```
 
 The framework owns the reusable SI-01 runtime and bootstrap components:
@@ -376,9 +376,9 @@ io.github.brainboxemb.eventtiming/
         ApplicationConfig.java
         PresentationConfig.java
         RemoteShellConfig.java
-        RemoteApiConfig.java
-        RemoteApiHttpConfig.java
-        RemoteApiWebSocketConfig.java
+        ApiConfig.java
+        ApiHttpConfig.java
+        ApiWebSocketConfig.java
     logging/
       Logging.java
       LoggingConfig.java
@@ -479,7 +479,7 @@ presentation/
       LocalConsole
     shell/
       RemoteShellServer
-    remoteapi/
+    api/
       HttpEndpoint
       WebSocketEndpoint
       MessageWriter
@@ -492,7 +492,7 @@ Console and remote shell are separate presentation interfaces. They share only t
 line-oriented command-session behaviour in `presentation.common.terminal`; both call
 the same `CommandHandler` and shutdown callback.
 
-A06/A07 are the first slice of the functional **Remote API**:
+A06/A07 are the first slice of the functional **API**:
 
 ```text
 HttpEndpoint
@@ -511,13 +511,13 @@ WebSocketEndpoint
 API HTTP and WebSocket transports. It is not application/control logic and therefore
 does not live in the application layer or in global presentation common code.
 
-The local class names deliberately omit the `RemoteApi` prefix because the enclosing `presentation.interfaces.remoteapi` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
+The local class names deliberately omit the `Api` prefix because the enclosing `presentation.interfaces.api` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
 
 The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
 framework and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
 both transports with a larger combined stack.
 
-A browser-based engineering client, if added, should consume the Remote API like any other external client. It does not require a separate SI-01 `presentation.web` package.
+A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
 Manual inspection is provided by an independent development tool:
 
@@ -528,8 +528,8 @@ test-client/
           v
   TestClientFxApplication    JavaFX development view
           |
-          +-- RemoteApiClient          HTTP/JSON client
-          +-- RemoteApiEventClient       Java 17 WebSocket client
+          +-- ApiClient          HTTP/JSON client
+          +-- ApiEventClient       Java 17 WebSocket client
           +-- RemoteShellClient          A05 raw TCP shell client
           |
           v

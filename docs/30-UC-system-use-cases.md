@@ -74,8 +74,8 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the preparation registry and preserve the change history. |
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
-| UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the Remote API. |
-| UC-009 | Exercise the Remote API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
+| UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the API. |
+| UC-009 | Exercise the API through an optional web test client | Test/developer | Use a simple browser client when it is useful for manual interface testing. |
 | UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
@@ -251,7 +251,7 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 :id: UC-008
 
 **Goal:** operate/observe a timing application through the
-Remote API.
+API.
 
 **Primary actor:** operator.
 
@@ -265,17 +265,17 @@ Remote API.
 
 ```
 
-```{uc} Exercise the Remote API through an optional web test client
+```{uc} Exercise the API through an optional web test client
 :id: UC-009
 
-**Goal:** provide a simple browser-based way to inspect or exercise the Remote API when
+**Goal:** provide a simple browser-based way to inspect or exercise the API when
 that is useful during development.
 
 **Primary actor:** test/developer.
 
 **Main flow:**
 
-1. A small web client connects to the existing Remote API.
+1. A small web client connects to the existing API.
 2. It shows a small set of API data such as version/status.
 3. It may exercise supported commands/events needed for manual integration testing.
 4. It remains test tooling; it does not become another source of timing/domain state.

@@ -166,7 +166,7 @@ For the first Pi proof, simple observations are sufficient:
 - memory use;
 - idle and representative CPU use;
 - thread count;
-- basic Remote API responsiveness.
+- basic API responsiveness.
 
 Add more detailed measurements only when a feature or observed problem justifies them.
 There are no numeric Pi resource budgets at this stage.

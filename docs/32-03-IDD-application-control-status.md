@@ -1,8 +1,8 @@
-# Remote API Interface (IDD)
+# API Interface (IDD)
 
 Status: review candidate / AP-1 first-executable slice
 
-System interface: **IF-03 — Remote API**
+System interface: **IF-03 — API**
 
 ## Purpose
 
@@ -29,7 +29,7 @@ client side
   headless ST-1 / integration test driver
   other supported remote tooling
         |
-        | IF-03 Remote API
+        | IF-03 API
         v
 SI-01 Headless Timing Application
 ```

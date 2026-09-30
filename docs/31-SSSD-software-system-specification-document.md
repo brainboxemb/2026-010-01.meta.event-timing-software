@@ -91,7 +91,7 @@ and architecture now share one document.
 The software-system architecture is driven by these system-level concerns:
 
 - the **Headless Timing Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
-- the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the Remote API;
+- the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Headless Timing Application through the API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
 - external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;
 - public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
@@ -106,9 +106,9 @@ Software-item identity is stated by the document and traceability metadata; the 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
 | **SI-01** | Headless Timing Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
-| **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the Remote API | Operator workstation/laptop |
+| **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the API | Operator workstation/laptop |
 
-Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX Remote API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
+Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
 
 ## System context
 
@@ -164,7 +164,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | IDD candidate |
-| **IF-03 Remote API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `32-03-IDD-application-control-status.md` candidate |
+| **IF-03 API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `32-03-IDD-application-control-status.md` candidate |
 | **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI IDD candidate |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system IDD; proprietary wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
@@ -279,7 +279,7 @@ The SSD for the **Headless Timing Application** (SI-01) owns, among other things
 - upstream transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
-The SSD for the planned **Desktop GUI Application** (SI-02) owns its requirements/internal architecture while conforming to the Remote API and applicable IDDs.
+The SSD for the planned **Desktop GUI Application** (SI-02) owns its requirements/internal architecture while conforming to the API and applicable IDDs.
 
 ## Architecture review model
 

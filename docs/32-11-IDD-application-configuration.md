@@ -232,7 +232,7 @@ presentation
         bindAddress
         port
       ...
-  remoteApi
+  api
     http
     webSocket
   remoteShell
@@ -253,7 +253,7 @@ presentation:
   remoteShell:
     bindAddress: 127.0.0.1
     port: 8023
-  remoteApi:
+  api:
     http:
       bindAddress: 127.0.0.1
       port: 8081
@@ -262,9 +262,9 @@ presentation:
       port: 8082
 ```
 
-`remoteShell` and `remoteApi` are independently optional. Within `remoteApi`, HTTP
+`remoteShell` and `api` are independently optional. Within `api`, HTTP
 and WebSocket listeners are independently optional; when present, each requires its
-`bindAddress` and `port`. The committed development example uses loopback for all listeners. External GUI/test clients connect to the Remote API and do not require their own SI-01 presentation configuration section. These settings configure presentation listeners and do not become TimingNode fields.
+`bindAddress` and `port`. The committed development example uses loopback for all listeners. External GUI/test clients connect to the API and do not require their own SI-01 presentation configuration section. These settings configure presentation listeners and do not become TimingNode fields.
 
 ### Logging
 

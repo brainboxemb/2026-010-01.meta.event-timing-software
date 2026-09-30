@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename IF-03 from **Remote API** to **API** across system/interface architecture, configuration (`presentation.api`) and Java component naming, while keeping HTTP/WebSocket wire behavior unchanged; also remove the overlapping `live records / level control` edge label from the layered architecture overview.
+
 - Close SIP Step 3 on accepted `v0.2.2`, mark its implementation/verification activities done, record the release completion date and activate Step 4 — TimingNode state and domain foundation.
 
 - Move SIP Step 3 to a v0.2.2 release-closure candidate: all functional/verification Done criteria are satisfied and the accepted v0.2.2 release remains the explicit closure gate.
