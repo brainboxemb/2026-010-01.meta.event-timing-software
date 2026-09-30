@@ -1,0 +1,28 @@
+diagram:
+  id: timingdata-sequence-manual-registration
+  type: sequence
+  title: Figure SDD01-TD04 — Manual registration
+  width: 1560
+  height: 880
+  description: Manual operator input is resolved inside SI-01 and joins the common LogBook commit path.
+  note: The client does not construct the canonical IF-05 RegistrationIdentity itself.
+
+participants:
+  - {id: client, label: Operator / client, kind: client}
+  - {id: api, label: IF-03 / CommandHandler, kind: interface}
+  - {id: manual, label: Manual registration, kind: application}
+  - {id: recorder, label: LogBookRecorder, kind: application}
+  - {id: committer, label: LogBookCommitter, kind: application}
+  - {id: store, label: TimingDataStore, kind: storage}
+  - {id: logbook, label: LogBook, kind: model}
+
+messages:
+  - {from: client, to: api, label: TeamIdentity + time, kind: call}
+  - {from: api, to: manual, label: validated command, kind: call}
+  - {from: manual, to: recorder, label: LogBookEntryCandidate, kind: async}
+  - {from: manual, to: api, label: accepted, kind: return}
+  - {from: api, to: client, label: accepted, kind: return}
+  - {from: recorder, to: committer, label: next candidate, kind: async}
+  - {from: committer, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: committer, label: durable, kind: return}
+  - {from: committer, to: logbook, label: commit LogBookItem, kind: call}

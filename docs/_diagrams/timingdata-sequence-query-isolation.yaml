@@ -1,0 +1,26 @@
+diagram:
+  id: timingdata-sequence-query-isolation
+  type: sequence
+  title: Figure SDD01-TD05 — LogBook query isolation
+  width: 1450
+  height: 820
+  description: Query work uses a short LogBook read view while new candidates continue through the record path.
+  note: Concrete Pi-friendly read mechanics remain in SDD-02.
+
+participants:
+  - {id: client, label: Query caller, kind: client}
+  - {id: logbook, label: LogBook, kind: model}
+  - {id: query, label: Query / StageTiming, kind: service}
+  - {id: recorder, label: LogBookRecorder, kind: application}
+  - {id: committer, label: LogBookCommitter, kind: application}
+  - {id: store, label: TimingDataStore, kind: storage}
+
+messages:
+  - {from: client, to: logbook, label: capture small read view, kind: call}
+  - {from: logbook, to: client, label: view, kind: return}
+  - {from: client, to: query, label: calculate, kind: call}
+  - {from: recorder, to: committer, label: next candidate, kind: async}
+  - {from: committer, to: store, label: append next record, kind: call}
+  - {from: store, to: committer, label: durable, kind: return}
+  - {from: committer, to: logbook, label: commit next item, kind: call}
+  - {from: query, to: client, label: result, kind: return}

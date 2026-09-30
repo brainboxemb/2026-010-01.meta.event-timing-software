@@ -272,11 +272,16 @@ therefore sits behind its own capability-specific bounded queue or outbox.
 
 ### Runtime flows
 
-The following text sequences are intentionally kept in the SDD instead of being
-turned into separate pictures. At this level the method/ownership detail is more
-useful in source form and remains directly reviewable in Git.
+Each flow below has a compact UML-style sequence overview followed by the more
+precise developer pseudocode. The diagram is for quickly seeing participants and
+async/sync boundaries; the text block underneath carries the method and commit
+details.
 
 #### Automatic RFID registration
+
+![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
+
+*Figure SDD01-TD03 — The RFID callback hands work to the bounded LogBook path; durable IF-05 storage happens before the LogBook item becomes visible.*
 
 ```text
 RFID adapter          TagProcessor          LogBookRecorder       LogBookCommitter       TimingDataStore       LogBook
@@ -305,6 +310,10 @@ the antenna/`TagProcessor` execution context.
 
 #### Manual registration
 
+![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
+
+*Figure SDD01-TD04 — Manual input is resolved inside SI-01 and then joins the same ordered LogBook commit path.*
+
 ```text
 Client             IF-03/CommandHandler      Manual registration       LogBookRecorder       LogBookCommitter
   |                         |                         |                        |                    |
@@ -330,6 +339,10 @@ candidate is enqueued but share the same ordered commit semantics afterwards.
 
 #### Long query while registrations continue
 
+![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
+
+*Figure SDD01-TD05 — A query reads LogBook state while later candidates can still be committed.*
+
 ```text
 Client/query thread                 LogBook                    LogBookRecorder/Committer
        |                               |                                  |
@@ -352,6 +365,10 @@ when the first real ranking/query implementation is built and measured on the
 target Raspberry Pi.
 
 #### Later producers
+
+![Generic LogBook producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
+
+*Figure SDD01-TD06 — Start, penalty and correction logic can reuse the same candidate/commit boundary when those record families are introduced.*
 
 Start-procedure and penalty/correction logic follow the same pattern:
 
