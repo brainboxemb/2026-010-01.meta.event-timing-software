@@ -249,15 +249,20 @@ registration, inspect the resulting TimingData, and close it again.
 
 ### Result
 
-- Location and open/close rules are explicit.
-- Direct registration produces identified TimingData.
-- Engineering Client shows state, history and live updates.
+- One registration point has explicit location and open/close invariants.
+- A direct semantic registration reaches the normal registration operation after the antenna/filtering boundary.
+- TimingData captures stable source identity, active location and source sequence.
+- The Engineering Client can reconstruct current state/history and observe subsequent live updates.
 
 ### Demo
 
-- Set location while closed; open registration.
-- Inject a registration; inspect TimingData.
-- Reject location change while open; close and change it.
+- Start with the registration point closed and no operational location assigned.
+- Assign a valid location.
+- Open registration.
+- Inject one accepted semantic registration with a deterministic observation time.
+- Inspect the resulting TimingData/history and live update.
+- Verify that changing location while open is rejected.
+- Close registration and then change the location successfully.
 
 ### Done
 

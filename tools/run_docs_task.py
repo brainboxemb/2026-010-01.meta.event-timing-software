@@ -114,25 +114,32 @@ def valid_pdf(path: Path) -> None:
 def validate_planning(root: Path) -> dict:
     required = [
         root / "README.md",
+        root / "roadmap-view.yaml",
         root / "sip-roadmap.svg",
         root / "sip-roadmap.pdf",
-        root / "roadmap/sip-roadmap-1.svg",
-        root / "roadmap/sip-roadmap-3.svg",
         root / "steps/step-02.svg",
         root / "steps/step-02.pdf",
     ]
     for path in required:
         if not path.is_file():
             raise RuntimeError(f"required planning output missing: {path}")
+
+    roadmap_pages = sorted((root / "roadmap").glob("sip-roadmap-*.svg"))
+    if not roadmap_pages:
+        raise RuntimeError("roadmap renderer produced no page SVGs")
+
     ET.parse(root / "sip-roadmap.svg")
-    for path in sorted((root / "roadmap").glob("*.svg")):
+    for path in roadmap_pages:
         ET.parse(path)
     for path in sorted((root / "steps").glob("*.svg")):
         ET.parse(path)
     valid_pdf(root / "sip-roadmap.pdf")
     for path in sorted((root / "steps").glob("*.pdf")):
         valid_pdf(path)
-    return {"file_count": sum(path.is_file() for path in root.rglob("*"))}
+    return {
+        "file_count": sum(path.is_file() for path in root.rglob("*")),
+        "roadmap_page_count": len(roadmap_pages),
+    }
 
 
 def validate_assembly(root: Path) -> dict:
