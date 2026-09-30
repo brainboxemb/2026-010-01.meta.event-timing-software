@@ -65,6 +65,12 @@ The current catalogue starts lightweight and can be expanded as requirements are
 
 ## Use-case catalogue
 
+The catalogue is grouped by operational purpose for readability. Use-case IDs
+remain stable traceability identifiers; their numeric order does not define the
+reading order or implementation sequence.
+
+### Normal operation
+
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
 | UC-001 | Connect to a registration system | Operator | Connect to a known registration system and view its current operational state. |
@@ -75,17 +81,29 @@ The current catalogue starts lightweight and can be expanded as requirements are
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
 | UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the API. |
-| UC-009 | Exercise SI-01 through the Engineering Client | Test/developer | Inspect and exercise supported public interfaces without becoming another source of domain state. |
+
+### System, backoffice and recovery
+
+| ID | Name | Primary actor | Goal |
+| --- | --- | --- | --- |
 | UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
 | UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
+
+### Engineering, simulation and verification
+
+| ID | Name | Primary actor | Goal |
+| --- | --- | --- | --- |
+| UC-009 | Exercise SI-01 through the Engineering Client | Test/developer | Inspect and exercise supported public interfaces without becoming another source of domain state. |
 | UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-TimingNode/source behaviour without real production hardware or private deployment identities. |
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
 | UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
+
+### Normal operation
 
 ```{uc} Connect to a registration system
 :id: UC-001
@@ -231,6 +249,7 @@ time of acceptance.
 6. Existing committed registration/source sequence state is not reset or rewritten by device recovery.
 
 ```
+
 ```{uc} Manage ready teams through keypad/operator input
 :id: UC-005
 
@@ -249,6 +268,7 @@ time of acceptance.
 Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
 
 ```
+
 ```{uc} Drive a passive CAN display from current system state
 :id: UC-006
 
@@ -265,6 +285,7 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 5. The passive display itself does not own ready-team/domain state.
 
 ```
+
 ```{uc} Provide data to a smart network display
 :id: UC-007
 
@@ -283,6 +304,7 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
 
 ```
+
 ```{uc} Operate SI-01 through a desktop GUI
 :id: UC-008
 
@@ -308,6 +330,118 @@ The planned SI-02 GUI is not built in Step 4; the existing Engineering Client
 may inspect these same public state semantics without claiming to implement SI-02.
 
 ```
+
+### System, backoffice and recovery
+
+```{uc} Synchronise reference data from backoffice
+:id: UC-010
+
+**Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
+
+**Primary actor:** backoffice.
+
+**Main flow:**
+
+1. Source-aware inbound backoffice communication receives a reference-data update.
+2. The transport adapter translates private/wire representation into public semantic data.
+3. SI-01 validates and applies the update.
+4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) for the addressed TimingNode, without silently updating another target.
+5. SI-01 makes accepted/rejected update outcomes and current reference state observable through the public semantics required by the slice.
+6. Backup/restore state is updated according to later persistence policy; status exposes freshness/health where required.
+
+**Alternative/failure flows:** unknown target, invalid or conflicting reference
+update, or unavailable upstream transport. Message submission alone must not
+be presented as proof that the target's reference state changed.
+
+```
+
+```{uc} Synchronise TimingNodeId-scoped data to backoffice
+:id: UC-011
+
+**Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
+
+**Primary actors:** SI-01 and backoffice.
+
+**Main flow:**
+
+1. A committed TimingData record contains the source `TimingNodeId`, the `LocationId` active when that record was accepted, and its source sequence identity.
+2. A corresponding outbound item becomes pending in the outbox/synchronisation state when that capability is implemented.
+3. `UpstreamProtocol` represents the semantic message and `UpstreamGateway` carries it through the configured connector.
+4. A production connector such as RabbitMQ may later map that semantic message to its transport.
+5. Successful acknowledgement/reconciliation advances pending state according to the final protocol.
+6. Source ordering and gap detection remain possible at higher levels.
+
+**First-registration slice:** D03 defines the identity and outbound semantic
+representation needed for committed registration TimingData. The exact
+`TimingNodeId`/`LocationId` wire types and validation belong to the
+TimingData/IDD contract. Real RabbitMQ delivery, durable outbox/restart,
+acknowledgement/reconciliation and inbound reference-data simulation are later
+increments.
+
+```
+
+```{uc} Continue local operation during backoffice outage
+:id: UC-012
+
+**Goal:** preserve required local timing functionality and traceability while external connectivity is unavailable.
+
+**Primary actor:** operator / SI-01.
+
+**Main flow:**
+
+1. SI-01 detects loss of internet/broker/backoffice connectivity and exposes the appropriate status layer.
+2. Local device operation, registration and calculations continue where required local configuration/reference data is available.
+3. New committed source records remain locally durable.
+4. Outbound items remain pending.
+5. After transport recovery, synchronisation resumes without inventing/reusing committed sequence numbers.
+
+```
+
+```{uc} Restart and restore local state
+:id: UC-013
+
+**Goal:** recover a coherent timing application after restart/power interruption.
+
+**Primary actor:** platform/operator.
+
+**Main flow:**
+
+1. SI-01 starts and loads configuration.
+2. Source-specific registration files and sequence state are restored/validated.
+3. Ready-team/reference/other recoverable state is restored according to the design.
+4. The runtime reconstructs configured TimingNodes and configured hardware/data-source adapters.
+5. Status reports restore health/errors before normal operation is presented as healthy.
+6. Backoffice/outbox recovery resumes independently from local startup.
+
+```
+
+```{uc} Run multiple TimingNodes in one process
+:id: UC-014
+
+**Goal:** host multiple independently addressed TimingNodes
+while preserving independent lifecycle, state and
+`TimingNodeId`-scoped streams.
+
+**Primary actor:** configuration/test/operator tooling.
+
+**Main flow:**
+
+1. Settings describe several independently addressed `TimingNode` objects and their location/timing node identity mappings.
+2. Each instance receives its own logical serialized state boundary.
+3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
+4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
+5. Public interfaces can address each instance explicitly.
+6. An engineering query, change or synthetic upstream input for one TimingNode
+   identifies its target and does not accidentally change another node's state.
+
+**Observable result:** two synthetic TimingNodes have separately inspectable
+lifecycle, reference/next-up state and independently ordered TimingData. Any
+intentional fan-out from one observation to several streams is a separately
+specified mapping rule, not accidental cross-instance sharing.
+
+```
+
+### Engineering, simulation and verification
 
 ```{uc} Exercise SI-01 through the Engineering Client
 :id: UC-009
@@ -352,111 +486,6 @@ upstream/reference-data simulation is deferred to a later increment.
 
 ```
 
-```{uc} Synchronise reference data from backoffice
-:id: UC-010
-
-**Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
-
-**Primary actor:** backoffice.
-
-**Main flow:**
-
-1. Source-aware inbound backoffice communication receives a reference-data update.
-2. The transport adapter translates private/wire representation into public semantic data.
-3. SI-01 validates and applies the update.
-4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) for the addressed TimingNode, without silently updating another target.
-5. SI-01 makes accepted/rejected update outcomes and current reference state observable through the public semantics required by the slice.
-6. Backup/restore state is updated according to later persistence policy; status exposes freshness/health where required.
-
-**Alternative/failure flows:** unknown target, invalid or conflicting reference
-update, or unavailable upstream transport. Message submission alone must not
-be presented as proof that the target's reference state changed.
-
-```
-```{uc} Synchronise TimingNodeId-scoped data to backoffice
-:id: UC-011
-
-**Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
-
-**Primary actors:** SI-01 and backoffice.
-
-**Main flow:**
-
-1. A committed TimingData record contains the source `TimingNodeId`, the `LocationId` active when that record was accepted, and its source sequence identity.
-2. A corresponding outbound item becomes pending in the outbox/synchronisation state when that capability is implemented.
-3. `UpstreamProtocol` represents the semantic message and `UpstreamGateway` carries it through the configured connector.
-4. A production connector such as RabbitMQ may later map that semantic message to its transport.
-5. Successful acknowledgement/reconciliation advances pending state according to the final protocol.
-6. Source ordering and gap detection remain possible at higher levels.
-
-**First-registration slice:** D03 defines the identity and outbound semantic
-representation needed for committed registration TimingData. The exact
-`TimingNodeId`/`LocationId` wire types and validation belong to the
-TimingData/IDD contract. Real RabbitMQ delivery, durable outbox/restart,
-acknowledgement/reconciliation and inbound reference-data simulation are later
-increments.
-
-```
-
-```{uc} Continue local operation during backoffice outage
-:id: UC-012
-
-**Goal:** preserve required local timing functionality and traceability while external connectivity is unavailable.
-
-**Primary actor:** operator / SI-01.
-
-**Main flow:**
-
-1. SI-01 detects loss of internet/broker/backoffice connectivity and exposes the appropriate status layer.
-2. Local device operation, registration and calculations continue where required local configuration/reference data is available.
-3. New committed source records remain locally durable.
-4. Outbound items remain pending.
-5. After transport recovery, synchronisation resumes without inventing/reusing committed sequence numbers.
-
-```
-```{uc} Restart and restore local state
-:id: UC-013
-
-**Goal:** recover a coherent timing application after restart/power interruption.
-
-**Primary actor:** platform/operator.
-
-**Main flow:**
-
-1. SI-01 starts and loads configuration.
-2. Source-specific registration files and sequence state are restored/validated.
-3. Ready-team/reference/other recoverable state is restored according to the design.
-4. The runtime reconstructs configured TimingNodes and configured hardware/data-source adapters.
-5. Status reports restore health/errors before normal operation is presented as healthy.
-6. Backoffice/outbox recovery resumes independently from local startup.
-
-```
-```{uc} Run multiple TimingNodes in one process
-:id: UC-014
-
-**Goal:** host multiple independently addressed TimingNodes
-while preserving independent lifecycle, state and
-`TimingNodeId`-scoped streams.
-
-**Primary actor:** configuration/test/operator tooling.
-
-**Main flow:**
-
-1. Settings describe several independently addressed `TimingNode` objects and their location/timing node identity mappings.
-2. Each instance receives its own logical serialized state boundary.
-3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
-4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
-5. Public interfaces can address each instance explicitly.
-6. An engineering query, change or synthetic upstream input for one TimingNode
-   identifies its target and does not accidentally change another node's state.
-
-**Observable result:** two synthetic TimingNodes have separately inspectable
-lifecycle, reference/next-up state and independently ordered TimingData. Any
-intentional fan-out from one observation to several streams is a separately
-specified mapping rule, not accidental cross-instance sharing.
-
-```
-
 ```{uc} Simulate a complete field toward backoffice
 :id: UC-015
 
@@ -473,6 +502,7 @@ specified mapping rule, not accidental cross-instance sharing.
 5. Tests validate isolation, ordering, recovery and status across the simulated field.
 
 ```
+
 ```{uc} Replace real devices with controllable stubs
 :id: UC-016
 
@@ -488,6 +518,7 @@ specified mapping rule, not accidental cross-instance sharing.
 4. Tests observe behaviour only through supported state/interfaces/evidence points.
 
 ```
+
 ```{uc} Use an alternative backoffice transport for loop testing
 :id: UC-017
 
@@ -507,6 +538,7 @@ specified mapping rule, not accidental cross-instance sharing.
 This use case is intentionally protocol-neutral and does not reproduce private production RabbitMQ message schemas.
 
 ```
+
 ```{uc} Verify production-shaped messaging through RabbitMQ
 :id: UC-018
 
@@ -526,6 +558,7 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 Production names, source IDs, schemas and credentials remain outside the public fixture.
 
 ```
+
 ```{uc} Process a test RFID tag
 :id: UC-019
 
@@ -560,6 +593,7 @@ Production names, source IDs, schemas and credentials remain outside the public 
 This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
 
 ```
+
 ## Step-4 operational review: first registration slice
 
 This review deliberately narrows Step 4 to the smallest useful vertical slice.
@@ -598,7 +632,7 @@ isolation are intentionally outside this first slice.
 The accepted first-executable IF-03 version/status/WebSocket semantics remain
 the Step-3 baseline. D03 extends them only as required by this smaller slice.
 
-## Cross-cutting alternative/failure scenarios## Cross-cutting alternative/failure scenarios
+## Cross-cutting alternative/failure scenarios
 
 The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:
 
