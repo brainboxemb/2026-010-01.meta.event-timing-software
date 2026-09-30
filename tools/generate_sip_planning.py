@@ -843,12 +843,7 @@ def step_board_view(board: dict, step: Step) -> dict:
         "platform": "muted",
     }
 
-    sections = [
-        {
-            "heading": "GOAL",
-            "bullets": [step.goal],
-        },
-    ]
+    sections = []
     if step.demo_bullets:
         sections.append(
             {
@@ -886,9 +881,8 @@ def step_board_view(board: dict, step: Step) -> dict:
         "board": {
             "title": f"SIP Step {step.number} — {step.title}",
             "meta": [
-                step.status.upper(),
-                step_schedule_text(step),
-                step_effort_text(step),
+                f"{step.status.upper()} · {step_effort_text(step)} · {step_schedule_text(step)}",
+                step.goal,
             ],
             "sections": sections,
             "groups": groups,
