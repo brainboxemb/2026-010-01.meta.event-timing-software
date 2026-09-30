@@ -534,6 +534,7 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 | IF-11 concern | SI-01 SSD requirement / architecture |
 | --- | --- |
 | external effective configuration | SI01-REQ-001 |
+| built-in application-profile defaults + explicit deployment overrides | SI01-REQ-001 / configuration-composition architecture |
 | configured TimingSystem/TimingNode composition | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
 | deployment/composition separation | SI-01 SSD configuration/composition architecture |
