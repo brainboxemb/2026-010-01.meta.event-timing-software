@@ -81,31 +81,37 @@ nodes:
     label: "Committed-record queue\nTimingDataRecord facts only"
     kind: service
     group: consumers
-    layout: {x: 1165, y: 215, w: 360, h: 82}
+    layout: {x: 1165, y: 155, w: 360, h: 78}
 
-  - id: projection
-    label: "Projection / ReadModel updater\neffective business state"
+  - id: committed-dispatcher
+    label: "CommittedRecordDispatcher\nordered single-consumer fan-out"
     kind: application
     group: consumers
-    layout: {x: 1165, y: 345, w: 360, h: 88}
+    layout: {x: 1165, y: 270, w: 360, h: 82}
+
+  - id: projection
+    label: "Projection / LogBook updater\neffective business state"
+    kind: application
+    group: consumers
+    layout: {x: 1165, y: 390, w: 360, h: 82}
 
   - id: read-model
     label: "Queryable read model / snapshots\nregistrations • ranking inputs • status"
     kind: model
     group: consumers
-    layout: {x: 1165, y: 485, w: 360, h: 90}
+    layout: {x: 1165, y: 505, w: 360, h: 86}
 
   - id: signalling
-    label: "Event / client signalling\nfrom committed facts"
+    label: "Event / client signalling\nindependent delivery path"
     kind: presentation
     group: consumers
-    layout: {x: 1165, y: 625, w: 360, h: 82}
+    layout: {x: 1165, y: 625, w: 360, h: 76}
 
   - id: downstream
     label: "Upstream / export / outbox\nindependent downstream delivery"
     kind: integration
     group: consumers
-    layout: {x: 1165, y: 745, w: 360, h: 82}
+    layout: {x: 1165, y: 745, w: 360, h: 76}
 
 edges:
   - {from: tag-processor, to: intent}
@@ -123,7 +129,8 @@ edges:
     from_anchor: {side: right, position: 0.45}
     to_anchor: {side: left, position: 0.50}
 
-  - {from: committed-queue, to: projection}
+  - {from: committed-queue, to: committed-dispatcher}
+  - {from: committed-dispatcher, to: projection}
   - {from: projection, to: read-model}
-  - {from: committed-queue, to: signalling}
-  - {from: committed-queue, to: downstream}
+  - {from: committed-dispatcher, to: signalling}
+  - {from: committed-dispatcher, to: downstream}
