@@ -88,6 +88,15 @@ It does **not** own:
 
 Those are software-item design concerns.
 
+<a id="fig-if05-01"></a>
+![TimingData v1 interchange model](../../../raw/prod/docs/assets/architecture/timingdata-interchange-model.svg)
+
+*Figure IF05-01 — Canonical TimingData envelope, first record families, identity and representation/provider boundaries.*
+
+The figure deliberately stops at the IF-05 contract boundary. It does not show
+which SI-01 component produced a record or which thread persists it; those
+relationships belong in SI-01 detailed design.
+
 ## TimingData v1 common record envelope
 
 Every committed TimingData v1 record has the following semantic envelope:
