@@ -249,23 +249,15 @@ tests and make its public results inspectable through the existing Engineering C
 
 ### Result
 
-- Core TimingNode state exists in software.
-- TimingData and initial upstream semantic boundaries are explicit.
-- State changes are deterministic and testable.
-- Domain behaviour has no production-hardware or transport dependency.
-- The existing Engineering Client can inspect the Step-4 state through public interfaces.
-- The Engineering Client can emulate the upstream peer over DebugConnector so
-  UpstreamProtocol semantics can be exercised without RabbitMQ/backend infrastructure.
+- Core TimingNode state and TimingData semantics exist and are deterministic/testable.
+- IF-03 and initial UpstreamProtocol boundaries expose the Step-4 behaviour without production hardware, RabbitMQ or backend infrastructure.
+- The Engineering Client can inspect TimingNode state and emulate the upstream peer through DebugConnector.
 
 ### Demo
 
-- Start SI-01 with a synthetic multi-TimingNode composition.
-- Use the JavaFX Engineering Client to inspect TimingNode state.
-- Apply/update starts, teams and reference data through supported Step-4 paths.
-- Show TimingData/registration history and state changes.
-- Show that multiple TimingNodes retain independent state/sequence histories.
-- Use the Engineering Client upstream simulator to exchange representative
-  UpstreamProtocol messages through DebugConnector.
+- Start SI-01 with a synthetic multi-TimingNode composition and inspect its state through the JavaFX Engineering Client.
+- Apply starts/teams/reference changes and show independent TimingData/registration histories for multiple TimingNodes.
+- Exchange representative UpstreamProtocol messages between DebugConnector and the Engineering Client upstream simulator.
 
 ### Done
 
