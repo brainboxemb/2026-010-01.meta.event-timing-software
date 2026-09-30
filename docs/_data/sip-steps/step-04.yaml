@@ -25,26 +25,30 @@ activities:
   - id: D02
     lane: documentation
     kind: documentation
-    title: Review Step-4 and client-facing use cases
+    title: Review use cases + existing web-app contract
     state: planned
     depends_on: [D01]
     note: >-
       Review UC-001, UC-002, UC-003, UC-005, UC-008, UC-010, UC-011 and UC-014
-      from operational intent. Determine what Step-4 state/actions must be visible
-      through IF-03 and the Engineering Client. UC-009 stays optional; no lightweight
-      browser client is introduced in Step 4.
+      from operational intent. Also inspect the existing web application's status,
+      snapshot/event, identifier and timing-data expectations as compatibility input.
+      Determine what Step-4 state/actions must be visible through IF-03 and the
+      Engineering Client. UC-009 stays optional; no new lightweight browser client
+      is introduced in Step 4.
 
   - id: D03
     lane: documentation
     kind: decision
-    title: Establish TimingData + UpstreamProtocol contracts
+    title: Establish TimingData + public protocol contracts
     state: planned
     depends_on: [D02]
     note: >-
-      Create the first focused TimingData/domain interchange design and IF-06
-      Backend Integration / UpstreamProtocol documents. Promote only the semantics
-      justified by reviewed use cases, then reconcile the existing architecture and
-      terminology against those contracts.
+      Create the first focused TimingData/domain interchange design, define the
+      Step-4 IF-03 client-facing representation needed by Engineering Client/web
+      compatibility, and establish IF-06 Backend Integration / UpstreamProtocol.
+      Keep client/API and backend/upstream protocols distinct while mapping both to
+      shared TimingData semantics where appropriate. Reconcile architecture and
+      terminology against the resulting contracts.
 
   - id: V01
     lane: verification
