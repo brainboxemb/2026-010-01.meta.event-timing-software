@@ -25,7 +25,6 @@ tasks:
       - 'docs/11-SIP-software-implementation-planning.md'
       - 'docs/_data/**'
       - 'tools/generate_sip_planning.py'
-      - 'tools/generate_sip_step_pdfs.py'
       - 'tools/generate_sip_manager_roadmap.py'
       - 'tools/run_docs_task.py'
       - 'tools/requirements-docs.txt'

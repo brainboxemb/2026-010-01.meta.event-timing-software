@@ -417,14 +417,16 @@ def step_board_view(board: dict, step: Step) -> dict:
         "platform": "muted",
     }
 
-    sections = []
-    if step.demo_bullets:
-        sections.append(
-            {
-                "heading": "END DEMO",
-                "bullets": list(step.demo_bullets),
-            }
-        )
+    sections = [
+        {
+            "heading": "RESULT",
+            "bullets": list(step.result_bullets),
+        },
+        {
+            "heading": "END DEMO",
+            "bullets": list(step.demo_bullets),
+        },
+    ]
 
     groups = []
     for lane, activities in activities_by_lane(board):
@@ -462,6 +464,7 @@ def step_board_view(board: dict, step: Step) -> dict:
                 "heading": "GOAL",
                 "text": step.goal,
             },
+            "section_columns": 2,
             "sections": sections,
             "groups": groups,
         }
