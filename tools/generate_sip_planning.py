@@ -384,12 +384,15 @@ def activities_by_lane(board: dict) -> List[Tuple[str, List[dict]]]:
 
 
 def step_card_meta(activity: dict) -> str:
+    if activity.get("state") == "done":
+        return ""
+
     parts: List[str] = []
     if activity.get("estimate_project_days"):
         parts.append(f"~{activity['estimate_project_days']}d")
     if activity.get("depends_on"):
         parts.append("after " + ",".join(activity["depends_on"]))
-    if activity.get("note") and activity.get("state") != "done":
+    if activity.get("note"):
         parts.append(concise(activity["note"], 30))
     return " | ".join(parts)
 
