@@ -605,7 +605,7 @@ current presentation adapters.
 ## LogBook recording and TimingData persistence
 
 The existing architecture remains authoritative: one `TimingNode` contains one
-`LogBook`, and that `LogBook` owns the node's operational traceable state as
+`LogBook`, and that LogBook owns the node's operational traceable state as
 0..N `LogBookItem` values.
 
 IF-05 `TimingData` is the persistent/interchange representation used to store
@@ -613,52 +613,49 @@ and exchange those committed facts. Do not introduce a second domain component
 called `TimingDataJournal` or a separate `TimingDataProjection` beside the
 LogBook.
 
-The first Java implementation therefore separates asynchronous ingress from the
-synchronous commit algorithm while keeping LogBook ownership explicit:
+The first Java implementation keeps the asynchronous record path **inside the
+owning TimingNode**. Separate public/application components named
+`LogBookRecorder` and `LogBookCommitter` are not required:
 
 ```text
-domain/application producer
-  TagProcessor / manual registration / lifecycle / later timing producers
-        |
-        | LogBookEntryCandidate
-        v
-application.logbook.LogBookRecorder
-  ArrayBlockingQueue<LogBookEntryCandidate>
-  one worker thread
-        |
-        v
-application.logbook.LogBookCommitter
-  synchronous + unit-testable
-        |
-        +-- create LogBookItem
-        +-- TimingData.toRecord(LogBookItem)
-        +-- TimingDataStore.append(TimingDataRecord)   durable IF-05 storage
-        +-- LogBook.commit(LogBookItem)                operational domain state
-        +-- CommittedTimingDataSink(s)                 non-blocking hand-off
+TimingNode
+  +-- LogBook
+  +-- ArrayBlockingQueue<LogBookEntryCandidate>
+  +-- record worker thread
+  +-- submit(candidate)
+  +-- commitCandidate(candidate)
+  |
+  +-- uses TimingDataStore
+          |
+          +-- FileTimingDataStore
+              file persistence / recovery
 ```
 
-The names remain implementation candidates until the first Step-4 Java work is
-opened, but the responsibility split is intentional.
+The TimingNode is therefore the visible owner of record ordering, queueing and
+commit sequencing. Small private methods or package-private helpers may still be
+introduced later when they improve the Java implementation, but they do not
+become additional architecture concepts merely to split this flow.
 
 ### First-slice Java responsibilities
 
 | Type | Responsibility | Thread/queue ownership |
 | --- | --- | --- |
+| `TimingNode` | Own lifecycle, LogBook, bounded record ingress and ordered commit processing for one node | one bounded queue + one record worker in the first implementation |
 | `LogBookEntryCandidate` | Immutable internal description of one traceable fact before sequence/recordedAt/commit | none |
-| `LogBookRecorder` | Accept candidates and own the bounded ingress/worker lifecycle | one `ArrayBlockingQueue` + one worker |
-| `LogBookCommitter` | Perform the ordered durable commit algorithm for one TimingNode | called by record worker; no thread of its own |
-| `LogBook` | Domain owner of committed operational `LogBookItem` state/history for one TimingNode | single-writer commit path |
-| `TimingDataStore` | Application-facing storage port for encoded/decoded IF-05 committed records | none |
-| `FileTimingDataStore` | Canonical append-only IF-05 file implementation | blocking file I/O on LogBook worker |
+| `LogBook` | Domain owner of committed operational `LogBookItem` state/history for one TimingNode | single-writer mutation from the TimingNode record path |
+| `TimingDataStore` | Storage boundary for committed IF-05 append/read/recovery | none |
+| `FileTimingDataStore` | Concrete file handling: append, durable flush, startup scan, incomplete-tail repair and record loading | blocking file I/O on the TimingNode record worker |
 | `CommittedTimingDataSink` | Non-blocking hand-off contract for committed IF-05 facts that need signalling/upstream delivery | concrete slow sinks own their own async boundary |
-| query/ranking services | Read LogBook/domain state and reference data; perform expensive work outside the recorder worker | introduced with their real use cases |
+| query/ranking services | Read LogBook/domain state and reference data; perform expensive work outside the TimingNode record worker | introduced with their real use cases |
 
 `TimingDataStore` is an I/O/storage boundary. It does not become a Domain
-aggregate and does not replace the LogBook.
+aggregate and does not replace the LogBook. The diagrams label it **file
+persistence / recovery** to make its role clear; the concrete
+`FileTimingDataStore` contains the actual filesystem handling.
 
 ### Why ArrayBlockingQueue
 
-The ingress boundary should use a bounded
+The TimingNode ingress boundary should use a bounded
 `ArrayBlockingQueue<LogBookEntryCandidate>` rather than a linked/unbounded
 queue or the default queue hidden inside
 `Executors.newSingleThreadExecutor()`.
@@ -676,64 +673,60 @@ arrive in a burst and how long a worst-case file write takes on the Raspberry Pi
 A full queue must be visible to the application/status; never silently drop a
 candidate.
 
-For the first single-TimingNode application a dedicated worker loop is clearer
-than wrapping the queue in a generic executor:
+For the first single-TimingNode application a dedicated worker loop owned by the
+TimingNode is clearer than wrapping the queue in a generic executor:
 
 ```java
-final class LogBookRecorder implements AutoCloseable {
-    private final BlockingQueue<LogBookEntryCandidate> queue;
-    private final LogBookCommitter committer;
-    private final Thread worker;
+final class TimingNode implements AutoCloseable {
+    private final BlockingQueue<LogBookEntryCandidate> logBookQueue;
+    private final TimingDataStore timingDataStore;
+    private final LogBook logBook;
+    private final Thread recordWorker;
 
     boolean submit(LogBookEntryCandidate candidate) {
-        return queue.offer(candidate);
+        return logBookQueue.offer(candidate);
     }
 
-    private void run() {
+    private void runRecordWorker() {
         while (running) {
-            LogBookEntryCandidate candidate = queue.take();
-            committer.commit(candidate);
+            LogBookEntryCandidate candidate = logBookQueue.take();
+            commitCandidate(candidate);
         }
+    }
+
+    private CommittedLogBookItem commitCandidate(
+            LogBookEntryCandidate candidate) {
+        long sequence = sequenceState.peekNext();
+        TimingTimestamp recordedAt = timeSource.now();
+
+        LogBookItem item =
+            logBookItemFactory.create(candidate, sequence, recordedAt);
+        TimingDataRecord record = timingData.toRecord(item);
+
+        timingDataStore.append(record);
+        sequenceState.commit(sequence);
+        logBook.commit(item);
+        committedSinks.publish(record);
+
+        return new CommittedLogBookItem(item, record);
     }
 }
 ```
 
 The real class still needs clear shutdown/interruption/error handling. The sketch
-only shows which object owns the queue and worker thread.
-
-### Synchronous commit core
-
-`LogBookCommitter` contains the ordered algorithm and has no executor or
-sleep/wait logic:
-
-```java
-CommittedLogBookItem commit(LogBookEntryCandidate candidate) {
-    long sequence = sequenceState.peekNext();
-    TimingTimestamp recordedAt = timeSource.now();
-
-    LogBookItem item =
-        logBookItemFactory.create(candidate, sequence, recordedAt);
-
-    TimingDataRecord record = timingData.toRecord(item);
-
-    timingDataStore.append(record);  // returns only after durable IF-05 commit
-    sequenceState.commit(sequence);  // sequence is now consumed
-    logBook.commit(item);            // operational domain state becomes visible
-    committedSinks.publish(record);  // non-blocking hand-off only
-
-    return new CommittedLogBookItem(item, record);
-}
-```
+only fixes ownership: the queue, worker and ordered commit flow belong to the
+TimingNode.
 
 If `timingDataStore.append(record)` fails, do not advance the sequence and do
 not update the LogBook. The next candidate also has to wait. On restart/retry,
 first repair the file back to its last complete record, rebuild the LogBook, then
 continue with the same next sequence.
 
-This synchronous core is directly unit-testable with an in-memory
-`TimingDataStore`, fake `TimeSource`, deterministic sequence state, a real
-small `LogBook` and fake committed sinks. Unit tests therefore do not need
-worker threads or sleeps to verify commit semantics.
+The commit method can be tested with an in-memory `TimingDataStore`, fake
+`TimeSource`, deterministic sequence state, a small real `LogBook` and fake
+committed sinks. Tests do not need to make `LogBookRecorder` or
+`LogBookCommitter` production types. If testing later benefits from extracting
+a small helper, that remains an implementation refactor.
 
 ### LogBook reads and long-running queries
 
@@ -760,7 +753,7 @@ Do not clone the complete LogBook for every query, and do not use
 ### External committed-data output
 
 External signalling, WebSocket publication or upstream delivery may block/retry
-independently. Such work does not execute on the LogBook recorder thread.
+independently. Such work does not execute on the TimingNode record worker.
 
 ```java
 interface CommittedTimingDataSink {
@@ -783,9 +776,9 @@ For the first one-node application:
 ```text
 1 TimingNode
   -> 1 LogBook
-  -> 1 LogBookRecorder
-  -> 1 bounded queue
-  -> 1 worker
+  -> 1 bounded LogBook queue
+  -> 1 record worker
+  -> 1 TimingDataStore dependency
 ```
 
 If a later multi-node application shows that one worker per node is too
@@ -797,13 +790,13 @@ the multi-node consumer exists.
 
 For the initial Pi-oriented runtime:
 
-- keep the LogBook ingress queue bounded;
+- keep each TimingNode LogBook ingress queue bounded;
 - prefer `ArrayBlockingQueue` over linked/unbounded work queues;
 - do not allocate a `CompletableFuture`/task wrapper per logbook event unless a
   real asynchronous result consumer requires it;
 - do not deep-copy complete LogBook state for routine queries;
 - do not use `CopyOnWriteArrayList` for registration/event history;
-- keep long-lived worker-thread count explicit in composition/status;
+- keep long-lived record-worker count explicit in composition/status;
 - keep LogBook mutation single-writer where practical;
 - move blocking network/retry work behind capability-specific output boundaries;
 - measure queue high-water, durable-store latency, heap/GC behaviour and query

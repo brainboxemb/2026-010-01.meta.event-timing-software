@@ -1,10 +1,10 @@
 diagram:
   id: timingdata-async-ownership
-  title: Figure SDD01-TD02 — LogBook asynchronous ownership and query isolation
+  title: Figure SDD01-TD02 — TimingNode asynchronous ownership and query isolation
   width: 1680
   height: 860
-  description: One bounded ingress queue isolates producers from durable LogBook commit; queries and external delivery run outside the record worker.
-  note: Exact queue capacity and output-worker counts remain verification/deployment choices.
+  description: The TimingNode owns one bounded record queue and worker; queries and external delivery run outside that worker.
+  note: Exact queue capacity and later worker-sharing choices remain verification/deployment decisions.
 
 groups:
   - id: producer-context
@@ -12,8 +12,8 @@ groups:
     kind: layer-domain
     layout: {x: 45, y: 105, w: 330, h: 620}
 
-  - id: record-context
-    label: LogBook record execution
+  - id: timingnode-context
+    label: TimingNode execution
     kind: layer-application
     layout: {x: 415, y: 105, w: 600, h: 620}
 
@@ -29,49 +29,37 @@ groups:
 
 nodes:
   - id: producer
-    label: "Producer task\nTagProcessor • manual • lifecycle • later producers"
+    label: "Producer task\nTagProcessor • command • lifecycle • later producers"
     kind: model
     group: producer-context
-    layout: {x: 80, y: 210, w: 260, h: 100}
+    layout: {x: 80, y: 240, w: 260, h: 100}
 
-  - id: candidate
-    label: "LogBookEntryCandidate\nreturns after bounded enqueue"
+  - id: timing-node
+    label: "TimingNode\nowns record ordering + worker"
     kind: model
-    group: producer-context
-    layout: {x: 80, y: 405, w: 260, h: 82}
+    group: timingnode-context
+    layout: {x: 455, y: 180, w: 260, h: 90}
 
   - id: queue
-    label: "Q1 — bounded ingress\nArrayBlockingQueue"
+    label: "Internal bounded queue\nArrayBlockingQueue"
     kind: service
-    group: record-context
-    layout: {x: 455, y: 170, w: 260, h: 78}
-
-  - id: recorder
-    label: "LogBookRecorder\nworker"
-    kind: application
-    group: record-context
-    layout: {x: 455, y: 315, w: 260, h: 78}
-
-  - id: committer
-    label: "LogBookCommitter\nordered synchronous core"
-    kind: application
-    group: record-context
-    layout: {x: 455, y: 465, w: 260, h: 82}
+    group: timingnode-context
+    layout: {x: 455, y: 360, w: 260, h: 78}
 
   - id: store
-    label: "TimingDataStore\ndurable IF-05 append"
+    label: "TimingDataStore\nfile persistence / recovery"
     kind: storage
-    group: record-context
-    layout: {x: 760, y: 325, w: 210, h: 78}
+    group: timingnode-context
+    layout: {x: 760, y: 250, w: 210, h: 90}
 
   - id: logbook
     label: "LogBook\nsingle-writer state"
     kind: model
-    group: record-context
-    layout: {x: 760, y: 490, w: 210, h: 78}
+    group: timingnode-context
+    layout: {x: 760, y: 465, w: 210, h: 78}
 
   - id: query
-    label: "Query/ranking worker\nshort read capture\nlong calculation elsewhere"
+    label: "Query/ranking task\nshort read capture\nlong calculation elsewhere"
     kind: service
     group: query-context
     layout: {x: 1090, y: 315, w: 200, h: 105}
@@ -89,12 +77,19 @@ nodes:
     layout: {x: 1400, y: 430, w: 200, h: 90}
 
 edges:
-  - {from: producer, to: candidate}
-  - {from: candidate, to: queue, label: "async enqueue"}
-  - {from: queue, to: recorder}
-  - {from: recorder, to: committer}
-  - {from: committer, to: store, label: "durable append"}
-  - {from: committer, to: logbook, label: "commit item"}
+  - {from: producer, to: timing-node, label: "submit candidate"}
+  - from: timing-node
+    to: queue
+    label: "async enqueue"
+    from_anchor: {side: bottom, position: 0.35}
+    to_anchor: {side: top, position: 0.35}
+  - from: queue
+    to: timing-node
+    label: "next candidate"
+    from_anchor: {side: top, position: 0.70}
+    to_anchor: {side: bottom, position: 0.70}
+  - {from: timing-node, to: store, label: "durable append"}
+  - {from: timing-node, to: logbook, label: "commit item"}
   - {from: logbook, to: query, label: "short read"}
-  - {from: committer, to: sink, label: "non-blocking offer"}
+  - {from: timing-node, to: sink, label: "non-blocking offer"}
   - {from: sink, to: output-worker}

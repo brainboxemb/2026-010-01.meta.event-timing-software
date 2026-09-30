@@ -1,25 +1,24 @@
 diagram:
   id: timingdata-sequence-generic-producer
   type: sequence
-  title: Figure SDD01-TD06 — Generic LogBook producer
-  width: 1380
-  height: 900
-  description: Later traceable domain producers asynchronously enqueue candidates and reuse the same recorder and durable commit path.
+  title: Figure SDD01-TD06 — Generic TimingNode producer
+  width: 1320
+  height: 840
+  description: Later traceable domain producers submit candidates to the same TimingNode-owned queue and durable commit path.
   note: Exact start, penalty and correction record families remain deferred.
 
 participants:
   - {id: producer, label: Domain producer, kind: model}
-  - {id: queue, label: LogBook queue, kind: service}
-  - {id: recorder, label: LogBookRecorder, kind: application}
-  - {id: committer, label: LogBookCommitter, kind: application}
-  - {id: store, label: TimingDataStore, kind: storage}
+  - {id: node, label: TimingNode, kind: model}
+  - {id: queue, label: "Internal LogBook queue", kind: service}
+  - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
   - {id: logbook, label: LogBook, kind: model}
 
 messages:
-  - {from: producer, to: queue, label: enqueue LogBookEntryCandidate, kind: async}
-  - {from: recorder, to: queue, label: take next candidate, kind: call}
-  - {from: queue, to: recorder, label: candidate, kind: return}
-  - {from: recorder, to: committer, label: commit candidate, kind: call}
-  - {from: committer, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: committer, label: durable, kind: return}
-  - {from: committer, to: logbook, label: commit LogBookItem, kind: call}
+  - {from: producer, to: node, label: submit candidate, kind: call}
+  - {from: node, to: queue, label: enqueue candidate, kind: async}
+  - {from: node, to: producer, label: accepted, kind: return}
+  - {from: queue, to: node, label: next candidate, kind: async}
+  - {from: node, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: commit LogBookItem, kind: call}

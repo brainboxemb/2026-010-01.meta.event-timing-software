@@ -1,10 +1,10 @@
 diagram:
   id: timingdata-producer-pipeline
-  title: Figure SDD01-TD01 — LogBook producers and durable TimingData commit path
+  title: Figure SDD01-TD01 — TimingNode-owned LogBook commit path
   width: 1640
   height: 980
-  description: Multiple domain producers converge on one bounded LogBook recording path; IF-05 TimingData is the durable/interchange representation.
-  note: Start-procedure and penalty/correction producers are shown as later record families.
+  description: Multiple domain producers hand traceable facts to the owning TimingNode, which queues and commits them in order.
+  note: TimingDataStore owns the file persistence/recovery boundary; LogBook remains the operational Domain state.
 
 groups:
   - id: producers
@@ -12,8 +12,8 @@ groups:
     kind: layer-domain
     layout: {x: 55, y: 105, w: 390, h: 760}
 
-  - id: commit
-    label: Ordered LogBook commit
+  - id: timingnode
+    label: TimingNode-owned record flow
     kind: layer-application
     layout: {x: 485, y: 105, w: 650, h: 760}
 
@@ -47,41 +47,29 @@ nodes:
     group: producers
     layout: {x: 95, y: 555, w: 310, h: 90}
 
-  - id: candidate
-    label: "LogBookEntryCandidate\nnode/location context captured\nNO sequence • NOT committed"
+  - id: timing-node
+    label: "TimingNode\nordered record processing"
     kind: model
-    group: commit
-    layout: {x: 545, y: 165, w: 520, h: 100}
+    group: timingnode
+    layout: {x: 600, y: 190, w: 420, h: 100}
 
   - id: queue
-    label: "Bounded LogBook ingress queue\nArrayBlockingQueue candidate"
+    label: "Internal bounded LogBook queue\nArrayBlockingQueue"
     kind: service
-    group: commit
-    layout: {x: 625, y: 315, w: 360, h: 82}
-
-  - id: recorder
-    label: "LogBookRecorder\nworker / FIFO ownership"
-    kind: application
-    group: commit
-    layout: {x: 625, y: 445, w: 360, h: 82}
-
-  - id: committer
-    label: "LogBookCommitter\nsequence • recordedAt • item/record mapping"
-    kind: application
-    group: commit
-    layout: {x: 605, y: 575, w: 400, h: 95}
+    group: timingnode
+    layout: {x: 630, y: 380, w: 360, h: 82}
 
   - id: timingdata-store
-    label: "TimingDataStore\nappend-only IF-05 durable file"
+    label: "TimingDataStore\nfile persistence / recovery"
     kind: storage
-    group: commit
-    layout: {x: 535, y: 735, w: 300, h: 82}
+    group: timingnode
+    layout: {x: 535, y: 650, w: 300, h: 90}
 
   - id: logbook
     label: "LogBook\n0..N committed LogBookItem"
     kind: model
-    group: commit
-    layout: {x: 865, y: 735, w: 220, h: 82}
+    group: timingnode
+    layout: {x: 865, y: 650, w: 220, h: 90}
 
   - id: query
     label: "StageTiming / query services\nshort LogBook read capture"
@@ -102,16 +90,24 @@ nodes:
     layout: {x: 1225, y: 650, w: 310, h: 90}
 
 edges:
-  - {from: tag-processor, to: candidate}
-  - {from: manual-registration, to: candidate}
-  - {from: lifecycle, to: candidate}
-  - {from: later-producers, to: candidate, dashed: true, label: "later"}
+  - {from: tag-processor, to: timing-node, label: "candidate"}
+  - {from: manual-registration, to: timing-node, label: "candidate"}
+  - {from: lifecycle, to: timing-node, label: "candidate"}
+  - {from: later-producers, to: timing-node, dashed: true, label: "candidate later"}
 
-  - {from: candidate, to: queue}
-  - {from: queue, to: recorder}
-  - {from: recorder, to: committer}
-  - {from: committer, to: timingdata-store, label: "durable append"}
-  - {from: committer, to: logbook, label: "commit after persistence"}
+  - from: timing-node
+    to: queue
+    label: "async enqueue"
+    from_anchor: {side: bottom, position: 0.35}
+    to_anchor: {side: top, position: 0.35}
+  - from: queue
+    to: timing-node
+    label: "next candidate"
+    from_anchor: {side: top, position: 0.70}
+    to_anchor: {side: bottom, position: 0.70}
+
+  - {from: timing-node, to: timingdata-store, label: "durable append"}
+  - {from: timing-node, to: logbook, label: "commit after persistence"}
   - {from: logbook, to: query, label: "read"}
-  - {from: committer, to: sink, label: "committed record"}
+  - {from: timing-node, to: sink, label: "committed record"}
   - {from: sink, to: downstream, label: "async delivery"}

@@ -2,30 +2,26 @@ diagram:
   id: timingdata-sequence-manual-registration
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
-  width: 1780
-  height: 1120
-  description: Manual operator input is resolved inside SI-01, acknowledged after async enqueue, and later handled by the common LogBook recorder.
-  note: The client does not wait for durable file I/O; accepted means the candidate entered the bounded processing path.
+  width: 1540
+  height: 980
+  description: IF-03 passes operator input to the TimingNode, which resolves it, queues a candidate and later performs the durable commit.
+  note: Accepted means queued for ordered processing; the client does not wait for file I/O.
 
 participants:
   - {id: client, label: Operator / client, kind: client}
   - {id: api, label: IF-03 / CommandHandler, kind: interface}
-  - {id: manual, label: Manual registration, kind: application}
-  - {id: queue, label: LogBook queue, kind: service}
-  - {id: recorder, label: LogBookRecorder, kind: application}
-  - {id: committer, label: LogBookCommitter, kind: application}
-  - {id: store, label: TimingDataStore, kind: storage}
+  - {id: node, label: TimingNode, kind: model}
+  - {id: queue, label: "Internal LogBook queue", kind: service}
+  - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
   - {id: logbook, label: LogBook, kind: model}
 
 messages:
   - {from: client, to: api, label: TeamIdentity + time, kind: call}
-  - {from: api, to: manual, label: validated command, kind: call}
-  - {from: manual, to: queue, label: enqueue LogBookEntryCandidate, kind: async}
-  - {from: manual, to: api, label: accepted, kind: return}
+  - {from: api, to: node, label: register command, kind: call}
+  - {from: node, to: queue, label: enqueue resolved candidate, kind: async}
+  - {from: node, to: api, label: accepted, kind: return}
   - {from: api, to: client, label: accepted, kind: return}
-  - {from: recorder, to: queue, label: take next candidate, kind: call}
-  - {from: queue, to: recorder, label: candidate, kind: return}
-  - {from: recorder, to: committer, label: commit candidate, kind: call}
-  - {from: committer, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: committer, label: durable, kind: return}
-  - {from: committer, to: logbook, label: commit LogBookItem, kind: call}
+  - {from: queue, to: node, label: next candidate, kind: async}
+  - {from: node, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: commit LogBookItem, kind: call}

@@ -2,26 +2,25 @@ diagram:
   id: timingdata-sequence-auto-registration
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
-  width: 1620
-  height: 960
-  description: High-level interaction from RFID observation through the bounded LogBook queue to durable TimingData and committed LogBook state.
-  note: The producer is free after async enqueue; the recorder later takes the candidate from the queue.
+  width: 1540
+  height: 900
+  description: TagProcessor submits a candidate to the owning TimingNode; the TimingNode queues it and commits it asynchronously.
+  note: TimingDataStore performs file persistence/recovery; the producer is free after enqueue.
 
 participants:
   - {id: antenna, label: RFID adapter, kind: integration}
   - {id: tag, label: TagProcessor, kind: model}
-  - {id: queue, label: LogBook queue, kind: service}
-  - {id: recorder, label: LogBookRecorder, kind: application}
-  - {id: committer, label: LogBookCommitter, kind: application}
-  - {id: store, label: TimingDataStore, kind: storage}
+  - {id: node, label: TimingNode, kind: model}
+  - {id: queue, label: "Internal LogBook queue", kind: service}
+  - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
   - {id: logbook, label: LogBook, kind: model}
 
 messages:
   - {from: antenna, to: tag, label: observation, kind: call}
-  - {from: tag, to: queue, label: enqueue LogBookEntryCandidate, kind: async}
-  - {from: recorder, to: queue, label: take next candidate, kind: call}
-  - {from: queue, to: recorder, label: candidate, kind: return}
-  - {from: recorder, to: committer, label: commit candidate, kind: call}
-  - {from: committer, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: committer, label: durable, kind: return}
-  - {from: committer, to: logbook, label: commit LogBookItem, kind: call}
+  - {from: tag, to: node, label: submit candidate, kind: call}
+  - {from: node, to: queue, label: enqueue candidate, kind: async}
+  - {from: node, to: tag, label: accepted, kind: return}
+  - {from: queue, to: node, label: next candidate, kind: async}
+  - {from: node, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: commit LogBookItem, kind: call}

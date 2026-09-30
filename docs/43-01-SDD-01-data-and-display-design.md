@@ -181,17 +181,27 @@ publish an uncommitted fact or depend on the physical IF-05 representation.
 
 ### Ordered durable commit
 
-The first implementation uses one serial commit lane per TimingNode. The
-`TagProcessor` and other producers only enqueue candidates.
+The first implementation uses one serial record lane per TimingNode. The
+**TimingNode owns that lane**: its bounded queue, its asynchronous record worker
+and the ordered commit step. Producers such as `TagProcessor` submit a
+`LogBookEntryCandidate` to their owning TimingNode and return without waiting
+for file I/O.
 
 Conceptually:
 
 ```java
-void submit(LogBookEntryCandidate candidate) {
-    logBookQueue.add(candidate);
+boolean submit(LogBookEntryCandidate candidate) {
+    return logBookQueue.offer(candidate);
 }
 
-CommittedLogBookItem commitNext(LogBookEntryCandidate candidate) {
+void runRecordWorker() {
+    while (running) {
+        LogBookEntryCandidate candidate = logBookQueue.take();
+        commitCandidate(candidate);
+    }
+}
+
+CommittedLogBookItem commitCandidate(LogBookEntryCandidate candidate) {
     long sequence = sequenceState.peekNext(candidate.timingNodeId());
     TimingTimestamp recordedAt = timeSource.now();
 
@@ -208,6 +218,11 @@ CommittedLogBookItem commitNext(LogBookEntryCandidate candidate) {
     return new CommittedLogBookItem(item, record);
 }
 ```
+
+This does not require separate architectural components called
+`LogBookRecorder` or `LogBookCommitter`. If small private helper methods or
+classes later make the Java code easier to maintain, SDD-02 may introduce them
+as implementation details without changing TimingNode ownership.
 
 `recordedAt` is captured immediately before the definitive record is encoded
 for the append attempt; it is metadata rather than the durability marker.
@@ -227,28 +242,30 @@ TimingDataRecord  persistent/interchange IF-05 representation
 ### Asynchronous execution and query isolation
 
 The first Pi-oriented implementation needs only **one mandatory asynchronous
-queue** in the LogBook commit path:
+queue** in the LogBook commit path, and that queue belongs to the TimingNode:
 
 ```text
-TagProcessor / manual / lifecycle / later producers
+TagProcessor / command / lifecycle / later producer
                     |
-                    | LogBookEntryCandidate
+                    | submit LogBookEntryCandidate
                     v
-        bounded ArrayBlockingQueue
+                TimingNode
                     |
+                    | async enqueue
                     v
-             LogBookRecorder
-             worker thread
+        internal bounded ArrayBlockingQueue
                     |
+                    | next candidate
                     v
-             LogBookCommitter
+        TimingNode record worker
               /           \
              /             \
             v               v
    TimingDataStore       LogBook
-   durable IF-05         Domain state
+   file persistence      Domain state
+   / recovery
             |               |
-            |               +----> short read/capture ----> query/ranking worker
+            |               +----> short read/capture ----> query/ranking task
             |
             +----> CommittedTimingDataSink
                        |
@@ -258,17 +275,17 @@ TagProcessor / manual / lifecycle / later producers
 There is no second queue between durable commit and LogBook state. The LogBook
 update is short and synchronous after the IF-05 append succeeds.
 
-A long-running query does not run on the recorder worker and does not require a
-deep copy of the complete LogBook. It captures only the small immutable
+A long-running query does not run on the TimingNode record worker and does not
+require a deep copy of the complete LogBook. It captures only the small immutable
 references/index/version boundary required by the real query, releases any short
 synchronisation, and performs expensive calculation elsewhere.
 
 Slow network signalling/retry is different: it may block independently and
 therefore sits behind its own capability-specific bounded queue or outbox.
 
-![LogBook asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
+![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — One bounded ingress queue isolates producers from durable commit; queries and external delivery do not occupy the LogBook recorder worker.*
+*Figure SDD01-TD02 — The TimingNode owns one bounded ingress queue and record worker; queries and external delivery execute independently.*
 
 ### Runtime flows
 
@@ -281,28 +298,28 @@ details.
 
 ![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
 
-*Figure SDD01-TD03 — The RFID callback hands work to the bounded LogBook path; durable IF-05 storage happens before the LogBook item becomes visible.*
+*Figure SDD01-TD03 — TagProcessor hands a candidate to its TimingNode, which queues it and later performs the durable commit.*
 
 ```text
-RFID adapter          TagProcessor          LogBookRecorder       LogBookCommitter       TimingDataStore       LogBook
-    |                      |                       |                     |                       |                  |
-    | onObservation(obs)   |                       |                     |                       |                  |
-    |--------------------->|                       |                     |                       |                  |
-    |                      | normalizeTag()        |                     |                       |                  |
-    |                      | resolveIdentity()     |                     |                       |                  |
-    |                      | buildCandidate()      |                     |                       |                  |
-    |                      | submit(candidate)     |                     |                       |                  |
-    |                      |---------------------->|                     |                       |                  |
-    |                      | returns immediately   |                     |                       |                  |
-    |                      |                       | take()              |                       |                  |
-    |                      |                       |-------------------->|                       |                  |
-    |                      |                       |                     | create LogBookItem()  |                  |
-    |                      |                       |                     | toTimingDataRecord()  |                  |
-    |                      |                       |                     | append(record + LF)   |                  |
-    |                      |                       |                     |---------------------->|                  |
-    |                      |                       |                     |<----------------------| durable          |
-    |                      |                       |                     | commit(item)          |                  |
-    |                      |                       |                     |------------------------------------------>|
+RFID adapter       TagProcessor        TimingNode        internal queue       TimingDataStore       LogBook
+    |                   |                  |                   |                      |                  |
+    | observation       |                  |                   |                      |                  |
+    |------------------>|                  |                   |                      |                  |
+    |                   | normalize/resolve|                   |                      |                  |
+    |                   | buildCandidate() |                   |                      |                  |
+    |                   | submit(candidate)|                   |                      |                  |
+    |                   |----------------->|                   |                      |                  |
+    |                   |                  | enqueue           |                      |                  |
+    |                   |                  |------------------>|                      |                  |
+    |                   |<-----------------| accepted          |                      |                  |
+    |                   |                  |                   |                      |                  |
+    |                   |                  |<------------------| next candidate       |                  |
+    |                   |                  | create item/record|                      |                  |
+    |                   |                  | append(record)    |                      |                  |
+    |                   |                  |----------------------------------------->|                  |
+    |                   |                  |<-----------------------------------------| durable          |
+    |                   |                  | commit(item)      |                      |                  |
+    |                   |                  |----------------------------------------------------------->|
 ```
 
 The RFID callback is free after enqueue. File latency therefore does not occupy
@@ -312,51 +329,55 @@ the antenna/`TagProcessor` execution context.
 
 ![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
 
-*Figure SDD01-TD04 — Manual input is resolved inside SI-01 and then joins the same ordered LogBook commit path.*
+*Figure SDD01-TD04 — IF-03 hands operator input to the TimingNode; acceptance returns after enqueue, before durable file handling.*
 
 ```text
-Client             IF-03/CommandHandler      Manual registration       LogBookRecorder       LogBookCommitter
-  |                         |                         |                        |                    |
-  | TeamIdentity + time     |                         |                        |                    |
-  |------------------------>|                         |                        |                    |
-  |                         | validate command        |                        |                    |
-  |                         |------------------------>|                        |                    |
-  |                         |                         | resolve RegistrationIdentity                |
-  |                         |                         | determine origin/timeSource/effectiveTime    |
-  |                         |                         | buildCandidate()       |                    |
-  |                         |                         | submit(candidate)      |                    |
-  |                         |                         |----------------------->|                    |
-  |                         |<------------------------| accepted               |                    |
-  |<------------------------| accepted                |                        |                    |
-  |                         |                         |                        | take()             |
-  |                         |                         |                        |------------------->|
-  |                         |                         |                        |   same durable commit path...
+Client          IF-03/CommandHandler        TimingNode        internal queue       TimingDataStore       LogBook
+  |                       |                    |                    |                      |                  |
+  | TeamIdentity + time   |                    |                    |                      |                  |
+  |---------------------->|                    |                    |                      |                  |
+  |                       | register(...)      |                    |                      |                  |
+  |                       |------------------->|                    |                      |                  |
+  |                       |                    | resolve identity   |                      |                  |
+  |                       |                    | build candidate    |                      |                  |
+  |                       |                    | enqueue            |                      |                  |
+  |                       |                    |------------------->|                      |                  |
+  |                       |<-------------------| accepted           |                      |                  |
+  |<----------------------| accepted           |                    |                      |                  |
+  |                       |                    |<-------------------| next candidate       |                  |
+  |                       |                    | append IF-05 record                       |                  |
+  |                       |                    |------------------------------------------>|                  |
+  |                       |                    |<------------------------------------------| durable          |
+  |                       |                    | commit LogBookItem  |                      |                  |
+  |                       |                    |----------------------------------------------------------->|
 ```
 
-The client supplies operator input; SI-01 resolves the canonical IF-05
+The client supplies operator input; the TimingNode resolves the canonical IF-05
 `RegistrationIdentity`. Automatic and manual paths therefore differ before the
-candidate is enqueued but share the same ordered commit semantics afterwards.
+candidate is enqueued but share the same TimingNode-owned queue and ordered
+commit semantics afterwards.
 
 #### Long query while registrations continue
 
 ![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
 
-*Figure SDD01-TD05 — A query reads LogBook state while later candidates can still be committed.*
+*Figure SDD01-TD05 — A query can continue while another registration is queued and committed by the TimingNode record worker.*
 
 ```text
-Client/query thread                 LogBook                    LogBookRecorder/Committer
-       |                               |                                  |
-       | acquire small read view       |                                  |
-       |------------------------------>|                                  |
-       |<------------------------------| refs/index + sequence boundary   |
-       |                               |                                  |
-       | calculate/rank...             |             next candidate       |
-       |--------------------           |                                  |
-       |                               |<---------------------------------|
-       | calculate/rank...             |             durable commit       |
-       |                               |<---------------------------------|
-       | calculate/rank...             |                                  |
-       | return result                 |                                  |
+Query task              LogBook         Registration producer       TimingNode       internal queue
+   |                       |                     |                       |                  |
+   | capture read view     |                     |                       |                  |
+   |---------------------->|                     |                       |                  |
+   |<----------------------| view                |                       |                  |
+   | calculate...          |                     | submit candidate      |                  |
+   |                       |                     |---------------------->|                  |
+   | calculate...          |                     |                       | enqueue          |
+   |                       |                     |                       |----------------->|
+   |                       |                     |<----------------------| accepted         |
+   | calculate...          |                     |                       |<-----------------| next candidate
+   |                       |<--------------------------------------------| commit item      |
+   | calculate...          |                     |                       |                  |
+   | return result         |                     |                       |                  |
 ```
 
 The calculation does not keep a long LogBook lock and does not require a deep
@@ -368,21 +389,25 @@ target Raspberry Pi.
 
 ![Generic LogBook producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
 
-*Figure SDD01-TD06 — Start, penalty and correction logic can reuse the same candidate/commit boundary when those record families are introduced.*
+*Figure SDD01-TD06 — Later start, penalty and correction logic submit candidates to the same TimingNode-owned queue and commit path.*
 
 Start-procedure and penalty/correction logic follow the same pattern:
 
 ```text
 domain-specific business logic
           |
+          | LogBookEntryCandidate
           v
-LogBookEntryCandidate
+      TimingNode
           |
           v
-bounded LogBook queue
+internal bounded queue
           |
           v
-same LogBookCommitter + IF-05 persistence
+TimingNode record worker
+          |
+          +--> TimingDataStore (file persistence / recovery)
+          +--> LogBook
 ```
 
 Their exact LogBookItem/IF-05 record families remain deferred until the
@@ -392,15 +417,16 @@ applicable requirements are promoted.
 
 | Execution role | May block on | Must not block |
 | --- | --- | --- |
-| producer task | short domain work + bounded enqueue policy | durable file I/O, long query, network delivery |
-| LogBook recorder worker | ordered local durable append | long query, client rendering, network retry |
-| LogBook commit/update | short in-memory mutation after durable append | long report/ranking calculation |
-| query worker/caller | its own calculation/read workload | LogBook recorder progress |
-| signalling/upstream worker | its own delivery/retry policy | LogBook commit |
+| producer/caller | short domain work + bounded TimingNode enqueue policy | durable file I/O, long query, network delivery |
+| TimingNode record worker | ordered local durable append | long query, client rendering, network retry |
+| TimingNode commit step | short in-memory mutation after durable append | long report/ranking calculation |
+| query worker/caller | its own calculation/read workload | TimingNode record progress |
+| signalling/upstream worker | its own delivery/retry policy | TimingNode commit |
 
-For the first one-TimingNode application the LogBook recorder owns one dedicated
-worker thread. A later multi-node implementation may share workers only if it
-preserves independent FIFO commit order per TimingNode.
+For the first one-TimingNode application each TimingNode owns one bounded queue
+and one dedicated record worker. A later multi-node implementation may share
+worker infrastructure only if it preserves independent FIFO commit order per
+TimingNode.
 
 ## TimingData persistence and recovery
 
@@ -767,8 +793,9 @@ needed around that interface:
 ### Record pipeline
 
 - **CAND-PIPE-001** — Traceable domain/application producers shall hand an
-  immutable `LogBookEntryCandidate` to the bounded LogBook ingress queue;
-  durable file I/O shall not execute on RFID/device/operator ingress callbacks.
+  immutable `LogBookEntryCandidate` to the owning TimingNode, which shall place
+  it on its bounded internal LogBook queue; durable file I/O shall not execute
+  on RFID/device/operator ingress callbacks.
 - **CAND-PIPE-002** — The record-commit path shall publish an IF-05 record to
   downstream consumers only after the complete local record is durably appended
   and its sequence is committed.
@@ -776,7 +803,7 @@ needed around that interface:
   corresponding `LogBookItem` synchronously to the owning TimingNode LogBook
   before external publication.
 - **CAND-PIPE-004** — Potentially long queries and network delivery/retry shall
-  execute outside the LogBook recorder worker; only slow external delivery
+  execute outside the TimingNode record worker; only slow external delivery
   requires an additional asynchronous queue/outbox boundary.
 
 ### Identity resolution before IF-05 commit
