@@ -12,7 +12,8 @@ Generated output:
 - planning/sip-roadmap.svg: one continuous roadmap;
 - planning/sip-roadmap.pdf: the same roadmap as A4-landscape pages;
 - planning/roadmap/sip-roadmap-1.svg .. -3.svg: separate A4 pages;
-- planning/steps/step-NN.svg: A4-portrait detailed step boards.
+- planning/steps/step-NN.svg: A4-portrait detailed step boards;
+- planning/steps/step-NN.pdf: printable detail boards.
 
 All outputs are presentations of the same planning sources.
 """
@@ -28,6 +29,8 @@ import html
 import json
 import math
 import re
+import shutil
+import subprocess
 import textwrap
 
 import yaml
@@ -817,272 +820,142 @@ def step_card_meta(activity: dict) -> str:
     return " | ".join(parts)
 
 
-def render_step_svg(board: dict, step: Step, path: Path) -> None:
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{A4_P_W_MM}mm" '
-        f'height="{A4_P_H_MM}mm" viewBox="0 0 {A4_P_W_MM} {A4_P_H_MM}">',
-        '<rect width="100%" height="100%" fill="white"/>',
+def step_board_view(board: dict, step: Step) -> dict:
+    state_tones = {
+        "done": "success",
+        "next": "warning",
+        "active": "active",
+        "planned": "muted",
+        "blocked": "danger",
+        "deferred": "muted",
+    }
+    maturity_tones = {
+        "outline": "muted",
+        "working": "active",
+        "review": "warning",
+        "accepted": "success",
+    }
+    lane_tones = {
+        "tooling": "active",
+        "documentation": "warning",
+        "application": "success",
+        "verification": "draft",
+        "platform": "muted",
+    }
+
+    sections = [
+        {
+            "heading": "GOAL",
+            "bullets": [step.goal],
+        },
     ]
-    svg_text(
-        parts,
-        MARGIN_MM,
-        10.0,
-        wrap(f"SIP Step {step.number} — {step.title}", 82, 2),
-        4.0,
-        anchor="start",
-        weight="bold",
-    )
-    svg_text(
-        parts,
-        MARGIN_MM,
-        17.0,
-        [
-            (
-                f"{step.status.upper()} | original estimate ~{step.estimate_days:g}d"
-                + (
-                    f" | actual ~{(step.actual_days if step.actual_days is not None else 0.0):g}d"
-                    if step.actual_days is not None or step.status == "active"
-                    else ""
-                )
-                + (
-                    f" | remaining ~{step.remaining_days:g}d"
-                    f" | total estimate ~{((step.actual_days if step.actual_days is not None else 0.0) + step.remaining_days):g}d"
-                    if step.status == "active"
-                    else (
-                        f" | total estimate ~{step.actual_days:g}d"
-                        if step.status == "done" and step.actual_days is not None
-                        else ""
-                    )
-                )
-                + f" | {step_schedule_text(step)}"
-            )
-        ],
-        2.9,
-        anchor="start",
-        weight="bold",
-        fill="#555",
-    )
-    svg_text(
-        parts,
-        MARGIN_MM,
-        24.0,
-        wrap(step.goal, 75, 3),
-        2.7,
-        anchor="start",
-        fill="#555",
-    )
-
-    demo = step.demo_bullets
-    usable_w = A4_P_W_MM - 2 * MARGIN_MM
-    if demo:
-        demo_top = 34.0
-        demo_h = 27.0
-        parts.append(
-            f'<rect x="{MARGIN_MM}" y="{demo_top}" width="{usable_w}" height="{demo_h}" '
-            'rx="1.5" fill="#f6f8fa" stroke="#6c8ebf" stroke-width="0.45"/>'
-        )
-        svg_text(
-            parts,
-            MARGIN_MM + 3,
-            demo_top + 5.5,
-            [f"END DEMO · {step_demo_id(step.number)}"],
-            2.55,
-            anchor="start",
-            weight="bold",
-            fill="#4f81bd",
-        )
-        cursor = demo_top + 10.5
-        for bullet in demo:
-            lines = wrap(bullet, 71, 2)
-            svg_text(
-                parts,
-                MARGIN_MM + 4,
-                cursor,
-                ["• " + lines[0]] + ["  " + line for line in lines[1:]],
-                2.2,
-                anchor="start",
-                fill="#333",
-            )
-            cursor += len(lines) * 2.65 + 0.9
-        docs_top = demo_top + demo_h + 4.0
-    else:
-        docs_top = 34.0
-
-    docs = step.documents
-    docs_h = 25.0 if len(docs) > 4 else 19.0
-    parts.append(
-        f'<rect x="{MARGIN_MM}" y="{docs_top}" width="{usable_w}" height="{docs_h}" '
-        'rx="1.5" fill="#fafafa" stroke="#999" stroke-width="0.4"/>'
-    )
-    svg_text(
-        parts,
-        MARGIN_MM + 3,
-        docs_top + 5.5,
-        ["DOCUMENTATION"],
-        2.55,
-        anchor="start",
-        weight="bold",
-        fill="#444",
-    )
-    doc_col_w = (usable_w - 9) / 2
-    for idx, document in enumerate(docs):
-        row, col = divmod(idx, 2)
-        x = MARGIN_MM + 3 + col * (doc_col_w + 3)
-        y = docs_top + 8.0 + row * 6.4
-        style = MATURITY[document["maturity"]]
-        label = (
-            f"{document['name']} {style['label']}-{document['completeness']} — "
-            f"{concise(document['title'], 27)}"
-        )
-        svg_text(
-            parts,
-            x,
-            y + 2.1,
-            [label],
-            2.2,
-            anchor="start",
-            weight="bold",
-            fill=style["stroke"],
+    if step.demo_bullets:
+        sections.append(
+            {
+                "heading": f"END DEMO · {step_demo_id(step.number)}",
+                "bullets": list(step.demo_bullets),
+            }
         )
 
-    y = docs_top + docs_h + 4.0
-    card_w = (usable_w - STEP_CARD_GAP * (STEP_CARD_COLS - 1)) / STEP_CARD_COLS
-    lanes = activities_by_lane(board)
-    changes = board.get("planning_changes", [])
-    changes_h = planning_changes_height(changes)
-    total_h = sum(lane_height(len(items)) for _, items in lanes)
-    total_h += STEP_LANE_GAP * max(0, len(lanes) - 1)
-    reserved_changes_h = changes_h + (2.5 if changes else 0.0)
-    available_h = A4_P_H_MM - y - 4.0 - reserved_changes_h
-    if total_h > available_h:
-        raise SystemExit(
-            f"Step {step.number} A4 board does not fit: needs {total_h:.1f} mm, "
-            f"has {available_h:.1f} mm"
-        )
-
-    for lane, activities in lanes:
-        title, lane_fill, lane_stroke = LANES[lane]
-        height = lane_height(len(activities))
-        parts.append(
-            f'<rect x="{MARGIN_MM}" y="{y:.2f}" width="{usable_w:.2f}" height="{height:.2f}" '
-            f'rx="1.5" fill="#ffffff" stroke="{lane_stroke}" stroke-width="0.45"/>'
-        )
-        parts.append(
-            f'<rect x="{MARGIN_MM}" y="{y:.2f}" width="{usable_w:.2f}" '
-            f'height="{STEP_LANE_HEADER_H:.2f}" rx="1.5" fill="{lane_fill}" '
-            f'stroke="{lane_stroke}" stroke-width="0.35"/>'
-        )
-        svg_text(
-            parts,
-            MARGIN_MM + 2.5,
-            y + 4.15,
-            [title],
-            2.55,
-            anchor="start",
-            weight="bold",
-            fill=lane_stroke,
-        )
-
-        cards_top = y + STEP_LANE_HEADER_H + 1.3
-        for idx, activity in enumerate(activities):
-            row, col = divmod(idx, STEP_CARD_COLS)
-            card_x = MARGIN_MM + col * (card_w + STEP_CARD_GAP)
-            card_y = cards_top + row * (STEP_CARD_H + STEP_CARD_GAP)
-            status_label, status_fill, status_stroke = STATE_STYLE[activity["state"]]
-            parts.append(
-                f'<rect x="{card_x:.2f}" y="{card_y:.2f}" width="{card_w:.2f}" '
-                f'height="{STEP_CARD_H:.2f}" rx="1.2" fill="#fffdf2" '
-                f'stroke="{status_stroke}" stroke-width="0.45"/>'
-            )
-            svg_text(
-                parts,
-                card_x + 1.6,
-                card_y + 4.7,
-                [activity["id"]],
-                2.3,
-                anchor="start",
-                weight="bold",
-                fill="#555",
-            )
-            badge_w = 16.0
-            parts.append(
-                f'<rect x="{card_x+card_w-badge_w-1.2:.2f}" y="{card_y+1.0:.2f}" '
-                f'width="{badge_w:.2f}" height="5.0" rx="0.8" fill="{status_fill}" '
-                f'stroke="{status_stroke}" stroke-width="0.25"/>'
-            )
-            svg_text(
-                parts,
-                card_x + card_w - badge_w / 2 - 1.2,
-                card_y + 4.55,
-                [status_label],
-                1.9,
-                weight="bold",
-                fill=status_stroke,
-            )
-            svg_text(
-                parts,
-                card_x + card_w / 2,
-                card_y + 9.5,
-                wrap(activity["title"], 22, 3),
-                3.0,
-                weight="bold",
-            )
+    groups = []
+    for lane, activities in activities_by_lane(board):
+        lane_title = LANES[lane][0]
+        cards = []
+        for activity in activities:
             meta = step_card_meta(activity)
-            if meta:
-                svg_text(
-                    parts,
-                    card_x + 1.6,
-                    card_y + STEP_CARD_H - 1.8,
-                    [concise(meta, 34)],
-                    2.2,
-                    anchor="start",
-                    fill="#555",
-                )
-        y += height + STEP_LANE_GAP
+            cards.append(
+                {
+                    "id": activity["id"],
+                    "title": activity["title"],
+                    "state": {
+                        "label": STATE_STYLE[activity["state"]][0],
+                        "tone": state_tones.get(activity["state"], "neutral"),
+                    },
+                    **({"meta": [meta]} if meta else {}),
+                }
+            )
+        groups.append(
+            {
+                "heading": lane_title,
+                "tone": lane_tones.get(lane, "neutral"),
+                "cards": cards,
+            }
+        )
 
+    view = {
+        "board": {
+            "title": f"SIP Step {step.number} — {step.title}",
+            "meta": [
+                step.status.upper(),
+                step_schedule_text(step),
+                step_effort_text(step),
+            ],
+            "sections": sections,
+            "groups": groups,
+        }
+    }
+
+    if step.documents:
+        view["board"]["badge_section"] = {
+            "heading": "DOCUMENTATION",
+            "badges": [
+                {
+                    "label": compact_doc_label(document),
+                    "tone": maturity_tones.get(document["maturity"], "neutral"),
+                }
+                for document in step.documents
+            ],
+        }
+
+    changes = board.get("planning_changes", [])
     if changes:
-        change_top = y + 1.0
-        parts.append(
-            f'<rect x="{MARGIN_MM}" y="{change_top:.2f}" width="{usable_w:.2f}" '
-            f'height="{changes_h:.2f}" rx="1.5" fill="#fafafa" '
-            'stroke="#999999" stroke-width="0.4"/>'
-        )
-        svg_text(
-            parts,
-            MARGIN_MM + 3,
-            change_top + 5.4,
-            ["PLANNING CHANGES"],
-            2.55,
-            anchor="start",
-            weight="bold",
-            fill="#555555",
-        )
-        cursor = change_top + 10.0
-        for change in changes:
-            lines = planning_change_lines(change)
-            svg_text(
-                parts,
-                MARGIN_MM + 4,
-                cursor,
-                [change["date"]],
-                2.0,
-                anchor="start",
-                weight="bold",
-                fill="#6c8ebf",
-            )
-            svg_text(
-                parts,
-                MARGIN_MM + 24,
-                cursor,
-                lines,
-                2.15,
-                anchor="start",
-                fill="#333333",
-            )
-            cursor += max(5.4, len(lines) * 2.6 + 0.9)
+        view["board"]["trailing_sections"] = [
+            {
+                "heading": "PLANNING CHANGES",
+                "bullets": [
+                    f"{change['date']} — {change['change']}"
+                    for change in changes
+                ],
+            }
+        ]
 
-    parts.append("</svg>")
-    path.write_text("\n".join(parts), encoding="utf-8")
+    return view
+
+
+def render_step_board(board: dict, step: Step, path: Path) -> None:
+    render_dir = path.parent / f".{path.stem}-board"
+    if render_dir.exists():
+        shutil.rmtree(render_dir)
+    render_dir.mkdir(parents=True)
+
+    view_path = render_dir / "board-view.yaml"
+    view_path.write_text(
+        yaml.safe_dump(
+            step_board_view(board, step),
+            sort_keys=False,
+            allow_unicode=True,
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            "eng-docs",
+            "board",
+            "--source",
+            str(view_path),
+            "--out",
+            str(render_dir / "rendered"),
+        ],
+        check=True,
+    )
+
+    shutil.copyfile(render_dir / "rendered" / "board.svg", path)
+    shutil.copyfile(
+        render_dir / "rendered" / "board.pdf",
+        path.with_suffix(".pdf"),
+    )
+    shutil.rmtree(render_dir)
 
 
 def write_readme(
@@ -1154,7 +1027,7 @@ def main() -> None:
     render_roadmap_pdf(groups, planning_basis, out_dir / "sip-roadmap.pdf")
 
     for number, board in sorted(boards.items()):
-        render_step_svg(
+        render_step_board(
             board,
             by_number[number],
             out_dir / "steps" / f"step-{number:02d}.svg",
