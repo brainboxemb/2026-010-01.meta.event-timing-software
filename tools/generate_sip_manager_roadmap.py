@@ -130,7 +130,10 @@ def write_readme(
         lines.extend(["", "## Step details", ""])
         for path in step_pages:
             number = int(path.stem.split("-")[-1])
-            lines.append(f"- [Step {number}](./steps/{path.name})")
+            lines.append(
+                f"- Step {number}: [SVG](./steps/{path.name}) · "
+                f"[PDF](./steps/step-{number:02d}.pdf)"
+            )
 
     lines.append("")
     (out_dir / "README.md").write_text(
