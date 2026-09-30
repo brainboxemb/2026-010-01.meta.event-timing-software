@@ -1,0 +1,157 @@
+step: 4
+
+planning_changes:
+  - date: '2026-09-30'
+    change: >-
+      Step 4 now starts by bringing the Engineering Client documentation/UI baseline
+      up to date, then reviews use cases and establishes TimingData/UpstreamProtocol contracts.
+  - date: '2026-09-30'
+    change: >-
+      Use-case and requirement alignment gates domain implementation because the
+      architecture is ahead of the promoted functional baseline.
+
+activities:
+  - id: D01
+    lane: documentation
+    kind: documentation
+    title: Engineering Client architecture + UI baseline
+    state: next
+    note: >-
+      Document the existing JavaFX Engineering Client as a standalone engineering
+      tool in the same repository: component architecture, current tabs/functions,
+      Step-4 inspection surfaces and a reproducible CI screenshot/documentation
+      direction. Keep the module name test-client for now.
+
+  - id: D02
+    lane: documentation
+    kind: documentation
+    title: Review use cases + existing web-app contract
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Review UC-001, UC-002, UC-003, UC-005, UC-008, UC-010, UC-011 and UC-014
+      from operational intent. Also inspect the existing web application's status,
+      snapshot/event, identifier and timing-data expectations as compatibility input.
+      Determine what Step-4 state/actions must be visible through IF-03 and the
+      Engineering Client. UC-009 stays optional; no new lightweight browser client
+      is introduced in Step 4.
+
+  - id: D03
+    lane: documentation
+    kind: decision
+    title: Establish TimingData + public protocol contracts
+    state: planned
+    depends_on: [D02]
+    note: >-
+      Create the first focused TimingData/domain interchange design, define the
+      Step-4 IF-03 client-facing representation needed by Engineering Client/web
+      compatibility, and establish IF-06 Backend Integration / UpstreamProtocol.
+      Keep client/API and backend/upstream protocols distinct while mapping both to
+      shared TimingData semantics where appropriate. Reconcile architecture and
+      terminology against the resulting contracts.
+
+  - id: V01
+    lane: verification
+    kind: verification
+    title: Define deterministic Step-4 acceptance examples
+    state: planned
+    depends_on: [D03]
+    note: >-
+      Turn the reviewed use cases and promoted contracts into small synthetic
+      examples and expected state transitions before implementation. Include
+      TimingData identity/sequence examples and Engineering Client-visible outcomes.
+
+  - id: A01
+    lane: application
+    kind: implementation
+    title: TimingNode lifecycle and state foundation
+    state: planned
+    depends_on: [V01]
+    note: >-
+      Implement only lifecycle/state semantics justified by the reviewed use cases
+      and requirements, including observable state needed by later capabilities.
+
+  - id: A02
+    lane: application
+    kind: implementation
+    title: Registration history + TimingData
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Implement hardware-independent accepted registration state, monotonic
+      TimingNodeId-scoped sequence/history and the first public TimingData
+      representation required by the Step-4 contract. RFID decoding/filtering,
+      durable recovery and real upstream transport remain outside this activity.
+
+  - id: A03
+    lane: application
+    kind: implementation
+    title: StageStartTimes and RaceData
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Implement local reference-state semantics needed by one TimingNode, with
+      clear ownership and deterministic update behaviour but without backoffice
+      transport or persistence concerns.
+
+  - id: A04
+    lane: application
+    kind: implementation
+    title: NextUpTeams state and mutations
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Implement reviewed team-preparation semantics independently from keypad,
+      CAN and display adapters. Preserve history only where promoted functional
+      requirements require it.
+
+  - id: A05
+    lane: application
+    kind: integration
+    title: Engineering Client Step-4 inspection
+    state: planned
+    depends_on: [A02, A03, A04]
+    note: >-
+      Extend IF-03 and the existing JavaFX Engineering Client only as required to
+      inspect the Step-4 TimingNode/TimingData/reference/next-up state. Keep the
+      client external to SI-01 and do not introduce the optional web client.
+
+  - id: A06
+    lane: application
+    kind: integration
+    title: API-controlled DebugConnector
+    state: planned
+    depends_on: [D03, A02, A05]
+    note: >-
+      Add a lightweight DebugConnector under UpstreamGateway and expose its
+      engineering/test-control surface through IF-03. The API advertises whether
+      backend simulation/debug injection is supported and enabled. The Engineering
+      Client can inject semantic UpstreamProtocol messages and inspect DebugConnector
+      traffic through the normal API/event channel. DebugConnector may coexist with
+      RabbitMqConnector so targeted test messages can still be injected while a real
+      backend transport is active. Test control must enter through DebugConnector
+      rather than mutating domain/reference state directly.
+
+  - id: V02
+    lane: verification
+    kind: verification
+    title: Deterministic domain and isolation verification
+    state: planned
+    depends_on: [A02, A03, A04]
+    note: >-
+      Verify state-transition/invariant requirements with controlled synthetic
+      data, including several TimingNodes to prove mutable state and sequence
+      isolation without production hardware, network or persistence.
+
+  - id: V03
+    lane: verification
+    kind: verification
+    title: Step-4 running-system demonstration
+    state: planned
+    depends_on: [A05, A06, V02]
+    note: >-
+      Run SI-01 with synthetic data and use the JavaFX Engineering Client to show
+      TimingNode state, TimingData/registration history, reference/next-up changes
+      and isolation across multiple TimingNodes. Use IF-03 test-control/capability
+      support to inject representative UpstreamProtocol messages through
+      DebugConnector and inspect the resulting traffic, with or without RabbitMQ.

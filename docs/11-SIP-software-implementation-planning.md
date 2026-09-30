@@ -205,50 +205,73 @@ Status: active
 ### Purpose
 
 Put useful timing concepts into software while the environment is still completely
-controlled. This is where we learn whether the TimingNode model is pleasant to implement,
-without letting hardware protocols or deployment details shape the domain prematurely.
+controlled. Before implementing those concepts, bring the Engineering Client and
+the TimingData/upstream semantic contracts up to the same maturity as the current
+architecture so domain code is driven by reviewed behaviour rather than by diagrams alone.
 
 ### Goal
 
-Implement the main local TimingNode data/state model with deterministic tests.
+Define and implement the main local TimingNode data/state model with deterministic
+tests and make its public results inspectable through the existing Engineering Client.
 
 ### Scope
 
-- registrations and source sequence/history;
+- Engineering Client architecture and UI specification for Step-4 inspection;
+- relevant system/use-case review and promotion of Step-4 requirements;
+- first focused TimingData/interchange contract;
+- first IF-06 / UpstreamProtocol semantic contract;
+- registrations, TimingData identity and source sequence/history;
 - StageStartTimes;
 - NextUpTeams;
 - RaceData/reference data;
 - TimingNode lifecycle/status needed by these capabilities;
-- clear state-change ownership and observable results.
+- clear state-change ownership and observable results;
+- compatible IF-03 additions needed by the existing JavaFX Engineering Client;
+- an API-controlled DebugConnector for exercising UpstreamProtocol without requiring
+  RabbitMQ/backend infrastructure, while still allowing debug injection to coexist
+  with a real RabbitMQ connector when configured.
 
 ### Not in this step
 
 - production RFID/CAN hardware;
+- production RabbitMQ/backend implementation work beyond defining how the
+  API-controlled DebugConnector can coexist with configured real connectors;
 - target-platform deployment;
-- full persistence/recovery and end-to-end event simulation.
+- full persistence/recovery and end-to-end event simulation;
+- the optional lightweight browser/web test client;
+- the planned SI-02 Desktop GUI Application.
 
 ### Needs
 
-- representative synthetic data;
-- domain examples/test cases.
+- representative synthetic domain/protocol examples;
+- reviewed Step-4 use cases;
+- current JavaFX Engineering Client;
+- initial TimingData and IF-06/UpstreamProtocol document baselines.
 
 ### Result
 
-- Core TimingNode state exists in software.
-- State changes are deterministic and testable.
-- Domain behaviour has no hardware dependency.
+- TimingNode state and TimingData are deterministic and testable.
+- Public contracts expose Step-4 without production services.
+- Engineering Client inspects state and drives DebugConnector.
 
 ### Demo
 
-- Create a TimingNode with synthetic data.
-- Update starts, teams and reference data.
-- Show registration history and state changes.
+- Inspect synthetic TimingNodes with the Engineering Client.
+- Change reference state and show independent histories.
+- Inject UpstreamProtocol messages through DebugConnector.
 
 ### Done
 
+- Engineering Client architecture/UI baseline is documented;
+- Step-4-relevant use cases and requirements have been reviewed/promoted;
+- TimingData and IF-06/UpstreamProtocol contracts are established at the required Step-4 level;
 - core state transitions have deterministic tests;
 - source identity/sequence rules are represented consistently;
-- no production adapter is required to exercise the implemented behaviour.
+- Step-4 state is observable through IF-03 and the Engineering Client;
+- representative UpstreamProtocol exchange works through the API-controlled
+  DebugConnector without direct domain mutation, both standalone and alongside a
+  configured real connector where supported;
+- the running-system demo uses the Engineering Client rather than a new web test client.
 
 ---
 
