@@ -3,13 +3,10 @@ step: 4
 planning_changes:
   - date: '2026-09-30'
     change: >-
-      Step 4 was reduced from a broad TimingNode domain foundation to the first
-      registration vertical slice: location, open/close, direct accepted-registration
-      simulation and observable TimingData.
+      Step 4 narrowed to location, open/close, direct registration and observable TimingData.
   - date: '2026-09-30'
     change: >-
-      StageStartTimes, RaceData, NextUpTeams, keypad/display behaviour, antenna/filtering,
-      multi-node isolation and inbound upstream simulation were deferred to later increments.
+      Start times, next-up/display, antenna filtering, multi-node and inbound upstream simulation moved later.
 
 activities:
   - id: D01
