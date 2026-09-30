@@ -514,41 +514,110 @@ Breaking semantic changes shall not silently redefine v1.
 
 ## IF-05 requirements
 
-- **IF05-REQ-001** — Every committed TimingData record shall contain the v1
-  common record envelope defined by this IDD.
-- **IF05-REQ-002** — The stable record key shall be
-  `TimingNodeId + SequenceNumber`.
-- **IF05-REQ-003** — Sequence numbering shall start at 1 per TimingNode stream;
-  0 is reserved and committed record keys shall not be reused.
-- **IF05-REQ-004** — TimingData v1 shall support `TIMING_NODE_STATE`,
-  `REGISTRATION` and `REGISTRATION_REVOKED` records as defined above.
-- **IF05-REQ-005** — Registration records shall use canonical
-  `RegistrationIdentity` rather than physical RFID/tag representation.
-- **IF05-REQ-006** — v1 `RegistrationIdentity` shall support the
-  `STANDARD`, `WOMEN` and `MEN` semantics and location compatibility
-  defined above.
-- **IF05-REQ-007** — Reserve transponders shall resolve to a canonical
-  `RegistrationIdentity` and shall not introduce a reserve registration type.
-- **IF05-REQ-008** — Revocation shall be represented by a new append-only record
-  referring to the concerned registration; it shall not rewrite the registration.
-- **IF05-REQ-009** — The canonical public/reference file encoding shall be UTF-8
-  JSON Lines with LF writer output and one independently decodable record per
-  complete line.
-- **IF05-REQ-010** — An incomplete trailing line shall not be interpreted as a
-  committed record.
-- **IF05-REQ-011** — External/proprietary codecs shall translate to/from the IF-05
-  semantic model rather than redefining its record semantics.
-- **IF05-REQ-012** — The same provider contract shall be reusable by SI-01 and
-  engineering/test tooling where that tooling inspects or converts external
-  TimingData representations.
-- **IF05-REQ-013** — Canonical IF-05 TimingTimestamp text shall use UTC `Z`
-  form with exactly nine fractional-second digits as defined by this IDD.
-- **IF05-REQ-014** — Canonical v1 SequenceNumber shall be a positive JSON-safe
-  integer in the range `1..2^53-1`, shall not wrap and shall not reuse committed
-  values.
-- **IF05-REQ-015** — v1 readers shall tolerate additional JSON members while
-  treating malformed records, sequence violations and unsupported major versions
-  as explicit compatibility/validation conditions according to this IDD.
+```{ifreq} Common TimingData v1 envelope
+:id: IF05-REQ-001
+
+Every committed TimingData record shall contain the v1 common record envelope
+defined by this IDD.
+```
+
+```{ifreq} Stable TimingData record key
+:id: IF05-REQ-002
+
+The stable record key shall be `TimingNodeId + SequenceNumber`.
+```
+
+```{ifreq} Sequence start and non-reuse
+:id: IF05-REQ-003
+
+Sequence numbering shall start at 1 per TimingNode stream; 0 is reserved and
+committed record keys shall not be reused.
+```
+
+```{ifreq} TimingData v1 record families
+:id: IF05-REQ-004
+
+TimingData v1 shall support `TIMING_NODE_STATE`, `REGISTRATION` and
+`REGISTRATION_REVOKED` records as defined by this IDD.
+```
+
+```{ifreq} Canonical registration identity
+:id: IF05-REQ-005
+
+Registration records shall use canonical `RegistrationIdentity` rather than
+physical RFID/tag representation.
+```
+
+```{ifreq} RegistrationIdentity v1 semantics
+:id: IF05-REQ-006
+
+v1 `RegistrationIdentity` shall support the `STANDARD`, `WOMEN` and
+`MEN` semantics and location compatibility defined by this IDD.
+```
+
+```{ifreq} Reserve tag resolution
+:id: IF05-REQ-007
+
+Reserve transponders shall resolve to a canonical `RegistrationIdentity` and
+shall not introduce a reserve registration type.
+```
+
+```{ifreq} Append-only registration revocation
+:id: IF05-REQ-008
+
+Revocation shall be represented by a new append-only record referring to the
+concerned registration; it shall not rewrite the registration.
+```
+
+```{ifreq} Canonical reference file encoding
+:id: IF05-REQ-009
+
+The canonical public/reference file encoding shall be UTF-8 JSON Lines with LF
+writer output and one independently decodable record per complete line.
+```
+
+```{ifreq} Incomplete trailing line
+:id: IF05-REQ-010
+
+An incomplete trailing line shall not be interpreted as a committed record.
+```
+
+```{ifreq} External codec semantic compatibility
+:id: IF05-REQ-011
+
+External/proprietary codecs shall translate to/from the IF-05 semantic model
+rather than redefining its record semantics.
+```
+
+```{ifreq} Shared provider contract
+:id: IF05-REQ-012
+
+The same provider contract shall be reusable by SI-01 and engineering/test
+tooling where that tooling inspects or converts external TimingData
+representations.
+```
+
+```{ifreq} Canonical TimingTimestamp text
+:id: IF05-REQ-013
+
+Canonical IF-05 TimingTimestamp text shall use UTC `Z` form with exactly nine
+fractional-second digits as defined by this IDD.
+```
+
+```{ifreq} SequenceNumber range and no-wrap rule
+:id: IF05-REQ-014
+
+Canonical v1 SequenceNumber shall be a positive JSON-safe integer in the range
+`1..2^53-1`, shall not wrap and shall not reuse committed values.
+```
+
+```{ifreq} Compatible v1 reader behavior
+:id: IF05-REQ-015
+
+v1 readers shall tolerate additional JSON members while treating malformed
+records, sequence violations and unsupported major versions as explicit
+compatibility/validation conditions according to this IDD.
+```
 
 ## Deferred from this first slice
 
