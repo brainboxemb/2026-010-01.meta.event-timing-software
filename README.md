@@ -81,6 +81,7 @@ project documents.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
 - [`docs/32-03-IDD-application-control-status.md`](docs/32-03-IDD-application-control-status.md) — system-owned IF-03 API contract.
+- [`docs/32-05-IDD-timingdata-interchange.md`](docs/32-05-IDD-timingdata-interchange.md) — system-owned IF-05 TimingData file/interchange contract.
 - [`docs/32-11-IDD-application-configuration.md`](docs/32-11-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/41-01-SSD-timing-application-specification-document.md`](docs/41-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/41-02-SSD-gui-application-specification-document.md`](docs/41-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
