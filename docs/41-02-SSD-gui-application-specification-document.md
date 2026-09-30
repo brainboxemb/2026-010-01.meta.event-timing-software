@@ -30,7 +30,7 @@ the working specification/architecture direction until that requirement slice is
 
 Software item: **Desktop GUI Application** (SI-02)
 
-This Software Architecture Document describes the initial architecture direction for the planned desktop GUI. The GUI is a separate software item from the **Headless Timing Application** (SI-01) and communicates with it through system-defined network interfaces.
+This Software Architecture Document describes the initial architecture direction for the planned desktop GUI. The GUI is a separate software item from the **Timing Point Application** (SI-01) and communicates with it through system-defined network interfaces.
 
 ## Purpose
 
@@ -55,7 +55,7 @@ Desktop GUI Application
         | HTTP/JSON + WebSocket are current architecture candidates
         v
 Software item 01
-Headless Timing Application
+Timing Point Application
         |
         +-- local development host
         +-- Raspberry Pi Zero target
@@ -98,7 +98,7 @@ As system requirements and IDDs mature, the GUI may add:
 - ready-team overview/control;
 - device/network/backoffice status and diagnostics.
 
-These operations are handled by the **Headless Timing Application** (SI-01). The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
+These operations are handled by the **Timing Point Application** (SI-01). The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
 
 ## GUI IDD as system input
 
@@ -119,7 +119,7 @@ The future SSD for the **Desktop GUI Application** (SI-02) can reference the app
 
 ## Software-to-software interface IDD
 
-A separate system-level IDD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Headless Timing Application** (SI-01).
+A separate system-level IDD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Timing Point Application** (SI-01).
 
 Current direction:
 
@@ -172,7 +172,7 @@ The fake client should be able to produce version/status changes, disconnects, s
 - desktop GUI toolkit/framework;
 - packaging/distribution model;
 - HTTP/WebSocket client library compatible with the selected GUI runtime;
-- whether the GUI uses the same Java baseline as the **Headless Timing Application** (SI-01) or can use a newer runtime;
+- whether the GUI uses the same Java baseline as the **Timing Point Application** (SI-01) or can use a newer runtime;
 - configuration storage for known endpoints;
 - authentication/credential storage;
 - update mechanism.

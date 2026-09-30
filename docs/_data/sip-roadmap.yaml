@@ -25,7 +25,7 @@ actuals:
 
 terms:
   - term: SI-01
-    meaning: Headless Timing Application
+    meaning: Timing Point Application
   - term: SI-02
     meaning: Planned Desktop GUI Application
   - term: TimingNode

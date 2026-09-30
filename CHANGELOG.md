@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename SI-01 to **Timing Point Application**, define `io.github.brainboxemb.eventtiming.timingpoint` as its Java package root, and align the detailed design with separate `infra.logging` and `infra.loggingserver` components while preserving `TimingNode` as the internal domain aggregate.
+
 - Rename IF-03 from **Remote API** to **API** across system/interface architecture, configuration (`presentation.api`) and Java component naming, while keeping HTTP/WebSocket wire behavior unchanged; also remove the overlapping `live records / level control` edge label from the layered architecture overview.
 
 - Close SIP Step 3 on accepted `v0.2.2`, mark its implementation/verification activities done, record the release completion date and activate Step 4 — TimingNode state and domain foundation.

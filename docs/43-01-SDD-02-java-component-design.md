@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-Software item: **SI-01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
 This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
 
@@ -51,6 +51,8 @@ executable: event-timing-app
 
 The root parent POM is build/aggregation metadata, not a deployed product component.
 
+The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable framework and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
+
 ## Package direction
 
 The current Java structure should grow from real code, not from the architecture
@@ -59,7 +61,7 @@ diagram.
 Likely top-level packages are:
 
 ```text
-io.github.brainboxemb.eventtiming/
+io.github.brainboxemb.eventtiming/timingpoint/
   application/
   domain/
   core/
@@ -86,6 +88,7 @@ io.github.brainboxemb.eventtiming/
     bootstrap/
       config/
     logging/
+    loggingserver/
   runtime/
   platform/
 ```
@@ -298,36 +301,39 @@ Logging follows the same library-versus-executable composition boundary.
 ```text
 event-timing-framework.jar
   -> slf4j-api only
-  -> provider-neutral LoggingConfig values
-  -> io.github.brainboxemb.eventtiming.infra.logging
+  -> io.github.brainboxemb.eventtiming.timingpoint.infra.logging
        +-- Logging
-       |    +-- LoggingControl
-       |    +-- ConsoleHandler
-       |    +-- TimestampedFileLogHandler + CompactLogFormatter
-       |    +-- LiveLogHandler
+       +-- LoggingConfig / LoggingLevel / LoggingFileConfig
+       +-- LoggingControl
+       +-- ConsoleHandler
+       +-- TimestampedFileLogHandler + CompactLogFormatter
+  -> io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver
        +-- LoggingServer
-            +-- client-initiated live diagnostics + temporary level control
+       +-- LoggingServerConfig
+       +-- LiveLogHandler
+       +-- client-initiated live diagnostics + temporary level control
 
 event-timing-app.jar
   -> selects exactly one SLF4J provider
   -> initial provider: slf4j-jdk14
   -> delegates SLF4J records to java.util.logging
   -> starts/stops framework-provided Logging
+  -> independently starts/stops optional LoggingServer
 ```
 
 Working rules:
 
 - framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- provider-neutral deployment values are owned by the logging component itself: `LoggingConfig` contains `LoggingLevel`, `LoggingFileConfig` and optional `LoggingServerConfig`; `ApplicationConfig` may reference that component configuration as composition data;
+- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; `ApplicationConfig` may reference both as composition data;
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
-- concrete JUL implementation types such as `Handler`, backend `Level`, file lifecycle/rotation and socket lifecycle stay isolated under framework infrastructure `io.github.brainboxemb.eventtiming.infra.logging`; they are not domain/application contracts;
-- `infra.logging` must not depend on `infra.bootstrap.config`; bootstrap/composition may depend on the logging component and pass its configuration into it, never the reverse;
+- concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
+- `infra.logging` must not depend on `infra.loggingserver` or `infra.bootstrap.config`; executable/bootstrap composition starts the two components separately. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
 - `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
 - `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
 - the framework artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
-- `Logging` is the primary runtime logging infrastructure component and owns backend setup, handler composition and the temporary global-level control;
-- `LoggingServer` is the separate externally reachable live-diagnostics component; it owns only the logging-specific socket/protocol boundary and is not a Presentation/IF-03 endpoint;
+- `Logging` is the primary runtime logging infrastructure component and owns backend setup, console/file handler composition, record formatting and the current global-level control;
+- `LoggingServer` is the separate externally reachable live-diagnostics component; it owns the live JUL handler plus logging-specific socket/protocol boundary, delegates temporary level changes to `Logging`, and is not a Presentation/IF-03 endpoint;
 - the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
 - Raspberry Pi startup must not assume that wall-clock time is already network-synchronised: the clock may repeat or move backwards across restarts, so retained log creation must use non-overwriting create semantics, add a collision suffix when necessary, and protect the active log from retention decisions regardless of timestamp ordering;
 - retained text records use the compact operator-facing form `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`; exception stack traces follow the record line when present;
@@ -345,31 +351,23 @@ framework to provide the default JUL logging infrastructure and its configuratio
 
 `event-timing-app` is the first executable consumer of the framework library.
 
-Its package root remains:
+Its executable package is deliberately thin:
 
 ```text
-io.github.brainboxemb.eventtiming.app/
-  TimingApplication.java
-  TimingApplicationLifecycle.java
-  bootstrap/
-    ApplicationBootstrap.java
-    ApplicationConfig.java
-    ApplicationConfigLoader.java
-    PresentationConfig.java
-    RemoteShellConfig.java
-    ApiConfig.java
-    ApiHttpConfig.java
-    ApiWebSocketConfig.java
+io.github.brainboxemb.eventtiming.timingpoint.app/
+  TimingApplicationMain.java
 ```
 
-The framework owns the reusable SI-01 runtime and bootstrap components:
+The framework owns the reusable SI-01 runtime, bootstrap and infrastructure components:
 
 ```text
-io.github.brainboxemb.eventtiming/
+io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
     TimingApplication.java
     TimingApplicationLifecycle.java
   infra/
+    BuildIdentity.java
+    EmbeddedBuildIdentityLoader.java
     bootstrap/
       ApplicationBootstrap.java
       config/
@@ -379,16 +377,18 @@ io.github.brainboxemb.eventtiming/
         ApiConfig.java
         ApiHttpConfig.java
         ApiWebSocketConfig.java
+        YamlApplicationConfigLoader.java
     logging/
       Logging.java
       LoggingConfig.java
       LoggingLevel.java
       LoggingFileConfig.java
-      LoggingServer.java
-      LoggingServerConfig.java
       LoggingControl.java
       TimestampedFileLogHandler.java
       CompactLogFormatter.java
+    loggingserver/
+      LoggingServer.java
+      LoggingServerConfig.java
       LiveLogHandler.java
 ```
 
@@ -402,20 +402,22 @@ The executable artifact is deliberately thin. Its launcher/input adapters remain
 
 ```text
 event-timing-framework.jar
-  io.github.brainboxemb.eventtiming.infra.logging/
+  io.github.brainboxemb.eventtiming.timingpoint.infra.logging/
     Logging.java
     LoggingConfig.java
     LoggingLevel.java
     LoggingFileConfig.java
-    LoggingServer.java
-    LoggingServerConfig.java
     LoggingControl.java
     TimestampedFileLogHandler.java
     CompactLogFormatter.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver/
+    LoggingServer.java
+    LoggingServerConfig.java
     LiveLogHandler.java
 
 event-timing-framework.jar
-  io.github.brainboxemb.eventtiming.infra/
+  io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
     bootstrap/
@@ -424,7 +426,7 @@ event-timing-framework.jar
         YamlApplicationConfigLoader.java
 
 event-timing-app.jar
-  io.github.brainboxemb.eventtiming.app/
+  io.github.brainboxemb.eventtiming.timingpoint.app/
     TimingApplicationMain.java
 ```
 
@@ -440,7 +442,9 @@ main()
        -> validated ApplicationConfig
   -> Logging
        -> configure JUL level + console/file handlers
-       -> start optional LoggingServer for live diagnostics
+  -> optional LoggingServer
+       -> attach live handler + diagnostics listener
+       -> use Logging for current level / common formatting
   -> framework ApplicationBootstrap
        -> select/construct concrete presentation/I/O/platform implementations
        -> create reusable application/domain/runtime objects

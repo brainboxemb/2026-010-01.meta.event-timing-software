@@ -2,7 +2,7 @@
 
 Status: working/review baseline
 
-Software item: **SI-01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
 This Software Item Specification Document combines the SI-01 software requirements and
 software-item architecture in one versionable baseline. Requirement identifiers remain
@@ -237,7 +237,7 @@ A chosen implementation technology must satisfy this SSD and IF-03 rather than r
 
 ### Architecture drivers
 
-The **Headless Timing Application** (SI-01) architecture is driven by these concerns:
+The **Timing Point Application** (SI-01) architecture is driven by these concerns:
 
 - run on the original Raspberry Pi Zero / Zero W target; actual runtime/resource constraints are established by measurement;
 - remain usable on Linux/Windows development and test hosts;
@@ -259,7 +259,7 @@ The existing use cases in `30-UC-system-use-cases.md` are the scenario source. T
 
 Representative architecture-validation scenarios include:
 
-1. start the **Headless Timing Application** (SI-01), load configuration, expose version/status and shut down cleanly;
+1. start the **Timing Point Application** (SI-01), load configuration, expose version/status and shut down cleanly;
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
 4. persist accepted operational state and recover it after restart;
@@ -370,7 +370,7 @@ satisfies: >-
 ---
 
 The **API** is the general programmable interface of
-the **Headless Timing Application** (SI-01) for remote
+the **Timing Point Application** (SI-01) for remote
 clients, engineering tools and headless
 black-box/integration tests. A06/A07 implement only its
 first version/status/event slice; later supported control
@@ -890,7 +890,7 @@ interface and live delivery remains best effort.
 :id: TimingSystem
 
 A `TimingSystem` is an internal parent domain aggregate.
-One **Headless Timing Application** (SI-01) may host 1..N
+One **Timing Point Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
 simulation contexts. Each TimingSystem owns a complete
 `SystemStatus` overview, a system-level
@@ -999,7 +999,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-`ApplicationId` identifies the running Headless Timing Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationID` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
+`ApplicationId` identifies the running Timing Point Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationID` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
 
 <a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
@@ -1318,7 +1318,7 @@ Time is an explicit architecture concern rather than an incidental use of `Date`
 
 #### `TimingTimestamp` value
 
-The **Headless Timing Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
+The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
 
 Working semantics:
 
@@ -1472,12 +1472,12 @@ Working decisions:
 - `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
 - the executable composition selects exactly one provider;
 - the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating SLF4J records to the JDK `java.util.logging` backend configured by the framework-provided `Logging` infrastructure;
-- `event-timing-framework.jar` provides the reusable `io.github.brainboxemb.eventtiming.infra.logging.Logging` and `LoggingServer` implementation, including the JDK JUL handler/server classes; these classes introduce no external backend dependency because JUL is part of the Java runtime;
+- `event-timing-framework.jar` provides reusable `io.github.brainboxemb.eventtiming.timingpoint.infra.logging.Logging` and separate `io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver.LoggingServer` infrastructure; both use JDK JUL facilities and introduce no external backend dependency because JUL is part of the Java runtime;
 - the startup configuration defines one global semantic log level; the A08 baseline uses the normal `TRACE / DEBUG / INFO / WARN / ERROR` vocabulary and maps it to the selected backend;
 - `LoggingControl` owns the current global level and may apply a **temporary runtime override**. A runtime override is intentionally not written back to `application.yml` and resets to the configured level on restart;
 - the durable operational sink is a human-readable rotating `TimestampedFileLogHandler` with configured size limit and retained generations; its wall-clock filename is for operator readability, not uniqueness, so stale/repeated Raspberry Pi startup time must never overwrite an existing log or cause retention to prune the active file;
 - console logging remains available for local startup/development feedback;
-- an optional `LoggingServer` accepts a connection initiated by the JavaFX engineering client and streams new log records through a dedicated diagnostics channel;
+- an optional `LoggingServer` is independently composed beside `Logging`, attaches its own live handler, accepts a connection initiated by the JavaFX engineering client and streams new log records through a dedicated diagnostics channel;
 - the same diagnostics connection may query/change the temporary runtime log level; this control remains logging-specific rather than becoming a generic application command bus;
 - live delivery is best effort: a missing, slow or disconnected engineering client must not block TimingNode/application execution, and live records need not be retained for later replay;
 - the file sink is the retained source for historical operational logs; A08 does not add an in-memory log-history model or ring buffer;
@@ -1606,7 +1606,7 @@ data/persistence SDD only when implementation reaches that complexity.
 
 ### Integration architecture
 
-The **external device and network topology is owned by the SSSD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SSD starts at the **Headless Timing Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
+The **external device and network topology is owned by the SSSD**, because RFID/CAN devices, local LAN clients, displays and the upstream system are system-level deployment/interface relationships. This SSD starts at the **Timing Point Application** (SI-01) boundary and explains how the application realises those system interfaces internally through ports, adapters, callbacks, status handling and transport implementations.
 
 #### Upstream messaging
 
@@ -1766,7 +1766,7 @@ implementation concern.
 
 ### Technology decision register
 
-This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Headless Timing Application** (SI-01) architecture.
+This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Timing Point Application** (SI-01) architecture.
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
@@ -1790,12 +1790,12 @@ Technology choices should fit the actual application and target. Pi compatibilit
 
 ### Physical/deployment view
 
-Representative **Headless Timing Application** (SI-01) deployments are:
+Representative **Timing Point Application** (SI-01) deployments are:
 
 ```text
 Production field host
   Raspberry Pi Zero / Zero W
-    one Headless Timing Application process
+    one Timing Point Application process
       one or more TimingSystem aggregates
         each with 1..N TimingNodes
       local devices + local files
@@ -1803,12 +1803,12 @@ Production field host
 
 Development/test host
   Linux or Windows
-    same Headless Timing Application framework/application behaviour
+    same Timing Point Application framework/application behaviour
     real or stub adapters
     may host multiple independent TimingSystems for simulation
 ```
 
-The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Headless Timing Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSSD rather than duplicated here.
+The architecture should not require a different domain implementation for simulation. Different compositions select different adapters/topologies around the same application/domain behaviour. The system-level placement of the Timing Point Application relative to devices, operator clients, LAN/Wi-Fi and the upstream system is defined in the SSSD rather than duplicated here.
 
 ### Testability and failure/recovery architecture
 
@@ -1832,7 +1832,7 @@ Detailed verification strategy belongs in `60-SVP-software-verification-plan.md`
 
 ### Detailed-design documents
 
-Keep this SSD as the main technical design for the **Headless Timing Application** (SI-01). Use a separate SDD only when
+Keep this SSD as the main technical design for the **Timing Point Application** (SI-01). Use a separate SDD only when
 implementation detail would make the architecture section of this SSD harder to read.
 
 Current active focused SDD:

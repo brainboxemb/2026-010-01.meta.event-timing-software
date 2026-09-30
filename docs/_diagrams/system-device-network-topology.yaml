@@ -21,7 +21,7 @@ groups:
 
 nodes:
   - id: si01
-    label: "Headless Timing Application (SI-01)\nlocal timing runtime"
+    label: "Timing Point Application (SI-01)\nlocal timing runtime"
     kind: core
     group: field
     layout: {x: 235, y: 180, w: 330, h: 95}
