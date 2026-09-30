@@ -436,14 +436,19 @@ event-timing-app.jar
 
 `event-timing-framework.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
 
-The executable startup flow is:
+The target executable startup/configuration flow is:
 
 ```text
 main()
   -> framework EmbeddedBuildIdentityLoader
        -> executable-provided filtered build resource
-  -> framework YamlApplicationConfigLoader
-       -> validated ApplicationConfig
+  -> configuration resolution
+       -> selected built-in application-profile defaults
+       -> selected platform defaults
+       -> selected operating-mode defaults
+       -> explicit IF-11 YAML deployment overrides
+       -> secret resolution
+       -> validated effective ApplicationConfig
   -> Logging
        -> configure JUL level + console/file handlers
   -> optional LoggingServer
@@ -456,6 +461,12 @@ main()
   -> TimingApplication runtime
 ```
 
+The current Step-3 `YamlApplicationConfigLoader` implements only the explicit
+YAML subset already needed by the running application. Profile/platform/mode
+resolution is the next configuration responsibility; the architecture does not
+require a new public Java type for each source before that behaviour is
+implemented.
+
 `BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable framework application/runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
@@ -467,10 +478,26 @@ composition component around it and consumes the framework-owned effective
 
 The default IF-11 file syntax is YAML and its parser/mapping belongs to reusable
 framework infrastructure. `YamlApplicationConfigLoader` lives with the framework
-bootstrap/configuration model and maps YAML into component-owned configuration values
-before composition starts. SnakeYAML is therefore a framework implementation dependency;
-the IF-11 contract remains independent of SnakeYAML APIs and another input adapter may
-construct the same typed `ApplicationConfig` without YAML.
+bootstrap/configuration model. As profile support is implemented, configuration
+infrastructure resolves built-in profile/platform/mode defaults plus explicit
+deployment YAML into one effective `ApplicationConfig` **before**
+`ApplicationBootstrap` runs.
+
+The resolver responsibility must remain data/composition oriented:
+
+- `standard` and `finish` are profile IDs/default templates, not Java subclasses;
+- do not introduce `StandardTimingApplication`, `FinishTimingApplication` or a
+  profile-specific domain hierarchy;
+- profile defaults may select topology/cardinality and capability defaults;
+- platform defaults may select environment-specific values;
+- operating-mode defaults may replace real providers with simulated providers;
+- explicit IF-11 deployment values have highest non-secret precedence;
+- `ApplicationBootstrap` consumes only the resolved/validated
+  `ApplicationConfig` and contains no profile-name switches.
+
+SnakeYAML is therefore a framework implementation dependency; the IF-11 contract
+remains independent of SnakeYAML APIs and another input adapter may construct the
+same typed effective `ApplicationConfig` without YAML.
 
 Build-identity interpretation is reusable for the same reason. The framework owns
 `BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
@@ -499,6 +526,11 @@ presentation/
 Console and remote shell are separate presentation interfaces. They share only the
 line-oriented command-session behaviour in `presentation.common.terminal`; both call
 the same `CommandHandler` and shutdown callback.
+
+Console, Remote Shell and API are baseline Timing Point Application capabilities.
+Application profiles do not add/remove or redefine their command/status semantics.
+Concrete network listener bindings remain deployment configuration, so a listener
+may still be explicitly left unbound/disabled without creating another profile.
 
 A06/A07 are the first slice of the functional **API**:
 
