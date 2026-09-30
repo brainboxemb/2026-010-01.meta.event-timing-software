@@ -259,26 +259,22 @@ At closure:
 - framework post-merge run `34697920820` is green for Linux/Windows clean bootstrap, Linux canonical reactor build, Windows compatibility reactor build, and Windows execution of the exact Linux-produced application JAR;
 - the implementation repository therefore provides a reproducible clean-checkout consumer proof for both reusable tooling layers and a stable starting point for subsequent SI-01 increments.
 
-AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SIP Step 2 has since closed and SIP Step 3 is active.
+AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SIP Step 2 and SIP Step 3 have since closed; SIP Step 4 is now active.
 
-## Current coordination focus — SIP Step 3
+## Current coordination focus — SIP Step 4
 
 Current stable state:
 
 - Step 2 closed with release `v0.1.0`;
-- the current published Step-3 product baseline is `v0.2.1`;
-- normal development is `0.2.2-SNAPSHOT`;
-- IF-03 owns the public application-control/status contract;
-- IF-11 owns deployment/application configuration;
-- `CommandHandler` is the current shared presentation/application boundary;
-- `BuildIdentity` remains separate from deployment configuration;
-- `VC-ST1-001` now runs as an automated separate-process black-box test on the normal Linux/native-Windows verification path;
-- all Step-3 functional Done criteria are satisfied; the accepted v0.2.2 release remains the closure gate.
+- Step 3 closed with accepted release `v0.2.2` from exact implementation commit `c07ccd6127ac0976018026778f7a63df7af043bc`;
+- the safe post-release implementation development successor is `0.2.3-SNAPSHOT`; this does not pre-decide the eventual Step-4 release number;
+- IF-03 owns the public application-control/status contract and IF-11 owns deployment/application configuration;
+- the Step-3 application shell, shared terminal behaviour, HTTP/WebSocket status boundary, runtime logging and engineering client are established reusable foundations;
+- `VC-ST1-001` runs as an automated separate-process black-box test on Linux/native Windows, and the v0.2.2 tag qualification also executed the exact Linux-produced application JAR on Windows.
 
-The next bounded cross-repository focus is **Step-3 release closure on v0.2.2**. The configuration, shared terminal, IF-03 HTTP/WebSocket, runtime logging, JavaFX engineering client and separate-process ST-1 verification slices are implemented. Do not start a new Step-3 capability slice before closure; complete the normal release qualification/publication path, then mark Step 3 complete only after the accepted v0.2.2 release exists.
+The next bounded cross-repository focus is **SIP Step 4 — TimingNode state and domain foundation**. Start with controlled domain requirements/examples and deterministic tests for registrations/history, StageStartTimes, NextUpTeams, RaceData/reference data and the lifecycle/status semantics those capabilities genuinely require. Keep production RFID/CAN hardware, target deployment and full persistence/recovery outside this step.
 
-Do not add a new AP step merely to mirror SIP Step 3. Add one only when a distinct coordination deliverable needs its own plan.
-
+Do not create a detailed Step-4 activity board until the first domain slices and their authority are concrete enough to name without inventing implementation structure.
 ## Ongoing supporting activity — source collection
 
 Source collection is continuous and capability-driven rather than a mandatory stage that blocks all implementation.

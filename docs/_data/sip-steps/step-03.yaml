@@ -1,6 +1,10 @@
 step: 3
 
 planning_changes:
+  - date: '2026-09-29'
+    change: >-
+      Step 3 closed on accepted v0.2.2 after Linux, native Windows,
+      exact-artifact Windows smoke and VC-ST1-001 black-box verification.
   - date: '2026-09-25'
     change: >-
       A02 was narrowed to one application.yml with one TimingNode; broader
@@ -99,14 +103,13 @@ activities:
     lane: application
     kind: implementation
     title: Runtime logging + live diagnostics
-    state: active
+    state: done
     depends_on: [A03]
     note: >-
-      Keep framework logging on SLF4J while the executable configures JUL. Write
-      rotating retained file logs, optionally expose a best-effort live log socket
-      for the JavaFX engineering client, and allow a temporary process-wide level
-      override without rewriting application.yml. Logs remain separate from
-      IF-03 application/status events.
+      Framework infra.logging owns the reusable JUL logging implementation and
+      component configuration while the executable selects slf4j-jdk14. Retained
+      timestamped files, live diagnostics and temporary runtime level control are
+      implemented and remain separate from IF-03 application/status events.
 
   - id: V01
     lane: verification
@@ -122,17 +125,23 @@ activities:
     lane: verification
     kind: verification
     title: Adapter equivalence checks
-    state: planned
+    state: done
     depends_on: [A04, A05, A06, A07]
+    note: >-
+      Local console, remote terminal, HTTP and WebSocket adapters reuse the shared
+      CommandHandler/status semantics and are covered by adapter-level tests.
 
   - id: V03
     lane: verification
     kind: verification
     title: ST-1 application behaviour black-box test
-    state: planned
+    state: done
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
     note: >-
-      Verify snapshot/reconnect now; verify STATUS_CHANGED with the first real public state change.
+      VC-ST1-001 launches the packaged application as a separate JVM and verifies
+      HTTP version/status, WebSocket snapshot/reconnect and controlled remote-shell
+      shutdown on Linux and native Windows. End-to-end STATUS_CHANGED remains tied
+      to the first later public capability that can cause a real status change.
 
   - id: V04
     lane: verification
@@ -148,8 +157,9 @@ activities:
     lane: verification
     kind: verification
     title: Step-3 0.2.x release / identity proof
-    state: planned
+    state: done
     depends_on: [V03, V04]
     note: >-
-      v0.2.1 is the current published Step-3 baseline; normal development continues
-      on 0.2.2-SNAPSHOT and Step 3 closes on the next accepted 0.2.x release.
+      Accepted v0.2.2 is the Step-3 closure release. Its exact tag passed Linux
+      canonical build, native Windows qualification, exact Linux-artifact smoke on
+      Windows, artifact identity checks and GitHub Release publication.

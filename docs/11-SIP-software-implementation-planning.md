@@ -132,9 +132,7 @@ Create the Java repository and prove that it builds and runs independently.
 
 ## Step 3 — Application and Remote API foundation
 
-Status: active
-
-Closure state: **release closure candidate**
+Status: completed
 
 ### Purpose
 
@@ -189,19 +187,20 @@ Build the first useful **Headless Timing Application** (SI-01) on the developmen
 - runtime logging and Windows artifact execution are repeatable;
 - the step closes on the next accepted `0.2.x` release.
 
-### Closure candidate
+### Closure evidence
 
-The implementation and verification criteria above are satisfied on the current
-`0.2.2-SNAPSHOT` line. `VC-ST1-001` exercises the packaged application as a separate
-process through HTTP/WebSocket plus controlled remote-terminal shutdown and passes the
-normal Linux and native Windows Maven verification paths. Step 3 remains active only
-because the accepted `v0.2.2` release is the explicit closure gate.
+Step 3 closed on 29 September 2026 with accepted release `v0.2.2` from exact implementation
+commit `c07ccd6127ac0976018026778f7a63df7af043bc`. The release tag passed Linux canonical
+Maven verification, native full-Windows Maven verification and Windows execution of the
+exact Linux-produced application JAR. `VC-ST1-001` is part of the canonical reactor and
+verifies the packaged application as a separate process through HTTP/WebSocket plus
+controlled remote-terminal shutdown.
 
 ---
 
 ## Step 4 — TimingNode state and domain foundation
 
-Status: planned
+Status: active
 
 ### Purpose
 
