@@ -3,7 +3,7 @@ diagram:
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
   width: 1600
-  height: 1010
+  height: 1080
   description: Manual input resolves TeamIdentity inside SI-01 before entering the same TimingData commit pipeline.
   note: The client supplies participant identity/time input; SI-01 resolves the canonical IF-05 RegistrationIdentity.
 
