@@ -1472,12 +1472,12 @@ Working decisions:
 - `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
 - the executable composition selects exactly one provider;
 - the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating SLF4J records to the JDK `java.util.logging` backend configured by the framework-provided `Logging` infrastructure;
-- `event-timing-framework.jar` provides the reusable `io.github.brainboxemb.eventtiming.infra.logging.Logging` and `LoggingServer` implementation, including the JDK JUL handler/server classes; these classes introduce no external backend dependency because JUL is part of the Java runtime;
+- `event-timing-framework.jar` provides reusable `io.github.brainboxemb.eventtiming.timingpoint.infra.logging.Logging` and separate `io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver.LoggingServer` infrastructure; both use JDK JUL facilities and introduce no external backend dependency because JUL is part of the Java runtime;
 - the startup configuration defines one global semantic log level; the A08 baseline uses the normal `TRACE / DEBUG / INFO / WARN / ERROR` vocabulary and maps it to the selected backend;
 - `LoggingControl` owns the current global level and may apply a **temporary runtime override**. A runtime override is intentionally not written back to `application.yml` and resets to the configured level on restart;
 - the durable operational sink is a human-readable rotating `TimestampedFileLogHandler` with configured size limit and retained generations; its wall-clock filename is for operator readability, not uniqueness, so stale/repeated Raspberry Pi startup time must never overwrite an existing log or cause retention to prune the active file;
 - console logging remains available for local startup/development feedback;
-- an optional `LoggingServer` accepts a connection initiated by the JavaFX engineering client and streams new log records through a dedicated diagnostics channel;
+- an optional `LoggingServer` is independently composed beside `Logging`, attaches its own live handler, accepts a connection initiated by the JavaFX engineering client and streams new log records through a dedicated diagnostics channel;
 - the same diagnostics connection may query/change the temporary runtime log level; this control remains logging-specific rather than becoming a generic application command bus;
 - live delivery is best effort: a missing, slow or disconnected engineering client must not block TimingNode/application execution, and live records need not be retained for later replay;
 - the file sink is the retained source for historical operational logs; A08 does not add an in-memory log-history model or ring buffer;
