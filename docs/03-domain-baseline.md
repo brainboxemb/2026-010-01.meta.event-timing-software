@@ -350,7 +350,9 @@ A committed registration may later be revoked. Revocation is append-only:
 - the effective registration/race time on the revocation is copied from the
   original registration rather than replaced by the operator's current time;
 - origin and time-source remain those of the referenced registration;
-- the revocation record separately carries its own commit/record time.
+- the revocation record separately carries its own `recordedAt` value, captured
+  when the definitive record is materialized for the commit attempt; durable
+  commit remains a separate persistence outcome.
 
 This preserves the complete audit/order history. TimingData itself does not own or maintain a derived effective-registration
 projection. Domain/application business logic may reconstruct that state from
@@ -536,12 +538,14 @@ containing total-system context
 location association
 antenna context where relevant
 record type/payload
-record time
+effective event time plus recordedAt metadata
 TimingNode-specific persistence/recovery without sequence reuse
 synchronisation/gap detection
 ```
 
-Corrections/revocations should remain traceable rather than silently rewriting earlier records; the exact record model remains under design.
+Corrections/revocations remain traceable rather than silently rewriting earlier
+records. The first public record/file model is now defined by IF-05; later record
+families extend that contract only when their domain requirements are promoted.
 
 ## Open domain questions
 
