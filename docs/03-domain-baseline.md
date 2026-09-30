@@ -386,9 +386,24 @@ RegistrationIdentity
   number
 ```
 
-This is compatible with existing systems that split a participant identifier
-into a type discriminator and a numeric team number, without copying their
-proprietary one-character type codes into the public protocol.
+The first supported semantic registration types are:
+
+```text
+STANDARD  team 1..350; valid at locations 1..23
+WOMEN     team 1..350; valid at location 24
+MEN       team 1..350; valid at location 25
+```
+
+The type names are public semantics, not legacy wire letters. A proprietary
+translator may map them to its external representation.
+
+A reserve transponder is **not** a fourth registration-identity type. It is a
+reserve `TagIdentity` in the RFID/input domain and must resolve through
+reference data to the applicable canonical `RegistrationIdentity`.
+
+Location/type compatibility is validated before a registration is committed.
+The public model keeps that validation rule explicit so a registration identity
+that is valid at one location is not silently accepted at another.
 
 ## Race data
 
@@ -416,10 +431,17 @@ The postfix distinguishes physical tag copies and is removed from the canonical
 registration identity. The prefix is retained because it carries semantic tag
 class information.
 
-For the first registration slice the relevant classes are:
+For the first registration slice the relevant tag classes are:
 
 - normal tag;
 - reserve tag.
+
+A normal tag resolves directly to one of the supported registration-identity
+types. A reserve tag uses reserve mapping data first.
+
+The physical tag shape is not globally required to contain a postfix: finish
+tags may be represented without one. When present, a postfix is physical
+tag-copy detail and is not part of the canonical registration identity.
 
 The exact encoded prefix/postfix values, encryption details and device/protocol
 representation are proprietary and are not defined here. Test-tag behaviour is
@@ -449,6 +471,11 @@ Test tags are a separate RFID tag class identified by their prefix. They are **n
 After decoding, SI-01 must be able to distinguish a test tag from both a normal tag and a reserve tag so test-specific behaviour can be applied deliberately. A test tag must not be silently treated as a normal participant tag merely because its decoded payload also contains a team-like number.
 
 The exact behaviour is intentionally not fixed in this domain baseline. It belongs in operational use cases and later requirements, including whether a test tag creates a registration record, affects calculations, is synchronised to backoffice, is allowed in all lifecycle states, and how it is made visible to an operator.
+
+Legacy identifiers used for "unknown team" registrations at normal/finish
+locations are not promoted into the public RegistrationIdentity model yet. Their
+business meaning and required behaviour must first be verified from authoritative
+documentation.
 
 ## Start-time reference data
 
