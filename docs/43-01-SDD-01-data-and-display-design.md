@@ -254,21 +254,17 @@ TeamIdentity
   -> RegistrationIdentity
 ```
 
-`RegistrationIdentity` supports a semantic type discriminator plus number. The
-first supported values are:
+The canonical `RegistrationIdentity` type/number values, ranges and location
+compatibility are defined by IF-05. SI-01 identity-resolution code consumes that
+contract; it does not maintain a second independent type table.
 
-```text
-STANDARD   number 1..350   allowed at LocationID 1..23
-WOMEN      number 1..350   allowed at LocationID 24
-MEN        number 1..350   allowed at LocationID 25
-```
+A proprietary translator may map the IF-05 identity to/from its external split
+representation, but external one-character codes remain outside SI-01 domain
+semantics.
 
-A proprietary translator may map these to/from its external split representation,
-but external one-character codes are not public TimingData values.
-
-Reserve transponders remain a `TagIdentity` concern and resolve to one of these
-canonical registration identities; they do not add another
-`RegistrationIdentity.type`.
+Reserve transponders remain a `TagIdentity` concern and resolve to an IF-05
+canonical `RegistrationIdentity`; they do not add another public registration
+identity type.
 
 Source identities such as `TagIdentity` may be retained/exposed separately when
 an interface needs provenance or diagnostics; they are not substitutes for the
