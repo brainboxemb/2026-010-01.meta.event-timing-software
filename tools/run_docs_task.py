@@ -42,7 +42,6 @@ TASKS = {
         "output": PRODUCERS / "planning",
         "commands": [
             [sys.executable, "tools/generate_sip_planning.py"],
-            [sys.executable, "tools/generate_sip_step_pdfs.py"],
             [sys.executable, "tools/generate_sip_manager_roadmap.py"],
         ],
     },
