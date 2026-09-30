@@ -3,6 +3,9 @@ step: 4
 planning_changes:
   - date: '2026-09-30'
     change: >-
+      D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.
+  - date: '2026-09-30'
+    change: >-
       Step 4 narrowed to location, open/close, direct registration and observable TimingData.
   - date: '2026-09-30'
     change: >-
@@ -22,7 +25,7 @@ activities:
     lane: documentation
     kind: documentation
     title: Review first-registration operational use cases
-    state: active
+    state: done
     depends_on: [D01]
     note: >-
       Review only UC-001, UC-002, UC-003, UC-009 and the outbound-registration
@@ -33,7 +36,7 @@ activities:
     lane: documentation
     kind: documentation
     title: Translate private compatibility behaviour
-    state: planned
+    state: done
     depends_on: [D02]
     note: >-
       Translate only safe abstract client-behaviour conclusions needed by the
@@ -45,7 +48,7 @@ activities:
     lane: documentation
     kind: decision
     title: Establish first TimingData + public control contracts
-    state: planned
+    state: active
     depends_on: [D02, D02W]
     note: >-
       Define TimingNodeId and LocationId once in the TimingData/IDD contract,
