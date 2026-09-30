@@ -1,0 +1,47 @@
+diagram:
+  id: timingdata-sequence-generic-producer
+  type: sequence
+  title: Figure SDD01-TD06 — Generic TimingData producer hand-off
+  width: 1180
+  height: 700
+  description: Later start-procedure, penalty and correction producers reuse the same ordered commit path.
+  note: Their exact IF-05 record families and payloads remain deferred until the applicable requirements are promoted.
+
+participants:
+  - id: producer
+    label: "Domain producer"
+    kind: model
+  - id: rq
+    label: "Record queue"
+    kind: service
+  - id: rh
+    label: "RecordHandler"
+    kind: application
+  - id: file
+    label: "TimingData file"
+    kind: storage
+  - id: cq
+    label: "Committed queue"
+    kind: service
+
+messages:
+  - from: producer
+    to: rq
+    label: enqueue TimingDataIntent
+    kind: async
+  - from: rq
+    to: rh
+    label: next intent
+    kind: async
+  - from: rh
+    to: file
+    label: append canonical record
+    kind: call
+  - from: file
+    to: rh
+    label: durable append complete
+    kind: return
+  - from: rh
+    to: cq
+    label: committed TimingDataRecord
+    kind: async
