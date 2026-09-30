@@ -31,7 +31,7 @@ client side
         |
         | IF-03 API
         v
-SI-01 Headless Timing Application
+SI-01 Timing Point Application
 ```
 
 SI-01 keeps the TimingNode/status state. Clients observe/query it and later submit permitted commands; cached responses do not move that state into the client.

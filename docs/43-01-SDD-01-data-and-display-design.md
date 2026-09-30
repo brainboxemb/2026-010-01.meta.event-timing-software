@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-Software item: **01 — Headless Timing Application**
+Software item: **01 — Timing Point Application**
 
 This document refines local data ownership, backup/restore, traceable registration streams, ready-team behaviour, reference data, and the two display generations.
 

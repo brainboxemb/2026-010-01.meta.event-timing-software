@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-Software item: **SI-01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
 This SDD defines the transport-independent backoffice boundary and two intended communication implementations:
 

@@ -154,7 +154,7 @@ For independently released documents, a released document records the exact vers
 
 ## Current direction
 
-The project currently centres on the **Headless Timing Application** (SI-01):
+The project currently centres on the **Timing Point Application** (SI-01):
 
 - Java application with one or more `TimingNode` instances;
 - external configuration;
@@ -214,7 +214,7 @@ These are direction markers, not a fixed schedule.
 
 Establish the useful domain/application boundaries and a buildable Java framework.
 
-### B — First useful Headless Timing Application
+### B — First useful Timing Point Application
 
 Grow SI-01 on the development host: configuration, lifecycle, API, logging and
 basic black-box testing.

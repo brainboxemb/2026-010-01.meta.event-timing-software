@@ -73,7 +73,7 @@ The structure is a contract for configuration ownership. It does not require one
 
 ### Application identity
 
-`ApplicationId` identifies the configured Headless Timing Application instance.
+`ApplicationId` identifies the configured Timing Point Application instance.
 It is a separate identity/type from `TimingNodeId`.
 
 For the current single-TimingNode deployment style, the intended starting
