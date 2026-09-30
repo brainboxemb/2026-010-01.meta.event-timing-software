@@ -286,14 +286,13 @@ A `TimingDataRecord` is not limited to participant RFID passage data. Operationa
 
 First promoted operational example:
 
-- WP-status record characteristic `W`;
-- status `O` records that the TimingNode/WP was opened;
-- status `D` records that the TimingNode/WP was closed.
+- opening a TimingNode is a traceable TimingData state-change record;
+- closing a TimingNode is a traceable TimingData state-change record.
 
-The normal source-stream ordering is therefore a `W/O` record followed later by a
-`W/D` record. Legacy lowercase `d` ("closed, more data expected") is not
-produced by SI-01 and is not a TimingNode lifecycle state; a higher-level system
-may derive/add such an indication from its own synchronisation knowledge.
+The public TimingData contract represents the semantic state transition
+(`OPEN` / `CLOSED`) and does not prescribe legacy field names, characteristic
+codes or one proprietary wire encoding. A concrete `TimingDataProvider` may map
+these generic records to a deployment-specific/proprietary representation.
 
 A working minimal envelope is therefore conceptually:
 
