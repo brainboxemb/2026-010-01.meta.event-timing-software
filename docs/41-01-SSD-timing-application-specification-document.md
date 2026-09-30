@@ -15,6 +15,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
 - `32-03-IDD-application-control-status.md` for IF-03 obligations;
+- `32-05-IDD-timingdata-interchange.md` for IF-05 TimingData obligations;
 - `32-11-IDD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
@@ -609,12 +610,11 @@ architecture relates the TimingNode aggregate, rather than LogBook directly, to
 `TimingData`; the exact LogBookItem-to-TimingData mapping remains a lower-level
 design concern.
 
-`TimingData` owns the framework-defined canonical semantic protocol for timing
-information. `TimingDataRecord` is its principal record type. TimingData owns
-record meaning, validation, protocol versioning and the canonical
-public/reference codec. This is a Domain contract because the meaning and
-compatibility of recorded timing data are product semantics, not a property of a
-filesystem, RabbitMQ or HTTP implementation.
+`TimingData` is the SI-01/domain capability that realises the system-owned
+IF-05 TimingData Interchange contract. The normative persistent/interchange
+record kinds, field semantics, identity/ordering rules, versioning and canonical
+reference encoding are defined by `32-05-IDD-timingdata-interchange.md`.
+SI-01 design shall not redefine that external/file contract independently.
 
 A `TimingDataProvider` is a translation/extension boundary. A public or
 proprietary provider may translate an external representation to/from the
