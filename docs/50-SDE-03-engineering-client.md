@@ -168,29 +168,29 @@ This is the initial operational state after startup/recovery. The user may enter
 a valid event/profile LocationId and apply it. **Open** stays disabled until the
 client has resynchronised status showing an assigned LocationId.
 
-The accepted-registration controls remain disabled while the node is CLOSED.
+The auto-reg controls remain disabled while the node is CLOSED.
 
 ### OPEN with committed TimingData
 
 <a id="fig-sde03-03"></a>
 ![Timing view — OPEN with committed history](../../../raw/prod/docs/assets/architecture/engineering-client-timing-open.svg)
-*Figure SDE03-03 — Timing view while OPEN with direct-registration simulation and committed history.*
+*Figure SDE03-03 — Timing view while OPEN with dev auto-reg simulation and committed history.*
 
 While OPEN:
 
 - LocationId is displayed read-only;
 - changing LocationId is disabled;
 - **Close** is enabled;
-- direct accepted-registration simulation is enabled only when capability
+- dev auto-reg is enabled only when capability
   `DIRECT_REGISTRATION_SIMULATION` is both supported and enabled;
-- the user supplies only `RegistrationId` plus accepted observation time;
-- the optional **Now** action fills the observation-time field from the client
+- the user supplies only `id` plus `time`;
+- the optional **Now** action fills the `time` field from the client
   clock for convenience, while an explicit timestamp remains available for
   deterministic testing;
 - successful commits appear in the history and through the live event stream.
 
 The client never supplies TimingNodeId, source sequence, active LocationId or
-`recordedAt` for direct accepted-registration simulation.
+`recordedAt` for dev auto-reg simulation.
 
 ### RECONNECTING / stale state
 
@@ -215,7 +215,7 @@ A reconnect does not visually pretend that cached values are authoritative.
 
 ### Control availability
 
-| Client state | Set Location | Open | Close | Inject accepted registration |
+| Client state | Set Location | Open | Close | Auto-reg |
 | --- | --- | --- | --- | --- |
 | disconnected / reconnecting / stale | disabled | disabled | disabled | disabled |
 | LIVE + CLOSED + no LocationId | enabled | disabled | disabled | disabled |
@@ -275,13 +275,12 @@ not accidental contract drift.
 
 ## Capability-driven engineering controls
 
-The Engineering Client must not assume that direct registration simulation is
+The Engineering Client must not assume that dev auto-reg is
 available in every SI-01 deployment. The running application advertises whether
 that engineering capability is supported and enabled; otherwise the control is
 disabled or absent.
 
-For this first slice the engineering control is deliberately a **direct accepted
-registration** input. It is not antenna simulation and it is not an upstream
+For this first slice the engineering control is deliberately a **dev auto-reg** input. It is not antenna simulation and it is not an upstream
 backend message. Broader DebugConnector/upstream simulation is deferred until a
 later slice needs inbound backoffice behaviour such as start-time/reference-data
 updates.
@@ -346,7 +345,7 @@ Candidate generated views are:
 
 1. Status / connection baseline;
 2. Timing / CLOSED without LocationId;
-3. Timing / OPEN with direct accepted-registration and committed history;
+3. Timing / OPEN with dev auto-reg and committed history;
 4. Timing / RECONNECTING with stale cached data;
 5. Logs/Terminal only where those screenshots materially improve user documentation.
 
@@ -361,7 +360,7 @@ The Engineering Client remains independently testable:
 - service/client classes are unit tested without JavaFX handlers;
 - UI presentation can use deterministic fixture models;
 - interface integration uses a real running SI-01 through its public interfaces;
-- direct accepted-registration simulation enters SI-01 through IF-03 and the normal
+- dev auto-reg enters SI-01 through IF-03 and the normal
   TimingNode registration operation, never through package-private/internal mutation;
 - screenshot generation verifies stable rendering, not business correctness.
 
