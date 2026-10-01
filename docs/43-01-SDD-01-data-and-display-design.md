@@ -1,16 +1,28 @@
 # Data and display detailed design
 
-Status: working draft / non-authoritative
+Status: working draft / focused detailed design
 
-Software item: **01 — Headless Timing Application**
+Software item: **SI-01 — Timing Point Application**
 
-This document refines local data ownership, backup/restore, traceable registration streams, ready-team behaviour, reference data, and the two display generations.
+This SDD explains **how the data flows inside SI-01**: how LogBook entries are
+recorded, when a TimingData record is committed, how restart/recovery works, and
+how queries, prepare-team data and display data use that state.
 
-The initial design does **not** require a conventional embedded database. Runtime state is held in typed Java data structures/repositories and is backed up to simple files so the application can restore its state after restart.
+The SSD still defines the architecture. IF-05 still defines the TimingData
+record/file format. SDD-02 chooses the concrete Java classes, queues and worker
+threads.
 
-Domain identifiers and known ranges are captured in `03-domain-baseline.md`. This SDD translates those facts into software/data-design direction.
+The first version does **not** need an embedded database. Committed LogBook
+entries are written as append-only IF-05 TimingData. After a restart, SI-01 can
+read those records back and rebuild the LogBook. Other state, such as RaceData or
+prepare-team state, can use its own simpler backup/sync mechanism.
 
-## Core distinction: two traceable information models
+Identifiers and known ranges come from `03-domain-baseline.md`. This SDD only
+describes how SI-01 uses them.
+
+## Design scope and data ownership
+
+### Two traceable information models
 
 Two information flows must not be conflated:
 
@@ -19,7 +31,7 @@ Two information flows must not be conflated:
 
 Both need traceability and persistence, but they have different semantics and sequence scopes.
 
-## Registration-source identity
+### TimingNode source and location identity
 
 Every `TimingNode` has a `TimingNodeId`.
 
@@ -41,151 +53,394 @@ A registration entry is associated with both its source and its location.
 
 `TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
 
-## LogBook and TimingData
+### LogBook and IF-05 TimingData
 
-The runtime `LogBook` owns operational state as 0..N `LogBookItem` values.
-Those items are domain state and do not have to be shaped like the representation
-used outside the LogBook.
+The runtime `LogBook` stores committed canonical `TimingDataRecord` values.
+The current design does not add a second logbook-specific timing-record type.
 
-`TimingData` defines the canonical persistent/interchange representation.
-`TimingDataRecord` is the record representation used for storage, Web exchange
-and as timing-data payload inside `UpstreamProtocol`. TimingData owns the
-validation and encode/decode compatibility rules so adapters can persist or
-transport encoded values without becoming owners of the record schema.
+That choice is deliberate. The old/reference software already treats one LBR
+record as both the logged timing fact and the object consumers read. The new
+design keeps that useful property while giving the file format a clear IF-05
+contract.
 
-The registration ledger contains timing/registration-domain and traceable operational records such as:
+The system-owned **IF-05 TimingData Interchange** contract is defined by
+`32-05-IDD-timingdata-interchange.md`. It owns record kinds,
+`RegistrationIdentity`, sequence/key semantics, versioning and canonical file
+encoding.
+
+The same immutable `TimingDataRecord` object can therefore be:
+
+- appended by `TimingDataStore`;
+- added to `LogBook` after that append is durable;
+- read by runtime consumers;
+- offered to downstream/upstream delivery.
+
+A `TimingDataProvider` may translate to or from another external representation,
+but that translation does not introduce a second SI-01 timing-record model.
+
+### Tag, team and registration identity resolution
+
+Decoded team numbers are in the known range:
 
 ```text
-SYSTEM_OPEN
-PASSAGE
-START
-MANUAL_REGISTRATION
-PENALTY
-PENALTY_REVOKED
+TeamNumber = 0..999
 ```
 
-`SYSTEM_OPEN` is explicitly part of the registration stream: opening a location/timing node is not merely a transient status change; it produces a synchronisable traceable entry.
+A decoded physical RFID identity contains:
 
-Additional operational record types may be added only when domain requirements justify them.
+```text
+prefix + number + postfix
+```
 
-Records are historical facts and are not silently overwritten when corrected or revoked.
+The registration path normalises it to:
 
-## Registration sequence and stable record key
+```text
+RegistrationTag = prefix + number
+```
 
-The registration sequence is **monotonically increasing per `TimingNodeId` / timing node**.
+The postfix/copy suffix, when present, is deliberately removed from the
+registration identity; the prefix is retained so normal and reserve tags remain
+distinguishable. Finish-side tag representations are allowed to have no postfix,
+so parsing/normalisation shall not require one globally.
 
-It is not scoped by location and it is not one global sequence across all registration systems.
+All participant registrations are committed with one canonical
+`RegistrationIdentity`.
+
+Automatic path:
+
+```text
+TagIdentity
+  normal  -> deterministic registration-identity translation
+  reserve -> RaceData-backed reserve translation
+       -> RegistrationIdentity
+```
+
+Manual path:
+
+```text
+TeamIdentity
+  -> UI/application registration-identity translation
+  -> RegistrationIdentity
+```
+
+The canonical `RegistrationIdentity` type/number values, ranges and location
+compatibility are defined by IF-05. SI-01 identity-resolution code consumes that
+contract; it does not maintain a second independent type table.
+
+A proprietary translator may map the IF-05 identity to/from its external split
+representation, but external one-character codes remain outside SI-01 domain
+semantics.
+
+Reserve transponders remain a `TagIdentity` concern and resolve to an IF-05
+canonical `RegistrationIdentity`; they do not add another public registration
+identity type.
+
+Source identities such as `TagIdentity` may be retained/exposed separately when
+an interface needs provenance or diagnostics; they are not substitutes for the
+canonical registration identity stored by TimingData.
+
+## TimingNode serial execution and timing-data commit
+
+### Active-object boundary
+
+A `TimingNode` is the active serialization boundary for all mutable state that
+belongs to one timing point. The contained state objects stay passive:
+
+```text
+TimingNode  <<active object>>
+  +-- bounded serial work queue
+  +-- one serial worker (first implementation)
+  |
+  +-- LogBook           passive, committed TimingDataRecord history
+  +-- NextUpTeams       passive
+  +-- StageStartTimes   passive
+  +-- RaceData          passive
+  +-- lifecycle/location state
+  |
+  +-- TimingDataStore
+  +-- NextUpTeamsStore
+  +-- StageStartTimesStore
+  +-- RaceDataStore
+```
+
+The Active Object wording describes the behaviour, not a required Java base
+class. SDD-02 uses composition for the first implementation.
+
+Public/application calls stay ordinary Java methods such as
+`register(teamIdentity, time)`. Crossing the TimingNode's asynchronous boundary
+requires a small immutable internal work item so the caller may return while the
+node processes the operation later. That internal item is not a public Command
+Pattern object, is not persisted and does not become another domain model.
+
+The single TimingNode worker gives one clear order across registrations,
+NextUpTeams changes, reference-data updates and lifecycle changes. No producer
+lock is required around sequence allocation because only this worker performs
+the commit step.
+
+### TimingData commit and sequence
+
+For a registration, the decision that a registration shall be recorded has
+already been made before the asynchronous hand-off. The worker does not approve
+the registration again. It may still perform deterministic resolution or
+enrichment that depends on the node's current serialized state, such as resolving
+a reserve tag through the current `RaceData`.
+
+Only when the worker is ready to commit does it ask the LogBook for the next
+sequence. Sequence is therefore not assigned when work is placed on the queue.
 
 Conceptually:
 
-```text
-TimingDataRecordKey = (TimingNodeId, SequenceNumber)
+```java
+void processRegistration(RegistrationInput input) {
+    long sequence = logBook.nextSequence();
+
+    TimingDataRecord record =
+        timingDataFactory.registration(input, sequence, timeSource.now());
+
+    timingDataStore.append(record);   // returns after durable append
+    logBook.add(record);              // consumer visibility point
+    committedSinks.publish(record);   // non-blocking hand-off only
+}
 ```
 
-Example:
+`LogBook.nextSequence()` is based on committed state:
 
 ```text
-source A:  1041, 1042, 1043, 1044, ...
-source B:   551,  552,  553, ...
+empty LogBook                  -> 1
+last committed sequence = N    -> N + 1
 ```
 
-The location remains explicit data on each record:
+Calling `nextSequence()` does not consume the number. If persistence fails,
+the record is not added to LogBook and the next attempt still uses the same
+sequence. A later work item may not overtake the failed timing-data commit.
+
+The important ordering is:
 
 ```text
-source=A  sequence=1042  location=7   type=PASSAGE  ...
-source=A  sequence=1043  location=7   type=SYSTEM_OPEN ...
+TimingNode worker
+  -> choose next sequence
+  -> create immutable TimingDataRecord
+  -> TimingDataStore.append(record)
+  -> durable
+  -> LogBook.add(record)            <-- visible to consumers from here
+  -> publish/notify downstream
 ```
 
-If the source is later associated with another location, the source sequence does not implicitly restart. This preserves one consistent source stream for higher-level synchronisation.
+There is no direct producer-to-store path and no second TimingNode serial worker.
 
-A receiving/upstream system can use the sequence for ordering and gap detection. Receiving `1041`, `1042`, `1044` from source `A` makes the missing `1043` visible.
+![TimingNode producers and durable TimingData commit path](../../../raw/prod/docs/assets/architecture/timingdata-producer-pipeline.svg)
 
-![Registration traceability — sequence per timing node](../../../raw/prod/docs/assets/architecture/registration-stream-identity.svg)
+*Figure SDD01-TD01 — State-changing input enters the TimingNode serial boundary; a TimingData record becomes visible only after durable persistence.*
 
-### Illustrative TimingData record model
+### Other TimingNode state and per-type stores
 
-The Java shape below is illustrative. The architectural boundary is that
-`TimingData` owns this representation and its codec/compatibility semantics;
-`LogBookItem` remains free to use a different internal shape.
+Not every state type has the same durability semantics.
+
+`TimingDataStore` is special: successful durable append is part of the timing
+record commit. The LogBook is rebuilt from committed TimingData after restart.
+
+`NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` serve a
+different first purpose: preserve accepted state changes/snapshots for
+post-event analysis. Their stored data lets engineers later answer questions
+such as which teams were next-up or which stage-start times/reference data were
+known when a timing decision was made.
+
+Those files are not automatically the runtime source after reboot. For example,
+StageStartTimes can be sent again when the node is opened. Keeping its historical
+file is still valuable for later analysis.
+
+All state changes are ordered by the TimingNode worker. The first implementation
+may also perform these small/infrequent store writes on that worker. If target
+measurements show an analysis-store write can delay registration unacceptably,
+the immutable snapshot can later be handed to a bounded persistence executor.
+That optimization must not change TimingNode state ordering and must not
+introduce an unbounded hidden queue.
+
+### Query/consumer visibility
+
+Consumers only see committed timing records. A query that starts before a new
+record is added may finish against its earlier view; a later query sees the new
+record.
+
+A long query must not occupy the TimingNode worker or hold the LogBook lock for
+its whole calculation. With the expected LogBook size of roughly 1200–1500
+records, immutable TimingDataRecord objects make a shallow reference snapshot
+cheap. Copying 1500 references is roughly 6 KiB with 4-byte compressed
+references or 12 KiB with 8-byte references.
+
+To avoid turning even that small copy into repeated garbage, a consumer may own
+a reusable destination buffer:
 
 ```java
-final class TimingDataRecord {
-    private TimingNodeId timingNodeId;
-    private long sequenceNumber;
-    private LocationID locationId;
-    private RegistrationType type;
-    private Instant observedAt;
-    private Instant createdAt;
-    private RegistrationOrigin origin;
-    private TeamNumber teamNumber;              // when applicable
-    private TimingDataRecordKey reference;    // corrections/revocations
-    private RegistrationPayload payload;         // type-specific data
-}
-
-final class TimingDataRecordKey {
-    private TimingNodeId timingNodeId;
-    private long sequenceNumber;
-}
+int count = logBook.copyTo(reusableBuffer);  // short synchronized copy
+calculate(reusableBuffer, count);            // no LogBook lock
 ```
 
-Names are illustrative; the important design is the TimingNode-scoped sequence and explicit location association.
+The exact collection/array implementation and measured copy time remain SDD-02
+implementation/verification details. The architectural point is that a consumer
+gets a stable view without a second LogBook thread.
 
-### Sequence allocation
+![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-A sequence allocator is owned per `TimingNode`:
+*Figure SDD01-TD02 — One TimingNode serial worker owns mutation order; passive state and consumers do not receive their own workers.*
 
-```java
-interface RegistrationSequence {
-    long next(TimingNodeId timingNodeId);
-}
-```
+### Runtime flows
 
-Conceptual processing:
+The sequence diagrams below are intentionally high-level. They show method calls,
+the TimingNode asynchronous boundary, persistence and visibility. SDD-02 owns the
+concrete Java worker mechanism.
 
-```java
-void acceptRegistration(RegistrationCandidate candidate) {
-    TimingNodeId timingNode = candidate.timingNodeId();
-    long sequence = registrationSequence.next(timingNode);
+#### Automatic RFID registration
 
-    LogBookItem item = logBookItemFactory.create(
-        sequence,
-        candidate.locationId(),
-        candidate);
+![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
 
-    logBook.append(item);
+*Figure SDD01-TD03 — An antenna callback submits work to the TimingNode and returns; the TimingNode worker later persists and exposes the record.*
 
-    TimingDataRecord record = timingData.toRecord(timingNode, item);
-    storage.append(timingData.encode(record));
-    upstream.enqueue(record);
-}
-```
+#### Manual registration
 
-The serialized timing node application path is a natural place to coordinate committed records, while sequence allocation remains scoped independently by `TimingNodeId`.
+![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
 
-## Sequence persistence and synchronisation
+*Figure SDD01-TD04 — CommandHandler makes a normal TimingNode registration call; no Command object is implied by the interface.*
 
-Sequence allocation is a domain consistency mechanism, not a storage implementation detail.
+#### Long query while registrations continue
 
-Required direction:
+![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
 
-- never reuse a committed `(TimingNodeId, SequenceNumber)` after restart;
-- preserve monotonic order independently for each `TimingNode`;
-- persist enough allocator state that restore cannot accidentally restart a source sequence;
-- expose source + sequence in synchronisation/support data;
-- support upstream gap/consistency detection;
-- corrections/revocations refer to a stable earlier record key rather than mutating history.
+*Figure SDD01-TD05 — A query works on a stable LogBook view while the TimingNode worker can commit later records.*
 
-Backup metadata should therefore be source-keyed, for example:
+#### Later producers
+
+![Generic TimingNode producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
+
+*Figure SDD01-TD06 — Later start, penalty and correction operations use the same TimingNode serial boundary.*
+
+#### Thread/ownership responsibilities
+
+| Execution role | May block on | Must not block |
+| --- | --- | --- |
+| ingress/caller | short validation + bounded TimingNode submission | durable file I/O, long query, network retry |
+| TimingNode serial worker | ordered domain state change; required local persistence | long query, client rendering, slow network retry |
+| query worker/caller | its own calculation on a stable read view | TimingNode state progress |
+| signalling/upstream worker | its own delivery/retry policy | TimingNode commit |
+
+For the first one-node implementation, one dedicated worker is the simplest
+mechanism. A later multi-node runtime may share executor threads only if each
+TimingNode still processes at most one work item at a time and preserves FIFO
+order.
+
+## TimingData persistence and recovery
+
+### Recovering the next sequence
+
+We do not need a separate sequence-counter file in the first implementation.
+The TimingData file already tells us the last committed sequence:
 
 ```text
-registration.nextSequence.A  = 1045
-registration.nextSequence.B  = 554
-registration.nextSequence.R1 = ...   # exact reserve identifier form TBD
+no committed records       -> nextSequence = 1
+last committed sequence N  -> nextSequence = N + 1
 ```
 
-Whether sequence gaps are allowed is still a formal requirement question. **No reuse and monotonicity** are already known; contiguity across failed/aborted persistence still needs definition.
+At startup:
 
-## Prepare-team registry
+- read complete IF-05 records in order;
+- check that the file belongs to one TimingNode;
+- check that the committed sequence increases without duplicates or unexpected gaps;
+- ignore/remove only a half-written final record that has no complete line ending;
+- never reuse a committed `(TimingNodeId, SequenceNumber)`.
+
+A half-written **last** record after power loss is recoverable: truncate back to
+the last complete record and continue from there.
+
+A corrupt **complete** record, duplicate sequence or gap is different. Do not
+silently skip or renumber it. Stop recovery for that TimingNode and report the
+problem so support/operator tooling can see it.
+
+If we later add a cached sequence-counter file for faster startup, it is only a
+cache. The committed TimingData file remains the source used to check/rebuild it.
+
+### Persistence roles
+
+TimingData has the strongest rule:
+
+- a TimingData record is committed only after its complete IF-05 representation
+  is durably appended;
+- only then is the same `TimingDataRecord` added to LogBook and visible to
+  runtime consumers;
+- the TimingData file is used to rebuild LogBook after restart.
+
+Other per-node stores have a different first purpose:
+
+- `NextUpTeamsStore` preserves accepted next-up state/history for analysis;
+- `StageStartTimesStore` preserves accepted start-time snapshots for analysis;
+- `RaceDataStore` preserves accepted reference-data snapshots/versions for
+  analysis.
+
+Those historical stores do not automatically restore live state after reboot.
+The live protocol may resend the current data, for example when a TimingNode is
+opened. Recovery semantics can be promoted later if an operational requirement
+needs them.
+
+Implementation points to verify on the target Pi:
+
+- what exact flush/fsync call makes a TimingData append durable;
+- what happens if power disappears halfway through the final line;
+- whether truncating the incomplete tail is safe on the target filesystem;
+- how a corrupt complete record is reported instead of silently ignored;
+- file rotation/retention for TimingData and analysis stores;
+- whether any non-critical store write needs asynchronous offload after
+  measurement.
+
+We do not need a database just to solve these cases.
+
+### Startup flow
+
+The first startup flow is intentionally straightforward:
+
+```text
+start process
+   |
+   v
+load configuration
+   |
+   v
+open TimingData file for each configured TimingNode
+   |
+   v
+read and validate complete IF-05 records
+   |
+   +--> half-written final line: truncate to last complete record + report
+   |
+   +--> corrupt complete record / duplicate / gap: recovery error, do not append
+   |
+   v
+nextSequence = last committed sequence + 1
+   |
+   v
+rebuild LogBook
+   |
+   v
+load other saved/reference state
+   |
+   v
+start interfaces/devices
+   |
+   v
+connect/synchronise upstream when available
+```
+
+A new/empty TimingData file starts at sequence 1.
+
+Rebuilding the LogBook does **not** automatically reopen a TimingNode. For
+example, if the last historical state record says `OPEN`, a process restart must
+not start accepting new observations merely because that old record exists. The
+open/closed restart policy belongs to lifecycle/control requirements.
+
+If prepare-team or reference-data backup is corrupt, report that explicitly too;
+do not silently present the system as healthy.
+
+## Prepare-team and reference data
+
+### Prepare-team registry
 
 Keypad input indicates which teams should prepare at the timing node/exchange point. A keypad action is not itself a passage/start/penalty registration.
 
@@ -232,139 +487,11 @@ final class PrepareTeamEvent {
 
 The prepare-team history sequence is a separate design question from the `TimingNodeId`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `TimingNodeId` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
 
-## Team and tag identities
-
-Decoded team numbers are in the known range:
-
-```text
-TeamNumber = 0..999
-```
-
-An RFID tag identity ultimately contains:
-
-```text
-prefix + team number + postfix
-```
-
-Known semantics:
-
-- a dedicated prefix indicates a reserve tag;
-- two physical tags exist for the same team/identity;
-- the postfix distinguishes those two physical tag copies;
-- exact encoded prefix/postfix values and encryption/protocol format are not defined in this public design.
-
-Reserve-tag identities are resolved through locally available backoffice-synchronised mapping data before normal participant/team processing.
-
-## In-memory authoritative state with file backup
-
-The initial implementation direction is:
-
-```text
-live application
-    |
-    +-- TimingSystem (1..N)
-    |     +-- UpstreamProtocol      sync/reconcile/ping semantics
-    |     +-- TimingNode (1..N)
-    |           +-- LogBook         0..N LogBookItem in memory
-    |           +-- RegistrationState
-    |           +-- NextUpTeams
-    |           +-- StageStartTimes
-    |           +-- RaceData
-    |           +-- RegistrationSequenceState
-    |
-    +-- TimingData                  canonical record + codec contract
-    |
-    +-- simple file backup / restore
-```
-
-The application operates on typed in-memory structures rather than repeatedly parsing files during normal operation. `LogBookItem` is the LogBook's internal state shape; `TimingDataRecord` is produced through the TimingData contract when data crosses the persistence, Web or upstream interchange boundary. Files provide persistence/recovery, not the primary domain API.
-
-Possible interfaces:
-
-```java
-interface LogBook {
-    void append(LogBookItem item);
-    List<LogBookItem> snapshot();
-}
-
-interface PrepareTeamRegistry {
-    void add(TeamNumber team, InputSource source, Instant createdAt);
-    void remove(TeamNumber team, InputSource source, Instant createdAt);
-    List<TeamNumber> currentTeams();
-    List<PrepareTeamEvent> history();
-}
-
-interface StageStartTimeRegistry {
-    void replace(StartTimeSnapshot snapshot);
-    StartTime find(TeamNumber teamNumber);
-    StartTimeSnapshot snapshot();
-}
-```
-
-Concrete implementations can use collections/maps appropriate to lookup patterns.
-
-## Backup policy
-
-The exact write policy still needs evidence and requirements. Candidates include:
-
-- persist every accepted traceable event before acknowledging it;
-- keep an append recovery journal plus periodic snapshots;
-- atomically write current-state/reference snapshots using temporary-file + rename/replace;
-- keep all source sequence allocator state in the same recoverable persistence set.
-
-For the initial implementation, correctness and recoverability are more important than introducing a database engine.
-
-Status should eventually expose at least:
-
-```text
-backup state
-last successful backup time
-last restore result
-last registration sequence per timing node
-last ready-team sequence
-last reference-data synchronisation time/version
-```
-
-## Startup restore
-
-A possible startup sequence is:
-
-```text
-start process
-   |
-   v
-load configuration
-   |
-   v
-load trace journals / snapshots / timing node sequence metadata
-   |
-   v
-reconstruct in-memory repositories and derived state
-   |
-   v
-load reference-data backup
-   |
-   v
-validate sequence state against restored records
-   |
-   v
-start interfaces/devices
-   |
-   v
-connect/synchronise with backoffice when available
-```
-
-For ready teams, restoration can restore a snapshot or replay the journal:
-
-```java
-PrepareTeamRegistry prepareTeams = restorePrepareTeamRegistry(backup.prepareTeamRegistry());
-```
-
-A missing/corrupt backup or inconsistent sequence metadata must result in explicit status rather than silently looking healthy.
-
-## Start-time and reserve-tag synchronisation
+### Start-time and reserve-tag synchronisation
 
 Start times and reserve-tag mappings are backoffice-owned reference data that must also be available locally.
+
+The start-time semantic model must remain compatible with sources that define a race/stage start as **time-of-day only**. An optional date/race-day value may be carried when available, but consumers shall not require it. Accepted registration observations remain absolute `TimingTimestamp` values. For elapsed-time calculation, a time-only start is resolved in the configured event/race time zone to the most recent valid occurrence not after the registration timestamp, so a midnight crossing is handled as the next civil day rather than as a negative elapsed time.
 
 The application maintains local in-memory repositories and synchronises accepted data from the backoffice.
 
@@ -409,7 +536,7 @@ void handle(StartTimeSnapshotReceived message) {
 
 The same pattern applies to reserve-tag conversion data. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/IDD design.
 
-## Keypad behaviour
+### Keypad behaviour
 
 The CAN keypad can both add and remove team numbers from prepare-team registry.
 
@@ -438,7 +565,9 @@ Removing a team follows the same path with `REMOVED`.
 
 The application, not the keypad, remains authoritative for current prepare-team registry. Duplicate-add, remove-not-present, ordering and capacity behaviour need explicit requirements.
 
-## Display model
+## Display data
+
+### Display model
 
 Display data is derived from **current state**, not by forwarding keypad history directly.
 
@@ -477,7 +606,7 @@ final class TeamDisplayData {
 
 Fields are illustrative. The display IDD will ultimately define the system contract.
 
-## Display V1 — passive CAN display
+### Display V1 — passive CAN display
 
 Display V1 is relatively passive and must be actively driven by the timing application.
 
@@ -498,7 +627,7 @@ Implications:
 - a V1 reset does not destroy application prepare-team registry;
 - status distinguishes discovered/reachable/last successfully updated.
 
-## Display V2 — smart Wi-Fi display
+### Display V2 — smart Wi-Fi display
 
 Display V2 is a smarter network client. The timing application communicates domain/display **data**, while V2 owns presentation/rendering behaviour.
 
@@ -520,18 +649,24 @@ void onDisplayV2Connected(DisplaySession session) {
 
 A later optimisation may send deltas, but reconnect must always be recoverable through a complete current snapshot.
 
-## Registration versus ready-team display state
+### Registration versus ready-team display state
 
 These flows remain separate:
 
 ```text
-RFID/manual/start/penalty/system-open
+RFID / manual / lifecycle / later start / penalty logic
           |
           v
- RegistrationLedger
+      TimingNode
+   bounded serial work
           |
-          +--> local results/ranking
-          +--> backoffice outbox
+          v
+    TimingDataRecord
+          |
+          +--> TimingDataStore (durable)
+          +--> LogBook (visible after durable append)
+          +--> StageTiming / ranking inputs
+          +--> downstream integration
 
 keypad/UI prepare/remove team
           |
@@ -547,56 +682,65 @@ A team can be ready for display without having produced a registration, and a re
 
 Later interactions (for example automatically removing a team after a successful start/passage) must be explicit domain requirements rather than accidental display side effects.
 
-## Synchronisation and threading
+## Rules when implementing IF-05
 
-Registration records, ready-team events, reference-data updates and UI/device commands enter through controlled serialized state-change boundaries so in-memory transitions are deterministic.
+The TimingData record/file contract is not re-specified here. SI-01 design shall
+conform to **IF05-REQ-001..015** in
+`32-05-IDD-timingdata-interchange.md`.
 
-File writes/network sends should not stall those boundaries indefinitely. Durability semantics need explicit requirements, particularly for traceable registration records whose source sequence is used for upstream consistency checking.
+The following temporary design constraints cover only the internal realisation
+needed around that interface:
 
-One possible pattern is:
+### TimingNode state and record pipeline
 
-```text
-serial handler
-   |
-   +-- allocate source sequence
-   +-- append in-memory ledger
-   +-- update derived state
-   +-- create immutable persistence work
-   +-- schedule durable file write
-   +-- create downstream backoffice work
-```
+- **CAND-PIPE-001** — Each TimingNode shall provide one bounded serial execution
+  boundary for its mutable per-node state. Contained state objects such as
+  LogBook, NextUpTeams, StageStartTimes and RaceData shall remain passive.
+- **CAND-PIPE-002** — Registration sequence shall be selected by the TimingNode
+  worker immediately before commit, not when ingress work is queued.
+- **CAND-PIPE-003** — A TimingData record shall become visible in LogBook only
+  after `TimingDataStore` reports the complete append durable.
+- **CAND-PIPE-004** — The LogBook shall hold the same canonical
+  `TimingDataRecord` values used by the TimingData persistence/interchange
+  boundary; no second logbook-specific timing-record type is required.
+- **CAND-PIPE-005** — Potentially long queries and network delivery/retry shall
+  execute outside the TimingNode serial worker.
+- **CAND-PIPE-006** — Consumers needing a stable LogBook view shall use a short
+  read/copy operation and perform long calculations after releasing LogBook
+  synchronization; implementations should avoid unnecessary per-query garbage.
 
-However, because upstream systems depend on the sequence stream, formal requirements must decide when a sequence/record is considered committed and which failure gaps are legal.
+### Identity resolution before IF-05 commit
 
-## Candidate requirements
+- **CAND-ID-001** — The RFID path shall normalise physical tag input to the
+  `TagIdentity` form required for registration-identity resolution.
+- **CAND-ID-002** — The RFID path shall distinguish normal versus reserve-tag
+  semantics before the TimingNode creates the committed TimingData record.
+- **CAND-ID-003** — A normal `TagIdentity` shall resolve deterministically to
+  the IF-05 `RegistrationIdentity`; a reserve `TagIdentity` shall resolve
+  through locally available race/reference mapping data.
+- **CAND-ID-004** — Manual registration shall resolve operator-supplied
+  `TeamIdentity` to the same IF-05 `RegistrationIdentity` used by automatic
+  registrations.
+- **CAND-ID-005** — Physical tag postfix/copy detail, when present, shall not be
+  carried into IF-05 `RegistrationIdentity`; parsing shall not require a
+  postfix globally.
 
-Temporary identifiers only; these are not yet formal requirements.
+### Local data and per-type stores
 
-### Registration identity and traceability
-
-- **CAND-REG-001** — Each registration system/source shall have a stable `TimingNodeId`.
-- **CAND-REG-002** — Each physical location shall have a unique `LocationID` in the known domain range `1..25`.
-- **CAND-REG-003** — Each committed registration entry shall contain both `TimingNodeId` and `LocationID`.
-- **CAND-REG-004** — Each committed registration entry shall receive a monotonically increasing sequence number scoped to its `TimingNodeId`.
-- **CAND-REG-005** — The stable registration record identity shall include `TimingNodeId` and sequence number so upstream systems can order records and detect gaps per timing node.
-- **CAND-REG-006** — Registration sequence allocation shall survive restart/restore and shall not reuse previously committed sequence numbers for a source.
-- **CAND-REG-007** — Opening a location/timing node shall create a traceable registration-stream entry.
-- **CAND-REG-008** — Registration corrections and revocations shall remain traceable to earlier record identity and shall not silently overwrite historical records.
-
-### Tag/team identity
-
-- **CAND-TAG-001** — Decoded team numbers shall support the known range `0..999`.
-- **CAND-TAG-002** — Tag decoding shall distinguish normal versus reserve-tag prefix semantics.
-- **CAND-TAG-003** — Tag decoding shall retain the postfix/copy identity needed to distinguish the two physical tags associated with one team identity.
-- **CAND-TAG-004** — Reserve tags shall be resolvable using locally available mapping data synchronised from the backoffice.
-
-### Local data and backup
-
-- **CAND-DATA-001** — The initial implementation shall maintain active registration, ready-team and reference state in application data structures without requiring an external database engine.
-- **CAND-DATA-002** — The system shall back up locally required traceable history/state to simple persistent files and shall be able to restore that information during startup.
-- **CAND-DATA-003** — Backup/restore failures shall be represented in system status.
-- **CAND-DATA-004** — The local start-time data set shall be synchronisable from the backoffice and remain available after loss of live backoffice connectivity.
-- **CAND-DATA-005** — The system shall track enough reference-data synchronisation metadata to determine whether local data is current/stale relative to the latest accepted update.
+- **CAND-DATA-001** — The initial implementation shall maintain committed
+  LogBook state, next-up state and reference state in typed in-memory objects
+  without requiring an external database engine.
+- **CAND-DATA-002** — `TimingDataStore` shall be the durable/recovery source
+  for committed TimingData.
+- **CAND-DATA-003** — NextUpTeams, StageStartTimes and RaceData shall each use a
+  type-specific store when their accepted state/snapshots are preserved for
+  analysis; these stores shall not be treated as runtime recovery authority
+  unless a requirement explicitly says so.
+- **CAND-DATA-004** — TimingData recovery faults and analysis-store failures
+  shall be visible in system status/diagnostics.
+- **CAND-DATA-005** — The system shall track enough reference-data
+  synchronisation metadata to determine whether local data is current/stale
+  relative to the latest accepted update.
 
 ### Ready-team/keypad data
 
@@ -619,15 +763,10 @@ Temporary identifiers only; these are not yet formal requirements.
 - What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
 - Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
-- At what value does a new source sequence start?
-- Are sequence gaps acceptable after failed/aborted persistence provided committed numbers are never reused?
-- Which durability point makes a source sequence/record committed and eligible for backoffice transmission?
-- What sequence numeric width/wraparound policy is required?
-- Which operational events besides `SYSTEM_OPEN` belong in the registration stream?
-- What payload is required on a `SYSTEM_OPEN` entry?
+- What exact filesystem durability primitive/policy is required before a completed append is considered durable on each deployment platform?
+- Which additional producer/domain paths should emit future IF-05 record families after their requirements are promoted?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
-- Which state must survive restart: all registration history, all ready-team history, current ready-team snapshot, start times, reserve tags, display revision, outbox, or all of these?
-- Is snapshot-only backup sufficient for registrations/ready-team events, or should traceable changes use an append journal plus periodic snapshot?
+- Should ready-team recovery use an append persistent file, a current-state snapshot, or both?
 - How frequently may simple backup files be written without unnecessary SD-card wear?
 - Should reference data use one combined backup snapshot or separate files per data set?
 - Is start-time synchronisation always a full snapshot, or can the backoffice send deltas/corrections?

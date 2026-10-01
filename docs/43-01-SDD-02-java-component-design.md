@@ -1,16 +1,21 @@
 # Java component, package and artifact detailed design
 
-Status: working draft / non-authoritative
+Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
-This SDD has one focused purpose: refine the SI-01 architecture into Java package, Maven artifact, composition and contract-placement rules that are already relevant to the implementation repository.
+This SDD describes the **Java implementation** of the SI-01 design: Maven
+modules, packages, classes/interfaces, composition, queues/threads and provider
+loading.
 
-The application architecture itself — including runtime hierarchy, threading, messaging, integration, configuration and technology direction — is owned by the architecture part of `41-01-SSD-timing-application-specification-document.md`.
+The SSD says what the architecture must do. SDD-01 describes the LogBook/data
+flow. IDDs such as IF-05 define external/file contracts. This document picks the
+Java mechanisms that implement those decisions.
 
 ## Why this SDD exists
 
-This detail is kept separate because artifact/package choices already affect source layout, dependency checks, public/private composition and release boundaries in the implementation repository.
+This detail is separate because module/package choices directly affect the Java
+repository, dependencies and what can be reused by other applications.
 
 The central rule is:
 
@@ -28,15 +33,19 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 
 ## Initial Maven reactor
 
-The current implementation deliberately proves only one reusable library and one executable application:
+The current reactor has two reusable artifacts plus one executable application.
+The separate TimingData API artifact is justified by the independent SI-01 and
+Engineering Client consumers:
 
 ```text
 event-timing-framework/
-├── pom.xml                  event-timing-parent
+├── pom.xml                    event-timing-parent
+├── timing-data-api/
+│   └── pom.xml                event-timing-data-api.jar
 ├── framework/
-│   └── pom.xml              event-timing-framework.jar
+│   └── pom.xml                event-timing-framework.jar
 └── app/
-    └── pom.xml              event-timing-app.jar
+    └── pom.xml                event-timing-app.jar
 ```
 
 Working coordinates:
@@ -44,12 +53,13 @@ Working coordinates:
 ```text
 groupId: io.github.brainboxemb.eventtiming
 
-parent:     event-timing-parent
-library:    event-timing-framework
-executable: event-timing-app
+parent:          event-timing-parent
+TimingData API:  event-timing-data-api
+framework:       event-timing-framework
+executable:      event-timing-app
 ```
 
-The root parent POM is build/aggregation metadata, not a deployed product component.
+The root POM only groups/configures the build; it is not a runtime component.
 
 The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable framework and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
 
@@ -140,13 +150,20 @@ domain/
     TimingNode.java
     TimingNodeId.java
     UpstreamMessagePort.java            TimingNode-level upstream messages
+    NextUpTeams.java                    passive per-node state
+    NextUpTeamsStore.java               persistence port for next-up analysis history
+    StageStartTimes.java                passive per-node reference state
+    StageStartTimesStore.java           persistence port for start-time analysis history
+    RaceData.java                       passive per-node reference state
+    RaceDataStore.java                  persistence port for race/reference analysis history
   logbook/
-    LogBook.java
-    LogBookItem.java                    internal logbook-domain representation
+    LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingData.java                     canonical record/codec contract
-    TimingDataRecord.java               persistent/interchange record
-    TimingDataProvider.java             typed extension provider contract
+    TimingDataRecord.java               canonical semantic/interchange record
+    TimingDataRecordKey.java
+    TimingDataStore.java                durable append/load/recovery port
+    TimingDataCodec.java                canonical public/reference codec
+    TimingDataProvider.java             external-format translation provider
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
@@ -176,10 +193,23 @@ io/
     rabbitmq/
       RabbitMqConnector.java
       DebugConnector.java                 engineering/debug connector when implemented
+  storage/
+    FileTimingDataStore.java              TimingData durable append/recovery
+    FileNextUpTeamsStore.java             next-up analysis history/snapshots
+    FileStageStartTimesStore.java         start-time analysis history/snapshots
+    FileRaceDataStore.java                race/reference analysis snapshots
+
+core/
+  concurrent/
+    SerialWorker.java                     bounded one-at-a-time execution primitive
 ```
 
 The names above record ownership/direction, not a requirement to create empty
-types early. `ApplicationId`, internal `TimingSystemId` and functional
+types early. Store **interfaces** stay next to the capability whose semantics
+they persist; concrete filesystem implementations stay under `io.storage`.
+`SerialWorker` is a small reusable execution primitive under `core.concurrent`,
+composed into TimingNode rather than used as a Domain superclass. It has no
+TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
@@ -210,19 +240,16 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
 mirror the hardware name.
 
-`TimingNode` contains its `LogBook` as part of the TimingNode aggregate. The
-LogBook keeps 0..N `LogBookItem` values as its internal operational
-representation. A separate `logbook` package may still be used to keep that
-cohesive implementation together; package placement does not make LogBook a
-separate top-level aggregate.
+`TimingNode` contains its passive `LogBook` as part of the TimingNode
+aggregate. LogBook keeps 0..N committed `TimingDataRecord` values. The current
+design deliberately avoids a second logbook-specific record type because there
+is no different domain shape that needs one.
 
-`TimingData` is also a Domain capability, not an I/O codec package. `TimingNode`
-has the explicit semantic relationship with this contract for timing data it
-produces or consumes. TimingData owns the canonical `TimingDataRecord`
-representation plus the public validation, encode/decode and compatibility
-contract used for persistence and interchange. Concrete storage, Web and
-messaging adapters may depend on that API and carry an encoded representation
-without knowing or switching on individual TimingData fields.
+`TimingData` remains the Domain capability/contract name; it does not require a
+separate Java `TimingData` wrapper class. The Java `TimingDataRecord` model
+and validation/codec services realise the system-owned IF-05 contract. Concrete
+storage, Web and messaging adapters may carry that record or its encoded form
+without redefining field semantics.
 
 `UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
@@ -283,10 +310,11 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
+domain          --> core (only reusable execution primitives)
 io              --> application/domain ports/contracts + platform
 runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-core            --> reusable execution mechanics
+core            --> JDK/platform-neutral reusable execution mechanics only
 platform        --> low-level environment only
 ```
 
@@ -576,15 +604,317 @@ test-client/
         SI-01
 ```
 
-`test-client/` is a standalone Java-17 Maven project, not a module in the Java-8
-SI-01 reactor. It has no dependency on `event-timing-framework` or
-`event-timing-app`; this preserves the external-client boundary and makes later
-extraction to a dedicated repository straightforward if the tool grows. It is engineering support rather than the planned SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
+`test-client/` is a standalone Java-17 application and does not depend on
+`event-timing-framework` or `event-timing-app` implementation code. It may,
+however, depend on the separately reusable `timing-data-api` artifact because
+TimingData codec/provider reuse is now a real cross-executable requirement. This
+preserves the external-client boundary while allowing SI-01 and the Engineering
+Client to exercise the exact same public or proprietary TimingData translator.
+
+The Engineering Client remains engineering support rather than the planned SI-02
+GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared presentation/application boundary remains small:
 `CommandHandler.version()` returns build identity and
 `CommandHandler.status()` returns the current TimingNode status used by the
 current presentation adapters.
+
+## TimingNode active-object execution and persistence
+
+The Java design implements the **Active Object pattern** for each TimingNode,
+but does not make `TimingNode` inherit from an `ActiveObject` base class.
+
+The architectural rule is simple:
+
+```text
+TimingNode
+  +-- one bounded serial execution boundary
+  +-- one worker active at a time
+  |
+  +-- passive LogBook
+  +-- passive NextUpTeams
+  +-- passive StageStartTimes
+  +-- passive RaceData
+  |
+  +-- per-type store ports
+```
+
+This gives one writer for all mutable per-node state and one clear ordering
+between registration, lifecycle, next-up and reference-data changes.
+
+### Why composition instead of an ActiveObject base class
+
+A reusable base class such as `TimingNode extends ActiveObject<Work>` is
+possible, but it would couple the domain type to one threading mechanism.
+Composition keeps that choice replaceable:
+
+```java
+final class TimingNode {
+    private final SerialWorker<TimingNodeWork> serialWorker;
+    private final LogBook logBook;
+    private final NextUpTeams nextUpTeams;
+    private final StageStartTimes stageStartTimes;
+    private final RaceData raceData;
+
+    boolean register(TeamIdentity team, TimingTimestamp time) {
+        return serialWorker.offer(
+            TimingNodeWork.registration(team, time));
+    }
+}
+```
+
+`TimingNodeWork` is an internal immutable carrier for work that has already
+been accepted as a state change before the asynchronous hand-off. It is not a
+business-approval candidate, is not an external Command Pattern API and is not
+persisted. The worker may still resolve fields that depend on current
+TimingNode-owned state before commit. Add only work kinds required by real use
+cases.
+
+A boolean return from methods such as `register(...)` reports whether the
+bounded serial queue accepted the work item. It does not mean the worker performs
+a second business approval later.
+
+The worker invokes normal private/domain methods once the work item is selected.
+Code already running on the TimingNode worker should use direct Java calls rather
+than queueing more internal messages.
+
+### First SerialWorker implementation
+
+The first implementation should use a small composed `SerialWorker<W>` backed
+by one `ArrayBlockingQueue<W>` and one dedicated thread:
+
+```java
+final class SerialWorker<W> implements AutoCloseable {
+    private final BlockingQueue<W> queue;
+    private final Thread thread;
+    private final Consumer<W> handler;
+
+    boolean offer(W work) {
+        return queue.offer(work);
+    }
+
+    private void run() {
+        while (running) {
+            handler.accept(queue.take());
+        }
+    }
+}
+```
+
+Reasons for the explicit queue/thread first:
+
+- queue capacity is visible and bounded;
+- queue depth/high-water and overload can be reported directly;
+- FIFO behaviour is obvious;
+- shutdown can stop ingress and drain accepted work deliberately;
+- there is no hidden unbounded executor queue;
+- the implementation is easy to measure on the Raspberry Pi.
+
+Do **not** use `Executors.newSingleThreadExecutor()` for this boundary: its
+normal work queue is unbounded and hides the overload behaviour we need to
+control.
+
+A `ThreadPoolExecutor` configured with one thread and an
+`ArrayBlockingQueue` can implement the same semantics. It remains a valid
+alternative, especially if several TimingNodes later share a small executor.
+The first dedicated `SerialWorker` is chosen for transparency, not because the
+JDK executor framework is unsuitable.
+
+If the implementation later moves to a shared executor, these invariants remain:
+
+```text
+per TimingNode:
+  FIFO order
+  at most one work item executing
+  bounded queued work
+  visible overload
+```
+
+### TimingData commit
+
+The queue does not contain a pre-numbered TimingData record. Sequence is chosen
+on the worker immediately before persistence:
+
+```java
+private void processRegistration(RegistrationInput input) {
+    long sequence = logBook.nextSequence();
+
+    TimingDataRecord record =
+        timingDataFactory.registration(input, sequence, timeSource.now());
+
+    timingDataStore.append(record);  // durable before return
+    logBook.add(record);             // visibility point
+    committedSinks.publish(record);  // non-blocking only
+}
+```
+
+Only the TimingNode worker calls this commit path, so a producer lock around
+sequence allocation is unnecessary.
+
+`LogBook.nextSequence()` reads committed state and does not consume the value.
+If append fails, LogBook is unchanged and retry uses the same next sequence. The
+worker must not process a later timing record ahead of that failed record.
+
+### Passive LogBook and consumer reads
+
+LogBook has no worker thread. It stores immutable `TimingDataRecord` values and
+supports short synchronized mutations/reads.
+
+A query that needs a stable view should copy references and then release LogBook
+synchronization before doing expensive work. With roughly 1200–1500 records, a
+shallow copy is small: 1500 references are about 6 KiB with compressed 4-byte
+references or 12 KiB with 8-byte references.
+
+Avoid allocating a new snapshot array for every high-frequency query when a
+caller-owned reusable buffer is enough:
+
+```java
+int count = logBook.copyTo(reusableTimingDataBuffer);
+calculate(reusableTimingDataBuffer, count);
+```
+
+This keeps long calculations off the TimingNode worker and avoids unnecessary GC
+pressure. Measure the actual copy time, heap behaviour and query frequency on the
+target Pi before introducing a more complex read model.
+
+### Per-type stores
+
+Use a separate persistence boundary for each state type whose history/snapshots
+need to be kept:
+
+| Store | First purpose | Commit role |
+| --- | --- | --- |
+| `TimingDataStore` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| `NextUpTeamsStore` | preserve accepted next-up changes/snapshots for analysis | not a TimingData commit gate |
+| `StageStartTimesStore` | preserve accepted start-time snapshots for analysis | not runtime recovery authority by default |
+| `RaceDataStore` | preserve accepted race/reference snapshots/versions for analysis | not runtime recovery authority by default |
+
+Concrete file implementations live under `io.storage`. Store contracts are
+dependency-inverted ports composed into the TimingNode; the TimingNode must not
+depend on concrete filesystem classes.
+
+The TimingNode worker fixes the order in which state changes are accepted. The
+first implementation may call the small/infrequent analysis-store writes on the
+same worker. If measurements show that one of those writes delays registrations,
+the worker can hand an immutable snapshot to a bounded storage executor. Do not
+add one thread per state object and do not introduce an unbounded background
+queue.
+
+For example, a StageStartTimes update may be:
+
+```text
+TimingNode worker
+  -> validate received snapshot
+  -> replace StageStartTimes live state
+  -> StageStartTimesStore.append(snapshot for analysis)
+```
+
+After a reboot, the live protocol can send the current StageStartTimes again
+(for example as part of OPEN handling). The historical file is still retained
+for analysis.
+
+### External committed-data output
+
+External signalling, WebSocket publication or upstream delivery may block/retry
+independently. Such work does not execute as a blocking operation on the
+TimingNode serial worker.
+
+```java
+interface CommittedTimingDataSink {
+    boolean offer(TimingDataRecord record);
+}
+```
+
+Each concrete slow/network sink owns its own bounded queue/worker or durable
+outbox as required by that capability.
+
+### Multiple TimingNodes
+
+The semantic requirement is one serial execution lane per TimingNode, not
+permanently one operating-system thread per node.
+
+For the first one-node application:
+
+```text
+1 TimingNode
+  -> 1 SerialWorker
+       -> 1 bounded queue
+       -> 1 dedicated worker thread
+  -> passive state objects
+  -> store dependencies
+```
+
+If a later multi-node application shows that one thread per node is too
+expensive, multiple SerialWorkers may share a small executor while preserving
+the per-node invariants above.
+
+### Raspberry-Pi implementation rules
+
+For the initial Pi-oriented runtime:
+
+- keep each TimingNode work queue bounded;
+- prefer explicit bounded queues over hidden/unbounded executor queues;
+- keep contained domain state passive and single-writer where practical;
+- keep TimingDataRecord immutable after creation;
+- avoid deep-copying LogBook history for routine queries;
+- reuse consumer snapshot buffers where repeated allocation would add GC churn;
+- move blocking network/retry work behind capability-specific output boundaries;
+- add asynchronous analysis-store writing only when measurement justifies it;
+- measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
+  and query latency before increasing concurrency.
+
+## Shared TimingData API artifact
+
+Both SI-01 and the Engineering Client need the TimingData types/provider SPI.
+That is enough reason for a small shared artifact; the Java-17 Engineering Client
+should not have to depend on the whole SI-01 framework.
+
+Conceptually:
+
+```text
+timing-data-api
+  TimingDataRecord / TimingDataRecordKey
+  RegistrationIdentity and record value types
+  TimingDataCodec
+  TimingDataProvider / translator SPI
+
+event-timing-framework  ---> timing-data-api
+test-client             ---> timing-data-api
+
+reference TimingData provider  ---> timing-data-api
+private external provider      ---> timing-data-api
+                                  |
+                                  +-- optional native/proprietary DLL
+```
+
+Both applications may load the same provider implementation. The shared Java
+types follow IF-05; IF-05 remains the place that defines the fields, ordering,
+versioning and file format. A provider only translates an external format to/from
+that model.
+
+The shared artifact contains **interchange values**, not the whole SI-01 Domain
+model. For example, SI-01 keeps its strong `TimingNodeId` type, while the IF-05
+record carries the serialized `timingNodeId` value as a non-empty `String`:
+
+```text
+SI-01 Domain
+  TimingNodeId
+      |
+      | value()
+      v
+timing-data-api
+  TimingDataRecord.timingNodeId : String
+  TimingDataRecordKey.timingNodeId : String
+```
+
+The framework maps between those two forms at the TimingData boundary. That keeps
+the Engineering Client independent from SI-01 Domain packages, while
+`timing-data-api` stays a small file/interchange API rather than becoming a
+second Domain model.
+
+This artifact contains no SI-01 runtime/application classes and no JavaFX code.
+Its Java API must remain usable from both the Java-8 SI-01 baseline and the
+Java-17 Engineering Client.
 
 ## Derived consumers
 
@@ -663,7 +993,7 @@ Create future artifacts only when a real boundary requires them. Candidates migh
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
 - public/private RFID/CAN I/O implementations;
-- a separately versioned Java SPI artifact if binary compatibility/release evidence later justifies extracting the framework-owned provider contracts;
+- separately versioning `timing-data-api` if binary compatibility/release evidence later requires an independent release cycle;
 - reusable test support.
 
 Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
@@ -689,6 +1019,8 @@ Useful automated rules may include:
 - exact package granularity after real application/domain classes exist;
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
+- exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
+- concrete compact LogBook indexes/read-view mechanics required by the first ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework/provider contracts and private implementations;

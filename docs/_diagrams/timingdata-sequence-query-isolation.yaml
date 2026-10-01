@@ -1,0 +1,32 @@
+diagram:
+  id: timingdata-sequence-query-isolation
+  type: sequence
+  title: Figure SDD01-TD05 — LogBook query isolation
+  width: 1400
+  height: 1030
+  description: A query copies a short stable LogBook view and continues calculating while the TimingNode worker commits another registration.
+  note: The long calculation runs outside both the TimingNode worker and the LogBook synchronization window.
+
+participants:
+  - {id: client, label: Query caller, kind: client}
+  - {id: query, label: Query / StageTiming, kind: service}
+  - {id: logbook, label: "LogBook\ncommitted TimingData", kind: model}
+  - {id: producer, label: Registration producer, kind: model}
+  - {id: node, label: TimingNode, kind: model}
+  - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
+
+messages:
+  - {from: client, to: query, label: calculate, kind: call}
+  - {from: query, to: logbook, label: "copyTo(reusableBuffer)", kind: call}
+  - {from: logbook, to: query, label: "count + stable references", kind: return}
+  - {from: producer, to: node, label: "register(...)", kind: call}
+  - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
+  - {from: node, to: producer, label: queued, kind: return}
+  - {from: node, to: node, label: "serial worker processes registration", kind: call}
+  - {from: node, to: logbook, label: "nextSequence()", kind: call}
+  - {from: logbook, to: node, label: "sequence N", kind: return}
+  - {from: node, to: store, label: "append(record N)", kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: "add(record N)", kind: call}
+  - {from: logbook, to: node, label: visible, kind: return}
+  - {from: query, to: client, label: result, kind: return}

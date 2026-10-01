@@ -1,10 +1,10 @@
 diagram:
   id: runtime-dispatch-process
-  title: Figure SI01-04 — SI-01 runtime ingress — TimingNode serial execution
+  title: Figure SI01-04 — SI-01 runtime ingress — ordered TimingNode state changes
   width: 1580
   height: 930
-  description: Process view of concurrent ingress, explicit TimingNode routing and per-TimingNode serial execution.
-  note: External work is submitted to each resolved TimingNode serial executor. Once running there, normal direct Java calls are used.
+  description: Architecture process view of concurrent ingress, explicit TimingNode routing and per-TimingNode ordered state mutation.
+  note: External work crosses an ordered TimingNode state-change boundary. Concrete Java queue/worker/executor mechanics belong to SDD-02.
 
 groups:
   - id: ingress
@@ -18,7 +18,7 @@ groups:
     layout: {x: 430, y: 110, w: 790, h: 690}
 
   - id: execution
-    label: Execution resources
+    label: Execution constraints
     kind: layer-platform
     layout: {x: 1260, y: 110, w: 260, h: 690}
 
@@ -60,25 +60,25 @@ nodes:
     layout: {x: 520, y: 275, w: 610, h: 80}
 
   - id: timing-node-01
-    label: "TimingNode timing-node-01\nserial executor • bounded FIFO\nUpstreamMessagePort • normal domain calls"
+    label: "TimingNode timing-node-01\nordered state-change boundary\nbounded ingress • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 505, y: 410, w: 300, h: 105}
 
   - id: timing-node-02
-    label: "TimingNode timing-node-02\nserial executor • bounded FIFO\nUpstreamMessagePort • normal domain calls"
+    label: "TimingNode timing-node-02\nordered state-change boundary\nbounded ingress • normal domain calls"
     kind: model
     group: runtime
     layout: {x: 845, y: 410, w: 300, h: 105}
 
   - id: state-executor
-    label: "Shared state ExecutorService\n1 worker in constrained profile\nconfigurable >1 for independent TimingNodes"
+    label: "Per-TimingNode ordering guarantee\none state change at a time\nmechanism defined in SDD-02"
     kind: platform
     group: execution
     layout: {x: 1300, y: 260, w: 180, h: 125}
 
   - id: io-rule
-    label: "Blocking I/O / scheduler rule\noutside TimingNode serial execution\ncompletion is submitted back"
+    label: "Blocking-work isolation\npersistence/query/output must not\nblock producer callbacks"
     kind: platform
     group: execution
     layout: {x: 1300, y: 500, w: 180, h: 125}

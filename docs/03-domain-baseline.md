@@ -35,7 +35,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -144,7 +144,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -172,18 +172,22 @@ including a programmable offset or stepped time, so several TimingSystems hosted
 in one process can intentionally observe different absolute times. Duration and
 timeout semantics remain separate and use a monotonic source where appropriate.
 
-Each TimingNode contains one `LogBook`. The LogBook owns its operational state
-as 0..N `LogBookItem` values and remains visibly part of the TimingNode
-aggregate. A `LogBookItem` is the internal logbook-domain representation and
-is not required to match the persistent/interchange representation one-for-one.
-The TimingNode aggregate has the architectural relationship to `TimingData`;
-the exact LogBookItem-to-record mapping is a lower-level design decision.
+Each TimingNode contains one passive `LogBook`. The LogBook keeps the node's
+committed timing history as 0..N canonical `TimingDataRecord` values. The same
+immutable semantic record that is persisted is also what runtime consumers read
+from the LogBook; the current design does not add a second logbook-specific
+record type.
 
-`TimingData` defines the canonical persistent/interchange timing-data contract.
-Its principal record is `TimingDataRecord`; the TimingData responsibility also
-owns the public validation, encode/decode and compatibility semantics. Storage,
-Web and upstream communication may consume that contract without becoming owners
-of its field semantics.
+The system-owned IF-05 interface defines the canonical TimingData record
+semantics and interchange format. SI-01 uses the `TimingDataRecord` model
+directly and keeps file encoding/decoding in the TimingData storage/codec
+boundary. Storage, Web and upstream communication may consume that API without
+becoming alternative owners of IF-05 field or compatibility semantics.
+
+A TimingNode is the active serialization boundary for its mutable per-node
+state. Its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and
+`RaceData` objects remain passive state holders. Concrete queue/thread choices
+belong to detailed design.
 
 `UpstreamProtocol` is a Domain protocol owned in the context of one
 `TimingSystem`. It covers transfer of TimingData plus
@@ -251,6 +255,8 @@ This allows receiving/upstream systems to reason about stream consistency indepe
 
 Important intended properties:
 
+- committed sequence numbering starts at **1** for a new `TimingNodeId` stream;
+- sequence number **0 is reserved** and shall never identify a normal committed TimingData record;
 - the number is monotonic per `TimingNodeId`-scoped stream;
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
@@ -284,9 +290,15 @@ The exact file names, external IDs and deployment mappings are configuration/pri
 
 A `TimingDataRecord` is not limited to participant RFID passage data. Operational events can also be represented as TimingData records when they must participate in the traceable/synchronised stream.
 
-Known example:
+First promoted operational example:
 
-- opening a location/timing node is itself a TimingData entry.
+- opening a TimingNode is a traceable TimingData state-change record;
+- closing a TimingNode is a traceable TimingData state-change record.
+
+The public TimingData contract represents the semantic state transition
+(`OPEN` / `CLOSED`) and does not prescribe legacy field names, characteristic
+codes or one proprietary wire encoding. A concrete `TimingDataProvider` may map
+these generic records to a deployment-specific/proprietary representation.
 
 A working minimal envelope is therefore conceptually:
 
@@ -303,23 +315,108 @@ TimingDataRecord
 
 Asset and antenna context may additionally be retained where useful for diagnostics/audit, but the exact storage/wire schema is not yet fixed.
 
+### Participant registration semantics
+
+The public TimingData model supports both **automatic** and **manual**
+participant registrations. These are the same semantic registration concept and
+use the same sequence/key rules.
+
+Every participant registration stored in TimingData has one canonical
+`RegistrationIdentity`. `TagIdentity` and `TeamIdentity` are source-domain
+identities from which that registration identity is derived:
+
+- an automatic registration starts with a decoded/normalised `TagIdentity`;
+- a manual registration starts with a `TeamIdentity` selected/entered by the
+  operator/client;
+- both paths resolve to a `RegistrationIdentity` before the TimingData record is
+  committed.
+
+Conceptually:
+
+```text
+TagIdentity  -----\
+                 +--> RegistrationIdentity --> TimingData REGISTRATION
+TeamIdentity -----/
+```
+
+For manual registrations the model separately records whether the effective time
+was assigned automatically by SI-01 or explicitly entered by the operator.
+
+A proprietary format may collapse origin and time-source into compact codes; the
+public TimingData protocol keeps them as separate semantic fields.
+
+A committed registration may later be revoked. Revocation is append-only:
+
+- the original registration remains immutable in the stream;
+- a new revocation record receives its own sequence number;
+- the revocation record references the original
+  `(TimingNodeId, SequenceNumber)`;
+- the effective registration/race time on the revocation is copied from the
+  original registration rather than replaced by the operator's current time;
+- origin and time-source remain those of the referenced registration;
+- the revocation record separately carries its own `recordedAt` value, captured
+  when the definitive record is materialized for the commit attempt; durable
+  commit remains a separate persistence outcome.
+
+This preserves the complete audit/order history. TimingData itself does not own or maintain a derived effective-registration
+projection. Domain/application business logic may reconstruct that state from
+registration and revocation records and shall honour it for calculations such as
+classification, ranking or other race-result logic.
+
+A consuming client/presentation layer separately decides whether a revoked
+registration is hidden, struck through, marked revoked or shown in another way.
+
+External proprietary formats may represent the same facts with
+implementation-specific markers, but those markers are not part of the public
+TimingData protocol.
+
 ## Time semantics
 
-Recorded event time and start-time data need one unambiguous absolute-time meaning independent of how a local clock is displayed.
+Recorded **event time** needs one unambiguous absolute-time meaning independent of how a local clock is displayed. Race/stage start reference data is different: an external definition may contain only a local time-of-day and no date.
 
-The working dedicated software value name is `TimingTimestamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. Local time-zone and daylight-saving conversion are presentation/configuration concerns unless a future business rule explicitly depends on a local civil time.
+The working dedicated absolute-event value name is `TimingTimestamp`. At domain boundaries it represents an absolute point on the time line rather than a local date/time with an implicit time zone. A time-only race/start definition remains a separate value and is resolved using the configured event/race time zone when an absolute registration is compared with it.
+
+For a time-only start definition, SI-01 chooses the most recent valid occurrence of that local clock time that is not after the registration timestamp. This supports the normal midnight rollover without requiring the external definition to invent a date. Example: `23:59:50` start and `00:00:10` registration yields 20 seconds elapsed. If a start date is supplied, it is authoritative. Durations of 24 hours or more cannot be inferred uniquely from a time-only start and therefore require additional date/day context.
 
 A timestamp is **not** the source-ordering mechanism. Registration timing node sequence numbers remain the stable ordering/consistency mechanism even if an operating-system wall clock is corrected forwards or backwards.
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
-## Team number
+## Team and registration identity
 
-The decoded participant/team identity contains a team number in the range:
+`TeamIdentity` is the participant/team identity used by operator-facing and
+race-reference behaviour. A manual registration is entered using this identity.
+
+`RegistrationIdentity` is the canonical participant identity stored on a
+TimingData registration record. It is deliberately distinct from both
+`TeamIdentity` and `TagIdentity`.
+
+The registration identity supports a semantic **type + number** structure:
 
 ```text
-TeamNumber = 0..999
+RegistrationIdentity
+  type
+  number
 ```
+
+The first supported semantic registration types are:
+
+```text
+STANDARD  team 1..350; valid at locations 1..23
+WOMEN     team 1..350; valid at location 24
+MEN       team 1..350; valid at location 25
+```
+
+The type names are public semantics, not legacy wire letters. A proprietary
+translator may map them to its external representation.
+
+A reserve transponder is **not** a fourth registration-identity type. It is a
+reserve `TagIdentity` in the RFID/input domain and must resolve through
+reference data to the applicable canonical `RegistrationIdentity`.
+
+Location/type compatibility is validated before a registration is committed.
+The public model keeps that validation rule explicit so a registration identity
+that is valid at one location is not silently accepted at another.
 
 ## Race data
 
@@ -331,32 +428,54 @@ Stage start-time data remains a separate concern owned by `StageStartTimes`.
 
 ## RFID tag identity structure
 
-The tag ultimately represents a structured identity containing:
+A decoded physical RFID tag contains:
 
 ```text
-prefix + team number + postfix
+prefix + number + postfix
 ```
 
-Known semantics:
+For registration semantics SI-01 normalises this to:
 
-- `team number` is `0..999`;
-- prefix semantics distinguish at least normal, reserve and test tag classes;
-- a dedicated prefix indicates that a tag is a reserve tag;
-- a dedicated prefix indicates that a tag is a test tag;
-- there are two physical tags for a team/identity;
-- a postfix distinguishes the two tag copies.
+```text
+RegistrationTag = prefix + number
+```
 
-The exact encoded prefix/postfix values, encryption details and protocol representation are proprietary and are not defined here.
+The postfix distinguishes physical tag copies and is removed from the canonical
+registration identity. The prefix is retained because it carries semantic tag
+class information.
 
-A working public semantic representation should preserve the tag class after decoding rather than immediately flattening every tag into one normal participant identity. The exact class/type API remains an implementation/design decision.
+For the first registration slice the relevant tag classes are:
+
+- normal tag;
+- reserve tag.
+
+A normal tag resolves directly to one of the supported registration-identity
+types. A reserve tag uses reserve mapping data first.
+
+The physical tag shape is not globally required to contain a postfix: finish
+tags may be represented without one. When present, a postfix is physical
+tag-copy detail and is not part of the canonical registration identity.
+
+The exact encoded prefix/postfix values, encryption details and device/protocol
+representation are proprietary and are not defined here. Test-tag behaviour is
+handled separately and is not needed to define the first normal/reserve
+registration identity.
 
 ## Reserve tags
 
 Reserve tags require conversion/mapping data supplied by the backoffice.
 
-The local timing application therefore needs to be able to resolve a decoded reserve-tag identity through locally synchronised reference data before treating it as the intended team identity.
+The local timing application therefore needs to retain the **observed normalised
+reserve-tag identity** and resolve it through locally available mapping data to
+the registration identity required for normal race processing.
 
-The mapping must remain available locally when live backoffice connectivity is temporarily unavailable, subject to later freshness/validity requirements.
+The mapping must remain available locally when live backoffice connectivity is
+temporarily unavailable, subject to later freshness/validity requirements.
+
+The first TimingData slice deliberately does **not** yet decide what every public
+client sees for a reserve registration: the observed reserve tag, the resolved
+identity, or both. That projection belongs to the relevant public interface
+contract and must not be guessed by an RFID adapter.
 
 ## Test tags
 
@@ -366,11 +485,18 @@ After decoding, SI-01 must be able to distinguish a test tag from both a normal 
 
 The exact behaviour is intentionally not fixed in this domain baseline. It belongs in operational use cases and later requirements, including whether a test tag creates a registration record, affects calculations, is synchronised to backoffice, is allowed in all lifecycle states, and how it is made visible to an operator.
 
+Legacy identifiers used for "unknown team" registrations at normal/finish
+locations are not promoted into the public RegistrationIdentity model yet. Their
+business meaning and required behaviour must first be verified from authoritative
+documentation.
+
 ## Start-time reference data
 
 Start times are supplied/synchronised from the backoffice and retained locally.
 
-They support local calculations such as elapsed time and ranking without requiring every calculation to make a live backoffice request.
+A start-time definition shall support at least a local time-of-day without a date. A source may additionally provide an explicit date/race-day context; SI-01 may retain that richer information. A date is therefore optional in the semantic input, not a prerequisite for elapsed-time calculation.
+
+They support local calculations such as elapsed time and ranking without requiring every calculation to make a live backoffice request. When only time-of-day is known, elapsed-time calculation uses the midnight-rollover rule defined in the time model above.
 
 ## Full-field simulation
 
@@ -416,18 +542,20 @@ containing total-system context
 location association
 antenna context where relevant
 record type/payload
-record time
+effective event time plus recordedAt metadata
 TimingNode-specific persistence/recovery without sequence reuse
 synchronisation/gap detection
 ```
 
-Corrections/revocations should remain traceable rather than silently rewriting earlier records; the exact record model remains under design.
+Corrections/revocations remain traceable rather than silently rewriting earlier
+records. The first public record/file model is now defined by IF-05; later record
+families extend that contract only when their domain requirements are promoted.
 
 ## Open domain questions
 
 - Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
 - How are reserve/virtual TimingNodes represented in registration-routing rules when they share a physical producer with normal TimingNodes?
-- Does sequence numbering start at a defined value for a new timing node?
+- Sequence numbering starts at 1; 0 is reserved.
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
 - Which operational events besides `OPEN` must be part of a timing node registration stream (for example close/reinitialisation/configuration changes)?

@@ -1,0 +1,78 @@
+diagram:
+  id: timingdata-producer-pipeline
+  title: Figure SDD01-TD01 — TimingNode serial commit path
+  width: 1640
+  height: 930
+  description: State-changing ingress enters one bounded TimingNode serial boundary; passive state is updated only after required persistence.
+  note: TimingDataStore is the durable/recovery source for TimingData. Other per-type stores preserve analysis history/snapshots.
+
+groups:
+  - id: ingress
+    label: Ingress
+    kind: layer-domain
+    layout: {x: 55, y: 105, w: 350, h: 700}
+  - id: node
+    label: TimingNode active object
+    kind: layer-application
+    layout: {x: 445, y: 105, w: 720, h: 700}
+  - id: storage
+    label: Storage / consumers
+    kind: layer-infrastructure
+    layout: {x: 1205, y: 105, w: 380, h: 700}
+
+nodes:
+  - id: producers
+    label: "TagProcessor • commands • lifecycle\nnext-up/reference updates"
+    kind: model
+    group: ingress
+    layout: {x: 95, y: 250, w: 270, h: 100}
+  - id: queue
+    label: "Bounded serial work queue"
+    kind: service
+    group: node
+    layout: {x: 515, y: 175, w: 280, h: 78}
+  - id: worker
+    label: "TimingNode SerialWorker\none work item at a time"
+    kind: application
+    group: node
+    layout: {x: 835, y: 175, w: 280, h: 90}
+  - id: logbook
+    label: "LogBook\n0..N committed TimingDataRecord"
+    kind: model
+    group: node
+    layout: {x: 515, y: 405, w: 280, h: 90}
+  - id: nextup
+    label: "NextUpTeams"
+    kind: model
+    group: node
+    layout: {x: 835, y: 365, w: 220, h: 72}
+  - id: refs
+    label: "StageStartTimes / RaceData"
+    kind: model
+    group: node
+    layout: {x: 835, y: 485, w: 250, h: 72}
+  - id: timingstore
+    label: "TimingDataStore\ndurable append / recovery"
+    kind: storage
+    group: storage
+    layout: {x: 1240, y: 175, w: 300, h: 90}
+  - id: analysisstores
+    label: "NextUpTeamsStore\nStageStartTimesStore\nRaceDataStore"
+    kind: storage
+    group: storage
+    layout: {x: 1240, y: 375, w: 300, h: 120}
+  - id: consumers
+    label: "Queries / downstream\nread committed state"
+    kind: interface
+    group: storage
+    layout: {x: 1240, y: 600, w: 300, h: 90}
+
+edges:
+  - {from: producers, to: queue, label: "bounded submit"}
+  - {from: queue, to: worker, label: "FIFO"}
+  - {from: worker, to: timingstore, label: "append TimingData"}
+  - {from: worker, to: logbook, label: "add after durable"}
+  - {from: worker, to: nextup, label: "ordered mutation"}
+  - {from: worker, to: refs, label: "ordered mutation"}
+  - {from: worker, to: analysisstores, label: "analysis snapshots"}
+  - {from: logbook, to: consumers, label: "stable read view"}

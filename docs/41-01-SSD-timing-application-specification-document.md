@@ -4,10 +4,9 @@ Status: working/review baseline
 
 Software item: **SI-01 — Timing Point Application**
 
-This Software Item Specification Document combines the SI-01 software requirements and
-software-item architecture in one versionable baseline. Requirement identifiers remain
-`SI01-REQ-...`; architecture elements and focused SDDs remain traceable to those
-requirements without creating a release dependency between a separate SRD and SAD.
+This document combines the SI-01 requirements and architecture in one baseline.
+Requirements keep their `SI01-REQ-...` identifiers. Detailed SDDs build on this
+architecture instead of repeating it.
 
 ## Inputs
 
@@ -15,6 +14,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
 - `32-03-IDD-application-control-status.md` for IF-03 obligations;
+- `32-05-IDD-timingdata-interchange.md` for IF-05 TimingData obligations;
 - `32-11-IDD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
@@ -25,6 +25,25 @@ The SI-01 specification consumes the software-system allocation and the interfac
 The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SSD.
 
 When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
+
+## Document roles
+
+Use this SSD for the **requirements and architecture** of SI-01: what the main
+parts are responsible for, how they relate, and which constraints detailed
+design must respect.
+
+Implementation detail is split over focused SDDs:
+
+| Document | What belongs there |
+| --- | --- |
+| `43-01-SDD-01-data-and-display-design.md` | internal data/runtime behaviour: LogBook recording, commit ordering, persistence/recovery algorithms, query isolation, prepare-team/reference/display data |
+| `43-01-SDD-02-java-component-design.md` | concrete Java realisation: modules, packages, classes/interfaces, queue/executor/thread choices, provider discovery and dependency enforcement |
+| `43-01-SDD-03-backoffice-transport-design.md` | concrete transport realisation below the system/upstream semantic boundary |
+| applicable IDD | externally visible interface/file/protocol contract; an SDD shall not redefine it |
+
+An SDD may choose the concrete mechanism, as long as it still fits this SSD and
+the applicable IDD. Keep class names, queue types, worker threads, file-recovery
+steps and package layout out of the SSD unless they change the architecture.
 
 ## Software-item requirements
 
@@ -329,7 +348,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -521,7 +540,7 @@ TimingSystem (1..N per TimingApplication)
     TagProcessor
     StageStartTimes
     LogBook
-      0..N LogBookItem
+      0..N TimingDataRecord
     NextUpTeams
     RaceData
     StageTiming
@@ -536,12 +555,15 @@ TimingData
 `TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
-identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
-components shown inside the TimingNode aggregate in Figure SI01-01, including its
-`LogBook`. The LogBook therefore remains visibly part of the TimingNode aggregate
-while owning its own 0..N `LogBookItem` collection. `TimingNode` also has an
-explicit semantic relationship with the shared `TimingData` contract for the
-canonical data it produces or consumes.
+identity (`TimingNodeId` and `LocationID`), lifecycle/state and the per-node
+components shown inside the TimingNode aggregate in Figure SI01-01.
+
+A TimingNode is also the **active serialization boundary** for mutable per-node
+state. State-changing work for that node is accepted through one bounded serial
+execution path and processed in order. The contained `LogBook`,
+`NextUpTeams`, `StageStartTimes` and `RaceData` objects remain passive.
+The LogBook keeps 0..N committed `TimingDataRecord` values and does not own a
+second worker or second timing-record representation.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
 The two roles share the same semantic concept but have distinct engineering
@@ -569,7 +591,10 @@ cross-aggregate target resolution.
 :id: TagProcessor
 
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
-the domain decisions that follow from those observations.
+the registration semantics needed by the TimingNode. It does not write files
+from the antenna callback. State-changing registration work crosses the
+TimingNode's bounded serial execution boundary and is completed by that node's
+worker.
 ```
 
 ```{arch} StageStartTimes
@@ -598,23 +623,23 @@ TimingNode's timing behaviour.
 accepted timing state and reference data.
 ```
 
-`LogBook` is a contained responsibility of one TimingNode and owns that node's
-operational logbook state as 0..N `LogBookItem` values. `LogBookItem` is the
-LogBook's internal domain representation; it is intentionally not required to
-have the same shape as the persistent/interchange representation. The high-level
-architecture relates the TimingNode aggregate, rather than LogBook directly, to
-`TimingData`; the exact LogBookItem-to-TimingData mapping remains a lower-level
-design concern.
+`LogBook` is passive state contained by one TimingNode and keeps that node's
+committed timing history as 0..N `TimingDataRecord` values. The current design
+uses the canonical TimingData record directly instead of maintaining a second
+LogBook-specific record type.
 
-`TimingData` owns the canonical persistent/interchange representation of
-timing information. `TimingDataRecord` is its principal record type.
-`TimingData` also owns the public encode/decode, validation and compatibility
-semantics for that representation. This is a Domain contract because the meaning
-and compatibility of recorded timing data are product semantics, not a property
-of a filesystem, RabbitMQ or HTTP implementation. A selected
-`TimingDataProvider` may supply the concrete representation/codec implementation
-behind that stable contract when a deployment needs an extension-provided format;
-normal domain users depend on `TimingData`, not on provider discovery mechanics.
+`TimingData` is the SI-01/domain capability that realises the system-owned
+IF-05 TimingData Interchange contract. The normative persistent/interchange
+record kinds, field semantics, identity/ordering rules, versioning and canonical
+reference encoding are defined by `32-05-IDD-timingdata-interchange.md`.
+SI-01 design shall not redefine that external/file contract independently.
+
+A `TimingDataProvider` is a translation/extension boundary. A public or
+proprietary provider may translate an external representation to/from the
+framework-owned `TimingDataRecord` model, but it does not redefine public field
+semantics. The same provider contract is reusable by SI-01 and engineering tools
+such as the JavaFX Engineering Client; normal domain users remain unaware of
+provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
@@ -931,31 +956,31 @@ inputs.
 
 A `TimingNode` is the independently addressed
 operational/domain aggregate at one timing location. It
-belongs to exactly one `TimingSystem`, contains its
-`LogBook`, exposes its own `UpstreamMessagePort` and has
-an explicit relationship with `TimingData`; the upstream
-and TimingData contracts remain functionally centred on
-`TimingNodeId`.
+belongs to exactly one `TimingSystem` and is the active
+serialization boundary for that node's mutable state.
+Its contained state objects are passive; the upstream and
+TimingData contracts remain centred on `TimingNodeId`.
 ```
 
 
 ```{arch} LogBook
 :id: LogBook
 
-A `LogBook` is contained by one TimingNode and owns that
-node's operational collection of `LogBookItem` values.
-Those internal items are deliberately separate from the
-canonical TimingData interchange shape.
+A `LogBook` is passive state contained by one TimingNode.
+It holds that node's committed `TimingDataRecord` values.
+The current design does not introduce a second
+logbook-specific timing-record representation.
 ```
 
 ```{arch} TimingData
 :id: TimingData
 
-`TimingData` is the shared Domain contract for canonical
-persistent/interchange timing records, including
-`TimingDataRecord`, validation and encode/decode compatibility.
-Storage, Web and upstream protocol code consume this contract
-without owning its field semantics.
+`TimingData` is the shared Domain capability that realises
+system-owned IF-05 inside SI-01. It exposes the typed
+`TimingDataRecord` model plus validation/codec services needed
+by application code. Canonical record/file semantics and
+compatibility remain defined by IF-05; Storage, Web and upstream
+protocol code consume that contract without redefining it.
 ```
 
 ```{arch} UpstreamProtocol
@@ -1004,7 +1029,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -1143,189 +1168,49 @@ Working rules:
 
 The initial architecture uses explicit typed routing because the flow is easier to reason about, test and keep lightweight on the Pi Zero. A third-party messaging/event framework should only be introduced when it solves a demonstrated problem better than explicit routing and JDK concurrency primitives.
 
-### Process view: threading and concurrency
+### Process view: ordering and concurrency
 
-The domain model is intentionally kept simple. Code working on one `TimingNode`
-should be able to behave as if it is single-threaded.
+SI-01 receives work from several places at once: operator interfaces, devices,
+timers and upstream connections. State changes for one `TimingNode` still have
+to happen in a clear order.
 
-That guarantee is provided by the application around the domain code. Domain
-objects are not expected to add locks everywhere to protect themselves from
-normal application callbacks.
+Architecture rules:
 
-#### The rule for one TimingNode
+- callbacks do not change TimingNode state directly;
+- resolve the target TimingNode before state-changing work enters its ordered path;
+- two state changes for the same TimingNode do not run over each other;
+- the TimingNode behaves as an active object: one bounded serial execution
+  boundary owns the order in which its mutable state changes;
+- the contained LogBook, NextUpTeams, StageStartTimes and RaceData objects remain
+  passive and do not each receive their own execution thread;
+- different TimingNodes may make progress at the same time;
+- file writes must not hold up RFID/device/operator callbacks;
+- a slow query or ranking calculation must not hold up LogBook commits;
+- a slow network connection must not hold up a local commit;
+- queues/resources are bounded and overload is visible instead of silently dropping work;
+- during shutdown, stop new input first and give accepted work time to finish.
 
-For each `TimingNode`:
+The SSD only sets these rules. SDD-01 describes state ordering, persistence and
+consumer visibility. SDD-02 chooses the Java queue/worker implementation. The
+current direction is the Active Object pattern implemented by composition, not a
+mandatory `TimingNode extends ActiveObject` class hierarchy.
 
-1. any code that changes its mutable state is submitted to that TimingNode's
-   serial executor;
-2. that executor runs at most one accepted task for that TimingNode at a time;
-3. once a task is running there, normal direct Java calls are used between the
-   TimingNode's domain objects;
-4. a second task for the same TimingNode waits until the first one has finished;
-5. another TimingNode may run at the same time.
+External ingress still keeps its functional routing responsibilities:
 
-In short:
+- `CommandHandler` routes presentation commands/queries;
+- configured device/antenna mappings resolve device observations to TimingNodes;
+- `UpstreamMessageRouter` resolves system-level versus TimingNode-targeted
+  upstream messages;
+- scheduled work retains its owning target.
 
-```text
-RFID callback ----+
-operator command -+--> TimingNode A serial executor --> normal domain calls
-timer callback ---+
-
-other input ------+--> TimingNode B serial executor --> normal domain calls
-```
-
-The serial executor does not need a dedicated thread. It may use a shared
-`ExecutorService`. The important rule is that two tasks for the same TimingNode
-must never execute at the same time.
-
-The initial constrained composition may use one shared worker. A desktop or
-simulation composition may use more workers so different TimingNodes can run in
-parallel.
-
-#### Where input enters
-
-External libraries may call the application from their own threads. Examples are HTTP,
-WebSocket, shell, RFID, CAN, RabbitMQ and timer callbacks.
-
-Those callback threads must not change mutable TimingNode state directly.
-
-The application boundary determines which TimingNode(s) receive the work:
-
-- `CommandHandler` handles presentation commands/queries that address a TimingNode;
-- configured device/antenna mappings map an `AntennaId` to 1..N TimingNodes;
-- `CanNetworkController` owns CAN discovery/state and converts device callbacks into application-facing work;
-- `NetworkDeviceService` owns bidirectional network-device communication; discovery/session mechanics stay below this high-level responsibility;
-- `UpstreamMessageRouter` resolves upstream targets: system-level messages go to `TimingSystem.UpstreamMessagePort` and `TimingNodeId` messages go to the matching `TimingNode.UpstreamMessagePort`;
-- a scheduled task keeps the TimingNode target it was registered for.
-
-Each resolved target is then submitted to that TimingNode's serial executor.
-When one observation fans out to two TimingNodes, both receive their own queued
-work and keep independent TimingNode-scoped state/sequence semantics.
-
-There is no central generic `TimingSystemDispatcher`. `CommandHandler`,
-antenna mapping and upstream messaging remain separate boundary responsibilities.
-`UpstreamMessageRouter` is specifically for target resolution on the
-bidirectional upstream-system relationship; it is not a generic message bus or
-all-purpose mediator. `UpstreamGateway` remains the I/O upstream-system
-boundary and connector owner.
-
-```text
-operator endpoint
-      |
-      v
- CommandHandler ---------------------+
-      |                              |
-      v                              v
-TimingNode A serial executor    TimingNode B serial executor
-      ^                              ^
-      |                              |
-I/O mappings / timers resolve targets
-```
+There is no central generic `TimingSystemDispatcher` or generic event bus.
 
 <a id="fig-si01-04"></a>
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
-*Figure SI01-04 — SI-01 runtime dispatch process.*
+*Figure SI01-04 — Concurrent ingress resolves to ordered TimingNode state-change boundaries; concrete execution mechanics belong to detailed design.*
 
 The source for this process view is
 `docs/_diagrams/runtime-dispatch-process.yaml`.
-
-#### Reads
-
-A read does not automatically need the TimingNode serial executor.
-
-Use the simplest rule that preserves correctness:
-
-- application data that does not depend on mutable TimingNode state, such as the
-  build/version identity, may be read directly;
-- a read that must see an exact combination of mutable TimingNode values is run
-  through that TimingNode's serial executor;
-- presentation code must not gain write access to domain state just because it
-  can read it.
-
-The HTTP/status representation may later be built from values returned by the
-application. The architecture does not require a Java class called
-`ApplicationStatusSnapshot`, `ApplicationStatusModel` or any other specific
-status helper merely to satisfy this rule.
-
-#### Blocking I/O
-
-Do not block the TimingNode serial executor on network, device or slow file I/O.
-
-A normal flow is:
-
-```text
-TimingNode task
-   |
-   +--> request I/O
-            |
-            v
-      I/O executor / external library
-            |
-            v
-      completion/failure
-            |
-            +--> submit follow-up task to the owning TimingNode
-```
-
-If a domain transition depends on successful I/O, represent that pending state
-explicitly and finish the transition when the completion comes back. Do not keep
-the TimingNode blocked while waiting for the external operation.
-
-#### Queue and failure behaviour
-
-The queue in front of a TimingNode must be bounded in field use.
-
-- accepted tasks are processed in submission order;
-- a full queue is an explicit failure, never a silent drop;
-- one task throwing an exception must not permanently stop later accepted work;
-- queue depth/high-water information should be observable for diagnostics;
-- exact queue sizes remain a configuration/verification decision.
-
-#### Shutdown
-
-Normal shutdown follows the same ownership rules:
-
-1. stop accepting new client/device input;
-2. stop or quiesce adapters;
-3. allow already accepted TimingNode work to finish within a configured timeout;
-4. finish required persistence/outbox work;
-5. stop scheduler/I/O/state executors;
-6. report failure if graceful shutdown cannot finish in time.
-
-#### Architecture review cases
-
-The concurrency design is reviewed against concrete cases rather than by adding
-placeholder classes:
-
-| Case | Required behaviour |
-| --- | --- |
-| Two commands arrive at the same TimingNode together | one runs, then the other; they never overlap |
-| Commands arrive at two different TimingNodes | they may run concurrently |
-| RFID callback arrives while an operator command changes the same TimingNode | callback work waits in the same TimingNode queue |
-| Timer fires while that TimingNode is busy | timer work is queued for the same TimingNode |
-| A handler throws | failure is reported; later accepted tasks can still run |
-| TimingNode queue is full | submission fails visibly; work is not silently dropped |
-| Blocking network/file/device operation is needed | I/O runs outside the TimingNode serial executor |
-| I/O completion comes back on another thread | completion is submitted back to the owning TimingNode before changing state |
-| A query needs an exact view of several mutable TimingNode values | query runs in that TimingNode serial executor |
-| A client asks for application build/version | read directly; no TimingNode executor is involved |
-| Shutdown starts with queued work | new ingress stops and accepted work gets a bounded chance to finish |
-| Domain code calls another domain object while already inside the TimingNode task | use a normal direct Java call; do not send another command merely to preserve layers |
-
-These cases are the basis for implementation tests of the serial-execution
-mechanism and its callers.
-
-#### Concurrency technology baseline
-
-The selected baseline is deliberately small:
-
-- JDK `java.util.concurrent`;
-- one small project-owned serial-executor implementation per TimingNode;
-- one shared configurable backing `ExecutorService`;
-- separate I/O/scheduler execution when needed;
-- direct/controllable executors in unit tests;
-- no actor, reactive-stream or generic event-bus framework unless a later
-  measured need justifies one.
 
 ### Time and clock architecture
 
@@ -1333,7 +1218,7 @@ Time is an explicit architecture concern rather than an incidental use of `Date`
 
 #### `TimingTimestamp` value
 
-The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful absolute event times such as observations, registrations, start times and persisted/synchronised event timestamps.
+The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful **absolute event times** such as observations, accepted registrations and persisted/synchronised event timestamps. A race/stage start definition is not required to be an absolute timestamp: it may be supplied as local time-of-day without a date, or with an explicit date when that information is available.
 
 Working semantics:
 
@@ -1343,7 +1228,9 @@ Working semantics:
 - its precision and external serialisation are explicit rather than inherited accidentally from a Java API or wire codec;
 - domain/application APIs pass `TimingTimestamp` rather than arbitrary `long`, `Date`, generic Java timestamp classes or local-date/time values where an absolute event time is intended.
 
-The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing, time-only strings and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. This keeps the domain type independent of one protocol, storage format or deployment time zone.
+The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. Time-only race/start definitions are a separate domain/reference-data concept and shall not be forced into `TimingTimestamp` by inventing a date.
+
+When a race/stage start is defined only by local time-of-day, elapsed-time calculation shall resolve that clock time against the accepted registration timestamp using the configured event/race time zone. The resolved start is the most recent valid occurrence of that time-of-day that is not after the registration. This deliberately supports one civil-day rollover: a start at `23:59:50` followed by a registration at `00:00:10` resolves to an elapsed time of 20 seconds rather than a negative value. If an explicit start date is supplied, that date is authoritative. A time-only definition cannot by itself distinguish elapsed durations of 24 hours or more; such cases require an explicit date or another higher-level race-day reference.
 
 #### Time sources
 
@@ -1375,7 +1262,7 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp`; perform local-zone conversion only at explicit boundaries; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` for events; resolve time-only race/start definitions through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
 | clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
@@ -1621,31 +1508,31 @@ Working rules:
 
 ### Data and persistence architecture
 
-The initial architecture keeps application/domain state in memory and uses simple file-based persistence/restore rather than requiring an embedded database.
+Keep the data roles simple:
 
-Keep these concepts distinct:
+- `LogBook` is passive state and holds committed `TimingDataRecord` values;
+- `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
+  per-node state objects;
+- the TimingNode worker is the single writer for those mutable per-node objects;
+- each state type that needs file persistence uses its own store contract;
+- `TimingDataStore` is the durable/recovery source for committed timing data;
+- `NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` preserve
+  their accepted changes/snapshots for later analysis; they are not automatically
+  the runtime recovery authority;
+- queries read consistent state without becoming another owner of it.
 
-1. ingress/ordering — concurrency ownership;
-2. `LogBook` / `LogBookItem` — operational domain state and history owned for a TimingNode;
-3. `TimingData` / `TimingDataRecord` — canonical persistent/interchange representation, validation and encode/decode compatibility;
-4. prepare-team state/history — operational teams-to-prepare behaviour distinct from timing records;
-5. race/reference data — locally available participant/team/tag-reference input received from external sources;
-6. absolute event time — project-owned `TimingTimestamp` semantics independent of local display time;
-7. local backup/restore — restart/power-loss recovery;
-8. `UpstreamProtocol` — TimingData transfer plus synchronisation, reconciliation and system-level protocol messages.
+For example, StageStartTimes may be sent again when a TimingNode is opened after
+a reboot, while the separately stored historical snapshots remain useful for
+post-event analysis.
 
-TimingData identity remains TimingNode-scoped; the current stable conceptual key is
-`(TimingNodeId, SequenceNumber)`.
+The first implementation can use simple local files; an embedded database is not
+required. SDD-01 defines ordering, commit/visibility and the different persistence
+roles. SDD-02 defines the Java worker and store boundaries.
 
-Storage consumes the TimingData representation/codec contract. A storage adapter
-may persist and recover encoded records without understanding their individual
-domain fields. The same principle applies to transport adapters: they move a
-representation owned by Domain instead of becoming an alternative owner of the
-record schema.
-
-Persistence durability semantics, concrete file format, atomic-write strategy
-and corruption/recovery rules remain open decisions and may justify a focused
-data/persistence SDD only when implementation reaches that complexity.
+Practical detailed-design work includes a half-written last TimingData record,
+corrupt-file reporting, durable flush/fsync behaviour, file rotation and bounded
+consumer reads. Analysis stores may use simpler append/snapshot formats because
+they do not define the TimingData commit point.
 
 ### Integration architecture
 
@@ -1737,40 +1624,24 @@ Status must distinguish at least local network reachability from external/upstre
 
 ### Development view
 
-#### Maven artifact boundary
+#### Development boundaries
 
-The current implementation baseline deliberately starts with one reusable framework library and one executable application:
+The development structure shall preserve the architecture dependency direction
+without assuming that every architecture layer is a package or Maven artifact.
 
-```text
-event-timing-parent
-framework/ -> event-timing-framework.jar
-app/       -> event-timing-app.jar
-```
+Architecture-level boundaries are:
 
-Architecture layers/packages are **not automatically Maven artifacts**. A new artifact is justified by an actual consumer, reuse, dependency, lifecycle, deployment, public/private or release boundary.
+- SI-01 has a reusable application/framework implementation and a deployable
+  executable application;
+- the public IF-05 Java contract must be independently consumable by SI-01 and
+  engineering/test tooling without depending on SI-01 internal Domain packages;
+- presentation and I/O implementations depend on application/domain contracts
+  rather than owning domain semantics;
+- public framework/reference code compiles and verifies without private
+  production implementations.
 
-#### Package direction
-
-Likely package responsibilities may evolve toward areas such as:
-
-```text
-application
-domain
-core
-presentation
-  interfaces
-    api
-    console
-    shell
-    web          when implemented
-  common
-io
-platform
-```
-
-Within presentation, functional interfaces own their transport-specific subpackages. External GUI or engineering clients consume the API rather than creating transport packages inside SI-01.
-
-Do not create future packages merely to mirror the architecture picture. Package structure becomes explicit only as real classes make ownership and dependency rules enforceable.
+The exact Maven reactor, artifact names, Java package layout, shared
+`timing-data-api` placement and dependency checks are owned by SDD-02.
 
 #### Public/private extension model
 
@@ -1792,10 +1663,9 @@ providers at startup, builds one registry, validates configured provider IDs and
 then performs normal composition. Runtime/domain components receive normal typed
 interfaces and never interact with class loaders or provider discovery.
 
-The Java 8 baseline can implement discovery with `ServiceLoader` plus a
-dedicated class loader for configured external JARs. Loading is a startup concern:
-hot reload/unload is not required. Provider IDs must be unique; duplicate or
-unknown configured IDs are startup/configuration errors.
+Provider discovery/loading is a startup/composition responsibility. Provider IDs
+must remain unambiguous and configuration errors must fail explicitly. The
+concrete Java discovery/class-loading mechanism is detailed in SDD-02.
 
 Built-in reference/simulation implementations remain part of the normal public
 software where they are needed for development and verification. In particular,
@@ -1814,15 +1684,15 @@ This table intentionally lives in the architecture section of this SSD because t
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
 | Java baseline | Java SE 8 is the current SI-01 baseline | accepted for current implementation; verify the selected runtime on the Pi target |
-| Extension mechanism | typed provider SPIs discovered at startup with Java 8 `ServiceLoader`; built-in and external-JAR providers share one registry | working direction; prove with public synthetic/reference providers before integrating private implementations |
+| Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
 | Build | Maven | accepted |
-| Concurrency | one project-owned `SerialExecutor` per `TimingNode` over shared configurable JDK executors | architecture baseline selected; keep defaults simple and tune only if evidence requires it |
+| Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition for the first Java worker and keeps executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
-| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | working direction; controlled per-system offset/stepping supports simulation; define precision/serialisation, sync and clock-correction policy |
+| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
-| Persistence | application/domain state + simple file persistence/restore | durability/file mechanics still open |
+| Persistence | per-type stores: TimingDataStore is the durable/recovery source for committed timing data; NextUpTeams/StageStartTimes/RaceData stores preserve analysis history/snapshots | ordering and visibility in SDD-01; Java store boundaries in SDD-02; wire/file contract in IF-05 |
 | API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
@@ -1862,46 +1732,59 @@ Testability is an architecture property. Application/domain code should where pr
 - receive absolute time through an injectable abstraction;
 - receive duration/timeout measurements through a controllable monotonic abstraction where needed;
 - include tests that step the wall clock forwards/backwards and cross representative DST/local-time transitions;
-- exercise `SerialExecutor` ordering, same-TimingNode non-overlap, cross-TimingNode parallelism and bounded-queue rejection deterministically;
+- exercise per-TimingNode ordering/non-overlap, independent-node progress and bounded-ingress overload behaviour deterministically;
 - depend on semantic ports rather than concrete device/network libraries;
 - keep protocol parsing in adapters;
 - use deterministic handlers that can run synchronously in unit tests;
 - expose observable status for degraded/failure conditions;
 - avoid `Thread.sleep()` as a domain timing mechanism.
 
-Fault handling should preserve local operation, traceability and explicit status. Exact retry counts, timeouts and durability guarantees belong to requirements or focused implementation design when evidence exists.
+Failures should stay visible and should not silently lose timing history. Retry
+counts, timeouts and the exact durability guarantee are detailed-design choices
+once we have real implementation/measurement evidence.
 
 Detailed verification strategy belongs in `60-SVP-software-verification-plan.md`.
 
 ### Detailed-design documents
 
-Keep this SSD as the main technical design for the **Timing Point Application** (SI-01). Use a separate SDD only when
-implementation detail would make the architecture section of this SSD harder to read.
+Keep this SSD at architecture level. Put implementation detail in the focused
+SDDs below instead of repeating it here.
 
-Current active focused SDD:
+Current focused SDDs:
 
 ```text
+43-01-SDD-01-data-and-display-design.md
+  internal data/runtime algorithms:
+  LogBook recording, TimingData persistence/recovery, query isolation,
+  prepare-team/reference/display behaviour
+
 43-01-SDD-02-java-component-design.md
-  Java packages, Maven artifacts and composition
+  concrete Java realisation:
+  Maven artifacts, packages, classes/interfaces, queue/thread/executor choices,
+  provider discovery and dependency checks
+
+43-01-SDD-03-backoffice-transport-design.md
+  transport realisation below the upstream semantic boundary
 ```
 
-Persistence/data and upstream transport notes remain deferred until their
-implementation needs focused design.
+IDDs define the external/file/API contracts. The SDDs use those contracts; they
+do not define a second version of them.
 
 ### Open architecture decisions
 
-The next useful architecture work is to resolve concrete implementation choices, not create more document layers:
+Only keep questions here if the answer could change the SI-01 architecture.
+Implementation questions go in the relevant SDD.
 
-- TimingNode queue capacities and overload policy if real workloads show a need for explicit limits;
-- field logging handlers, level defaults and rotation/retention;
-- remote-shell technology;
-- first concrete command/query submission/result API signatures;
-- `TimingTimestamp` representation/precision/serialisation and equality/comparison semantics;
-- wall-clock synchronisation, correction detection and the operational policy for a material forward/backward clock step;
-- concrete configuration file syntax/library and first Java configuration type boundaries;
-- persistence commit/durability/atomic-write/recovery policy;
-- concrete Java runtime/vendor/version for the Pi target;
-- status/health vocabulary and publication model;
-- exact public API/SPI boundaries as real consumers appear;
-- RabbitMQ connection/channel/retry strategy when that integration becomes active;
-- whether there is ever a concrete reason to move beyond the current Java 8 baseline.
+Open architecture questions include:
+
+- production authentication/authorisation and final network exposure policy;
+- operational policy for material wall-clock corrections when it affects timing
+  correctness or operator action;
+- final upstream/backoffice semantic responsibilities as IF-06 is promoted;
+- whether measured multi-TimingNode/Pi resource behaviour ever requires changing
+  the current ordered-per-node responsibility model;
+- any target-runtime limitation that forces a change to the Java-8/application
+  architecture baseline.
+
+Queue sizes, Java signatures, executor choice, fsync/atomic file operations,
+rotation and LogBook indexes belong in SDD-01/SDD-02, not here.
