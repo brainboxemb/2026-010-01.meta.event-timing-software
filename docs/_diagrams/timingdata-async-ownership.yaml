@@ -56,12 +56,12 @@ nodes:
     group: query
     layout: {x: 1170, y: 315, w: 180, h: 100}
   - id: outqueue
-    label: "EventDispatcher\ntyped bounded hand-off"
+    label: "newTimingDataEvent\nEvent<TimingData>"
     kind: service
     group: output
     layout: {x: 1435, y: 235, w: 180, h: 82}
   - id: outworker
-    label: "Event subscribers\nWebSocket / upstream"
+    label: "Subscribed listeners\nWebSocket / upstream"
     kind: integration
     group: output
     layout: {x: 1435, y: 455, w: 180, h: 90}
@@ -72,5 +72,5 @@ edges:
   - {from: worker, to: state, label: "ordered read / mutation"}
   - {from: worker, to: stores, label: "required persistence"}
   - {from: worker, to: queryworker, label: "immutable view / result"}
-  - {from: worker, to: outqueue, label: "TimingDataCommitted"}
-  - {from: outqueue, to: outworker, label: "typed dispatch"}
+  - {from: worker, to: outqueue, label: "emit(timingData)"}
+  - {from: outqueue, to: outworker, label: "notify listeners"}
