@@ -164,7 +164,7 @@ shared/timing-data/
     TimingDataProvider.java
     defaultprofile/
       DefaultTimingDataFactory.java
-      DefaultTimingDataCodec.java        when codec implementation is added
+      DefaultTimingDataCodec.java
       private automatic/manual default value implementations
 ```
 
@@ -1117,7 +1117,7 @@ shared/timing-data
 default profile
   DefaultTimingDataFactory
     private automatic/manual immutable implementations
-  DefaultTimingDataCodec        when codec implementation is added
+  DefaultTimingDataCodec
 
 test / product-specific profile
   DummyEventTimingDataFactory
@@ -1213,7 +1213,9 @@ TimingDataProvider
 ```
 
 The factory creates the concrete in-memory TimingData objects. The codec
-encodes/decodes the same profile family. Provider discovery and configuration
+encodes/decodes the same profile family.
+The built-in default/reference codec uses Jackson's streaming API only; JSON Lines
+record framing, durable append and incomplete-tail recovery remain store responsibilities. Provider discovery and configuration
 remain bootstrap/infrastructure concerns.
 
 The provider therefore does more than representation translation, but it still
