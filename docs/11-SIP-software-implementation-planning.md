@@ -207,10 +207,10 @@ Status: active
 Implement the smallest useful timing-domain vertical slice before introducing
 reference data, keypad/display behaviour or production transports.
 
-The domain/recording foundation is now implemented. The remaining active work in
-this step is completing the concrete Engineering Client Timing-view/UI baseline
-(D01), then exposing the behaviour through IF-03 and the Engineering Client (A03)
-and proving the complete running-system flow.
+The domain/recording foundation and concrete Engineering Client Timing-view/UI
+baseline are now defined. The active work is A03: expose the accepted compact
+node-addressed IF-03 control/LogBook/live behaviour in the running application
+and Engineering Client, then prove the complete running-system flow.
 
 ### Goal
 
@@ -233,8 +233,10 @@ update, and close it again.
 - passive LogBook and append-only file persistence with startup recovery;
 - post-commit typed TimingData event;
 - compact node-addressed IF-03 location/open/close control, capability-gated dev auto-reg, bounded LogBook queries and live updates;
-- Engineering Client state/history rebuild and live-update handling;
-- deterministic first-slice verification and running-system demo.
+- Engineering Client state/LogBook rebuild and live-update handling;
+- deterministic component/domain verification;
+- automated ST-1 black-box verification through public IF-03;
+- Engineering Client running-system demo after black-box verification is green.
 
 ### Not in this step
 
@@ -263,19 +265,40 @@ update, and close it again.
 - Committed TimingData survives restart and rebuilds the LogBook before operational work starts.
 - LocationId and RegistrationId are shared value representations without hard-coded event policy.
 - Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
-- D01 is active to complete the concrete Engineering Client Timing-view/UI baseline; A03 follows with the IF-03/client implementation.
+- D01 is complete with declarative Timing-view wireframes, state/enablement rules and reconnect behaviour; A03 is active for IF-03/client implementation.
+- Formal Step-4 verification order is A03 implementation, then automated VC-ST1-002 black-box verification, then the manual Engineering Client running-system demo.
+
+### Verification order
+
+The running-system verification deliberately separates SI-01/IF-03 behaviour from
+the JavaFX client:
+
+1. **A03 implementation + component/adapter tests** — implement the public
+   node-addressed control/LogBook/live resources and Engineering Client service/view integration.
+2. **V03 / VC-ST1-002 black-box** — start SI-01 as a separate process and drive
+   the complete first-registration flow through public IF-03 only. The test must
+   not inspect or mutate private Java state.
+3. **V04 Engineering Client demo** — repeat the same semantic flow through the
+   JavaFX Engineering Client and verify UI enablement, feedback, LogBook/live
+   presentation and reconnect/stale/live behaviour.
+
+This order makes failures easier to localise: V03 proves SI-01 and IF-03
+independently before V04 adds the human/UI client.
 
 ### Demo
 
+The demo is V04 and runs only after V03/VC-ST1-002 is green.
+
+
 - Start SI-01 with the registration point CLOSED and no operational location.
-- Connect the Engineering Client and rebuild current status/history.
+- Connect the Engineering Client and rebuild current status/LogBook.
 - Assign a valid synthetic LocationId.
 - Open registration.
 - Inject one dev auto-reg request with deterministic `id` and `time`.
-- Inspect the committed TimingData in history and the corresponding live update.
+- Inspect the committed TimingData in the LogBook and the corresponding live update.
 - Verify changing LocationId while OPEN is rejected.
 - Close registration and then change LocationId successfully.
-- Restart SI-01 and verify committed TimingData history is recovered without replaying old records as new live events.
+- Restart SI-01 and verify committed TimingData LogBook is recovered without replaying old records as new live events.
 
 ### Done
 
@@ -287,7 +310,9 @@ update, and close it again.
 - committed TimingData is emitted only after durable append plus LogBook visibility;
 - IF-03 exposes node-addressed location/open/close, capabilities, dev auto-reg, bounded LogBook metadata/ranges and live TimingData updates;
 - the Engineering Client rebuilds status/history after reconnect before presenting the view as live;
-- VC-ST1-002 and the running-system demo succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+- automated VC-ST1-002 passes against SI-01 as a separate process using public IF-03 only;
+- the subsequent Engineering Client running-system demo passes through the same public boundary;
+- both verification steps succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
 ---
 
