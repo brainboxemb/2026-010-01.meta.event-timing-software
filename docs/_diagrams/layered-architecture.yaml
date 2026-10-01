@@ -219,7 +219,7 @@ nodes:
   object_id: LogBook
   group: timing-node-aggregate
   label: "LogBook"
-  subtitle: "0..N LogBookItem"
+  subtitle: "0..N TimingDataRecord"
   kind: service
   notation: component
   layout: {x: 850, y: 792, w: 240, h: 50}
