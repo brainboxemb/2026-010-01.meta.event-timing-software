@@ -271,41 +271,47 @@ They deliberately distinguish queue admission from the domain result produced
 when work executes against current TimingNode state. SDD-02 owns the concrete
 Java queue, Future and worker mechanism.
 
+#### Automatic RFID registration
+
+![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
+
+*Figure SDD01-TD03 — A device callback receives only bounded admission status and returns; later TimingNode processing uses current state and has no synchronous callback waiting for the domain result.*
+
+#### Manual registration
+
+![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
+
+*Figure SDD01-TD04 — A presentation-driven registration call waits for its actual processed/committed result while the Future remains internal to TimingNode.*
+
+#### Long query while registrations continue
+
+![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
+
+*Figure SDD01-TD05 — The query captures its read view on the TimingNode lane and performs longer calculation outside the lane; it does not read LogBook directly.*
+
+#### Later producers
+
+![Generic TimingNode producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
+
+*Figure SDD01-TD06 — Later state-dependent operations use the same TimingNode ownership/ordering boundary; their caller contract must still state whether they wait for a result or are submission-only.*
+
 #### State-dependent OPEN waits for its processed result
 
 ![TimingNode OPEN sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open.svg)
 
-*Figure SDD01-TD03 — `open()` returns only after the queued operation has executed against current TimingNode state; the internal Future is not exposed to the caller.*
+*Figure SDD01-TD07 — `open()` returns only after the queued operation has executed against current TimingNode state; the internal Future is not exposed to the caller.*
 
 #### Concurrent OPEN and SET_LOCATION are ordered by the TimingNode
 
 ![TimingNode OPEN / SET_LOCATION ordering sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open-set-location.svg)
 
-*Figure SDD01-TD04 — State-dependent validation happens when each operation reaches the serial lane, so SET_LOCATION cannot rely on an earlier external read of CLOSED state.*
+*Figure SDD01-TD08 — State-dependent validation happens when each operation reaches the serial lane, so SET_LOCATION cannot rely on an earlier external read of CLOSED state.*
 
 #### Timeout means outcome unknown, not rollback
 
 ![TimingNode timeout sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-timeout.svg)
 
-*Figure SDD01-TD05 — A caller timeout stops waiting but does not cancel already accepted work; the caller re-queries state before deciding what happened.*
-
-#### Device observation uses submission-only ingress
-
-![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
-
-*Figure SDD01-TD06 — A device callback receives only bounded admission status and returns; later TimingNode processing uses current state and has no synchronous callback waiting for the domain result.*
-
-#### Manual registration waits for commit result
-
-![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
-
-*Figure SDD01-TD07 — A presentation-driven registration call may wait for the actual processed/committed result while the Future remains internal to TimingNode.*
-
-#### Consistency-sensitive query captures state on the serial lane
-
-![TimingNode query sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
-
-*Figure SDD01-TD08 — The query captures its read view on the TimingNode lane and performs longer calculation outside the lane; it does not read LogBook directly.*
+*Figure SDD01-TD09 — A caller timeout stops waiting but does not cancel already accepted work; the caller re-queries state before deciding what happened.*
 
 #### Thread/ownership responsibilities
 
