@@ -124,6 +124,7 @@ The first-executable status representation is:
   "timingNodes": [
     {
       "timingNodeId": "<configured-timing-node-id>",
+      "locationId": null,
       "lifecycle": "CLOSED"
     }
   ],
@@ -144,10 +145,11 @@ keeps `TimingNodeId` application-wide unique so that this flattened view is
 unambiguous. Structured problem entries carry additional observable operational
 problems.
 
-The first executable does not yet implement operational open/close commands. A
-configured minimal `TimingNode` therefore reports `CLOSED`; later SIP
-increments may add additional lifecycle values while preserving the
-field/ownership model.
+In the Step-4 first-registration slice, `locationId` is either `null` while
+no operational location is assigned or the positive current IF-05 `LocationId`
+value. `lifecycle` is `CLOSED` or `OPEN`. A closed node may retain its last
+selected location during the same runtime session; startup/recovery does not
+invent a current operational location from historical TimingData.
 
 Problem entries use:
 
@@ -200,6 +202,153 @@ Successful response:
 
 Later subsystem/device/backoffice fields may extend the model without changing the ownership principle.
 
+### IF03-OP-004 — Get public/engineering capabilities
+
+HTTP mapping:
+
+```text
+GET /api/v1/capabilities
+```
+
+Successful response:
+
+```json
+{
+  "apiVersion": "1",
+  "capabilities": [
+    {
+      "id": "DIRECT_REGISTRATION_SIMULATION",
+      "supported": true,
+      "enabled": true
+    }
+  ]
+}
+```
+
+Unknown capability IDs added within API v1 are ignored by clients that do not
+understand them. The direct-registration engineering command below is available
+only when `DIRECT_REGISTRATION_SIMULATION` is both supported and enabled.
+
+### IF03-OP-005 — Set current operational location
+
+HTTP mapping:
+
+```text
+PUT /api/v1/timing-node/location
+```
+
+Request:
+
+```json
+{
+  "locationId": 24
+}
+```
+
+The value uses the shared IF-05 `LocationId` representation. Concrete allowed
+values remain event/profile/deployment policy outside IF-03.
+
+Successful response is HTTP `200`:
+
+```json
+{
+  "apiVersion": "1",
+  "result": "UPDATED"
+}
+```
+
+The operation is accepted only while the TimingNode is CLOSED. A successful
+change is reflected by subsequent status queries and a `STATUS_CHANGED` event.
+
+### IF03-OP-006 — Open registration
+
+HTTP mapping:
+
+```text
+POST /api/v1/timing-node/open
+```
+
+The request has no semantic body. Successful HTTP `200` results are
+`OPENED` or `ALREADY_OPEN`. OPEN without a configured current LocationId is
+a domain conflict and does not change state.
+
+### IF03-OP-007 — Close registration
+
+HTTP mapping:
+
+```text
+POST /api/v1/timing-node/close
+```
+
+The request has no semantic body. Successful HTTP `200` results are
+`CLOSED` or `ALREADY_CLOSED`. A successful state change is followed by a
+`STATUS_CHANGED` event.
+
+### IF03-OP-008 — Inject an already-accepted registration
+
+This is an engineering capability, not a replacement RFID or manual-entry
+interface.
+
+HTTP mapping:
+
+```text
+POST /api/v1/engineering/accepted-registration
+```
+
+Request:
+
+```json
+{
+  "registrationId": "<resolved-registration-id>",
+  "observationTime": "2026-10-01T12:00:00.000000000Z"
+}
+```
+
+The caller supplies only the already-resolved shared `RegistrationId` and the
+accepted observation time. SI-01 supplies its configured source identity,
+current LocationId, next committed sequence and recordedAt value and executes the
+same accepted-registration operation used after normal RFID interpretation and
+filtering.
+
+Successful HTTP `200` response:
+
+```json
+{
+  "apiVersion": "1",
+  "result": "COMMITTED",
+  "recordKey": {
+    "timingNodeId": "<configured-timing-node-id>",
+    "sequenceNumber": 1
+  }
+}
+```
+
+Command outcome is intentionally separate from the history/live TimingData
+representation. The committed record becomes visible through IF03-OP-009 and a
+`TIMING_DATA_COMMITTED` event.
+
+### IF03-OP-009 — Get committed TimingData history
+
+HTTP mapping:
+
+```text
+GET /api/v1/timing-data
+```
+
+Successful response:
+
+```json
+{
+  "apiVersion": "1",
+  "timingNodeId": "<configured-timing-node-id>",
+  "records": []
+}
+```
+
+Each `records` element uses the public IF-05 TimingData JSON field semantics.
+Records are returned in committed source-sequence order. This resource exposes
+committed history only; it does not expose queued/uncommitted operations.
+
 ### IF03-OP-003 — Subscribe to status/event updates
 
 WebSocket mapping:
@@ -223,30 +372,47 @@ Event envelope:
 }
 ```
 
-First-executable event types:
+Step-4 event types:
 
 ```text
 STATUS_SNAPSHOT
 STATUS_CHANGED
+TIMING_DATA_COMMITTED
 ```
 
 For `STATUS_SNAPSHOT`, `payload` contains the complete current status representation.
 
-For `STATUS_CHANGED`, `payload` also contains a complete current status representation in the first executable. SI-01 emits this event only after an actual authoritative status change; it shall not manufacture periodic or duplicate changes merely to exercise the transport. This deliberately avoids introducing partial-patch/replay semantics before they are needed. Later compatible optimisation may add more event types while `/status` remains the authoritative resynchronisation operation.
+For `STATUS_CHANGED`, `payload` also contains a complete current status
+representation. SI-01 emits this event only after an actual authoritative
+location/lifecycle/status change; it shall not manufacture periodic or duplicate
+changes merely to exercise the transport.
 
-WebSocket transport ordering is sufficient for first-executable events; no durable cross-connection event sequence is introduced in AP-1.
+For `TIMING_DATA_COMMITTED`, `payload` is the committed public IF-05 TimingData
+record. It is emitted only after durable local append and LogBook visibility.
+Recovery does not replay old records as new live events.
+
+WebSocket delivery order is sufficient within one connected session. The stable
+TimingData record key, rather than a separate transient WebSocket sequence,
+provides deduplication when history and live delivery overlap.
 
 ## Reconnect and resynchronisation
 
-Reconnect semantics are intentionally simple:
+Reconnect semantics rebuild authoritative current state/history before the client
+declares its view live:
 
 1. client reconnects to `/api/v1/events`;
-2. SI-01 sends a new complete `STATUS_SNAPSHOT` event;
-3. the client replaces its cached status with that snapshot;
-4. subsequent `STATUS_CHANGED` events are applied in WebSocket delivery order;
-5. the client may call `GET /api/v1/status` at any time to explicitly recover current authoritative state.
+2. SI-01 sends a complete `STATUS_SNAPSHOT`; the client begins buffering later
+   WebSocket events;
+3. the client replaces its cached status from the snapshot and calls
+   `GET /api/v1/timing-data` to rebuild committed history;
+4. the client applies buffered `STATUS_CHANGED` events in WebSocket order;
+5. buffered `TIMING_DATA_COMMITTED` records already present in rebuilt history
+   are discarded by stable TimingData record key; later records are appended in
+   source-sequence order;
+6. only after this merge is complete does the client mark the view live.
 
-No event replay across disconnected sessions is required by the first executable.
+No durable WebSocket replay across disconnected sessions is required. Committed
+history is the recovery source for TimingData missed while disconnected.
 
 ## Error responses
 
@@ -262,16 +428,26 @@ HTTP failures use a JSON envelope:
 }
 ```
 
-Initial status mapping:
+Step-4 mapping:
 
-| HTTP status | Meaning in first executable |
+| HTTP status | Stable example codes / meaning |
 | --- | --- |
-| `400` | malformed request where applicable |
-| `404` | unknown resource |
-| `405` | unsupported HTTP method on a known resource |
+| `400` | `MALFORMED_REQUEST`, `INVALID_VALUE` |
+| `403` | `CAPABILITY_NOT_ENABLED` |
+| `404` | `NOT_FOUND` |
+| `405` | `METHOD_NOT_ALLOWED` |
+| `409` | domain-state conflict such as `NO_LOCATION`, `NODE_NOT_CLOSED`, `NODE_NOT_OPEN` |
+| `503` | `BUSY`, `UNAVAILABLE`, or expected commit dependency failure |
+| `504` | `OUTCOME_UNKNOWN` after the caller-side operation guard timeout |
 | `500` | unexpected internal interface failure |
 
-A normal reported problem represented by `/status` is not converted into HTTP `500` merely because a problem entry is present.
+A timeout response explicitly means that the accepted operation may still execute;
+the transport shall not cancel already accepted TimingNode work. Before retrying a
+state-changing command whose outcome is unknown, the client resynchronises current
+status/history.
+
+A normal reported problem represented by `/status` is not converted into HTTP
+`500` merely because a problem entry is present.
 
 ## Network access and first-executable security policy
 
@@ -366,6 +542,59 @@ Without explicit configuration the first-executable IF-03 service shall bind onl
 Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
 ```
 
+```{ifreq} Step-4 location and lifecycle control
+:id: IF03-REQ-011
+:derived_from: SI01-REQ-040
+
+IF-03 shall expose the current optional LocationId and OPEN/CLOSED state and shall
+provide IF03-OP-005/006/007 for location, open and close control using the shared
+SI-01 application/domain semantics.
+```
+
+```{ifreq} Engineering capability discovery
+:id: IF03-REQ-012
+:derived_from: SI01-REQ-043
+
+IF-03 shall provide IF03-OP-004 so the Engineering Client can determine whether
+direct registration simulation is supported and enabled before presenting or
+using that control.
+```
+
+```{ifreq} Direct accepted-registration engineering control
+:id: IF03-REQ-013
+:derived_from: SI01-REQ-041, SI01-REQ-043
+
+When the advertised capability is supported and enabled, IF-03 shall provide
+IF03-OP-008 and pass only resolved RegistrationId plus accepted observation time
+to the normal SI-01 accepted-registration operation.
+```
+
+```{ifreq} Committed TimingData history query
+:id: IF03-REQ-014
+:derived_from: SI01-REQ-042
+
+IF-03 shall provide IF03-OP-009 for committed TimingData history in source-sequence
+order using public IF-05 field semantics.
+```
+
+```{ifreq} Live committed TimingData delivery
+:id: IF03-REQ-015
+:derived_from: SI01-REQ-042
+
+The IF-03 WebSocket event stream shall emit `TIMING_DATA_COMMITTED` only after
+the corresponding TimingData record is committed and visible in authoritative
+local history.
+```
+
+```{ifreq} Rebuild history before live presentation
+:id: IF03-REQ-016
+:derived_from: SI01-REQ-044
+
+A reconnecting client shall be able to combine the current status snapshot,
+committed TimingData history and buffered live events using stable TimingData
+record keys before declaring its view live.
+```
+
 ## Relationship to SI-01 SSD
 
 Each IF-03 requirement owns its upstream SI-01 traceability through its
@@ -415,6 +644,36 @@ A07 separately verifies the `STATUS_CHANGED` broadcast path at adapter level. En
 
 The test driver shall not mutate internal Java objects or inspect private implementation state to obtain the pass/fail result.
 
+## Step-4 first-registration verification case
+
+```{vc} Control and observe first committed registration
+---
+id: VC-ST1-002
+verifies: >-
+  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-044,
+  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015,
+  IF03-REQ-016
+---
+
+Deterministic procedure:
+
+1. start SI-01 with direct registration simulation supported and enabled;
+2. query status and verify CLOSED with no current LocationId;
+3. set a known synthetic LocationId and verify CLOSED status reflects it;
+4. request OPEN and verify OPEN with the same LocationId;
+5. attempt another location change and verify explicit NODE_NOT_CLOSED conflict;
+6. submit one accepted registration with a deterministic RegistrationId and
+   observation time;
+7. verify the command result is COMMITTED and does not supply client-owned source
+   sequence/location/recordedAt fields;
+8. verify committed history contains exactly the resulting TimingData with source
+   sequence 1, the active LocationId and the supplied observation time;
+9. verify a TIMING_DATA_COMMITTED live event represents that same stable record key;
+10. request CLOSE and verify CLOSED;
+11. reconnect the event client, rebuild history, deduplicate any buffered overlap
+    by record key and only then mark the view live.
+```
+
 ## Remote shell scope
 
 The first executable may expose equivalent version/status semantics through a remote-shell adapter as required by the SIP, but AP-1 does **not** introduce a separate system IDD for that transport.
@@ -431,12 +690,10 @@ If the remote shell later becomes a stable externally consumed system interface,
 
 The following IF-03 capabilities are visible in later use cases/architecture but intentionally outside this AP-1 baseline:
 
-- open/close TimingNode commands;
 - start procedure;
 - RFID power/reinitialisation commands;
 - ready-team add/remove;
-- manual registration/penalty/revocation;
-- registration/history queries;
+- manual registration/penalty/revocation beyond the direct accepted-registration engineering path;
 - reference-data administration;
 - backoffice controls;
 - detailed diagnostics/support export;
