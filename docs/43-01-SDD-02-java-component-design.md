@@ -159,9 +159,8 @@ timing-data-api/
 ```
 
 Small construction-only support values may be nested in the owning public
-contract (for example `TimingData.Key`, `TimingData.Context` or
-`RegistrationData.Context`) rather than automatically becoming separate
-top-level public files.
+contract (for example `TimingData.Context` or `RegistrationData.Context`) rather
+than automatically becoming separate top-level public files.
 
 For example, the first TimingNode implementation is grouped as:
 
