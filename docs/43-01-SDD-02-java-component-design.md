@@ -150,11 +150,18 @@ domain/
     TimingNode.java
     TimingNodeId.java
     UpstreamMessagePort.java            TimingNode-level upstream messages
+    NextUpTeams.java                    passive per-node state
+    NextUpTeamsStore.java               persistence port for next-up analysis history
+    StageStartTimes.java                passive per-node reference state
+    StageStartTimesStore.java           persistence port for start-time analysis history
+    RaceData.java                       passive per-node reference state
+    RaceDataStore.java                  persistence port for race/reference analysis history
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
     TimingDataRecord.java               canonical semantic/interchange record
     TimingDataRecordKey.java
+    TimingDataStore.java                durable append/load/recovery port
     TimingDataCodec.java                canonical public/reference codec
     TimingDataProvider.java             external-format translation provider
   upstream/
@@ -191,10 +198,16 @@ io/
     FileNextUpTeamsStore.java             next-up analysis history/snapshots
     FileStageStartTimesStore.java         start-time analysis history/snapshots
     FileRaceDataStore.java                race/reference analysis snapshots
+
+runtime/
+  SerialWorker.java                       bounded one-at-a-time execution helper
 ```
 
 The names above record ownership/direction, not a requirement to create empty
-types early. `ApplicationId`, internal `TimingSystemId` and functional
+types early. Store **interfaces** stay next to the capability whose semantics
+they persist; concrete filesystem implementations stay under `io.storage`.
+`SerialWorker` is runtime machinery composed into TimingNode rather than a
+Domain superclass. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
