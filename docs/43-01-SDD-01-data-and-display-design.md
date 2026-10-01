@@ -116,24 +116,45 @@ TimingNode  <<active object>>
 The Active Object wording describes the behaviour, not a required Java base
 class. SDD-02 uses composition for the first implementation.
 
-Public/application calls stay ordinary Java methods such as
-`register(teamIdentity, time)`. Crossing the TimingNode's asynchronous boundary
-requires a small immutable internal work item so the caller may return while the
-node processes the operation later. That internal item is not a public Command
-Pattern object, is not persisted and does not become another domain model.
+Public/application calls stay ordinary methods. The TimingNode hides the
+asynchronous hand-off used by its Active Object implementation.
 
-The single TimingNode worker gives one clear order across registrations,
-NextUpTeams changes, reference-data updates and lifecycle changes. No producer
-lock is required around sequence allocation because only this worker performs
-the commit step.
+For a state-dependent operation such as `setLocation(...)`, `open()`,
+`close()` or a consistency-sensitive status query, the public call does not
+report success merely because work entered the queue. The TimingNode queues an
+internal work item, executes it later against the then-current ordered state and
+returns the processed result to the caller. A Java implementation may connect
+those two moments with an internal `Future`; that Future is not part of the
+caller-facing domain API.
+
+Submission-only ingress is a separate contract. A device callback may need only
+to know whether bounded work was admitted so that the callback thread can
+continue immediately. In that case `ACCEPTED` means only accepted for later
+processing.
+
+The contained state objects are passive but not globally readable. Lifecycle,
+location, LogBook, NextUpTeams, StageStartTimes and RaceData are accessed through
+the TimingNode ownership boundary. The single TimingNode worker gives one clear
+order across registrations, reference-data updates and lifecycle changes. No
+producer lock is required around sequence allocation because only this worker
+performs the commit step.
 
 ### TimingData commit and sequence
 
-For a registration, the decision that a registration shall be recorded has
-already been made before the asynchronous hand-off. The worker does not approve
-the registration again. It may still perform deterministic resolution or
-enrichment that depends on the node's current serialized state, such as resolving
-a source/provider identity through the current `RaceData`.
+A producer may have completed work that belongs before the TimingNode boundary,
+such as device decoding/filtering or translation into a semantic registration
+request. That does not let the producer decide state-dependent TimingNode
+conditions from outside the node.
+
+When the work item reaches the serial lane, the TimingNode checks the current
+state needed by that operation. Examples include whether the node is open, which
+location is active and which current reference data is needed. Only then does the
+worker create/commit the resulting TimingData.
+
+For a caller that waits for a registration result, successful return therefore
+means the registration operation has reached its defined commit/visibility point;
+for submission-only device ingress there is no synchronous caller waiting for
+that later result.
 
 Only when the worker is ready to commit does it ask the LogBook for the next
 sequence. Sequence is therefore not assigned when work is placed on the queue.
@@ -208,75 +229,98 @@ introduce an unbounded hidden queue.
 
 ### Query/consumer visibility
 
-Consumers only see committed timing records. A query that starts before a new
-record is added may finish against its earlier view; a later query sees the new
-record.
+Consumers do not read mutable TimingNode-owned objects directly.
 
-A long query must not occupy the TimingNode worker or hold the LogBook lock for
-its whole calculation. With the expected LogBook size of roughly 1200–1500
-records, immutable TimingDataRecord objects make a shallow reference snapshot
-cheap. Copying 1500 references is roughly 6 KiB with 4-byte compressed
-references or 12 KiB with 8-byte references.
+A consistency-sensitive query enters the TimingNode serial lane and captures the
+state it needs at a defined point in the same ordering as state changes. If the
+query requires expensive calculation, only the short snapshot step runs on the
+lane; the calculation continues on the caller/query execution context after the
+snapshot has been returned.
 
-To avoid turning even that small copy into repeated garbage, a consumer may own
-a reusable destination buffer:
+Conceptually:
 
-```java
-int count = logBook.copyTo(reusableBuffer);  // short synchronized copy
-calculate(reusableBuffer, count);            // no LogBook lock
+```text
+query caller
+  -> TimingNode query
+       -> ordered serial lane
+       -> capture immutable/read-only state view
+       -> return view/result
+  -> optional long calculation outside lane
 ```
 
-The exact collection/array implementation and measured copy time remain SDD-02
-implementation/verification details. The architectural point is that a consumer
-gets a stable view without a second LogBook thread.
+For LogBook history the first implementation may capture a shallow immutable
+reference view because `TimingDataRecord` values are immutable. The exact
+representation and allocation strategy belong to SDD-02 and measurement on the
+target. A reusable internal buffer is acceptable only if callers cannot observe
+it being mutated/reused after the query returns.
+
+A query that is ordered before a new commit may legitimately see the earlier
+state; a query ordered after that commit sees the new state. A separately
+published immutable status/read snapshot may later serve high-frequency readers,
+but it must have explicit freshness semantics and does not make the underlying
+mutable state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — One TimingNode serial worker owns mutation order; passive state and consumers do not receive their own workers.*
+*Figure SDD01-TD02 — The TimingNode owns mutable state; short serialized reads publish immutable views for work that continues outside the lane.*
 
 ### Runtime flows
 
-The sequence diagrams below are intentionally high-level. They show method calls,
-the TimingNode asynchronous boundary, persistence and visibility. SDD-02 owns the
-concrete Java worker mechanism.
+The sequence diagrams below show the different caller contracts explicitly.
+They deliberately distinguish queue admission from the domain result produced
+when work executes against current TimingNode state. SDD-02 owns the concrete
+Java queue, Future and worker mechanism.
 
-#### Automatic RFID registration
+#### State-dependent OPEN waits for its processed result
+
+![TimingNode OPEN sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open.svg)
+
+*Figure SDD01-TD03 — `open()` returns only after the queued operation has executed against current TimingNode state; the internal Future is not exposed to the caller.*
+
+#### Concurrent OPEN and SET_LOCATION are ordered by the TimingNode
+
+![TimingNode OPEN / SET_LOCATION ordering sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open-set-location.svg)
+
+*Figure SDD01-TD04 — State-dependent validation happens when each operation reaches the serial lane, so SET_LOCATION cannot rely on an earlier external read of CLOSED state.*
+
+#### Timeout means outcome unknown, not rollback
+
+![TimingNode timeout sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-timeout.svg)
+
+*Figure SDD01-TD05 — A caller timeout stops waiting but does not cancel already accepted work; the caller re-queries state before deciding what happened.*
+
+#### Device observation uses submission-only ingress
 
 ![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
 
-*Figure SDD01-TD03 — An antenna callback submits work to the TimingNode and returns; the TimingNode worker later persists and exposes the record.*
+*Figure SDD01-TD06 — A device callback receives only bounded admission status and returns; later TimingNode processing uses current state and has no synchronous callback waiting for the domain result.*
 
-#### Manual registration
+#### Manual registration waits for commit result
 
 ![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
 
-*Figure SDD01-TD04 — CommandHandler makes a normal TimingNode registration call; no Command object is implied by the interface.*
+*Figure SDD01-TD07 — A presentation-driven registration call may wait for the actual processed/committed result while the Future remains internal to TimingNode.*
 
-#### Long query while registrations continue
+#### Consistency-sensitive query captures state on the serial lane
 
-![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
+![TimingNode query sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
 
-*Figure SDD01-TD05 — A query works on a stable LogBook view while the TimingNode worker can commit later records.*
-
-#### Later producers
-
-![Generic TimingNode producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
-
-*Figure SDD01-TD06 — Later start, penalty and correction operations use the same TimingNode serial boundary.*
+*Figure SDD01-TD08 — The query captures its read view on the TimingNode lane and performs longer calculation outside the lane; it does not read LogBook directly.*
 
 #### Thread/ownership responsibilities
 
-| Execution role | May block on | Must not block |
+| Execution role | May block on | Must not do |
 | --- | --- | --- |
-| ingress/caller | short validation + bounded TimingNode submission | durable file I/O, long query, network retry |
-| TimingNode serial worker | ordered domain state change; required local persistence | long query, client rendering, slow network retry |
-| query worker/caller | its own calculation on a stable read view | TimingNode state progress |
-| signalling/upstream worker | its own delivery/retry policy | TimingNode commit |
+| presentation caller waiting for a state-dependent result | bounded TimingNode operation wait | read/mutate TimingNode-owned state directly |
+| device/callback ingress | short validation + bounded submission | wait for durable commit, run long domain work, read node state directly |
+| TimingNode serial worker | ordered domain operation; required local persistence; short snapshot capture | client rendering, slow network retry, long ranking calculation |
+| query caller/worker | long calculation on returned immutable view | retain a mutable internal buffer or bypass TimingNode ownership |
+| signalling/upstream worker | its own delivery/retry policy | mutate TimingNode state directly or block TimingNode commit |
 
 For the first one-node implementation, one dedicated worker is the simplest
 mechanism. A later multi-node runtime may share executor threads only if each
-TimingNode still processes at most one work item at a time and preserves FIFO
-order.
+TimingNode still processes at most one work item at a time, preserves FIFO order
+and retains the same caller-visible operation semantics.
 
 ## TimingData persistence and recovery
 
