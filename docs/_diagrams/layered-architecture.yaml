@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1465
+  height: 1426
   description: Working responsibility view of the reusable framework and executable application.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -13,7 +13,9 @@ diagram:
 # - Flat-layer content starts 25 px from the left edge (x=55).
 # - Normal sibling component gap is 20 px.
 # - A normal layer title baseline is 22 px below its local top edge.
-# - The first component row starts 42 px below a flat layer top.
+# - The first component row starts about 42 px below the local layer top.
+# - Normal bottom padding after the tallest component is 18 px, matching Presentation/Application.
+# - For shaped layers, "local top" means the visible top edge at that x-position, not the group's raw y origin.
 # - Component width follows content/established columns; do not stretch blocks to fill a layer.
 # - Component height follows displayed content; do not add empty height merely to align bottoms.
 # Platform deliberately reuses the lower I/O row columns (x=55, 275, 535).
@@ -66,15 +68,15 @@ groups:
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
-  layout: {x: 30, y: 928, w: 1120, h: 285}
+  layout: {x: 30, y: 928, w: 1120, h: 258}
   label_offset: {x: 0, y: 78}
   # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
   # same x breakpoints and diagonal rise gives a constant visible gap.
   outline:
     corner_radius: 10
     points:
-      - {x: 0.0, y: 0.2722807}
-      - {x: 0.6694915, y: 0.2722807}
+      - {x: 0.0, y: 0.3007752}
+      - {x: 0.6694915, y: 0.3007752}
       - {x: 0.7203390, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 1.0}
@@ -82,8 +84,8 @@ groups:
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  # 42 px header/row offset + 120 px tallest component + 30 px bottom padding.
-  layout: {x: 30, y: 1243, w: 1120, h: 192}
+  # 42 px header/row offset + 120 px tallest component + 18 px bottom padding.
+  layout: {x: 30, y: 1216, w: 1120, h: 180}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -92,7 +94,7 @@ groups:
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1180, y: 250, w: 230, h: 1185}
+  layout: {x: 1180, y: 250, w: 230, h: 1146}
 nodes:
 - id: local-console
   object_id: Console
@@ -273,7 +275,7 @@ nodes:
     - "backup / restore"
   kind: storage
   notation: packaging-component
-  layout: {x: 55, y: 1070, w: 200, h: 95}
+  layout: {x: 55, y: 1048, w: 200, h: 95}
 - id: devices-io
   object_id: Devices
   group: io-layer
@@ -319,7 +321,7 @@ nodes:
       object_id: NetworkDeviceService
   kind: integration
   notation: packaging-component
-  layout: {x: 275, y: 1070, w: 240, h: 95}
+  layout: {x: 275, y: 1048, w: 240, h: 95}
 - id: messaging-io
   object_id: Messaging
   group: io-layer
@@ -337,7 +339,7 @@ nodes:
               object_id: DebugConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1070, w: 260, h: 120}
+  layout: {x: 535, y: 1048, w: 260, h: 120}
 
 - id: platform-execution
   object_id: PlatformExecution
@@ -348,7 +350,7 @@ nodes:
   kind: platform
   notation: packaging-component
   # Reuse Storage column/width; one displayed item needs only a compact box.
-  layout: {x: 55, y: 1285, w: 200, h: 80}
+  layout: {x: 55, y: 1258, w: 200, h: 80}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
@@ -358,7 +360,7 @@ nodes:
   kind: platform
   notation: packaging-component
   # Reuse DeviceNetworks column/width.
-  layout: {x: 275, y: 1285, w: 240, h: 80}
+  layout: {x: 275, y: 1258, w: 240, h: 80}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer
@@ -371,7 +373,7 @@ nodes:
   kind: platform
   notation: packaging-component
   # Reuse Messaging column/width; four displayed items use the same 120 px density.
-  layout: {x: 535, y: 1285, w: 260, h: 120}
+  layout: {x: 535, y: 1258, w: 260, h: 120}
 
 - id: timing-application-runtime
   object_id: TimingApplication
