@@ -101,6 +101,7 @@ reading order or implementation sequence.
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
+| UC-019 | Handle provider-specific input classification | Input subsystem / operator | Preserve a provider-declared semantic input classification when public processing policy needs it, without exposing provider-private encoding details. |
 
 ### Normal operation
 
@@ -554,6 +555,40 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 6. The broker is stopped/restarted to exercise reconnect, consumer restoration and pending-outbox resume.
 
 Production names, source IDs, schemas and credentials remain outside the public fixture.
+
+```
+
+```{uc} Handle provider-specific input classification
+:id: UC-019
+
+**Goal:** preserve a provider-declared semantic input classification when the
+public application contract needs distinct processing, without publishing
+provider-private source encoding or mapping rules.
+
+**Primary actors:** input subsystem and operator.
+
+**Preconditions:**
+
+- the selected provider has decoded the private/source representation;
+- any semantic classification exposed to the application is part of that
+  provider's public contract.
+
+**Main flow:**
+
+1. The input adapter receives a decoded semantic observation from the selected provider.
+2. Provider-private codes remain behind the provider boundary.
+3. SI-01 preserves any public semantic classification required by application policy.
+4. The normal TimingNode path validates and processes the resulting semantic input.
+5. Any committed TimingData record uses only the public canonical TimingData fields.
+
+**Behaviour still to define:**
+
+- which provider-declared semantic classifications, if any, require distinct public application behaviour;
+- which lifecycle/configuration policies apply to such classifications;
+- what operator-visible diagnostics are required.
+
+Concrete production encodings, private mapping tables and deployment-specific
+categories are outside this public use case.
 
 ```
 
