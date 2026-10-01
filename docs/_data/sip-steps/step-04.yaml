@@ -1,6 +1,9 @@
 step: 4
 
 planning_changes:
+  - date: '2026-10-01'
+    change: >-
+      TimingData baseline completed; D01 UI design active before A03 client/API integration.
   - date: '2026-09-30'
     change: >-
       D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.
@@ -16,10 +19,12 @@ activities:
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: done
+    state: active
     note: >-
-      Document the existing JavaFX Engineering Client as a standalone engineering
-      tool in the same repository. Keep the module name test-client for now.
+      Complete the Engineering Client architecture and the concrete Step-4 Timing
+      UI baseline: view layout, control availability, lifecycle/capability states,
+      TimingData history/live presentation and reconnect/stale/live behaviour.
+      Keep the module name test-client for now.
 
   - id: D02
     lane: documentation
@@ -48,7 +53,7 @@ activities:
     lane: documentation
     kind: decision
     title: Establish first TimingData + public control contracts
-    state: active
+    state: done
     depends_on: [D02, D02W]
     note: >-
       Define TimingNodeId and LocationId once in the TimingData/IDD contract,
@@ -61,7 +66,7 @@ activities:
     lane: verification
     kind: verification
     title: Define deterministic first-slice examples
-    state: planned
+    state: done
     depends_on: [D03]
     note: >-
       Cover unassigned location, location set while CLOSED, open, rejected location
@@ -72,7 +77,7 @@ activities:
     lane: application
     kind: implementation
     title: TimingNode location and lifecycle
-    state: planned
+    state: done
     depends_on: [V01]
     note: >-
       Implement configured TimingNode identity, optional location while CLOSED,
@@ -83,7 +88,7 @@ activities:
     lane: application
     kind: implementation
     title: Direct registration + TimingData
-    state: planned
+    state: done
     depends_on: [A01]
     note: >-
       Implement the accepted-registration operation after the antenna/filtering
@@ -94,8 +99,8 @@ activities:
     lane: application
     kind: integration
     title: Engineering Client first-slice control
-    state: planned
-    depends_on: [A02]
+    state: next
+    depends_on: [D01, A02]
     note: >-
       Add IF-03/client support for location, open/close, capability-gated direct
       registration simulation, registration history and live updates. Rebuild
@@ -105,7 +110,7 @@ activities:
     lane: verification
     kind: verification
     title: First-slice domain verification
-    state: planned
+    state: done
     depends_on: [A02]
     note: >-
       Verify lifecycle/location invariants, sequence ownership, historical

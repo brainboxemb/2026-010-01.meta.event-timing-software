@@ -180,25 +180,83 @@ The first-executable IF-03 service shall default to local/loopback-only access. 
 SI-01 shall implement IF-03 `v1` such that compatible additions can be made without requiring clients to understand every newly added JSON member or event type; breaking interface semantics shall not silently redefine the existing `v1` contract.
 ```
 
-### First-executable lifecycle interpretation
+#### Step-4 first-registration operation
 
-The first executable is not yet an operational timing implementation.
+```{req} Operational location and lifecycle
+:id: SI01-REQ-040
+:derived_from: UC-001, UC-002, UC-008, UC-009
+
+SI-01 shall expose the current operational `LocationId` and `OPEN`/`CLOSED`
+state, allow the location to be assigned or changed only while CLOSED, require a
+valid current location before OPEN succeeds, and keep that location fixed while
+OPEN.
+```
+
+```{req} Accepted semantic registration operation
+:id: SI01-REQ-041
+:derived_from: UC-003, UC-009
+
+SI-01 shall provide one application/domain operation for an already-accepted
+semantic registration. The caller supplies the resolved `RegistrationId` and
+accepted observation time; SI-01 supplies its own source identity, active
+`LocationId`, next committed sequence and recorded time before committing the
+TimingData value.
+```
+
+```{req} Committed registration observability
+:id: SI01-REQ-042
+:derived_from: UC-003, UC-009, UC-011
+
+SI-01 shall make committed registration TimingData observable through current
+history and live post-commit notification without exposing uncommitted records
+as committed state.
+```
+
+```{req} Capability-gated engineering registration injection
+:id: SI01-REQ-043
+:derived_from: UC-009
+
+The direct accepted-registration engineering control shall be usable only when
+SI-01 advertises that the corresponding engineering capability is both supported
+and enabled. This control enters at the accepted semantic registration boundary
+and shall not let the client supply final TimingData, source sequence, active
+LocationId, recorded time or source identity.
+```
+
+```{req} Reconnect rebuild before live presentation
+:id: SI01-REQ-044
+:derived_from: UC-009
+
+After IF-03 reconnect, an engineering/operator client shall be able to rebuild
+current status and committed registration history before treating subsequent
+updates as a live view. Duplicate TimingData observed through history plus live
+delivery shall be identifiable by the stable TimingData record key.
+```
+
+### Step-4 lifecycle interpretation
+
+The Step-4 first-registration slice extends the first executable with the first
+real TimingNode operational state while preserving the existing application
+lifecycle/status boundary.
 
 Therefore:
 
-- application state may move through `STARTING`, `RUNNING`, `DEGRADED` and `STOPPING` according to IF-03;
-- at least one configured minimal `TimingNode` is represented;
-- that TimingNode reports lifecycle `CLOSED` in this slice;
-- operational open/close commands and resulting registration-stream events remain deferred to the later domain increment.
-
-This prevents the first version/status executable from inventing partial operational semantics merely to make a demo look more complete.
+- at least one configured TimingNode is represented;
+- a restarted TimingNode begins `CLOSED` with no current operational location;
+- a `LocationId` can be assigned or changed while CLOSED;
+- OPEN requires a current valid location;
+- the current location cannot change while OPEN;
+- an accepted semantic registration can commit only while OPEN;
+- committed registration history and live post-commit updates are observable
+  through IF-03;
+- physical RFID observation/filtering remains a later input slice.
 
 ### Explicitly deferred requirements
 
 The following areas are intentionally not made concrete by this SSD slice:
 
-- RFID power/read/filter/decryption behaviour;
-- registration and source-sequence behaviour beyond any minimal topology placeholder needed for configuration;
+- RFID power/read/filter/decryption behaviour before the accepted-registration boundary;
+- TagId/TeamId/reference-data resolution and provider-specific identity mapping;
 - ready-team/start/penalty behaviour;
 - CAN/keypad/Display V1;
 - smart Display V2;
@@ -223,6 +281,9 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary | architecture/component checks + `VC-ST1-001` |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
+| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03 control/status | V1/V2 + Step-4 ST-1 |
+| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control | V2 + Step-4 ST-1 |
+| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 history/WebSocket | V2/V3 + reconnect verification |
 
 ### AP-1 decisions resolved by this baseline
 
