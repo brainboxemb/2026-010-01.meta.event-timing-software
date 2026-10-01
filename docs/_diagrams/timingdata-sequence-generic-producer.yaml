@@ -5,7 +5,7 @@ diagram:
   width: 1100
   height: 780
   description: Later traceable domain operations use the same bounded TimingNode serial boundary and durable TimingData commit order.
-  note: Exact start, penalty and correction record families remain deferred.
+  note: The operation-specific contract decides whether the caller waits for a domain result or only observes queue admission.
 
 participants:
   - {id: producer, label: Domain producer, kind: model}
@@ -14,10 +14,9 @@ participants:
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
 
 messages:
-  - {from: producer, to: node, label: "record fact", kind: call}
-  - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
-  - {from: node, to: producer, label: queued, kind: return}
-  - {from: node, to: node, label: "serial worker processes work", kind: call}
+  - {from: producer, to: node, label: "domain operation", kind: call}
+  - {from: node, to: node, label: "bounded internal hand-off", kind: async}
+  - {from: node, to: node, label: "worker executes against current node state", kind: call}
   - {from: node, to: logbook, label: "nextSequence()", kind: call}
   - {from: logbook, to: node, label: "sequence N", kind: return}
   - {from: node, to: store, label: "append(record N)", kind: call}

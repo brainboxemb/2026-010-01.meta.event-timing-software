@@ -1,14 +1,14 @@
 diagram:
   id: timingdata-async-ownership
-  title: Figure SDD01-TD02 — TimingNode active-object ownership and query isolation
+  title: Figure SDD01-TD02 — TimingNode execution and ownership detail
   width: 1680
   height: 850
-  description: One bounded serial worker owns TimingNode state mutation; contained state remains passive and queries run outside the worker.
-  note: A later shared executor may replace the dedicated thread only if per-node FIFO, one-at-a-time execution and bounded work are preserved.
+  description: "TimingNode refinement view: one bounded serial execution lane owns mutable node state, queries capture immutable views and post-fact TimingData notification uses a local typed event."
+  note: A later shared executor may replace the dedicated thread only if per-node FIFO, one-at-a-time execution, bounded work and the same ownership semantics are preserved.
 
 groups:
   - id: ingress
-    label: Ingress execution
+    label: Callers / ingress
     kind: layer-domain
     layout: {x: 45, y: 105, w: 320, h: 610}
   - id: node
@@ -16,7 +16,7 @@ groups:
     kind: layer-application
     layout: {x: 405, y: 105, w: 700, h: 610}
   - id: query
-    label: Consumer execution
+    label: Read / consumer execution
     kind: layer-presentation
     layout: {x: 1145, y: 105, w: 230, h: 610}
   - id: output
@@ -26,51 +26,51 @@ groups:
 
 nodes:
   - id: caller
-    label: "Caller / device callback"
+    label: "Presentation / device / query caller"
     kind: model
     group: ingress
-    layout: {x: 80, y: 275, w: 250, h: 82}
+    layout: {x: 80, y: 275, w: 250, h: 92}
   - id: queue
-    label: "bounded work queue"
+    label: "bounded serial work queue"
     kind: service
     group: node
     layout: {x: 450, y: 175, w: 250, h: 72}
   - id: worker
-    label: "SerialWorker\nTimingNode state changes"
+    label: "SerialWorker\ncommands + sensitive reads"
     kind: application
     group: node
     layout: {x: 760, y: 175, w: 270, h: 86}
   - id: state
-    label: "Passive node state\nLogBook • NextUpTeams\nStageStartTimes • RaceData"
+    label: "Passive node-owned state\nLogBook • lifecycle/location\nNextUpTeams • StageStartTimes • RaceData"
     kind: model
     group: node
-    layout: {x: 470, y: 420, w: 310, h: 110}
+    layout: {x: 470, y: 405, w: 330, h: 125}
   - id: stores
     label: "Per-type stores\nTimingData + analysis history"
     kind: storage
     group: node
-    layout: {x: 825, y: 420, w: 230, h: 100}
+    layout: {x: 835, y: 420, w: 230, h: 100}
   - id: queryworker
-    label: "Query / ranking\nreusable read buffer"
+    label: "Long query / ranking\nimmutable read view"
     kind: service
     group: query
     layout: {x: 1170, y: 315, w: 180, h: 100}
   - id: outqueue
-    label: "bounded output\nqueue / outbox"
+    label: "newTimingDataEvent\nEvent<TimingData>"
     kind: service
     group: output
     layout: {x: 1435, y: 235, w: 180, h: 82}
   - id: outworker
-    label: "network worker\nmay retry/block"
+    label: "Subscribed listeners\nWebSocket / upstream"
     kind: integration
     group: output
     layout: {x: 1435, y: 455, w: 180, h: 90}
 
 edges:
-  - {from: caller, to: queue, label: "submit"}
+  - {from: caller, to: queue, label: "command / query / submit"}
   - {from: queue, to: worker, label: "FIFO"}
+  - {from: worker, to: state, label: "ordered read / mutation"}
   - {from: worker, to: stores, label: "required persistence"}
-  - {from: worker, to: state, label: "ordered mutation"}
-  - {from: state, to: queryworker, label: "short copy/read"}
-  - {from: worker, to: outqueue, label: "committed output"}
-  - {from: outqueue, to: outworker}
+  - {from: worker, to: queryworker, label: "immutable view / result"}
+  - {from: worker, to: outqueue, label: "emit(timingData)"}
+  - {from: outqueue, to: outworker, label: "notify listeners"}

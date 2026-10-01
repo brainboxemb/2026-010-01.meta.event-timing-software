@@ -78,7 +78,11 @@ groups:
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1180, y: 250, w: 230, h: 1043}
+  layout: {x: 1180, y: 250, w: 230, h: 500}
+- id: core-layer
+  label: Core
+  kind: layer-crosscutting
+  layout: {x: 1180, y: 770, w: 230, h: 523}
 
 nodes:
 - id: local-console
@@ -369,8 +373,18 @@ nodes:
   label: "Build / version identity"
   kind: crosscutting
   layout: {x: 1210, y: 615, w: 170, h: 80}
+- id: core-primitives
+  object_id: CorePrimitives
+  group: core-layer
+  label: "Core primitives"
+  items:
+    - "SerialWorker"
+    - "Event<T>"
+  kind: crosscutting
+  notation: packaging-component
+  layout: {x: 1210, y: 835, w: 170, h: 185}
 - id: boundary-note
-  group: crosscutting-layer
+  group: core-layer
   label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
   layout: {x: 1210, y: 1213, w: 170, h: 70}

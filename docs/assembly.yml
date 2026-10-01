@@ -91,13 +91,14 @@ indexes:
 books:
   - output: documents/architecture-book.md
     title: Software specification and architecture document set
-    description: Generated review/output book containing the SSSD, software-item SSDs and currently active focused detailed design. The numbered source documents on the source branch remain authoritative.
+    description: Generated review/output book containing the SSSD, software-item SSDs and currently active focused detailed designs. The numbered source documents on the source branch remain authoritative.
     documents:
       - software-system-specification
       - application-control-status
       - timingdata-interchange
       - application-configuration
       - timing-application-specification
+      - data-display-design
       - java-component-design
       - gui-application-specification
 

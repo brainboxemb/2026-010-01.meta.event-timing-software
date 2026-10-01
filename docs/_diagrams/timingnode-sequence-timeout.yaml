@@ -1,0 +1,28 @@
+diagram:
+  id: timingnode-sequence-timeout
+  type: sequence
+  title: Figure SDD01-TD09 — Timeout and state re-query
+  width: 1360
+  height: 1110
+  description: A caller stops waiting before queued OPEN finishes. Accepted work is not automatically cancelled, so the caller later re-queries TimingNode state.
+  note: Timeout reports an unknown outcome to that caller. It is not OpenResult.REJECTED and does not imply rollback.
+
+participants:
+  - {id: client, label: Operator / Engineering Client, kind: client}
+  - {id: api, label: Presentation / CommandHandler, kind: interface}
+  - {id: node, label: TimingNode, kind: model}
+
+messages:
+  - {from: client, to: api, label: OPEN, kind: call}
+  - {from: api, to: node, label: "open()", kind: call}
+  - {from: node, to: node, label: "queue OPEN work + hidden Future", kind: async}
+  - {from: node, to: api, label: "TimingNodeTimeoutException", kind: return}
+  - {from: api, to: client, label: "timeout — outcome unknown", kind: return}
+  - {from: node, to: node, label: "worker later executes OPEN", kind: call}
+  - {from: node, to: node, label: "state = OPEN; Future completes", kind: call}
+  - {from: client, to: api, label: STATUS, kind: call}
+  - {from: api, to: node, label: "status()", kind: call}
+  - {from: node, to: node, label: "queue consistency-sensitive read", kind: async}
+  - {from: node, to: node, label: "worker captures current state = OPEN", kind: call}
+  - {from: node, to: api, label: "TimingNodeStatus.OPEN", kind: return}
+  - {from: api, to: client, label: OPEN, kind: return}

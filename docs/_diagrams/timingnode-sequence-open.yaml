@@ -1,0 +1,22 @@
+diagram:
+  id: timingnode-sequence-open
+  type: sequence
+  title: Figure SDD01-TD07 — OPEN waits for processed domain result
+  width: 1220
+  height: 900
+  description: A caller invokes a normal synchronous OPEN operation. TimingNode queues internal work, executes it against current state and only then returns the domain result.
+  note: A Java Future may connect the queued work to the waiting method internally; it is not exposed to CommandHandler or the client.
+
+participants:
+  - {id: client, label: Operator / Engineering Client, kind: client}
+  - {id: api, label: Presentation / CommandHandler, kind: interface}
+  - {id: node, label: TimingNode, kind: model}
+
+messages:
+  - {from: client, to: api, label: OPEN, kind: call}
+  - {from: api, to: node, label: "open()", kind: call}
+  - {from: node, to: node, label: "queue OPEN work + hidden Future", kind: async}
+  - {from: node, to: node, label: "worker: inspect current state", kind: call}
+  - {from: node, to: node, label: "CLOSED + location set -> state = OPEN", kind: call}
+  - {from: node, to: api, label: "OpenResult.OPENED", kind: return}
+  - {from: api, to: client, label: OPENED, kind: return}

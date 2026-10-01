@@ -37,6 +37,7 @@ Use the numbered project documents for their specific roles:
 - [docs/50-SDE-01-software-development-environment.md](docs/50-SDE-01-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
 - [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
+- [docs/43-01-SDD-01-data-and-display-design.md](docs/43-01-SDD-01-data-and-display-design.md) — active TimingNode data/runtime behaviour and operation-flow design;
 - [docs/43-01-SDD-02-java-component-design.md](docs/43-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
 - [docs/41-02-SSD-gui-application-specification-document.md](docs/41-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
 - [docs/60-SVP-software-verification-plan.md](docs/60-SVP-software-verification-plan.md) — verification strategy/evidence model;

@@ -48,12 +48,17 @@ ARCHITECTURE_DOCUMENTS = [
     "32-03-IDD-application-control-status.md",
     "32-11-IDD-application-configuration.md",
     "41-01-SSD-timing-application-specification-document.md",
+    "43-01-SDD-01-data-and-display-design.md",
     "43-01-SDD-02-java-component-design.md",
     "41-02-SSD-gui-application-specification-document.md",
 ]
 
-DEFERRED_DESIGN_DOCUMENTS = [
+ACTIVE_DESIGN_DOCUMENTS = [
     "43-01-SDD-01-data-and-display-design.md",
+    "43-01-SDD-02-java-component-design.md",
+]
+
+DEFERRED_DESIGN_DOCUMENTS = [
     "43-01-SDD-03-backoffice-transport-design.md",
 ]
 
@@ -71,8 +76,8 @@ DOCUMENTS = (
     + EXTERNAL_INPUT_DOCUMENTS
     + SYSTEM_SPEC_DOCUMENTS
     + SOFTWARE_ITEM_SPEC_DOCUMENTS
+    + ACTIVE_DESIGN_DOCUMENTS
     + DEFERRED_DESIGN_DOCUMENTS
-    + ["43-01-SDD-02-java-component-design.md"]
     + ENGINEERING_DOCUMENTS
     + VERIFICATION_DOCUMENTS
     + USER_DOCUMENTS
@@ -236,8 +241,9 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Software-item detailed design — active", ""])
-    _, title, _ = by_name["43-01-SDD-02-java-component-design.md"]
-    doc_index.append(f"- [{title}](./43-01-SDD-02-java-component-design.md)")
+    for name in ACTIVE_DESIGN_DOCUMENTS:
+        _, title, _ = by_name[name]
+        doc_index.append(f"- [{title}](./{name})")
 
     doc_index.extend(["", "## Software-item detailed design — deferred notes", ""])
     for name in DEFERRED_DESIGN_DOCUMENTS:

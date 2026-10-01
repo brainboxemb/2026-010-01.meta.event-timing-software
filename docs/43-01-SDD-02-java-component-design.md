@@ -75,6 +75,8 @@ io.github.brainboxemb.eventtiming/timingpoint/
   application/
   domain/
   core/
+    concurrent/
+    events/
   presentation/
     interfaces/
       api/
@@ -128,8 +130,8 @@ Use these rules:
   closely related value/supporting types; keep that small group together rather
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
-- reserve `infra` for concrete cross-cutting technical support such as
-  `BuildIdentity`;
+- reserve `core` for small JDK-only reusable primitives such as bounded/serial execution and typed local events;
+- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
 - use `io` for external hardware, messaging and storage adapters.
 
 For example, the first TimingNode implementation is grouped as:
@@ -202,6 +204,8 @@ io/
 core/
   concurrent/
     SerialWorker.java                     bounded one-at-a-time execution primitive
+  events/
+    Event.java                            small typed subscribe / unsubscribe / emit primitive
 ```
 
 The names above record ownership/direction, not a requirement to create empty
@@ -265,6 +269,11 @@ upstream connectivity and synchronisation. Concrete I/O components expose or
 publish semantic status inputs; `SystemStatus` must not depend on classes such
 as `Rev1CanDisplay`, socket/session implementations or vendor antenna drivers.
 
+TimingNode status reaches this aggregate as an immutable semantic snapshot/result
+created through the TimingNode ownership boundary. `SystemStatus` does not call
+into `LogBook`, lifecycle fields, location fields or other mutable TimingNode
+internals directly.
+
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
 `ApplicationStatusSnapshot` or `ApplicationStatusModel`.
@@ -284,19 +293,18 @@ domain
   domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
 
 core
-  runtime/execution contracts
+  small JDK-only reusable primitives/contracts, including serial execution
+  and local typed events
 
 io
   hardware, messaging and storage adapters
 
 infra
-  cross-cutting technical support and framework bootstrap/composition
+  concrete cross-cutting technical support, including logging, diagnostics,
+  extension discovery and framework bootstrap/composition
 
 runtime
   top-level composed runtime object and lifecycle mechanics
-
-infra
-  extension discovery/registry and framework bootstrap/composition
 
 platform
   execution-environment abstractions
@@ -310,11 +318,11 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
-domain          --> core (only reusable execution primitives)
-io              --> application/domain ports/contracts + platform
+domain          --> core
+io              --> application/domain ports/contracts + core + platform
 runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-core            --> JDK/platform-neutral reusable execution mechanics only
+core            --> JDK/platform-neutral reusable primitives/contracts only
 platform        --> low-level environment only
 ```
 
@@ -616,8 +624,9 @@ GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared presentation/application boundary remains small:
 `CommandHandler.version()` returns build identity and
-`CommandHandler.status()` returns the current TimingNode status used by the
-current presentation adapters.
+`CommandHandler.status()` obtains the current TimingNode status through the
+TimingNode query/ownership boundary used by the current presentation adapters;
+it does not assemble status by reading node-owned fields directly.
 
 ## TimingNode active-object execution and persistence
 
@@ -646,69 +655,165 @@ between registration, lifecycle, next-up and reference-data changes.
 
 A reusable base class such as `TimingNode extends ActiveObject<Work>` is
 possible, but it would couple the domain type to one threading mechanism.
-Composition keeps that choice replaceable:
+Composition keeps that choice replaceable and lets the public TimingNode API stay
+synchronous and domain-oriented.
+
+For state-dependent operations the caller waits for the result produced on the
+TimingNode lane:
 
 ```java
 final class TimingNode {
-    private final SerialWorker<TimingNodeWork> serialWorker;
-    private final LogBook logBook;
-    private final NextUpTeams nextUpTeams;
-    private final StageStartTimes stageStartTimes;
-    private final RaceData raceData;
+    private final SerialWorker serialWorker;
 
-    boolean register(TeamIdentity team, TimingTimestamp time) {
+    OpenResult open() throws TimingNodeOperationException {
+        return await(serialWorker.submit(this::doOpen));
+    }
+
+    SetLocationResult setLocation(LocationId locationId)
+            throws TimingNodeOperationException {
+        return await(serialWorker.submit(
+                () -> doSetLocation(locationId)));
+    }
+
+    TimingNodeStatus status() throws TimingNodeOperationException {
+        return await(serialWorker.submit(this::snapshotStatus));
+    }
+
+    SubmissionResult submitObservation(Observation observation) {
         return serialWorker.offer(
-            TimingNodeWork.registration(team, time));
+                () -> processObservation(observation));
     }
 }
 ```
 
-`TimingNodeWork` is an internal immutable carrier for work that has already
-been accepted as a state change before the asynchronous hand-off. It is not a
-business-approval candidate, is not an external Command Pattern API and is not
-persisted. The worker may still resolve fields that depend on current
-TimingNode-owned state before commit. Add only work kinds required by real use
-cases.
+The public methods above are illustrative signatures, not a requirement to use
+those exact result class names. The important split is:
 
-A boolean return from methods such as `register(...)` reports whether the
-bounded serial queue accepted the work item. It does not mean the worker performs
-a second business approval later.
+```text
+open / close / setLocation / consistency-sensitive query
+    -> queued internally
+    -> execute against current ordered TimingNode state
+    -> caller receives processed domain result
 
-The worker invokes normal private/domain methods once the work item is selected.
-Code already running on the TimingNode worker should use direct Java calls rather
-than queueing more internal messages.
+device/callback ingress that is explicitly submission-only
+    -> bounded queue admission result
+    -> callback may continue immediately
+    -> later processing has no synchronous caller waiting for its domain result
+```
+
+A queue-admission result is never used as a substitute for the domain result of
+a state-dependent command.
+
+The Future used to connect the queued work with a waiting caller is an internal
+Active Object mechanism. It does not appear in the normal TimingNode
+application/domain interface. In Java 8 a plain `Future<R>` is sufficient for
+this first design; `CompletionStage` is not required by the current synchronous
+caller contract.
+
+Code already running on the TimingNode lane uses direct private/domain methods
+such as `doOpen()` rather than calling the blocking public `open()` method
+again. Re-entering a public blocking operation from the same serial lane would
+wait on work that cannot run until the current work item finishes.
+
+### Operation results and execution failures
+
+Keep domain outcomes separate from failures of the execution boundary.
+
+For example:
+
+```text
+OpenResult
+  OPENED
+  ALREADY_OPEN
+  NO_LOCATION
+
+submission/execution failure
+  queue full
+  node stopping/unavailable
+  unexpected internal failure
+
+wait timeout
+  caller stopped waiting
+  operation may still be queued or executing
+  final domain outcome is unknown to that caller
+```
+
+A domain rejection such as `NO_LOCATION` is a normal processed result. Queue
+full or a stopping worker means the operation was not admitted and belongs to an
+operation/execution exception rather than `OpenResult`.
+
+A timeout is different again. It means only that the caller did not receive the
+processed result within the configured guard time. TimingNode timeout handling
+must not automatically cancel or interrupt an already accepted state change.
+The caller must treat the final outcome as unknown and re-query/reconcile state
+before assuming that the command did not happen.
+
+The first implementation may expose a small TimingNode-specific exception family
+rather than leaking `TimeoutException`, `ExecutionException` or
+`InterruptedException` from `java.util.concurrent` through the domain API.
+Keep that family small and add distinct exception types only where callers need
+different recovery behaviour. Timeout is a useful distinct case because its
+outcome semantics differ from definite submission rejection.
 
 ### First SerialWorker implementation
 
-The first implementation should use a small composed `SerialWorker<W>` backed
-by one `ArrayBlockingQueue<W>` and one dedicated thread:
+The first implementation should remain a small composed worker backed by one
+bounded queue and one dedicated thread, but it must support both result-bearing
+work and submission-only work. A Java-8-oriented shape is:
 
 ```java
-final class SerialWorker<W> implements AutoCloseable {
-    private final BlockingQueue<W> queue;
+final class SerialWorker implements AutoCloseable {
+    private final BlockingQueue<Runnable> queue;
     private final Thread thread;
-    private final Consumer<W> handler;
 
-    boolean offer(W work) {
-        return queue.offer(work);
+    <R> Future<R> submit(Callable<R> work) {
+        FutureTask<R> task = new FutureTask<>(work);
+
+        if (!queue.offer(task)) {
+            throw new SerialWorkerBusyException();
+        }
+
+        return task;
+    }
+
+    SubmissionResult offer(Runnable work) {
+        return queue.offer(wrapForReporting(work))
+                ? SubmissionResult.ACCEPTED
+                : SubmissionResult.BUSY;
     }
 
     private void run() {
-        while (running) {
-            handler.accept(queue.take());
+        while (running || !queue.isEmpty()) {
+            Runnable work = takeNext();
+            work.run();
         }
     }
 }
 ```
 
-Reasons for the explicit queue/thread first:
+The concrete exception/result names and shutdown-loop details may change during
+implementation. The required behaviour is:
 
 - queue capacity is visible and bounded;
-- queue depth/high-water and overload can be reported directly;
-- FIFO behaviour is obvious;
-- shutdown can stop ingress and drain accepted work deliberately;
-- there is no hidden unbounded executor queue;
-- the implementation is easy to measure on the Raspberry Pi.
+- FIFO order is preserved for one TimingNode;
+- at most one work item for that TimingNode executes at a time;
+- state-dependent validation happens in that ordered execution context;
+- result-bearing work has an internal Future that is completed by execution;
+- submission-only ingress can observe definite queue admission without waiting
+  for later domain processing;
+- one ordinary work-item failure must not silently kill the worker;
+- an unexpected failure is reported and completes a waiting operation as a
+  technical failure; the worker may continue only when TimingNode state is known
+  to remain consistent;
+- shutdown stops new admission first and lets already accepted work drain within
+  the controlled shutdown policy.
+
+The worker starts only after the TimingNode has completed construction/recovery
+and before the node is exposed for normal operation. During controlled shutdown,
+new work is rejected before the worker drains accepted work and stops. An
+operation waiting for a result may therefore complete normally during draining;
+an operation that cannot be admitted because shutdown has started fails
+immediately as unavailable.
 
 Do **not** use `Executors.newSingleThreadExecutor()` for this boundary: its
 normal work queue is unbounded and hides the overload behaviour we need to
@@ -728,6 +833,7 @@ per TimingNode:
   at most one work item executing
   bounded queued work
   visible overload
+  Future result corresponds to execution on that ordered lane
 ```
 
 ### TimingData commit
@@ -743,8 +849,8 @@ private void processRegistration(RegistrationInput input) {
         timingDataFactory.registration(input, sequence, timeSource.now());
 
     timingDataStore.append(record);  // durable before return
-    logBook.add(record);             // visibility point
-    committedSinks.publish(record);  // non-blocking only
+    logBook.add(record);             // committed domain state
+    newTimingDataEvent.emit(record);
 }
 ```
 
@@ -755,27 +861,42 @@ sequence allocation is unnecessary.
 If append fails, LogBook is unchanged and retry uses the same next sequence. The
 worker must not process a later timing record ahead of that failed record.
 
-### Passive LogBook and consumer reads
+### Passive LogBook and TimingNode-owned reads
 
-LogBook has no worker thread. It stores immutable `TimingDataRecord` values and
-supports short synchronized mutations/reads.
+`LogBook` has no worker thread. It stores immutable `TimingDataRecord` values,
+but it is contained mutable TimingNode state rather than a globally readable
+repository.
 
-A query that needs a stable view should copy references and then release LogBook
-synchronization before doing expensive work. With roughly 1200–1500 records, a
-shallow copy is small: 1500 references are about 6 KiB with compressed 4-byte
-references or 12 KiB with 8-byte references.
+Code outside the TimingNode ownership boundary does not call `LogBook.copyTo()`
+directly. A consistency-sensitive query first enters the TimingNode lane, where
+the node captures the required short immutable/read-only view. Long calculation
+continues after that lane operation has completed:
 
-Avoid allocating a new snapshot array for every high-frequency query when a
-caller-owned reusable buffer is enough:
-
-```java
-int count = logBook.copyTo(reusableTimingDataBuffer);
-calculate(reusableTimingDataBuffer, count);
+```text
+query caller
+  -> TimingNode query operation
+       -> serial lane
+       -> capture LogBook/reference-data snapshot
+       -> return immutable read view
+  -> long calculation outside serial lane
 ```
 
-This keeps long calculations off the TimingNode worker and avoids unnecessary GC
-pressure. Measure the actual copy time, heap behaviour and query frequency on the
-target Pi before introducing a more complex read model.
+With roughly 1200–1500 timing records, a shallow reference snapshot remains a
+reasonable first implementation. The concrete representation may reuse storage
+or buffers internally if measurement shows allocation pressure; that
+optimization must not let external consumers retain a mutable buffer that the
+TimingNode later changes underneath them.
+
+This model gives two useful guarantees:
+
+- a query snapshot has a defined place in the same ordering as state changes;
+- long calculation never holds the TimingNode lane merely because it needs a
+  stable input view.
+
+A high-frequency status/read path may later use a worker-published immutable
+snapshot when measurement justifies it. Such a published snapshot is an
+explicit read model with known freshness semantics, not permission for callers
+to read TimingNode-owned mutable objects directly.
 
 ### Per-type stores
 
@@ -793,7 +914,7 @@ Concrete file implementations live under `io.storage`. Store contracts are
 dependency-inverted ports composed into the TimingNode; the TimingNode must not
 depend on concrete filesystem classes.
 
-The TimingNode worker fixes the order in which state changes are accepted. The
+The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
 first implementation may call the small/infrequent analysis-store writes on the
 same worker. If measurements show that one of those writes delays registrations,
 the worker can hand an immutable snapshot to a bounded storage executor. Do not
@@ -813,20 +934,62 @@ After a reboot, the live protocol can send the current StageStartTimes again
 (for example as part of OPEN handling). The historical file is still retained
 for analysis.
 
-### External committed-data output
+### Simple typed events
 
-External signalling, WebSocket publication or upstream delivery may block/retry
-independently. Such work does not execute as a blocking operation on the
-TimingNode serial worker.
+Post-fact notifications use a small local `Event<T>` abstraction rather than a
+central event bus. The reusable mechanism lives under `core.events` because it
+is a small JDK-only reusable primitive rather than domain semantics, external I/O
+or concrete infrastructure.
+
+Conceptually:
 
 ```java
-interface CommittedTimingDataSink {
-    boolean offer(TimingDataRecord record);
+final class Event<T> {
+    void subscribe(Consumer<T> listener);
+    void unsubscribe(Consumer<T> listener);
+    void emit(T value);
 }
 ```
 
-Each concrete slow/network sink owns its own bounded queue/worker or durable
-outbox as required by that capability.
+A component owns the event instance; `core.events` only supplies the generic
+subscription/emit mechanism. For TimingData the first event is:
+
+```java
+Event<TimingData> newTimingDataEvent;
+```
+
+The commit path is therefore:
+
+```text
+TimingNode serial lane
+  -> persist TimingData
+  -> update committed LogBook state
+  -> newTimingDataEvent.emit(timingData)
+       |
+       +--> subscribed listener
+       +--> subscribed listener
+```
+
+The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the event instance they need.
+
+The event says that new TimingData is now available. The fact that
+`newTimingDataEvent` is emitted only after successful persistence and LogBook
+update is part of the event contract; it does not need to be encoded in a longer
+event name.
+
+Listeners must not become alternate owners of TimingNode mutable state. Slow
+network delivery or retry work must also not block the TimingNode serial lane;
+a listener that needs such work hands the TimingData value to its own bounded
+execution/delivery mechanism.
+
+If listener notification fails after the record is committed, that does not
+roll back the TimingData commit. A consumer that needs reliable recovery uses
+authoritative persisted/LogBook state and its own reconciliation/delivery
+mechanism.
+
+Other local events may use the same `Event<T>` abstraction when a real consumer
+needs them. Do not introduce events merely to replace ordinary direct method
+calls.
 
 ### Multiple TimingNodes
 
@@ -1020,7 +1183,8 @@ Useful automated rules may include:
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
-- concrete compact LogBook indexes/read-view mechanics required by the first ranking/query implementation;
+- exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
+- concrete immutable TimingNode read-view representation and compact LogBook indexing required by the first ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework/provider contracts and private implementations;
