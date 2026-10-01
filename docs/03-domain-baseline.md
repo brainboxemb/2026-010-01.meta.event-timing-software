@@ -329,8 +329,9 @@ Three IDs have different meanings:
 The source IDs are resolved before TimingData construction:
 
 ```text
-TagId  -----> RaceData/reference resolution ----                                                  +--> RegistrationId --> TimingData
-TeamId -----> RaceData/reference resolution ----/
+TagId  -----> RaceData/reference resolution ----+
+                                                 +--> RegistrationId --> TimingData
+TeamId -----> RaceData/reference resolution ----+
 ```
 
 An automatic registration therefore starts from `TagId`; a manual registration
@@ -362,28 +363,23 @@ The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, inject
 
 ## Registration identity and source resolution
 
-`RegistrationId` is the canonical participant identity stored on a
-TimingData registration record. It is deliberately separate from the concrete
-identity observed at an input device and from identities used by an operator or
-reference-data source.
-
-The public baseline does not define event-specific participant categories,
-number ranges, source/tag encodings or location-to-participant mapping rules.
-Those values belong to the applicable reference data, provider or deployment
-contract and are promoted to public documentation only when a public requirement
-needs them.
-
-Conceptually:
+`RegistrationId` is the canonical registration identity stored on committed
+TimingData. It is deliberately separate from the concrete source/reference IDs
+used to reach that registration:
 
 ```text
-source identity -----------\
-                            +--> RegistrationId
-operator/reference identity/
+TagId  -----> RaceData/reference resolution ----+
+                                                 +--> RegistrationId
+TeamId -----> RaceData/reference resolution ----+
 ```
 
-Resolution occurs before a registration is committed. A concrete input/provider
-may use locally available reference data to perform that resolution without
-changing the public TimingData identity contract.
+`TagId` and `TeamId` remain source/reference-domain identities. Their concrete
+formats, categories, ranges and mappings are outside the public baseline.
+Resolution occurs before TimingData construction and may use locally available
+`RaceData`.
+
+`RegistrationId` also remains separate from the TimingData record key
+`(TimingNodeId, SequenceNumber)`.
 
 ## Race data
 
