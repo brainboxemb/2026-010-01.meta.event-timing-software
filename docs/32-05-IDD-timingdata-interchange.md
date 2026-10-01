@@ -7,12 +7,14 @@ System interface: **IF-05 — TimingData Interchange**
 ## Purpose
 
 This Interface Design/Description Document owns the system-level persistent and
-interchange contract for TimingData records.
+interchange contract for TimingData.
 
-It defines the canonical public record semantics and reference file encoding used
-when timing facts cross a durable-file or compatible interchange boundary. It is
-deliberately independent from SI-01 internal classes, threads, queues and storage
-implementation details.
+It defines the common public TimingData semantics plus the default/reference
+representation used when timing facts cross a durable-file or compatible
+interchange boundary. A configured TimingData profile may use another concrete
+Java implementation and representation while preserving the common semantic
+contracts. The IDD is deliberately independent from SI-01 internal classes,
+threads, queues and storage implementation details.
 
 The first slice covers:
 
@@ -46,17 +48,18 @@ Representative consumers are:
 ```text
 SI-01 Timing Point Application
         |
-        +-- writes / reads canonical TimingData file
-        |
-        +-- converts TimingData for supported upstream/external formats
+        +-- constructs TimingData through configured factory
+        +-- reads / writes through matching codec
 
 Engineering/Test Client
         |
-        +-- reads / writes/inspects TimingData through the shared codec/provider contract
+        +-- reads / writes / inspects through the same common API
 
-External/proprietary TimingData provider
+TimingDataProvider
         |
-        +-- translates external representation <-> canonical TimingData semantics
+        +-- stateless TimingDataFactory
+        +-- matching TimingDataCodec
+        +-- default, test or product-specific concrete implementation
 ```
 
 A consumer may use TimingData in memory after decoding, but this IDD does not
@@ -66,14 +69,16 @@ prescribe its in-memory object model or presentation.
 
 The public TimingData contract owns:
 
-- record kinds and their field meanings;
-- stable record identity;
+- the common semantic TimingData families and their field meanings;
+- stable TimingData identity;
 - source ordering semantics;
 - registration identity semantics;
 - timestamp semantics at the interchange boundary;
-- protocol/file versioning;
-- canonical public/reference encoding;
-- compatibility rules for external/provider translations.
+- compatibility rules that every configured profile must preserve.
+
+The default/reference profile additionally owns its concrete versioning and
+canonical public/reference encoding. Other profiles may use a different concrete
+representation without changing the common semantics.
 
 It does **not** own:
 
@@ -97,9 +102,10 @@ The figure deliberately stops at the IF-05 contract boundary. It does not show
 which SI-01 component produced a record or which thread persists it; those
 relationships belong in SI-01 detailed design.
 
-## TimingData v1 common record envelope
+## Common TimingData envelope
 
-Every committed TimingData v1 record has the following semantic envelope:
+Every committed TimingData value exposes the following common semantic envelope.
+The default/reference v1 representation serializes these values directly:
 
 ```text
 TimingDataRecord
@@ -500,34 +506,47 @@ Revocation example:
 }
 ```
 
-## Canonical codec and external providers
+## TimingData profiles, factory and codec
 
-The framework-owned public/reference codec implements the IF-05 canonical
-representation.
-
-A `TimingDataProvider`/translator may support an external/proprietary format:
+A `TimingDataProvider` supplies one coherent concrete profile:
 
 ```text
-external/proprietary representation
-        |
-        v
-TimingDataProvider / translator
-        |
-        v
-IF-05 TimingDataRecord semantics
+TimingDataProvider
+  |
+  +-- TimingDataFactory     stateless object construction
+  |
+  +-- TimingDataCodec       encode/decode the same concrete profile
 ```
 
-Rules:
+The factory receives explicit construction values and returns objects implementing
+the common semantic interfaces such as `RegistrationData`. It does not allocate
+sequence numbers, inspect mutable TimingNode state, persist data or publish
+events.
 
-- the provider translates representation; it does not redefine IF-05 semantics;
-- proprietary fixed-field values/codes remain outside this public IDD;
-- an external format may use different line endings or physical layout;
-- an external fixed-field codec may therefore use CRLF while the canonical
-  public/reference writer uses LF;
-- SI-01 and the Engineering/Test Client shall be able to use the same compatible
-  provider implementation rather than maintaining separate proprietary decoders;
-- a provider may internally delegate to a native/proprietary DLL without exposing
-  that implementation detail in IF-05.
+For example, the same common call may produce different concrete classes:
+
+```text
+createRegistrationData(context)
+        |
+        +--> DefaultRegistrationData
+        |
+        +--> DummyEventRegistrationData
+```
+
+A concrete profile may add profile-specific immutable information. Consumers that
+only need IF-05 semantics continue to use the common interfaces and do not depend
+on those extra fields.
+
+The default/reference profile implements the canonical JSON Lines representation
+defined below. A product-specific provider may use another representation,
+including a proprietary fixed-field format or native library, provided that its
+common TimingData values preserve the IF-05 semantic contracts.
+
+The selected provider/profile is an application/configuration concern. A
+`profileId` is therefore not repeated in every common TimingData value. A tool
+opening profile-specific data outside that configured context must be told which
+provider to use. File-level self-description may be added later if a concrete
+standalone-import requirement justifies it.
 
 ## Compatibility and versioning
 
