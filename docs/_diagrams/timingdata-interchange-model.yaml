@@ -1,67 +1,55 @@
 diagram:
   id: timingdata-interchange-model
-  title: Figure IF05-01 — TimingData v1 interchange model
+  title: Figure IF05-01 — Common TimingData contract and concrete profiles
   width: 1580
   height: 930
-  description: Canonical TimingData v1 envelope, first record families, registration identity and codec/provider boundary.
-  note: IF-05 owns record/file semantics. Internal producers, queues and worker threads are intentionally not shown here.
+  description: Common TimingData semantics are stable while a configured provider supplies the concrete factory and matching codec/representation.
+  note: The factory is stateless object construction. TimingNode policy, sequence allocation, persistence and event publication remain outside the provider.
 
 groups:
   - id: contract
-    label: IF-05 canonical record contract
+    label: IF-05 common semantic contract
     kind: layer-domain
     layout: {x: 55, y: 105, w: 900, h: 720}
 
-  - id: representation
-    label: Representation / translation boundary
+  - id: profile
+    label: Configured TimingData profile
     kind: layer-infrastructure
     layout: {x: 995, y: 105, w: 530, h: 720}
 
 nodes:
-  - id: record
-    label: TimingDataRecord
+  - id: timingdata
+    label: TimingData
     kind: model
     group: contract
     layout: {x: 105, y: 165, w: 355, h: 250}
     items:
-      - version = 1
-      - timingNodeId
-      - sequenceNumber
+      - timingNodeId + sequenceNumber
       - locationId
-      - recordType
       - effectiveTime
       - recordedAt
-      - type-specific data
+      - immutable common value
 
-  - id: key
-    label: TimingDataRecordKey
-    kind: model
+  - id: registration
+    label: RegistrationData
+    subtitle: common registration semantics
+    kind: service
     group: contract
-    layout: {x: 105, y: 500, w: 355, h: 130}
-    items:
-      - timingNodeId
-      - sequenceNumber
+    layout: {x: 545, y: 165, w: 330, h: 95}
 
   - id: lifecycle
-    label: TIMING_NODE_STATE
+    label: TimingNodeStateData
     subtitle: state = OPEN | CLOSED
     kind: service
     group: contract
-    layout: {x: 545, y: 165, w: 330, h: 85}
-
-  - id: registration
-    label: REGISTRATION
-    subtitle: origin + timeSource + RegistrationIdentity
-    kind: service
-    group: contract
-    layout: {x: 545, y: 300, w: 330, h: 90}
+    layout: {x: 545, y: 310, w: 330, h: 90}
 
   - id: revoked
-    label: REGISTRATION_REVOKED
-    subtitle: references original registration key
+    label: RegistrationRevokedData
+    subtitle: references earlier RegistrationData
     kind: service
     group: contract
-    layout: {x: 545, y: 440, w: 330, h: 90}
+    layout: {x: 545, y: 450, w: 330, h: 90}
 
   - id: registration-identity
     label: RegistrationIdentity
@@ -72,41 +60,49 @@ nodes:
       - provider-neutral canonical value
       - concrete source mappings remain external
 
-  - id: canonical-codec
-    label: Canonical reference codec
-    subtitle: UTF-8 JSON Lines • one record per line • LF writer
-    kind: interface
-    group: representation
-    layout: {x: 1070, y: 190, w: 380, h: 95}
-
-  - id: canonical-file
-    label: TimingData file
-    subtitle: append-only history • incomplete trailing line is not committed
-    kind: storage
-    group: representation
-    layout: {x: 1070, y: 365, w: 380, h: 95}
-
   - id: provider
-    label: TimingDataProvider / translator
-    subtitle: external representation <-> IF-05 semantics
+    label: TimingDataProvider
+    subtitle: stable profile/provider selection
     kind: integration
-    group: representation
-    layout: {x: 1070, y: 545, w: 380, h: 95}
+    group: profile
+    layout: {x: 1070, y: 165, w: 380, h: 85}
 
-  - id: proprietary
-    label: External / proprietary format
-    subtitle: may use fixed fields, CRLF and optional native DLL
+  - id: factory
+    label: TimingDataFactory
+    subtitle: stateless concrete object construction
+    kind: service
+    group: profile
+    layout: {x: 1070, y: 300, w: 380, h: 85}
+
+  - id: codec
+    label: TimingDataCodec
+    subtitle: matching encode / decode implementation
+    kind: interface
+    group: profile
+    layout: {x: 1070, y: 435, w: 380, h: 85}
+
+  - id: reference
+    label: Default / reference profile
+    subtitle: canonical UTF-8 JSON Lines representation
+    kind: storage
+    group: profile
+    layout: {x: 1070, y: 570, w: 380, h: 85}
+
+  - id: alternate
+    label: Alternate profile
+    subtitle: e.g. DummyEventTimingData or product-specific representation
     kind: external
-    group: representation
-    layout: {x: 1070, y: 690, w: 380, h: 85}
+    group: profile
+    layout: {x: 1070, y: 695, w: 380, h: 85}
 
 edges:
-  - {from: record, to: lifecycle, label: "recordType"}
-  - {from: record, to: registration, label: "recordType"}
-  - {from: record, to: revoked, label: "recordType"}
+  - {from: timingdata, to: registration, label: "semantic subtype"}
+  - {from: timingdata, to: lifecycle, label: "semantic subtype"}
+  - {from: timingdata, to: revoked, label: "semantic subtype"}
   - {from: registration, to: registration-identity, label: "identity"}
-  - {from: revoked, to: key, label: "reference"}
-  - {from: record, to: canonical-codec, label: "encode / decode"}
-  - {from: canonical-codec, to: canonical-file}
-  - {from: record, to: provider, label: "semantic model"}
-  - {from: provider, to: proprietary, label: "translate"}
+  - {from: provider, to: factory}
+  - {from: provider, to: codec}
+  - {from: factory, to: timingdata, label: "creates"}
+  - {from: codec, to: timingdata, label: "encode / decode"}
+  - {from: provider, to: reference, label: "default"}
+  - {from: provider, to: alternate, label: "alternative"}
