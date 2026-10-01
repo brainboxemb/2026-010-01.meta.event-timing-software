@@ -207,73 +207,86 @@ Status: active
 Implement the smallest useful timing-domain vertical slice before introducing
 reference data, keypad/display behaviour or production transports.
 
+The domain/recording foundation is now implemented. The remaining active work in
+this step is exposing that behaviour through IF-03 and the Engineering Client,
+then proving the complete running-system flow.
+
 ### Goal
 
 Operate one TimingNode through a complete controlled registration flow:
 configure its location while closed, open it, inject an already-accepted
-registration, inspect the resulting TimingData, and close it again.
+registration, persist and inspect the resulting TimingData, observe the live
+update, and close it again.
 
 ### Scope
 
-- Engineering Client architecture/UI baseline already established;
-- focused review of UC-001, UC-002, UC-003, UC-009 and the outbound-registration part of UC-011;
-- configured non-empty TimingNode identity;
-- LocationId assigned/changed only while `CLOSED`;
-- valid LocationId required before `OPEN` and fixed while `OPEN`;
-- direct accepted-registration simulation at the TimingNode boundary after antenna/filtering;
-- TimingNode-owned source sequence and capture of active TimingNodeId/LocationId in committed TimingData;
-- registration snapshot/history plus live public observation;
-- reconnect/rebuild semantics sufficient for the Engineering Client;
-- first TimingData/IDD definitions for TimingNodeId, LocationId, registration identity and observation time;
-- minimal outbound semantic registration contract, without requiring a production transport.
+- Engineering Client architecture/UI baseline;
+- focused UC-001, UC-002, UC-003, UC-009 and outbound UC-011 semantics;
+- shared `LocationId` and `RegistrationId` representations with event/profile-specific policy outside the shared library;
+- TimingNode location assignment/change only while `CLOSED`;
+- valid current LocationId required before `OPEN` and fixed while `OPEN`;
+- one bounded serialized TimingNode mutation/commit lane;
+- direct accepted-registration operation after the antenna/filtering boundary;
+- TimingNode-owned source identity, active location, commit-time sequence and recorded time;
+- typed immutable registration TimingData plus canonical reference codec;
+- passive LogBook and append-only file persistence with startup recovery;
+- post-commit typed TimingData event;
+- IF-03 location/open/close control, capability-gated direct registration simulation, committed history and live updates;
+- Engineering Client state/history rebuild and live-update handling;
+- deterministic first-slice verification and running-system demo.
 
 ### Not in this step
 
 - simulated or physical antenna input;
-- RFID decoding, observation accumulation or filtering;
-- provider-specific source classification/mapping behaviour;
+- RFID decoding, observation accumulation or filtering before the accepted-registration boundary;
+- TagId/TeamId/reference-data resolution and provider-specific mapping behaviour;
 - StageStartTimes and inbound upstream/reference-data handling;
 - RaceData;
 - NextUpTeams, keypad or display behaviour;
 - multi-TimingNode isolation;
-- RabbitMQ;
-- durable outbox/replay and persistence/recovery;
+- RabbitMQ or real upstream delivery;
+- durable upstream outbox/acknowledgement/reconciliation;
 - SI-02 or a new browser client.
 
 ### Needs
 
-- reviewed first-slice use cases;
+- accepted D03 IF-03 first-registration contract;
 - current JavaFX Engineering Client;
-- deterministic direct-registration examples;
-- first TimingData and IF-03/IDD contract decisions.
+- deterministic synthetic RegistrationId/LocationId examples;
+- running SI-01 composition with the reference TimingData codec/store enabled.
 
 ### Result
 
-- One registration point has explicit location and open/close invariants.
-- A direct semantic registration reaches the normal registration operation after the antenna/filtering boundary.
-- TimingData captures stable source identity, active location and source sequence.
-- The Engineering Client can reconstruct current state/history and observe subsequent live updates.
+- TimingNode location/lifecycle invariants are implemented behind one bounded serial owner.
+- Accepted and manual registrations share one ordered durable TimingData commit path.
+- Committed TimingData survives restart and rebuilds the LogBook before operational work starts.
+- LocationId and RegistrationId are shared value representations without hard-coded event policy.
+- Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
+- A03 is the active remaining slice: expose control/history/live behaviour through IF-03 and the Engineering Client.
 
 ### Demo
 
-- Start with the registration point closed and no operational location assigned.
-- Assign a valid location.
+- Start SI-01 with the registration point CLOSED and no operational location.
+- Connect the Engineering Client and rebuild current status/history.
+- Assign a valid synthetic LocationId.
 - Open registration.
-- Inject one accepted semantic registration with a deterministic observation time.
-- Inspect the resulting TimingData/history and live update.
-- Verify that changing location while open is rejected.
-- Close registration and then change the location successfully.
+- Inject one accepted semantic registration with deterministic RegistrationId and observation time.
+- Inspect the committed TimingData in history and the corresponding live update.
+- Verify changing LocationId while OPEN is rejected.
+- Close registration and then change LocationId successfully.
+- Restart SI-01 and verify committed TimingData history is recovered without replaying old records as new live events.
 
 ### Done
 
-- D02 first-slice use-case review is accepted;
-- private compatibility input has been translated only into safe behavioural conclusions needed by the slice;
-- D03 defines the first TimingData and public-control contract without copying a legacy wire contract;
-- location/lifecycle invariants have deterministic tests;
-- direct registration simulation cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
-- committed registration data is observable as current/history state and live updates through IF-03;
-- reconnect rebuild does not present stale cached state as live;
-- the running-system demo succeeds without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+- D02/D02W first-slice use-case and safe compatibility review are accepted;
+- D03 defines the first TimingData and IF-03 public-control contract;
+- TimingNode location/lifecycle and accepted-registration invariants have deterministic tests;
+- direct registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
+- canonical codec, file persistence, incomplete-tail recovery and LogBook rebuild are implemented and verified;
+- committed TimingData is emitted only after durable append plus LogBook visibility;
+- IF-03 exposes location/open/close, capabilities, accepted-registration simulation, committed history and live TimingData updates;
+- the Engineering Client rebuilds status/history after reconnect before presenting the view as live;
+- VC-ST1-002 and the running-system demo succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
 ---
 
