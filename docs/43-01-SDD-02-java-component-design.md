@@ -97,6 +97,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
   infra/
     bootstrap/
       config/
+    events/
     logging/
     loggingserver/
   runtime/
@@ -129,7 +130,7 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `infra` for concrete cross-cutting technical support such as
-  `BuildIdentity`;
+  `BuildIdentity`, logging and the small in-process event utility;
 - use `io` for external hardware, messaging and storage adapters.
 
 For example, the first TimingNode implementation is grouped as:
@@ -295,13 +296,11 @@ io
   hardware, messaging and storage adapters
 
 infra
-  cross-cutting technical support and framework bootstrap/composition
+  cross-cutting technical support, including events, logging,
+  extension discovery and framework bootstrap/composition
 
 runtime
   top-level composed runtime object and lifecycle mechanics
-
-infra
-  extension discovery/registry and framework bootstrap/composition
 
 platform
   execution-environment abstractions
@@ -315,10 +314,11 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
-domain          --> core (only reusable execution primitives)
-io              --> application/domain ports/contracts + platform
-runtime         --> application / domain / core
+domain          --> core + narrow infra cross-cutting utilities
+io              --> application/domain ports/contracts + platform + narrow infra cross-cutting utilities
+runtime         --> application / domain / core + narrow infra cross-cutting utilities
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
+infra.events    --> JDK only
 core            --> JDK/platform-neutral reusable execution mechanics only
 platform        --> low-level environment only
 ```
@@ -934,7 +934,8 @@ for analysis.
 ### Simple typed events
 
 Post-fact notifications use a small local `Event<T>` abstraction rather than a
-central event bus.
+central event bus. The reusable mechanism lives under `infra.events` because it
+is cross-cutting technical support rather than domain semantics or external I/O.
 
 Conceptually:
 
@@ -946,7 +947,8 @@ final class Event<T> {
 }
 ```
 
-A component owns the event instance. For TimingData the first event is:
+A component owns the event instance; `infra.events` only supplies the generic
+subscription/emit mechanism. For TimingData the first event is:
 
 ```java
 Event<TimingData> newTimingDataEvent;
