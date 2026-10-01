@@ -232,7 +232,7 @@ update, and close it again.
 - typed immutable registration TimingData plus canonical reference codec;
 - passive LogBook and append-only file persistence with startup recovery;
 - post-commit typed TimingData event;
-- IF-03 location/open/close control, capability-gated dev auto-reg, committed history and live updates;
+- compact node-addressed IF-03 location/open/close control, capability-gated dev auto-reg, bounded LogBook queries and live updates;
 - Engineering Client state/history rebuild and live-update handling;
 - deterministic first-slice verification and running-system demo.
 
@@ -285,7 +285,7 @@ update, and close it again.
 - direct registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
 - canonical codec, file persistence, incomplete-tail recovery and LogBook rebuild are implemented and verified;
 - committed TimingData is emitted only after durable append plus LogBook visibility;
-- IF-03 exposes location/open/close, capabilities, dev auto-reg, committed history and live TimingData updates;
+- IF-03 exposes node-addressed location/open/close, capabilities, dev auto-reg, bounded LogBook metadata/ranges and live TimingData updates;
 - the Engineering Client rebuilds status/history after reconnect before presenting the view as live;
 - VC-ST1-002 and the running-system demo succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
