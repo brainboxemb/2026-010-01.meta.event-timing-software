@@ -61,9 +61,8 @@ supported external interfaces. It does not import `event-timing-framework` or
 
 TimingData inspection/conversion is a separate engineering capability. The
 Engineering Client may depend on the small shared `timing-data-api` artifact and
-load the same `TimingDataProvider` implementations that SI-01 can use. This
-allows an external/proprietary eBART codec to be exercised by the Engineering
-Client without copying its decoding rules into client code.
+load the same compatible `TimingDataProvider` implementations that SI-01 can
+use, without copying provider-specific decoding rules into client code.
 
 Keeping it in the same repository is intentional while interface changes and
 engineering-client changes normally belong to the same development increment. A
