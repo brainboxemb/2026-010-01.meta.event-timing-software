@@ -846,8 +846,9 @@ private void processRegistration(RegistrationInput input) {
         timingDataFactory.registration(input, sequence, timeSource.now());
 
     timingDataStore.append(record);  // durable before return
-    logBook.add(record);             // visibility point
-    committedSinks.publish(record);  // non-blocking only
+    logBook.add(record);             // committed domain state
+    eventPublisher.publish(
+            new TimingDataCommitted(record));
 }
 ```
 
