@@ -1,0 +1,24 @@
+diagram:
+  id: timingnode-sequence-open-set-location
+  type: sequence
+  title: Figure SDD01-TD08 — Concurrent OPEN and SET_LOCATION ordering
+  width: 1360
+  height: 1020
+  description: Two callers submit state-dependent operations close together. The TimingNode serial lane decides both against state in queue order.
+  note: SET_LOCATION must not validate CLOSED from a pre-queue external read; by the time it executes, OPEN may already have changed the node state.
+
+participants:
+  - {id: callerA, label: Caller A, kind: client}
+  - {id: callerB, label: Caller B, kind: client}
+  - {id: node, label: TimingNode, kind: model}
+
+messages:
+  - {from: callerA, to: node, label: "open()", kind: call}
+  - {from: node, to: node, label: "queue OPEN + Future A", kind: async}
+  - {from: callerB, to: node, label: "setLocation(location-02)", kind: call}
+  - {from: node, to: node, label: "queue SET_LOCATION + Future B", kind: async}
+  - {from: node, to: node, label: "worker executes OPEN against CLOSED state", kind: call}
+  - {from: node, to: node, label: "state = OPEN", kind: call}
+  - {from: node, to: callerA, label: "OpenResult.OPENED", kind: return}
+  - {from: node, to: node, label: "worker executes SET_LOCATION against OPEN state", kind: call}
+  - {from: node, to: callerB, label: "SetLocationResult.NODE_NOT_CLOSED", kind: return}
