@@ -150,10 +150,11 @@ The shared TimingData artifact has its own package root:
 timing-data-api/
   io.github.brainboxemb.eventtiming.timingdata/
     TimingData.java
-    RegistrationData.java
-    TimingNodeStateData.java
-    RegistrationRevokedData.java
-    RegistrationIdentity.java
+    TimingDataContext.java
+    AutomaticRegistrationTimingData.java
+    ManualRegistrationTimingData.java
+    RegistrationId.java
+    ManualRegistrationTimeSource.java
     TimingTimestamp.java
     TimingDataFactory.java
     TimingDataCodec.java
@@ -161,14 +162,14 @@ timing-data-api/
     defaultprofile/
       DefaultTimingDataFactory.java
       DefaultTimingDataCodec.java
-      DefaultRegistrationData.java
-      DefaultTimingNodeStateData.java
-      DefaultRegistrationRevokedData.java
+      DefaultAutomaticRegistrationTimingData.java
+      DefaultManualRegistrationTimingData.java
 ```
 
-Small construction-only support values may be nested in the owning public
-contract (for example `TimingData.Context` or `RegistrationData.Context`) rather
-than automatically becoming separate top-level public files.
+`TimingDataContext` is the one immutable value-only construction context for
+fields shared by every TimingData variant. Do not mirror the semantic type tree
+with `AutomaticRegistrationContext`, `ManualRegistrationContext` or nested
+per-variant context types.
 
 For example, the first TimingNode implementation is grouped as:
 
@@ -874,11 +875,18 @@ on the worker immediately before persistence:
 private void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    RegistrationData.Context context =
-        registrationDataContext(input, sequence, timeSource.now());
+    TimingDataContext context =
+        timingDataContext(sequence, activeLocationId, input.effectiveTime(), timeSource.now());
 
-    RegistrationData data =
-        timingDataFactory.createRegistrationData(context);
+    RegistrationId registrationId = raceData.resolveRegistrationId(input);
+
+    TimingData data;
+    if (input.isAutomatic()) {
+        data = timingDataFactory.createAutomaticRegistration(context, registrationId);
+    } else {
+        data = timingDataFactory.createManualRegistration(
+                context, registrationId, input.timeSource());
+    }
 
     timingDataStore.append(data);    // durable before return
     logBook.add(data);               // committed domain state
@@ -1060,98 +1068,121 @@ For the initial Pi-oriented runtime:
 
 ## Shared TimingData API and concrete profiles
 
-Both SI-01 and the Engineering Client need the common TimingData contracts
-without depending on the whole SI-01 application core. The shared artifact therefore
+Both SI-01 and the Engineering Client need common TimingData contracts without
+depending on the whole SI-01 application core. The shared artifact therefore
 owns the semantic interfaces and value types that every supported TimingData
 profile must implement; it does **not** require one concrete record class for all
 profiles.
 
-Conceptually:
+The first traced Java semantic model is intentionally small:
 
 ```text
 timing-data-api
   TimingData
-    common identity / location / time access
-  RegistrationData
-  TimingNodeStateData
-  RegistrationRevokedData
+    common TimingNodeId / sequence / LocationId / time access
+  TimingDataContext
+    one common immutable construction context
+  AutomaticRegistrationTimingData
+    extends TimingData
+    RegistrationId
+  ManualRegistrationTimingData
+    extends TimingData
+    RegistrationId
+    ManualRegistrationTimeSource
+  RegistrationId
+  ManualRegistrationTimeSource
   TimingTimestamp
-  RegistrationIdentity
   TimingDataFactory
   TimingDataCodec
   TimingDataProvider
 
 default profile
-  DefaultRegistrationData
-  DefaultTimingNodeStateData
-  DefaultRegistrationRevokedData
+  DefaultAutomaticRegistrationTimingData
+  DefaultManualRegistrationTimingData
   DefaultTimingDataFactory
   DefaultTimingDataCodec
 
 test / product-specific profile
-  DummyEventRegistrationData
+  DummyEventAutomaticRegistrationTimingData
   DummyEventTimingDataFactory
   DummyEventTimingDataCodec
 ```
 
-The semantic interfaces are common. A concrete profile may add information to
-its own implementation, but code using only the common API does not need to know
-that concrete class.
+There is no intermediate public `RegistrationData` interface. Automatic and
+manual registration are already the useful type-safe variants, so another level
+would add hierarchy without giving callers a stronger contract.
 
-For example:
+Likewise, `TimingNodeStateData` and `RegistrationRevokedData` are not created
+from old record-enum values. UC-002 still defers OPEN/CLOSE-as-TimingData and the
+current use-case baseline does not require revocation. Add those semantic types
+only after a promoted requirement justifies them.
+
+The semantic interfaces are common. A configured profile supplies simple
+immutable implementing classes:
 
 ```java
-RegistrationData data =
-        timingDataFactory.createRegistrationData(context);
+AutomaticRegistrationTimingData autoRegTD =
+        timingDataFactory.createAutomaticRegistration(context, registrationId);
+
+ManualRegistrationTimingData manRegTD =
+        timingDataFactory.createManualRegistration(
+                context, registrationId, ManualRegistrationTimeSource.OPERATOR_ENTERED);
 ```
 
-The same caller can receive either `DefaultRegistrationData` or a compatible
-product/event-specific implementation such as `DummyEventRegistrationData`.
-The caller depends on `RegistrationData`, not on either implementation class.
+The return types preserve variant type safety even when the configured provider
+returns a different concrete implementation.
 
 ### Stateless TimingData factory
 
 `TimingDataFactory` is a stateless construction service. It does not validate
-TimingNode lifecycle policy, allocate sequence numbers, commit data, own a
-LogBook or publish events. Those responsibilities stay with the TimingNode and
-its contained domain components.
+TimingNode lifecycle policy, allocate sequence numbers, resolve `TagId` or
+`TeamId`, commit data, own a LogBook or publish events. Those responsibilities
+stay with the TimingNode and its contained domain components.
 
-The factory receives the already selected construction values and creates the
-configured concrete TimingData implementation.
-
-A small method may use explicit parameters. When a creation method would
-otherwise acquire an unwieldy argument list, the values are grouped into an
-immutable context object:
-
-```java
-RegistrationData createRegistrationData(
-        RegistrationData.Context context);
-```
-
-Conceptually:
+Source/reference resolution happens before factory construction:
 
 ```text
-RegistrationData.Context
-  TimingData.Context
-    timingNodeId
-    locationId
-    sequenceNumber
-    effectiveTime
-    recordedAt
-  registrationIdentity
-  origin
-  timeSource
+TagId  -----> RaceData ----\
+                         +--> RegistrationId
+TeamId -----> RaceData ----/
 ```
+
+The factory receives the already selected common construction values in one
+generic context and only the extra values required by the requested variant:
+
+```java
+AutomaticRegistrationTimingData createAutomaticRegistration(
+        TimingDataContext context,
+        RegistrationId registrationId);
+
+ManualRegistrationTimingData createManualRegistration(
+        TimingDataContext context,
+        RegistrationId registrationId,
+        ManualRegistrationTimeSource timeSource);
+```
+
+```text
+TimingDataContext
+  timingNodeId
+  sequenceNumber
+  locationId
+  effectiveTime
+  recordedAt
+```
+
+For the current manual variant, `ManualRegistrationTimeSource` is constrained to
+`SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`. Automatic registration uses observed
+time by definition, so callers do not pass an `origin` or `OBSERVED` flag
+merely to restate the return type.
 
 The context contains values only. It does not contain `TimingNode`, `LogBook`,
 stores, services or other mutable collaborators.
 
 The first implementation does not need an abstract TimingData base class.
-`TimingData.Context` already groups the common construction values and a
-concrete immutable class can delegate to that context. Introduce a
-protected/private base helper only when multiple real implementation classes
-show enough repeated behaviour to justify it; such a helper remains
-implementation reuse, not an additional public domain abstraction.
+Concrete immutable implementations may delegate to `TimingDataContext`.
+Introduce a private/protected helper only when multiple real implementations show
+enough repeated behaviour to justify it; such a helper remains implementation
+reuse, not an additional public semantic layer.
 
 ### Provider boundary
 

@@ -2,27 +2,27 @@ diagram:
   id: timingdata-interchange-model
   title: Figure IF05-01 — Common TimingData contract and concrete profiles
   width: 1580
-  height: 930
-  description: Common TimingData semantics are stable while a configured provider supplies the concrete factory and matching codec/representation.
-  note: The factory is stateless object construction. TimingNode policy, sequence allocation, persistence and event publication remain outside the provider.
+  height: 860
+  description: Common TimingData registration semantics are stable while a configured provider supplies concrete implementations and a matching codec/representation.
+  note: The factory is stateless object construction. TagId/TeamId resolution, TimingNode policy, sequence allocation, persistence and event publication remain outside the provider.
 
 groups:
   - id: contract
     label: IF-05 common semantic contract
     kind: layer-domain
-    layout: {x: 55, y: 105, w: 900, h: 720}
+    layout: {x: 55, y: 105, w: 900, h: 650}
 
   - id: profile
     label: Configured TimingData profile
     kind: layer-infrastructure
-    layout: {x: 995, y: 105, w: 530, h: 720}
+    layout: {x: 995, y: 105, w: 530, h: 650}
 
 nodes:
   - id: timingdata
     label: TimingData
     kind: model
     group: contract
-    layout: {x: 105, y: 165, w: 355, h: 250}
+    layout: {x: 105, y: 165, w: 355, h: 210}
     items:
       - timingNodeId + sequenceNumber
       - locationId
@@ -30,35 +30,47 @@ nodes:
       - recordedAt
       - immutable common value
 
-  - id: registration
-    label: RegistrationData
-    subtitle: common registration semantics
+  - id: automatic-registration
+    label: AutomaticRegistrationTimingData
+    subtitle: type-safe automatic registration
     kind: service
     group: contract
-    layout: {x: 545, y: 165, w: 330, h: 95}
+    layout: {x: 545, y: 165, w: 350, h: 100}
+    items:
+      - RegistrationId
+      - observed effective time
 
-  - id: lifecycle
-    label: TimingNodeStateData
-    subtitle: state = OPEN | CLOSED
+  - id: manual-registration
+    label: ManualRegistrationTimingData
+    subtitle: type-safe manual registration
     kind: service
     group: contract
-    layout: {x: 545, y: 310, w: 330, h: 90}
+    layout: {x: 545, y: 300, w: 350, h: 115}
+    items:
+      - RegistrationId
+      - system-assigned or operator-entered time
 
-  - id: revoked
-    label: RegistrationRevokedData
-    subtitle: references earlier RegistrationData
-    kind: service
-    group: contract
-    layout: {x: 545, y: 450, w: 330, h: 90}
-
-  - id: registration-identity
-    label: RegistrationIdentity
+  - id: timingdata-context
+    label: TimingDataContext
+    subtitle: one common value-only construction context
     kind: model
     group: contract
-    layout: {x: 545, y: 595, w: 330, h: 150}
+    layout: {x: 105, y: 450, w: 355, h: 165}
     items:
-      - provider-neutral canonical value
-      - concrete source mappings remain external
+      - timingNodeId + sequenceNumber
+      - locationId
+      - effectiveTime + recordedAt
+      - no mutable collaborators
+
+  - id: registration-id
+    label: RegistrationId
+    kind: model
+    group: contract
+    layout: {x: 545, y: 485, w: 350, h: 130}
+    items:
+      - canonical committed registration identity
+      - TagId / TeamId resolution happens before factory
+      - not the TimingData record key
 
   - id: provider
     label: TimingDataProvider
@@ -69,40 +81,44 @@ nodes:
 
   - id: factory
     label: TimingDataFactory
-    subtitle: stateless concrete object construction
+    subtitle: stateless typed object construction
     kind: service
     group: profile
-    layout: {x: 1070, y: 300, w: 380, h: 85}
+    layout: {x: 1070, y: 285, w: 380, h: 100}
+    items:
+      - createAutomaticRegistration(...)
+      - createManualRegistration(...)
 
   - id: codec
     label: TimingDataCodec
     subtitle: matching encode / decode implementation
     kind: interface
     group: profile
-    layout: {x: 1070, y: 435, w: 380, h: 85}
+    layout: {x: 1070, y: 420, w: 380, h: 85}
 
   - id: reference
     label: Default / reference profile
     subtitle: canonical UTF-8 JSON Lines representation
     kind: storage
     group: profile
-    layout: {x: 1070, y: 570, w: 380, h: 85}
+    layout: {x: 1070, y: 540, w: 380, h: 85}
 
   - id: alternate
     label: Alternate profile
-    subtitle: e.g. DummyEventTimingData or product-specific representation
+    subtitle: test or product-specific concrete implementations
     kind: external
     group: profile
-    layout: {x: 1070, y: 695, w: 380, h: 85}
+    layout: {x: 1070, y: 660, w: 380, h: 65}
 
 edges:
-  - {from: timingdata, to: registration, label: "semantic subtype"}
-  - {from: timingdata, to: lifecycle, label: "semantic subtype"}
-  - {from: timingdata, to: revoked, label: "semantic subtype"}
-  - {from: registration, to: registration-identity, label: "identity"}
+  - {from: timingdata, to: automatic-registration, label: "semantic subtype"}
+  - {from: timingdata, to: manual-registration, label: "semantic subtype"}
+  - {from: automatic-registration, to: registration-id, label: "uses"}
+  - {from: manual-registration, to: registration-id, label: "uses"}
   - {from: provider, to: factory}
   - {from: provider, to: codec}
-  - {from: factory, to: timingdata, label: "creates"}
+  - {from: factory, to: timingdata-context, label: "receives"}
+  - {from: factory, to: timingdata, label: "creates typed variant"}
   - {from: codec, to: timingdata, label: "encode / decode"}
   - {from: provider, to: reference, label: "default"}
   - {from: provider, to: alternate, label: "alternative"}
