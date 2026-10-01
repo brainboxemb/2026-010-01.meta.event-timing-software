@@ -82,7 +82,7 @@ nodes:
 
   - id: registration-id
     label: ID
-    subtitle: sample-001
+    subtitle: N001
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 105, y: 430, w: 260, h: 76}
@@ -113,8 +113,8 @@ nodes:
     notation: wireframe-table
     items:
       - "Seq | Type | Location | RegistrationId | Effective | Recorded"
-      - "1 | automatic | 24 | sample-001 | 12:00:00.000 | 12:00:00.125"
-      - "2 | manual | 24 | sample-002 | 12:00:04.000 | 12:00:04.030"
+      - "1 | automatic | 24 | N001 | 12:00:00.000 | 12:00:00.125"
+      - "2 | manual | 24 | N002 | 12:00:04.000 | 12:00:04.030"
     layout: {x: 75, y: 560, w: 1035, h: 145}
 
 edges: []
