@@ -3,7 +3,7 @@ diagram:
   title: Figure SDD01-TD02 — TimingNode execution and ownership detail
   width: 1680
   height: 850
-  description: TimingNode refinement view: one bounded serial execution lane owns mutable node state, queries capture immutable views and post-fact TimingData notification uses a local typed event.
+  description: "TimingNode refinement view: one bounded serial execution lane owns mutable node state, queries capture immutable views and post-fact TimingData notification uses a local typed event."
   note: A later shared executor may replace the dedicated thread only if per-node FIFO, one-at-a-time execution, bounded work and the same ownership semantics are preserved.
 
 groups:
