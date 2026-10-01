@@ -254,7 +254,7 @@ query caller
 ```
 
 For LogBook history the first implementation may capture a shallow immutable
-reference view because `TimingDataRecord` values are immutable. The exact
+reference view because `TimingData` values are immutable. The exact
 representation and allocation strategy belong to SDD-02 and measurement on the
 target. A reusable internal buffer is acceptable only if callers cannot observe
 it being mutated/reused after the query returns.
@@ -369,7 +369,7 @@ TimingData has the strongest rule:
 
 - a TimingData record is committed only after its complete IF-05 representation
   is durably appended;
-- only then is the same `TimingDataRecord` added to LogBook and visible to
+- only then is the same concrete `TimingData` value added to LogBook and visible to
   runtime consumers;
 - the TimingData file is used to rebuild LogBook after restart.
 
@@ -666,7 +666,7 @@ RFID / manual / lifecycle / later start / penalty logic
    bounded serial work
           |
           v
-    TimingDataRecord
+    TimingData
           |
           +--> TimingDataStore (durable)
           +--> LogBook (visible after durable append)
@@ -706,7 +706,7 @@ needed around that interface:
 - **CAND-PIPE-003** — A TimingData record shall become visible in LogBook only
   after `TimingDataStore` reports the complete append durable.
 - **CAND-PIPE-004** — The LogBook shall hold the same canonical
-  `TimingDataRecord` values used by the TimingData persistence/interchange
+  immutable `TimingData` values used by the TimingData persistence/interchange
   boundary; no second logbook-specific timing-record type is required.
 - **CAND-PIPE-005** — Potentially long queries and network delivery/retry shall
   execute outside the TimingNode serial worker.
