@@ -600,8 +600,10 @@ jobs:
                   "93e63aeeb990cbad1f00c63ed947c3287e3ffdce",
                   # Immutable v0.7.0 release used by this consumer.
                   "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
-                  # Temporary native-UML sequence renderer qualification head.
+                  # Pre-release v0.8.0 qualification evidence may remain cached.
                   "5f53275ac5998b56ee2b7344f8819a8ee0e16270",
+                  # Immutable v0.8.0 release used by this consumer.
+                  "b36ee6828d15b4179e9e975c0ba76193b1bc2213",
                   # Immutable v0.8.0 native-UML sequence renderer release.
                   "b36ee6828d15b4179e9e975c0ba76193b1bc2213",
               }
