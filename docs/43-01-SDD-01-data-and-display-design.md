@@ -56,7 +56,7 @@ contract.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
 `32-05-IDD-timingdata-interchange.md`. It owns the common TimingData semantics,
-`RegistrationIdentity`, sequence/key semantics and compatibility rules. The
+`RegistrationId`, sequence/key semantics and compatibility rules. The
 configured profile owns its concrete classes and matching representation/codec.
 
 The same immutable `TimingData` object can therefore be:
@@ -73,7 +73,7 @@ continues to use the common TimingData interfaces.
 ### Registration identity resolution
 
 All participant registrations are committed with one canonical
-`RegistrationIdentity` owned by IF-05.
+`RegistrationId` owned by IF-05.
 
 Input/provider-specific identities and operator/reference-data identities are
 resolved to that canonical value before the definitive TimingData record is
@@ -81,14 +81,14 @@ created:
 
 ```text
 source/provider identity -----\
-                               +--> RegistrationIdentity
+                               +--> RegistrationId
 operator/reference identity --/
 ```
 
 The resolution may use current `RaceData` when reference data is required.
 Concrete source encoding, categories, ranges and mapping tables remain outside
 this public SDD. A provider may translate an external representation, but it does
-not redefine `RegistrationIdentity` semantics.
+not redefine `RegistrationId` semantics.
 
 ## TimingNode serial execution and timing-data commit
 
@@ -717,10 +717,10 @@ needed around that interface:
 ### Identity resolution before IF-05 commit
 
 - **CAND-ID-001** — Source/provider-specific participant identities shall resolve
-  to the canonical IF-05 `RegistrationIdentity` before the definitive TimingData
+  to the canonical IF-05 `RegistrationId` before the definitive TimingData
   record is created.
 - **CAND-ID-002** — Operator/reference-data registration paths shall resolve to
-  the same canonical `RegistrationIdentity` used by automatic/source-driven
+  the same canonical `RegistrationId` used by automatic/source-driven
   registrations.
 - **CAND-ID-003** — Concrete source encodings, category/range rules and mapping
   tables shall stay behind their provider/reference-data boundary unless a public
