@@ -200,7 +200,9 @@ controlled remote-terminal shutdown.
 
 ## Step 4 — First registration-system slice
 
-Status: active — V04 Engineering Client running-system demo
+Status: active
+
+Active activity: **V04 — Engineering Client running-system demo**.
 
 ### Purpose
 
