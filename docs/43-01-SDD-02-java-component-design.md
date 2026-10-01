@@ -35,7 +35,9 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 
 The current reactor has two reusable artifacts plus one executable application.
 The separate TimingData API artifact is justified by the independent SI-01 and
-Engineering Client consumers:
+Engineering Client consumers. During this design increment it also contains the
+small built-in default/reference profile so the profile boundary can be proven
+before another production artifact is introduced:
 
 ```text
 event-timing-framework/
@@ -134,6 +136,33 @@ Use these rules:
 - reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
 - use `io` for external hardware, messaging and storage adapters.
 
+The shared TimingData artifact has its own package root:
+
+```text
+timing-data-api/
+  io.github.brainboxemb.eventtiming.timingdata/
+    TimingData.java
+    RegistrationData.java
+    TimingNodeStateData.java
+    RegistrationRevokedData.java
+    RegistrationIdentity.java
+    TimingTimestamp.java
+    TimingDataFactory.java
+    TimingDataCodec.java
+    TimingDataProvider.java
+    defaultprofile/
+      DefaultTimingDataFactory.java
+      DefaultTimingDataCodec.java
+      DefaultRegistrationData.java
+      DefaultTimingNodeStateData.java
+      DefaultRegistrationRevokedData.java
+```
+
+Small construction-only support values may be nested in the owning public
+contract (for example `TimingData.Key`, `TimingData.Context` or
+`RegistrationData.Context`) rather than automatically becoming separate
+top-level public files.
+
 For example, the first TimingNode implementation is grouped as:
 
 ```text
@@ -161,22 +190,7 @@ domain/
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingData.java                     common immutable semantic contract
-    RegistrationData.java               common registration contract
-    TimingNodeStateData.java            common state-transition contract
-    RegistrationRevokedData.java        common revocation contract
-    RegistrationIdentity.java
-    TimingTimestamp.java
-    TimingDataFactory.java              stateless concrete-data construction
     TimingDataStore.java                durable append/load/recovery port
-    TimingDataCodec.java                profile-matching codec
-    TimingDataProvider.java             factory + codec profile provider
-    defaultprofile/
-      DefaultTimingDataFactory.java
-      DefaultTimingDataCodec.java
-      DefaultRegistrationData.java
-      DefaultTimingNodeStateData.java
-      DefaultRegistrationRevokedData.java
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
@@ -856,8 +870,11 @@ on the worker immediately before persistence:
 private void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
+    RegistrationData.Context context =
+        registrationDataContext(input, sequence, timeSource.now());
+
     RegistrationData data =
-        timingDataFactory.registration(input, sequence, timeSource.now());
+        timingDataFactory.createRegistrationData(context);
 
     timingDataStore.append(data);    // durable before return
     logBook.add(data);               // committed domain state
@@ -1104,14 +1121,14 @@ immutable context object:
 
 ```java
 RegistrationData createRegistrationData(
-        RegistrationDataContext context);
+        RegistrationData.Context context);
 ```
 
 Conceptually:
 
 ```text
-RegistrationDataContext
-  TimingDataContext
+RegistrationData.Context
+  TimingData.Context
     timingNodeId
     locationId
     sequenceNumber
