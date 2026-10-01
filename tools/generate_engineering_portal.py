@@ -271,6 +271,8 @@ evidence.
   while inspecting requirements, use cases, architecture and verification.
 - [Engineering object index](objects/index.md) — searchable generated object
   pages with incoming/outgoing and one-hop context.
+- [Engineering Client design](engineering-client.md) — Step-4 Timing UI
+  wireframes, control states and direct link to the full Engineering Client SDE.
 - [Architecture Book](book.md) — the existing assembled Book remains a
   first-class output and is not owned by this portal.
 
@@ -294,6 +296,35 @@ output.
 
 The Material portal complements that Book with search, object pages and focused
 engineering context. It does not replace Book assembly or source ownership.
+"""
+
+
+def render_engineering_client_page(repository: str, publication_branch: str) -> str:
+    sde_url = (
+        f"https://github.com/{repository}/blob/{publication_branch}/"
+        "documents/50-SDE-03-engineering-client.md"
+    )
+    return f"""# Engineering Client design
+
+This portal page is a derived review view for the Step-4 Engineering Client
+Timing UI. The authored design remains in SDE03 and the declarative diagram YAML.
+
+[Open the generated Engineering Client design document]({sde_url})
+
+## Timing view
+
+![Engineering Client Timing view](assets/architecture/engineering-client-timing-view.svg)
+
+The first-registration view combines authoritative TimingNode status, lifecycle
+control, capability-gated accepted-registration simulation and committed
+TimingData history.
+
+## Control-state examples
+
+![Timing view control states](assets/architecture/engineering-client-timing-states.svg)
+
+These states define CLOSED/no-location, CLOSED/located, OPEN and reconnecting/
+stale behaviour. They are design wireframes, not JavaFX screenshots.
 """
 
 
@@ -387,9 +418,25 @@ def write_portal(
         output_dir / "assets" / "architecture" / "layered-architecture.svg",
     )
 
+    for ui_asset in (
+        "engineering-client-timing-view.svg",
+        "engineering-client-timing-states.svg",
+    ):
+        source = architecture_path.parent / ui_asset
+        if not source.exists():
+            raise PortalError(f"missing Engineering Client portal asset: {source}")
+        shutil.copy2(
+            source,
+            output_dir / "assets" / "architecture" / ui_asset,
+        )
+
     (output_dir / "index.md").write_text(render_index(view), encoding="utf-8")
     (output_dir / "book.md").write_text(
         render_book_page(repository, publication_branch), encoding="utf-8"
+    )
+    (output_dir / "engineering-client.md").write_text(
+        render_engineering_client_page(repository, publication_branch),
+        encoding="utf-8",
     )
     (output_dir / "explorer.md").write_text(
         render_explorer(view, svg), encoding="utf-8"

@@ -35,9 +35,9 @@ elsewhere:
 - transport implementation belongs in the applicable SI-01 SDD;
 - the Engineering Client implementation README owns concrete build/run instructions.
 
-This document may show planned engineering controls before their protocol contract is
-final. Such UI direction is not authority for an IF-03 route or an UpstreamProtocol
-message shape.
+This document may show UI design before JavaFX implementation exists. IF-03 route,
+payload and outcome semantics remain owned by the applicable IDD; this document
+defines how the Engineering Client presents and enables those accepted controls.
 
 ## Repository and runtime boundary
 
@@ -48,10 +48,11 @@ Current placement:
 ├── core/            SI-01 reusable Java-8 application core
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
-├── timing-data-api/ shared TimingData model + codec/provider SPI
+├── shared/
+│   └── timing-data/ shared TimingData model + codec/provider SPI
 └── test-client/     Engineering Client
                     standalone Java 17 + JavaFX application
-                    may depend on timing-data-api only
+                    may depend on event-timing-data only
                     no SI-01 core/app implementation dependency
 ```
 
@@ -60,7 +61,7 @@ supported external interfaces. It does not import `event-timing-core` or
 `event-timing-app` implementation classes.
 
 TimingData inspection/conversion is a separate engineering capability. The
-Engineering Client may depend on the small shared `timing-data-api` artifact and
+Engineering Client may depend on the small shared `event-timing-data` artifact and
 load the same compatible `TimingDataProvider` implementations that SI-01 can
 use, without copying provider-specific decoding rules into client code.
 
@@ -148,44 +149,192 @@ new log records and can query/change the temporary runtime-global logging level.
 Live logs are not IF-03 application events and do not become TimingNode state merely
 because they are visible in the same Engineering Client.
 
-## Step-4 UI direction — first registration slice
+## Step-4 Timing view UI baseline
 
-The Step-4 UI grows only enough to exercise and inspect the first registration
-slice. The existing **Status**, **Events**, **Terminal** and **Logs** tabs remain
-the implemented baseline. A small **Timing** view may be added; a broad
-Upstream/reference-data editor is not part of this slice.
+D01 defines the concrete Engineering Client presentation for the first-registration
+slice before A03 implements it. The design is deliberately mid-fidelity: control
+placement, state, visibility and enablement are specified; production styling,
+branding and pixel-perfect JavaFX layout are not.
 
-The first Timing view should expose:
+The existing **Status**, **Events**, **Terminal** and **Logs** tabs remain. Step 4
+adds one **Timing** tab. Direct accepted-registration simulation belongs in this
+Timing view because it exercises TimingNode registration state; the separate
+Upstream/DebugConnector direction remains later work.
 
-- the configured TimingNode identity as read-only state;
-- the assigned/unassigned location state;
-- location editing only while the TimingNode is `CLOSED`;
-- explicit `open` and `close` actions with visible accepted/rejected outcomes;
-- a capability-gated direct accepted-registration simulation control;
-- optional deterministic observation time for repeatable engineering tests;
-- committed registration/TimingData history with source sequence;
-- raw public representations where useful for interface diagnosis.
+<a id="fig-sde03-02"></a>
+![Engineering Client Timing view](../../../raw/prod/docs/assets/architecture/engineering-client-timing-view.svg)
+*Figure SDE03-02 — Mid-fidelity Timing view in an OPEN/LIVE state. The YAML source is authoritative and generates both SVG and editable draw.io output.*
 
-The client must not construct or inject a completed TimingData record. Direct
-registration simulation enters the public TimingNode registration operation
-**after** antenna/decoding/filtering, so the TimingNode remains responsible for
-its configured identity, active location, lifecycle validation and source
-sequence. A later simulated-antenna increment will enter earlier in the normal
-registration path and exercise filtering before reaching the same operation.
+<a id="fig-sde03-03"></a>
+![Timing view control states](../../../raw/prod/docs/assets/architecture/engineering-client-timing-states.svg)
+*Figure SDE03-03 — Control-state examples for CLOSED/no-location, CLOSED/located, OPEN and reconnecting/stale.*
 
-### First-slice UI review scenarios
+### View structure
 
-| Scenario | Planned Engineering Client behaviour | Use case |
+The Timing tab is one vertically readable workflow rather than several small
+modal dialogs:
+
+1. connection/view state and configured TimingNode identity;
+2. current lifecycle and LocationId;
+3. location/open/close controls;
+4. capability-gated accepted-registration input;
+5. processed command outcome;
+6. committed TimingData history.
+
+The view uses the current single-TimingNode IF-03 endpoint. Multi-node selection
+is deliberately not introduced in Step 4.
+
+### Presentation model
+
+The UI keeps three kinds of information visibly distinct:
+
+| UI concern | Source | Presentation rule |
 | --- | --- | --- |
-| Inspect a closed TimingNode | Show configured identity, lifecycle and whether a location is assigned. | UC-001, UC-009 |
-| Set/change location | Allow only while `CLOSED`; show explicit validation/rejection. | UC-001, UC-002, UC-009 |
-| Open/close | Reject open without a valid location; keep the active location fixed until close. | UC-002, UC-009 |
-| Inject an accepted registration | When capability-enabled, submit semantic participant identity plus supported observation time; do not supply sequence/source/location fields owned by the node. | UC-003, UC-009 |
-| Inspect registration result | For presentation-driven registration, show the processed registration result and resulting committed TimingData/history. Keep submission-only admission terminology for device/callback ingress where no caller waits for the domain result. | UC-003, UC-009, UC-011 |
-| Lose/re-establish event connection | Mark cached information stale, rebuild current node state and registration data, then resume live updates. | UC-009 |
+| TimingNode identity | IF-03 status | read-only |
+| Lifecycle + LocationId | IF-03 authoritative status | current state; stale marker retained during reconnect |
+| Direct-registration capability | IF-03 capabilities | controls hidden or disabled when unsupported/disabled |
+| Last command result | processed IF-03 command response | transient operation feedback; not treated as TimingData |
+| TimingData history | IF-03 committed-history resource | ordered by source sequence |
+| Live TimingData | `TIMING_DATA_COMMITTED` | merge into history by stable record key |
+| Raw protocol detail | Status/Events diagnostic tabs | remains available for engineering inspection |
 
-D03 owns the actual routes, JSON fields, identifier formats, capability
-representation and TimingData schema.
+### Control enablement
+
+The client shall derive control availability from the latest authoritative state,
+not from which button was pressed most recently.
+
+| View state | Location edit / Set | Open | Close | Inject accepted registration |
+| --- | --- | --- | --- | --- |
+| disconnected | disabled | disabled | disabled | disabled |
+| reconnecting / stale | disabled | disabled | disabled | disabled |
+| LIVE + CLOSED + no LocationId | enabled | disabled | disabled | disabled |
+| LIVE + CLOSED + LocationId | enabled | enabled | disabled | disabled |
+| LIVE + OPEN | read-only / disabled | disabled | enabled | enabled only when capability enabled |
+
+A rejected command does not optimistically mutate the local model. The client
+shows the returned domain/error outcome and then keeps or refreshes authoritative
+status as required.
+
+### Location and lifecycle controls
+
+The LocationId field uses the public numeric LocationId representation. The UI
+does not encode concrete allowed event/location ranges itself; event/profile
+policy belongs to SI-01/reference configuration.
+
+While CLOSED:
+
+- LocationId is editable;
+- **Set location** is enabled when the entered value is structurally valid;
+- **Open** becomes enabled only after authoritative status reports a current
+  LocationId.
+
+While OPEN:
+
+- LocationId is shown read-only;
+- **Set location** and **Open** are disabled;
+- **Close** is enabled.
+
+The client still handles server-side conflicts such as `NODE_NOT_CLOSED` or
+`NO_LOCATION`; disabled controls reduce avoidable requests but are not the
+domain enforcement mechanism.
+
+### Direct accepted-registration control
+
+The first engineering registration control is shown only for the accepted
+`DIRECT_REGISTRATION_SIMULATION` capability.
+
+Inputs:
+
+- `RegistrationId` — required opaque shared representation;
+- observation time — editable canonical timestamp for deterministic tests;
+- **Use current time** — convenience action that fills the input, not a different
+  protocol operation;
+- **Inject accepted registration** — enabled only while LIVE, OPEN and the
+  capability is enabled.
+
+The client does **not** supply:
+
+- TimingNode/source identity;
+- LocationId;
+- sequence number;
+- recordedAt;
+- final TimingData JSON.
+
+Those remain SI-01-owned values. The processed command response is displayed as
+operation feedback. The resulting committed record is then observed through
+history/live TimingData.
+
+### TimingData history
+
+The first history table shows enough semantic data for Step-4 inspection:
+
+- source sequence;
+- LocationId captured in the record;
+- RegistrationId;
+- effective/observation time;
+- registration variant/type.
+
+The stable record key remains TimingNodeId + sequence. Selecting a row may later
+show full/raw IF-05 JSON, but a separate detail inspector is not required for
+the first A03 implementation because raw protocol inspection already exists in
+the Status/Events engineering tabs.
+
+History is not cleared by a transient WebSocket disconnect. It becomes visibly
+**STALE** until the reconnect rebuild completes.
+
+### Connection and rebuild states
+
+The Timing view uses four user-visible connection/data states:
+
+- **DISCONNECTED** — no authoritative live connection; mutating controls disabled;
+- **CONNECTING/RECONNECTING** — transport recovery in progress; previous values may
+  remain visible but are marked stale;
+- **STALE** — cached status/history is visible but must not drive mutations;
+- **LIVE** — status/history rebuild is complete and buffered live events have been
+  merged.
+
+Reconnect follows IF-03:
+
+1. reconnect WebSocket and begin buffering later events;
+2. apply the new status snapshot;
+3. reload committed TimingData history;
+4. merge buffered status changes in order;
+5. merge buffered `TIMING_DATA_COMMITTED` by stable record key, discarding overlap;
+6. only then mark the Timing view LIVE and re-enable controls.
+
+This avoids a misleading interval in which old state is interactive while history
+is still rebuilding.
+
+### Error and timeout presentation
+
+Expected command outcomes are shown close to the affected control, plus a compact
+**Last command** summary. The UI distinguishes:
+
+- domain conflict/rejection;
+- busy/unavailable;
+- capability disabled;
+- timeout with **outcome unknown**;
+- unexpected client/server error.
+
+For `OUTCOME_UNKNOWN`, the client does not immediately repeat the command. It
+first refreshes/rebuilds authoritative state/history because accepted work may
+still have completed after the caller timeout.
+
+### Deterministic documentation states
+
+The YAML wireframes use only synthetic public values. They are design evidence,
+not JavaFX screenshots and not integration verification.
+
+The eventual JavaFX documentation mode should reproduce at least:
+
+1. CLOSED with no LocationId;
+2. CLOSED with LocationId;
+3. OPEN with direct registration capability enabled and committed history;
+4. reconnecting/stale.
+
+The generated YAML → SVG/draw.io wireframes remain the D01 design source even
+after JavaFX screenshots become available. Screenshots prove implementation
+appearance; they do not replace the UI-state specification.
 
 ## Capability-driven engineering controls
 

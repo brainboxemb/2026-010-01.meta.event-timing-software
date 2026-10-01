@@ -1,0 +1,65 @@
+diagram:
+  id: engineering-client-timing-states
+  title: Figure SDE03-03 — Timing view control states
+  width: 1180
+  height: 820
+  description: Step-4 Timing view state examples used to define control availability and reconnect behaviour.
+  note: These are deterministic design states, not screenshots of the JavaFX implementation.
+
+groups: []
+
+nodes:
+  - id: closed-empty
+    label: CLOSED · no location
+    subtitle: LIVE
+    kind: external
+    notation: wireframe-panel
+    items:
+      - "LocationId: editable"
+      - "Set location: enabled"
+      - "Open: disabled"
+      - "Close: disabled"
+      - "Inject registration: disabled"
+    layout: {x: 55, y: 100, w: 500, h: 275}
+
+  - id: closed-located
+    label: CLOSED · location assigned
+    subtitle: LIVE
+    kind: external
+    notation: wireframe-panel
+    items:
+      - "LocationId: editable"
+      - "Set location: enabled"
+      - "Open: enabled"
+      - "Close: disabled"
+      - "Inject registration: disabled"
+    layout: {x: 625, y: 100, w: 500, h: 275}
+
+  - id: open-state
+    label: OPEN · registration active
+    subtitle: LIVE
+    kind: external
+    notation: wireframe-panel
+    items:
+      - "LocationId: read-only"
+      - "Set location: disabled"
+      - "Open: disabled"
+      - "Close: enabled"
+      - "Inject: enabled only when capability is enabled"
+    layout: {x: 55, y: 445, w: 500, h: 275}
+
+  - id: reconnecting
+    label: Reconnecting / stale
+    subtitle: STALE
+    kind: external
+    notation: wireframe-panel
+    items:
+      - "All mutating controls: disabled"
+      - "Keep last values visibly stale"
+      - "Buffer live WebSocket events after reconnect"
+      - "Rebuild status + committed history"
+      - "Deduplicate TimingData by record key"
+      - "Enable controls only after state becomes LIVE"
+    layout: {x: 625, y: 445, w: 500, h: 275}
+
+edges: []

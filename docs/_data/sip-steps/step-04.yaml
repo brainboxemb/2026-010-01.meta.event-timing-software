@@ -3,7 +3,7 @@ step: 4
 planning_changes:
   - date: '2026-10-01'
     change: >-
-      TimingData baseline completed; D01 UI design active before A03 client/API integration.
+      D01 Timing UI baseline completed; A03 client/API integration is active.
   - date: '2026-09-30'
     change: >-
       D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.
@@ -19,7 +19,7 @@ activities:
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: active
+    state: done
     note: >-
       Complete the Engineering Client architecture and the concrete Step-4 Timing
       UI baseline: view layout, control availability, lifecycle/capability states,
@@ -99,7 +99,7 @@ activities:
     lane: application
     kind: integration
     title: Engineering Client first-slice control
-    state: next
+    state: active
     depends_on: [D01, A02]
     note: >-
       Add IF-03/client support for location, open/close, capability-gated direct
