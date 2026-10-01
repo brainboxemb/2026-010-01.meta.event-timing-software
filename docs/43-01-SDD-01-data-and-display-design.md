@@ -263,7 +263,7 @@ mutable state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — The TimingNode owns mutable state; short serialized reads publish immutable views for work that continues outside the lane.*
+*Figure SDD01-TD02 — TimingNode refinement: one serial execution boundary owns mutable state; short reads return immutable views and `newTimingDataEvent` provides post-fact notification without exposing mutable state.*
 
 ### Runtime flows
 
