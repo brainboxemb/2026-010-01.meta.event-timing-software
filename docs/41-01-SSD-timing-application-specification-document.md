@@ -1171,9 +1171,9 @@ Working rules:
 - a caller timeout does not prove rejection or rollback of already accepted work; until state is queried or another result is observed, the final outcome is unknown to that caller;
 - external protocol DTOs are mapped at the presentation/I/O boundary rather than used as the internal domain model;
 - messages crossing thread/process boundaries should be immutable where practical;
-- a generic event-bus framework is **not** assumed to be necessary.
+- post-fact notifications use a small typed publish/subscribe event boundary; commands and queries are not routed through that event mechanism.
 
-The initial architecture uses explicit typed routing because the flow is easier to reason about, test and keep lightweight on the Pi Zero. A third-party messaging/event framework should only be introduced when it solves a demonstrated problem better than explicit routing and JDK concurrency primitives.
+The internal event mechanism is deliberately smaller than a general-purpose messaging platform. It publishes immutable typed events such as `TimingDataCommitted` to explicitly registered subscribers. It has no string topics, reflection-based discovery or global static access. The dispatcher is composed/scoped with the owning runtime and does not become an alternate owner of TimingNode state. A third-party event framework is only justified later if it preserves these semantics and solves a demonstrated problem better than the small in-process abstraction.
 
 ### Process view: ordering and concurrency
 
@@ -1213,7 +1213,7 @@ External ingress still keeps its functional routing responsibilities:
   upstream messages;
 - scheduled work retains its owning target.
 
-There is no central generic `TimingSystemDispatcher` or generic event bus.
+There is no central dispatcher through which commands and queries must pass. A scoped typed `EventDispatcher` may fan out immutable events after facts have occurred; it is a notification mechanism, not the owner or execution path for TimingNode state.
 
 <a id="fig-si01-04"></a>
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
