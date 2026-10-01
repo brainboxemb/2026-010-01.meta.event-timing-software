@@ -320,21 +320,21 @@ participant registrations. These are the same semantic registration concept and
 use the same sequence/key rules.
 
 Every participant registration stored in TimingData has one canonical
-`RegistrationIdentity`. `TagIdentity` and `TeamIdentity` are source-domain
+`RegistrationId`. `TagId` and `TeamId` are source-domain
 identities from which that registration identity is derived:
 
-- an automatic registration starts with a decoded/normalised `TagIdentity`;
-- a manual registration starts with a `TeamIdentity` selected/entered by the
+- an automatic registration starts with a decoded/normalised `TagId`;
+- a manual registration starts with a `TeamId` selected/entered by the
   operator/client;
-- both paths resolve to a `RegistrationIdentity` before the TimingData value is
+- both paths resolve to a `RegistrationId` before the TimingData value is
   committed.
 
 Conceptually:
 
 ```text
-TagIdentity  -----\
-                 +--> RegistrationIdentity --> TimingData REGISTRATION
-TeamIdentity -----/
+TagId  -----\
+                 +--> RegistrationId --> TimingData REGISTRATION
+TeamId -----/
 ```
 
 For manual registrations the model separately records whether the effective time
@@ -382,7 +382,7 @@ The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, inject
 
 ## Registration identity and source resolution
 
-`RegistrationIdentity` is the canonical participant identity stored on a
+`RegistrationId` is the canonical participant identity stored on a
 TimingData registration record. It is deliberately separate from the concrete
 identity observed at an input device and from identities used by an operator or
 reference-data source.
@@ -397,7 +397,7 @@ Conceptually:
 
 ```text
 source identity -----------\
-                            +--> RegistrationIdentity
+                            +--> RegistrationId
 operator/reference identity/
 ```
 
@@ -411,7 +411,7 @@ changing the public TimingData identity contract.
 `TimingNode`.
 
 It may contain the data needed to resolve source identities to canonical
-`RegistrationIdentity` values. Obtaining or synchronising that data from an
+`RegistrationId` values. Obtaining or synchronising that data from an
 external system is an integration/application responsibility rather than
 behaviour owned by `RaceData`.
 
