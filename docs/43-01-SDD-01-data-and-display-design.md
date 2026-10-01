@@ -46,8 +46,8 @@ defined by this public SDD.
 
 ### LogBook and IF-05 TimingData
 
-The runtime `LogBook` stores committed canonical `TimingDataRecord` values.
-The current design does not add a second logbook-specific timing-record type.
+The runtime `LogBook` stores committed immutable `TimingData` values.
+The current design does not add a second logbook-specific timing-data type.
 
 That choice is deliberate. The old/reference software already treats one LBR
 record as both the logged timing fact and the object consumers read. The new
@@ -55,19 +55,20 @@ design keeps that useful property while giving the file format a clear IF-05
 contract.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
-`32-05-IDD-timingdata-interchange.md`. It owns record kinds,
-`RegistrationIdentity`, sequence/key semantics, versioning and canonical file
-encoding.
+`32-05-IDD-timingdata-interchange.md`. It owns the common TimingData semantics,
+`RegistrationIdentity`, sequence/key semantics and compatibility rules. The
+configured profile owns its concrete classes and matching representation/codec.
 
-The same immutable `TimingDataRecord` object can therefore be:
+The same immutable `TimingData` object can therefore be:
 
 - appended by `TimingDataStore`;
 - added to `LogBook` after that append is durable;
 - read by runtime consumers;
 - offered to downstream/upstream delivery.
 
-A `TimingDataProvider` may translate to or from another external representation,
-but that translation does not introduce a second SI-01 timing-record model.
+A `TimingDataProvider` supplies the configured concrete TimingData factory and
+codec. Different profiles may return different concrete classes while SI-01
+continues to use the common TimingData interfaces.
 
 ### Registration identity resolution
 
@@ -101,7 +102,7 @@ TimingNode  <<active object>>
   +-- bounded serial work queue
   +-- one serial worker (first implementation)
   |
-  +-- LogBook           passive, committed TimingDataRecord history
+  +-- LogBook           passive, committed TimingData history
   +-- NextUpTeams       passive
   +-- StageStartTimes   passive
   +-- RaceData          passive
@@ -165,12 +166,15 @@ Conceptually:
 void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    TimingDataRecord record =
-        timingDataFactory.registration(input, sequence, timeSource.now());
+    RegistrationDataContext context =
+        registrationDataContext(input, sequence, timeSource.now());
 
-    timingDataStore.append(record);   // returns after durable append
-    logBook.add(record);              // consumer visibility point
-    newTimingDataEvent.emit(record);
+    RegistrationData data =
+        timingDataFactory.createRegistrationData(context);
+
+    timingDataStore.append(data);     // returns after durable append
+    logBook.add(data);                // consumer visibility point
+    newTimingDataEvent.emit(data);
 }
 ```
 
@@ -190,7 +194,7 @@ The important ordering is:
 ```text
 TimingNode worker
   -> choose next sequence
-  -> create immutable TimingDataRecord
+  -> build immutable RegistrationData through configured factory
   -> TimingDataStore.append(record)
   -> durable
   -> LogBook.add(record)            <-- committed domain state
@@ -202,7 +206,7 @@ There is no direct producer-to-store path and no second TimingNode serial worker
 
 ![TimingNode producers and durable TimingData commit path](../../../raw/prod/docs/assets/architecture/timingdata-producer-pipeline.svg)
 
-*Figure SDD01-TD01 — State-changing input enters the TimingNode serial boundary; a TimingData record becomes visible only after durable persistence.*
+*Figure SDD01-TD01 — State-changing input enters the TimingNode serial boundary; the concrete TimingData value created by the configured factory becomes visible only after durable persistence.*
 
 ### Other TimingNode state and per-type stores
 
