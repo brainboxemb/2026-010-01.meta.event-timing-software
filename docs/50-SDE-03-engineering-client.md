@@ -172,11 +172,11 @@ client has resynchronised status showing an assigned LocationId.
 
 The auto-reg controls remain disabled while the node is CLOSED.
 
-### OPEN with committed TimingData
+### OPEN with LogBook records
 
 <a id="fig-sde03-03"></a>
-![Timing view — OPEN with committed history](../../../raw/prod/docs/assets/architecture/engineering-client-timing-open.svg)
-*Figure SDE03-03 — Timing view while OPEN with dev auto-reg simulation and committed history.*
+![Timing view — OPEN with LogBook records](../../../raw/prod/docs/assets/architecture/engineering-client-timing-open.svg)
+*Figure SDE03-03 — Timing view while OPEN with dev auto-reg simulation and a bounded LogBook page.*
 
 While OPEN:
 
@@ -198,7 +198,7 @@ The client never supplies TimingNodeId, source sequence, active LocationId or
 
 <a id="fig-sde03-04"></a>
 ![Timing view — reconnecting and stale](../../../raw/prod/docs/assets/architecture/engineering-client-timing-reconnecting.svg)
-*Figure SDE03-04 — Cached Timing view while IF-03 state/history is being rebuilt after reconnect.*
+*Figure SDE03-04 — Cached Timing view while IF-03 state/LogBook gaps are being rebuilt after reconnect.*
 
 When the IF-03 live connection is lost, cached information remains visible for
 diagnosis but is marked **STALE** and all state-changing controls are disabled.
@@ -235,8 +235,8 @@ button state was proof of domain acceptance.
 The Timing tab keeps **queue/transport execution** distinct from the **processed
 domain result**:
 
-- `UPDATED`, `OPENED`, `CLOSED`, `COMMITTED` and idempotent results are
-  shown as normal operation outcomes;
+- `UPDATED`, `OPENED`, `CLOSED` and idempotent results are shown as normal
+  operation outcomes; successful dev auto-reg shows the returned `seq`;
 - domain conflicts such as `NO_LOCATION`, `NODE_NOT_CLOSED` and
   `NODE_NOT_OPEN` are shown inline without treating them as application crashes;
 - `BUSY` / `UNAVAILABLE` are shown as execution availability problems;
