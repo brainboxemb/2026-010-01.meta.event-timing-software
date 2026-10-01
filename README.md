@@ -85,7 +85,7 @@ project documents.
 - [`docs/32-11-IDD-application-configuration.md`](docs/32-11-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/41-01-SSD-timing-application-specification-document.md`](docs/41-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/41-02-SSD-gui-application-specification-document.md`](docs/41-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
-- [`docs/43-01-SDD-01-data-and-display-design.md`](docs/43-01-SDD-01-data-and-display-design.md) — deferred SI-01 data/display detailed-design note.
+- [`docs/43-01-SDD-01-data-and-display-design.md`](docs/43-01-SDD-01-data-and-display-design.md) — active SI-01 data/runtime detailed design, including TimingNode ownership, operation flows, persistence and query isolation.
 - [`docs/43-01-SDD-02-java-component-design.md`](docs/43-01-SDD-02-java-component-design.md) — active focused SI-01 Java/Maven component/package detailed design.
 - [`docs/43-01-SDD-03-backoffice-transport-design.md`](docs/43-01-SDD-03-backoffice-transport-design.md) — deferred SI-01 transport-independent backoffice detailed-design note.
 - [`docs/50-SDE-01-software-development-environment.md`](docs/50-SDE-01-software-development-environment.md) — repository/workflow/tooling/environment conventions.
