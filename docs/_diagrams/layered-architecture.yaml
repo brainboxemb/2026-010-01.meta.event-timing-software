@@ -78,7 +78,11 @@ groups:
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1180, y: 250, w: 230, h: 1043}
+  layout: {x: 1180, y: 250, w: 230, h: 500}
+- id: core-layer
+  label: Core
+  kind: layer-crosscutting
+  layout: {x: 1180, y: 770, w: 230, h: 523}
 
 nodes:
 - id: local-console
@@ -369,8 +373,24 @@ nodes:
   label: "Build / version identity"
   kind: crosscutting
   layout: {x: 1210, y: 615, w: 170, h: 80}
+- id: serial-worker-core
+  object_id: SerialWorker
+  group: core-layer
+  label: "SerialWorker"
+  subtitle: "bounded serial execution"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 835, w: 170, h: 80}
+- id: event-core
+  object_id: Event
+  group: core-layer
+  label: "Event<T>"
+  subtitle: "subscribe • unsubscribe • emit"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 940, w: 170, h: 80}
 - id: boundary-note
-  group: crosscutting-layer
+  group: core-layer
   label: "Responsibility view only\n≠ Maven artifact split"
   kind: crosscutting
   layout: {x: 1210, y: 1213, w: 170, h: 70}
@@ -379,6 +399,20 @@ edges:
 - from: logging-server
   to: logging-infra
   dashed: true
+
+- from: timing-node-aggregate
+  to: serial-worker-core
+  label: uses
+  dashed: true
+  from_anchor: {side: right, position: 0.78}
+  to_anchor: {side: left, position: 0.50}
+
+- from: timing-node-aggregate
+  to: event-core
+  label: uses
+  dashed: true
+  from_anchor: {side: right, position: 0.92}
+  to_anchor: {side: left, position: 0.50}
 
 - from: local-console
   to: shared-terminal
