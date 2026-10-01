@@ -931,73 +931,60 @@ After a reboot, the live protocol can send the current StageStartTimes again
 (for example as part of OPEN handling). The historical file is still retained
 for analysis.
 
-### Internal typed event publication
+### Simple typed events
 
-Facts that have already occurred may be published through a small in-process
-event framework. This is intentionally different from the command/query path:
-commands and consistency-sensitive queries still call the owning TimingNode
-directly.
+Post-fact notifications use a small local `Event<T>` abstraction rather than a
+central event bus.
 
-The first design uses familiar publish/subscribe roles:
-
-```text
-Event
-  immutable fact that has already occurred
-
-EventPublisher
-  publishes an Event after the owning operation reaches its defined fact point
-
-EventDispatcher
-  routes typed events to explicitly registered subscribers
-
-EventSubscriber<E>
-  reacts to one or more concrete event types
-```
-
-For TimingData the first event is conceptually:
+Conceptually:
 
 ```java
-final class TimingDataCommitted implements Event {
-    private final TimingData timingData;
+final class Event<T> {
+    void subscribe(Consumer<T> listener);
+    void unsubscribe(Consumer<T> listener);
+    void emit(T value);
 }
 ```
 
-and the commit path becomes:
+A component owns the event instance. For TimingData the first event is:
+
+```java
+Event<TimingData> newTimingDataEvent;
+```
+
+The commit path is therefore:
 
 ```text
 TimingNode serial lane
   -> persist TimingData
   -> update committed LogBook state
-  -> publish TimingDataCommitted
+  -> newTimingDataEvent.emit(timingData)
        |
-       v
-    EventDispatcher
-       +--> WebSocket/event publisher
-       +--> upstream delivery component
-       +--> other explicitly composed subscribers
+       +--> subscribed listener
+       +--> subscribed listener
 ```
 
-The event framework is **typed and scoped**, not a process-global static bus.
-Subscriber registration happens during application composition. Commands,
-queries and mutable state access do not travel through it.
+There is no separate `EventDispatcher`, `EventPublisher`,
+`EventSubscriber` hierarchy or string/topic routing in the first design.
 
-Publishing from the TimingNode lane must remain a bounded/short hand-off.
-A subscriber must not perform slow network delivery, retry loops or other
-blocking work inline on the TimingNode worker. A slow subscriber hands the
-immutable event to its own bounded execution/delivery boundary.
+The event says that new TimingData is now available. The fact that
+`newTimingDataEvent` is emitted only after successful persistence and LogBook
+update is part of the event contract; it does not need to be encoded in a longer
+event name.
 
-A committed TimingData record remains authoritative in LogBook/storage even if a
-notification subscriber is unavailable or the event hand-off is temporarily
-full. Event publication failure therefore cannot roll back an already committed
-record. It is reported through status/diagnostics so affected consumers can
-reconcile from authoritative state. If a subscriber requires reliable delivery
-across process failure or extended outage, it owns the appropriate durable
-outbox/reconciliation mechanism; the in-process event notification alone is not
-a durable message broker.
+Listeners must not become alternate owners of TimingNode mutable state. Slow
+network delivery or retry work must also not block the TimingNode serial lane;
+a listener that needs such work hands the TimingData value to its own bounded
+execution/delivery mechanism.
 
-This event model can later carry other post-fact notifications such as
-`TimingNodeStateChanged` or `StatusChanged` where those events have real
-consumers. Do not create events merely to replace ordinary direct method calls.
+If listener notification fails after the record is committed, that does not
+roll back the TimingData commit. A consumer that needs reliable recovery uses
+authoritative persisted/LogBook state and its own reconciliation/delivery
+mechanism.
+
+Other local events may use the same `Event<T>` abstraction when a real consumer
+needs them. Do not introduce events merely to replace ordinary direct method
+calls.
 
 ### Multiple TimingNodes
 
