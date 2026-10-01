@@ -9,4 +9,4 @@ dependencies:
     type: git-submodule
     url: https://github.com/brainboxemb/tool.eng-docs.git
     path: tools/tool.eng-docs
-    ref: v0.8.1
+    ref: v0.9.0
