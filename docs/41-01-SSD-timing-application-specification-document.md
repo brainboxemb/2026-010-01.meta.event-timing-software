@@ -1312,7 +1312,7 @@ appear in the public application/domain API.
 Rules:
 
 - use typed internal work only where work crosses an asynchronous or TimingNode execution boundary;
-- resolve the target explicitly; do not use a generic event bus or topic discovery;
+- resolve command/query targets explicitly; do not route commands or mutable-state access through the event framework; typed post-fact events may use the scoped EventDispatcher;
 - once running in a TimingNode's serial execution lane, use normal direct Java calls;
 - do not call a blocking public TimingNode operation recursively from that same lane;
 - submit asynchronous I/O completion back to the owning TimingNode before changing its state;
