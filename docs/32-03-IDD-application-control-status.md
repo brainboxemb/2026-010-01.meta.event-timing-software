@@ -284,7 +284,7 @@ The request has no semantic body. Successful HTTP `200` results are
 `CLOSED` or `ALREADY_CLOSED`. A successful state change is followed by a
 `STATUS_CHANGED` event.
 
-### IF03-OP-008 — Inject an already-accepted registration
+### IF03-OP-008 — Simulate an automatic registration
 
 This is an engineering capability, not a replacement RFID or manual-entry
 interface.
@@ -292,20 +292,20 @@ interface.
 HTTP mapping:
 
 ```text
-POST /api/v1/engineering/accepted-registration
+POST /api/v1/dev/auto-reg
 ```
 
 Request:
 
 ```json
 {
-  "registrationId": "<resolved-registration-id>",
-  "observationTime": "2026-10-01T12:00:00.000000000Z"
+  "id": "<resolved-registration-id>",
+  "time": "2026-10-01T12:00:00.000000000Z"
 }
 ```
 
-The caller supplies only the already-resolved shared `RegistrationId` and the
-accepted observation time. SI-01 supplies its configured source identity,
+The caller supplies only the already-resolved shared `RegistrationId` as `id` and the
+accepted observation time as `time`. SI-01 supplies its configured source identity,
 current LocationId, next committed sequence and recordedAt value and executes the
 same accepted-registration operation used after normal RFID interpretation and
 filtering.
@@ -560,13 +560,13 @@ direct registration simulation is supported and enabled before presenting or
 using that control.
 ```
 
-```{ifreq} Direct accepted-registration engineering control
+```{ifreq} Dev auto-reg control
 :id: IF03-REQ-013
 :derived_from: SI01-REQ-041, SI01-REQ-043
 
 When the advertised capability is supported and enabled, IF-03 shall provide
-IF03-OP-008 and pass only resolved RegistrationId plus accepted observation time
-to the normal SI-01 accepted-registration operation.
+IF03-OP-008 and pass only `id` plus `time` to the normal SI-01
+accepted-registration operation.
 ```
 
 ```{ifreq} Committed TimingData history query
@@ -662,7 +662,7 @@ Deterministic procedure:
 3. set a known synthetic LocationId and verify CLOSED status reflects it;
 4. request OPEN and verify OPEN with the same LocationId;
 5. attempt another location change and verify explicit NODE_NOT_CLOSED conflict;
-6. submit one accepted registration with a deterministic RegistrationId and
+6. submit one dev auto-reg request with a deterministic RegistrationId and
    observation time;
 7. verify the command result is COMMITTED and does not supply client-owned source
    sequence/location/recordedAt fields;
@@ -693,7 +693,7 @@ The following IF-03 capabilities are visible in later use cases/architecture but
 - start procedure;
 - RFID power/reinitialisation commands;
 - ready-team add/remove;
-- manual registration/penalty/revocation beyond the direct accepted-registration engineering path;
+- manual registration/penalty/revocation beyond the dev auto-reg path;
 - reference-data administration;
 - backoffice controls;
 - detailed diagnostics/support export;
