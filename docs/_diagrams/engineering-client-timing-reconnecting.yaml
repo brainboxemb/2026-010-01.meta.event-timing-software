@@ -85,8 +85,8 @@ nodes:
     notation: wireframe-table
     items:
       - "Seq | Type | Location | RegistrationId | Effective | Recorded"
-      - "1 | automatic | 24 | sample-001 | 12:00:00.000 | 12:00:00.125"
-      - "2 | manual | 24 | sample-002 | 12:00:04.000 | 12:00:04.030"
+      - "1 | automatic | 24 | N001 | 12:00:00.000 | 12:00:00.125"
+      - "2 | manual | 24 | N002 | 12:00:04.000 | 12:00:04.030"
     layout: {x: 75, y: 445, w: 1035, h: 190}
 
   - id: rule
