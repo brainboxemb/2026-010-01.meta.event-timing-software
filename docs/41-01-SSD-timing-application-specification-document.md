@@ -565,7 +565,7 @@ read or mutate the node's lifecycle/location state or the mutable contents of it
 `LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData` objects. Those objects remain
 passive and do not receive their own workers. A short operation on the node lane may publish
 an immutable snapshot/read view for longer work outside the lane. The LogBook keeps 0..N
-committed `TimingDataRecord` values and does not own a second worker or second timing-record
+committed immutable `TimingData` values and does not own a second worker or second timing-record
 representation.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
@@ -991,7 +991,7 @@ TimingData contracts remain centred on `TimingNodeId`.
 :id: LogBook
 
 A `LogBook` is passive state contained by one TimingNode.
-It holds that node's committed `TimingDataRecord` values.
+It holds that node's committed immutable `TimingData` values.
 The current design does not introduce a second
 logbook-specific timing-record representation.
 ```
@@ -1001,7 +1001,7 @@ logbook-specific timing-record representation.
 
 `TimingData` is the shared Domain capability that realises
 system-owned IF-05 inside SI-01. It exposes the typed
-`TimingDataRecord` model plus validation/codec services needed
+common `TimingData` semantic interfaces plus configured factory/codec services needed
 by application code. Canonical record/file semantics and
 compatibility remain defined by IF-05; Storage, Web and upstream
 protocol code consume that contract without redefining it.
@@ -1563,7 +1563,7 @@ Working rules:
 
 Keep the data roles simple:
 
-- `LogBook` is passive state and holds committed `TimingDataRecord` values;
+- `LogBook` is passive state and holds committed immutable `TimingData` values;
 - `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
   per-node state objects;
 - the TimingNode worker is the single writer for those mutable per-node objects;
