@@ -689,32 +689,41 @@ Composition keeps that choice replaceable and lets the public TimingNode API sta
 synchronous and domain-oriented.
 
 For state-dependent operations the caller waits for the result produced on the
-TimingNode lane:
+TimingNode lane. Queue admission and the processed operation result are represented
+separately:
 
 ```java
 final class TimingNode {
     private final SerialWorker serialWorker;
 
     OpenResult open() throws TimingNodeOperationException {
-        return await(serialWorker.submit(this::doOpen));
+        SerialWorker.SubmitResult<OpenResult> submitResult =
+                serialWorker.submit(this::doOpen);
+
+        switch (submitResult.admission()) {
+            case ACCEPTED:
+                Future<OpenResult> futureResult = submitResult.futureResult();
+                return await(futureResult);
+            case FULL:
+                throw busy();
+            case NOT_RUNNING:
+                throw unavailable();
+            default:
+                throw unexpectedAdmission();
+        }
     }
 
-    SetLocationResult setLocation(LocationId locationId)
-            throws TimingNodeOperationException {
-        return await(serialWorker.submit(
-                () -> doSetLocation(locationId)));
-    }
-
-    TimingNodeStatus status() throws TimingNodeOperationException {
-        return await(serialWorker.submit(this::snapshotStatus));
-    }
-
-    SubmissionResult submitObservation(Observation observation) {
+    SerialWorker.AdmissionResult submitObservation(Observation observation) {
         return serialWorker.offer(
                 () -> processObservation(observation));
     }
 }
 ```
+
+The variable name `futureResult` is intentional: it is the Java
+`Future<R>` representing a result that will be produced later by execution on
+the serial lane. It is not the domain result itself. The later
+`futureResult.get(...)` yields the processed `OpenResult`.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
@@ -787,42 +796,50 @@ outcome semantics differ from definite submission rejection.
 
 ### First SerialWorker implementation
 
-The first implementation should remain a small composed worker backed by one
-bounded queue and one dedicated thread, but it must support both result-bearing
-work and submission-only work. A Java-8-oriented shape is:
+The first implementation remains a small composed worker backed by one bounded
+queue and one dedicated thread. Its public result types make the two result
+moments explicit:
 
 ```java
 final class SerialWorker implements AutoCloseable {
-    private final BlockingQueue<Runnable> queue;
-    private final Thread thread;
-
-    <R> Future<R> submit(Callable<R> work) {
-        FutureTask<R> task = new FutureTask<>(work);
-
-        if (!queue.offer(task)) {
-            throw new SerialWorkerBusyException();
-        }
-
-        return task;
+    enum AdmissionResult {
+        ACCEPTED,
+        FULL,
+        NOT_RUNNING
     }
 
-    SubmissionResult offer(Runnable work) {
-        return queue.offer(wrapForReporting(work))
-                ? SubmissionResult.ACCEPTED
-                : SubmissionResult.BUSY;
+    static final class SubmitResult<R> {
+        AdmissionResult admission();
+        Future<R> futureResult();
     }
 
-    private void run() {
-        while (running || !queue.isEmpty()) {
-            Runnable work = takeNext();
-            work.run();
-        }
+    <R> SubmitResult<R> submit(Callable<R> work) {
+        // Non-blocking queue admission.
+        // futureResult() exists only when admission() == ACCEPTED.
+    }
+
+    AdmissionResult offer(Runnable work) {
+        // Submission-only producer path: queue admission is the only result.
     }
 }
 ```
 
-The concrete exception/result names and shutdown-loop details may change during
-implementation. The required behaviour is:
+Usage rules:
+
+- `AdmissionResult` answers only whether the bounded serial lane accepted the
+  work item;
+- `SubmitResult.futureResult()` is the Java `Future<R>` for the later
+  processed result and is available only for accepted work;
+- a successful `ACCEPTED` admission must never be interpreted as a successful
+  domain operation;
+- `offer(Runnable)` is reserved for producer paths that intentionally need no
+  synchronous processed result;
+- result-bearing TimingNode operations normally convert FULL/NOT_RUNNING into
+  their small operation/execution failure model, then wait on the Future with
+  the configured guard timeout.
+
+The concrete internal queue/task implementation and shutdown-loop details may
+change. The required behaviour is:
 
 - queue capacity is visible and bounded;
 - FIFO order is preserved for one TimingNode;
