@@ -64,7 +64,7 @@ nodes:
 
   - id: close
     label: Close
-    kind: component
+    kind: presentation
     notation: wireframe-button
     layout: {x: 700, y: 315, w: 120, h: 38}
 
@@ -91,13 +91,13 @@ nodes:
 
   - id: now
     label: Use current time
-    kind: component
+    kind: presentation
     notation: wireframe-button
     layout: {x: 815, y: 420, w: 150, h: 38}
 
   - id: inject
     label: Inject accepted registration
-    kind: component
+    kind: presentation
     notation: wireframe-button
     layout: {x: 85, y: 495, w: 250, h: 42}
 
