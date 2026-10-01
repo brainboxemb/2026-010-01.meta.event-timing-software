@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1332
+  height: 1515
   description: Working responsibility view of the reusable framework and executable application.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -54,23 +54,23 @@ groups:
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
-  layout: {x: 30, y: 921, w: 1120, h: 255}
-  label_offset: {x: 0, y: 86}
-  # The shallower right shoulder remains part of I/O itself. It starts further
-  # left and follows Domain with a constant visible gap.
+  layout: {x: 30, y: 928, w: 1120, h: 285}
+  label_offset: {x: 0, y: 78}
+  # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
+  # same x breakpoints and diagonal rise gives a constant visible gap.
   outline:
     corner_radius: 10
     points:
-      - {x: 0.0, y: 0.3461538}
-      - {x: 0.6779661, y: 0.3461538}
-      - {x: 0.7288136, y: 0.0}
+      - {x: 0.0, y: 0.2722807}
+      - {x: 0.6694915, y: 0.2722807}
+      - {x: 0.7203390, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 1.0}
       - {x: 0.0, y: 1.0}
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  layout: {x: 30, y: 1206, w: 1120, h: 87}
+  layout: {x: 30, y: 1243, w: 1120, h: 242}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -78,12 +78,7 @@ groups:
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
-  layout: {x: 1180, y: 250, w: 230, h: 500}
-- id: core-layer
-  label: Core
-  kind: layer-crosscutting
-  layout: {x: 1180, y: 770, w: 230, h: 523}
-
+  layout: {x: 1180, y: 250, w: 230, h: 1235}
 nodes:
 - id: local-console
   object_id: Console
@@ -264,7 +259,7 @@ nodes:
     - "backup / restore"
   kind: storage
   notation: packaging-component
-  layout: {x: 55, y: 1041, w: 200, h: 95}
+  layout: {x: 55, y: 1070, w: 200, h: 95}
 - id: devices-io
   object_id: Devices
   group: io-layer
@@ -298,7 +293,7 @@ nodes:
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
-  layout: {x: 910, y: 936, w: 220, h: 210}
+  layout: {x: 910, y: 950, w: 220, h: 210}
 - id: device-network-io
   object_id: DeviceNetworks
   group: io-layer
@@ -310,7 +305,7 @@ nodes:
       object_id: NetworkDeviceService
   kind: integration
   notation: packaging-component
-  layout: {x: 275, y: 1041, w: 240, h: 95}
+  layout: {x: 275, y: 1070, w: 240, h: 95}
 - id: messaging-io
   object_id: Messaging
   group: io-layer
@@ -328,13 +323,40 @@ nodes:
               object_id: DebugConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1041, w: 260, h: 120}
+  layout: {x: 535, y: 1070, w: 260, h: 120}
 
-- id: platform-primitives
+- id: platform-execution
+  object_id: PlatformExecution
   group: platform-layer
-  label: Clock • filesystem • executors • process/network/OS primitives
+  label: "Execution"
+  items:
+    - "SerialWorker"
+    - "executors / threads"
   kind: platform
-  layout: {x: 180, y: 1236, w: 880, h: 45}
+  notation: packaging-component
+  layout: {x: 55, y: 1285, w: 300, h: 145}
+- id: platform-events
+  object_id: PlatformEvents
+  group: platform-layer
+  label: "Events"
+  items:
+    - "Event<T>"
+    - "typed local notifications"
+  kind: platform
+  notation: packaging-component
+  layout: {x: 375, y: 1285, w: 300, h: 145}
+- id: platform-environment
+  object_id: PlatformEnvironment
+  group: platform-layer
+  label: "Environment"
+  items:
+    - "clock / time"
+    - "filesystem / paths"
+    - "process / runtime"
+    - "network / OS"
+  kind: platform
+  notation: packaging-component
+  layout: {x: 695, y: 1285, w: 430, h: 145}
 
 - id: timing-application-runtime
   object_id: TimingApplication
@@ -373,22 +395,6 @@ nodes:
   label: "Build / version identity"
   kind: crosscutting
   layout: {x: 1210, y: 615, w: 170, h: 80}
-- id: core-primitives
-  object_id: CorePrimitives
-  group: core-layer
-  label: "Core primitives"
-  items:
-    - "SerialWorker"
-    - "Event<T>"
-  kind: crosscutting
-  notation: packaging-component
-  layout: {x: 1210, y: 835, w: 170, h: 185}
-- id: boundary-note
-  group: core-layer
-  label: "Responsibility view only\n≠ Maven artifact split"
-  kind: crosscutting
-  layout: {x: 1210, y: 1213, w: 170, h: 70}
-
 edges:
 - from: logging-server
   to: logging-infra
