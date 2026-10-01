@@ -56,12 +56,12 @@ nodes:
     group: query
     layout: {x: 1170, y: 315, w: 180, h: 100}
   - id: outqueue
-    label: "bounded output\nqueue / outbox"
+    label: "EventDispatcher\ntyped bounded hand-off"
     kind: service
     group: output
     layout: {x: 1435, y: 235, w: 180, h: 82}
   - id: outworker
-    label: "network worker\nmay retry/block"
+    label: "Event subscribers\nWebSocket / upstream"
     kind: integration
     group: output
     layout: {x: 1435, y: 455, w: 180, h: 90}
@@ -72,5 +72,5 @@ edges:
   - {from: worker, to: state, label: "ordered read / mutation"}
   - {from: worker, to: stores, label: "required persistence"}
   - {from: worker, to: queryworker, label: "immutable view / result"}
-  - {from: worker, to: outqueue, label: "committed output"}
-  - {from: outqueue, to: outworker}
+  - {from: worker, to: outqueue, label: "TimingDataCommitted"}
+  - {from: outqueue, to: outworker, label: "typed dispatch"}
