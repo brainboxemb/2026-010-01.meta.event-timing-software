@@ -315,7 +315,7 @@ The demo is V04 and runs only after V03/VC-ST1-002 is green.
 - Open registration.
 - Inject one dev auto-reg request with deterministic `id` and `time`.
 - Inspect the committed TimingData in the LogBook and the corresponding live update.
-- Verify changing LocationId while OPEN is rejected.
+- Verify **Set Location** is disabled while OPEN; V03 already proves a direct IF-03 location change is rejected with `NODE_NOT_CLOSED`.
 - Close registration and then change LocationId successfully.
 - Restart SI-01 and verify committed TimingData LogBook is recovered without replaying old records as new live events.
 
