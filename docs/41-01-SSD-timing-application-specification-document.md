@@ -912,10 +912,10 @@ TimingNode, TimingData, presentation or external I/O semantics.
 :id: PlatformPrimitives
 
 `PlatformPrimitives` represents the small reusable technical building blocks
-and execution-environment abstractions used across the framework. The current
-design includes bounded serial execution (`SerialWorker`) and a local typed
-event primitive (`Event<T>`). Concrete class and threading behaviour belongs
-to SDD-02.
+used across the framework. The current design includes bounded serial execution
+(`SerialWorker`) and a local typed event primitive (`Event<T>`). Platform also
+owns the low-level environment abstractions listed above. Concrete class and
+threading behaviour belongs to SDD-02.
 ```
 
 #### Runtime and infrastructure
