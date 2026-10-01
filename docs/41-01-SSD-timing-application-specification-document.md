@@ -493,7 +493,7 @@ satisfies: >-
 requests. It may serve simple application reads such as
 `version()`. Application-wide operations delegate to
 `Conductor` where lifecycle or cross-node coordination is
-required. When a presentation command or query targets a TimingNode, `CommandHandler` resolves the owning `TimingSystem` and the target `TimingNode` and submits state-changing work directly to that node's serial executor; `Conductor` is not a mandatory hop for TimingNode-scoped work.
+required. When a presentation command or query targets a TimingNode, `CommandHandler` resolves the owning `TimingSystem` and target `TimingNode`, then calls that node's application/domain operation. The TimingNode owns the crossing of its serial execution boundary; presentation code does not submit directly to its queue or read its mutable state. Operations whose result depends on current TimingNode state return only after that operation has executed on the node's ordered path. `Conductor` is not a mandatory hop for TimingNode-scoped work.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
@@ -558,12 +558,15 @@ TimingData
 identity (`TimingNodeId` and `LocationID`), lifecycle/state and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01.
 
-A TimingNode is also the **active serialization boundary** for mutable per-node
-state. State-changing work for that node is accepted through one bounded serial
-execution path and processed in order. The contained `LogBook`,
-`NextUpTeams`, `StageStartTimes` and `RaceData` objects remain passive.
-The LogBook keeps 0..N committed `TimingDataRecord` values and does not own a
-second worker or second timing-record representation.
+A TimingNode is also the **active serialization and ownership boundary** for mutable per-node
+state. State-dependent commands and consistency-sensitive reads enter one bounded serial
+execution path and are processed in order. Code outside that boundary does not directly
+read or mutate the node's lifecycle/location state or the mutable contents of its contained
+`LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData` objects. Those objects remain
+passive and do not receive their own workers. A short operation on the node lane may publish
+an immutable snapshot/read view for longer work outside the lane. The LogBook keeps 0..N
+committed `TimingDataRecord` values and does not own a second worker or second timing-record
+representation.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
 The two roles share the same semantic concept but have distinct engineering
@@ -1160,8 +1163,12 @@ future Web interface ----------+
 Working rules:
 
 - commands request state changes;
-- queries read current state/snapshots without becoming alternate owners of state;
+- a state-dependent command may wait for the domain result produced when that command reaches the TimingNode's ordered execution path;
+- submission-only ingress is explicit: acceptance means only that bounded work was accepted for later processing;
+- queries do not become alternate owners of state; consistency-sensitive reads run on the TimingNode's ordered path or use an immutable snapshot published from that path;
 - events report facts/results that have occurred;
+- queue admission, domain result and caller wait timeout are different outcomes and shall not be represented as though they mean the same thing;
+- a caller timeout does not prove rejection or rollback of already accepted work; until state is queried or another result is observed, the final outcome is unknown to that caller;
 - external protocol DTOs are mapped at the presentation/I/O boundary rather than used as the internal domain model;
 - messages crossing thread/process boundaries should be immutable where practical;
 - a generic event-bus framework is **not** assumed to be necessary.
@@ -1177,12 +1184,15 @@ to happen in a clear order.
 Architecture rules:
 
 - callbacks do not change TimingNode state directly;
-- resolve the target TimingNode before state-changing work enters its ordered path;
+- resolve the target TimingNode before state-dependent work enters its ordered path;
+- code outside a TimingNode does not directly inspect or mutate that node's mutable state;
 - two state changes for the same TimingNode do not run over each other;
 - the TimingNode behaves as an active object: one bounded serial execution
-  boundary owns the order in which its mutable state changes;
+  boundary owns state-dependent command ordering and consistency-sensitive reads;
+- state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
 - the contained LogBook, NextUpTeams, StageStartTimes and RaceData objects remain
   passive and do not each receive their own execution thread;
+- short read operations may capture immutable snapshots for longer calculations outside the TimingNode lane;
 - different TimingNodes may make progress at the same time;
 - file writes must not hold up RFID/device/operator callbacks;
 - a slow query or ranking calculation must not hold up LogBook commits;
@@ -1278,27 +1288,38 @@ Internal messaging exists at asynchronous/ownership boundaries; it is **not** a 
 Working semantic categories are:
 
 ```text
-TimingCommand
-  request an application/domain state change
+state-dependent command
+  request a state change
+  caller may wait for the processed domain result
 
-TimingEvent
-  report an observation, fact, adapter completion or failure
+submission-only input
+  request bounded admission for later processing
+  admission is not the later domain result
 
-TimingQuery<R>
-  request a consistency-sensitive result from current TimingNode state
+consistency-sensitive query
+  capture/read current TimingNode state on the ordered path
+
+event
+  report an observation, fact, completion or failure that has occurred
 ```
 
-The exact Java interface/generic signatures remain implementation detail, but the semantic distinction should stay visible.
+These are interaction semantics, not a requirement for public `Command` or `Query`
+classes. The caller-facing TimingNode API may remain ordinary synchronous methods.
+A Future/Promise is a suitable internal Active Object mechanism for connecting a
+queued operation to a caller that waits for its result; that mechanism need not
+appear in the public application/domain API.
 
 Rules:
 
-- use typed messages when work crosses an asynchronous or TimingNode execution boundary;
+- use typed internal work only where work crosses an asynchronous or TimingNode execution boundary;
 - resolve the target explicitly; do not use a generic event bus or topic discovery;
-- once running in a TimingNode's serial executor, use normal direct Java calls;
+- once running in a TimingNode's serial execution lane, use normal direct Java calls;
+- do not call a blocking public TimingNode operation recursively from that same lane;
 - submit asynchronous I/O completion back to the owning TimingNode before changing its state;
 - RabbitMQ is external I/O, not an in-process message bus.
 
-Choose concrete command/query return types when the first real consumers need them.
+SDD-01 illustrates the interaction cases. SDD-02 owns the concrete Java Future,
+queue, timeout and worker mechanics.
 
 ### Status and diagnostics architecture
 
