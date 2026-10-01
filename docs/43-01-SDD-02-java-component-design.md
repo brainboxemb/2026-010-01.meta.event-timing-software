@@ -154,7 +154,7 @@ timing-data-api/
     AutomaticRegistrationTimingData.java
     ManualRegistrationTimingData.java
     RegistrationId.java
-    RegistrationTimeSource.java
+    ManualRegistrationTimeSource.java
     TimingTimestamp.java
     TimingDataFactory.java
     TimingDataCodec.java
@@ -1088,9 +1088,9 @@ timing-data-api
   ManualRegistrationTimingData
     extends TimingData
     RegistrationId
-    RegistrationTimeSource
+    ManualRegistrationTimeSource
   RegistrationId
-  RegistrationTimeSource
+  ManualRegistrationTimeSource
   TimingTimestamp
   TimingDataFactory
   TimingDataCodec
@@ -1126,7 +1126,7 @@ AutomaticRegistrationTimingData autoRegTD =
 
 ManualRegistrationTimingData manRegTD =
         timingDataFactory.createManualRegistration(
-                context, registrationId, RegistrationTimeSource.OPERATOR_ENTERED);
+                context, registrationId, ManualRegistrationTimeSource.OPERATOR_ENTERED);
 ```
 
 The return types preserve variant type safety even when the configured provider
@@ -1158,7 +1158,7 @@ AutomaticRegistrationTimingData createAutomaticRegistration(
 ManualRegistrationTimingData createManualRegistration(
         TimingDataContext context,
         RegistrationId registrationId,
-        RegistrationTimeSource timeSource);
+        ManualRegistrationTimeSource timeSource);
 ```
 
 ```text
@@ -1170,7 +1170,7 @@ TimingDataContext
   recordedAt
 ```
 
-For the current manual variant, `RegistrationTimeSource` is constrained to
+For the current manual variant, `ManualRegistrationTimeSource` is constrained to
 `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`. Automatic registration uses observed
 time by definition, so callers do not pass an `origin` or `OBSERVED` flag
 merely to restate the return type.
