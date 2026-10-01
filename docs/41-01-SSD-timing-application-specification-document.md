@@ -1173,7 +1173,12 @@ Working rules:
 - messages crossing thread/process boundaries should be immutable where practical;
 - post-fact notifications may use a small typed `Event<T>` abstraction with explicit `subscribe` / `unsubscribe` / `emit`; commands and queries are not routed through that mechanism.
 
-The event mechanism is deliberately local and simple. A component owns an event such as `newTimingDataEvent : Event<TimingData>` and interested listeners subscribe directly to that event. There are no string topics, central event dispatcher or global static bus. Emitting an event reports that a fact has already occurred; it does not transfer ownership of TimingNode state.
+The event mechanism is deliberately local and simple. The generic `Event<T>`
+mechanism is cross-cutting infrastructure; a producing component owns a concrete
+event such as `newTimingDataEvent : Event<TimingData>` and interested listeners
+subscribe directly to that event. There are no string topics, central event
+dispatcher or global static bus. Emitting an event reports that a fact has
+already occurred; it does not transfer ownership of TimingNode state.
 
 ### Process view: ordering and concurrency
 
