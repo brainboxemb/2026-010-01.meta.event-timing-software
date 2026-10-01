@@ -910,6 +910,17 @@ The right-hand side of the layered view separates three technical responsibiliti
 
 Core is a technical foundation, not another business/domain layer. A domain component may compose a Core primitive such as `SerialWorker` or `Event<T>`; the primitive itself remains unaware of the domain component.
 
+```{arch} CorePrimitives
+:id: CorePrimitives
+
+`CorePrimitives` represents the small reusable technical building blocks used
+across the framework without owning application or domain semantics. The current
+design includes bounded serial execution (`SerialWorker`) and a local typed
+event primitive (`Event<T>`). These primitives are JDK-only and know nothing
+about TimingNode, TimingData, presentation or external I/O. Concrete class and
+threading behaviour belongs to SDD-02.
+```
+
 #### Cross-cutting concerns
 
 Cross-cutting technical concerns include logging, diagnostics, metrics and
