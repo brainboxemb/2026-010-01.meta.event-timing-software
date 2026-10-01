@@ -34,16 +34,17 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 ## Initial Maven reactor
 
 The current reactor has two reusable artifacts plus one executable application.
-The separate TimingData API artifact is justified by the independent SI-01 and
-Engineering Client consumers. During this design increment it also contains the
-small built-in default/reference profile so the profile boundary can be proven
-before another production artifact is introduced:
+The shared TimingData library artifact is justified by the independent SI-01 and
+Engineering Client consumers. It intentionally remains one artifact containing the
+semantic contracts, default/reference profile, codec and factory/provider; these
+responsibilities are not split into separate API/default JARs:
 
 ```text
 reactor/
 ├── pom.xml                    event-timing-parent
-├── timing-data-api/
-│   └── pom.xml                event-timing-data-api.jar
+├── shared/
+│   └── timing-data/
+│       └── pom.xml            event-timing-data.jar
 ├── core/
 │   └── pom.xml                event-timing-core.jar
 └── app/
@@ -56,7 +57,7 @@ Working coordinates:
 groupId: io.github.brainboxemb.eventtiming
 
 parent:          event-timing-parent
-TimingData API:  event-timing-data-api
+TimingData:      event-timing-data
 core:            event-timing-core
 executable:      event-timing-app
 ```
@@ -147,7 +148,7 @@ Use these rules:
 The shared TimingData artifact has its own package root:
 
 ```text
-timing-data-api/
+shared/timing-data/
   io.github.brainboxemb.eventtiming.timingdata/
     TimingData.java
     TimingDataContext.java
@@ -162,8 +163,7 @@ timing-data-api/
     defaultprofile/
       DefaultTimingDataFactory.java
       DefaultTimingDataCodec.java
-      DefaultAutomaticRegistrationTimingData.java
-      DefaultManualRegistrationTimingData.java
+      private automatic/manual default value implementations
 ```
 
 `TimingDataContext` is the one immutable value-only construction context for
@@ -644,7 +644,7 @@ test-client/
 
 `test-client/` is a standalone Java-17 application and does not depend on
 `event-timing-core` or `event-timing-app` implementation code. It may,
-however, depend on the separately reusable `timing-data-api` artifact because
+however, depend on the separately reusable `event-timing-data` artifact because
 TimingData codec/provider reuse is now a real cross-executable requirement. This
 preserves the external-client boundary while allowing SI-01 and the Engineering
 Client to exercise the exact same public or proprietary TimingData translator.
@@ -1066,7 +1066,7 @@ For the initial Pi-oriented runtime:
 - measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
   and query latency before increasing concurrency.
 
-## Shared TimingData API and concrete profiles
+## Shared TimingData library and concrete profiles
 
 Both SI-01 and the Engineering Client need common TimingData contracts without
 depending on the whole SI-01 application core. The shared artifact therefore
@@ -1077,7 +1077,7 @@ profiles.
 The first traced Java semantic model is intentionally small:
 
 ```text
-timing-data-api
+shared/timing-data
   TimingData
     common TimingNodeId / sequence / LocationId / time access
   TimingDataContext
@@ -1205,13 +1205,13 @@ implementation and its representation while preserving the common semantic
 contracts defined by IF-05.
 
 Both the Java-8 SI-01 runtime and Java-17 Engineering Client can depend on
-`timing-data-api`. The Engineering Client may inspect the common interfaces
+`event-timing-data`. The Engineering Client may inspect the common interfaces
 without depending on SI-01 Domain classes. Profile-specific inspection can be
 added only where a real consumer needs it.
 
-The first implementation should keep the default profile physically close to
-the API while the design is still changing; do not create another production
-Maven artifact solely to mirror the conceptual profile split. A dummy
+The first implementation keeps the default/reference profile inside the shared
+TimingData library while the design is still changing; do not create another
+production Maven artifact solely to mirror the conceptual profile split. A dummy
 event-specific implementation in tests is sufficient to prove that the common
 contract does not accidentally depend on the default concrete classes. A
 separate provider artifact becomes justified when a real independently deployed
@@ -1298,7 +1298,7 @@ Create future artifacts only when a real boundary requires them. Candidates migh
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
 - public/private RFID/CAN I/O implementations;
-- separately versioning `timing-data-api` if binary compatibility/release evidence later requires an independent release cycle;
+- separately versioning `event-timing-data` if binary compatibility/release evidence later requires an independent release cycle;
 - reusable test support.
 
 Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
