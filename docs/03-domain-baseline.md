@@ -287,17 +287,16 @@ The exact file names, external IDs and deployment mappings are configuration/pri
 
 ## TimingData values
 
-A `TimingData` value is not limited to participant RFID passage data. Operational events can also be represented as TimingData when they must participate in the traceable/synchronised stream.
+A `TimingData` value represents a committed fact in one `TimingNodeId`-scoped
+ordered stream. The common envelope carries source identity, sequence, location
+and time. Type-specific semantics are represented by the concrete TimingData
+variant rather than by nullable fields in one universal in-memory record.
 
-First promoted operational example:
-
-- opening a TimingNode is a traceable TimingData state-change record;
-- closing a TimingNode is a traceable TimingData state-change record.
-
-The public TimingData contract represents the semantic state transition
-(`OPEN` / `CLOSED`) and does not prescribe one concrete Java class or proprietary
-wire encoding. A configured `TimingDataProvider` supplies the concrete object
-factory and matching representation while preserving that common semantic contract.
+The currently promoted/required v1 fact is participant registration. UC-002
+explicitly leaves OPEN/CLOSE-as-TimingData as a later interface/protocol
+decision, and the current use-case baseline does not yet promote registration
+revocation. Those may become TimingData variants later when a use case or
+requirement actually owns them.
 
 A working minimal envelope is therefore conceptually:
 
@@ -308,65 +307,46 @@ TimingData
   sequenceNumber
   effective time
   recorded time
-  semantic subtype data
+  semantic variant data
 ```
 
-Asset and antenna context may additionally be retained where useful for diagnostics/audit, but the exact storage/wire schema is not yet fixed.
+Asset and antenna context may additionally be retained where useful for
+diagnostics/audit, but the exact storage/wire schema is not yet fixed.
 
 ### Participant registration semantics
 
-The public TimingData model supports both **automatic** and **manual**
-participant registrations. These are the same semantic registration concept and
-use the same sequence/key rules.
+The public TimingData model distinguishes **automatic** and **manual**
+registrations as typed semantic variants. Both use the same common TimingData
+envelope and sequence/key rules.
 
-Every participant registration stored in TimingData has one canonical
-`RegistrationId`. `TagId` and `TeamId` are source-domain
-identities from which that registration identity is derived:
+Three IDs have different meanings:
 
-- an automatic registration starts with a decoded/normalised `TagId`;
-- a manual registration starts with a `TeamId` selected/entered by the
-  operator/client;
-- both paths resolve to a `RegistrationId` before the TimingData value is
-  committed.
+- `TagId` is the RFID/tag source identity;
+- `TeamId` is the team/reference-data identity used by manual/domain input;
+- `RegistrationId` is the canonical registration identity stored in committed
+  TimingData.
 
-Conceptually:
+The source IDs are resolved before TimingData construction:
 
 ```text
-TagId  -----\
-                 +--> RegistrationId --> TimingData REGISTRATION
-TeamId -----/
+TagId  -----> RaceData/reference resolution ----                                                  +--> RegistrationId --> TimingData
+TeamId -----> RaceData/reference resolution ----/
 ```
 
-For manual registrations the model separately records whether the effective time
-was assigned automatically by SI-01 or explicitly entered by the operator.
+An automatic registration therefore starts from `TagId`; a manual registration
+starts from `TeamId`. The configured/reference data resolves either path to the
+same canonical `RegistrationId` concept before the definitive TimingData value
+is created.
 
-A proprietary format may collapse origin and time-source into compact codes; the
-public TimingData protocol keeps them as separate semantic fields.
+`RegistrationId` is not the TimingData record key. Record identity/order remains
+`(TimingNodeId, SequenceNumber)`.
 
-A committed registration may later be revoked. Revocation is append-only:
-
-- the original registration remains immutable in the stream;
-- a new revocation record receives its own sequence number;
-- the revocation record references the original
-  `(TimingNodeId, SequenceNumber)`;
-- the effective registration/race time on the revocation is copied from the
-  original registration rather than replaced by the operator's current time;
-- origin and time-source remain those of the referenced registration;
-- the revocation record separately carries its own `recordedAt` value, captured
-  when the definitive record is materialized for the commit attempt; durable
-  commit remains a separate persistence outcome.
-
-This preserves the complete audit/order history. TimingData itself does not own or maintain a derived effective-registration
-projection. Domain/application business logic may reconstruct that state from
-registration and revocation records and shall honour it for calculations such as
-classification, ranking or other race-result logic.
-
-A consuming client/presentation layer separately decides whether a revoked
-registration is hidden, struck through, marked revoked or shown in another way.
-
-External proprietary formats may represent the same facts with
-implementation-specific markers, but those markers are not part of the public
-TimingData protocol.
+For manual registrations the semantic model may additionally record whether the
+effective time was assigned by SI-01 or explicitly entered by the operator.
+Automatic registration uses the accepted observed time by definition. A concrete
+wire/profile representation may encode these facts with discriminators or compact
+codes; those representation details do not require a universal Java record with
+nullable fields.
 
 ## Time semantics
 
