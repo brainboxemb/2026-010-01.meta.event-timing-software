@@ -852,27 +852,42 @@ sequence allocation is unnecessary.
 If append fails, LogBook is unchanged and retry uses the same next sequence. The
 worker must not process a later timing record ahead of that failed record.
 
-### Passive LogBook and consumer reads
+### Passive LogBook and TimingNode-owned reads
 
-LogBook has no worker thread. It stores immutable `TimingDataRecord` values and
-supports short synchronized mutations/reads.
+`LogBook` has no worker thread. It stores immutable `TimingDataRecord` values,
+but it is contained mutable TimingNode state rather than a globally readable
+repository.
 
-A query that needs a stable view should copy references and then release LogBook
-synchronization before doing expensive work. With roughly 1200–1500 records, a
-shallow copy is small: 1500 references are about 6 KiB with compressed 4-byte
-references or 12 KiB with 8-byte references.
+Code outside the TimingNode ownership boundary does not call `LogBook.copyTo()`
+directly. A consistency-sensitive query first enters the TimingNode lane, where
+the node captures the required short immutable/read-only view. Long calculation
+continues after that lane operation has completed:
 
-Avoid allocating a new snapshot array for every high-frequency query when a
-caller-owned reusable buffer is enough:
-
-```java
-int count = logBook.copyTo(reusableTimingDataBuffer);
-calculate(reusableTimingDataBuffer, count);
+```text
+query caller
+  -> TimingNode query operation
+       -> serial lane
+       -> capture LogBook/reference-data snapshot
+       -> return immutable read view
+  -> long calculation outside serial lane
 ```
 
-This keeps long calculations off the TimingNode worker and avoids unnecessary GC
-pressure. Measure the actual copy time, heap behaviour and query frequency on the
-target Pi before introducing a more complex read model.
+With roughly 1200–1500 timing records, a shallow reference snapshot remains a
+reasonable first implementation. The concrete representation may reuse storage
+or buffers internally if measurement shows allocation pressure; that
+optimization must not let external consumers retain a mutable buffer that the
+TimingNode later changes underneath them.
+
+This model gives two useful guarantees:
+
+- a query snapshot has a defined place in the same ordering as state changes;
+- long calculation never holds the TimingNode lane merely because it needs a
+  stable input view.
+
+A high-frequency status/read path may later use a worker-published immutable
+snapshot when measurement justifies it. Such a published snapshot is an
+explicit read model with known freshness semantics, not permission for callers
+to read TimingNode-owned mutable objects directly.
 
 ### Per-type stores
 
@@ -890,7 +905,7 @@ Concrete file implementations live under `io.storage`. Store contracts are
 dependency-inverted ports composed into the TimingNode; the TimingNode must not
 depend on concrete filesystem classes.
 
-The TimingNode worker fixes the order in which state changes are accepted. The
+The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
 first implementation may call the small/infrequent analysis-store writes on the
 same worker. If measurements show that one of those writes delays registrations,
 the worker can hand an immutable snapshot to a bounded storage executor. Do not
