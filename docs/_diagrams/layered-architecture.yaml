@@ -272,10 +272,8 @@ nodes:
   label: "Storage"
   items:
     - label: TimingDataStore
-      object_id: TimingDataStore
       items:
         - label: FileTimingDataStore
-          object_id: FileTimingDataStore
   kind: storage
   notation: packaging-component
   # Keep this compact: only implemented storage is shown here. Future DB/state
