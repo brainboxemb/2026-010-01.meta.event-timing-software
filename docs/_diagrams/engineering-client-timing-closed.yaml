@@ -106,6 +106,7 @@ nodes:
 
   - id: history
     label: LogBook
+    subtitle: "count 0"
     kind: wireframe-surface
     notation: wireframe-table
     items:
