@@ -3,6 +3,9 @@ step: 4
 planning_changes:
   - date: '2026-10-01'
     change: >-
+      Step-4 verification ordered as A03 -> black-box VC-ST1-002 -> client demo.
+  - date: '2026-10-01'
+    change: >-
       D01 Timing UI baseline completed; A03 client/API integration is active.
   - date: '2026-09-30'
     change: >-
@@ -119,10 +122,22 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: First-registration running-system demo
+    title: Automated first-registration black-box verification
     state: planned
     depends_on: [A03, V02]
     note: >-
-      Demonstrate location -> open -> direct accepted registration -> observable
-      TimingData -> close using the Engineering Client, without RFID hardware,
-      filtering, RabbitMQ or backoffice infrastructure.
+      Automate VC-ST1-002 against SI-01 as a separate process through public
+      IF-03 only: status -> location -> open -> accepted registration -> history
+      + live event -> close -> reconnect/history rebuild and dedup.
+
+  - id: V04
+    lane: verification
+    kind: verification
+    title: Engineering Client running-system demo
+    state: planned
+    depends_on: [V03, A03]
+    note: >-
+      Manually run the same first-registration flow through the JavaFX Engineering
+      Client after black-box verification is green. Verify control enablement,
+      command feedback, history/live presentation and reconnect state without
+      RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
