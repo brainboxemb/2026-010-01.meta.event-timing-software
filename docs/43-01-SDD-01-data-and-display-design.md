@@ -133,7 +133,7 @@ For a registration, the decision that a registration shall be recorded has
 already been made before the asynchronous hand-off. The worker does not approve
 the registration again. It may still perform deterministic resolution or
 enrichment that depends on the node's current serialized state, such as resolving
-a reserve tag through the current `RaceData`.
+a source/provider identity through the current `RaceData`.
 
 Only when the worker is ready to commit does it ask the LogBook for the next
 sequence. Sequence is therefore not assigned when work is placed on the queue.

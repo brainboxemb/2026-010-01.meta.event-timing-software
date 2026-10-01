@@ -110,7 +110,7 @@ Software-item identity is stated by the document and traceability metadata; the 
 
 Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
 
-`standard` and `finish` are deployment/composition profiles of **the same SI-01 Timing Point Application**. They select different default topology/capabilities; they are not separate software items and do not create different TimingNode/domain semantics.
+Application profiles are deployment/composition templates of **the same SI-01 Timing Point Application**. A profile may select different default topology/capabilities, but it is not a separate software item and does not create different TimingNode/domain semantics. Concrete deployment profile definitions are outside this public system baseline until an explicit public requirement owns them.
 
 ## System context
 
