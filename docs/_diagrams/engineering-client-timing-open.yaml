@@ -68,7 +68,7 @@ nodes:
 
   - id: result
     label: Last operation
-    subtitle: COMMITTED / timing-node-01:1
+    subtitle: seq 1
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 105, y: 300, w: 785, h: 52}
@@ -101,13 +101,14 @@ nodes:
     layout: {x: 740, y: 457, w: 80, h: 38}
 
   - id: inject
-    label: Inject registration
+    label: Auto-reg
     kind: wireframe-action
     notation: wireframe-button
     layout: {x: 840, y: 457, w: 190, h: 38}
 
   - id: history
-    label: Committed TimingData history
+    label: LogBook
+    subtitle: "count 2 | latest page"
     kind: wireframe-surface
     notation: wireframe-table
     items:
