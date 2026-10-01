@@ -378,14 +378,12 @@ nodes:
   label: "SerialWorker"
   subtitle: "bounded serial execution"
   kind: crosscutting
-  notation: component
   layout: {x: 1210, y: 835, w: 170, h: 80}
 - id: event-core
   group: core-layer
   label: "Event<T>"
   subtitle: "subscribe • unsubscribe • emit"
   kind: crosscutting
-  notation: component
   layout: {x: 1210, y: 940, w: 170, h: 80}
 - id: boundary-note
   group: core-layer
