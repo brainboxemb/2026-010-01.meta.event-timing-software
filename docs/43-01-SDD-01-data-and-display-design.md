@@ -170,8 +170,7 @@ void processRegistration(RegistrationInput input) {
 
     timingDataStore.append(record);   // returns after durable append
     logBook.add(record);              // consumer visibility point
-    eventPublisher.publish(
-        new TimingDataCommitted(record));
+    newTimingDataEvent.emit(record);
 }
 ```
 
@@ -195,8 +194,8 @@ TimingNode worker
   -> TimingDataStore.append(record)
   -> durable
   -> LogBook.add(record)            <-- committed domain state
-  -> publish TimingDataCommitted event
-  -> EventDispatcher fans out to interested subscribers
+  -> newTimingDataEvent.emit(record)
+  -> subscribed listeners are notified
 ```
 
 There is no direct producer-to-store path and no second TimingNode serial worker.
