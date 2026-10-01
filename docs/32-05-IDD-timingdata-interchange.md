@@ -224,17 +224,18 @@ Known v1 members use the following JSON types and validation rules:
 | `version` | integer | every record | exactly `1` |
 | `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
 | `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
-| `locationId` | integer | every record | positive configured LocationId; concrete deployment/event ranges are outside IF-05 |
+| `locationId` | integer | every record | positive LocationId representation; concrete event/profile allowed sets and meanings are outside IF-05 |
 | `recordType` | string | every record | exactly `REGISTRATION` in v1 |
 | `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
 | `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
-| `registrationId` | string | every record | non-empty provider-neutral canonical registration identity |
+| `registrationId` | string | every record | non-empty RegistrationId representation; concrete event/profile allowed values and meanings are outside IF-05 |
 | `origin` | string | every record | `AUTOMATIC` or `MANUAL` |
 | `timeSource` | string | every record | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
 
-`registrationId` is deliberately opaque at the IF-05 boundary. Its concrete
-categories, number ranges, source encodings and source-to-registration mapping
-rules are not part of this public interchange contract.
+`LocationId` and `RegistrationId` are shared value representations at the
+IF-05 boundary, not universal event policy. IF-05 owns their serialized shape
+and common structural validity. The active event/profile/reference model owns
+their concrete meaning, allowed values/ranges and source mappings.
 
 Validation rules:
 
@@ -250,8 +251,9 @@ Validation rules:
 `RegistrationId` is the canonical registration identity carried by a
 TimingData registration record.
 
-The IF-05 v1 public contract treats it as a non-empty provider-neutral string.
-It intentionally does **not** define event categories, participant number ranges,
+The IF-05 v1 public contract treats it as a non-empty provider-neutral string
+representation. The actual identity domain may be event/profile-specific. IF-05
+therefore does **not** define event categories, participant number ranges,
 source/tag encoding, location-to-participant rules or production mapping tables.
 
 Conceptually:
@@ -512,9 +514,9 @@ source-specific or provider-specific identity representation.
 ```{ifreq} RegistrationId v1 semantics
 :id: IF05-REQ-006
 
-v1 `RegistrationId` shall be a non-empty provider-neutral canonical
-registration identity. Concrete event categories, ranges and deployment mappings
-shall remain outside IF-05.
+v1 `RegistrationId` shall be a non-empty provider-neutral representation at
+the IF-05 boundary. Concrete event/profile meanings, allowed values/ranges and
+deployment mappings shall remain outside IF-05.
 ```
 
 ```{ifreq} Source identity resolution
