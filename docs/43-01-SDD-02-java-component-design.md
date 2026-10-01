@@ -847,8 +847,7 @@ private void processRegistration(RegistrationInput input) {
 
     timingDataStore.append(record);  // durable before return
     logBook.add(record);             // committed domain state
-    eventPublisher.publish(
-            new TimingDataCommitted(record));
+    newTimingDataEvent.emit(record);
 }
 ```
 
