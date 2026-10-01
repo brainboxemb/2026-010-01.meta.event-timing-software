@@ -1,6 +1,6 @@
 diagram:
   id: engineering-client-timing-open
-  title: Figure SDE03-03 — Timing view / OPEN with committed history
+  title: Figure SDE03-03 — Timing view / OPEN with LogBook page
   width: 1180
   height: 790
   note: Dev auto-reg enters the accepted-registration boundary; the client does not construct final TimingData.
