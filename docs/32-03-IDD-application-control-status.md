@@ -104,14 +104,14 @@ by its commit SHA alone.
 ## Current status response
 
 The status resource is intentionally compact. Build identity is queried through
-\`/version\`; status carries only current operational state.
+`/version`; status carries only current operational state.
 
 > This is an external interface shape. It does not prescribe a Java class with
-> the same structure or a class named \`ApplicationStatusSnapshot\`. The
+> the same structure or a class named `ApplicationStatusSnapshot`. The
 > implementation may assemble this response from the application objects that
 > exist when the HTTP/status adapter is implemented.
 
-\`\`\`json
+```json
 {
   "nodes": [
     {
@@ -122,37 +122,37 @@ The status resource is intentionally compact. Build identity is queried through
   ],
   "problems": []
 }
-\`\`\`
+```
 
 The first executable does not expose a separate application lifecycle state in
-\`/status\`. A successful query already establishes that the IF-03 service is
+`/status`. A successful query already establishes that the IF-03 service is
 running; startup/shutdown process lifecycle remains an internal/runtime concern
 for this slice.
 
-Internally SI-01 may host 1..N \`TimingSystem\` aggregates, each with its own
-\`SystemStatus\`, but \`TimingSystemId\` is deliberately not part of this external
-IF-03 shape. The \`nodes\` array aggregates the configured TimingNodes.
-\`TimingNodeId\` is application-wide unique and is represented as \`id\` in the
+Internally SI-01 may host 1..N `TimingSystem` aggregates, each with its own
+`SystemStatus`, but `TimingSystemId` is deliberately not part of this external
+IF-03 shape. The `nodes` array aggregates the configured TimingNodes.
+`TimingNodeId` is application-wide unique and is represented as `id` in the
 compact IF-03 node object, so node-specific resources can use
-\`/api/v1/node/{id}/...\` without exposing an internal TimingSystem identifier.
+`/api/v1/node/{id}/...` without exposing an internal TimingSystem identifier.
 
-In the Step-4 first-registration slice, \`locationId\` is either \`null\` while
-no operational location is assigned or the positive current IF-05 \`LocationId\`
-value. \`state\` is \`CLOSED\` or \`OPEN\`. A closed node may retain its last
+In the Step-4 first-registration slice, `locationId` is either `null` while
+no operational location is assigned or the positive current IF-05 `LocationId`
+value. `state` is `CLOSED` or `OPEN`. A closed node may retain its last
 selected location during the same runtime session; startup/recovery does not
 invent a current operational location from historical TimingData.
 
 Problem entries use:
 
-\`\`\`json
+```json
 {
   "code": "<stable-machine-code>",
   "severity": "WARNING|ERROR",
   "message": "<human-readable-summary>"
 }
-\`\`\`
+```
 
-Clients must not make business decisions by parsing the human-readable \`message\`; \`code\` and structured status fields are the machine-readable contract.
+Clients must not make business decisions by parsing the human-readable `message`; `code` and structured status fields are the machine-readable contract.
 
 ## First-executable semantic operations
 
@@ -276,41 +276,41 @@ The request has no semantic body. Successful HTTP `200` results are
 ### IF03-OP-008 — Simulate an automatic registration
 
 This is an engineering capability, not a replacement RFID or manual-entry
-interface. The short \`auto-reg\` resource name is a Step-4 review label; the
+interface. The short `auto-reg` resource name is a Step-4 review label; the
 semantic injection boundary is the important contract decision.
 
 HTTP mapping:
 
-\`\`\`text
+```text
 POST /api/v1/dev/node/{id}/auto-reg
-\`\`\`
+```
 
 Request:
 
-\`\`\`json
+```json
 {
   "id": "<resolved-registration-id>",
   "time": "2026-10-01T12:00:00.000000000Z"
 }
-\`\`\`
+```
 
-The path \`{id}\` addresses the TimingNode. The request-body \`id\` is the
-already-resolved shared \`RegistrationId\`; \`time\` is the accepted observation
+The path `{id}` addresses the TimingNode. The request-body `id` is the
+already-resolved shared `RegistrationId`; `time` is the accepted observation
 time. SI-01 supplies source identity, current LocationId, next committed sequence
 and recordedAt and executes the same accepted-registration operation used after
 normal RFID interpretation/filtering.
 
-Successful HTTP \`200\` response:
+Successful HTTP `200` response:
 
-\`\`\`json
+```json
 {
   "seq": 1
 }
-\`\`\`
+```
 
 The returned sequence identifies the newly committed record within the addressed
 TimingNode. The committed record becomes visible through IF03-OP-009 and a
-\`TIMING_DATA_COMMITTED\` event.
+`TIMING_DATA_COMMITTED` event.
 
 ### IF03-OP-009 — Query committed LogBook
 
@@ -319,42 +319,42 @@ download the complete history merely to learn its size.
 
 HTTP mappings:
 
-\`\`\`text
+```text
 GET /api/v1/node/{id}/logbook
 GET /api/v1/node/{id}/logbook?from=101&limit=100
 GET /api/v1/node/{id}/logbook?last=100
-\`\`\`
+```
 
 Without query parameters the response is metadata only:
 
-\`\`\`json
+```json
 {
   "count": 12457,
   "first": 1,
   "last": 12457
 }
-\`\`\`
+```
 
-For an empty LogBook, \`count\` is \`0\` and \`first\`/\`last\` are \`null\`.
+For an empty LogBook, `count` is `0` and `first`/`last` are `null`.
 
-\`from\` is an inclusive committed source sequence. \`limit\` is the maximum
-number of records returned. \`last\` requests the newest records while preserving
-source-sequence order. \`last\` cannot be combined with \`from\` or \`limit\`.
-The Step-4 v1 baseline limits \`limit\` and \`last\` to 1..1000.
+`from` is an inclusive committed source sequence. `limit` is the maximum
+number of records returned. `last` requests the newest records while preserving
+source-sequence order. `last` cannot be combined with `from` or `limit`.
+The Step-4 v1 baseline limits `limit` and `last` to 1..1000.
 
 A record-bearing response is:
 
-\`\`\`json
+```json
 {
   "count": 12457,
   "next": 201,
   "records": []
 }
-\`\`\`
+```
 
-\`count\` is the total committed record count at response time. \`next\` is the
+`count` is the total committed record count at response time. `next` is the
 next source sequence to request when more records are available, otherwise
-\`null\`. Each \`records\` element uses the public IF-05 TimingData JSON field
+`null`. Each `records` element uses the public IF-05 TimingData JSON field
 semantics. Records are returned in committed source-sequence order; queued or
 uncommitted work is never exposed as LogBook content.
 
@@ -408,15 +408,15 @@ provides deduplication when history and live delivery overlap.
 Reconnect semantics rebuild authoritative current state/LogBook gaps before the
 client declares its view live:
 
-1. client reconnects to \`/api/v1/events\`;
-2. SI-01 sends a complete \`STATUS_SNAPSHOT\`; the client begins buffering later
+1. client reconnects to `/api/v1/events`;
+2. SI-01 sends a complete `STATUS_SNAPSHOT`; the client begins buffering later
    WebSocket events;
 3. the client replaces its cached status from the snapshot;
 4. for each selected/cached node, the client queries
-   \`GET /api/v1/node/{id}/logbook\` and fetches only required bounded ranges,
+   `GET /api/v1/node/{id}/logbook` and fetches only required bounded ranges,
    normally continuing from the last cached sequence;
-5. the client applies buffered \`STATUS_CHANGED\` events in WebSocket order;
-6. buffered \`TIMING_DATA_COMMITTED\` records already present in the rebuilt
+5. the client applies buffered `STATUS_CHANGED` events in WebSocket order;
+6. buffered `TIMING_DATA_COMMITTED` records already present in the rebuilt
    LogBook view are discarded by stable TimingData record key; later records are
    appended in source-sequence order;
 7. only after this merge is complete does the client mark the view live.
@@ -593,11 +593,11 @@ range query in source-sequence order using public IF-05 field semantics.
 :derived_from: SI01-REQ-042
 
 The IF-03 WebSocket event stream shall emit `TIMING_DATA_COMMITTED` only after
-the corresponding TimingData record is committed and visible in authoritative
-local history.
+the corresponding TimingData record is committed and visible in the authoritative
+LogBook.
 ```
 
-```{ifreq} Rebuild history before live presentation
+```{ifreq} Rebuild LogBook before live presentation
 :id: IF03-REQ-016
 :derived_from: SI01-REQ-044
 
