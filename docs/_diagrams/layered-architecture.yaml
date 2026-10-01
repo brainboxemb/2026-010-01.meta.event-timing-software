@@ -55,7 +55,7 @@ groups:
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
   layout: {x: 30, y: 928, w: 1120, h: 285}
-  label_offset: {x: 0, y: 86}
+  label_offset: {x: 0, y: 78}
   # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
   # same x breakpoints and diagonal rise gives a constant visible gap.
   outline:
