@@ -161,11 +161,22 @@ domain/
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingDataRecord.java               canonical semantic/interchange record
-    TimingDataRecordKey.java
+    TimingData.java                     common immutable semantic contract
+    RegistrationData.java               common registration contract
+    TimingNodeStateData.java            common state-transition contract
+    RegistrationRevokedData.java        common revocation contract
+    RegistrationIdentity.java
+    TimingTimestamp.java
+    TimingDataFactory.java              stateless concrete-data construction
     TimingDataStore.java                durable append/load/recovery port
-    TimingDataCodec.java                canonical public/reference codec
-    TimingDataProvider.java             external-format translation provider
+    TimingDataCodec.java                profile-matching codec
+    TimingDataProvider.java             factory + codec profile provider
+    defaultprofile/
+      DefaultTimingDataFactory.java
+      DefaultTimingDataCodec.java
+      DefaultRegistrationData.java
+      DefaultTimingNodeStateData.java
+      DefaultRegistrationRevokedData.java
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
@@ -245,12 +256,12 @@ therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
 mirror the hardware name.
 
 `TimingNode` contains its passive `LogBook` as part of the TimingNode
-aggregate. LogBook keeps 0..N committed `TimingDataRecord` values. The current
+aggregate. LogBook keeps 0..N committed `TimingData` values. The current
 design deliberately avoids a second logbook-specific record type because there
 is no different domain shape that needs one.
 
-`TimingData` remains the Domain capability/contract name; it does not require a
-separate Java `TimingData` wrapper class. The Java `TimingDataRecord` model
+`TimingData` remains the Domain capability/contract name and becomes the small
+shared Java interface implemented by concrete profile values. The default profile
 and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
@@ -845,12 +856,12 @@ on the worker immediately before persistence:
 private void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    TimingDataRecord record =
+    RegistrationData data =
         timingDataFactory.registration(input, sequence, timeSource.now());
 
-    timingDataStore.append(record);  // durable before return
-    logBook.add(record);             // committed domain state
-    newTimingDataEvent.emit(record);
+    timingDataStore.append(data);    // durable before return
+    logBook.add(data);               // committed domain state
+    newTimingDataEvent.emit(data);
 }
 ```
 
@@ -863,7 +874,7 @@ worker must not process a later timing record ahead of that failed record.
 
 ### Passive LogBook and TimingNode-owned reads
 
-`LogBook` has no worker thread. It stores immutable `TimingDataRecord` values,
+`LogBook` has no worker thread. It stores immutable `TimingData` values,
 but it is contained mutable TimingNode state rather than a globally readable
 repository.
 
@@ -1018,7 +1029,7 @@ For the initial Pi-oriented runtime:
 - keep each TimingNode work queue bounded;
 - prefer explicit bounded queues over hidden/unbounded executor queues;
 - keep contained domain state passive and single-writer where practical;
-- keep TimingDataRecord immutable after creation;
+- keep concrete TimingData values immutable after creation;
 - avoid deep-copying LogBook history for routine queries;
 - reuse consumer snapshot buffers where repeated allocation would add GC churn;
 - move blocking network/retry work behind capability-specific output boundaries;
