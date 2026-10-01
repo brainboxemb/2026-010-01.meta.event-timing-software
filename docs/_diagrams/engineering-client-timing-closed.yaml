@@ -82,14 +82,12 @@ nodes:
 
   - id: registration-id
     label: RegistrationId
-    subtitle: ""
     kind: wireframe-disabled
     notation: wireframe-input
     layout: {x: 105, y: 430, w: 260, h: 76}
 
   - id: observation-time
     label: Observation time
-    subtitle: ""
     kind: wireframe-disabled
     notation: wireframe-input
     layout: {x: 390, y: 430, w: 330, h: 76}
