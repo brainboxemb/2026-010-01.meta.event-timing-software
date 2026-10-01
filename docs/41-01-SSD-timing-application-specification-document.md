@@ -348,7 +348,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -540,7 +540,7 @@ TimingSystem (1..N per TimingApplication)
     TagProcessor
     StageStartTimes
     LogBook
-      0..N LogBookItem
+      0..N TimingDataRecord
     NextUpTeams
     RaceData
     StageTiming
@@ -555,12 +555,15 @@ TimingData
 `TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
-identity (`TimingNodeId` and `LocationID`), lifecycle/state, and the per-node
-components shown inside the TimingNode aggregate in Figure SI01-01, including its
-`LogBook`. The LogBook therefore remains visibly part of the TimingNode aggregate
-while owning its own 0..N `LogBookItem` collection. `TimingNode` also has an
-explicit semantic relationship with the shared `TimingData` contract for the
-canonical data it produces or consumes.
+identity (`TimingNodeId` and `LocationID`), lifecycle/state and the per-node
+components shown inside the TimingNode aggregate in Figure SI01-01.
+
+A TimingNode is also the **active serialization boundary** for mutable per-node
+state. State-changing work for that node is accepted through one bounded serial
+execution path and processed in order. The contained `LogBook`,
+`NextUpTeams`, `StageStartTimes` and `RaceData` objects remain passive.
+The LogBook keeps 0..N committed `TimingDataRecord` values and does not own a
+second worker or second timing-record representation.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
 The two roles share the same semantic concept but have distinct engineering
@@ -588,10 +591,10 @@ cross-aggregate target resolution.
 :id: TagProcessor
 
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
-the domain decisions needed to produce an immutable registration candidate. It
-does not perform durable TimingData writes and does not wait for slow
-persistence/query work. Accepted candidates cross an asynchronous record-commit
-boundary owned by the registration/TimingData handling path.
+the registration semantics needed by the TimingNode. It does not write files
+from the antenna callback. State-changing registration work crosses the
+TimingNode's bounded serial execution boundary and is completed by that node's
+worker.
 ```
 
 ```{arch} StageStartTimes
@@ -620,13 +623,10 @@ TimingNode's timing behaviour.
 accepted timing state and reference data.
 ```
 
-`LogBook` is a contained responsibility of one TimingNode and owns that node's
-operational logbook state as 0..N `LogBookItem` values. `LogBookItem` is the
-LogBook's internal domain representation; it is intentionally not required to
-have the same shape as the persistent/interchange representation. The high-level
-architecture relates the TimingNode aggregate, rather than LogBook directly, to
-`TimingData`; the exact LogBookItem-to-TimingData mapping remains a lower-level
-design concern.
+`LogBook` is passive state contained by one TimingNode and keeps that node's
+committed timing history as 0..N `TimingDataRecord` values. The current design
+uses the canonical TimingData record directly instead of maintaining a second
+LogBook-specific record type.
 
 `TimingData` is the SI-01/domain capability that realises the system-owned
 IF-05 TimingData Interchange contract. The normative persistent/interchange
@@ -956,21 +956,20 @@ inputs.
 
 A `TimingNode` is the independently addressed
 operational/domain aggregate at one timing location. It
-belongs to exactly one `TimingSystem`, contains its
-`LogBook`, exposes its own `UpstreamMessagePort` and has
-an explicit relationship with `TimingData`; the upstream
-and TimingData contracts remain functionally centred on
-`TimingNodeId`.
+belongs to exactly one `TimingSystem` and is the active
+serialization boundary for that node's mutable state.
+Its contained state objects are passive; the upstream and
+TimingData contracts remain centred on `TimingNodeId`.
 ```
 
 
 ```{arch} LogBook
 :id: LogBook
 
-A `LogBook` is contained by one TimingNode and owns that
-node's operational collection of `LogBookItem` values.
-Those internal items are deliberately separate from the
-canonical TimingData interchange shape.
+A `LogBook` is passive state contained by one TimingNode.
+It holds that node's committed `TimingDataRecord` values.
+The current design does not introduce a second
+logbook-specific timing-record representation.
 ```
 
 ```{arch} TimingData
@@ -1030,7 +1029,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -1180,6 +1179,10 @@ Architecture rules:
 - callbacks do not change TimingNode state directly;
 - resolve the target TimingNode before state-changing work enters its ordered path;
 - two state changes for the same TimingNode do not run over each other;
+- the TimingNode behaves as an active object: one bounded serial execution
+  boundary owns the order in which its mutable state changes;
+- the contained LogBook, NextUpTeams, StageStartTimes and RaceData objects remain
+  passive and do not each receive their own execution thread;
 - different TimingNodes may make progress at the same time;
 - file writes must not hold up RFID/device/operator callbacks;
 - a slow query or ranking calculation must not hold up LogBook commits;
@@ -1187,8 +1190,10 @@ Architecture rules:
 - queues/resources are bounded and overload is visible instead of silently dropping work;
 - during shutdown, stop new input first and give accepted work time to finish.
 
-The SSD only sets these rules. SDD-01 describes the LogBook commit flow.
-SDD-02 chooses the Java queue, worker/thread and lifecycle implementation.
+The SSD only sets these rules. SDD-01 describes state ordering, persistence and
+consumer visibility. SDD-02 chooses the Java queue/worker implementation. The
+current direction is the Active Object pattern implemented by composition, not a
+mandatory `TimingNode extends ActiveObject` class hierarchy.
 
 External ingress still keeps its functional routing responsibilities:
 
@@ -1505,26 +1510,29 @@ Working rules:
 
 Keep the data roles simple:
 
-- `LogBook` holds the committed timing history used by SI-01;
-- IF-05 `TimingData` is the file/interchange form of those timing facts;
-- prepare-team history is separate from timing registrations;
-- `RaceData` and start/reference data come from outside SI-01;
-- queries read this state but do not become another place that owns it;
-- after a restart, SI-01 rebuilds the state it needs and clearly reports a bad or
-  unreadable persisted file.
+- `LogBook` is passive state and holds committed `TimingDataRecord` values;
+- `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
+  per-node state objects;
+- the TimingNode worker is the single writer for those mutable per-node objects;
+- each state type that needs file persistence uses its own store contract;
+- `TimingDataStore` is the durable/recovery source for committed timing data;
+- `NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` preserve
+  their accepted changes/snapshots for later analysis; they are not automatically
+  the runtime recovery authority;
+- queries read consistent state without becoming another owner of it.
 
-IF-05 defines what a TimingData record/file looks like. SDD-01 describes how a
-LogBook change is committed and recovered. SDD-02 describes the Java classes and
-storage implementation.
+For example, StageStartTimes may be sent again when a TimingNode is opened after
+a reboot, while the separately stored historical snapshots remain useful for
+post-event analysis.
 
 The first implementation can use simple local files; an embedded database is not
-required.
+required. SDD-01 defines ordering, commit/visibility and the different persistence
+roles. SDD-02 defines the Java worker and store boundaries.
 
-Practical things to work out in detailed design include a half-written last
-record after power loss, a corrupt file at startup, atomically replacing or
-truncating files where needed, durable flush/fsync behaviour, file rotation and
-small indexes for fast reads. Those choices belong in the SDD unless they force
-an architecture change.
+Practical detailed-design work includes a half-written last TimingData record,
+corrupt-file reporting, durable flush/fsync behaviour, file rotation and bounded
+consumer reads. Analysis stores may use simpler append/snapshot formats because
+they do not define the TimingData commit point.
 
 ### Integration architecture
 
@@ -1678,13 +1686,13 @@ This table intentionally lives in the architecture section of this SSD because t
 | Java baseline | Java SE 8 is the current SI-01 baseline | accepted for current implementation; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
 | Build | Maven | accepted |
-| Concurrency | ordered state/LogBook mutation per TimingNode; callback, long-query and slow external-delivery work isolated from the commit path; bounded-resource design | concrete queues/workers/executors are owned by SDD-01/SDD-02 and verified on the Pi target |
+| Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition for the first Java worker and keeps executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
-| Persistence | LogBook-owned operational state + IF-05 TimingData durable/interchange representation; simple local recovery without requiring a database | commit/recovery algorithm in SDD-01; Java storage boundary in SDD-02; wire/file contract in IF-05 |
+| Persistence | per-type stores: TimingDataStore is the durable/recovery source for committed timing data; NextUpTeams/StageStartTimes/RaceData stores preserve analysis history/snapshots | ordering and visibility in SDD-01; Java store boundaries in SDD-02; wire/file contract in IF-05 |
 | API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |

@@ -78,6 +78,24 @@ owns the data directly, for example "timing state remains in the Headless Timing
 Application". Reserve terms such as `authoritative` for cases where competing sources
 of truth are actually being distinguished.
 
+### Documentation language
+
+Write project documentation in **plain technical English**. Prefer short,
+concrete sentences that say what the software does, owns or must handle. Avoid
+governance-heavy, legalistic or process-heavy wording when ordinary engineering
+language says the same thing more clearly.
+
+Keep practical implementation concerns readable. For example, say that a
+half-written final record must be truncated to the last complete record and that
+a corrupt complete record must be reported; do not hide those actions behind
+abstract terms such as "persistence durability semantics" or "recovery policy"
+when the concrete behaviour is known.
+
+Use formal requirement language where a requirement really needs it, but keep
+the surrounding explanation direct. Documentation, code comments, commits and
+repository text remain English; conversation with the user may use their
+language.
+
 ### Architecture figure references
 
 Architecture figures use a visible stable label plus a Markdown anchor so reviews and

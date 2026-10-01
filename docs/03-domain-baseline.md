@@ -35,7 +35,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -144,7 +144,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N LogBookItem
+              |     +-- 0..N TimingDataRecord
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -172,18 +172,22 @@ including a programmable offset or stepped time, so several TimingSystems hosted
 in one process can intentionally observe different absolute times. Duration and
 timeout semantics remain separate and use a monotonic source where appropriate.
 
-Each TimingNode contains one `LogBook`. The LogBook owns its operational state
-as 0..N `LogBookItem` values and remains visibly part of the TimingNode
-aggregate. A `LogBookItem` is the internal logbook-domain representation and
-is not required to match the persistent/interchange representation one-for-one.
-The TimingNode aggregate has the architectural relationship to `TimingData`;
-the exact LogBookItem-to-record mapping is a lower-level design decision.
+Each TimingNode contains one passive `LogBook`. The LogBook keeps the node's
+committed timing history as 0..N canonical `TimingDataRecord` values. The same
+immutable semantic record that is persisted is also what runtime consumers read
+from the LogBook; the current design does not add a second logbook-specific
+record type.
 
-The system-owned IF-05 interface defines the canonical persistent/interchange
-TimingData contract. Inside SI-01, the `TimingData` Domain capability realises
-that contract through `TimingDataRecord`, validation and codec services.
-Storage, Web and upstream communication may consume that API without becoming
-alternative owners of IF-05 field or compatibility semantics.
+The system-owned IF-05 interface defines the canonical TimingData record
+semantics and interchange format. SI-01 uses the `TimingDataRecord` model
+directly and keeps file encoding/decoding in the TimingData storage/codec
+boundary. Storage, Web and upstream communication may consume that API without
+becoming alternative owners of IF-05 field or compatibility semantics.
+
+A TimingNode is the active serialization boundary for its mutable per-node
+state. Its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and
+`RaceData` objects remain passive state holders. Concrete queue/thread choices
+belong to detailed design.
 
 `UpstreamProtocol` is a Domain protocol owned in the context of one
 `TimingSystem`. It covers transfer of TimingData plus
