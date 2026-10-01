@@ -168,7 +168,7 @@ Conceptually:
 void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    TimingDataContext context =
+    TimingDataFactory.Context context =
         timingDataContext(sequence, activeLocationId, input.effectiveTime(), timeSource.now());
 
     RegistrationId registrationId = raceData.resolveRegistrationId(input);

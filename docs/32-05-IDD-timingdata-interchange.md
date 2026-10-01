@@ -203,7 +203,7 @@ effective time.
 
 These discriminators describe the canonical representation. They do not require
 one universal Java record class: the common Java API may expose
-`AutomaticRegistrationTimingData` and `ManualRegistrationTimingData` directly
+`TimingData.AutomaticRegistration` and `TimingData.ManualRegistration` directly
 for type safety.
 
 Provider-specific one-character registration/action codes are not part of the
@@ -410,7 +410,7 @@ mutable TimingNode state, persist data or publish events.
 The common construction values are grouped once:
 
 ```text
-TimingDataContext
+TimingDataFactory.Context
   timingNodeId
   sequenceNumber
   locationId
@@ -421,14 +421,14 @@ TimingDataContext
 The factory then adds only variant-specific values:
 
 ```java
-AutomaticRegistrationTimingData createAutomaticRegistration(
-        TimingDataContext context,
+TimingData.AutomaticRegistration createAutomaticRegistration(
+        TimingDataFactory.Context context,
         RegistrationId registrationId);
 
-ManualRegistrationTimingData createManualRegistration(
-        TimingDataContext context,
+TimingData.ManualRegistration createManualRegistration(
+        TimingDataFactory.Context context,
         RegistrationId registrationId,
-        ManualRegistrationTimeSource timeSource);
+        TimingData.ManualTimeSource timeSource);
 ```
 
 There is no separate `RegistrationData`, `AutomaticRegistrationContext` or

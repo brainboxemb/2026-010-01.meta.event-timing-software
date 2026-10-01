@@ -151,22 +151,24 @@ The shared TimingData artifact has its own package root:
 shared/timing-data/
   io.github.brainboxemb.eventtiming.timingdata/
     TimingData.java
-    TimingDataContext.java
-    AutomaticRegistrationTimingData.java
-    ManualRegistrationTimingData.java
+      AutomaticRegistration
+      ManualRegistration
+      ManualTimeSource
+      RecordKey
     RegistrationId.java
-    ManualRegistrationTimeSource.java
     TimingTimestamp.java
     TimingDataFactory.java
+      Context
     TimingDataCodec.java
+      CodecException
     TimingDataProvider.java
     defaultprofile/
       DefaultTimingDataFactory.java
-      DefaultTimingDataCodec.java
+      DefaultTimingDataCodec.java        when codec implementation is added
       private automatic/manual default value implementations
 ```
 
-`TimingDataContext` is the one immutable value-only construction context for
+`TimingDataFactory.Context` is the one immutable value-only construction context for
 fields shared by every TimingData variant. Do not mirror the semantic type tree
 with `AutomaticRegistrationContext`, `ManualRegistrationContext` or nested
 per-variant context types.
@@ -892,7 +894,7 @@ on the worker immediately before persistence:
 private void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    TimingDataContext context =
+    TimingDataFactory.Context context =
         timingDataContext(sequence, activeLocationId, input.effectiveTime(), timeSource.now());
 
     RegistrationId registrationId = raceData.resolveRegistrationId(input);
@@ -1097,31 +1099,29 @@ The first traced Java semantic model is intentionally small:
 shared/timing-data
   TimingData
     common TimingNodeId / sequence / LocationId / time access
-  TimingDataContext
-    one common immutable construction context
-  AutomaticRegistrationTimingData
-    extends TimingData
-    RegistrationId
-  ManualRegistrationTimingData
-    extends TimingData
-    RegistrationId
-    ManualRegistrationTimeSource
+    AutomaticRegistration
+      RegistrationId
+    ManualRegistration
+      RegistrationId
+      ManualTimeSource
+    ManualTimeSource
+    RecordKey
   RegistrationId
-  ManualRegistrationTimeSource
   TimingTimestamp
   TimingDataFactory
+    Context
   TimingDataCodec
+    CodecException
   TimingDataProvider
 
 default profile
-  DefaultAutomaticRegistrationTimingData
-  DefaultManualRegistrationTimingData
   DefaultTimingDataFactory
-  DefaultTimingDataCodec
+    private automatic/manual immutable implementations
+  DefaultTimingDataCodec        when codec implementation is added
 
 test / product-specific profile
-  DummyEventAutomaticRegistrationTimingData
   DummyEventTimingDataFactory
+    private profile-specific immutable implementations
   DummyEventTimingDataCodec
 ```
 
@@ -1138,12 +1138,12 @@ The semantic interfaces are common. A configured profile supplies simple
 immutable implementing classes:
 
 ```java
-AutomaticRegistrationTimingData autoRegTD =
+TimingData.AutomaticRegistration automatic =
         timingDataFactory.createAutomaticRegistration(context, registrationId);
 
-ManualRegistrationTimingData manRegTD =
+TimingData.ManualRegistration manual =
         timingDataFactory.createManualRegistration(
-                context, registrationId, ManualRegistrationTimeSource.OPERATOR_ENTERED);
+                context, registrationId, TimingData.ManualTimeSource.OPERATOR_ENTERED);
 ```
 
 The return types preserve variant type safety even when the configured provider
@@ -1168,18 +1168,18 @@ The factory receives the already selected common construction values in one
 generic context and only the extra values required by the requested variant:
 
 ```java
-AutomaticRegistrationTimingData createAutomaticRegistration(
-        TimingDataContext context,
+TimingData.AutomaticRegistration createAutomaticRegistration(
+        TimingDataFactory.Context context,
         RegistrationId registrationId);
 
-ManualRegistrationTimingData createManualRegistration(
-        TimingDataContext context,
+TimingData.ManualRegistration createManualRegistration(
+        TimingDataFactory.Context context,
         RegistrationId registrationId,
-        ManualRegistrationTimeSource timeSource);
+        TimingData.ManualTimeSource timeSource);
 ```
 
 ```text
-TimingDataContext
+TimingDataFactory.Context
   timingNodeId
   sequenceNumber
   locationId
@@ -1187,7 +1187,7 @@ TimingDataContext
   recordedAt
 ```
 
-For the current manual variant, `ManualRegistrationTimeSource` is constrained to
+For the current manual variant, `TimingData.ManualTimeSource` is constrained to
 `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`. Automatic registration uses observed
 time by definition, so callers do not pass an `origin` or `OBSERVED` flag
 merely to restate the return type.
@@ -1196,7 +1196,7 @@ The context contains values only. It does not contain `TimingNode`, `LogBook`,
 stores, services or other mutable collaborators.
 
 The first implementation does not need an abstract TimingData base class.
-Concrete immutable implementations may delegate to `TimingDataContext`.
+Concrete immutable implementations may delegate to `TimingDataFactory.Context`.
 Introduce a private/protected helper only when multiple real implementations show
 enough repeated behaviour to justify it; such a helper remains implementation
 reuse, not an additional public semantic layer.
