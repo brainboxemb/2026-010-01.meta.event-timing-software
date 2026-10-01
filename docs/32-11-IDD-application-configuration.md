@@ -63,6 +63,8 @@ ApplicationConfig
 │   │   └── upstream
 │   │       └── connectors
 │   └── storage
+│       └── timingData
+│           └── path
 ├── presentation
 ├── logging
 ├── runtime
@@ -250,6 +252,38 @@ semantics. The router is upstream-specific and is not used as a generic internal
 application message bus.
 
 Storage settings remain under I/O because they configure external persistence.
+
+### Step-4 TimingData storage
+
+The Step-4 single-TimingNode executable adds the first concrete storage setting:
+
+```yaml
+io:
+  storage:
+    timingData:
+      path: data/timing-data.jsonl
+```
+
+`io.storage.timingData.path` identifies the authoritative append-only TimingData
+file used by the current configured TimingNode. It is deployment/composition
+configuration, not TimingNode domain state.
+
+Rules:
+
+- the path is required when the reference TimingData file store is composed;
+- the path may be relative to the application working directory or absolute;
+- the configured path selects the file location only; IF-05 and the Java
+  persistence design own record encoding, append ordering, recovery and
+  corruption handling;
+- startup recovery opens/validates this file and rebuilds committed LogBook
+  state before the TimingNode begins accepting operational work;
+- public examples use generic local paths and do not disclose deployment paths;
+- this first slice intentionally does not define a generalized per-node storage
+  registry or multi-TimingNode file mapping. That topology is added when the
+  multi-node runtime slice requires it.
+
+The storage path does not contain a LocationId or RegistrationId policy. Those
+identifier domains remain event/profile/reference-data concerns.
 
 ### Presentation
 
@@ -480,7 +514,9 @@ Validation includes, where applicable:
 - invalid logging level, file rotation/retention values or live-listener settings;
 - unsupported adapter/driver types;
 - missing required secret references or unresolved required secret values;
-- invalid runtime values such as impossible queue/executor settings.
+- invalid runtime values such as impossible queue/executor settings;
+- missing/blank `io.storage.timingData.path` when the reference TimingData file
+  store is part of the effective composition.
 
 Configuration loading, configuration validation and application composition are distinct responsibilities even when the initial implementation keeps them small.
 
@@ -499,6 +535,7 @@ main()
   -> validate effective configuration, profile constraints and provider references
   -> configure executable runtime logging
   -> ApplicationBootstrap composes TimingApplication and selected implementations
+  -> recover configured TimingData storage into the TimingNode LogBook
   -> start application lifecycle
 ```
 
@@ -512,19 +549,23 @@ Public configuration examples use synthetic identities and endpoints.
 
 Real deployment identities, production topology, credentials, encryption keys, proprietary mappings, private provider names and private protocol values remain outside the public repositories. Public examples use only generic/reference provider IDs and synthetic configuration.
 
-## First Step-3 implementation slice
+## Implemented configuration slices
 
-The first implementation should introduce only the configuration objects and fields needed by the executable slice being built.
+Step 3 introduced only the configuration fields needed by the first executable:
 
-At minimum, Step 3 needs enough configuration to:
+- external configuration loading;
+- stable application/TimingNode identity;
+- first IF-03 presentation bindings;
+- logging configuration and startup failure reporting.
 
-- start from external configuration;
-- construct the application with a stable `ApplicationId`;
-- construct at least one internal TimingSystem containing at least one configured TimingNode with a stable `TimingNodeId`;
-- bind the first IF-03 presentation endpoint safely;
-- report configuration/startup failures through the first executable behaviour.
+Step 4 adds the first concrete storage consumer:
 
-Hardware, messaging, storage and security sections may remain unimplemented until a real Step-3/later consumer needs them; their ownership and identity rules are defined here so those additions do not distort the domain model later.
+- `io.storage.timingData.path` for the authoritative append-only TimingData
+  file used by the current single-TimingNode reference composition;
+- storage recovery before operational work is accepted.
+
+Hardware, upstream messaging, security and multi-node storage mapping remain
+capability-driven later slices.
 
 ## Traceability
 
@@ -534,6 +575,7 @@ Hardware, messaging, storage and security sections may remain unimplemented unti
 | built-in application-profile defaults + explicit deployment overrides | SI01-REQ-001 / configuration-composition architecture |
 | configured TimingSystem/TimingNode composition | SI01-REQ-003 |
 | presentation listen/binding settings | SI01-REQ-032 + IF-03 |
+| TimingData storage path + startup recovery | SI01-REQ-042 + IF-05 / Java persistence design |
 | deployment/composition separation | SI-01 SSD configuration/composition architecture |
 | Java composition/type growth | SI-01 Java component SDD |
 
