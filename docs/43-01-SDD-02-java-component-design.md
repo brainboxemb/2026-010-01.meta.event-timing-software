@@ -1026,54 +1026,130 @@ For the initial Pi-oriented runtime:
 - measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
   and query latency before increasing concurrency.
 
-## Shared TimingData API artifact
+## Shared TimingData API and concrete profiles
 
-Both SI-01 and the Engineering Client need the TimingData types/provider SPI.
-That is enough reason for a small shared artifact; the Java-17 Engineering Client
-should not have to depend on the whole SI-01 framework.
+Both SI-01 and the Engineering Client need the common TimingData contracts
+without depending on the whole SI-01 framework. The shared artifact therefore
+owns the semantic interfaces and value types that every supported TimingData
+profile must implement; it does **not** require one concrete record class for all
+profiles.
 
 Conceptually:
 
 ```text
 timing-data-api
-  TimingDataRecord / TimingDataRecordKey
-  RegistrationIdentity and record value types
+  TimingData
+    common identity / location / time access
+  RegistrationData
+  TimingNodeStateData
+  RegistrationRevokedData
+  TimingTimestamp
+  RegistrationIdentity
+  TimingDataFactory
   TimingDataCodec
-  TimingDataProvider / translator SPI
+  TimingDataProvider
 
-event-timing-framework  ---> timing-data-api
-test-client             ---> timing-data-api
+default profile
+  DefaultRegistrationData
+  DefaultTimingNodeStateData
+  DefaultRegistrationRevokedData
+  DefaultTimingDataFactory
+  DefaultTimingDataCodec
 
-reference TimingData provider  ---> timing-data-api
-private external provider      ---> timing-data-api
-                                  |
-                                  +-- optional native/proprietary DLL
+test / product-specific profile
+  DummyEventRegistrationData
+  DummyEventTimingDataFactory
+  DummyEventTimingDataCodec
 ```
 
-Both applications may load the same provider implementation. The shared Java
-types follow IF-05; IF-05 remains the place that defines the fields, ordering,
-versioning and file format. A provider only translates an external format to/from
-that model.
+The semantic interfaces are common. A concrete profile may add information to
+its own implementation, but code using only the common API does not need to know
+that concrete class.
 
-The shared artifact contains **interchange values**, not the whole SI-01 Domain
-model. For example, SI-01 keeps its strong `TimingNodeId` type, while the IF-05
-record carries the serialized `timingNodeId` value as a non-empty `String`:
+For example:
+
+```java
+RegistrationData data =
+        timingDataFactory.createRegistrationData(context);
+```
+
+The same caller can receive either `DefaultRegistrationData` or a compatible
+product/event-specific implementation such as `DummyEventRegistrationData`.
+The caller depends on `RegistrationData`, not on either implementation class.
+
+### Stateless TimingData factory
+
+`TimingDataFactory` is a stateless construction service. It does not validate
+TimingNode lifecycle policy, allocate sequence numbers, commit data, own a
+LogBook or publish events. Those responsibilities stay with the TimingNode and
+its contained domain components.
+
+The factory receives the already selected construction values and creates the
+configured concrete TimingData implementation.
+
+A small method may use explicit parameters. When a creation method would
+otherwise acquire an unwieldy argument list, the values are grouped into an
+immutable context object:
+
+```java
+RegistrationData createRegistrationData(
+        RegistrationDataContext context);
+```
+
+Conceptually:
 
 ```text
-SI-01 Domain
-  TimingNodeId
-      |
-      | value()
-      v
-timing-data-api
-  TimingDataRecord.timingNodeId : String
-  TimingDataRecordKey.timingNodeId : String
+RegistrationDataContext
+  TimingDataContext
+    timingNodeId
+    locationId
+    sequenceNumber
+    effectiveTime
+    recordedAt
+  registrationIdentity
+  origin
+  timeSource
 ```
 
-The framework maps between those two forms at the TimingData boundary. That keeps
-the Engineering Client independent from SI-01 Domain packages, while
-`timing-data-api` stays a small file/interchange API rather than becoming a
-second Domain model.
+The context contains values only. It does not contain `TimingNode`, `LogBook`,
+stores, services or other mutable collaborators.
+
+A concrete implementation may use a protected/private base-construction helper
+to avoid repeating the common envelope mapping. That helper is implementation
+reuse, not an additional public domain abstraction.
+
+### Provider boundary
+
+A `TimingDataProvider` supplies a coherent family:
+
+```text
+TimingDataProvider
+  stable provider/profile id
+  TimingDataFactory
+  TimingDataCodec
+```
+
+The factory creates the concrete in-memory TimingData objects. The codec
+encodes/decodes the same profile family. Provider discovery and configuration
+remain bootstrap/infrastructure concerns.
+
+The provider therefore does more than representation translation, but it still
+does not own TimingNode business rules. It chooses the concrete TimingData
+implementation and its representation while preserving the common semantic
+contracts defined by IF-05.
+
+Both the Java-8 SI-01 runtime and Java-17 Engineering Client can depend on
+`timing-data-api`. The Engineering Client may inspect the common interfaces
+without depending on SI-01 Domain classes. Profile-specific inspection can be
+added only where a real consumer needs it.
+
+The first implementation should keep the default profile physically close to
+the API while the design is still changing; do not create another production
+Maven artifact solely to mirror the conceptual profile split. A dummy
+event-specific implementation in tests is sufficient to prove that the common
+contract does not accidentally depend on the default concrete classes. A
+separate provider artifact becomes justified when a real independently deployed
+profile exists.
 
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
