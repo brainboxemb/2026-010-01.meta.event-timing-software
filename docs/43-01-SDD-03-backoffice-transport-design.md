@@ -18,7 +18,7 @@ The application/domain model must not depend on RabbitMQ classes, socket classes
 
 Concrete production broker endpoint names, credentials, queue/exchange names, routing keys, external source IDs and message schemas are deployment/proprietary information and are intentionally excluded from this public repository.
 
-Package/artifact placement follows `43-01-SDD-02-java-component-design.md`: a transport implementation can initially live under the framework `io.messaging` capability and becomes a separate Maven library only when independent reuse, dependencies, lifecycle, ownership or release boundaries justify that split.
+Package/artifact placement follows `43-01-SDD-02-java-component-design.md`: a transport implementation can initially live under the application core's `io.messaging` capability and becomes a separate Maven library only when independent reuse, dependencies, lifecycle, ownership or release boundaries justify that split.
 
 ## Architectural goal
 
@@ -54,7 +54,7 @@ resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
 
 ## Semantic upstream/backoffice boundary
 
-The reusable framework/domain side should work with semantic source-aware messages, not transport destinations.
+The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
 Illustrative contracts:
 
@@ -68,7 +68,7 @@ interface BackofficeInboundListener {
 }
 ```
 
-`BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public framework.
+`BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public application core.
 
 These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
@@ -105,7 +105,7 @@ backoffice:
 
 The executable application resolves this selection to a concrete communication implementation. A public reference/test application can use `socket-test` or a stub. A private/product application can select RabbitMQ plus private mappings/codecs where required.
 
-This selection does not imply a separate Maven artifact for every transport. Initial implementations may coexist in the framework library while their boundaries are being tested.
+This selection does not imply a separate Maven artifact for every transport. Initial implementations may coexist in the core library while their boundaries are being tested.
 
 ## Socket test transport
 
@@ -136,7 +136,7 @@ SocketBackoffice
 Backoffice semantic boundary
              |
              v
-framework domain/platform
+application-core domain/platform
 ```
 
 One connection can multiplex several logical registration sources because every test message includes a generic source key.
@@ -328,7 +328,7 @@ For RabbitMQ, connection status can additionally expose broker/authentication/re
 
 ## Java package and future artifact placement
 
-Working package direction inside the reusable framework:
+Working package direction inside the reusable application core:
 
 ```text
 io.github.brainboxemb.eventtiming.domain.backoffice
@@ -354,7 +354,7 @@ Until such evidence exists, clean package boundaries are sufficient and make lat
 
 ## Public/private boundary
 
-Public framework/test code may define:
+Public core/test code may define:
 
 - transport-independent semantic ports;
 - generic `RegistrationSourceKey`;
@@ -475,7 +475,7 @@ Temporary identifiers only.
 - Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
-- At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the framework artifact?
+- At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
 - What is the production acknowledgement/reconciliation protocol?
 - Which outbound items require durable local outbox persistence versus rebuildable state?
 - What publisher-confirm/retry policy is required?

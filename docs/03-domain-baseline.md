@@ -445,7 +445,7 @@ The Raspberry Pi Zero target and desktop/integration-test hosts may show differe
 
 ## Public/private domain-data boundary
 
-This repository can document structural facts and generic ranges required for reusable framework design, but it must not become an inventory of the live/real deployment.
+This repository can document structural facts and generic ranges required for reusable implementation design, but it must not become an inventory of the live/real deployment.
 
 Keep the following outside the public repository unless deliberately approved for publication:
 

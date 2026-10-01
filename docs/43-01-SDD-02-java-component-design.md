@@ -26,7 +26,7 @@ Keep these concepts distinct:
 1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SSD architecture.
 2. **Java package** — cohesive source organisation and enforceable dependency discipline.
 3. **Maven artifact** — reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
-4. **Application composition** — assembly of framework code and selected implementations into an executable.
+4. **Application composition** — assembly of application-core code and selected implementations into an executable.
 5. **Contract/port** — semantic boundary placed with the responsibility that owns its meaning.
 
 A separate artifact is justified only by a real consumer, reuse, dependency, lifecycle, deployment, ownership, public/private, release or versioning boundary.
@@ -40,12 +40,12 @@ small built-in default/reference profile so the profile boundary can be proven
 before another production artifact is introduced:
 
 ```text
-event-timing-framework/
+reactor/
 ├── pom.xml                    event-timing-parent
 ├── timing-data-api/
 │   └── pom.xml                event-timing-data-api.jar
-├── framework/
-│   └── pom.xml                event-timing-framework.jar
+├── core/
+│   └── pom.xml                event-timing-core.jar
 └── app/
     └── pom.xml                event-timing-app.jar
 ```
@@ -57,13 +57,21 @@ groupId: io.github.brainboxemb.eventtiming
 
 parent:          event-timing-parent
 TimingData API:  event-timing-data-api
-framework:       event-timing-framework
+core:            event-timing-core
 executable:      event-timing-app
 ```
 
 The root POM only groups/configures the build; it is not a runtime component.
 
-The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable framework and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
+The `core/` Maven module is the reusable **application core of SI-01**. It contains
+the main application, domain, presentation, I/O, infrastructure, runtime and
+Platform implementation that is shared by executable compositions. The name
+`core` is an artifact/source boundary only: it does **not** reintroduce a
+separate Core architecture layer in Figure SI01-01. The executable `app/`
+module stays deliberately thin and adds the launcher, concrete runtime-provider
+selection and packaging needed to run that core.
+
+The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable application core and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
 
 ## Package direction
 
@@ -322,7 +330,7 @@ io
 
 infra
   concrete cross-cutting technical support, including logging, diagnostics,
-  extension discovery and framework bootstrap/composition
+  extension discovery and application-core bootstrap/composition
 
 runtime
   top-level composed runtime object and lifecycle mechanics
@@ -348,7 +356,7 @@ platform        --> JDK and low-level environment only
 ```
 
 Domain code does not depend on presentation or concrete I/O adapters.
-Executable composition may depend on the complete supported framework surface
+Executable composition may depend on the complete supported application-core surface
 and selected external libraries.
 
 ## Logging dependency placement
@@ -356,7 +364,7 @@ and selected external libraries.
 Logging follows the same library-versus-executable composition boundary.
 
 ```text
-event-timing-framework.jar
+event-timing-core.jar
   -> slf4j-api only
   -> io.github.brainboxemb.eventtiming.timingpoint.infra.logging
        +-- Logging
@@ -374,13 +382,13 @@ event-timing-app.jar
   -> selects exactly one SLF4J provider
   -> initial provider: slf4j-jdk14
   -> delegates SLF4J records to java.util.logging
-  -> starts/stops framework-provided Logging
+  -> starts/stops core-provided Logging
   -> independently starts/stops optional LoggingServer
 ```
 
 Working rules:
 
-- framework code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
+- application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
 - provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; `ApplicationConfig` may reference both as composition data;
 - the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
@@ -388,7 +396,7 @@ Working rules:
 - `infra.logging` must not depend on `infra.loggingserver` or `infra.bootstrap.config`; executable/bootstrap composition starts the two components separately. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
 - `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
 - `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
-- the framework artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
+- the core artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
 - `Logging` is the primary runtime logging infrastructure component and owns backend setup, console/file handler composition, record formatting and the current global-level control;
 - `LoggingServer` is the separate externally reachable live-diagnostics component; it owns the live JUL handler plus logging-specific socket/protocol boundary, delegates temporary level changes to `Logging`, and is not a Presentation/IF-03 endpoint;
 - the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
@@ -397,16 +405,16 @@ Working rules:
 - `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
 - the optional diagnostic listener is a logging-specific engineering facility. The test client initiates its TCP connection, log delivery is best effort, and network failure must not be allowed to block ordinary log publishers;
 - the live diagnostics protocol is separate from the IF-03 status/event wire model;
-- another executable/private consumer may select another compatible provider later without changing framework/domain source;
+- another executable/private consumer may select another compatible provider later without changing core/domain source;
 - exactly one provider should be present in a runtime composition;
 - provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
 
 This keeps provider selection replaceable at the executable boundary while allowing the reusable
-framework to provide the default JUL logging infrastructure and its configuration contract.
+application core to provide the default JUL logging infrastructure and its configuration contract.
 
 ## Default executable application
 
-`event-timing-app` is the first executable consumer of the framework library.
+`event-timing-app` is the first executable consumer of the application-core library.
 
 Its executable package is deliberately thin:
 
@@ -415,7 +423,7 @@ io.github.brainboxemb.eventtiming.timingpoint.app/
   TimingApplicationMain.java
 ```
 
-The framework owns the reusable SI-01 runtime, bootstrap and infrastructure components:
+The application core owns the reusable SI-01 runtime, bootstrap and infrastructure components:
 
 ```text
 io.github.brainboxemb.eventtiming/timingpoint/
@@ -459,10 +467,10 @@ endpoints around that runtime; those endpoints retain their Presentation
 ownership even if their lifecycle is later retained directly by the runtime.
 
 The executable artifact is deliberately thin. Its launcher/input adapters remain under
-`...eventtiming.app`; reusable runtime logging belongs to framework infrastructure:
+`...eventtiming.app`; reusable runtime logging belongs to application-core infrastructure:
 
 ```text
-event-timing-framework.jar
+event-timing-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra.logging/
     Logging.java
     LoggingConfig.java
@@ -477,7 +485,7 @@ event-timing-framework.jar
     LoggingServerConfig.java
     LiveLogHandler.java
 
-event-timing-framework.jar
+event-timing-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
@@ -491,13 +499,13 @@ event-timing-app.jar
     TimingApplicationMain.java
 ```
 
-`event-timing-framework.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
+`event-timing-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
 
 The target executable startup/configuration flow is:
 
 ```text
 main()
-  -> framework EmbeddedBuildIdentityLoader
+  -> core EmbeddedBuildIdentityLoader
        -> executable-provided filtered build resource
   -> configuration resolution
        -> selected built-in application-profile defaults
@@ -511,7 +519,7 @@ main()
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> framework ApplicationBootstrap
+  -> core ApplicationBootstrap
        -> select/construct concrete presentation/I/O/platform implementations
        -> create reusable application/domain/runtime objects
        -> install/start presentation and shutdown handling
@@ -526,15 +534,15 @@ implemented.
 
 `BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
 
-Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable framework application/runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
+Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The framework keeps the small `TimingApplication.Builder` only for constructing
+The application core keeps the small `TimingApplication.Builder` only for constructing
 the runtime object itself. `ApplicationBootstrap` is the concrete cross-cutting
-composition component around it and consumes the framework-owned effective
+composition component around it and consumes the core-owned effective
 `ApplicationConfig`.
 
 The default IF-11 file syntax is YAML and its parser/mapping belongs to reusable
-framework infrastructure. `YamlApplicationConfigLoader` lives with the framework
+application-core infrastructure. `YamlApplicationConfigLoader` lives with the core
 bootstrap/configuration model. As profile support is implemented, configuration
 infrastructure resolves built-in profile/platform/mode defaults plus explicit
 deployment YAML into one effective `ApplicationConfig` **before**
@@ -552,14 +560,14 @@ The resolver responsibility must remain data/composition oriented:
 - `ApplicationBootstrap` consumes only the resolved/validated
   `ApplicationConfig` and contains no profile-name switches.
 
-SnakeYAML is therefore a framework implementation dependency; the IF-11 contract
+SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
 same typed effective `ApplicationConfig` without YAML.
 
-Build-identity interpretation is reusable for the same reason. The framework owns
+Build-identity interpretation is reusable for the same reason. The application core owns
 `BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
 the filtered `event-timing-build.properties` resource and build-time provenance injection,
-because those values identify that executable artifact. The framework loader only interprets
+because those values identify that executable artifact. The core loader only interprets
 the classpath resource and has no dependency on `TimingApplicationMain` or another app class.
 
 The implemented presentation structure is:
@@ -611,7 +619,7 @@ does not live in the application layer or in global presentation common code.
 The local class names deliberately omit the `Api` prefix because the enclosing `presentation.interfaces.api` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
 
 The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
-framework and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
+application core and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
 both transports with a larger combined stack.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
@@ -634,7 +642,7 @@ test-client/
 ```
 
 `test-client/` is a standalone Java-17 application and does not depend on
-`event-timing-framework` or `event-timing-app` implementation code. It may,
+`event-timing-core` or `event-timing-app` implementation code. It may,
 however, depend on the separately reusable `timing-data-api` artifact because
 TimingData codec/provider reuse is now a real cross-executable requirement. This
 preserves the external-client boundary while allowing SI-01 and the Engineering
@@ -1053,7 +1061,7 @@ For the initial Pi-oriented runtime:
 ## Shared TimingData API and concrete profiles
 
 Both SI-01 and the Engineering Client need the common TimingData contracts
-without depending on the whole SI-01 framework. The shared artifact therefore
+without depending on the whole SI-01 application core. The shared artifact therefore
 owns the semantic interfaces and value types that every supported TimingData
 profile must implement; it does **not** require one concrete record class for all
 profiles.
@@ -1184,7 +1192,7 @@ Java-17 Engineering Client.
 
 ## Derived consumers
 
-The framework is deliberately not tied to one executable topology. Plausible consumers include:
+The application core is deliberately not tied to one executable topology. Plausible consumers include:
 
 ```text
 single-system application
@@ -1222,7 +1230,7 @@ runtime hot reload/unload is deliberately out of scope. The provider registry
 combines built-in and external providers and rejects duplicate provider IDs.
 
 Provider contracts belong with the capability whose meaning they create;
-class-loader/discovery mechanics belong under framework bootstrap/infra. Domain,
+class-loader/discovery mechanics belong under application-core bootstrap/infra. Domain,
 application and I/O runtime code must not depend on `URLClassLoader`,
 `ServiceLoader` or a generic `Plugin` interface.
 
@@ -1276,8 +1284,8 @@ Useful automated rules may include:
 - public code contains no real deployment mappings or proprietary values;
 - domain/application/runtime components do not depend on extension class-loader mechanics;
 - duplicate provider IDs and unknown configured provider IDs fail deterministically;
-- the executable consumes `event-timing-framework` rather than copying/forking framework source;
-- the framework artifact does not carry a concrete SLF4J provider/backend transitively;
+- the executable consumes `event-timing-core` rather than copying/forking application-core source;
+- the core artifact does not carry a concrete SLF4J provider/backend transitively;
 - an executable runtime contains exactly one intended SLF4J provider.
 
 ## Open detailed-design decisions
@@ -1290,7 +1298,7 @@ Useful automated rules may include:
 - concrete immutable TimingNode read-view representation and compact LogBook indexing required by the first ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
-- version alignment between public framework/provider contracts and private implementations;
+- version alignment between public core/provider contracts and private implementations;
 - which I/O capabilities eventually deserve independent artifacts;
 - whether and when provider contracts deserve a dedicated independently versioned SPI artifact;
 - exact field logging configuration/rotation/retention policy in the default executable.

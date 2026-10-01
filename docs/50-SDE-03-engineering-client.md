@@ -45,18 +45,18 @@ Current placement:
 
 ```text
 2026-010-02.java.event-timing-framework/
-├── framework/       SI-01 reusable Java-8 code
+├── core/            SI-01 reusable Java-8 application core
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
 ├── timing-data-api/ shared TimingData model + codec/provider SPI
 └── test-client/     Engineering Client
                     standalone Java 17 + JavaFX application
                     may depend on timing-data-api only
-                    no SI-01 framework/app implementation dependency
+                    no SI-01 core/app implementation dependency
 ```
 
 For live SI-01 operation the Engineering Client communicates only through
-supported external interfaces. It does not import `event-timing-framework` or
+supported external interfaces. It does not import `event-timing-core` or
 `event-timing-app` implementation classes.
 
 TimingData inspection/conversion is a separate engineering capability. The

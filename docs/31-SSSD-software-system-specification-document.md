@@ -82,7 +82,7 @@ and architecture now share one document.
 - Local timing/device operation shall not depend on a connected GUI or engineering/test client.
 - External devices and the upstream system are explicit software-system boundaries.
 - Public/reference and private/proprietary implementations shall meet the same supported
-  system contracts without requiring private source in public framework code.
+  system contracts without requiring private source in public implementation code.
 - Software-system interfaces shall remain independent of incidental deployment topology
   where the interface itself only requires an available IP/network path.
 
@@ -94,7 +94,7 @@ The software-system architecture is driven by these system-level concerns:
 - the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Timing Point Application through the API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
 - external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;
-- public framework/reference code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
+- public reference/core implementation code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
 - deployments should support the intended field target and normal development/test hosts; target limits are measured rather than assumed;
 - system interfaces and software-item ownership should remain stable even when internal implementation technology changes;
 - IP-based system interfaces must not require a particular router or Wi-Fi topology merely to exercise the interface.
@@ -108,7 +108,7 @@ Software-item identity is stated by the document and traceability metadata; the 
 | **SI-01** | Timing Point Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the API | Operator workstation/laptop |
 
-Supporting framework modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
+Supporting core modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
 
 Application profiles are deployment/composition templates of **the same SI-01 Timing Point Application**. A profile may select different default topology/capabilities, but it is not a separate software item and does not create different TimingNode/domain semantics. Concrete deployment profile definitions are outside this public system baseline until an explicit public requirement owns them.
 
@@ -255,7 +255,7 @@ The **Timing Point Application** (SI-01) keeps the local operational state. Losi
 
 ### Public/private implementation boundary
 
-System contracts used by public framework/reference code must allow private production implementations to plug in without public code depending on private source or proprietary identities.
+System contracts used by public reference/core implementation code must allow private production implementations to plug in without public code depending on private source or proprietary identities.
 
 Selected implementation families may be supplied by Java-8-compatible extension providers behind those stable contracts. The expected extension families are timing-data representation/codec, upstream protocol, antenna implementation, CAN protocol and display protocol. Extension discovery and provider selection are SI-01 implementation/composition concerns; they must not change the software-system interfaces or require proprietary source in the public repositories. Public/reference compositions must remain executable with synthetic/reference implementations so the public system can be built and verified independently.
 
@@ -277,7 +277,7 @@ The SSD for the **Timing Point Application** (SI-01) owns, among other things:
 - status architecture and lifecycle handling;
 - persistence and restore strategy;
 - logging/configuration/composition choices;
-- Java/framework/library decisions;
+- Java/core/library decisions;
 - RFID/CAN/display adapter architecture behind the system device interfaces;
 - upstream transport implementation behind IF-06;
 - resource-budget implications of those choices.

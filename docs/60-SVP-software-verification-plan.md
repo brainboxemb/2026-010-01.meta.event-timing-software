@@ -20,7 +20,7 @@ Verification should provide evidence that:
 - local operation remains available where required during backoffice/network outages;
 - multiple registration assets/sources remain isolated and correctly routed;
 - SI-01 runs correctly on the intended Raspberry Pi Zero / Zero W target;
-- public framework code can be consumed by external reference and private integration projects;
+- public core/reference implementation code can be consumed by external reference and private integration projects;
 - generated documentation and build artifacts are reproducible and reviewable.
 
 ## Traceability direction
@@ -443,7 +443,7 @@ The exact boundary between normal PR and merge-time ST-3 execution can be adjust
 
 ## Public/private verification model
 
-The public framework must be verifiable without proprietary source or deployment identities.
+The public application core must be verifiable without proprietary source or deployment identities.
 
 Private implementations should use the same public contracts where applicable; detailed private-repository verification is added when such an implementation actually exists.
 

@@ -418,7 +418,7 @@ need. Detailed scripts/tool choices belong in the implementation repository.
 
 Public/private separation must be enforceable by normal build structure:
 
-- public framework repositories build/test without private source;
+- public implementation repositories build/test without private source;
 - private implementations consume public APIs/artifacts;
 - private Maven/repository credentials use secure CI/developer credential mechanisms;
 - proprietary protocols and real deployment mappings remain private;

@@ -210,9 +210,9 @@ CI and release rules live in the SDE/repository guidance rather than here.
 
 These are direction markers, not a fixed schedule.
 
-### A — Architecture and framework baseline
+### A — Architecture and application-core baseline
 
-Establish the useful domain/application boundaries and a buildable Java framework.
+Establish the useful domain/application boundaries and a buildable Java application core.
 
 ### B — First useful Timing Point Application
 
