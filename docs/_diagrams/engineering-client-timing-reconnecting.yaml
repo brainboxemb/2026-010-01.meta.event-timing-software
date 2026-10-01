@@ -3,7 +3,7 @@ diagram:
   title: Figure SDE03-04 — Timing view / RECONNECTING and stale
   width: 1180
   height: 790
-  note: Cached information remains visible but non-authoritative until status/history rebuild and buffered-event merge complete.
+  note: Cached information remains visible but non-authoritative until status/LogBook gap recovery and buffered-event merge complete.
 
 groups: []
 
@@ -36,7 +36,7 @@ nodes:
 
   - id: rebuild
     label: Rebuild in progress
-    subtitle: status snapshot + committed history; live events buffered and deduplicated by record key
+    subtitle: status snapshot + bounded LogBook ranges; live events buffered and deduplicated by record key
     kind: wireframe-stale
     notation: wireframe-panel
     layout: {x: 75, y: 215, w: 1035, h: 90}
@@ -73,14 +73,14 @@ nodes:
     layout: {x: 795, y: 350, w: 100, h: 38}
 
   - id: inject
-    label: Inject registration
+    label: Auto-reg
     kind: wireframe-disabled
     notation: wireframe-button
     layout: {x: 920, y: 350, w: 165, h: 38}
 
   - id: history
-    label: Cached TimingData history
-    subtitle: Retained for inspection; not live until rebuild completes
+    label: Cached LogBook
+    subtitle: Retained for inspection; bounded gap fetch in progress
     kind: wireframe-disabled
     notation: wireframe-table
     items:
@@ -91,7 +91,7 @@ nodes:
 
   - id: rule
     label: Live transition
-    subtitle: Apply snapshot -> rebuild history -> merge buffered events -> deduplicate -> LIVE
+    subtitle: Apply snapshot -> fetch LogBook gap -> merge buffered events -> deduplicate -> LIVE
     kind: wireframe-stale
     notation: wireframe-input
     layout: {x: 75, y: 660, w: 1035, h: 58}
