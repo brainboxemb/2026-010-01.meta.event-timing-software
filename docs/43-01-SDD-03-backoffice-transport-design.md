@@ -136,7 +136,7 @@ SocketBackoffice
 Backoffice semantic boundary
              |
              v
-framework domain/core
+framework domain/platform
 ```
 
 One connection can multiplex several logical registration sources because every test message includes a generic source key.
