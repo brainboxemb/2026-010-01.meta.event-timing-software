@@ -1141,9 +1141,12 @@ RegistrationData.Context
 The context contains values only. It does not contain `TimingNode`, `LogBook`,
 stores, services or other mutable collaborators.
 
-A concrete implementation may use a protected/private base-construction helper
-to avoid repeating the common envelope mapping. That helper is implementation
-reuse, not an additional public domain abstraction.
+The first implementation does not need an abstract TimingData base class.
+`TimingData.Context` already groups the common construction values and a
+concrete immutable class can delegate to that context. Introduce a
+protected/private base helper only when multiple real implementation classes
+show enough repeated behaviour to justify it; such a helper remains
+implementation reuse, not an additional public domain abstraction.
 
 ### Provider boundary
 
