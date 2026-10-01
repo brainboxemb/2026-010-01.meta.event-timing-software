@@ -98,6 +98,7 @@ books:
       - timingdata-interchange
       - application-configuration
       - timing-application-specification
+      - data-display-design
       - java-component-design
       - gui-application-specification
 
