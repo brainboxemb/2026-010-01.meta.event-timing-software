@@ -84,7 +84,7 @@ def registration_stream_identity() -> Diagram:
 
         Node("record", "TimingDataRecord\\ntimingNodeId + sequence + locationId\\ntype + timestamps + payload", 820, 180, 380, 120, "core"),
         Node("key", "Stable key\\n(TimingNodeId, SequenceNumber)", 820, 380, 380, 85, "service"),
-        Node("location", "LocationID 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
+        Node("location", "LocationId 1..25\\nrecord field — NOT sequence scope", 360, 500, 370, 90, "interface"),
         Node("upstream", "Upstream / higher-level system\\nchecks order + detects per-TimingNode gaps", 820, 560, 390, 100, "external"),
         Node("gap", "Example gap\\nA: 1041, 1042, 1044 → 1043 missing", 820, 735, 390, 85, "queue"),
     ]
