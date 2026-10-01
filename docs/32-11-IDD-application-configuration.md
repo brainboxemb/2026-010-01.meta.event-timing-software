@@ -79,7 +79,7 @@ capability and compatibility defaults without introducing another domain model,
 Java application subclass or software item.
 
 This public baseline deliberately does not define concrete event/deployment
-profile IDs, fixed TimingNode counts, device combinations or allowed LocationID
+profile IDs, fixed TimingNode counts, device combinations or allowed LocationId
 sets. Those details are added only when an explicit public requirement owns them;
 private deployment profiles and compatibility mappings remain outside this
 repository.
@@ -139,8 +139,8 @@ Rules:
 - `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
 - `TimingNodeId` identifies the logical TimingNode and remains application-wide unique in the current configuration baseline;
-- `LocationID` identifies the configured physical/event location and is not derived from `TimingNodeId`;
-- each configured `LocationID` must satisfy any compatibility constraint of the selected built-in application profile;
+- `LocationId` identifies the configured physical/event location and is not derived from `TimingNodeId`;
+- each configured `LocationId` must satisfy any compatibility constraint of the selected built-in application profile;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
 - the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
 
@@ -465,7 +465,7 @@ Validation includes, where applicable:
 - missing/invalid or duplicate internal `TimingSystemId` values;
 - TimingSystems without at least one configured TimingNode;
 - duplicate application-wide `TimingNodeId` values;
-- a configured TimingNode `LocationID` that violates an explicitly defined compatibility rule of the selected application profile;
+- a configured TimingNode `LocationId` that violates an explicitly defined compatibility rule of the selected application profile;
 - references to unknown TimingSystems or TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
