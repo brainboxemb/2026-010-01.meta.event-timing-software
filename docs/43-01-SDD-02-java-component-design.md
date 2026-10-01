@@ -293,13 +293,14 @@ domain
   domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
 
 core
-  runtime/execution contracts
+  small JDK-only reusable primitives/contracts, including serial execution
+  and local typed events
 
 io
   hardware, messaging and storage adapters
 
 infra
-  cross-cutting technical support, including events, logging,
+  concrete cross-cutting technical support, including logging, diagnostics,
   extension discovery and framework bootstrap/composition
 
 runtime
