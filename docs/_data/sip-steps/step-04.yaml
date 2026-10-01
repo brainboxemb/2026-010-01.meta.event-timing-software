@@ -18,10 +18,7 @@ activities:
     title: Engineering Client architecture + UI baseline
     state: done
     note: >-
-      Complete the Engineering Client architecture and the concrete Step-4 Timing
-      UI baseline: view layout, control availability, lifecycle/capability states,
-      TimingData history/live presentation and reconnect/stale/live behaviour.
-      Keep the module name test-client for now.
+      Timing-view layout, control states, history/live and reconnect behaviour defined.
 
   - id: D02
     lane: documentation
@@ -30,9 +27,7 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      Review only UC-001, UC-002, UC-003, UC-009 and the outbound-registration
-      aspect of UC-011 for the first slice. Establish location/lifecycle rules,
-      the direct accepted-registration path and observable registration state.
+      First-slice use cases fixed location/lifecycle, accepted registration and observability.
 
   - id: D02W
     lane: documentation
@@ -41,10 +36,7 @@ activities:
     state: done
     depends_on: [D02]
     note: >-
-      Translate only safe abstract client-behaviour conclusions needed by the
-      first slice, such as current state, registration history/live updates and
-      reconnect/rebuild. Keep source identity and private protocol details outside
-      the public repository.
+      Safe compatibility behaviour reduced to state/history/live/reconnect semantics.
 
   - id: D03
     lane: documentation
@@ -53,11 +45,7 @@ activities:
     state: done
     depends_on: [D02, D02W]
     note: >-
-      Define TimingNodeId and LocationId once in the TimingData/IDD contract,
-      including the unassigned-location state while CLOSED; define registration
-      TimingData, source sequence, observation time, IF-03 location/open/close and
-      capability-gated direct accepted-registration simulation. Define only the
-      minimal outbound semantic registration contract needed for later transport.
+      TimingData and IF-03 first-registration contracts accepted.
 
   - id: V01
     lane: verification
@@ -66,9 +54,7 @@ activities:
     state: done
     depends_on: [D03]
     note: >-
-      Cover unassigned location, location set while CLOSED, open, rejected location
-      change while OPEN, direct registration with deterministic time, observable
-      TimingData, close and location change after close.
+      Deterministic lifecycle and first-registration examples defined.
 
   - id: A01
     lane: application
@@ -77,9 +63,7 @@ activities:
     state: done
     depends_on: [V01]
     note: >-
-      Implement configured TimingNode identity, optional location while CLOSED,
-      location validation, OPEN/CLOSED lifecycle and the invariant that active
-      location cannot change while OPEN.
+      Location and OPEN/CLOSED invariants implemented behind serialized ownership.
 
   - id: A02
     lane: application
@@ -88,9 +72,7 @@ activities:
     state: done
     depends_on: [A01]
     note: >-
-      Implement the accepted-registration operation after the antenna/filtering
-      boundary. TimingNode owns its source identity, active location and next
-      sequence. Preserve accepted observation time and expose committed history.
+      Accepted registration and committed TimingData path implemented.
 
   - id: A03
     lane: application
@@ -110,8 +92,7 @@ activities:
     state: done
     depends_on: [A02]
     note: >-
-      Verify lifecycle/location invariants, sequence ownership, historical
-      LocationId capture and rejection of direct registration while CLOSED.
+      Lifecycle, sequence and historical TimingData invariants verified.
 
   - id: V03
     lane: verification
