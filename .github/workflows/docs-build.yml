@@ -430,7 +430,7 @@ jobs:
 
           grep -q 'Engineering Client — Step 4 Timing UI' bld/engineering-portal/browser-engineering-client-ui.html
           grep -q 'CLOSED without operational location' bld/engineering-portal/browser-engineering-client-ui.html
-          grep -q 'OPEN with committed history' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'OPEN with bounded LogBook' bld/engineering-portal/browser-engineering-client-ui.html
           grep -q 'RECONNECTING / stale' bld/engineering-portal/browser-engineering-client-ui.html
           grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engineering-client-ui.html
 
