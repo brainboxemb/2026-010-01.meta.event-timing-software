@@ -289,7 +289,7 @@ Request:
 
 ```json
 {
-  "id": "<resolved-registration-id>",
+  "id": "N001",
   "time": "2026-10-01T12:00:00.000000000Z"
 }
 ```
