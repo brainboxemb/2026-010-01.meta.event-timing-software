@@ -97,6 +97,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
   infra/
     bootstrap/
       config/
+    concurrent/
     events/
     logging/
     loggingserver/
@@ -130,7 +131,7 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `infra` for concrete cross-cutting technical support such as
-  `BuildIdentity`, logging and the small in-process event utility;
+  `BuildIdentity`, logging, bounded/serial execution and the small in-process event utility;
 - use `io` for external hardware, messaging and storage adapters.
 
 For example, the first TimingNode implementation is grouped as:
@@ -200,7 +201,7 @@ io/
     FileStageStartTimesStore.java         start-time analysis history/snapshots
     FileRaceDataStore.java                race/reference analysis snapshots
 
-core/
+infra/
   concurrent/
     SerialWorker.java                     bounded one-at-a-time execution primitive
 ```
@@ -208,7 +209,7 @@ core/
 The names above record ownership/direction, not a requirement to create empty
 types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
-`SerialWorker` is a small reusable execution primitive under `core.concurrent`,
+`SerialWorker` is a small reusable execution primitive under `infra.concurrent`,
 composed into TimingNode rather than used as a Domain superclass. It has no
 TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -318,8 +319,9 @@ domain          --> core + narrow infra cross-cutting utilities
 io              --> application/domain ports/contracts + platform + narrow infra cross-cutting utilities
 runtime         --> application / domain / core + narrow infra cross-cutting utilities
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
+infra.concurrent --> JDK only
 infra.events    --> JDK only
-core            --> JDK/platform-neutral reusable execution mechanics only
+core            --> JDK/platform-neutral reusable contracts only
 platform        --> low-level environment only
 ```
 
