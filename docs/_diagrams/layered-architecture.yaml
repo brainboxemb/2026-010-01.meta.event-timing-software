@@ -328,25 +328,24 @@ nodes:
 - id: platform-primitives
   object_id: PlatformPrimitives
   group: platform-layer
-  label: "Reusable primitives"
+  label: "Platform primitives / environment"
   items:
-    - "SerialWorker — bounded serial execution"
-    - "Event<T> — local typed event"
-    - "executors / threads"
+    - label: "Execution"
+      items:
+        - "SerialWorker — bounded serial execution"
+        - "executors / threads"
+    - label: "Local events"
+      items:
+        - "Event<T> — typed local event"
+    - label: "Environment"
+      items:
+        - "clock / time"
+        - "filesystem / paths"
+        - "process / runtime"
+        - "network / OS"
   kind: platform
   notation: packaging-component
-  layout: {x: 55, y: 1250, w: 520, h: 100}
-- id: platform-environment
-  group: platform-layer
-  label: "Environment"
-  items:
-    - "clock / time"
-    - "filesystem / paths"
-    - "process / runtime"
-    - "network / OS"
-  kind: platform
-  notation: packaging-component
-  layout: {x: 595, y: 1250, w: 790, h: 100}
+  layout: {x: 155, y: 1245, w: 1180, h: 115}
 
 - id: timing-application-runtime
   object_id: TimingApplication
