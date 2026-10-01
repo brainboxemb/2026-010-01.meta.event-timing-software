@@ -155,6 +155,7 @@ shared/timing-data/
       ManualRegistration
       ManualTimeSource
       RecordKey
+    LocationId.java
     RegistrationId.java
     TimingTimestamp.java
     TimingDataFactory.java
@@ -1106,6 +1107,7 @@ shared/timing-data
       ManualTimeSource
     ManualTimeSource
     RecordKey
+  LocationId
   RegistrationId
   TimingTimestamp
   TimingDataFactory
@@ -1128,6 +1130,12 @@ test / product-specific profile
 There is no intermediate public `RegistrationData` interface. Automatic and
 manual registration are already the useful type-safe variants, so another level
 would add hierarchy without giving callers a stronger contract.
+
+`LocationId` and `RegistrationId` are standalone shared value types because
+they are used at boundaries beyond one concrete TimingData subtype. They define
+stable Java/IF-05 representations and only minimal structural validity. Concrete
+event/profile/reference-data meaning and allowed values remain outside the shared
+library.
 
 Likewise, `TimingNodeStateData` and `RegistrationRevokedData` are not created
 from old record-enum values. UC-002 still defers OPEN/CLOSE-as-TimingData and the
