@@ -964,8 +964,7 @@ TimingNode serial lane
        +--> subscribed listener
 ```
 
-There is no separate `EventDispatcher`, `EventPublisher`,
-`EventSubscriber` hierarchy or string/topic routing in the first design.
+The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the event instance they need.
 
 The event says that new TimingData is now available. The fact that
 `newTimingDataEvent` is emitted only after successful persistence and LogBook
