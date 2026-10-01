@@ -9,7 +9,13 @@ planning_changes:
       D01 Timing UI baseline completed; A03 client/API integration is active.
   - date: '2026-09-30'
     change: >-
-      Step 4 narrowed to first-registration control; later timing/device/upstream scope deferred.
+      D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.
+  - date: '2026-09-30'
+    change: >-
+      Step 4 narrowed to location, open/close, direct registration and observable TimingData.
+  - date: '2026-09-30'
+    change: >-
+      Start times, next-up/display, antenna filtering, multi-node and inbound upstream simulation moved later.
 
 activities:
   - id: D01
