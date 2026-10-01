@@ -115,7 +115,7 @@ The Status tab currently provides:
 - SI-01 HTTP endpoint selection;
 - `Get Version` and `Get Status`;
 - parsed application/build identity;
-- first TimingNode identity and lifecycle;
+- the TimingNode list and selected node state;
 - the complete raw JSON response.
 
 The parsed values are an engineering convenience. The raw response remains visible so
@@ -128,7 +128,7 @@ The Events tab currently provides:
 - WebSocket endpoint selection;
 - explicit connect/disconnect state;
 - latest event type and occurrence time;
-- first TimingNode identity/lifecycle from the event snapshot;
+- TimingNode list/selected node state from the event snapshot;
 - retained-on-screen raw events for the current client session.
 
 A reconnect is expected to recover a complete current snapshot according to IF-03.
@@ -151,12 +151,14 @@ because they are visible in the same Engineering Client.
 
 ## Step-4 Timing UI baseline — first registration slice
 
-The **Timing** tab is the Step-4 working surface for one TimingNode. It combines
-current authoritative node state, first-slice controls and committed TimingData
-history without making the client an owner of domain state.
+The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
+It combines current authoritative node state, first-slice controls and committed
+LogBook data without making the client an owner of domain state.
 
-The first slice deliberately remains a single-TimingNode view. Multi-node
-navigation is deferred until a later profile requires it.
+IF-03 already represents 1..N TimingNodes. The first Java runtime may still
+compose only one node, in which case selection is implicit. The client design
+must not bake that runtime limitation into its protocol model; when several
+nodes are reported, the same Timing view is addressed to the selected node.
 
 ### CLOSED without an operational location
 
@@ -205,10 +207,10 @@ Reconnect handling follows D03:
 
 1. connect the WebSocket and receive the complete status snapshot;
 2. begin buffering later live events;
-3. rebuild committed TimingData history through HTTP;
+3. query LogBook metadata and fetch only the bounded ranges needed to close any gap;
 4. apply buffered status changes in delivery order;
 5. merge buffered TimingData events and discard records already present in
-   history by stable TimingData record key;
+   the cached LogBook by stable TimingData record key;
 6. only then transition the Timing tab to **LIVE** and re-enable controls.
 
 A reconnect does not visually pretend that cached values are authoritative.
@@ -238,7 +240,7 @@ domain result**:
 - domain conflicts such as `NO_LOCATION`, `NODE_NOT_CLOSED` and
   `NODE_NOT_OPEN` are shown inline without treating them as application crashes;
 - `BUSY` / `UNAVAILABLE` are shown as execution availability problems;
-- `OUTCOME_UNKNOWN` marks the Timing view stale and triggers status/history
+- `OUTCOME_UNKNOWN` marks the Timing view stale and triggers status/LogBook
   resynchronisation before a state-changing retry is offered;
 - unexpected internal failures remain clearly distinct from expected domain
   rejections.
@@ -246,10 +248,10 @@ domain result**:
 The **Last operation** area in the wireframe is intentionally compact. Detailed
 raw response/error JSON remains available for engineering diagnosis.
 
-### TimingData history presentation
+### LogBook presentation
 
-The first table shows committed source order and the fields most useful during
-Step-4 integration:
+The first table is a paged view of the selected TimingNode LogBook and shows
+committed source order plus the fields most useful during Step-4 integration:
 
 ```text
 sequence | variant/type | LocationId | RegistrationId | effectiveTime | recordedAt
@@ -260,7 +262,7 @@ view already identifies one TimingNode, the table may omit the repeated
 TimingNodeId column while retaining the complete key internally for merge and
 deduplication.
 
-Selecting a history row may expose the complete public IF-05 JSON representation
+Selecting a LogBook row may expose the complete public IF-05 JSON representation
 in a detail/raw view. The table itself must not invent event-specific
 RegistrationId or LocationId semantics beyond labels supplied by later
 profile/reference-data features.
@@ -345,7 +347,7 @@ Candidate generated views are:
 
 1. Status / connection baseline;
 2. Timing / CLOSED without LocationId;
-3. Timing / OPEN with dev auto-reg and committed history;
+3. Timing / OPEN with dev auto-reg and a bounded LogBook page;
 4. Timing / RECONNECTING with stale cached data;
 5. Logs/Terminal only where those screenshots materially improve user documentation.
 
