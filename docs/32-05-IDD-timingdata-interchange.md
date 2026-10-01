@@ -200,7 +200,7 @@ Represents one participant registration.
 
 ```text
 recordType = REGISTRATION
-registrationIdentity
+registrationId
 origin
 timeSource
 effectiveTime
@@ -237,7 +237,7 @@ Represents an append-only fact that refers to an earlier registration.
 ```text
 recordType = REGISTRATION_REVOKED
 reference = TimingDataRecordKey of the concerned REGISTRATION
-registrationIdentity
+registrationId
 origin
 timeSource
 effectiveTime
@@ -275,8 +275,8 @@ application/use-case contract.
 | Record type | Common envelope | Type-specific required data |
 | --- | --- | --- |
 | `TIMING_NODE_STATE` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `state = OPEN | CLOSED` |
-| `REGISTRATION` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource` |
-| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationId, original effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource`, `reference` |
+| `REGISTRATION` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `registrationId`, `origin`, `timeSource` |
+| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationId, original effectiveTime, recordedAt | `registrationId`, `origin`, `timeSource`, `reference` |
 
 The matrix is a compact view of the same normative field semantics above; it does
 not define an alternative record shape.
@@ -295,7 +295,7 @@ Known v1 members use the following JSON types and validation rules:
 | `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
 | `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
 | `state` | string | `TIMING_NODE_STATE` only | `OPEN` or `CLOSED` |
-| `registrationIdentity` | string | registration/revocation | non-empty provider-neutral canonical participant identity |
+| `registrationId` | string | registration/revocation | non-empty provider-neutral canonical participant identity |
 | `origin` | string | registration/revocation | `AUTOMATIC` or `MANUAL` |
 | `timeSource` | string | registration/revocation | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
 | `reference` | object | `REGISTRATION_REVOKED` only | `TimingDataRecordKey` of the concerned registration |
@@ -308,7 +308,7 @@ reference
   sequenceNumber  integer: 1..9007199254740991
 ```
 
-`registrationIdentity` is deliberately opaque at the IF-05 boundary. Its
+`registrationId` is deliberately opaque at the IF-05 boundary. Its
 concrete categories, number ranges, source encodings and source-to-participant
 mapping rules are not part of this public interchange contract.
 
@@ -327,7 +327,7 @@ Validation rules:
   contracts;
 - `AUTOMATIC` registrations use `timeSource = OBSERVED`;
 - `MANUAL` registrations use `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`;
-- a revocation repeats the original registration's `registrationIdentity`,
+- a revocation repeats the original registration's `registrationId`,
   `origin`, `timeSource`, `locationId` and `effectiveTime`;
 - for a revocation, `reference.timingNodeId` equals the record's own
   `timingNodeId`.
@@ -344,7 +344,7 @@ the authoritative source order.
 
 ## Registration identities
 
-`RegistrationIdentity` is the canonical participant identity carried by a
+`RegistrationId` is the canonical participant identity carried by a
 TimingData registration record.
 
 The IF-05 v1 public contract treats it as a non-empty provider-neutral string.
@@ -355,11 +355,11 @@ Conceptually:
 
 ```text
 source-specific identity --------\
-                                 +--> RegistrationIdentity --> TimingData REGISTRATION
+                                 +--> RegistrationId --> TimingData REGISTRATION
 operator/reference identity -----/
 ```
 
-Resolution to `RegistrationIdentity` happens before the definitive TimingData
+Resolution to `RegistrationId` happens before the definitive TimingData
 record is committed. That resolution may use application/reference data, but the
 concrete mapping remains outside IF-05.
 
@@ -479,7 +479,7 @@ Registration example:
   "recordType": "REGISTRATION",
   "effectiveTime": "2026-09-30T20:01:39.123000000Z",
   "recordedAt": "2026-09-30T20:01:39.123000000Z",
-  "registrationIdentity": "participant-0042",
+  "registrationId": "participant-0042",
   "origin": "AUTOMATIC",
   "timeSource": "OBSERVED"
 }
@@ -496,7 +496,7 @@ Revocation example:
   "recordType": "REGISTRATION_REVOKED",
   "effectiveTime": "2026-09-30T20:01:39.123000000Z",
   "recordedAt": "2026-09-30T20:02:05.456000000Z",
-  "registrationIdentity": "participant-0042",
+  "registrationId": "participant-0042",
   "origin": "AUTOMATIC",
   "timeSource": "OBSERVED",
   "reference": {
@@ -607,14 +607,14 @@ TimingData v1 shall support `TIMING_NODE_STATE`, `REGISTRATION` and
 ```{ifreq} Canonical registration identity
 :id: IF05-REQ-005
 
-Registration records shall use canonical `RegistrationIdentity` rather than a
+Registration records shall use canonical `RegistrationId` rather than a
 source-specific or provider-specific identity representation.
 ```
 
-```{ifreq} RegistrationIdentity v1 semantics
+```{ifreq} RegistrationId v1 semantics
 :id: IF05-REQ-006
 
-v1 `RegistrationIdentity` shall be a non-empty provider-neutral canonical
+v1 `RegistrationId` shall be a non-empty provider-neutral canonical
 participant identity. Concrete event categories, ranges and deployment mappings
 shall remain outside IF-05.
 ```
@@ -623,7 +623,7 @@ shall remain outside IF-05.
 :id: IF05-REQ-007
 
 Source-specific participant identities shall resolve to canonical
-`RegistrationIdentity` before a registration is committed. Concrete source
+`RegistrationId` before a registration is committed. Concrete source
 encoding and mapping rules shall remain outside IF-05.
 ```
 
@@ -691,7 +691,7 @@ compatibility/validation conditions according to this IDD.
 - start-procedure record family and payload;
 - penalty/correction record families and payloads;
 - unknown-team registration semantics;
-- source `TagIdentity` provenance exposure;
+- source `TagId` provenance exposure;
 - file naming, retention, rotation and filesystem-specific durability primitives;
 - upstream transport/session/reconciliation semantics owned by IF-06;
 - IF-03 control/query resources that create or inspect these records.
