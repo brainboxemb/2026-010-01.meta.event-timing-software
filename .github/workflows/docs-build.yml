@@ -294,11 +294,16 @@ jobs:
               raise SystemExit("portal object count does not match engineering graph")
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
-          if provenance["tool_eng_docs"] != {
+          expected_tool_eng_docs = {
               "ref": "v0.9.1",
-              "sha": "7d13ae32c5ac3fea0192559a034b9778a517d",
-          }:
-              raise SystemExit("portal tool provenance mismatch")
+              "sha": "7d13ae32c5ac3ac3fea0192559a034b9778a517d",
+          }
+          if provenance["tool_eng_docs"] != expected_tool_eng_docs:
+              raise SystemExit(
+                  "portal tool provenance mismatch: "
+                  f"actual={provenance['tool_eng_docs']!r} "
+                  f"expected={expected_tool_eng_docs!r}"
+              )
 
           required_diagram_ids = {
               object_id
