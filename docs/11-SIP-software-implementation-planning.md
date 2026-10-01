@@ -207,10 +207,10 @@ Status: active
 Implement the smallest useful timing-domain vertical slice before introducing
 reference data, keypad/display behaviour or production transports.
 
-The domain/recording foundation is now implemented. The remaining active work in
-this step is completing the concrete Engineering Client Timing-view/UI baseline
-(D01), then exposing the behaviour through IF-03 and the Engineering Client (A03)
-and proving the complete running-system flow.
+The domain/recording foundation and concrete Engineering Client Timing-view/UI
+baseline are now defined. The active work is A03: expose the accepted IF-03
+control/history/live behaviour in the running application and Engineering Client,
+then prove the complete running-system flow.
 
 ### Goal
 
@@ -263,7 +263,7 @@ update, and close it again.
 - Committed TimingData survives restart and rebuilds the LogBook before operational work starts.
 - LocationId and RegistrationId are shared value representations without hard-coded event policy.
 - Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
-- D01 is active to complete the concrete Engineering Client Timing-view/UI baseline; A03 follows with the IF-03/client implementation.
+- D01 is complete with declarative Timing-view wireframes, state/enablement rules and reconnect behaviour; A03 is active for IF-03/client implementation.
 
 ### Demo
 
