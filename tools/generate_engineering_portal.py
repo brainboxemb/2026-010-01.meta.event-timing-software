@@ -271,8 +271,8 @@ evidence.
   while inspecting requirements, use cases, architecture and verification.
 - [Engineering object index](objects/index.md) — searchable generated object
   pages with incoming/outgoing and one-hop context.
-- [Engineering Client design](engineering-client.md) — Step-4 Timing UI
-  wireframes, control states and direct link to the full Engineering Client SDE.
+- [Engineering Client UI](engineering-client-ui.md) — review the Step-4 Timing
+  UI wireframes and state/interaction design.
 - [Architecture Book](book.md) — the existing assembled Book remains a
   first-class output and is not owned by this portal.
 
@@ -281,6 +281,64 @@ content come from native MyST/Sphinx-Needs and the released normalized graph
 boundary.
 """
 
+
+ENGINEERING_CLIENT_UI_DIAGRAMS = (
+    (
+        "engineering-client-timing-closed.svg",
+        "CLOSED without operational location",
+        "Set Location is available; Open waits for an authoritative assigned LocationId.",
+    ),
+    (
+        "engineering-client-timing-open.svg",
+        "OPEN with bounded LogBook",
+        "Location is fixed; dev auto-reg is capability-gated and committed records are shown from the LogBook.",
+    ),
+    (
+        "engineering-client-timing-reconnecting.svg",
+        "RECONNECTING / stale",
+        "Cached state remains visible while controls stay disabled until rebuild and dedup complete.",
+    ),
+)
+
+
+def render_engineering_client_ui(view: dict, repository: str) -> str:
+    source = source_url(
+        repository,
+        view["source_revision"],
+        "docs/50-SDE-03-engineering-client.md",
+    )
+    sections = []
+    for filename, title, description in ENGINEERING_CLIENT_UI_DIAGRAMS:
+        sections.extend(
+            [
+                f"## {title}",
+                "",
+                description,
+                "",
+                f"![{title}](assets/architecture/{filename})",
+                "",
+            ]
+        )
+
+    return "\n".join(
+        [
+            "# Engineering Client — Step 4 Timing UI",
+            "",
+            (
+                "This is a **derived portal view** of the D01 mid-fidelity UI "
+                "baseline. The authoritative design text and control/state rules "
+                f"remain in [SDE03 — Engineering Client]({source})."
+            ),
+            "",
+            (
+                "The wireframes are generated from declarative YAML by "
+                "tool.eng-docs; the same sources also produce editable draw.io "
+                "output in the normal documentation publication."
+            ),
+            "",
+            *sections,
+        ]
+    )
 
 def render_book_page(repository: str, publication_branch: str) -> str:
     url = (
@@ -296,35 +354,6 @@ output.
 
 The Material portal complements that Book with search, object pages and focused
 engineering context. It does not replace Book assembly or source ownership.
-"""
-
-
-def render_engineering_client_page(repository: str, publication_branch: str) -> str:
-    sde_url = (
-        f"https://github.com/{repository}/blob/{publication_branch}/"
-        "documents/50-SDE-03-engineering-client.md"
-    )
-    return f"""# Engineering Client design
-
-This portal page is a derived review view for the Step-4 Engineering Client
-Timing UI. The authored design remains in SDE03 and the declarative diagram YAML.
-
-[Open the generated Engineering Client design document]({sde_url})
-
-## Timing view
-
-![Engineering Client Timing view](assets/architecture/engineering-client-timing-view.svg)
-
-The first-registration view combines authoritative TimingNode status, lifecycle
-control, capability-gated accepted-registration simulation and committed
-TimingData history.
-
-## Control-state examples
-
-![Timing view control states](assets/architecture/engineering-client-timing-states.svg)
-
-These states define CLOSED/no-location, CLOSED/located, OPEN and reconnecting/
-stale behaviour. They are design wireframes, not JavaFX screenshots.
 """
 
 
@@ -417,26 +446,24 @@ def write_portal(
         architecture_path,
         output_dir / "assets" / "architecture" / "layered-architecture.svg",
     )
-
-    for ui_asset in (
-        "engineering-client-timing-view.svg",
-        "engineering-client-timing-states.svg",
-    ):
-        source = architecture_path.parent / ui_asset
-        if not source.exists():
-            raise PortalError(f"missing Engineering Client portal asset: {source}")
+    for filename, _, _ in ENGINEERING_CLIENT_UI_DIAGRAMS:
+        source = architecture_path.parent / filename
+        if not source.is_file():
+            raise PortalError(
+                f"missing generated Engineering Client UI diagram: {source}"
+            )
         shutil.copy2(
             source,
-            output_dir / "assets" / "architecture" / ui_asset,
+            output_dir / "assets" / "architecture" / filename,
         )
 
     (output_dir / "index.md").write_text(render_index(view), encoding="utf-8")
+    (output_dir / "engineering-client-ui.md").write_text(
+        render_engineering_client_ui(view, repository),
+        encoding="utf-8",
+    )
     (output_dir / "book.md").write_text(
         render_book_page(repository, publication_branch), encoding="utf-8"
-    )
-    (output_dir / "engineering-client.md").write_text(
-        render_engineering_client_page(repository, publication_branch),
-        encoding="utf-8",
     )
     (output_dir / "explorer.md").write_text(
         render_explorer(view, svg), encoding="utf-8"

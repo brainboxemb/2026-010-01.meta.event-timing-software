@@ -1,0 +1,117 @@
+diagram:
+  id: engineering-client-timing-closed
+  title: Figure SDE03-02 — Timing view / CLOSED without location
+  width: 1180
+  height: 790
+  note: Mid-fidelity D01 wireframe. Controls show intended state/ownership, not production styling.
+
+groups: []
+
+nodes:
+  - id: shell
+    label: Engineering Client
+    subtitle: IF-03 endpoint http://127.0.0.1:8081
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 35, y: 85, w: 1110, h: 660}
+
+  - id: tabs
+    label: "Status | Events | Timing | Terminal | Logs"
+    subtitle: Timing
+    kind: wireframe-surface
+    notation: wireframe-tabs
+    layout: {x: 65, y: 120, w: 1050, h: 44}
+
+  - id: connection
+    label: LIVE
+    kind: wireframe-live
+    notation: wireframe-status
+    layout: {x: 990, y: 180, w: 95, h: 30}
+
+  - id: node-panel
+    label: TimingNode
+    subtitle: timing-node-01
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 75, y: 180, w: 900, h: 185}
+
+  - id: lifecycle
+    label: CLOSED
+    kind: wireframe-action
+    notation: wireframe-status
+    layout: {x: 105, y: 235, w: 105, h: 32}
+
+  - id: location
+    label: LocationId
+    subtitle: not assigned
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 245, y: 215, w: 245, h: 76}
+
+  - id: set-location
+    label: Set location
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 510, y: 242, w: 125, h: 38}
+
+  - id: open
+    label: Open
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 675, y: 242, w: 100, h: 38}
+
+  - id: close
+    label: Close
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 790, y: 242, w: 100, h: 38}
+
+  - id: result
+    label: Last operation
+    subtitle: No command executed
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 105, y: 300, w: 785, h: 52}
+
+  - id: registration-panel
+    label: Auto-reg
+    subtitle: Disabled while TimingNode is CLOSED
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 75, y: 390, w: 1035, h: 145}
+
+  - id: registration-id
+    label: ID
+    kind: wireframe-disabled
+    notation: wireframe-input
+    layout: {x: 105, y: 430, w: 260, h: 76}
+
+  - id: observation-time
+    label: Time
+    kind: wireframe-disabled
+    notation: wireframe-input
+    layout: {x: 390, y: 430, w: 330, h: 76}
+
+  - id: use-now
+    label: Now
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 740, y: 457, w: 80, h: 38}
+
+  - id: inject
+    label: Auto-reg
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 840, y: 457, w: 190, h: 38}
+
+  - id: history
+    label: LogBook
+    subtitle: "count 0"
+    kind: wireframe-surface
+    notation: wireframe-table
+    items:
+      - "Seq | Type | Location | RegistrationId | Effective | Recorded"
+      - "No committed records"
+    layout: {x: 75, y: 560, w: 1035, h: 145}
+
+edges: []

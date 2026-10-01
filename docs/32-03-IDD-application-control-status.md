@@ -65,7 +65,8 @@ Only `GET` is required for the two HTTP resources in this slice. Later applicati
 - A breaking representation/semantic change requires a new API major path such as `/api/v2` or an explicitly documented compatible migration mechanism.
 - Unknown event types shall not corrupt client state; a client may ignore/log an event type it does not understand and can always re-query `/status`.
 - UTF-8 is used for JSON text.
-- timestamps in the public contract use ISO-8601 UTC text form.
+- timestamps in the public contract use ISO-8601 UTC text form;
+- the API major version is carried by the `/api/v1` resource namespace and is not repeated in every JSON object; `/version` still reports `apiVersion` as build/interface identity.
 
 ## Build/version identity
 
@@ -102,7 +103,8 @@ by its commit SHA alone.
 
 ## Current status response
 
-The first-executable status representation is:
+The status resource is intentionally compact. Build identity is queried through
+`/version`; status carries only current operational state.
 
 > This is an external interface shape. It does not prescribe a Java class with
 > the same structure or a class named `ApplicationStatusSnapshot`. The
@@ -111,21 +113,11 @@ The first-executable status representation is:
 
 ```json
 {
-  "apiVersion": "1",
-  "build": {
-    "application": "timing-application",
-    "version": "<project-version>",
-    "revision": "<source-revision>",
-    "sourceRef": "<branch-tag-or-ref>",
-    "buildOrigin": "local|github-actions",
-    "dirty": false,
-    "apiVersion": "1"
-  },
-  "timingNodes": [
+  "nodes": [
     {
-      "timingNodeId": "<configured-timing-node-id>",
+      "id": "<configured-timing-node-id>",
       "locationId": null,
-      "lifecycle": "CLOSED"
+      "state": "CLOSED"
     }
   ],
   "problems": []
@@ -138,16 +130,15 @@ running; startup/shutdown process lifecycle remains an internal/runtime concern
 for this slice.
 
 Internally SI-01 may host 1..N `TimingSystem` aggregates, each with its own
-`SystemStatus`, but `TimingSystemId` is deliberately not part of this first
-external IF-03 shape. The `timingNodes` array is an application-facing
-aggregation of the configured TimingNodes; the current configuration baseline
-keeps `TimingNodeId` application-wide unique so that this flattened view is
-unambiguous. Structured problem entries carry additional observable operational
-problems.
+`SystemStatus`, but `TimingSystemId` is deliberately not part of this external
+IF-03 shape. The `nodes` array aggregates the configured TimingNodes.
+`TimingNodeId` is application-wide unique and is represented as `id` in the
+compact IF-03 node object, so node-specific resources can use
+`/api/v1/node/{id}/...` without exposing an internal TimingSystem identifier.
 
 In the Step-4 first-registration slice, `locationId` is either `null` while
 no operational location is assigned or the positive current IF-05 `LocationId`
-value. `lifecycle` is `CLOSED` or `OPEN`. A closed node may retain its last
+value. `state` is `CLOSED` or `OPEN`. A closed node may retain its last
 selected location during the same runtime session; startup/recovery does not
 invent a current operational location from historical TimingData.
 
@@ -214,7 +205,6 @@ Successful response:
 
 ```json
 {
-  "apiVersion": "1",
   "capabilities": [
     {
       "id": "DIRECT_REGISTRATION_SIMULATION",
@@ -234,7 +224,7 @@ only when `DIRECT_REGISTRATION_SIMULATION` is both supported and enabled.
 HTTP mapping:
 
 ```text
-PUT /api/v1/timing-node/location
+PUT /api/v1/node/{id}/location
 ```
 
 Request:
@@ -252,7 +242,6 @@ Successful response is HTTP `200`:
 
 ```json
 {
-  "apiVersion": "1",
   "result": "UPDATED"
 }
 ```
@@ -265,7 +254,7 @@ change is reflected by subsequent status queries and a `STATUS_CHANGED` event.
 HTTP mapping:
 
 ```text
-POST /api/v1/timing-node/open
+POST /api/v1/node/{id}/open
 ```
 
 The request has no semantic body. Successful HTTP `200` results are
@@ -277,77 +266,98 @@ a domain conflict and does not change state.
 HTTP mapping:
 
 ```text
-POST /api/v1/timing-node/close
+POST /api/v1/node/{id}/close
 ```
 
 The request has no semantic body. Successful HTTP `200` results are
 `CLOSED` or `ALREADY_CLOSED`. A successful state change is followed by a
 `STATUS_CHANGED` event.
 
-### IF03-OP-008 — Inject an already-accepted registration
+### IF03-OP-008 — Simulate an automatic registration
 
 This is an engineering capability, not a replacement RFID or manual-entry
-interface.
+interface. The short `auto-reg` resource name is a Step-4 review label; the
+semantic injection boundary is the important contract decision.
 
 HTTP mapping:
 
 ```text
-POST /api/v1/engineering/accepted-registration
+POST /api/v1/dev/node/{id}/auto-reg
 ```
 
 Request:
 
 ```json
 {
-  "registrationId": "<resolved-registration-id>",
-  "observationTime": "2026-10-01T12:00:00.000000000Z"
+  "id": "N001",
+  "time": "2026-10-01T12:00:00.000000000Z"
 }
 ```
 
-The caller supplies only the already-resolved shared `RegistrationId` and the
-accepted observation time. SI-01 supplies its configured source identity,
-current LocationId, next committed sequence and recordedAt value and executes the
-same accepted-registration operation used after normal RFID interpretation and
-filtering.
+The path `{id}` addresses the TimingNode. The request-body `id` is the
+already-resolved shared `RegistrationId`; `N001` is only a short deterministic
+example and does not define a required prefix or format. `time` is the accepted observation
+time. SI-01 supplies source identity, current LocationId, next committed sequence
+and recordedAt and executes the same accepted-registration operation used after
+normal RFID interpretation/filtering.
 
 Successful HTTP `200` response:
 
 ```json
 {
-  "apiVersion": "1",
-  "result": "COMMITTED",
-  "recordKey": {
-    "timingNodeId": "<configured-timing-node-id>",
-    "sequenceNumber": 1
-  }
+  "seq": 1
 }
 ```
 
-Command outcome is intentionally separate from the history/live TimingData
-representation. The committed record becomes visible through IF03-OP-009 and a
+The returned sequence identifies the newly committed record within the addressed
+TimingNode. The committed record becomes visible through IF03-OP-009 and a
 `TIMING_DATA_COMMITTED` event.
 
-### IF03-OP-009 — Get committed TimingData history
+### IF03-OP-009 — Query committed LogBook
 
-HTTP mapping:
+The LogBook resource is node-addressed and bounded. A client does not need to
+download the complete history merely to learn its size.
+
+HTTP mappings:
 
 ```text
-GET /api/v1/timing-data
+GET /api/v1/node/{id}/logbook
+GET /api/v1/node/{id}/logbook?from=101&limit=100
+GET /api/v1/node/{id}/logbook?last=100
 ```
 
-Successful response:
+Without query parameters the response is metadata only:
 
 ```json
 {
-  "apiVersion": "1",
-  "timingNodeId": "<configured-timing-node-id>",
+  "count": 12457,
+  "first": 1,
+  "last": 12457
+}
+```
+
+For an empty LogBook, `count` is `0` and `first`/`last` are `null`.
+
+`from` is an inclusive committed source sequence. `limit` is the maximum
+number of records returned. `last` requests the newest records while preserving
+source-sequence order. `last` cannot be combined with `from` or `limit`.
+The Step-4 v1 baseline limits `limit` and `last` to 1..1000.
+
+A record-bearing response is:
+
+```json
+{
+  "count": 12457,
+  "next": 201,
   "records": []
 }
 ```
 
-Each `records` element uses the public IF-05 TimingData JSON field semantics.
-Records are returned in committed source-sequence order. This resource exposes
-committed history only; it does not expose queued/uncommitted operations.
+`count` is the total committed record count at response time. `next` is the
+next source sequence to request when more records are available, otherwise
+`null`. Each `records` element uses the public IF-05 TimingData JSON field
+semantics. Records are returned in committed source-sequence order; queued or
+uncommitted work is never exposed as LogBook content.
 
 ### IF03-OP-003 — Subscribe to status/event updates
 
@@ -365,7 +375,6 @@ Event envelope:
 
 ```json
 {
-  "apiVersion": "1",
   "eventType": "STATUS_SNAPSHOT",
   "occurredAt": "<ISO-8601 UTC>",
   "payload": {}
@@ -397,22 +406,25 @@ provides deduplication when history and live delivery overlap.
 
 ## Reconnect and resynchronisation
 
-Reconnect semantics rebuild authoritative current state/history before the client
-declares its view live:
+Reconnect semantics rebuild authoritative current state/LogBook gaps before the
+client declares its view live:
 
 1. client reconnects to `/api/v1/events`;
 2. SI-01 sends a complete `STATUS_SNAPSHOT`; the client begins buffering later
    WebSocket events;
-3. the client replaces its cached status from the snapshot and calls
-   `GET /api/v1/timing-data` to rebuild committed history;
-4. the client applies buffered `STATUS_CHANGED` events in WebSocket order;
-5. buffered `TIMING_DATA_COMMITTED` records already present in rebuilt history
-   are discarded by stable TimingData record key; later records are appended in
-   source-sequence order;
-6. only after this merge is complete does the client mark the view live.
+3. the client replaces its cached status from the snapshot;
+4. for each selected/cached node, the client queries
+   `GET /api/v1/node/{id}/logbook` and fetches only required bounded ranges,
+   normally continuing from the last cached sequence;
+5. the client applies buffered `STATUS_CHANGED` events in WebSocket order;
+6. buffered `TIMING_DATA_COMMITTED` records already present in the rebuilt
+   LogBook view are discarded by stable TimingData record key; later records are
+   appended in source-sequence order;
+7. only after this merge is complete does the client mark the view live.
 
-No durable WebSocket replay across disconnected sessions is required. Committed
-history is the recovery source for TimingData missed while disconnected.
+No durable WebSocket replay across disconnected sessions is required. The
+authoritative LogBook is the recovery source for committed TimingData missed
+while disconnected.
 
 ## Error responses
 
@@ -420,7 +432,6 @@ HTTP failures use a JSON envelope:
 
 ```json
 {
-  "apiVersion": "1",
   "error": {
     "code": "<stable-machine-code>",
     "message": "<human-readable-summary>"
@@ -434,7 +445,7 @@ Step-4 mapping:
 | --- | --- |
 | `400` | `MALFORMED_REQUEST`, `INVALID_VALUE` |
 | `403` | `CAPABILITY_NOT_ENABLED` |
-| `404` | `NOT_FOUND` |
+| `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
 | `409` | domain-state conflict such as `NO_LOCATION`, `NODE_NOT_CLOSED`, `NODE_NOT_OPEN` |
 | `503` | `BUSY`, `UNAVAILABLE`, or expected commit dependency failure |
@@ -546,9 +557,10 @@ Clients shall be able to ignore unknown response members/event types within API 
 :id: IF03-REQ-011
 :derived_from: SI01-REQ-040
 
-IF-03 shall expose the current optional LocationId and OPEN/CLOSED state and shall
-provide IF03-OP-005/006/007 for location, open and close control using the shared
-SI-01 application/domain semantics.
+IF-03 shall expose 1..N application-wide-unique TimingNode identities with current
+optional LocationId and OPEN/CLOSED state and shall provide node-addressed
+IF03-OP-005/006/007 location/open/close control using the shared SI-01
+application/domain semantics.
 ```
 
 ```{ifreq} Engineering capability discovery
@@ -560,21 +572,21 @@ direct registration simulation is supported and enabled before presenting or
 using that control.
 ```
 
-```{ifreq} Direct accepted-registration engineering control
+```{ifreq} Dev auto-reg control
 :id: IF03-REQ-013
 :derived_from: SI01-REQ-041, SI01-REQ-043
 
 When the advertised capability is supported and enabled, IF-03 shall provide
-IF03-OP-008 and pass only resolved RegistrationId plus accepted observation time
-to the normal SI-01 accepted-registration operation.
+IF03-OP-008 and pass only `id` plus `time` to the normal SI-01
+accepted-registration operation.
 ```
 
-```{ifreq} Committed TimingData history query
+```{ifreq} Committed LogBook query
 :id: IF03-REQ-014
 :derived_from: SI01-REQ-042
 
-IF-03 shall provide IF03-OP-009 for committed TimingData history in source-sequence
-order using public IF-05 field semantics.
+IF-03 shall provide IF03-OP-009 as a node-addressed LogBook metadata and bounded
+range query in source-sequence order using public IF-05 field semantics.
 ```
 
 ```{ifreq} Live committed TimingData delivery
@@ -582,17 +594,17 @@ order using public IF-05 field semantics.
 :derived_from: SI01-REQ-042
 
 The IF-03 WebSocket event stream shall emit `TIMING_DATA_COMMITTED` only after
-the corresponding TimingData record is committed and visible in authoritative
-local history.
+the corresponding TimingData record is committed and visible in the authoritative
+LogBook.
 ```
 
-```{ifreq} Rebuild history before live presentation
+```{ifreq} Rebuild LogBook before live presentation
 :id: IF03-REQ-016
 :derived_from: SI01-REQ-044
 
 A reconnecting client shall be able to combine the current status snapshot,
-committed TimingData history and buffered live events using stable TimingData
-record keys before declaring its view live.
+bounded authoritative LogBook ranges and buffered live events using stable
+TimingData record keys before declaring its view live.
 ```
 
 ## Relationship to SI-01 SSD
@@ -633,7 +645,7 @@ Procedure:
 1. start SI-01 as a separate process with a synthetic configuration containing at least one configured `TimingNode`;
 2. wait for the configured local IF-03 endpoint to become available;
 3. call `GET /api/v1/version` and verify the required identity fields are present;
-4. call `GET /api/v1/status` and verify the same build identity and configured TimingNode `TimingNodeId` is represented;
+4. call `GET /api/v1/status` and verify the configured TimingNode is represented in `nodes` by its compact `id` and current state;
 5. connect to `/api/v1/events` and verify the first application message is a complete `STATUS_SNAPSHOT`;
 6. disconnect the WebSocket client;
 7. reconnect and verify a new complete `STATUS_SNAPSHOT` is received before further change events are relied upon;
@@ -662,16 +674,18 @@ Deterministic procedure:
 3. set a known synthetic LocationId and verify CLOSED status reflects it;
 4. request OPEN and verify OPEN with the same LocationId;
 5. attempt another location change and verify explicit NODE_NOT_CLOSED conflict;
-6. submit one accepted registration with a deterministic RegistrationId and
-   observation time;
-7. verify the command result is COMMITTED and does not supply client-owned source
-   sequence/location/recordedAt fields;
-8. verify committed history contains exactly the resulting TimingData with source
-   sequence 1, the active LocationId and the supplied observation time;
-9. verify a TIMING_DATA_COMMITTED live event represents that same stable record key;
-10. request CLOSE and verify CLOSED;
-11. reconnect the event client, rebuild history, deduplicate any buffered overlap
-    by record key and only then mark the view live.
+6. submit one node-addressed dev auto-reg request with deterministic request-body
+   `id` and `time`;
+7. verify the response returns `seq: 1` and that the client did not supply
+   source identity, active location or recordedAt;
+8. query the addressed node LogBook metadata and verify
+   `count: 1`, `first: 1`, `last: 1`;
+9. fetch a bounded LogBook range and verify sequence 1 contains the active
+   LocationId and supplied observation time;
+10. verify a TIMING_DATA_COMMITTED live event represents that same stable record key;
+11. request CLOSE and verify CLOSED;
+12. reconnect the event client, query LogBook metadata/ranges, deduplicate any
+    buffered overlap by record key and only then mark the view live.
 ```
 
 ## Remote shell scope
@@ -693,7 +707,7 @@ The following IF-03 capabilities are visible in later use cases/architecture but
 - start procedure;
 - RFID power/reinitialisation commands;
 - ready-team add/remove;
-- manual registration/penalty/revocation beyond the direct accepted-registration engineering path;
+- manual registration/penalty/revocation beyond the dev auto-reg path;
 - reference-data administration;
 - backoffice controls;
 - detailed diagnostics/support export;

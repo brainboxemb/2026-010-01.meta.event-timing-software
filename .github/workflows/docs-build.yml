@@ -244,6 +244,21 @@ jobs:
           expected_ids = {item["id"] for item in graph["objects"]}
           objects = {item["id"]: item for item in graph["objects"]}
 
+          ui_page = site / "engineering-client-ui" / "index.html"
+          if not ui_page.is_file():
+              raise SystemExit("engineering portal missing Engineering Client UI page")
+          ui_html = ui_page.read_text(encoding="utf-8")
+          for filename in (
+              "engineering-client-timing-closed.svg",
+              "engineering-client-timing-open.svg",
+              "engineering-client-timing-reconnecting.svg",
+          ):
+              asset = root / "docs" / "assets" / "architecture" / filename
+              if not asset.is_file():
+                  raise SystemExit(f"engineering portal missing UI diagram asset: {filename}")
+              if filename not in ui_html:
+                  raise SystemExit(f"Engineering Client UI page does not reference {filename}")
+
           use_cases = {
               object_id: item
               for object_id, item in objects.items()
@@ -279,11 +294,16 @@ jobs:
               raise SystemExit("portal object count does not match engineering graph")
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
-          if provenance["tool_eng_docs"] != {
+          expected_tool_eng_docs = {
               "ref": "v0.9.1",
               "sha": "7d13ae32c5ac3ac3fea0192559a034b9778a517d",
-          }:
-              raise SystemExit("portal tool provenance mismatch")
+          }
+          if provenance["tool_eng_docs"] != expected_tool_eng_docs:
+              raise SystemExit(
+                  "portal tool provenance mismatch: "
+                  f"actual={provenance['tool_eng_docs']!r} "
+                  f"expected={expected_tool_eng_docs!r}"
+              )
 
           required_diagram_ids = {
               object_id
@@ -397,6 +417,32 @@ jobs:
           grep -q '<code>AntennaManager</code>' bld/engineering-portal/browser-explorer-AntennaManager.html
           grep -q 'coordinates the configured 0..N Antenna components' bld/engineering-portal/browser-explorer-AntennaManager.html
           grep -q 'Open source definition' bld/engineering-portal/browser-explorer-AntennaManager.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/engineering-client-ui/" \
+            > bld/engineering-portal/browser-engineering-client-ui.html
+
+          grep -q 'Engineering Client — Step 4 Timing UI' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'CLOSED without operational location' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'OPEN with bounded LogBook' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'RECONNECTING / stale' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engineering-client-ui.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --window-size=1600,1200 \
+            --screenshot=bld/engineering-portal/engineering-client-ui.png \
+            "http://127.0.0.1:8765/engineering-client-ui/"
 
           "$chrome" \
             --headless \
@@ -550,6 +596,13 @@ jobs:
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
           test -f bld/docs/assets/architecture/layered-architecture.drawio
+          for ui_diagram in \
+            engineering-client-timing-closed \
+            engineering-client-timing-open \
+            engineering-client-timing-reconnecting; do
+            test -f "bld/docs/assets/architecture/${ui_diagram}.svg"
+            test -f "bld/docs/assets/architecture/${ui_diagram}.drawio"
+          done
           for object_id in TimingNode CommandHandler Conductor Api; do
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.svg
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.drawio
@@ -608,9 +661,7 @@ jobs:
                   "b36ee6828d15b4179e9e975c0ba76193b1bc2213",
                   # Temporary compact-sequence renderer qualification head.
                   "dcbe8505f9ac26a3764bc7528b5f4ee286c02a87",
-                  # Immutable v0.8.1 compact-sequence renderer release.
-                  "43cb313545a271a15ad7195cc28c58d15489b6a1",
-                  # Immutable v0.9.0 UI-wireframe renderer release.
+                  # Immutable v0.9.0 wireframe-capable engineering-docs release.
                   "b4645d8810fd0e235605e5f03646e14f9653ddea",
                   # Immutable v0.9.1 multi-page BoardView release.
                   "7d13ae32c5ac3ac3fea0192559a034b9778a517d",
@@ -706,6 +757,7 @@ jobs:
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
           cp -a bld/engineering-portal/site "$staging/portal"
           cp bld/engineering-portal/explorer-TimingNode.png "$staging/evidence/portal/explorer-TimingNode.png"
+          cp bld/engineering-portal/engineering-client-ui.png "$staging/evidence/portal/engineering-client-ui.png"
           cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
           cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"
           cp docs/_portal/requirements.txt "$staging/evidence/portal/requirements.txt"

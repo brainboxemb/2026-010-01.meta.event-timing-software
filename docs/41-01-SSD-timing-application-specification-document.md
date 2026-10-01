@@ -212,11 +212,11 @@ history and live post-commit notification without exposing uncommitted records
 as committed state.
 ```
 
-```{req} Capability-gated engineering registration injection
+```{req} Capability-gated dev auto-reg
 :id: SI01-REQ-043
 :derived_from: UC-009
 
-The direct accepted-registration engineering control shall be usable only when
+The dev auto-reg control shall be usable only when
 SI-01 advertises that the corresponding engineering capability is both supported
 and enabled. This control enters at the accepted semantic registration boundary
 and shall not let the client supply final TimingData, source sequence, active
@@ -282,14 +282,14 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
 | SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03 control/status | V1/V2 + Step-4 ST-1 |
-| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control | V2 + Step-4 ST-1 |
-| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 history/WebSocket | V2/V3 + reconnect verification |
+| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + Step-4 ST-1 |
+| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + reconnect verification |
 
 ### AP-1 decisions resolved by this baseline
 
 The following are now fixed for the first-executable contract:
 
-- build/version identity fields are owned by IF-03: `application`, `version`, `revision`, `buildTime`, `apiVersion`;
+- build/version identity fields are owned by IF-03: `application`, `version`, `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`;
 - minimal application status/lifecycle semantics are defined in IF-03 and the lifecycle interpretation above;
 - IF-03 HTTP resources are `/api/v1/version` and `/api/v1/status`;
 - IF-03 WebSocket endpoint is `/api/v1/events`;

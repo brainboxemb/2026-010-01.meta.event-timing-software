@@ -10,8 +10,8 @@ strict: true
 nav:
   - Portal: index.md
   - Architecture Book: book.md
-  - Engineering Client design: engineering-client.md
   - Engineering explorer: explorer.md
+  - Engineering Client UI: engineering-client-ui.md
   - Objects:
       - Engineering object index: objects/index.md
 

@@ -1,0 +1,99 @@
+diagram:
+  id: engineering-client-timing-reconnecting
+  title: Figure SDE03-04 — Timing view / RECONNECTING and stale
+  width: 1180
+  height: 790
+  note: Cached information remains visible but non-authoritative until status/LogBook gap recovery and buffered-event merge complete.
+
+groups: []
+
+nodes:
+  - id: shell
+    label: Engineering Client
+    subtitle: IF-03 endpoint http://127.0.0.1:8081
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 35, y: 85, w: 1110, h: 660}
+
+  - id: tabs
+    label: "Status | Events | Timing | Terminal | Logs"
+    subtitle: Timing
+    kind: wireframe-surface
+    notation: wireframe-tabs
+    layout: {x: 65, y: 120, w: 1050, h: 44}
+
+  - id: connection
+    label: RECONNECTING
+    kind: wireframe-stale
+    notation: wireframe-status
+    layout: {x: 945, y: 180, w: 140, h: 30}
+
+  - id: stale
+    label: STALE
+    kind: wireframe-stale
+    notation: wireframe-status
+    layout: {x: 820, y: 180, w: 95, h: 30}
+
+  - id: rebuild
+    label: Rebuild in progress
+    subtitle: status snapshot + bounded LogBook ranges; live events buffered and deduplicated by record key
+    kind: wireframe-stale
+    notation: wireframe-panel
+    layout: {x: 75, y: 215, w: 1035, h: 90}
+
+  - id: location
+    label: LocationId
+    subtitle: "24 (cached)"
+    kind: wireframe-disabled
+    notation: wireframe-input
+    layout: {x: 95, y: 330, w: 245, h: 76}
+
+  - id: lifecycle
+    label: OPEN (cached)
+    kind: wireframe-disabled
+    notation: wireframe-status
+    layout: {x: 365, y: 352, w: 135, h: 32}
+
+  - id: set-location
+    label: Set location
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 530, y: 350, w: 125, h: 38}
+
+  - id: open
+    label: Open
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 680, y: 350, w: 100, h: 38}
+
+  - id: close
+    label: Close
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 795, y: 350, w: 100, h: 38}
+
+  - id: inject
+    label: Auto-reg
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 920, y: 350, w: 165, h: 38}
+
+  - id: history
+    label: Cached LogBook
+    subtitle: Retained for inspection; bounded gap fetch in progress
+    kind: wireframe-disabled
+    notation: wireframe-table
+    items:
+      - "Seq | Type | Location | RegistrationId | Effective | Recorded"
+      - "1 | automatic | 24 | N001 | 12:00:00.000 | 12:00:00.125"
+      - "2 | manual | 24 | N002 | 12:00:04.000 | 12:00:04.030"
+    layout: {x: 75, y: 445, w: 1035, h: 190}
+
+  - id: rule
+    label: Live transition
+    subtitle: Apply snapshot -> fetch LogBook gap -> merge buffered events -> deduplicate -> LIVE
+    kind: wireframe-stale
+    notation: wireframe-input
+    layout: {x: 75, y: 660, w: 1035, h: 58}
+
+edges: []

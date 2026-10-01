@@ -32,3 +32,9 @@ kinds:
   port: {fill: "#e1d5e7", stroke: "#9673a6"}
   adapter: {fill: "#f8cecc", stroke: "#b85450"}
   external: {fill: "#eeeeee", stroke: "#777777"}
+  wireframe-surface: {fill: "#ffffff", stroke: "#666666"}
+  wireframe-control: {fill: "#ffffff", stroke: "#777777"}
+  wireframe-action: {fill: "#f1f3f4", stroke: "#5f6368"}
+  wireframe-disabled: {fill: "#f5f5f5", stroke: "#b7b7b7"}
+  wireframe-live: {fill: "#eef8ee", stroke: "#5b8f5a"}
+  wireframe-stale: {fill: "#fff8df", stroke: "#b58b24"}
