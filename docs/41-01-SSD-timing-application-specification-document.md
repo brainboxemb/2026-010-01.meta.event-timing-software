@@ -900,6 +900,16 @@ process/runtime information
 network / OS primitives
 ```
 
+#### Runtime, infrastructure and core
+
+The right-hand side of the layered view separates three technical responsibilities:
+
+- **Runtime** — the running `TimingApplication` composition and lifecycle container;
+- **Infrastructure / cross-cutting** — concrete technical facilities such as logging, diagnostics, build identity and bootstrap/composition;
+- **Core** — small JDK-only reusable primitives with no TimingNode, I/O or presentation semantics, such as bounded serial execution and local typed events.
+
+Core is a technical foundation, not another business/domain layer. A domain component may compose a Core primitive such as `SerialWorker` or `Event<T>`; the primitive itself remains unaware of the domain component.
+
 #### Cross-cutting concerns
 
 Cross-cutting technical concerns include logging, diagnostics, metrics and
