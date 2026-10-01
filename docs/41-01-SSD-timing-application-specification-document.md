@@ -1171,9 +1171,9 @@ Working rules:
 - a caller timeout does not prove rejection or rollback of already accepted work; until state is queried or another result is observed, the final outcome is unknown to that caller;
 - external protocol DTOs are mapped at the presentation/I/O boundary rather than used as the internal domain model;
 - messages crossing thread/process boundaries should be immutable where practical;
-- post-fact notifications use a small typed publish/subscribe event boundary; commands and queries are not routed through that event mechanism.
+- post-fact notifications may use a small typed `Event<T>` abstraction with explicit `subscribe` / `unsubscribe` / `emit`; commands and queries are not routed through that mechanism.
 
-The internal event mechanism is deliberately smaller than a general-purpose messaging platform. It publishes immutable typed events such as `TimingDataCommitted` to explicitly registered subscribers. It has no string topics, reflection-based discovery or global static access. The dispatcher is composed/scoped with the owning runtime and does not become an alternate owner of TimingNode state. A third-party event framework is only justified later if it preserves these semantics and solves a demonstrated problem better than the small in-process abstraction.
+The event mechanism is deliberately local and simple. A component owns an event such as `newTimingDataEvent : Event<TimingData>` and interested listeners subscribe directly to that event. There are no string topics, central event dispatcher or global static bus. Emitting an event reports that a fact has already occurred; it does not transfer ownership of TimingNode state.
 
 ### Process view: ordering and concurrency
 
@@ -1213,7 +1213,7 @@ External ingress still keeps its functional routing responsibilities:
   upstream messages;
 - scheduled work retains its owning target.
 
-There is no central dispatcher through which commands and queries must pass. A scoped typed `EventDispatcher` may fan out immutable events after facts have occurred; it is a notification mechanism, not the owner or execution path for TimingNode state.
+There is no central dispatcher through which commands and queries must pass. Components may expose local typed events such as `newTimingDataEvent` for post-fact notification; those events are not the owner or execution path for TimingNode state.
 
 <a id="fig-si01-04"></a>
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
@@ -1312,7 +1312,7 @@ appear in the public application/domain API.
 Rules:
 
 - use typed internal work only where work crosses an asynchronous or TimingNode execution boundary;
-- resolve command/query targets explicitly; do not route commands or mutable-state access through the event framework; typed post-fact events may use the scoped EventDispatcher;
+- resolve command/query targets explicitly; do not route commands or mutable-state access through events; local typed events are only for post-fact notification;
 - once running in a TimingNode's serial execution lane, use normal direct Java calls;
 - do not call a blocking public TimingNode operation recursively from that same lane;
 - submit asynchronous I/O completion back to the owning TimingNode before changing its state;
