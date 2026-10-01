@@ -908,14 +908,30 @@ A domain or I/O component may compose a Platform primitive such as
 `SerialWorker` or `Event<T>`; the primitive itself remains unaware of
 TimingNode, TimingData, presentation or external I/O semantics.
 
-```{arch} PlatformPrimitives
-:id: PlatformPrimitives
+The layered view groups Platform into three small technical responsibilities:
 
-`PlatformPrimitives` represents the small reusable technical building blocks
-used across the framework. The current design includes bounded serial execution
-(`SerialWorker`) and a local typed event primitive (`Event<T>`). Platform also
-owns the low-level environment abstractions listed above. Concrete class and
-threading behaviour belongs to SDD-02.
+```{arch} PlatformExecution
+:id: PlatformExecution
+
+`PlatformExecution` owns reusable execution primitives such as bounded serial
+execution and the low-level executor/thread abstractions behind them. It does not
+own TimingNode state or domain policy.
+```
+
+```{arch} PlatformEvents
+:id: PlatformEvents
+
+`PlatformEvents` supplies the small typed local-event mechanism used for
+post-fact notifications. Event instances remain owned by the component that
+publishes them; Platform does not provide a central event bus.
+```
+
+```{arch} PlatformEnvironment
+:id: PlatformEnvironment
+
+`PlatformEnvironment` groups low-level clock/time, filesystem/path,
+process/runtime and network/OS abstractions. Concrete class and threading
+behaviour belongs to SDD-02.
 ```
 
 #### Runtime and infrastructure
