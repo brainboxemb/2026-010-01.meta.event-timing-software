@@ -21,10 +21,12 @@ activities:
     lane: documentation
     kind: documentation
     title: Engineering Client architecture + UI baseline
-    state: done
+    state: active
     note: >-
-      Document the existing JavaFX Engineering Client as a standalone engineering
-      tool in the same repository. Keep the module name test-client for now.
+      Complete the Engineering Client architecture and the concrete Step-4 Timing
+      UI baseline: view layout, control availability, lifecycle/capability states,
+      TimingData history/live presentation and reconnect/stale/live behaviour.
+      Keep the module name test-client for now.
 
   - id: D02
     lane: documentation
@@ -99,8 +101,8 @@ activities:
     lane: application
     kind: integration
     title: Engineering Client first-slice control
-    state: active
-    depends_on: [A02]
+    state: next
+    depends_on: [D01, A02]
     note: >-
       Add IF-03/client support for location, open/close, capability-gated direct
       registration simulation, registration history and live updates. Rebuild
