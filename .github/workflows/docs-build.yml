@@ -419,6 +419,32 @@ jobs:
             --disable-gpu \
             --disable-dev-shm-usage \
             --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/engineering-client-ui/" \
+            > bld/engineering-portal/browser-engineering-client-ui.html
+
+          grep -q 'Engineering Client — Step 4 Timing UI' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'CLOSED without operational location' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'OPEN with committed history' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'RECONNECTING / stale' bld/engineering-portal/browser-engineering-client-ui.html
+          grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engineering-client-ui.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --window-size=1600,1200 \
+            --screenshot=bld/engineering-portal/engineering-client-ui.png \
+            "http://127.0.0.1:8765/engineering-client-ui/"
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
             --window-size=1600,1000 \
             --screenshot=bld/engineering-portal/explorer-TimingNode.png \
             "http://127.0.0.1:8765/explorer/?object=TimingNode"
@@ -724,6 +750,7 @@ jobs:
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
           cp -a bld/engineering-portal/site "$staging/portal"
           cp bld/engineering-portal/explorer-TimingNode.png "$staging/evidence/portal/explorer-TimingNode.png"
+          cp bld/engineering-portal/engineering-client-ui.png "$staging/evidence/portal/engineering-client-ui.png"
           cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
           cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"
           cp docs/_portal/requirements.txt "$staging/evidence/portal/requirements.txt"
