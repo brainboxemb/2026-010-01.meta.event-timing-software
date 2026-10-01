@@ -18,16 +18,16 @@ threads, queues and storage implementation details.
 
 The first slice covers:
 
-- TimingNode lifecycle facts;
 - participant registrations;
-- participant-registration revocations;
 - record identity and ordering;
 - registration identity;
 - canonical public/reference file encoding;
 - public/private codec/provider compatibility.
 
-Later TimingData record families, including start-procedure and penalty/correction
-facts, extend this interface when their domain requirements are promoted.
+Other TimingData families are added only when a promoted use case or requirement
+needs them. In particular, UC-002 currently leaves OPEN/CLOSE-as-TimingData as a
+later decision, and the current use-case baseline does not require registration
+revocation.
 
 ## Inputs
 
@@ -96,7 +96,7 @@ Those are software-item design concerns.
 <a id="fig-if05-01"></a>
 ![TimingData v1 interchange model](../../../raw/prod/docs/assets/architecture/timingdata-interchange-model.svg)
 
-*Figure IF05-01 — Canonical TimingData envelope, first record families, identity and representation/provider boundaries.*
+*Figure IF05-01 — Common TimingData registration contract, identity and representation/provider boundaries.*
 
 The figure deliberately stops at the IF-05 contract boundary. It does not show
 which SI-01 component produced a record or which thread persists it; those
@@ -173,30 +173,9 @@ ordered stream and stable key.
 
 ## TimingData v1 record types
 
-### TIMING_NODE_STATE
-
-Represents a traceable TimingNode lifecycle **transition**.
-
-```text
-recordType = TIMING_NODE_STATE
-state = OPEN | CLOSED
-```
-
-For this record family:
-
-- `effectiveTime` is the time at which the represented transition becomes effective;
-- `recordedAt` is captured when the definitive transition record is
-  materialized for its commit attempt;
-- `locationId` is the location associated with the transition;
-- an initial process/runtime state of CLOSED with no assigned LocationId does not
-  by itself require a synthetic TimingData record.
-
-The public semantic states are `OPEN` and `CLOSED`. Legacy/proprietary status
-characters are not IF-05 values.
-
 ### REGISTRATION
 
-Represents one participant registration.
+Represents one committed participant registration.
 
 ```text
 recordType = REGISTRATION
@@ -206,80 +185,35 @@ timeSource
 effectiveTime
 ```
 
-`origin`:
+The v1 representation distinguishes two semantic registration variants:
 
 ```text
 AUTOMATIC
+  origin = AUTOMATIC
+  timeSource = OBSERVED
+
 MANUAL
+  origin = MANUAL
+  timeSource = SYSTEM_ASSIGNED | OPERATOR_ENTERED
 ```
 
-`timeSource`:
+An automatic registration uses the accepted observed time. A manual
+registration may use the system-assigned time or an explicitly operator-entered
+effective time.
 
-```text
-OBSERVED
-SYSTEM_ASSIGNED
-OPERATOR_ENTERED
-```
-
-Meaning:
-
-- `AUTOMATIC + OBSERVED` represents the normal accepted electronic/tag path;
-- a manual registration may use `SYSTEM_ASSIGNED` time;
-- a manual registration may instead use `OPERATOR_ENTERED` time.
+These discriminators describe the canonical representation. They do not require
+one universal Java record class: the common Java API may expose
+`AutomaticRegistrationTimingData` and `ManualRegistrationTimingData` directly
+for type safety.
 
 Provider-specific one-character registration/action codes are not part of the
 public IF-05 contract.
-
-### REGISTRATION_REVOKED
-
-Represents an append-only fact that refers to an earlier registration.
-
-```text
-recordType = REGISTRATION_REVOKED
-reference = TimingDataRecordKey of the concerned REGISTRATION
-registrationId
-origin
-timeSource
-effectiveTime
-```
-
-Rules:
-
-- the referenced registration remains present and unchanged;
-- the revocation is a new record with its own record key and `recordedAt`;
-- the referenced record key belongs to the same `TimingNodeId` stream;
-- in an authoritative complete source stream, `reference.sequenceNumber` is
-  lower than the revocation's own sequence and identifies a
-  `REGISTRATION` record;
-- a partial/imported subset may omit that earlier record; the reference remains
-  representable but is then explicitly unresolved rather than silently treated
-  as valid business state;
-- `effectiveTime` equals the effective registration/race time of the referenced
-  registration, not the later operator/command time;
-- `locationId` equals the location captured by the referenced registration,
-  even if the TimingNode has subsequently been reconfigured while CLOSED;
-- registration identity, origin and time-source semantics remain those of the
-  registration being referred to.
-
-TimingData records the facts only. Domain/application business logic may derive an
-effective registration state for ranking, classification and other race-result
-calculations. Presentation clients independently decide whether a revoked
-registration is hidden, struck through, marked revoked or otherwise displayed.
-
-IF-05 does not impose a "maximum one revocation" rule. Behaviour of a command that
-would produce redundant or conflicting business facts belongs to the applicable
-application/use-case contract.
 
 ## TimingData v1 record matrix
 
 | Record type | Common envelope | Type-specific required data |
 | --- | --- | --- |
-| `TIMING_NODE_STATE` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `state = OPEN | CLOSED` |
 | `REGISTRATION` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `registrationId`, `origin`, `timeSource` |
-| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationId, original effectiveTime, recordedAt | `registrationId`, `origin`, `timeSource`, `reference` |
-
-The matrix is a compact view of the same normative field semantics above; it does
-not define an alternative record shape.
 
 ## Canonical JSON field contract
 
@@ -290,57 +224,26 @@ Known v1 members use the following JSON types and validation rules:
 | `version` | integer | every record | exactly `1` |
 | `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
 | `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
-| `locationId` | integer | every committed v1 record | positive configured LocationId; concrete deployment/event ranges are outside IF-05 |
-| `recordType` | string | every record | `TIMING_NODE_STATE`, `REGISTRATION` or `REGISTRATION_REVOKED` |
+| `locationId` | integer | every record | positive configured LocationId; concrete deployment/event ranges are outside IF-05 |
+| `recordType` | string | every record | exactly `REGISTRATION` in v1 |
 | `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
 | `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
-| `state` | string | `TIMING_NODE_STATE` only | `OPEN` or `CLOSED` |
-| `registrationId` | string | registration/revocation | non-empty provider-neutral canonical participant identity |
-| `origin` | string | registration/revocation | `AUTOMATIC` or `MANUAL` |
-| `timeSource` | string | registration/revocation | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
-| `reference` | object | `REGISTRATION_REVOKED` only | `TimingDataRecordKey` of the concerned registration |
+| `registrationId` | string | every record | non-empty provider-neutral canonical registration identity |
+| `origin` | string | every record | `AUTOMATIC` or `MANUAL` |
+| `timeSource` | string | every record | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
 
-Nested objects:
-
-```text
-reference
-  timingNodeId    non-empty string
-  sequenceNumber  integer: 1..9007199254740991
-```
-
-`registrationId` is deliberately opaque at the IF-05 boundary. Its
-concrete categories, number ranges, source encodings and source-to-participant
-mapping rules are not part of this public interchange contract.
+`registrationId` is deliberately opaque at the IF-05 boundary. Its concrete
+categories, number ranges, source encodings and source-to-registration mapping
+rules are not part of this public interchange contract.
 
 Validation rules:
 
-- every required known member is present and non-null;
-- a canonical writer omits non-applicable type-specific members rather than
-  emitting `null` placeholders;
-- a known type-specific member that contradicts the selected `recordType`
-  (for example `state` on a `REGISTRATION`) is invalid rather than treated
-  as an unknown compatible extension;
-- additional genuinely unknown object members are handled by the v1
-  compatibility rules below, including inside the defined `reference` object;
+- every required member is present and non-null;
 - `timingNodeId` values are not normalized, case-folded or derived by IF-05;
-  they represent the same stable identity used by the surrounding application
-  contracts;
 - `AUTOMATIC` registrations use `timeSource = OBSERVED`;
 - `MANUAL` registrations use `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`;
-- a revocation repeats the original registration's `registrationId`,
-  `origin`, `timeSource`, `locationId` and `effectiveTime`;
-- for a revocation, `reference.timingNodeId` equals the record's own
-  `timingNodeId`.
-
-The repeated registration fields on `REGISTRATION_REVOKED` are deliberate:
-each complete line remains independently decodable for identity/effective-time
-inspection, while `reference` preserves the historical relationship to the
-original registration.
-
-No chronological ordering invariant is inferred from `effectiveTime` or
-`recordedAt`. Operator-entered effective times and wall-clock corrections can
-make timestamp ordering differ from record ordering; `sequenceNumber` remains
-the authoritative source order.
+- no chronological ordering invariant is inferred from `effectiveTime` or
+  `recordedAt`; `sequenceNumber` remains the authoritative source order.
 
 ## Registration identities
 
@@ -354,14 +257,17 @@ source/tag encoding, location-to-participant rules or production mapping tables.
 Conceptually:
 
 ```text
-source-specific identity --------\
-                                 +--> RegistrationId --> TimingData REGISTRATION
-operator/reference identity -----/
+TagId  -----> RaceData/reference resolution ----\
+                                                  +--> RegistrationId --> TimingData REGISTRATION
+TeamId -----> RaceData/reference resolution ----/
 ```
 
-Resolution to `RegistrationId` happens before the definitive TimingData
-record is committed. That resolution may use application/reference data, but the
-concrete mapping remains outside IF-05.
+`TagId` is the RFID/tag source identity and `TeamId` is the
+team/reference-data identity used by manual/domain input. Resolution to
+`RegistrationId` happens before the definitive TimingData record is created.
+Only `RegistrationId` crosses the committed IF-05 TimingData boundary in this
+slice. `RegistrationId` is separate from the record key
+`(TimingNodeId, SequenceNumber)`.
 
 A provider may translate an external representation to/from the canonical
 identity value. Provider-specific codes and deployment mappings remain outside
@@ -433,10 +339,8 @@ Rules:
 - the canonical writer emits compact single-line JSON; insignificant whitespace
   and JSON object member ordering are not semantic to readers;
 - the canonical writer emits common envelope members in the order shown by this
-  IDD, followed by the applicable type-specific members; nested
-  `reference` uses `timingNodeId` then `sequenceNumber`;
-- the file is append-only; existing records are not rewritten for revocation or
-  correction;
+  IDD, followed by the registration-specific members;
+- the file is append-only; existing committed records are not rewritten;
 - an incomplete trailing line after interrupted/power-loss write is not a
   committed record;
 - valid complete records before an incomplete tail remain readable;
@@ -453,7 +357,7 @@ deployment/software-item concerns and are not defined by IF-05.
 The following examples illustrate the canonical v1 semantic shape and timestamp
 representation.
 
-Lifecycle example:
+Automatic registration example:
 
 ```json
 {
@@ -461,14 +365,16 @@ Lifecycle example:
   "timingNodeId": "timing-node-01",
   "sequenceNumber": 1,
   "locationId": 7,
-  "recordType": "TIMING_NODE_STATE",
+  "recordType": "REGISTRATION",
   "effectiveTime": "2026-09-30T20:01:39.123000000Z",
   "recordedAt": "2026-09-30T20:01:39.123000000Z",
-  "state": "OPEN"
+  "registrationId": "registration-0042",
+  "origin": "AUTOMATIC",
+  "timeSource": "OBSERVED"
 }
 ```
 
-Registration example:
+Manual registration example:
 
 ```json
 {
@@ -477,32 +383,11 @@ Registration example:
   "sequenceNumber": 2,
   "locationId": 7,
   "recordType": "REGISTRATION",
-  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
-  "recordedAt": "2026-09-30T20:01:39.123000000Z",
-  "registrationId": "participant-0042",
-  "origin": "AUTOMATIC",
-  "timeSource": "OBSERVED"
-}
-```
-
-Revocation example:
-
-```json
-{
-  "version": 1,
-  "timingNodeId": "timing-node-01",
-  "sequenceNumber": 3,
-  "locationId": 7,
-  "recordType": "REGISTRATION_REVOKED",
-  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
-  "recordedAt": "2026-09-30T20:02:05.456000000Z",
-  "registrationId": "participant-0042",
-  "origin": "AUTOMATIC",
-  "timeSource": "OBSERVED",
-  "reference": {
-    "timingNodeId": "timing-node-01",
-    "sequenceNumber": 2
-  }
+  "effectiveTime": "2026-09-30T20:01:42.000000000Z",
+  "recordedAt": "2026-09-30T20:01:45.456000000Z",
+  "registrationId": "registration-0042",
+  "origin": "MANUAL",
+  "timeSource": "OPERATOR_ENTERED"
 }
 ```
 
@@ -518,24 +403,38 @@ TimingDataProvider
   +-- TimingDataCodec       encode/decode the same concrete profile
 ```
 
-The factory receives explicit construction values and returns objects implementing
-the common semantic interfaces such as `RegistrationData`. It does not allocate
-sequence numbers, inspect mutable TimingNode state, persist data or publish
-events.
+The factory receives already selected construction values and returns the typed
+semantic registration variant. It does not allocate sequence numbers, inspect
+mutable TimingNode state, persist data or publish events.
 
-For example, the same common call may produce different concrete classes:
+The common construction values are grouped once:
 
 ```text
-createRegistrationData(context)
-        |
-        +--> DefaultRegistrationData
-        |
-        +--> DummyEventRegistrationData
+TimingDataContext
+  timingNodeId
+  sequenceNumber
+  locationId
+  effectiveTime
+  recordedAt
 ```
 
-A concrete profile may add profile-specific immutable information. Consumers that
-only need IF-05 semantics continue to use the common interfaces and do not depend
-on those extra fields.
+The factory then adds only variant-specific values:
+
+```java
+AutomaticRegistrationTimingData createAutomaticRegistration(
+        TimingDataContext context,
+        RegistrationId registrationId);
+
+ManualRegistrationTimingData createManualRegistration(
+        TimingDataContext context,
+        RegistrationId registrationId,
+        RegistrationTimeSource timeSource);
+```
+
+There is no separate `RegistrationData`, `AutomaticRegistrationContext` or
+`ManualRegistrationContext` hierarchy. A concrete profile may return different
+immutable implementing classes while callers retain the typed common semantic
+contract.
 
 The default/reference profile implements the canonical JSON Lines representation
 defined below. A product-specific provider may use another representation,
@@ -600,8 +499,7 @@ committed record keys shall not be reused.
 ```{ifreq} TimingData v1 record families
 :id: IF05-REQ-004
 
-TimingData v1 shall support `TIMING_NODE_STATE`, `REGISTRATION` and
-`REGISTRATION_REVOKED` records as defined by this IDD.
+TimingData v1 shall support `REGISTRATION` records as defined by this IDD.
 ```
 
 ```{ifreq} Canonical registration identity
@@ -627,11 +525,12 @@ Source-specific participant identities shall resolve to canonical
 encoding and mapping rules shall remain outside IF-05.
 ```
 
-```{ifreq} Append-only registration revocation
+```{ifreq} Registration variant semantics
 :id: IF05-REQ-008
 
-Revocation shall be represented by a new append-only record referring to the
-concerned registration; it shall not rewrite the registration.
+Automatic registrations shall use observed effective time. Manual registrations
+shall distinguish system-assigned and operator-entered effective time as defined
+by this IDD.
 ```
 
 ```{ifreq} Canonical reference file encoding
@@ -688,6 +587,8 @@ compatibility/validation conditions according to this IDD.
 
 ## Deferred from this first slice
 
+- TimingNode OPEN/CLOSE TimingData representation; UC-002 leaves this as a later decision;
+- registration revocation/correction semantics and record family;
 - start-procedure record family and payload;
 - penalty/correction record families and payloads;
 - unknown-team registration semantics;
