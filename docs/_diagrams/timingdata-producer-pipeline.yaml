@@ -1,26 +1,26 @@
 diagram:
   id: timingdata-producer-pipeline
-  title: Figure SDD01-TD01 — TimingNode-owned LogBook commit path
+  title: Figure SDD01-TD01 — TimingNode to LogBook recording path
   width: 1640
-  height: 980
-  description: Multiple domain producers hand traceable facts to the owning TimingNode, which queues and commits them in order.
-  note: TimingDataStore owns the file persistence/recovery boundary; LogBook remains the operational Domain state.
+  height: 930
+  description: Producers call the owning TimingNode; the LogBook owns ordered asynchronous recording and uses TimingDataStore for persistence.
+  note: TimingDataStore owns file persistence/recovery; LogBook owns the bounded recording queue, worker and committed operational state.
 
 groups:
   - id: producers
     label: Traceable fact producers
     kind: layer-domain
-    layout: {x: 55, y: 105, w: 390, h: 760}
+    layout: {x: 55, y: 105, w: 390, h: 700}
 
-  - id: timingnode
-    label: TimingNode-owned record flow
+  - id: domain
+    label: TimingNode domain
     kind: layer-application
-    layout: {x: 485, y: 105, w: 650, h: 760}
+    layout: {x: 485, y: 105, w: 650, h: 700}
 
-  - id: consumers
-    label: Reads and external delivery
+  - id: io
+    label: Persistence and consumers
     kind: layer-infrastructure
-    layout: {x: 1175, y: 105, w: 410, h: 760}
+    layout: {x: 1175, y: 105, w: 410, h: 700}
 
 nodes:
   - id: tag-processor
@@ -45,69 +45,52 @@ nodes:
     label: "Start / penalty / correction\nlater record families"
     kind: model
     group: producers
-    layout: {x: 95, y: 555, w: 310, h: 90}
+    layout: {x: 95, y: 545, w: 310, h: 90}
 
   - id: timing-node
-    label: "TimingNode\nordered record processing"
+    label: "TimingNode\ndomain-facing operations"
     kind: model
-    group: timingnode
-    layout: {x: 600, y: 190, w: 420, h: 100}
+    group: domain
+    layout: {x: 605, y: 205, w: 410, h: 95}
 
-  - id: queue
-    label: "Internal bounded LogBook queue\nArrayBlockingQueue"
-    kind: service
-    group: timingnode
-    layout: {x: 630, y: 380, w: 360, h: 82}
+  - id: logbook
+    label: "LogBook\nbounded queue + record worker\n0..N committed LogBookItem"
+    kind: model
+    group: domain
+    layout: {x: 585, y: 430, w: 450, h: 115}
 
   - id: timingdata-store
     label: "TimingDataStore\nfile persistence / recovery"
     kind: storage
-    group: timingnode
-    layout: {x: 535, y: 650, w: 300, h: 90}
-
-  - id: logbook
-    label: "LogBook\n0..N committed LogBookItem"
-    kind: model
-    group: timingnode
-    layout: {x: 865, y: 650, w: 220, h: 90}
+    group: io
+    layout: {x: 1225, y: 190, w: 310, h: 90}
 
   - id: query
     label: "StageTiming / query services\nshort LogBook read capture"
     kind: service
-    group: consumers
-    layout: {x: 1225, y: 255, w: 310, h: 90}
+    group: io
+    layout: {x: 1225, y: 360, w: 310, h: 90}
 
   - id: sink
     label: "CommittedTimingDataSink\nnon-blocking hand-off"
     kind: interface
-    group: consumers
-    layout: {x: 1225, y: 485, w: 310, h: 82}
+    group: io
+    layout: {x: 1225, y: 525, w: 310, h: 82}
 
   - id: downstream
     label: "Signalling / upstream worker\ncapability-specific queue or outbox"
     kind: integration
-    group: consumers
-    layout: {x: 1225, y: 650, w: 310, h: 90}
+    group: io
+    layout: {x: 1225, y: 660, w: 310, h: 90}
 
 edges:
-  - {from: tag-processor, to: timing-node, label: "candidate"}
-  - {from: manual-registration, to: timing-node, label: "candidate"}
-  - {from: lifecycle, to: timing-node, label: "candidate"}
-  - {from: later-producers, to: timing-node, dashed: true, label: "candidate later"}
+  - {from: tag-processor, to: timing-node, label: "register"}
+  - {from: manual-registration, to: timing-node, label: "register"}
+  - {from: lifecycle, to: timing-node, label: "record lifecycle fact"}
+  - {from: later-producers, to: timing-node, dashed: true, label: "later"}
 
-  - from: timing-node
-    to: queue
-    label: "async enqueue"
-    from_anchor: {side: bottom, position: 0.35}
-    to_anchor: {side: top, position: 0.35}
-  - from: queue
-    to: timing-node
-    label: "next candidate"
-    from_anchor: {side: top, position: 0.70}
-    to_anchor: {side: bottom, position: 0.70}
-
-  - {from: timing-node, to: timingdata-store, label: "durable append"}
-  - {from: timing-node, to: logbook, label: "commit after persistence"}
+  - {from: timing-node, to: logbook, label: "async record"}
+  - {from: logbook, to: timingdata-store, label: "durable append"}
   - {from: logbook, to: query, label: "read"}
-  - {from: timing-node, to: sink, label: "committed record"}
+  - {from: logbook, to: sink, label: "committed record"}
   - {from: sink, to: downstream, label: "async delivery"}

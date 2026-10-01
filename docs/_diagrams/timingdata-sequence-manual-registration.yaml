@@ -2,26 +2,23 @@ diagram:
   id: timingdata-sequence-manual-registration
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
-  width: 1540
-  height: 980
-  description: IF-03 passes operator input to the TimingNode, which resolves it, queues a candidate and later performs the durable commit.
-  note: Accepted means queued for ordered processing; the client does not wait for file I/O.
+  width: 1420
+  height: 860
+  description: CommandHandler calls TimingNode normally; LogBook owns the asynchronous queue and worker that persist the registration.
+  note: Accepted means LogBook queued the registration; durable file I/O happens later on the LogBook worker.
 
 participants:
   - {id: client, label: Operator / client, kind: client}
   - {id: api, label: IF-03 / CommandHandler, kind: interface}
   - {id: node, label: TimingNode, kind: model}
-  - {id: queue, label: "Internal LogBook queue", kind: service}
+  - {id: logbook, label: "LogBook\nbounded queue + worker", kind: model}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
-  - {id: logbook, label: LogBook, kind: model}
 
 messages:
-  - {from: client, to: api, label: TeamIdentity + time, kind: call}
-  - {from: api, to: node, label: register command, kind: call}
-  - {from: node, to: queue, label: enqueue resolved candidate, kind: async}
+  - {from: client, to: api, label: "register(teamIdentity, time)", kind: call}
+  - {from: api, to: node, label: "register(teamIdentity, time)", kind: call}
+  - {from: node, to: logbook, label: "record(registration)", kind: async}
   - {from: node, to: api, label: accepted, kind: return}
   - {from: api, to: client, label: accepted, kind: return}
-  - {from: queue, to: node, label: next candidate, kind: async}
-  - {from: node, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: node, label: durable, kind: return}
-  - {from: node, to: logbook, label: commit LogBookItem, kind: call}
+  - {from: logbook, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: logbook, label: durable, kind: return}

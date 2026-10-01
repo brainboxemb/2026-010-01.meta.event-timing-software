@@ -2,23 +2,20 @@ diagram:
   id: timingdata-sequence-generic-producer
   type: sequence
   title: Figure SDD01-TD06 — Generic TimingNode producer
-  width: 1320
-  height: 840
-  description: Later traceable domain producers submit candidates to the same TimingNode-owned queue and durable commit path.
+  width: 1220
+  height: 760
+  description: Later domain producers call TimingNode; LogBook owns the asynchronous recording and persistence lane.
   note: Exact start, penalty and correction record families remain deferred.
 
 participants:
   - {id: producer, label: Domain producer, kind: model}
   - {id: node, label: TimingNode, kind: model}
-  - {id: queue, label: "Internal LogBook queue", kind: service}
+  - {id: logbook, label: "LogBook\nbounded queue + worker", kind: model}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
-  - {id: logbook, label: LogBook, kind: model}
 
 messages:
-  - {from: producer, to: node, label: submit candidate, kind: call}
-  - {from: node, to: queue, label: enqueue candidate, kind: async}
+  - {from: producer, to: node, label: "record fact", kind: call}
+  - {from: node, to: logbook, label: "record(entry)", kind: async}
   - {from: node, to: producer, label: accepted, kind: return}
-  - {from: queue, to: node, label: next candidate, kind: async}
-  - {from: node, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: node, label: durable, kind: return}
-  - {from: node, to: logbook, label: commit LogBookItem, kind: call}
+  - {from: logbook, to: store, label: append IF-05 record, kind: call}
+  - {from: store, to: logbook, label: durable, kind: return}

@@ -2,29 +2,26 @@ diagram:
   id: timingdata-sequence-query-isolation
   type: sequence
   title: Figure SDD01-TD05 — LogBook query isolation
-  width: 1780
-  height: 1120
-  description: A query uses a short LogBook read view while another registration is queued and committed by the TimingNode record worker.
-  note: The long calculation is outside the TimingNode record path.
+  width: 1700
+  height: 980
+  description: A query uses a short LogBook read view while the LogBook worker persists another registration independently.
+  note: The query calculation does not occupy the LogBook record worker.
 
 participants:
   - {id: client, label: Query caller, kind: client}
   - {id: query, label: Query / StageTiming, kind: service}
-  - {id: logbook, label: LogBook, kind: model}
+  - {id: logbook, label: "LogBook\nbounded queue + worker", kind: model}
   - {id: producer, label: Registration producer, kind: model}
   - {id: node, label: TimingNode, kind: model}
-  - {id: queue, label: "Internal LogBook queue", kind: service}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
 
 messages:
   - {from: client, to: query, label: calculate, kind: call}
-  - {from: query, to: logbook, label: capture small read view, kind: call}
+  - {from: query, to: logbook, label: capture read view, kind: call}
   - {from: logbook, to: query, label: view, kind: return}
-  - {from: producer, to: node, label: submit candidate, kind: call}
-  - {from: node, to: queue, label: enqueue candidate, kind: async}
+  - {from: producer, to: node, label: "register(...)", kind: call}
+  - {from: node, to: logbook, label: "record(registration)", kind: async}
   - {from: node, to: producer, label: accepted, kind: return}
-  - {from: queue, to: node, label: next candidate, kind: async}
-  - {from: node, to: store, label: append next record, kind: call}
-  - {from: store, to: node, label: durable, kind: return}
-  - {from: node, to: logbook, label: commit next item, kind: call}
+  - {from: logbook, to: store, label: append next record, kind: call}
+  - {from: store, to: logbook, label: durable, kind: return}
   - {from: query, to: client, label: result, kind: return}

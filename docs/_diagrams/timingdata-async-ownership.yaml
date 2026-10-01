@@ -1,62 +1,56 @@
 diagram:
   id: timingdata-async-ownership
-  title: Figure SDD01-TD02 — TimingNode asynchronous ownership and query isolation
+  title: Figure SDD01-TD02 — LogBook asynchronous ownership and query isolation
   width: 1680
-  height: 860
-  description: The TimingNode owns one bounded record queue and worker; queries and external delivery run outside that worker.
+  height: 840
+  description: TimingNode hands traceable facts to LogBook; LogBook owns the bounded queue/record worker while queries and network delivery remain independent.
   note: Exact queue capacity and later worker-sharing choices remain verification/deployment decisions.
 
 groups:
   - id: producer-context
     label: Producer execution
     kind: layer-domain
-    layout: {x: 45, y: 105, w: 330, h: 620}
+    layout: {x: 45, y: 105, w: 330, h: 600}
 
-  - id: timingnode-context
-    label: TimingNode execution
+  - id: domain-context
+    label: TimingNode / LogBook execution
     kind: layer-application
-    layout: {x: 415, y: 105, w: 600, h: 620}
+    layout: {x: 415, y: 105, w: 600, h: 600}
 
   - id: query-context
     label: Query execution
     kind: layer-presentation
-    layout: {x: 1055, y: 105, w: 270, h: 620}
+    layout: {x: 1055, y: 105, w: 270, h: 600}
 
   - id: output-context
     label: External delivery execution
     kind: layer-infrastructure
-    layout: {x: 1365, y: 105, w: 270, h: 620}
+    layout: {x: 1365, y: 105, w: 270, h: 600}
 
 nodes:
   - id: producer
     label: "Producer task\nTagProcessor • command • lifecycle • later producers"
     kind: model
     group: producer-context
-    layout: {x: 80, y: 240, w: 260, h: 100}
+    layout: {x: 80, y: 270, w: 260, h: 100}
 
   - id: timing-node
-    label: "TimingNode\nowns record ordering + worker"
+    label: "TimingNode\ndomain-facing operation"
     kind: model
-    group: timingnode-context
-    layout: {x: 455, y: 180, w: 260, h: 90}
+    group: domain-context
+    layout: {x: 455, y: 190, w: 250, h: 82}
 
-  - id: queue
-    label: "Internal bounded queue\nArrayBlockingQueue"
-    kind: service
-    group: timingnode-context
-    layout: {x: 455, y: 360, w: 260, h: 78}
+  - id: logbook
+    label: "LogBook\nbounded queue + record worker\ncommitted state"
+    kind: model
+    group: domain-context
+    layout: {x: 455, y: 390, w: 250, h: 105}
 
   - id: store
     label: "TimingDataStore\nfile persistence / recovery"
     kind: storage
-    group: timingnode-context
-    layout: {x: 760, y: 250, w: 210, h: 90}
-
-  - id: logbook
-    label: "LogBook\nsingle-writer state"
-    kind: model
-    group: timingnode-context
-    layout: {x: 760, y: 465, w: 210, h: 78}
+    group: domain-context
+    layout: {x: 760, y: 285, w: 210, h: 90}
 
   - id: query
     label: "Query/ranking task\nshort read capture\nlong calculation elsewhere"
@@ -77,19 +71,9 @@ nodes:
     layout: {x: 1400, y: 430, w: 200, h: 90}
 
 edges:
-  - {from: producer, to: timing-node, label: "submit candidate"}
-  - from: timing-node
-    to: queue
-    label: "async enqueue"
-    from_anchor: {side: bottom, position: 0.35}
-    to_anchor: {side: top, position: 0.35}
-  - from: queue
-    to: timing-node
-    label: "next candidate"
-    from_anchor: {side: top, position: 0.70}
-    to_anchor: {side: bottom, position: 0.70}
-  - {from: timing-node, to: store, label: "durable append"}
-  - {from: timing-node, to: logbook, label: "commit item"}
+  - {from: producer, to: timing-node, label: "call"}
+  - {from: timing-node, to: logbook, label: "async record"}
+  - {from: logbook, to: store, label: "durable append"}
   - {from: logbook, to: query, label: "short read"}
-  - {from: timing-node, to: sink, label: "non-blocking offer"}
+  - {from: logbook, to: sink, label: "non-blocking offer"}
   - {from: sink, to: output-worker}
