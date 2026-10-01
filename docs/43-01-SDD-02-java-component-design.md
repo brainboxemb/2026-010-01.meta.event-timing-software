@@ -94,11 +94,12 @@ io.github.brainboxemb.eventtiming/timingpoint/
       network/
     messaging/
     storage/
+  core/
+    concurrent/
+    events/
   infra/
     bootstrap/
       config/
-    concurrent/
-    events/
     logging/
     loggingserver/
   runtime/
@@ -130,8 +131,8 @@ Use these rules:
   closely related value/supporting types; keep that small group together rather
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
-- reserve `infra` for concrete cross-cutting technical support such as
-  `BuildIdentity`, logging, bounded/serial execution and the small in-process event utility;
+- reserve `core` for small JDK-only reusable primitives such as bounded/serial execution and typed local events;
+- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
 - use `io` for external hardware, messaging and storage adapters.
 
 For example, the first TimingNode implementation is grouped as:
@@ -201,15 +202,17 @@ io/
     FileStageStartTimesStore.java         start-time analysis history/snapshots
     FileRaceDataStore.java                race/reference analysis snapshots
 
-infra/
+core/
   concurrent/
     SerialWorker.java                     bounded one-at-a-time execution primitive
+  events/
+    Event.java                            small typed subscribe / unsubscribe / emit primitive
 ```
 
 The names above record ownership/direction, not a requirement to create empty
 types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
-`SerialWorker` is a small reusable execution primitive under `infra.concurrent`,
+`SerialWorker` is a small reusable execution primitive under `core.concurrent`,
 composed into TimingNode rather than used as a Domain superclass. It has no
 TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -315,13 +318,11 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
-domain          --> core + narrow infra cross-cutting utilities
-io              --> application/domain ports/contracts + platform + narrow infra cross-cutting utilities
-runtime         --> application / domain / core + narrow infra cross-cutting utilities
+domain          --> core
+io              --> application/domain ports/contracts + core + platform
+runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-infra.concurrent --> JDK only
-infra.events    --> JDK only
-core            --> JDK/platform-neutral reusable contracts only
+core            --> JDK/platform-neutral reusable primitives/contracts only
 platform        --> low-level environment only
 ```
 
@@ -936,8 +937,9 @@ for analysis.
 ### Simple typed events
 
 Post-fact notifications use a small local `Event<T>` abstraction rather than a
-central event bus. The reusable mechanism lives under `infra.events` because it
-is cross-cutting technical support rather than domain semantics or external I/O.
+central event bus. The reusable mechanism lives under `core.events` because it
+is a small JDK-only reusable primitive rather than domain semantics, external I/O
+or concrete infrastructure.
 
 Conceptually:
 
@@ -949,7 +951,7 @@ final class Event<T> {
 }
 ```
 
-A component owns the event instance; `infra.events` only supplies the generic
+A component owns the event instance; `core.events` only supplies the generic
 subscription/emit mechanism. For TimingData the first event is:
 
 ```java
