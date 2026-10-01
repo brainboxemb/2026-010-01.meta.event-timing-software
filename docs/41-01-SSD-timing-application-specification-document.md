@@ -1349,6 +1349,14 @@ synchronisation state. Domain owns the meaning of this overview; concrete CAN,
 socket, vendor-device and persistence implementations remain in I/O and report
 semantic status without leaking adapter classes into Domain.
 
+`SystemStatus` does not bypass TimingNode ownership to inspect node internals.
+A TimingNode supplies a semantic immutable status/result from its own ordered
+state boundary; SystemStatus may retain/aggregate that representation together
+with system/I/O health. An application-wide status response may therefore use
+published node-status snapshots, or obtain a consistency-sensitive node status
+through the normal TimingNode query operation when that stronger ordering is
+required.
+
 An application-facing status view may aggregate the 1..N TimingSystem statuses
 and application/runtime problems into one response; that aggregation does not
 move SystemStatus ownership back to the TimingApplication.
