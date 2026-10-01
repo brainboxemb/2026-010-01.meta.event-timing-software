@@ -227,12 +227,12 @@ update, and close it again.
 - TimingNode location assignment/change only while `CLOSED`;
 - valid current LocationId required before `OPEN` and fixed while `OPEN`;
 - one bounded serialized TimingNode mutation/commit lane;
-- direct accepted-registration operation after the antenna/filtering boundary;
+- dev auto-reg operation after the antenna/filtering boundary;
 - TimingNode-owned source identity, active location, commit-time sequence and recorded time;
 - typed immutable registration TimingData plus canonical reference codec;
 - passive LogBook and append-only file persistence with startup recovery;
 - post-commit typed TimingData event;
-- IF-03 location/open/close control, capability-gated direct registration simulation, committed history and live updates;
+- IF-03 location/open/close control, capability-gated dev auto-reg, committed history and live updates;
 - Engineering Client state/history rebuild and live-update handling;
 - deterministic first-slice verification and running-system demo.
 
@@ -271,7 +271,7 @@ update, and close it again.
 - Connect the Engineering Client and rebuild current status/history.
 - Assign a valid synthetic LocationId.
 - Open registration.
-- Inject one accepted semantic registration with deterministic RegistrationId and observation time.
+- Inject one dev auto-reg request with deterministic `id` and `time`.
 - Inspect the committed TimingData in history and the corresponding live update.
 - Verify changing LocationId while OPEN is rejected.
 - Close registration and then change LocationId successfully.
@@ -285,7 +285,7 @@ update, and close it again.
 - direct registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
 - canonical codec, file persistence, incomplete-tail recovery and LogBook rebuild are implemented and verified;
 - committed TimingData is emitted only after durable append plus LogBook visibility;
-- IF-03 exposes location/open/close, capabilities, accepted-registration simulation, committed history and live TimingData updates;
+- IF-03 exposes location/open/close, capabilities, dev auto-reg, committed history and live TimingData updates;
 - the Engineering Client rebuilds status/history after reconnect before presenting the view as live;
 - VC-ST1-002 and the running-system demo succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
