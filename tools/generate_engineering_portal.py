@@ -290,8 +290,8 @@ ENGINEERING_CLIENT_UI_DIAGRAMS = (
     ),
     (
         "engineering-client-timing-open.svg",
-        "OPEN with committed history",
-        "Location is fixed; direct accepted-registration simulation is capability-gated.",
+        "OPEN with bounded LogBook",
+        "Location is fixed; dev auto-reg is capability-gated and committed records are shown from the LogBook.",
     ),
     (
         "engineering-client-timing-reconnecting.svg",
