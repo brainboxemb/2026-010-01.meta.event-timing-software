@@ -400,20 +400,6 @@ edges:
   to: logging-infra
   dashed: true
 
-- from: timing-node-aggregate
-  to: serial-worker-core
-  label: uses
-  dashed: true
-  from_anchor: {side: right, position: 0.78}
-  to_anchor: {side: left, position: 0.50}
-
-- from: timing-node-aggregate
-  to: event-core
-  label: uses
-  dashed: true
-  from_anchor: {side: right, position: 0.92}
-  to_anchor: {side: left, position: 0.50}
-
 - from: local-console
   to: shared-terminal
   from_anchor: {side: bottom, position: 0.50}
