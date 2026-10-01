@@ -646,69 +646,165 @@ between registration, lifecycle, next-up and reference-data changes.
 
 A reusable base class such as `TimingNode extends ActiveObject<Work>` is
 possible, but it would couple the domain type to one threading mechanism.
-Composition keeps that choice replaceable:
+Composition keeps that choice replaceable and lets the public TimingNode API stay
+synchronous and domain-oriented.
+
+For state-dependent operations the caller waits for the result produced on the
+TimingNode lane:
 
 ```java
 final class TimingNode {
-    private final SerialWorker<TimingNodeWork> serialWorker;
-    private final LogBook logBook;
-    private final NextUpTeams nextUpTeams;
-    private final StageStartTimes stageStartTimes;
-    private final RaceData raceData;
+    private final SerialWorker serialWorker;
 
-    boolean register(TeamIdentity team, TimingTimestamp time) {
+    OpenResult open() throws TimingNodeOperationException {
+        return await(serialWorker.submit(this::doOpen));
+    }
+
+    SetLocationResult setLocation(LocationId locationId)
+            throws TimingNodeOperationException {
+        return await(serialWorker.submit(
+                () -> doSetLocation(locationId)));
+    }
+
+    TimingNodeStatus status() throws TimingNodeOperationException {
+        return await(serialWorker.submit(this::snapshotStatus));
+    }
+
+    SubmissionResult submitObservation(Observation observation) {
         return serialWorker.offer(
-            TimingNodeWork.registration(team, time));
+                () -> processObservation(observation));
     }
 }
 ```
 
-`TimingNodeWork` is an internal immutable carrier for work that has already
-been accepted as a state change before the asynchronous hand-off. It is not a
-business-approval candidate, is not an external Command Pattern API and is not
-persisted. The worker may still resolve fields that depend on current
-TimingNode-owned state before commit. Add only work kinds required by real use
-cases.
+The public methods above are illustrative signatures, not a requirement to use
+those exact result class names. The important split is:
 
-A boolean return from methods such as `register(...)` reports whether the
-bounded serial queue accepted the work item. It does not mean the worker performs
-a second business approval later.
+```text
+open / close / setLocation / consistency-sensitive query
+    -> queued internally
+    -> execute against current ordered TimingNode state
+    -> caller receives processed domain result
 
-The worker invokes normal private/domain methods once the work item is selected.
-Code already running on the TimingNode worker should use direct Java calls rather
-than queueing more internal messages.
+device/callback ingress that is explicitly submission-only
+    -> bounded queue admission result
+    -> callback may continue immediately
+    -> later processing has no synchronous caller waiting for its domain result
+```
+
+A queue-admission result is never used as a substitute for the domain result of
+a state-dependent command.
+
+The Future used to connect the queued work with a waiting caller is an internal
+Active Object mechanism. It does not appear in the normal TimingNode
+application/domain interface. In Java 8 a plain `Future<R>` is sufficient for
+this first design; `CompletionStage` is not required by the current synchronous
+caller contract.
+
+Code already running on the TimingNode lane uses direct private/domain methods
+such as `doOpen()` rather than calling the blocking public `open()` method
+again. Re-entering a public blocking operation from the same serial lane would
+wait on work that cannot run until the current work item finishes.
+
+### Operation results and execution failures
+
+Keep domain outcomes separate from failures of the execution boundary.
+
+For example:
+
+```text
+OpenResult
+  OPENED
+  ALREADY_OPEN
+  NO_LOCATION
+
+submission/execution failure
+  queue full
+  node stopping/unavailable
+  unexpected internal failure
+
+wait timeout
+  caller stopped waiting
+  operation may still be queued or executing
+  final domain outcome is unknown to that caller
+```
+
+A domain rejection such as `NO_LOCATION` is a normal processed result. Queue
+full or a stopping worker means the operation was not admitted and belongs to an
+operation/execution exception rather than `OpenResult`.
+
+A timeout is different again. It means only that the caller did not receive the
+processed result within the configured guard time. TimingNode timeout handling
+must not automatically cancel or interrupt an already accepted state change.
+The caller must treat the final outcome as unknown and re-query/reconcile state
+before assuming that the command did not happen.
+
+The first implementation may expose a small TimingNode-specific exception family
+rather than leaking `TimeoutException`, `ExecutionException` or
+`InterruptedException` from `java.util.concurrent` through the domain API.
+Keep that family small and add distinct exception types only where callers need
+different recovery behaviour. Timeout is a useful distinct case because its
+outcome semantics differ from definite submission rejection.
 
 ### First SerialWorker implementation
 
-The first implementation should use a small composed `SerialWorker<W>` backed
-by one `ArrayBlockingQueue<W>` and one dedicated thread:
+The first implementation should remain a small composed worker backed by one
+bounded queue and one dedicated thread, but it must support both result-bearing
+work and submission-only work. A Java-8-oriented shape is:
 
 ```java
-final class SerialWorker<W> implements AutoCloseable {
-    private final BlockingQueue<W> queue;
+final class SerialWorker implements AutoCloseable {
+    private final BlockingQueue<Runnable> queue;
     private final Thread thread;
-    private final Consumer<W> handler;
 
-    boolean offer(W work) {
-        return queue.offer(work);
+    <R> Future<R> submit(Callable<R> work) {
+        FutureTask<R> task = new FutureTask<>(work);
+
+        if (!queue.offer(task)) {
+            throw new SerialWorkerBusyException();
+        }
+
+        return task;
+    }
+
+    SubmissionResult offer(Runnable work) {
+        return queue.offer(wrapForReporting(work))
+                ? SubmissionResult.ACCEPTED
+                : SubmissionResult.BUSY;
     }
 
     private void run() {
-        while (running) {
-            handler.accept(queue.take());
+        while (running || !queue.isEmpty()) {
+            Runnable work = takeNext();
+            work.run();
         }
     }
 }
 ```
 
-Reasons for the explicit queue/thread first:
+The concrete exception/result names and shutdown-loop details may change during
+implementation. The required behaviour is:
 
 - queue capacity is visible and bounded;
-- queue depth/high-water and overload can be reported directly;
-- FIFO behaviour is obvious;
-- shutdown can stop ingress and drain accepted work deliberately;
-- there is no hidden unbounded executor queue;
-- the implementation is easy to measure on the Raspberry Pi.
+- FIFO order is preserved for one TimingNode;
+- at most one work item for that TimingNode executes at a time;
+- state-dependent validation happens in that ordered execution context;
+- result-bearing work has an internal Future that is completed by execution;
+- submission-only ingress can observe definite queue admission without waiting
+  for later domain processing;
+- one ordinary work-item failure must not silently kill the worker;
+- an unexpected failure is reported and completes a waiting operation as a
+  technical failure; the worker may continue only when TimingNode state is known
+  to remain consistent;
+- shutdown stops new admission first and lets already accepted work drain within
+  the controlled shutdown policy.
+
+The worker starts only after the TimingNode has completed construction/recovery
+and before the node is exposed for normal operation. During controlled shutdown,
+new work is rejected before the worker drains accepted work and stops. An
+operation waiting for a result may therefore complete normally during draining;
+an operation that cannot be admitted because shutdown has started fails
+immediately as unavailable.
 
 Do **not** use `Executors.newSingleThreadExecutor()` for this boundary: its
 normal work queue is unbounded and hides the overload behaviour we need to
@@ -728,6 +824,7 @@ per TimingNode:
   at most one work item executing
   bounded queued work
   visible overload
+  Future result corresponds to execution on that ordered lane
 ```
 
 ### TimingData commit
