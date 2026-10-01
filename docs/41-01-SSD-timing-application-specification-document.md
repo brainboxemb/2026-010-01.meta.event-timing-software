@@ -348,7 +348,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N TimingDataRecord
+              |     +-- 0..N TimingData
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -540,16 +540,16 @@ TimingSystem (1..N per TimingApplication)
     TagProcessor
     StageStartTimes
     LogBook
-      0..N TimingDataRecord
+      0..N TimingData
     NextUpTeams
     RaceData
     StageTiming
     uses / produces TimingData
 
 TimingData
-  TimingDataRecord
-  canonical structure / validation
-  encode / decode / compatibility
+  common semantic contracts
+  configured concrete profile
+  factory / codec / compatibility
 ```
 
 `TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
@@ -627,22 +627,22 @@ accepted timing state and reference data.
 ```
 
 `LogBook` is passive state contained by one TimingNode and keeps that node's
-committed timing history as 0..N `TimingDataRecord` values. The current design
-uses the canonical TimingData record directly instead of maintaining a second
-LogBook-specific record type.
+committed timing history as 0..N immutable `TimingData` values. Concrete objects
+may come from different compatible TimingData profiles; LogBook does not maintain
+a second logbook-specific record representation.
 
 `TimingData` is the SI-01/domain capability that realises the system-owned
-IF-05 TimingData Interchange contract. The normative persistent/interchange
-record kinds, field semantics, identity/ordering rules, versioning and canonical
-reference encoding are defined by `32-05-IDD-timingdata-interchange.md`.
-SI-01 design shall not redefine that external/file contract independently.
+IF-05 TimingData Interchange contract. IF-05 defines the common semantic
+contracts, identity/ordering rules and compatibility obligations. A configured
+TimingData profile supplies the concrete immutable TimingData classes plus the
+matching factory and codec.
 
-A `TimingDataProvider` is a translation/extension boundary. A public or
-proprietary provider may translate an external representation to/from the
-framework-owned `TimingDataRecord` model, but it does not redefine public field
-semantics. The same provider contract is reusable by SI-01 and engineering tools
-such as the JavaFX Engineering Client; normal domain users remain unaware of
-provider discovery mechanics.
+A `TimingDataProvider` supplies that coherent profile family. Its factory is
+stateless and constructs concrete TimingData values from explicit construction
+values; it does not own TimingNode lifecycle policy, sequence allocation,
+persistence or event publication. The same common provider/API boundary is
+reusable by SI-01 and engineering tools such as the JavaFX Engineering Client;
+normal domain users remain unaware of provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
@@ -1053,7 +1053,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N TimingDataRecord
+              |     +-- 0..N TimingData
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
