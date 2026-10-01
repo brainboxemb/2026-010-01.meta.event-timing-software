@@ -374,7 +374,6 @@ nodes:
   kind: crosscutting
   layout: {x: 1210, y: 615, w: 170, h: 80}
 - id: serial-worker-core
-  object_id: SerialWorker
   group: core-layer
   label: "SerialWorker"
   subtitle: "bounded serial execution"
@@ -382,7 +381,6 @@ nodes:
   notation: component
   layout: {x: 1210, y: 835, w: 170, h: 80}
 - id: event-core
-  object_id: Event
   group: core-layer
   label: "Event<T>"
   subtitle: "subscribe • unsubscribe • emit"
