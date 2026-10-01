@@ -69,8 +69,8 @@ nodes:
     group: contract
     layout: {x: 545, y: 595, w: 330, h: 150}
     items:
-      - type = STANDARD | WOMEN | MEN
-      - number = 1..350
+      - provider-neutral canonical value
+      - concrete source mappings remain external
 
   - id: canonical-codec
     label: Canonical reference codec

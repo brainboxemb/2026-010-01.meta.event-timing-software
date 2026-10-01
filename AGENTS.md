@@ -126,12 +126,20 @@ different effort model.
 ## Public/private boundary
 
 This is a public repository. Keep real/proprietary deployment identities,
-external source mappings, reserve assignments, production topology, proprietary
-protocol values, credentials, encryption keys and secrets out of public source
-and documentation.
+external source mappings, production topology, proprietary protocol values,
+credentials, encryption keys and secrets out of public source and documentation.
 
-Use generic placeholders when concrete deployment examples are needed. Private
-inventory/configuration stays in private/external sources.
+Treat information learned from legacy/reference software, production behaviour,
+private files or user-provided operational examples as **reference input**, not
+automatically as public project knowledge. Do not promote concrete categories,
+identifier ranges, source encodings, routing/mapping rules or event/deployment
+conventions into public requirements, IDDs, architecture, examples or code unless
+an explicit public project authority owns that information.
+
+When a public contract only needs the structural concept, keep the public form
+generic and provider-neutral. Use synthetic placeholders when an example is
+required. Private inventory/configuration and concrete compatibility mappings stay
+in private/external sources.
 
 ## Working method
 

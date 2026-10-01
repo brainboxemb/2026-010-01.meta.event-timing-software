@@ -89,7 +89,7 @@ Known structural rules:
 - the application may compose 0..N antennas; configuration maps each `AntennaId` to its TimingNode targets;
 - every TimingNode owns its own monotonic registration sequence and
   TimingNode-specific persistence/synchronisation state;
-- reserve and virtual TimingNodes may share a physical antenna through routing;
+- multiple TimingNodes may share a physical antenna through explicit routing;
 - concrete production antenna/device settings remain deployment information.
 
 ### Antenna identifiers
@@ -216,7 +216,7 @@ TimingNode domain model.
 Each physical event location has a unique numeric identifier:
 
 ```text
-LocationID = 1..25
+LocationID = configured physical event-location identity
 ```
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
@@ -382,113 +382,44 @@ A timestamp is **not** the source-ordering mechanism. Registration timing node s
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
-## Team and registration identity
-
-`TeamIdentity` is the participant/team identity used by operator-facing and
-race-reference behaviour. A manual registration is entered using this identity.
+## Registration identity and source resolution
 
 `RegistrationIdentity` is the canonical participant identity stored on a
-TimingData registration record. It is deliberately distinct from both
-`TeamIdentity` and `TagIdentity`.
+TimingData registration record. It is deliberately separate from the concrete
+identity observed at an input device and from identities used by an operator or
+reference-data source.
 
-The registration identity supports a semantic **type + number** structure:
+The public baseline does not define event-specific participant categories,
+number ranges, source/tag encodings or location-to-participant mapping rules.
+Those values belong to the applicable reference data, provider or deployment
+contract and are promoted to public documentation only when a public requirement
+needs them.
+
+Conceptually:
 
 ```text
-RegistrationIdentity
-  type
-  number
+source identity -----------\
+                            +--> RegistrationIdentity
+operator/reference identity/
 ```
 
-The first supported semantic registration types are:
-
-```text
-STANDARD  team 1..350; valid at locations 1..23
-WOMEN     team 1..350; valid at location 24
-MEN       team 1..350; valid at location 25
-```
-
-The type names are public semantics, not legacy wire letters. A proprietary
-translator may map them to its external representation.
-
-A reserve transponder is **not** a fourth registration-identity type. It is a
-reserve `TagIdentity` in the RFID/input domain and must resolve through
-reference data to the applicable canonical `RegistrationIdentity`.
-
-Location/type compatibility is validated before a registration is committed.
-The public model keeps that validation rule explicit so a registration identity
-that is valid at one location is not silently accepted at another.
+Resolution occurs before a registration is committed. A concrete input/provider
+may use locally available reference data to perform that resolution without
+changing the public TimingData identity contract.
 
 ## Race data
 
-`RaceData` is the locally available participant/team/tag reference data used by one `TimingNode`.
+`RaceData` is the locally available participant/reference data used by one
+`TimingNode`.
 
-It may include participant/team reference data, normal tag references and reserve-tag conversion/mapping data. It is TimingNode-scoped application/domain state; obtaining or synchronising that data from the backoffice is an integration/application responsibility rather than behaviour owned by a `RaceData`.
+It may contain the data needed to resolve source identities to canonical
+`RegistrationIdentity` values. Obtaining or synchronising that data from an
+external system is an integration/application responsibility rather than
+behaviour owned by `RaceData`.
 
-Stage start-time data remains a separate concern owned by `StageStartTimes`.
-
-## RFID tag identity structure
-
-A decoded physical RFID tag contains:
-
-```text
-prefix + number + postfix
-```
-
-For registration semantics SI-01 normalises this to:
-
-```text
-RegistrationTag = prefix + number
-```
-
-The postfix distinguishes physical tag copies and is removed from the canonical
-registration identity. The prefix is retained because it carries semantic tag
-class information.
-
-For the first registration slice the relevant tag classes are:
-
-- normal tag;
-- reserve tag.
-
-A normal tag resolves directly to one of the supported registration-identity
-types. A reserve tag uses reserve mapping data first.
-
-The physical tag shape is not globally required to contain a postfix: finish
-tags may be represented without one. When present, a postfix is physical
-tag-copy detail and is not part of the canonical registration identity.
-
-The exact encoded prefix/postfix values, encryption details and device/protocol
-representation are proprietary and are not defined here. Test-tag behaviour is
-handled separately and is not needed to define the first normal/reserve
-registration identity.
-
-## Reserve tags
-
-Reserve tags require conversion/mapping data supplied by the backoffice.
-
-The local timing application therefore needs to retain the **observed normalised
-reserve-tag identity** and resolve it through locally available mapping data to
-the registration identity required for normal race processing.
-
-The mapping must remain available locally when live backoffice connectivity is
-temporarily unavailable, subject to later freshness/validity requirements.
-
-The first TimingData slice deliberately does **not** yet decide what every public
-client sees for a reserve registration: the observed reserve tag, the resolved
-identity, or both. That projection belongs to the relevant public interface
-contract and must not be guessed by an RFID adapter.
-
-## Test tags
-
-Test tags are a separate RFID tag class identified by their prefix. They are **not** the same concept as software test doubles, stub adapters or synthetic test tooling.
-
-After decoding, SI-01 must be able to distinguish a test tag from both a normal tag and a reserve tag so test-specific behaviour can be applied deliberately. A test tag must not be silently treated as a normal participant tag merely because its decoded payload also contains a team-like number.
-
-The exact behaviour is intentionally not fixed in this domain baseline. It belongs in operational use cases and later requirements, including whether a test tag creates a registration record, affects calculations, is synchronised to backoffice, is allowed in all lifecycle states, and how it is made visible to an operator.
-
-Legacy identifiers used for "unknown team" registrations at normal/finish
-locations are not promoted into the public RegistrationIdentity model yet. Their
-business meaning and required behaviour must first be verified from authoritative
-documentation.
+Concrete source formats, production mappings and private compatibility rules are
+outside this public baseline. Stage start-time data remains a separate concern
+owned by `StageStartTimes`.
 
 ## Start-time reference data
 
@@ -521,7 +452,7 @@ This repository can document structural facts and generic ranges required for re
 Keep the following outside the public repository unless deliberately approved for publication:
 
 - concrete antenna/device IDs and their real mappings;
-- exact virtual/reserve-source assignments;
+- exact production source-to-node assignments;
 - exact production antenna/device topology;
 - proprietary protocol field values;
 - encryption keys or secrets.
@@ -554,11 +485,11 @@ families extend that contract only when their domain requirements are promoted.
 ## Open domain questions
 
 - Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
-- How are reserve/virtual TimingNodes represented in registration-routing rules when they share a physical producer with normal TimingNodes?
+- How are multiple TimingNodes represented in registration-routing rules when they share a physical producer?
 - Sequence numbering starts at 1; 0 is reserved.
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
 - What happens if the numeric sequence reaches its maximum representation?
 - Which operational events besides `OPEN` must be part of a timing node registration stream (for example close/reinitialisation/configuration changes)?
 - What exact data must an `OPEN` registration entry contain?
-- Are normal, reserve and virtual timingNodes treated identically by backoffice synchronisation once their timing node identity is known?
-- What exact operational behaviour is required for test tags, and which parts deliberately differ from normal and reserve tags?
+- Which TimingNode-specific synchronisation rules, if any, are required once the node identity is known?
+- Which source-specific behaviours, if any, require public operational requirements rather than provider-private handling?
