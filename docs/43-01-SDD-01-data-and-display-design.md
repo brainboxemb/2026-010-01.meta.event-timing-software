@@ -40,9 +40,10 @@ the applicable configured `LocationId`.
 configuration relates observations to TimingNodes; code must not infer one
 identity from another.
 
-Concrete production source identifiers, source classes, allowed LocationId sets
-and source-to-node mappings are deployment/provider information and are not
-defined by this public SDD.
+The shared `LocationId` Java value type owns only the common positive numeric
+representation. Concrete event/profile LocationId meaning, allowed sets and
+source-to-node mappings are deployment/reference information and are not defined
+by this public SDD.
 
 ### LogBook and IF-05 TimingData
 
@@ -55,9 +56,11 @@ design keeps that useful property while giving the file format a clear IF-05
 contract.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
-`32-05-IDD-timingdata-interchange.md`. It owns the common TimingData semantics,
-`RegistrationId`, sequence/key semantics and compatibility rules. The
-configured profile owns its concrete classes and matching representation/codec.
+`32-05-IDD-timingdata-interchange.md`. It owns the common TimingData semantics, shared `LocationId` and
+`RegistrationId` value representations, sequence/key semantics and compatibility
+rules. The configured event/profile/reference model owns the concrete identifier
+domains, while the configured TimingData profile owns its concrete classes and
+matching representation/codec.
 
 The same immutable `TimingData` object can therefore be:
 
@@ -72,8 +75,9 @@ continues to use the common TimingData interfaces.
 
 ### Registration identity resolution
 
-All participant registrations are committed with one canonical
-`RegistrationId` owned by IF-05.
+All participant registrations are committed with one shared `RegistrationId`
+representation defined by IF-05. The concrete RegistrationId domain and meaning
+may be event/profile-specific.
 
 `TagId` and `TeamId` are resolved to that canonical value before the
 definitive TimingData record is created:
@@ -88,9 +92,10 @@ TeamId -----> RaceData/reference resolution ----/
 team/reference-data/manual path. Only the resolved `RegistrationId` is passed
 to the TimingData factory. The resolution may use current `RaceData` when
 reference data is required.
-Concrete source encoding, categories, ranges and mapping tables remain outside
-this public SDD. A provider may translate an external representation, but it does
-not redefine `RegistrationId` semantics.
+Concrete source encoding, categories, ranges, allowed RegistrationId values and
+mapping tables remain outside this public SDD. A provider may translate an
+external representation; the active event/reference profile supplies the concrete
+identity semantics while IF-05 keeps the shared boundary representation stable.
 
 ## TimingNode serial execution and timing-data commit
 
