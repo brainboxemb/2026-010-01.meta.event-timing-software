@@ -3,9 +3,7 @@ step: 4
 planning_changes:
   - date: '2026-10-01'
     change: >-
-      TimingNode/TimingData recording, persistence, recovery and post-commit event
-      baseline completed; D03 first-registration IF-03 contract finalized and A03
-      Engineering Client/API integration is the next active implementation slice.
+      TimingData baseline completed; D01 UI design active before A03 client/API integration.
   - date: '2026-09-30'
     change: >-
       D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.
