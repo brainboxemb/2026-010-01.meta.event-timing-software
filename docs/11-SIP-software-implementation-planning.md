@@ -234,7 +234,9 @@ update, and close it again.
 - post-commit typed TimingData event;
 - IF-03 location/open/close control, capability-gated direct registration simulation, committed history and live updates;
 - Engineering Client state/history rebuild and live-update handling;
-- deterministic first-slice verification and running-system demo.
+- deterministic component/domain verification;
+- automated ST-1 black-box verification through public IF-03;
+- Engineering Client running-system demo after black-box verification is green.
 
 ### Not in this step
 
@@ -264,8 +266,28 @@ update, and close it again.
 - LocationId and RegistrationId are shared value representations without hard-coded event policy.
 - Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
 - D01 is complete with declarative Timing-view wireframes, state/enablement rules and reconnect behaviour; A03 is active for IF-03/client implementation.
+- Formal Step-4 verification order is A03 implementation, then automated VC-ST1-002 black-box verification, then the manual Engineering Client running-system demo.
+
+### Verification order
+
+The running-system verification deliberately separates SI-01/IF-03 behaviour from
+the JavaFX client:
+
+1. **A03 implementation + component/adapter tests** — implement the public
+   control/history/live resources and Engineering Client service/view integration.
+2. **V03 / VC-ST1-002 black-box** — start SI-01 as a separate process and drive
+   the complete first-registration flow through public IF-03 only. The test must
+   not inspect or mutate private Java state.
+3. **V04 Engineering Client demo** — repeat the same semantic flow through the
+   JavaFX Engineering Client and verify UI enablement, feedback, history/live
+   presentation and reconnect/stale/live behaviour.
+
+This order makes failures easier to localise: V03 proves SI-01 and IF-03
+independently before V04 adds the human/UI client.
 
 ### Demo
+
+The demo is V04 and runs only after V03/VC-ST1-002 is green.
 
 - Start SI-01 with the registration point CLOSED and no operational location.
 - Connect the Engineering Client and rebuild current status/history.
@@ -287,7 +309,9 @@ update, and close it again.
 - committed TimingData is emitted only after durable append plus LogBook visibility;
 - IF-03 exposes location/open/close, capabilities, accepted-registration simulation, committed history and live TimingData updates;
 - the Engineering Client rebuilds status/history after reconnect before presenting the view as live;
-- VC-ST1-002 and the running-system demo succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+- automated VC-ST1-002 passes against SI-01 as a separate process using public IF-03 only;
+- the subsequent Engineering Client running-system demo passes through the same public boundary;
+- both verification steps succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
 ---
 
