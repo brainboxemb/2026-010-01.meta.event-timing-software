@@ -151,11 +151,10 @@ domain/
     TimingNodeId.java
     UpstreamMessagePort.java            TimingNode-level upstream messages
   logbook/
-    LogBook.java
-    LogBookItem.java                    internal logbook-domain representation
+    LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingData.java                     framework-owned semantic protocol API
-    TimingDataRecord.java               canonical persistent/interchange record
+    TimingDataRecord.java               canonical semantic/interchange record
+    TimingDataRecordKey.java
     TimingDataCodec.java                canonical public/reference codec
     TimingDataProvider.java             external-format translation provider
   upstream/
@@ -187,6 +186,11 @@ io/
     rabbitmq/
       RabbitMqConnector.java
       DebugConnector.java                 engineering/debug connector when implemented
+  storage/
+    FileTimingDataStore.java              TimingData durable append/recovery
+    FileNextUpTeamsStore.java             next-up analysis history/snapshots
+    FileStageStartTimesStore.java         start-time analysis history/snapshots
+    FileRaceDataStore.java                race/reference analysis snapshots
 ```
 
 The names above record ownership/direction, not a requirement to create empty
@@ -221,19 +225,16 @@ reached through this service. The smart display remains an external client and
 therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
 mirror the hardware name.
 
-`TimingNode` contains its `LogBook` as part of the TimingNode aggregate. The
-LogBook keeps 0..N `LogBookItem` values as its internal operational
-representation. A separate `logbook` package may still be used to keep that
-cohesive implementation together; package placement does not make LogBook a
-separate top-level aggregate.
+`TimingNode` contains its passive `LogBook` as part of the TimingNode
+aggregate. LogBook keeps 0..N committed `TimingDataRecord` values. The current
+design deliberately avoids a second logbook-specific record type because there
+is no different domain shape that needs one.
 
-`TimingData` is also a Domain capability, not an I/O codec package. `TimingNode`
-has the explicit semantic relationship with this capability for timing data it
-produces or consumes. The Java `TimingDataRecord` model and validation/codec
-services realise the system-owned IF-05 contract; they do not create a second
-public protocol authority. Concrete storage, Web and messaging adapters may
-depend on that API and carry an encoded representation without knowing or
-switching on individual TimingData fields.
+`TimingData` remains the Domain capability/contract name; it does not require a
+separate Java `TimingData` wrapper class. The Java `TimingDataRecord` model
+and validation/codec services realise the system-owned IF-05 contract. Concrete
+storage, Web and messaging adapters may carry that record or its encoded form
+without redefining field semantics.
 
 `UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
@@ -602,156 +603,198 @@ The shared presentation/application boundary remains small:
 `CommandHandler.status()` returns the current TimingNode status used by the
 current presentation adapters.
 
-## LogBook recording and TimingData persistence
+## TimingNode active-object execution and persistence
 
-The existing architecture remains authoritative: one `TimingNode` contains one
-`LogBook`, and that LogBook owns the node's operational traceable state as
-0..N `LogBookItem` values.
+The Java design implements the **Active Object pattern** for each TimingNode,
+but does not make `TimingNode` inherit from an `ActiveObject` base class.
 
-IF-05 `TimingData` is the persistent/interchange representation used to store
-and exchange those committed facts. Do not introduce a second domain component
-called `TimingDataJournal` or a separate `TimingDataProjection` beside the
-LogBook.
-
-The TimingNode handles the domain-facing operation. For example,
-`register(teamIdentity, time)` validates/resolves the registration and calls
-`LogBook.record(...)`. That LogBook call is the asynchronous recording
-boundary.
-
-The first Java implementation keeps the queue and worker **inside the LogBook
-implementation**:
+The architectural rule is simple:
 
 ```text
 TimingNode
-  +-- register(...)
+  +-- one bounded serial execution boundary
+  +-- one worker active at a time
   |
-  +--> LogBook.record(...)
-         +-- bounded ArrayBlockingQueue<LogBookEntryCandidate>
-         +-- one record worker
-         +-- committed LogBookItem state
-         |
-         +--> TimingDataStore
-                |
-                +-- FileTimingDataStore
-                    file persistence / recovery
+  +-- passive LogBook
+  +-- passive NextUpTeams
+  +-- passive StageStartTimes
+  +-- passive RaceData
+  |
+  +-- per-type store ports
 ```
 
-No `LogBookRecorder` or `LogBookCommitter` architecture type is required.
-The queue and worker are runtime details of LogBook recording. If a small private
-or package-private helper later makes the implementation easier to test or
-maintain, it remains an implementation detail.
+This gives one writer for all mutable per-node state and one clear ordering
+between registration, lifecycle, next-up and reference-data changes.
 
-### First-slice Java responsibilities
+### Why composition instead of an ActiveObject base class
 
-| Type | Responsibility | Thread/queue ownership |
-| --- | --- | --- |
-| `TimingNode` | Own lifecycle and domain-facing operations for one timing point; resolve input and hand traceable entries to LogBook | no persistence worker |
-| `LogBookEntryCandidate` | Internal description of one traceable fact before sequence/recordedAt/commit | none |
-| `LogBook` | Own committed `LogBookItem` state plus the ordered asynchronous recording lane | one bounded queue + one record worker in the first implementation |
-| `TimingDataStore` | Storage boundary used by LogBook recording for IF-05 append/read/recovery | none |
-| `FileTimingDataStore` | Concrete file handling: append, durable flush, startup scan, incomplete-tail repair and record loading | blocking file I/O on the LogBook record worker |
-| `CommittedTimingDataSink` | Non-blocking hand-off for committed IF-05 facts that need signalling/upstream delivery | slow sinks own their own async boundary |
-| query/ranking services | Read LogBook/reference state and perform expensive work outside the LogBook worker | introduced with their real use cases |
-
-`TimingDataStore` is an I/O/storage boundary. It does not become a Domain
-aggregate and does not replace the LogBook. Diagrams label it **file persistence
-/ recovery**; the concrete `FileTimingDataStore` contains the actual filesystem
-handling.
-
-### LogBook queue and worker
-
-Use a bounded `ArrayBlockingQueue<LogBookEntryCandidate>` rather than a
-linked/unbounded queue or the default queue hidden inside
-`Executors.newSingleThreadExecutor()`.
-
-Reasons:
-
-- capacity is explicit and observable;
-- the backing reference array is allocated once;
-- queue bookkeeping does not allocate one linked node per event;
-- overload cannot grow memory without bound on the Raspberry Pi;
-- FIFO behaviour matches the serial per-TimingNode commit-order requirement.
-
-Do not guess the production queue size yet. Measure event bursts and worst-case
-file-write latency on the Raspberry Pi. A full queue must be visible to
-application/status code; never silently drop a traceable entry.
-
-A first implementation can keep the worker directly inside `LogBook`:
+A reusable base class such as `TimingNode extends ActiveObject<Work>` is
+possible, but it would couple the domain type to one threading mechanism.
+Composition keeps that choice replaceable:
 
 ```java
-final class LogBook implements AutoCloseable {
-    private final BlockingQueue<LogBookEntryCandidate> recordQueue;
-    private final TimingDataStore timingDataStore;
-    private final Thread recordWorker;
+final class TimingNode {
+    private final SerialWorker<TimingNodeWork> serialWorker;
+    private final LogBook logBook;
+    private final NextUpTeams nextUpTeams;
+    private final StageStartTimes stageStartTimes;
+    private final RaceData raceData;
 
-    boolean record(LogBookEntryCandidate entry) {
-        return recordQueue.offer(entry);
-    }
-
-    private void runRecordWorker() {
-        while (running) {
-            commit(recordQueue.take());
-        }
-    }
-
-    private void commit(LogBookEntryCandidate entry) {
-        long sequence = sequenceState.peekNext();
-        TimingTimestamp recordedAt = timeSource.now();
-
-        LogBookItem item =
-            logBookItemFactory.create(entry, sequence, recordedAt);
-        TimingDataRecord record = timingData.toRecord(item);
-
-        timingDataStore.append(record);
-        sequenceState.commit(sequence);
-        applyCommitted(item);
-        committedSinks.publish(record);
+    boolean register(TeamIdentity team, TimingTimestamp time) {
+        return serialWorker.offer(
+            TimingNodeWork.registration(team, time));
     }
 }
 ```
 
-The sketch fixes ownership, not final class shape. Shutdown/interruption/error
-handling still has to be designed carefully.
+`TimingNodeWork` is an internal immutable carrier for data that must survive
+the asynchronous hand-off. It is not an external Command Pattern API and is not
+persisted. Add only work kinds required by real use cases.
 
-`TimingNode.register(...)` therefore returns **accepted** after
-`LogBook.record(...)` has accepted the entry into the bounded queue. It does not
-wait for the durable file append.
+The worker invokes normal private/domain methods once the work item is selected.
+Code already running on the TimingNode worker should use direct Java calls rather
+than queueing more internal messages.
 
-If `timingDataStore.append(record)` fails, do not advance the sequence and do
-not expose the item as committed LogBook state. Later entries in the same node's
-record lane must not overtake it. On restart/retry, first repair the file back to
-its last complete record, rebuild LogBook state, then continue with the same next
-sequence.
+### First SerialWorker implementation
 
-The commit code can be unit-tested with an in-memory `TimingDataStore`, fake
-`TimeSource`, deterministic sequence state and fake committed sinks. Extracting
-a private helper for testability is allowed, but it does not become a new
-architecture component.
+The first implementation should use a small composed `SerialWorker<W>` backed
+by one `ArrayBlockingQueue<W>` and one dedicated thread:
 
-### LogBook reads and long-running queries
+```java
+final class SerialWorker<W> implements AutoCloseable {
+    private final BlockingQueue<W> queue;
+    private final Thread thread;
+    private final Consumer<W> handler;
 
-Queries and ranking logic do not consume a second TimingData queue. They read the
-LogBook and the other Domain/reference components that own the required
-information.
+    boolean offer(W work) {
+        return queue.offer(work);
+    }
 
-Keep LogBook reads short. A long ranking/report calculation should not hold a
-LogBook lock and should not deep-copy the complete history.
+    private void run() {
+        while (running) {
+            handler.accept(queue.take());
+        }
+    }
+}
+```
 
-Depending on the first real query, suitable Pi-friendly patterns include:
+Reasons for the explicit queue/thread first:
 
-- capture only the small set of immutable `LogBookItem` references required by
-  the calculation;
-- maintain compact indexes inside LogBook for current participant/event lookup;
-- capture a sequence/version boundary and use it to define the query view;
-- copy a small primitive/reference index when cheaper than retaining a lock.
+- queue capacity is visible and bounded;
+- queue depth/high-water and overload can be reported directly;
+- FIFO behaviour is obvious;
+- shutdown can stop ingress and drain accepted work deliberately;
+- there is no hidden unbounded executor queue;
+- the implementation is easy to measure on the Raspberry Pi.
 
-Do not clone the complete LogBook for every query, and do not use
-`CopyOnWriteArrayList` for frequently changing registration/history data.
+Do **not** use `Executors.newSingleThreadExecutor()` for this boundary: its
+normal work queue is unbounded and hides the overload behaviour we need to
+control.
+
+A `ThreadPoolExecutor` configured with one thread and an
+`ArrayBlockingQueue` can implement the same semantics. It remains a valid
+alternative, especially if several TimingNodes later share a small executor.
+The first dedicated `SerialWorker` is chosen for transparency, not because the
+JDK executor framework is unsuitable.
+
+If the implementation later moves to a shared executor, these invariants remain:
+
+```text
+per TimingNode:
+  FIFO order
+  at most one work item executing
+  bounded queued work
+  visible overload
+```
+
+### TimingData commit
+
+The queue does not contain a pre-numbered TimingData record. Sequence is chosen
+on the worker immediately before persistence:
+
+```java
+private void processRegistration(RegistrationInput input) {
+    long sequence = logBook.nextSequence();
+
+    TimingDataRecord record =
+        timingDataFactory.registration(input, sequence, timeSource.now());
+
+    timingDataStore.append(record);  // durable before return
+    logBook.add(record);             // visibility point
+    committedSinks.publish(record);  // non-blocking only
+}
+```
+
+Only the TimingNode worker calls this commit path, so a producer lock around
+sequence allocation is unnecessary.
+
+`LogBook.nextSequence()` reads committed state and does not consume the value.
+If append fails, LogBook is unchanged and retry uses the same next sequence. The
+worker must not process a later timing record ahead of that failed record.
+
+### Passive LogBook and consumer reads
+
+LogBook has no worker thread. It stores immutable `TimingDataRecord` values and
+supports short synchronized mutations/reads.
+
+A query that needs a stable view should copy references and then release LogBook
+synchronization before doing expensive work. With roughly 1200–1500 records, a
+shallow copy is small: 1500 references are about 6 KiB with compressed 4-byte
+references or 12 KiB with 8-byte references.
+
+Avoid allocating a new snapshot array for every high-frequency query when a
+caller-owned reusable buffer is enough:
+
+```java
+int count = logBook.copyTo(reusableTimingDataBuffer);
+calculate(reusableTimingDataBuffer, count);
+```
+
+This keeps long calculations off the TimingNode worker and avoids unnecessary GC
+pressure. Measure the actual copy time, heap behaviour and query frequency on the
+target Pi before introducing a more complex read model.
+
+### Per-type stores
+
+Use a separate persistence boundary for each state type whose history/snapshots
+need to be kept:
+
+| Store | First purpose | Commit role |
+| --- | --- | --- |
+| `TimingDataStore` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| `NextUpTeamsStore` | preserve accepted next-up changes/snapshots for analysis | not a TimingData commit gate |
+| `StageStartTimesStore` | preserve accepted start-time snapshots for analysis | not runtime recovery authority by default |
+| `RaceDataStore` | preserve accepted race/reference snapshots/versions for analysis | not runtime recovery authority by default |
+
+Concrete file implementations live under `io.storage`. Store contracts are
+dependency-inverted ports composed into the TimingNode; the TimingNode must not
+depend on concrete filesystem classes.
+
+The TimingNode worker fixes the order in which state changes are accepted. The
+first implementation may call the small/infrequent analysis-store writes on the
+same worker. If measurements show that one of those writes delays registrations,
+the worker can hand an immutable snapshot to a bounded storage executor. Do not
+add one thread per state object and do not introduce an unbounded background
+queue.
+
+For example, a StageStartTimes update may be:
+
+```text
+TimingNode worker
+  -> validate received snapshot
+  -> replace StageStartTimes live state
+  -> StageStartTimesStore.append(snapshot for analysis)
+```
+
+After a reboot, the live protocol can send the current StageStartTimes again
+(for example as part of OPEN handling). The historical file is still retained
+for analysis.
 
 ### External committed-data output
 
 External signalling, WebSocket publication or upstream delivery may block/retry
-independently. Such work does not execute on the LogBook record worker.
+independently. Such work does not execute as a blocking operation on the
+TimingNode serial worker.
 
 ```java
 interface CommittedTimingDataSink {
@@ -760,45 +803,42 @@ interface CommittedTimingDataSink {
 ```
 
 Each concrete slow/network sink owns its own bounded queue/worker or durable
-outbox as required by that capability. There is no shared second
-`BlockingQueue<TimingDataRecord>` for LogBook state, queries and all external
-outputs.
+outbox as required by that capability.
 
 ### Multiple TimingNodes
 
-The semantic requirement is one serial LogBook recording lane per
-`TimingNodeId`, not permanently one operating-system thread per TimingNode.
+The semantic requirement is one serial execution lane per TimingNode, not
+permanently one operating-system thread per node.
 
 For the first one-node application:
 
 ```text
 1 TimingNode
-  -> 1 LogBook
-       -> 1 bounded recording queue
-       -> 1 record worker
-       -> 1 TimingDataStore dependency
+  -> 1 SerialWorker
+       -> 1 bounded queue
+       -> 1 dedicated worker thread
+  -> passive state objects
+  -> store dependencies
 ```
 
-If a later multi-node application shows that one worker per LogBook is too
-expensive, multiple logical lanes may share a small executor while preserving
-FIFO ordering independently per TimingNode. Do not build that scheduler before
-the multi-node consumer exists.
+If a later multi-node application shows that one thread per node is too
+expensive, multiple SerialWorkers may share a small executor while preserving
+the per-node invariants above.
 
 ### Raspberry-Pi implementation rules
 
 For the initial Pi-oriented runtime:
 
-- keep each LogBook recording queue bounded;
-- prefer `ArrayBlockingQueue` over linked/unbounded work queues;
-- do not allocate a `CompletableFuture`/task wrapper per LogBook event unless a
-  real asynchronous result consumer requires it;
-- do not deep-copy complete LogBook state for routine queries;
-- do not use `CopyOnWriteArrayList` for registration/event history;
-- keep long-lived record-worker count explicit in composition/status;
-- keep LogBook mutation single-writer where practical;
+- keep each TimingNode work queue bounded;
+- prefer explicit bounded queues over hidden/unbounded executor queues;
+- keep contained domain state passive and single-writer where practical;
+- keep TimingDataRecord immutable after creation;
+- avoid deep-copying LogBook history for routine queries;
+- reuse consumer snapshot buffers where repeated allocation would add GC churn;
 - move blocking network/retry work behind capability-specific output boundaries;
-- measure queue high-water, durable-store latency, heap/GC behaviour and query
-  latency on the target Raspberry Pi before increasing concurrency.
+- add asynchronous analysis-store writing only when measurement justifies it;
+- measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
+  and query latency before increasing concurrency.
 
 ## Shared TimingData API artifact
 
@@ -811,7 +851,7 @@ Conceptually:
 ```text
 timing-data-api
   TimingDataRecord / TimingDataRecordKey
-  RegistrationIdentity and TimingData value types
+  RegistrationIdentity and record value types
   TimingDataCodec
   TimingDataProvider / translator SPI
 
@@ -956,7 +996,7 @@ Useful automated rules may include:
 - exact package granularity after real application/domain classes exist;
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
-- exact bounded LogBook ingress-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
+- exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
 - concrete compact LogBook indexes/read-view mechanics required by the first ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
