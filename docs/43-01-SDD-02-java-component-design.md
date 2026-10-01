@@ -76,7 +76,7 @@ Likely top-level packages are:
 io.github.brainboxemb.eventtiming/timingpoint/
   application/
   domain/
-  core/
+  platform/
     concurrent/
     events/
   presentation/
@@ -132,7 +132,7 @@ Use these rules:
   closely related value/supporting types; keep that small group together rather
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
-- reserve `core` for small JDK-only reusable primitives such as bounded/serial execution and typed local events;
+- reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
 - reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
 - use `io` for external hardware, messaging and storage adapters.
 
@@ -225,7 +225,7 @@ io/
     FileStageStartTimesStore.java         start-time analysis history/snapshots
     FileRaceDataStore.java                race/reference analysis snapshots
 
-core/
+platform/
   concurrent/
     SerialWorker.java                     bounded one-at-a-time execution primitive
   events/
@@ -235,7 +235,7 @@ core/
 The names above record ownership/direction, not a requirement to create empty
 types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
-`SerialWorker` is a small reusable execution primitive under `core.concurrent`,
+`SerialWorker` is a small reusable execution primitive under `platform.concurrent`,
 composed into TimingNode rather than used as a Domain superclass. It has no
 TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -316,10 +316,6 @@ application
 domain
   domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
 
-core
-  small JDK-only reusable primitives/contracts, including serial execution
-  and local typed events
-
 io
   hardware, messaging and storage adapters
 
@@ -331,7 +327,8 @@ runtime
   top-level composed runtime object and lifecycle mechanics
 
 platform
-  execution-environment abstractions
+  small JDK-only reusable primitives and execution-environment abstractions,
+  including serial execution and local typed events
 ```
 
 Do not create one generic top-level `api` package merely to collect
@@ -341,13 +338,12 @@ interfaces.
 
 ```text
 presentation    --> application
-application     --> domain / core / I/O ports
-domain          --> core
-io              --> application/domain ports/contracts + core + platform
-runtime         --> application / domain / core
+application     --> domain / I/O ports
+domain          --> platform
+io              --> application/domain ports/contracts + platform
+runtime         --> application / domain / platform
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-core            --> JDK/platform-neutral reusable primitives/contracts only
-platform        --> low-level environment only
+platform        --> JDK and low-level environment only
 ```
 
 Domain code does not depend on presentation or concrete I/O adapters.
@@ -964,7 +960,7 @@ for analysis.
 ### Simple typed events
 
 Post-fact notifications use a small local `Event<T>` abstraction rather than a
-central event bus. The reusable mechanism lives under `core.events` because it
+central event bus. The reusable mechanism lives under `platform.events` because it
 is a small JDK-only reusable primitive rather than domain semantics, external I/O
 or concrete infrastructure.
 
@@ -978,7 +974,7 @@ final class Event<T> {
 }
 ```
 
-A component owns the event instance; `core.events` only supplies the generic
+A component owns the event instance; `platform.events` only supplies the generic
 subscription/emit mechanism. For TimingData the first event is:
 
 ```java
