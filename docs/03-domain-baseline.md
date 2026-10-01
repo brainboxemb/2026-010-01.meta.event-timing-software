@@ -10,7 +10,7 @@ Concrete production asset names, external registration-system IDs, source mappin
 
 One running headless timing application must be able to host **1..N logical `TimingSystem` instances** at the same time. Each `TimingSystem` owns **1..N `TimingNode` instances**. This supports normal single-system deployment as well as simulation/test compositions that run multiple independent timing systems in one process.
 
-The working software/domain term is `TimingNode` for one independently addressed logical timing aggregate at the **end of a stage**. A `TimingNode` is deployed or configured for a physical event `LocationID`; the software identity of the timing node and the physical location where it is used are separate concepts.
+The working software/domain term is `TimingNode` for one independently addressed logical timing aggregate at the **end of a stage**. A `TimingNode` is deployed or configured for a physical event `LocationId`; the software identity of the timing node and the physical location where it is used are separate concepts.
 
 Conceptually, one timing application owns one or more independently addressed timingNodes:
 
@@ -29,7 +29,7 @@ TimingApplication
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
-              +-- LocationID
+              +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
               +-- TagProcessor
@@ -45,7 +45,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-`ApplicationId`, internal `TimingSystemId`, `TimingNodeId` and `LocationID` are distinct concepts. `ApplicationId` identifies the running process/runtime. `TimingSystemId` is an internal composition/simulation identity used to distinguish multiple TimingSystem instances in one process; it is not part of the upstream functional addressing contract. `TimingNodeId` is the functional identity exposed to timing-data/upstream semantics, and `LocationID` identifies the physical event location where that node is configured or deployed.
+`ApplicationId`, internal `TimingSystemId`, `TimingNodeId` and `LocationId` are distinct concepts. `ApplicationId` identifies the running process/runtime. `TimingSystemId` is an internal composition/simulation identity used to distinguish multiple TimingSystem instances in one process; it is not part of the upstream functional addressing contract. `TimingNodeId` is the functional identity exposed to timing-data/upstream semantics, and `LocationId` identifies the physical event location where that node is configured or deployed.
 
 Operational state such as `OPEN` / `CLOSED` belongs to the TimingNode software/domain concept. It is not the lifecycle of a physical registration box merely because that box is used by the timing node.
 
@@ -55,9 +55,9 @@ The previous working name `TimingSystemInstance` was rejected as a name for an i
 
 ## Timing-system, antenna and TimingNode identity
 
-`ApplicationId`, `TimingSystemId`, `TimingNodeId`, `AntennaId` and `LocationID` are separate namespaces.
+`ApplicationId`, `TimingSystemId`, `TimingNodeId`, `AntennaId` and `LocationId` are separate namespaces.
 
-`TimingSystemId` identifies one logical `TimingSystem` inside a `TimingApplication` for internal composition, diagnostics and simulation isolation. The upstream system need not know that this grouping exists. `TimingNodeId` remains the functional identity of a node and scopes that node's registration sequence and synchronisation semantics. `LocationID` separately identifies the event location where the TimingNode is configured or deployed.
+`TimingSystemId` identifies one logical `TimingSystem` inside a `TimingApplication` for internal composition, diagnostics and simulation isolation. The upstream system need not know that this grouping exists. `TimingNodeId` remains the functional identity of a node and scopes that node's registration sequence and synchronisation semantics. `LocationId` separately identifies the event location where the TimingNode is configured or deployed.
 
 The I/O boundary owns antenna configuration and mapping:
 
@@ -138,7 +138,7 @@ TimingApplication
         |
         +-- 1..N TimingNode
               +-- TimingNodeId
-              +-- LocationID
+              +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
               +-- TagProcessor
@@ -215,7 +215,7 @@ TimingNode domain model.
 Each physical event location has a unique numeric identifier:
 
 ```text
-LocationID = configured physical event-location identity
+LocationId = configured physical event-location identity
 ```
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
@@ -224,7 +224,7 @@ A `TimingData` value is associated with the functional timing-node identity and 
 
 ```text
 TimingNodeId
-LocationID
+LocationId
 ```
 
 The containing `TimingSystem` is local runtime/composition context and is not required to be serialized into TimingData.
@@ -241,7 +241,7 @@ Conceptually:
 TimingData key = (TimingNodeId, SequenceNumber)
 ```
 
-The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope. When one process hosts multiple TimingSystems, local storage/composition keeps their runtime contexts separated without changing the functional TimingData key.
+The `LocationId` and `AntennaId` may provide useful context, but neither changes the sequence scope. When one process hosts multiple TimingSystems, local storage/composition keeps their runtime contexts separated without changing the functional TimingData key.
 
 Generic example:
 
@@ -482,7 +482,7 @@ families extend that contract only when their domain requirements are promoted.
 
 ## Open domain questions
 
-- Can a `TimingNode` change `LocationID` during one operational session, or is location fixed until the timing node is closed/reconfigured?
+- Can a `TimingNode` change `LocationId` during one operational session, or is location fixed until the timing node is closed/reconfigured?
 - How are multiple TimingNodes represented in registration-routing rules when they share a physical producer?
 - Sequence numbering starts at 1; 0 is reserved.
 - Are sequence-number gaps allowed after failed/aborted persistence, provided numbers are never reused?
