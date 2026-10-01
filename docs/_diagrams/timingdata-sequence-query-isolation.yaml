@@ -3,7 +3,7 @@ diagram:
   type: sequence
   title: Figure SDD01-TD05 — LogBook query isolation
   width: 1450
-  height: 1120
+  height: 1160
   description: A consistency-sensitive query captures its read view through the TimingNode serial lane, then performs long calculation outside the lane while later registrations continue.
   note: The query never reads LogBook directly from outside TimingNode ownership.
 
