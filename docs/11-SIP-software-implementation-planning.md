@@ -208,8 +208,9 @@ Implement the smallest useful timing-domain vertical slice before introducing
 reference data, keypad/display behaviour or production transports.
 
 The domain/recording foundation is now implemented. The remaining active work in
-this step is exposing that behaviour through IF-03 and the Engineering Client,
-then proving the complete running-system flow.
+this step is completing the concrete Engineering Client Timing-view/UI baseline
+(D01), then exposing the behaviour through IF-03 and the Engineering Client (A03)
+and proving the complete running-system flow.
 
 ### Goal
 
@@ -220,7 +221,7 @@ update, and close it again.
 
 ### Scope
 
-- Engineering Client architecture/UI baseline;
+- Engineering Client architecture plus concrete Step-4 Timing-view/UI baseline;
 - focused UC-001, UC-002, UC-003, UC-009 and outbound UC-011 semantics;
 - shared `LocationId` and `RegistrationId` representations with event/profile-specific policy outside the shared library;
 - TimingNode location assignment/change only while `CLOSED`;
@@ -262,7 +263,7 @@ update, and close it again.
 - Committed TimingData survives restart and rebuilds the LogBook before operational work starts.
 - LocationId and RegistrationId are shared value representations without hard-coded event policy.
 - Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
-- A03 is the active remaining slice: expose control/history/live behaviour through IF-03 and the Engineering Client.
+- D01 is active to complete the concrete Engineering Client Timing-view/UI baseline; A03 follows with the IF-03/client implementation.
 
 ### Demo
 
