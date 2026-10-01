@@ -35,9 +35,10 @@ elsewhere:
 - transport implementation belongs in the applicable SI-01 SDD;
 - the Engineering Client implementation README owns concrete build/run instructions.
 
-This document may show planned engineering controls before their protocol contract is
-final. Such UI direction is not authority for an IF-03 route or an UpstreamProtocol
-message shape.
+This document defines the Engineering Client UI/design baseline only. IF-03 routes,
+payloads, capability semantics and failure codes remain authoritative in
+`32-03-IDD-application-control-status.md`; this UI must conform to that contract
+rather than redefine it.
 
 ## Repository and runtime boundary
 
@@ -48,10 +49,10 @@ Current placement:
 ├── core/            SI-01 reusable Java-8 application core
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
-├── timing-data-api/ shared TimingData model + codec/provider SPI
+├── shared/timing-data/ shared TimingData model + codec/provider SPI
 └── test-client/     Engineering Client
                     standalone Java 17 + JavaFX application
-                    may depend on timing-data-api only
+                    may depend on event-timing-data only
                     no SI-01 core/app implementation dependency
 ```
 
@@ -60,7 +61,7 @@ supported external interfaces. It does not import `event-timing-core` or
 `event-timing-app` implementation classes.
 
 TimingData inspection/conversion is a separate engineering capability. The
-Engineering Client may depend on the small shared `timing-data-api` artifact and
+Engineering Client may depend on the small shared `event-timing-data` artifact and
 load the same compatible `TimingDataProvider` implementations that SI-01 can
 use, without copying provider-specific decoding rules into client code.
 
@@ -148,44 +149,129 @@ new log records and can query/change the temporary runtime-global logging level.
 Live logs are not IF-03 application events and do not become TimingNode state merely
 because they are visible in the same Engineering Client.
 
-## Step-4 UI direction — first registration slice
+## Step-4 Timing UI baseline — first registration slice
 
-The Step-4 UI grows only enough to exercise and inspect the first registration
-slice. The existing **Status**, **Events**, **Terminal** and **Logs** tabs remain
-the implemented baseline. A small **Timing** view may be added; a broad
-Upstream/reference-data editor is not part of this slice.
+The **Timing** tab is the Step-4 working surface for one TimingNode. It combines
+current authoritative node state, first-slice controls and committed TimingData
+history without making the client an owner of domain state.
 
-The first Timing view should expose:
+The first slice deliberately remains a single-TimingNode view. Multi-node
+navigation is deferred until a later profile requires it.
 
-- the configured TimingNode identity as read-only state;
-- the assigned/unassigned location state;
-- location editing only while the TimingNode is `CLOSED`;
-- explicit `open` and `close` actions with visible accepted/rejected outcomes;
-- a capability-gated direct accepted-registration simulation control;
-- optional deterministic observation time for repeatable engineering tests;
-- committed registration/TimingData history with source sequence;
-- raw public representations where useful for interface diagnosis.
+### CLOSED without an operational location
 
-The client must not construct or inject a completed TimingData record. Direct
-registration simulation enters the public TimingNode registration operation
-**after** antenna/decoding/filtering, so the TimingNode remains responsible for
-its configured identity, active location, lifecycle validation and source
-sequence. A later simulated-antenna increment will enter earlier in the normal
-registration path and exercise filtering before reaching the same operation.
+<a id="fig-sde03-02"></a>
+![Timing view — CLOSED without location](../../../raw/prod/docs/assets/architecture/engineering-client-timing-closed.svg)
+*Figure SDE03-02 — Timing view while CLOSED and no current LocationId is assigned.*
 
-### First-slice UI review scenarios
+This is the initial operational state after startup/recovery. The user may enter
+a valid event/profile LocationId and apply it. **Open** stays disabled until the
+client has resynchronised status showing an assigned LocationId.
 
-| Scenario | Planned Engineering Client behaviour | Use case |
-| --- | --- | --- |
-| Inspect a closed TimingNode | Show configured identity, lifecycle and whether a location is assigned. | UC-001, UC-009 |
-| Set/change location | Allow only while `CLOSED`; show explicit validation/rejection. | UC-001, UC-002, UC-009 |
-| Open/close | Reject open without a valid location; keep the active location fixed until close. | UC-002, UC-009 |
-| Inject an accepted registration | When capability-enabled, submit semantic participant identity plus supported observation time; do not supply sequence/source/location fields owned by the node. | UC-003, UC-009 |
-| Inspect registration result | For presentation-driven registration, show the processed registration result and resulting committed TimingData/history. Keep submission-only admission terminology for device/callback ingress where no caller waits for the domain result. | UC-003, UC-009, UC-011 |
-| Lose/re-establish event connection | Mark cached information stale, rebuild current node state and registration data, then resume live updates. | UC-009 |
+The accepted-registration controls remain disabled while the node is CLOSED.
 
-D03 owns the actual routes, JSON fields, identifier formats, capability
-representation and TimingData schema.
+### OPEN with committed TimingData
+
+<a id="fig-sde03-03"></a>
+![Timing view — OPEN with committed history](../../../raw/prod/docs/assets/architecture/engineering-client-timing-open.svg)
+*Figure SDE03-03 — Timing view while OPEN with direct-registration simulation and committed history.*
+
+While OPEN:
+
+- LocationId is displayed read-only;
+- changing LocationId is disabled;
+- **Close** is enabled;
+- direct accepted-registration simulation is enabled only when capability
+  `DIRECT_REGISTRATION_SIMULATION` is both supported and enabled;
+- the user supplies only `RegistrationId` plus accepted observation time;
+- the optional **Now** action fills the observation-time field from the client
+  clock for convenience, while an explicit timestamp remains available for
+  deterministic testing;
+- successful commits appear in the history and through the live event stream.
+
+The client never supplies TimingNodeId, source sequence, active LocationId or
+`recordedAt` for direct accepted-registration simulation.
+
+### RECONNECTING / stale state
+
+<a id="fig-sde03-04"></a>
+![Timing view — reconnecting and stale](../../../raw/prod/docs/assets/architecture/engineering-client-timing-reconnecting.svg)
+*Figure SDE03-04 — Cached Timing view while IF-03 state/history is being rebuilt after reconnect.*
+
+When the IF-03 live connection is lost, cached information remains visible for
+diagnosis but is marked **STALE** and all state-changing controls are disabled.
+
+Reconnect handling follows D03:
+
+1. connect the WebSocket and receive the complete status snapshot;
+2. begin buffering later live events;
+3. rebuild committed TimingData history through HTTP;
+4. apply buffered status changes in delivery order;
+5. merge buffered TimingData events and discard records already present in
+   history by stable TimingData record key;
+6. only then transition the Timing tab to **LIVE** and re-enable controls.
+
+A reconnect does not visually pretend that cached values are authoritative.
+
+### Control availability
+
+| Client state | Set Location | Open | Close | Inject accepted registration |
+| --- | --- | --- | --- | --- |
+| disconnected / reconnecting / stale | disabled | disabled | disabled | disabled |
+| LIVE + CLOSED + no LocationId | enabled | disabled | disabled | disabled |
+| LIVE + CLOSED + LocationId assigned | enabled | enabled | disabled | disabled |
+| LIVE + OPEN + simulation capability enabled | disabled | disabled | enabled | enabled |
+| LIVE + OPEN + simulation capability unsupported/disabled | disabled | disabled | enabled | hidden or disabled with capability explanation |
+
+The UI disables obviously invalid actions, but SI-01 remains authoritative.
+A race or stale UI may still produce a domain conflict; the client displays the
+processed result and refreshes authoritative state rather than assuming the local
+button state was proof of domain acceptance.
+
+### Operation-result presentation
+
+The Timing tab keeps **queue/transport execution** distinct from the **processed
+domain result**:
+
+- `UPDATED`, `OPENED`, `CLOSED`, `COMMITTED` and idempotent results are
+  shown as normal operation outcomes;
+- domain conflicts such as `NO_LOCATION`, `NODE_NOT_CLOSED` and
+  `NODE_NOT_OPEN` are shown inline without treating them as application crashes;
+- `BUSY` / `UNAVAILABLE` are shown as execution availability problems;
+- `OUTCOME_UNKNOWN` marks the Timing view stale and triggers status/history
+  resynchronisation before a state-changing retry is offered;
+- unexpected internal failures remain clearly distinct from expected domain
+  rejections.
+
+The **Last operation** area in the wireframe is intentionally compact. Detailed
+raw response/error JSON remains available for engineering diagnosis.
+
+### TimingData history presentation
+
+The first table shows committed source order and the fields most useful during
+Step-4 integration:
+
+```text
+sequence | variant/type | LocationId | RegistrationId | effectiveTime | recordedAt
+```
+
+The stable record key is `TimingNodeId + sequenceNumber`. Because the current
+view already identifies one TimingNode, the table may omit the repeated
+TimingNodeId column while retaining the complete key internally for merge and
+deduplication.
+
+Selecting a history row may expose the complete public IF-05 JSON representation
+in a detail/raw view. The table itself must not invent event-specific
+RegistrationId or LocationId semantics beyond labels supplied by later
+profile/reference-data features.
+
+### Documentation/demo fixtures
+
+The three wireframes above define deterministic public synthetic states for D01
+review. Later JavaFX documentation-mode screenshots should reproduce these same
+states closely enough that differences are intentional UI implementation choices,
+not accidental contract drift.
+
 
 ## Capability-driven engineering controls
 
@@ -202,8 +288,8 @@ updates.
 
 ## Existing web-application compatibility
 
-Before Step-4 IF-03/TimingData representations are fixed, the project will inspect the
-existing web application's current expectations for:
+The accepted Step-4 IF-03/TimingData representation should still be compared with
+the existing web application's current expectations for:
 
 - status/snapshot structure;
 - live event/update behaviour;
@@ -259,9 +345,10 @@ CI should initially prove one stable screenshot before multiplying the number of
 Candidate generated views are:
 
 1. Status / connection baseline;
-2. Step-4 Timing view for one closed/open TimingNode;
-3. direct accepted-registration simulation with resulting TimingData/history;
-4. Logs/Terminal only where those screenshots materially improve user documentation.
+2. Timing / CLOSED without LocationId;
+3. Timing / OPEN with direct accepted-registration and committed history;
+4. Timing / RECONNECTING with stale cached data;
+5. Logs/Terminal only where those screenshots materially improve user documentation.
 
 The user manual may reference these generated screenshots once this pipeline exists.
 A screenshot documents presentation; it does not replace textual requirements or
