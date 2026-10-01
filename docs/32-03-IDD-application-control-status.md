@@ -295,7 +295,8 @@ Request:
 ```
 
 The path `{id}` addresses the TimingNode. The request-body `id` is the
-already-resolved shared `RegistrationId`; `time` is the accepted observation
+already-resolved shared `RegistrationId`; `N001` is only a short deterministic
+example and does not define a required prefix or format. `time` is the accepted observation
 time. SI-01 supplies source identity, current LocationId, next committed sequence
 and recordedAt and executes the same accepted-registration operation used after
 normal RFID interpretation/filtering.
