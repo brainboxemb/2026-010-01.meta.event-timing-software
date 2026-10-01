@@ -77,8 +77,9 @@ io.github.brainboxemb.eventtiming/timingpoint/
   application/
   domain/
   platform/
-    concurrent/
+    execution/
     events/
+    environment/
   presentation/
     interfaces/
       api/
@@ -225,16 +226,17 @@ io/
     FileRaceDataStore.java                race/reference analysis snapshots
 
 platform/
-  concurrent/
+  execution/
     SerialWorker.java                     bounded one-at-a-time execution primitive
   events/
     Event.java                            small typed subscribe / unsubscribe / emit primitive
+  environment/                            low-level environment adapters only when real types justify them
 ```
 
 The names above record ownership/direction, not a requirement to create empty
 types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
-`SerialWorker` is a small reusable execution primitive under `platform.concurrent`,
+`SerialWorker` is a small reusable execution primitive under `platform.execution`,
 composed into TimingNode rather than used as a Domain superclass. It has no
 TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
