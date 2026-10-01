@@ -75,17 +75,19 @@ continues to use the common TimingData interfaces.
 All participant registrations are committed with one canonical
 `RegistrationId` owned by IF-05.
 
-Input/provider-specific identities and operator/reference-data identities are
-resolved to that canonical value before the definitive TimingData record is
-created:
+`TagId` and `TeamId` are resolved to that canonical value before the
+definitive TimingData record is created:
 
 ```text
-source/provider identity -----\
-                               +--> RegistrationId
-operator/reference identity --/
+TagId  -----> RaceData/reference resolution ----\
+                                                  +--> RegistrationId
+TeamId -----> RaceData/reference resolution ----/
 ```
 
-The resolution may use current `RaceData` when reference data is required.
+`TagId` belongs to the RFID/tag input path. `TeamId` belongs to the
+team/reference-data/manual path. Only the resolved `RegistrationId` is passed
+to the TimingData factory. The resolution may use current `RaceData` when
+reference data is required.
 Concrete source encoding, categories, ranges and mapping tables remain outside
 this public SDD. A provider may translate an external representation, but it does
 not redefine `RegistrationId` semantics.
@@ -166,11 +168,18 @@ Conceptually:
 void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    RegistrationData.Context context =
-        registrationDataContext(input, sequence, timeSource.now());
+    TimingDataContext context =
+        timingDataContext(sequence, activeLocationId, input.effectiveTime(), timeSource.now());
 
-    RegistrationData data =
-        timingDataFactory.createRegistrationData(context);
+    RegistrationId registrationId = raceData.resolveRegistrationId(input);
+
+    TimingData data;
+    if (input.isAutomatic()) {
+        data = timingDataFactory.createAutomaticRegistration(context, registrationId);
+    } else {
+        data = timingDataFactory.createManualRegistration(
+                context, registrationId, input.timeSource());
+    }
 
     timingDataStore.append(data);     // returns after durable append
     logBook.add(data);                // consumer visibility point
@@ -194,7 +203,7 @@ The important ordering is:
 ```text
 TimingNode worker
   -> choose next sequence
-  -> build immutable RegistrationData through configured factory
+  -> build typed immutable registration TimingData through configured factory
   -> TimingDataStore.append(record)
   -> durable
   -> LogBook.add(record)            <-- committed domain state
@@ -716,12 +725,12 @@ needed around that interface:
 
 ### Identity resolution before IF-05 commit
 
-- **CAND-ID-001** — Source/provider-specific participant identities shall resolve
+- **CAND-ID-001** — An automatic/tag registration shall resolve its `TagId`
   to the canonical IF-05 `RegistrationId` before the definitive TimingData
-  record is created.
-- **CAND-ID-002** — Operator/reference-data registration paths shall resolve to
-  the same canonical `RegistrationId` used by automatic/source-driven
-  registrations.
+  value is created.
+- **CAND-ID-002** — A manual/reference-data registration shall resolve its
+  `TeamId` to the same canonical `RegistrationId` concept before TimingData
+  creation.
 - **CAND-ID-003** — Concrete source encodings, category/range rules and mapping
   tables shall stay behind their provider/reference-data boundary unless a public
   interface requirement explicitly promotes them.
