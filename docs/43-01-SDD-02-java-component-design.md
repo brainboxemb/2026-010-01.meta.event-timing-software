@@ -153,7 +153,7 @@ timing-data-api/
     RegistrationData.java
     TimingNodeStateData.java
     RegistrationRevokedData.java
-    RegistrationIdentity.java
+    RegistrationId.java
     TimingTimestamp.java
     TimingDataFactory.java
     TimingDataCodec.java
@@ -1076,7 +1076,7 @@ timing-data-api
   TimingNodeStateData
   RegistrationRevokedData
   TimingTimestamp
-  RegistrationIdentity
+  RegistrationId
   TimingDataFactory
   TimingDataCodec
   TimingDataProvider
@@ -1138,7 +1138,7 @@ RegistrationData.Context
     sequenceNumber
     effectiveTime
     recordedAt
-  registrationIdentity
+  registrationId
   origin
   timeSource
 ```
