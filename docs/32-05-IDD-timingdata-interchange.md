@@ -428,7 +428,7 @@ AutomaticRegistrationTimingData createAutomaticRegistration(
 ManualRegistrationTimingData createManualRegistration(
         TimingDataContext context,
         RegistrationId registrationId,
-        RegistrationTimeSource timeSource);
+        ManualRegistrationTimeSource timeSource);
 ```
 
 There is no separate `RegistrationData`, `AutomaticRegistrationContext` or
