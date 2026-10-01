@@ -77,7 +77,7 @@ Working direction discussed and promoted in PR #40:
 
 - `Waypoint` is the software/domain system operated for one waypoint;
 - a waypoint is at the end of a `Stage`;
-- a `Waypoint` is deployed/configured at a `LocationID`;
+- a `Waypoint` is deployed/configured at a `LocationId`;
 - `RegistrationAssetId` identifies a physical registration hardware asset such as `asset-01`;
 - a physical registration system can have one or more antennas;
 - `UniqueID` is the logical ordered-stream identity configured for a producing system, for example `asset-01` using `source-01`; another producer may use an unrelated identity such as `source-02`;
