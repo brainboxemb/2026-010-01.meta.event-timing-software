@@ -373,18 +373,16 @@ nodes:
   label: "Build / version identity"
   kind: crosscutting
   layout: {x: 1210, y: 615, w: 170, h: 80}
-- id: serial-worker-core
+- id: core-primitives
+  object_id: CorePrimitives
   group: core-layer
-  label: "SerialWorker"
-  subtitle: "bounded serial execution"
+  label: "Core primitives"
+  items:
+    - "SerialWorker"
+    - "Event<T>"
   kind: crosscutting
-  layout: {x: 1210, y: 835, w: 170, h: 80}
-- id: event-core
-  group: core-layer
-  label: "Event<T>"
-  subtitle: "subscribe • unsubscribe • emit"
-  kind: crosscutting
-  layout: {x: 1210, y: 940, w: 170, h: 80}
+  notation: packaging-component
+  layout: {x: 1210, y: 835, w: 170, h: 185}
 - id: boundary-note
   group: core-layer
   label: "Responsibility view only\n≠ Maven artifact split"
