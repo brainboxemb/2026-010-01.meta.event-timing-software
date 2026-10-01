@@ -35,7 +35,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N TimingDataRecord
+              |     +-- 0..N TimingData
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -144,7 +144,7 @@ TimingApplication
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
-              |     +-- 0..N TimingDataRecord
+              |     +-- 0..N TimingData
               +-- NextUpTeams
               +-- RaceData
               +-- StageTiming
@@ -173,16 +173,15 @@ in one process can intentionally observe different absolute times. Duration and
 timeout semantics remain separate and use a monotonic source where appropriate.
 
 Each TimingNode contains one passive `LogBook`. The LogBook keeps the node's
-committed timing history as 0..N canonical `TimingDataRecord` values. The same
-immutable semantic record that is persisted is also what runtime consumers read
-from the LogBook; the current design does not add a second logbook-specific
-record type.
+committed timing history as 0..N immutable `TimingData` values. The same
+semantic value that is persisted is also what runtime consumers read from the
+LogBook; the current design does not add a second logbook-specific data type.
 
-The system-owned IF-05 interface defines the canonical TimingData record
-semantics and interchange format. SI-01 uses the `TimingDataRecord` model
-directly and keeps file encoding/decoding in the TimingData storage/codec
-boundary. Storage, Web and upstream communication may consume that API without
-becoming alternative owners of IF-05 field or compatibility semantics.
+The system-owned IF-05 interface defines the common TimingData semantics and
+the default/reference interchange profile. SI-01 consumes the common `TimingData`
+interfaces while a configured provider supplies the concrete immutable classes,
+stateless factory and matching codec. Storage, Web and upstream communication may
+consume the common API without becoming alternative owners of IF-05 semantics.
 
 A TimingNode is the active serialization boundary for its mutable per-node
 state. Its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and
@@ -221,7 +220,7 @@ LocationID = configured physical event-location identity
 
 A `TimingNode` is configured/deployed at a location, while its software identity remains separate from that location identity.
 
-A `TimingDataRecord` is associated with the functional timing-node identity and physical location:
+A `TimingData` value is associated with the functional timing-node identity and physical location:
 
 ```text
 TimingNodeId
@@ -239,7 +238,7 @@ Every timing node registration stream has a monotonically increasing sequence nu
 Conceptually:
 
 ```text
-TimingDataRecordKey = (TimingNodeId, SequenceNumber)
+TimingData key = (TimingNodeId, SequenceNumber)
 ```
 
 The `LocationID` and `AntennaId` may provide useful context, but neither changes the sequence scope. When one process hosts multiple TimingSystems, local storage/composition keeps their runtime contexts separated without changing the functional TimingData key.
@@ -256,7 +255,7 @@ This allows receiving/upstream systems to reason about stream consistency indepe
 Important intended properties:
 
 - committed sequence numbering starts at **1** for a new `TimingNodeId` stream;
-- sequence number **0 is reserved** and shall never identify a normal committed TimingData record;
+- sequence number **0 is reserved** and shall never identify a normal committed TimingData value;
 - the number is monotonic per `TimingNodeId`-scoped stream;
 - a committed number must not be reused after restart/recovery;
 - higher-level synchronisation can use it for ordering and gap/consistency detection;
@@ -286,9 +285,9 @@ TimingNodeId timing-node-02
 
 The exact file names, external IDs and deployment mappings are configuration/private data. The file format, append/snapshot policy, atomicity and durability rules still need detailed design and formal requirements.
 
-## TimingData entries
+## TimingData values
 
-A `TimingDataRecord` is not limited to participant RFID passage data. Operational events can also be represented as TimingData records when they must participate in the traceable/synchronised stream.
+A `TimingData` value is not limited to participant RFID passage data. Operational events can also be represented as TimingData when they must participate in the traceable/synchronised stream.
 
 First promoted operational example:
 
@@ -296,21 +295,20 @@ First promoted operational example:
 - closing a TimingNode is a traceable TimingData state-change record.
 
 The public TimingData contract represents the semantic state transition
-(`OPEN` / `CLOSED`) and does not prescribe legacy field names, characteristic
-codes or one proprietary wire encoding. A concrete `TimingDataProvider` may map
-these generic records to a deployment-specific/proprietary representation.
+(`OPEN` / `CLOSED`) and does not prescribe one concrete Java class or proprietary
+wire encoding. A configured `TimingDataProvider` supplies the concrete object
+factory and matching representation while preserving that common semantic contract.
 
 A working minimal envelope is therefore conceptually:
 
 ```text
-TimingDataRecord
+TimingData
   timingNodeId
   locationId
   sequenceNumber
-  recordType
-  observed/event time
-  created time
-  record-specific payload
+  effective time
+  recorded time
+  semantic subtype data
 ```
 
 Asset and antenna context may additionally be retained where useful for diagnostics/audit, but the exact storage/wire schema is not yet fixed.
@@ -328,7 +326,7 @@ identities from which that registration identity is derived:
 - an automatic registration starts with a decoded/normalised `TagIdentity`;
 - a manual registration starts with a `TeamIdentity` selected/entered by the
   operator/client;
-- both paths resolve to a `RegistrationIdentity` before the TimingData record is
+- both paths resolve to a `RegistrationIdentity` before the TimingData value is
   committed.
 
 Conceptually:
