@@ -34,13 +34,13 @@ Both need traceability and persistence, but they have different semantics and se
 ### TimingNode source and location identity
 
 Every `TimingNode` has a `TimingNodeId`. A registration fact also captures
-the applicable configured `LocationID`.
+the applicable configured `LocationId`.
 
-`TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O
+`TimingNodeId`, `LocationId` and `AntennaId` are separate namespaces. I/O
 configuration relates observations to TimingNodes; code must not infer one
 identity from another.
 
-Concrete production source identifiers, source classes, allowed LocationID sets
+Concrete production source identifiers, source classes, allowed LocationId sets
 and source-to-node mappings are deployment/provider information and are not
 defined by this public SDD.
 

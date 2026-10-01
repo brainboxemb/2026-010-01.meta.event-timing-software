@@ -158,7 +158,7 @@ Sequence rules:
   range `1..9007199254740991` (`2^53 - 1`);
 - the canonical JSON writer emits the value as a plain decimal integer, without a
   fractional part or exponent notation;
-- changing `LocationID` does not reset the sequence;
+- changing `LocationId` does not reset the sequence;
 - sequence is an ordering/traceability value, not a timestamp;
 - a committed record key shall not be reused;
 - the sequence does not wrap. Exhaustion of the defined range is an explicit
@@ -188,7 +188,7 @@ For this record family:
 - `recordedAt` is captured when the definitive transition record is
   materialized for its commit attempt;
 - `locationId` is the location associated with the transition;
-- an initial process/runtime state of CLOSED with no assigned LocationID does not
+- an initial process/runtime state of CLOSED with no assigned LocationId does not
   by itself require a synthetic TimingData record.
 
 The public semantic states are `OPEN` and `CLOSED`. Legacy/proprietary status
@@ -274,9 +274,9 @@ application/use-case contract.
 
 | Record type | Common envelope | Type-specific required data |
 | --- | --- | --- |
-| `TIMING_NODE_STATE` | version, TimingNodeId, sequence, LocationID, effectiveTime, recordedAt | `state = OPEN | CLOSED` |
-| `REGISTRATION` | version, TimingNodeId, sequence, LocationID, effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource` |
-| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationID, original effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource`, `reference` |
+| `TIMING_NODE_STATE` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `state = OPEN | CLOSED` |
+| `REGISTRATION` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource` |
+| `REGISTRATION_REVOKED` | version, TimingNodeId, sequence, original LocationId, original effectiveTime, recordedAt | `registrationIdentity`, `origin`, `timeSource`, `reference` |
 
 The matrix is a compact view of the same normative field semantics above; it does
 not define an alternative record shape.
@@ -290,7 +290,7 @@ Known v1 members use the following JSON types and validation rules:
 | `version` | integer | every record | exactly `1` |
 | `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
 | `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
-| `locationId` | integer | every committed v1 record | positive configured LocationID; concrete deployment/event ranges are outside IF-05 |
+| `locationId` | integer | every committed v1 record | positive configured LocationId; concrete deployment/event ranges are outside IF-05 |
 | `recordType` | string | every record | `TIMING_NODE_STATE`, `REGISTRATION` or `REGISTRATION_REVOKED` |
 | `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
 | `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
