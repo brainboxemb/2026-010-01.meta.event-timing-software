@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine TimingNode operation semantics around one serialized mutable-state ownership boundary: synchronous state-dependent commands wait for their processed domain result while Java Future mechanics stay internal; submission-only ingress remains explicit; timeout reports unknown outcome rather than rollback; consistency-sensitive reads use TimingNode-owned queries/snapshots; add concrete runtime sequence examples and restore SDD-01 to the Architecture Book.
+
 - Define the JavaFX `test-client/` as the project **Engineering Client**: document its independent external-client architecture, current/Step-4 UI baseline, API-controlled DebugConnector role, same-repository boundary and deterministic CI screenshot/documentation direction.
 
 - Clarify Engineering Portal navigation: exact Markdown source links now force GitHub source view (`?plain=1#L…`), explorer actions are named `Open details & relations` / `Open source definition`, and the explorer/object pages explain the distinction between derived portal views and authored engineering source.
