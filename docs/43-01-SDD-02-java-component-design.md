@@ -199,15 +199,17 @@ io/
     FileStageStartTimesStore.java         start-time analysis history/snapshots
     FileRaceDataStore.java                race/reference analysis snapshots
 
-runtime/
-  SerialWorker.java                       bounded one-at-a-time execution helper
+core/
+  concurrent/
+    SerialWorker.java                     bounded one-at-a-time execution primitive
 ```
 
 The names above record ownership/direction, not a requirement to create empty
 types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
-`SerialWorker` is runtime machinery composed into TimingNode rather than a
-Domain superclass. `ApplicationId`, internal `TimingSystemId` and functional
+`SerialWorker` is a small reusable execution primitive under `core.concurrent`,
+composed into TimingNode rather than used as a Domain superclass. It has no
+TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
@@ -308,10 +310,11 @@ interfaces.
 ```text
 presentation    --> application
 application     --> domain / core / I/O ports
+domain          --> core (only reusable execution primitives)
 io              --> application/domain ports/contracts + platform
 runtime         --> application / domain / core
 infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-core            --> reusable execution mechanics
+core            --> JDK/platform-neutral reusable execution mechanics only
 platform        --> low-level environment only
 ```
 
