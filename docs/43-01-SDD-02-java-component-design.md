@@ -932,20 +932,70 @@ After a reboot, the live protocol can send the current StageStartTimes again
 (for example as part of OPEN handling). The historical file is still retained
 for analysis.
 
-### External committed-data output
+### Internal typed event publication
 
-External signalling, WebSocket publication or upstream delivery may block/retry
-independently. Such work does not execute as a blocking operation on the
-TimingNode serial worker.
+Facts that have already occurred may be published through a small in-process
+event framework. This is intentionally different from the command/query path:
+commands and consistency-sensitive queries still call the owning TimingNode
+directly.
+
+The first design uses familiar publish/subscribe roles:
+
+```text
+Event
+  immutable fact that has already occurred
+
+EventPublisher
+  publishes an Event after the owning operation reaches its defined fact point
+
+EventDispatcher
+  routes typed events to explicitly registered subscribers
+
+EventSubscriber<E>
+  reacts to one or more concrete event types
+```
+
+For TimingData the first event is conceptually:
 
 ```java
-interface CommittedTimingDataSink {
-    boolean offer(TimingDataRecord record);
+final class TimingDataCommitted implements Event {
+    private final TimingData timingData;
 }
 ```
 
-Each concrete slow/network sink owns its own bounded queue/worker or durable
-outbox as required by that capability.
+and the commit path becomes:
+
+```text
+TimingNode serial lane
+  -> persist TimingData
+  -> update committed LogBook state
+  -> publish TimingDataCommitted
+       |
+       v
+    EventDispatcher
+       +--> WebSocket/event publisher
+       +--> upstream delivery component
+       +--> other explicitly composed subscribers
+```
+
+The event framework is **typed and scoped**, not a process-global static bus.
+Subscriber registration happens during application composition. Commands,
+queries and mutable state access do not travel through it.
+
+Publishing from the TimingNode lane must remain a bounded/short hand-off.
+A subscriber must not perform slow network delivery, retry loops or other
+blocking work inline on the TimingNode worker. A slow subscriber hands the
+immutable event to its own bounded execution/delivery boundary.
+
+A committed TimingData record remains authoritative in LogBook/storage even if a
+notification subscriber is unavailable. If a subscriber requires reliable
+delivery across process failure or extended outage, it owns the appropriate
+durable outbox/reconciliation mechanism; the in-process event notification alone
+is not a durable message broker.
+
+This event model can later carry other post-fact notifications such as
+`TimingNodeStateChanged` or `StatusChanged` where those events have real
+consumers. Do not create events merely to replace ordinary direct method calls.
 
 ### Multiple TimingNodes
 
