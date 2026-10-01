@@ -4,7 +4,7 @@ diagram:
   width: 1380
   height: 820
   description: Engineering Client UI and independent client services connected only through supported SI-01 external boundaries.
-  note: Dashed Step-4 relations are planned engineering controls; exact IF-03 resources and UpstreamProtocol schemas remain deferred to the applicable interface-contract work.
+  note: The Timing view uses the accepted Step-4 IF-03 HTTP + WebSocket contract. Upstream/DebugConnector control remains a later engineering capability.
 
 groups:
   - id: ui
@@ -60,7 +60,7 @@ nodes:
     layout: {x: 75, y: 485, w: 150, h: 78}
 
   - id: upstream-view
-    label: "Upstream (Step 4)\ncapability + test control"
+    label: "Upstream (later)\ncapability + test control"
     kind: presentation
     group: ui
     layout: {x: 245, y: 485, w: 150, h: 78}
@@ -127,8 +127,9 @@ nodes:
 
 edges:
   - {from: status-view, to: api-client}
-  - {from: timing-view, to: api-client, dashed: true, label: "Step-4 queries / commands"}
-  - {from: upstream-view, to: api-client, dashed: true, label: "capabilities / test control"}
+  - {from: timing-view, to: api-client, label: "status / control / history"}
+  - {from: timing-view, to: event-client, label: "live TimingData"}
+  - {from: upstream-view, to: api-client, dashed: true, label: "later capabilities / test control"}
   - {from: events-view, to: event-client}
   - {from: terminal-view, to: shell-client}
   - {from: logs-view, to: log-client}
