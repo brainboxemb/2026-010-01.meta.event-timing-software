@@ -513,8 +513,8 @@ deployment YAML into one effective `ApplicationConfig` **before**
 
 The resolver responsibility must remain data/composition oriented:
 
-- `standard` and `finish` are profile IDs/default templates, not Java subclasses;
-- do not introduce `StandardTimingApplication`, `FinishTimingApplication` or a
+- application profiles are data/default templates, not Java subclasses;
+- do not introduce profile-specific TimingApplication subclasses or a
   profile-specific domain hierarchy;
 - profile defaults may select topology/cardinality and capability defaults;
 - platform defaults may select environment-specific values;

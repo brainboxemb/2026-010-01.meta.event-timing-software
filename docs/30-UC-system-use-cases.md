@@ -86,7 +86,7 @@ reading order or implementation sequence.
 
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, reserve-tag mappings and other required reference data for local use. |
+| UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, participant/reference mappings and other required reference data for local use. |
 | UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
 | UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
@@ -101,7 +101,7 @@ reading order or implementation sequence.
 | UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
 | UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
 | UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
-| UC-019 | Process a test RFID tag | RFID subsystem / operator | Recognise a test-tag identity and apply explicit test-tag behaviour without silently treating it as a normal or reserve participant tag. |
+| UC-019 | Handle provider-specific input classification | Input subsystem / operator | Preserve a provider-declared semantic input classification when public processing policy needs it, without exposing provider-private encoding details. |
 
 ### Normal operation
 
@@ -558,38 +558,37 @@ Production names, source IDs, schemas and credentials remain outside the public 
 
 ```
 
-```{uc} Process a test RFID tag
+```{uc} Handle provider-specific input classification
 :id: UC-019
 
-**Goal:** recognise a test-tag observation and apply deliberate test-specific behaviour without allowing the tag to masquerade as a normal or reserve participant tag.
+**Goal:** preserve a provider-declared semantic input classification when the
+public application contract needs distinct processing, without publishing
+provider-private source encoding or mapping rules.
 
-**Primary actors:** RFID subsystem and operator.
+**Primary actors:** input subsystem and operator.
 
 **Preconditions:**
 
-- the tag has been decoded sufficiently to identify its semantic tag class;
-- the configured TimingNode can identify that the tag is a test tag.
+- the selected provider has decoded the private/source representation;
+- any semantic classification exposed to the application is part of that
+  provider's public contract.
 
 **Main flow:**
 
-1. The RFID adapter captures the observation through the same normal ingress path used for other tags.
-2. Decoding preserves the semantic tag class as `test` rather than flattening the identity to a normal participant identity.
-3. Any common validation/filtering that also applies to test tags is performed according to the final requirements.
-4. SI-01 applies the configured/test-tag policy instead of the normal or reserve-tag path.
-5. The resulting action and operator-visible state remain explicitly distinguishable as test-tag behaviour.
-6. If any record is persisted or synchronised, its semantics remain distinguishable from a normal participant registration.
+1. The input adapter receives a decoded semantic observation from the selected provider.
+2. Provider-private codes remain behind the provider boundary.
+3. SI-01 preserves any public semantic classification required by application policy.
+4. The normal TimingNode path validates and processes the resulting semantic input.
+5. Any committed TimingData record uses only the public canonical TimingData fields.
 
 **Behaviour still to define:**
 
-- whether a test tag creates a registration-stream record at all;
-- whether it uses a dedicated record type and/or `TimingNodeId` routing rule;
-- whether it may affect elapsed-time/ranking/other derived calculations;
-- whether it is synchronised to backoffice, and if so with what semantics;
-- in which lifecycle states a test tag is accepted;
-- what an operator sees when a test tag is detected/accepted/rejected;
-- whether test-tag handling requires an explicit enable/configuration mode.
+- which provider-declared semantic classifications, if any, require distinct public application behaviour;
+- which lifecycle/configuration policies apply to such classifications;
+- what operator-visible diagnostics are required.
 
-This use case is about a real semantic RFID tag class. It is separate from UC-015/016 software simulation and stub-device testing.
+Concrete production encodings, private mapping tables and deployment-specific
+categories are outside this public use case.
 
 ```
 
@@ -603,7 +602,7 @@ compatibility-source protocol.
 | Use case | First-slice inspection/control need | Explicitly later |
 | --- | --- | --- |
 | UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, set or change location while `CLOSED`, open registration only with a valid location, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
-| UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, tag decoding, observation accumulation/filtering, reserve/test-tag behaviour and persistence/recovery. |
+| UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, source decoding, observation accumulation/filtering, provider-specific input behaviour and persistence/recovery. |
 | UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
 | UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |
 
@@ -637,8 +636,8 @@ The following scenarios should be associated with applicable use cases rather th
 
 - RFID power/boot/heartbeat failure;
 - invalid/decryption/filtering failure;
-- missing/stale reserve-tag or start-time data;
-- test-tag detection while test-tag behaviour is disabled or not valid in the current lifecycle state;
+- missing/stale reference data;
+- source-specific input rejected by the selected provider/policy;
 - CAN device disappearance;
 - passive display reset/reconnect;
 - smart-display reconnect;
@@ -678,4 +677,3 @@ This allows one operational goal to remain visible even when implementation resp
 - Which reference-data updates are automatically accepted versus requiring operator acknowledgement?
 - What exact local behaviour is required if reference data is stale but backoffice is unavailable?
 - Which configured mapping cases can intentionally create records in multiple virtual/`TimingNodeId`-scoped streams from one accepted RFID event?
-- Which UC-019 test-tag behaviours are part of normal operational verification versus maintenance/service-only behaviour?

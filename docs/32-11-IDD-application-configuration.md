@@ -73,46 +73,25 @@ The structure is a contract for configuration ownership. It does not require one
 
 ### Application profile and baseline capabilities
 
-A Timing Point Application uses a selected **application profile** as a versioned
-default composition template. The profile supplies topology/capability defaults;
-it does not introduce a different domain model, Java application subclass or
-separate software item.
+A Timing Point Application may use a selected **application profile** as a
+versioned default composition template. A profile can supply topology,
+capability and compatibility defaults without introducing another domain model,
+Java application subclass or software item.
 
-The first architecture-level profile set is:
+This public baseline deliberately does not define concrete event/deployment
+profile IDs, fixed TimingNode counts, device combinations or allowed LocationID
+sets. Those details are added only when an explicit public requirement owns them;
+private deployment profiles and compatibility mappings remain outside this
+repository.
 
-| Profile | Intended default composition | Location compatibility |
-| --- | --- | --- |
-| `standard` | Normal Timing Point: one TimingNode by default, CAN device network enabled by default, display capability present by default, normal field-device composition. | No profile-specific `LocationID` restriction; generic `LocationID` validity rules still apply. |
-| `finish` | Finish Timing Point: two TimingNodes by default, CAN disabled by default, no display by default; finish-specific field I/O is added only when its implementation requirements are concrete. | Each configured TimingNode must use `LocationID` 24 or 25. |
+Explicit deployment configuration may override profile defaults where the
+profile contract allows it. It must not bypass compatibility rules owned by the
+selected profile.
 
-A built-in profile may define both **defaults** and **compatibility constraints**.
-Explicit deployment configuration may override profile-owned defaults, but it
-must not widen or bypass profile compatibility constraints. The initial
-`finish` constraint therefore rejects a configured TimingNode whose
-`LocationID` is not 24 or 25; `standard` adds no profile-specific location
-restriction.
-
-Conceptually, the built-in profile metadata includes:
-
-```text
-standard
-  allowedLocationIds: any
-
-finish
-  allowedLocationIds: [24, 25]
-```
-
-`allowedLocationIds` is profile-definition metadata versioned with the
-software. It is not a deployment-configurable observation/tag filter and does
-not change what `LocationID` means. It constrains which configured location
-identities are compatible with the selected application profile.
-
-Console, Remote Shell and API are **baseline Timing Point Application
-capabilities**, not profile-specific features. Their command/status semantics
-remain the same for every profile. Deployment configuration still controls
+Console, Remote Shell and API are baseline Timing Point Application capabilities,
+not implicitly tied to one profile. Deployment configuration still controls
 concrete listener/binding settings and may explicitly leave a network listener
-unbound/disabled where appropriate; that does not create another application
-profile.
+unbound/disabled where appropriate.
 
 Web remains a separate browser-facing capability whose per-TimingNode bindings
 are composed when that capability is used.
@@ -420,7 +399,7 @@ This is deliberately not arbitrary inheritance. The three default sources answer
 orthogonal questions:
 
 - **application profile** — what Timing Point topology/capabilities are normally
-  composed, initially `standard` or `finish`;
+  composed for the selected deployment family;
 - **platform** — the execution/deployment environment, such as Pi Zero or Windows;
 - **operating mode** — how concrete adapters are realised, such as normal/real
   operation versus simulation.
@@ -430,8 +409,7 @@ A representative source layout may eventually be:
 ```text
 built-in defaults/
   profile/
-    standard.yml
-    finish.yml
+    <profile-id>.yml
   platform/
     pi-zero.yml
     windows.yml
@@ -453,19 +431,12 @@ baseline.
 
 ## Application profile, platform and operating-mode semantics
 
-The three selectors are intentionally independent.
+The three selectors are intentionally independent:
 
-Examples:
-
-```text
-standard + pi-zero + normal
-finish   + pi-zero + normal
-finish   + windows + simulation
-standard + windows + simulation
-```
-
-Windows does not imply simulation, and Finish does not imply a different domain
-implementation.
+- **application profile** selects topology/capability defaults;
+- **platform** selects execution-environment defaults;
+- **operating mode** selects how concrete adapters are realised, for example
+  normal operation versus simulation.
 
 Simulation changes concrete adapter/provider defaults while preserving the same
 application/domain model:
@@ -475,19 +446,14 @@ normal:     TimingNode -> configured Antenna provider
 simulation: TimingNode -> built-in SimulatedAntenna
 ```
 
-The same TimingNode identity rules, application commands, API semantics and
-domain behaviour remain in use.
-
 A profile may provide a topology skeleton/cardinality, capability defaults and
 compatibility constraints. Deployment-specific externally meaningful identities
 and locations must either be supplied explicitly or follow a separately
-specified deterministic default rule; profile resolution must not invent
-ambiguous functional identities. Profile location constraints validate an
-explicitly resolved `LocationID`; they do not supply that identity implicitly.
+specified deterministic public rule; profile resolution must not invent
+ambiguous functional identities.
 
-The exact selector syntax is deferred until the configuration resolver is
-implemented. A compact deployment should ultimately be able to select a profile
-and specify only the values that differ from those defaults.
+The exact selector syntax and any concrete public profile set are deferred until
+a real configuration consumer and its public requirements need them.
 
 ## Validation
 
@@ -499,7 +465,7 @@ Validation includes, where applicable:
 - missing/invalid or duplicate internal `TimingSystemId` values;
 - TimingSystems without at least one configured TimingNode;
 - duplicate application-wide `TimingNodeId` values;
-- a configured TimingNode `LocationID` that is not allowed by the selected built-in application profile (initially, `finish` allows only 24 and 25 while `standard` adds no profile-specific restriction);
+- a configured TimingNode `LocationID` that violates an explicitly defined compatibility rule of the selected application profile;
 - references to unknown TimingSystems or TimingNodes;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;

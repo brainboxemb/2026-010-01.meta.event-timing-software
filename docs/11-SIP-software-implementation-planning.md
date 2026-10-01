@@ -231,7 +231,7 @@ registration, inspect the resulting TimingData, and close it again.
 
 - simulated or physical antenna input;
 - RFID decoding, observation accumulation or filtering;
-- reserve/test-tag behaviour;
+- provider-specific source classification/mapping behaviour;
 - StageStartTimes and inbound upstream/reference-data handling;
 - RaceData;
 - NextUpTeams, keypad or display behaviour;

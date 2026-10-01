@@ -284,12 +284,12 @@ Known v1 members use the following JSON types and validation rules:
 | `version` | integer | every record | exactly `1` |
 | `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
 | `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
-| `locationId` | integer | every committed v1 record | `1..25`; record captures the applicable historical location |
+| `locationId` | integer | every committed v1 record | positive configured LocationID; concrete deployment/event ranges are outside IF-05 |
 | `recordType` | string | every record | `TIMING_NODE_STATE`, `REGISTRATION` or `REGISTRATION_REVOKED` |
 | `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
 | `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
 | `state` | string | `TIMING_NODE_STATE` only | `OPEN` or `CLOSED` |
-| `registrationIdentity` | object | registration/revocation | canonical object defined below |
+| `registrationIdentity` | string | registration/revocation | non-empty provider-neutral canonical participant identity |
 | `origin` | string | registration/revocation | `AUTOMATIC` or `MANUAL` |
 | `timeSource` | string | registration/revocation | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
 | `reference` | object | `REGISTRATION_REVOKED` only | `TimingDataRecordKey` of the concerned registration |
@@ -297,14 +297,14 @@ Known v1 members use the following JSON types and validation rules:
 Nested objects:
 
 ```text
-registrationIdentity
-  type            string: STANDARD | WOMEN | MEN
-  number          integer: 1..350
-
 reference
   timingNodeId    non-empty string
   sequenceNumber  integer: 1..9007199254740991
 ```
+
+`registrationIdentity` is deliberately opaque at the IF-05 boundary. Its
+concrete categories, number ranges, source encodings and source-to-participant
+mapping rules are not part of this public interchange contract.
 
 Validation rules:
 
@@ -315,7 +315,7 @@ Validation rules:
   (for example `state` on a `REGISTRATION`) is invalid rather than treated
   as an unknown compatible extension;
 - additional genuinely unknown object members are handled by the v1
-  compatibility rules below, including inside defined nested objects;
+  compatibility rules below, including inside the defined `reference` object;
 - `timingNodeId` values are not normalized, case-folded or derived by IF-05;
   they represent the same stable identity used by the surrounding application
   contracts;
@@ -338,75 +338,28 @@ the authoritative source order.
 
 ## Registration identities
 
-Three identity concepts are kept distinct:
+`RegistrationIdentity` is the canonical participant identity carried by a
+TimingData registration record.
+
+The IF-05 v1 public contract treats it as a non-empty provider-neutral string.
+It intentionally does **not** define event categories, participant number ranges,
+source/tag encoding, location-to-participant rules or production mapping tables.
+
+Conceptually:
 
 ```text
-TagIdentity
-TeamIdentity
-RegistrationIdentity
+source-specific identity --------\
+                                 +--> RegistrationIdentity --> TimingData REGISTRATION
+operator/reference identity -----/
 ```
 
-Only `RegistrationIdentity` is the canonical participant identity of a TimingData
-registration record.
+Resolution to `RegistrationIdentity` happens before the definitive TimingData
+record is committed. That resolution may use application/reference data, but the
+concrete mapping remains outside IF-05.
 
-Conceptual input paths are:
-
-```text
-TagIdentity  -----\
-                 +--> RegistrationIdentity --> TimingData REGISTRATION
-TeamIdentity -----/
-```
-
-- `TagIdentity` belongs to the RFID/input domain;
-- `TeamIdentity` belongs to participant/operator/reference-data semantics;
-- `RegistrationIdentity` belongs to the TimingData interchange record.
-
-### RegistrationIdentity v1
-
-```text
-RegistrationIdentity
-  type
-  number
-```
-
-First supported semantic values:
-
-| Type | Number | Valid LocationID |
-| --- | ---: | --- |
-| `STANDARD` | 1..350 | 1..23 |
-| `WOMEN` | 1..350 | 24 |
-| `MEN` | 1..350 | 25 |
-
-The public type names express semantics. A proprietary translator may map these
-to an external representation such as one-character number types, but those
-external characters are not IF-05 values.
-
-### Reserve tags
-
-A reserve transponder is **not** a fourth `RegistrationIdentity.type`.
-
-It is a reserve `TagIdentity` that is resolved through race/reference data to
-the canonical `RegistrationIdentity` before the TimingData registration is
-committed.
-
-The exact public/client exposure of source `TagIdentity` provenance is not part
-of the first IF-05 record shape and may be defined by an interface that explicitly
-needs it.
-
-### Physical tag postfix
-
-A decoded physical RFID representation may contain a postfix/copy identifier.
-That postfix is physical-tag detail and is not part of
-`RegistrationIdentity`.
-
-The public contract does not require every physical tag representation to contain
-a postfix; finish-side tag representations may have none.
-
-### Unknown-team legacy identities
-
-Legacy identifiers used for unknown-team registrations are deliberately **not**
-promoted into TimingData v1 yet. Their business semantics shall be verified before
-a public `RegistrationIdentity` value/state is defined for them.
+A provider may translate an external representation to/from the canonical
+identity value. Provider-specific codes and deployment mappings remain outside
+this public contract.
 
 ## Time semantics
 
@@ -475,8 +428,7 @@ Rules:
   and JSON object member ordering are not semantic to readers;
 - the canonical writer emits common envelope members in the order shown by this
   IDD, followed by the applicable type-specific members; nested
-  `RegistrationIdentity` uses `type` then `number`, and `reference` uses
-  `timingNodeId` then `sequenceNumber`;
+  `reference` uses `timingNodeId` then `sequenceNumber`;
 - the file is append-only; existing records are not rewritten for revocation or
   correction;
 - an incomplete trailing line after interrupted/power-loss write is not a
@@ -521,10 +473,7 @@ Registration example:
   "recordType": "REGISTRATION",
   "effectiveTime": "2026-09-30T20:01:39.123000000Z",
   "recordedAt": "2026-09-30T20:01:39.123000000Z",
-  "registrationIdentity": {
-    "type": "STANDARD",
-    "number": 42
-  },
+  "registrationIdentity": "participant-0042",
   "origin": "AUTOMATIC",
   "timeSource": "OBSERVED"
 }
@@ -541,10 +490,7 @@ Revocation example:
   "recordType": "REGISTRATION_REVOKED",
   "effectiveTime": "2026-09-30T20:01:39.123000000Z",
   "recordedAt": "2026-09-30T20:02:05.456000000Z",
-  "registrationIdentity": {
-    "type": "STANDARD",
-    "number": 42
-  },
+  "registrationIdentity": "participant-0042",
   "origin": "AUTOMATIC",
   "timeSource": "OBSERVED",
   "reference": {
@@ -642,22 +588,24 @@ TimingData v1 shall support `TIMING_NODE_STATE`, `REGISTRATION` and
 ```{ifreq} Canonical registration identity
 :id: IF05-REQ-005
 
-Registration records shall use canonical `RegistrationIdentity` rather than
-physical RFID/tag representation.
+Registration records shall use canonical `RegistrationIdentity` rather than a
+source-specific or provider-specific identity representation.
 ```
 
 ```{ifreq} RegistrationIdentity v1 semantics
 :id: IF05-REQ-006
 
-v1 `RegistrationIdentity` shall support the `STANDARD`, `WOMEN` and
-`MEN` semantics and location compatibility defined by this IDD.
+v1 `RegistrationIdentity` shall be a non-empty provider-neutral canonical
+participant identity. Concrete event categories, ranges and deployment mappings
+shall remain outside IF-05.
 ```
 
-```{ifreq} Reserve tag resolution
+```{ifreq} Source identity resolution
 :id: IF05-REQ-007
 
-Reserve transponders shall resolve to a canonical `RegistrationIdentity` and
-shall not introduce a reserve registration type.
+Source-specific participant identities shall resolve to canonical
+`RegistrationIdentity` before a registration is committed. Concrete source
+encoding and mapping rules shall remain outside IF-05.
 ```
 
 ```{ifreq} Append-only registration revocation

@@ -1462,20 +1462,18 @@ resolved secret values
 effective ApplicationConfig
 ```
 
-The selected **application profile** defines the normal topology/capability template
-for the Timing Point Application. The first architecture-level examples are:
+The selected **application profile** defines a topology/capability template for
+the Timing Point Application. Concrete deployment profile IDs, TimingNode counts,
+device combinations and compatibility mappings are not defined by this public
+architecture unless an explicit public requirement owns them.
 
-- `standard`: one TimingNode by default, CAN enabled by default and display capability present;
-- `finish`: two TimingNodes by default, CAN disabled by default and no display by default.
+Profiles do not create different application/domain models. They resolve to the
+same TimingSystem/TimingNode architecture and may be combined with platform and
+operating-mode defaults plus explicit deployment configuration within the
+profile's compatibility rules.
 
-These profiles do not create different application/domain models. They resolve to
-the same TimingSystem/TimingNode architecture and may be overridden by explicit
-deployment configuration.
-
-Platform and operating mode are separate dimensions. For example, a Finish
-composition may run on Pi Zero with normal adapters or on Windows with simulated
-adapters. Windows does not imply simulation and Finish does not imply a special
-TimingNode implementation.
+Platform and operating mode remain independent dimensions. Simulation may replace
+concrete adapters while preserving the same TimingNode/domain implementation.
 
 Console, Remote Shell and API form the baseline control/automation capability set
 of the Timing Point Application and are not selected by the application profile.
@@ -1589,7 +1587,7 @@ Public protocol semantics and TimingData compatibility remain owned by Domain.
 
 RFID integration is an adapter boundary. Raw callbacks/protocol data do not directly mutate application state. The adapter is responsible for protocol/device interaction and turns accepted observations/health changes into typed application-facing messages.
 
-Decoding must retain public semantic tag classification (normal/reserve/test) even if proprietary prefix/encryption details stay in a private codec. Reserve resolution and test-tag policy are domain/use-case concerns rather than reasons for the adapter to silently rewrite every decoded tag to one normal identity.
+Decoding must preserve the source/provider semantics required by the public input contract while proprietary encoding details stay behind the provider boundary. Source-specific mapping or policy must not be guessed by a generic adapter.
 
 Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
 

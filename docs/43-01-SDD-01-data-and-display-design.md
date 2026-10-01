@@ -33,25 +33,16 @@ Both need traceability and persistence, but they have different semantics and se
 
 ### TimingNode source and location identity
 
-Every `TimingNode` has a `TimingNodeId`.
+Every `TimingNode` has a `TimingNodeId`. A registration fact also captures
+the applicable configured `LocationID`.
 
-Known source classes are:
+`TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O
+configuration relates observations to TimingNodes; code must not infer one
+identity from another.
 
-```text
-normal registration systems   A..I
-reserve registration systems  1..4 (exact identifier representation TBD)
-virtual registration systems  exist; exact identifier representation TBD
-```
-
-Every physical location has:
-
-```text
-LocationID = 1..25
-```
-
-A registration entry is associated with both its source and its location.
-
-`TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
+Concrete production source identifiers, source classes, allowed LocationID sets
+and source-to-node mappings are deployment/provider information and are not
+defined by this public SDD.
 
 ### LogBook and IF-05 TimingData
 
@@ -78,66 +69,25 @@ The same immutable `TimingDataRecord` object can therefore be:
 A `TimingDataProvider` may translate to or from another external representation,
 but that translation does not introduce a second SI-01 timing-record model.
 
-### Tag, team and registration identity resolution
-
-Decoded team numbers are in the known range:
-
-```text
-TeamNumber = 0..999
-```
-
-A decoded physical RFID identity contains:
-
-```text
-prefix + number + postfix
-```
-
-The registration path normalises it to:
-
-```text
-RegistrationTag = prefix + number
-```
-
-The postfix/copy suffix, when present, is deliberately removed from the
-registration identity; the prefix is retained so normal and reserve tags remain
-distinguishable. Finish-side tag representations are allowed to have no postfix,
-so parsing/normalisation shall not require one globally.
+### Registration identity resolution
 
 All participant registrations are committed with one canonical
-`RegistrationIdentity`.
+`RegistrationIdentity` owned by IF-05.
 
-Automatic path:
-
-```text
-TagIdentity
-  normal  -> deterministic registration-identity translation
-  reserve -> RaceData-backed reserve translation
-       -> RegistrationIdentity
-```
-
-Manual path:
+Input/provider-specific identities and operator/reference-data identities are
+resolved to that canonical value before the definitive TimingData record is
+created:
 
 ```text
-TeamIdentity
-  -> UI/application registration-identity translation
-  -> RegistrationIdentity
+source/provider identity -----\
+                               +--> RegistrationIdentity
+operator/reference identity --/
 ```
 
-The canonical `RegistrationIdentity` type/number values, ranges and location
-compatibility are defined by IF-05. SI-01 identity-resolution code consumes that
-contract; it does not maintain a second independent type table.
-
-A proprietary translator may map the IF-05 identity to/from its external split
-representation, but external one-character codes remain outside SI-01 domain
-semantics.
-
-Reserve transponders remain a `TagIdentity` concern and resolve to an IF-05
-canonical `RegistrationIdentity`; they do not add another public registration
-identity type.
-
-Source identities such as `TagIdentity` may be retained/exposed separately when
-an interface needs provenance or diagnostics; they are not substitutes for the
-canonical registration identity stored by TimingData.
+The resolution may use current `RaceData` when reference data is required.
+Concrete source encoding, categories, ranges and mapping tables remain outside
+this public SDD. A provider may translate an external representation, but it does
+not redefine `RegistrationIdentity` semantics.
 
 ## TimingNode serial execution and timing-data commit
 
@@ -183,7 +133,7 @@ For a registration, the decision that a registration shall be recorded has
 already been made before the asynchronous hand-off. The worker does not approve
 the registration again. It may still perform deterministic resolution or
 enrichment that depends on the node's current serialized state, such as resolving
-a reserve tag through the current `RaceData`.
+a source/provider identity through the current `RaceData`.
 
 Only when the worker is ready to commit does it ask the LogBook for the next
 sequence. Sequence is therefore not assigned when work is placed on the queue.
@@ -487,9 +437,9 @@ final class PrepareTeamEvent {
 
 The prepare-team history sequence is a separate design question from the `TimingNodeId`-scoped sequence. It may use its own internal registry sequence or later a broader operational-event sequence, but it must not accidentally consume/alter a `TimingNodeId` registration sequence unless requirements explicitly make a prepare-team action a registration-stream entry.
 
-### Start-time and reserve-tag synchronisation
+### Reference-data synchronisation
 
-Start times and reserve-tag mappings are backoffice-owned reference data that must also be available locally.
+Start-time and participant/reference mappings supplied by an external system may also need to be available locally.
 
 The start-time semantic model must remain compatible with sources that define a race/stage start as **time-of-day only**. An optional date/race-day value may be carried when available, but consumers shall not require it. Accepted registration observations remain absolute `TimingTimestamp` values. For elapsed-time calculation, a time-only start is resolved in the configured event/race time zone to the most recent valid occurrence not after the registration timestamp, so a midnight crossing is handled as the next civil day rather than as a negative elapsed time.
 
@@ -534,7 +484,7 @@ void handle(StartTimeSnapshotReceived message) {
 }
 ```
 
-The same pattern applies to reserve-tag conversion data. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/IDD design.
+The same pattern can be used for other participant/reference mappings. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/IDD design.
 
 ### Keypad behaviour
 
@@ -711,19 +661,15 @@ needed around that interface:
 
 ### Identity resolution before IF-05 commit
 
-- **CAND-ID-001** — The RFID path shall normalise physical tag input to the
-  `TagIdentity` form required for registration-identity resolution.
-- **CAND-ID-002** — The RFID path shall distinguish normal versus reserve-tag
-  semantics before the TimingNode creates the committed TimingData record.
-- **CAND-ID-003** — A normal `TagIdentity` shall resolve deterministically to
-  the IF-05 `RegistrationIdentity`; a reserve `TagIdentity` shall resolve
-  through locally available race/reference mapping data.
-- **CAND-ID-004** — Manual registration shall resolve operator-supplied
-  `TeamIdentity` to the same IF-05 `RegistrationIdentity` used by automatic
+- **CAND-ID-001** — Source/provider-specific participant identities shall resolve
+  to the canonical IF-05 `RegistrationIdentity` before the definitive TimingData
+  record is created.
+- **CAND-ID-002** — Operator/reference-data registration paths shall resolve to
+  the same canonical `RegistrationIdentity` used by automatic/source-driven
   registrations.
-- **CAND-ID-005** — Physical tag postfix/copy detail, when present, shall not be
-  carried into IF-05 `RegistrationIdentity`; parsing shall not require a
-  postfix globally.
+- **CAND-ID-003** — Concrete source encodings, category/range rules and mapping
+  tables shall stay behind their provider/reference-data boundary unless a public
+  interface requirement explicitly promotes them.
 
 ### Local data and per-type stores
 
@@ -760,9 +706,8 @@ needed around that interface:
 
 ## Open questions
 
-- What exact identifiers represent reserve registration systems `1..4` in software/wire formats?
 - What exact identifiers represent virtual registration systems?
-- Is each physical producer configured with exactly one `TimingNodeId`, and how are reserve/virtual TimingNodes associated with registration hardware?
+- How are physical producers mapped to one or more `TimingNodeId` values in deployment configuration?
 - What exact filesystem durability primitive/policy is required before a completed append is considered durable on each deployment platform?
 - Which additional producer/domain paths should emit future IF-05 record families after their requirements are promoted?
 - Should ready-team events use their own sequence stream or a broader operational event sequence?
