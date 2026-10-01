@@ -3,9 +3,9 @@ diagram:
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
   width: 1200
-  height: 920
-  description: RFID input enters the TimingNode serial boundary; the worker assigns sequence, persists the record and only then exposes it through LogBook.
-  note: The two TimingNode self-messages show the bounded async hand-off and later worker execution without introducing another architecture component.
+  height: 980
+  description: Device ingress receives bounded admission only; later TimingNode execution checks current state, assigns sequence, persists the record and exposes committed TimingData.
+  note: ACCEPTED means queue admission only. The device callback does not wait for the later domain result.
 
 participants:
   - {id: antenna, label: RFID adapter, kind: integration}
@@ -16,11 +16,11 @@ participants:
 
 messages:
   - {from: antenna, to: tag, label: observation, kind: call}
-  - {from: tag, to: node, label: "register(observation)", kind: call}
+  - {from: tag, to: node, label: "submitObservation(observation)", kind: call}
   - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
-  - {from: node, to: tag, label: queued, kind: return}
-  - {from: tag, to: antenna, label: queued, kind: return}
-  - {from: node, to: node, label: "serial worker processes registration", kind: call}
+  - {from: node, to: tag, label: ACCEPTED, kind: return}
+  - {from: tag, to: antenna, label: ACCEPTED, kind: return}
+  - {from: node, to: node, label: "worker checks current node state and processes observation", kind: call}
   - {from: node, to: logbook, label: "nextSequence()", kind: call}
   - {from: logbook, to: node, label: "sequence N", kind: return}
   - {from: node, to: store, label: "append(record N)", kind: call}
