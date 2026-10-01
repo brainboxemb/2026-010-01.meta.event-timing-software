@@ -75,6 +75,8 @@ io.github.brainboxemb.eventtiming/timingpoint/
   application/
   domain/
   core/
+    concurrent/
+    events/
   presentation/
     interfaces/
       api/
@@ -94,9 +96,6 @@ io.github.brainboxemb.eventtiming/timingpoint/
       network/
     messaging/
     storage/
-  core/
-    concurrent/
-    events/
   infra/
     bootstrap/
       config/
