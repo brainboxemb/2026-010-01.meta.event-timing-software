@@ -1132,7 +1132,8 @@ Useful automated rules may include:
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
-- concrete compact LogBook indexes/read-view mechanics required by the first ranking/query implementation;
+- exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
+- concrete immutable TimingNode read-view representation and compact LogBook indexing required by the first ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public framework/provider contracts and private implementations;
