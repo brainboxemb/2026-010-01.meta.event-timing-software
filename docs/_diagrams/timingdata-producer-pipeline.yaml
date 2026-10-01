@@ -3,8 +3,8 @@ diagram:
   title: Figure SDD01-TD01 — TimingNode serial commit path
   width: 1640
   height: 930
-  description: State-changing ingress enters one bounded TimingNode serial boundary; passive state is updated only after required persistence.
-  note: TimingDataStore is the durable/recovery source for TimingData. Other per-type stores preserve analysis history/snapshots.
+  description: State-dependent ingress enters one bounded TimingNode ownership boundary; passive state is read/mutated only on the serial lane and committed output becomes visible after required persistence.
+  note: TimingDataStore is the durable/recovery source for TimingData. External readers receive query results or immutable snapshots, not direct mutable-state access.
 
 groups:
   - id: ingress
@@ -22,17 +22,17 @@ groups:
 
 nodes:
   - id: producers
-    label: "TagProcessor • commands • lifecycle\nnext-up/reference updates"
+    label: "TagProcessor • commands • lifecycle\nnext-up/reference updates • queries"
     kind: model
     group: ingress
-    layout: {x: 95, y: 250, w: 270, h: 100}
+    layout: {x: 95, y: 250, w: 270, h: 110}
   - id: queue
     label: "Bounded serial work queue"
     kind: service
     group: node
     layout: {x: 515, y: 175, w: 280, h: 78}
   - id: worker
-    label: "TimingNode SerialWorker\none work item at a time"
+    label: "TimingNode SerialWorker\none operation at a time"
     kind: application
     group: node
     layout: {x: 835, y: 175, w: 280, h: 90}
@@ -62,17 +62,17 @@ nodes:
     group: storage
     layout: {x: 1240, y: 375, w: 300, h: 120}
   - id: consumers
-    label: "Queries / downstream\nread committed state"
+    label: "Queries / downstream\nimmutable result or snapshot"
     kind: interface
     group: storage
     layout: {x: 1240, y: 600, w: 300, h: 90}
 
 edges:
-  - {from: producers, to: queue, label: "bounded submit"}
+  - {from: producers, to: queue, label: "bounded operation"}
   - {from: queue, to: worker, label: "FIFO"}
   - {from: worker, to: timingstore, label: "append TimingData"}
-  - {from: worker, to: logbook, label: "add after durable"}
-  - {from: worker, to: nextup, label: "ordered mutation"}
-  - {from: worker, to: refs, label: "ordered mutation"}
+  - {from: worker, to: logbook, label: "ordered access"}
+  - {from: worker, to: nextup, label: "ordered access"}
+  - {from: worker, to: refs, label: "ordered access"}
   - {from: worker, to: analysisstores, label: "analysis snapshots"}
-  - {from: logbook, to: consumers, label: "stable read view"}
+  - {from: worker, to: consumers, label: "query result / immutable snapshot"}
