@@ -88,7 +88,7 @@ activities:
     lane: application
     kind: implementation
     title: Direct registration + TimingData
-    state: active
+    state: done
     depends_on: [A01]
     note: >-
       Implement the accepted-registration operation after the antenna/filtering
@@ -99,7 +99,7 @@ activities:
     lane: application
     kind: integration
     title: Engineering Client first-slice control
-    state: planned
+    state: active
     depends_on: [A02]
     note: >-
       Add IF-03/client support for location, open/close, capability-gated direct
@@ -110,7 +110,7 @@ activities:
     lane: verification
     kind: verification
     title: First-slice domain verification
-    state: active
+    state: done
     depends_on: [A02]
     note: >-
       Verify lifecycle/location invariants, sequence ownership, historical
