@@ -265,6 +265,11 @@ upstream connectivity and synchronisation. Concrete I/O components expose or
 publish semantic status inputs; `SystemStatus` must not depend on classes such
 as `Rev1CanDisplay`, socket/session implementations or vendor antenna drivers.
 
+TimingNode status reaches this aggregate as an immutable semantic snapshot/result
+created through the TimingNode ownership boundary. `SystemStatus` does not call
+into `LogBook`, lifecycle fields, location fields or other mutable TimingNode
+internals directly.
+
 An IDD response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
 `ApplicationStatusSnapshot` or `ApplicationStatusModel`.
@@ -616,8 +621,9 @@ GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared presentation/application boundary remains small:
 `CommandHandler.version()` returns build identity and
-`CommandHandler.status()` returns the current TimingNode status used by the
-current presentation adapters.
+`CommandHandler.status()` obtains the current TimingNode status through the
+TimingNode query/ownership boundary used by the current presentation adapters;
+it does not assemble status by reading node-owned fields directly.
 
 ## TimingNode active-object execution and persistence
 
