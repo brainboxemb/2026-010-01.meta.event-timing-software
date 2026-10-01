@@ -74,20 +74,20 @@ nodes:
     layout: {x: 105, y: 300, w: 785, h: 52}
 
   - id: registration-panel
-    label: Accepted registration simulation
+    label: Auto-reg
     subtitle: Disabled while TimingNode is CLOSED
     kind: wireframe-surface
     notation: wireframe-panel
     layout: {x: 75, y: 390, w: 1035, h: 145}
 
   - id: registration-id
-    label: RegistrationId
+    label: ID
     kind: wireframe-disabled
     notation: wireframe-input
     layout: {x: 105, y: 430, w: 260, h: 76}
 
   - id: observation-time
-    label: Observation time
+    label: Time
     kind: wireframe-disabled
     notation: wireframe-input
     layout: {x: 390, y: 430, w: 330, h: 76}
@@ -99,13 +99,13 @@ nodes:
     layout: {x: 740, y: 457, w: 80, h: 38}
 
   - id: inject
-    label: Inject registration
+    label: Auto-reg
     kind: wireframe-disabled
     notation: wireframe-button
     layout: {x: 840, y: 457, w: 190, h: 38}
 
   - id: history
-    label: Committed TimingData history
+    label: LogBook
     kind: wireframe-surface
     notation: wireframe-table
     items:
