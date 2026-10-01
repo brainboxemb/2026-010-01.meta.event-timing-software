@@ -271,6 +271,8 @@ evidence.
   while inspecting requirements, use cases, architecture and verification.
 - [Engineering object index](objects/index.md) — searchable generated object
   pages with incoming/outgoing and one-hop context.
+- [Engineering Client UI](engineering-client-ui.md) — review the Step-4 Timing
+  UI wireframes and state/interaction design.
 - [Architecture Book](book.md) — the existing assembled Book remains a
   first-class output and is not owned by this portal.
 
@@ -279,6 +281,64 @@ content come from native MyST/Sphinx-Needs and the released normalized graph
 boundary.
 """
 
+
+ENGINEERING_CLIENT_UI_DIAGRAMS = (
+    (
+        "engineering-client-timing-closed.svg",
+        "CLOSED without operational location",
+        "Set Location is available; Open waits for an authoritative assigned LocationId.",
+    ),
+    (
+        "engineering-client-timing-open.svg",
+        "OPEN with committed history",
+        "Location is fixed; direct accepted-registration simulation is capability-gated.",
+    ),
+    (
+        "engineering-client-timing-reconnecting.svg",
+        "RECONNECTING / stale",
+        "Cached state remains visible while controls stay disabled until rebuild and dedup complete.",
+    ),
+)
+
+
+def render_engineering_client_ui(view: dict, repository: str) -> str:
+    source = source_url(
+        repository,
+        view["source_revision"],
+        "docs/50-SDE-03-engineering-client.md",
+    )
+    sections = []
+    for filename, title, description in ENGINEERING_CLIENT_UI_DIAGRAMS:
+        sections.extend(
+            [
+                f"## {title}",
+                "",
+                description,
+                "",
+                f"![{title}](assets/architecture/{filename})",
+                "",
+            ]
+        )
+
+    return "\n".join(
+        [
+            "# Engineering Client — Step 4 Timing UI",
+            "",
+            (
+                "This is a **derived portal view** of the D01 mid-fidelity UI "
+                "baseline. The authoritative design text and control/state rules "
+                f"remain in [SDE03 — Engineering Client]({source})."
+            ),
+            "",
+            (
+                "The wireframes are generated from declarative YAML by "
+                "tool.eng-docs; the same sources also produce editable draw.io "
+                "output in the normal documentation publication."
+            ),
+            "",
+            *sections,
+        ]
+    )
 
 def render_book_page(repository: str, publication_branch: str) -> str:
     url = (
@@ -386,8 +446,22 @@ def write_portal(
         architecture_path,
         output_dir / "assets" / "architecture" / "layered-architecture.svg",
     )
+    for filename, _, _ in ENGINEERING_CLIENT_UI_DIAGRAMS:
+        source = architecture_path.parent / filename
+        if not source.is_file():
+            raise PortalError(
+                f"missing generated Engineering Client UI diagram: {source}"
+            )
+        shutil.copy2(
+            source,
+            output_dir / "assets" / "architecture" / filename,
+        )
 
     (output_dir / "index.md").write_text(render_index(view), encoding="utf-8")
+    (output_dir / "engineering-client-ui.md").write_text(
+        render_engineering_client_ui(view, repository),
+        encoding="utf-8",
+    )
     (output_dir / "book.md").write_text(
         render_book_page(repository, publication_branch), encoding="utf-8"
     )
