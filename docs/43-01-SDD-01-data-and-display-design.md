@@ -166,7 +166,7 @@ Conceptually:
 void processRegistration(RegistrationInput input) {
     long sequence = logBook.nextSequence();
 
-    RegistrationDataContext context =
+    RegistrationData.Context context =
         registrationDataContext(input, sequence, timeSource.now());
 
     RegistrationData data =
