@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1415
+  height: 1515
   description: Working responsibility view of the reusable framework and executable application.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -70,7 +70,7 @@ groups:
 - id: platform-layer
   label: Platform abstractions / technical primitives
   kind: layer-platform
-  layout: {x: 30, y: 1213, w: 1380, h: 162}
+  layout: {x: 30, y: 1213, w: 1380, h: 272}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -345,7 +345,7 @@ nodes:
         - "network / OS"
   kind: platform
   notation: packaging-component
-  layout: {x: 155, y: 1245, w: 1180, h: 115}
+  layout: {x: 155, y: 1245, w: 1180, h: 220}
 
 - id: timing-application-runtime
   object_id: TimingApplication
