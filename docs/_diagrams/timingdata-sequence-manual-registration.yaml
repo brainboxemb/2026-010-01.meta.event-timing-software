@@ -2,23 +2,28 @@ diagram:
   id: timingdata-sequence-manual-registration
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
-  width: 1420
-  height: 860
-  description: CommandHandler calls TimingNode normally; LogBook owns the asynchronous queue and worker that persist the registration.
-  note: Accepted means LogBook queued the registration; durable file I/O happens later on the LogBook worker.
+  width: 1500
+  height: 1260
+  description: CommandHandler makes a normal registration call; the TimingNode queues the work and its serial worker later performs the durable commit.
+  note: register(...) is a normal Java call. No public Command object is implied.
 
 participants:
   - {id: client, label: Operator / client, kind: client}
   - {id: api, label: IF-03 / CommandHandler, kind: interface}
   - {id: node, label: TimingNode, kind: model}
-  - {id: logbook, label: "LogBook\nbounded queue + worker", kind: model}
+  - {id: logbook, label: "LogBook\ncommitted TimingData", kind: model}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
 
 messages:
   - {from: client, to: api, label: "register(teamIdentity, time)", kind: call}
   - {from: api, to: node, label: "register(teamIdentity, time)", kind: call}
-  - {from: node, to: logbook, label: "record(registration)", kind: async}
+  - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
   - {from: node, to: api, label: accepted, kind: return}
   - {from: api, to: client, label: accepted, kind: return}
-  - {from: logbook, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: logbook, label: durable, kind: return}
+  - {from: node, to: node, label: "serial worker processes registration", kind: call}
+  - {from: node, to: logbook, label: "nextSequence()", kind: call}
+  - {from: logbook, to: node, label: "sequence N", kind: return}
+  - {from: node, to: store, label: "append(record N)", kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: "add(record N)", kind: call}
+  - {from: logbook, to: node, label: visible, kind: return}

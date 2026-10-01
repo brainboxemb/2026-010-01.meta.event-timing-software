@@ -76,8 +76,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "a9b6dcf94f9a0b5986b1cadd76bde47102566977"
-          grep -F 'ref: v0.7.0' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "a482ef01af3edbe24db8ad4bfd9385e3283eb0c7"
+          grep -F 'ref: a482ef01af3edbe24db8ad4bfd9385e3283eb0c7' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -218,8 +218,8 @@ jobs:
             --assets docs/_portal/assets \
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
-            --tool-ref v0.7.0 \
-            --tool-sha a9b6dcf94f9a0b5986b1cadd76bde47102566977
+            --tool-ref a482ef01af3edbe24db8ad4bfd9385e3283eb0c7 \
+            --tool-sha a482ef01af3edbe24db8ad4bfd9385e3283eb0c7
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
@@ -280,8 +280,8 @@ jobs:
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
           if provenance["tool_eng_docs"] != {
-              "ref": "v0.7.0",
-              "sha": "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
+              "ref": "a482ef01af3edbe24db8ad4bfd9385e3283eb0c7",
+              "sha": "a482ef01af3edbe24db8ad4bfd9385e3283eb0c7",
           }:
               raise SystemExit("portal tool provenance mismatch")
 
@@ -600,6 +600,8 @@ jobs:
                   "93e63aeeb990cbad1f00c63ed947c3287e3ffdce",
                   # Immutable v0.7.0 release used by this consumer.
                   "a9b6dcf94f9a0b5986b1cadd76bde47102566977",
+                  # Temporary native-UML sequence renderer qualification head.
+                  "a482ef01af3edbe24db8ad4bfd9385e3283eb0c7",
               }
               if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")

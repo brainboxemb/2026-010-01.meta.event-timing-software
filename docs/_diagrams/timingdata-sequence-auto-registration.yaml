@@ -2,22 +2,28 @@ diagram:
   id: timingdata-sequence-auto-registration
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
-  width: 1420
-  height: 800
-  description: TagProcessor calls its TimingNode; LogBook queues and persists the resulting registration asynchronously.
-  note: The bounded queue and record worker are internal to LogBook.
+  width: 1500
+  height: 1260
+  description: RFID input enters the TimingNode serial boundary; the worker assigns sequence, persists the record and only then exposes it through LogBook.
+  note: The two TimingNode self-messages show the bounded async hand-off and later worker execution without introducing another architecture component.
 
 participants:
   - {id: antenna, label: RFID adapter, kind: integration}
   - {id: tag, label: TagProcessor, kind: model}
   - {id: node, label: TimingNode, kind: model}
-  - {id: logbook, label: "LogBook\nbounded queue + worker", kind: model}
+  - {id: logbook, label: "LogBook\ncommitted TimingData", kind: model}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
 
 messages:
   - {from: antenna, to: tag, label: observation, kind: call}
   - {from: tag, to: node, label: "register(observation)", kind: call}
-  - {from: node, to: logbook, label: "record(registration)", kind: async}
+  - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
   - {from: node, to: tag, label: accepted, kind: return}
-  - {from: logbook, to: store, label: append IF-05 record, kind: call}
-  - {from: store, to: logbook, label: durable, kind: return}
+  - {from: tag, to: antenna, label: accepted, kind: return}
+  - {from: node, to: node, label: "serial worker processes registration", kind: call}
+  - {from: node, to: logbook, label: "nextSequence()", kind: call}
+  - {from: logbook, to: node, label: "sequence N", kind: return}
+  - {from: node, to: store, label: "append(record N)", kind: call}
+  - {from: store, to: node, label: durable, kind: return}
+  - {from: node, to: logbook, label: "add(record N)", kind: call}
+  - {from: logbook, to: node, label: visible, kind: return}
