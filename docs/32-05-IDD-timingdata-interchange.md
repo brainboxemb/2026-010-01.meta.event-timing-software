@@ -247,7 +247,7 @@ Validation rules:
 
 ## Registration identities
 
-`RegistrationId` is the canonical participant identity carried by a
+`RegistrationId` is the canonical registration identity carried by a
 TimingData registration record.
 
 The IF-05 v1 public contract treats it as a non-empty provider-neutral string.
@@ -513,14 +513,14 @@ source-specific or provider-specific identity representation.
 :id: IF05-REQ-006
 
 v1 `RegistrationId` shall be a non-empty provider-neutral canonical
-participant identity. Concrete event categories, ranges and deployment mappings
+registration identity. Concrete event categories, ranges and deployment mappings
 shall remain outside IF-05.
 ```
 
 ```{ifreq} Source identity resolution
 :id: IF05-REQ-007
 
-Source-specific participant identities shall resolve to canonical
+Source-specific `TagId` / `TeamId` values shall resolve to canonical
 `RegistrationId` before a registration is committed. Concrete source
 encoding and mapping rules shall remain outside IF-05.
 ```
