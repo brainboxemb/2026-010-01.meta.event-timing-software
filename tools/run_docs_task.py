@@ -150,6 +150,7 @@ def validate_assembly(root: Path) -> dict:
         root / "documents/50-SDE-01-software-development-environment.md",
         root / "documents/50-SDE-02-java-build-test-toolchain.md",
         root / "documents/41-01-SSD-timing-application-specification-document.md",
+        root / "documents/43-01-SDD-01-data-and-display-design.md",
         root / "documents/43-01-SDD-02-java-component-design.md",
         root / "documents/60-SVP-software-verification-plan.md",
         root / "assets/architecture/system-overview.svg",
@@ -160,12 +161,14 @@ def validate_assembly(root: Path) -> dict:
         if not path.is_file():
             raise RuntimeError(f"required assembled output missing: {path}")
     architecture_book = (root / "documents/architecture-book.md").read_text(encoding="utf-8")
-    active = "**Source document:** [43-01-SDD-02-java-component-design.md]"
-    deferred = [
+    active = [
         "**Source document:** [43-01-SDD-01-data-and-display-design.md]",
+        "**Source document:** [43-01-SDD-02-java-component-design.md]",
+    ]
+    deferred = [
         "**Source document:** [43-01-SDD-03-backoffice-transport-design.md]",
     ]
-    if active not in architecture_book:
+    if any(marker not in architecture_book for marker in active):
         raise RuntimeError("active SDD section missing from architecture book")
     if any(marker in architecture_book for marker in deferred):
         raise RuntimeError("deferred SDD section unexpectedly present in architecture book")
