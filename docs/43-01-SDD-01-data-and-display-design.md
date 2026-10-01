@@ -53,23 +53,30 @@ A registration entry is associated with both its source and its location.
 
 `TimingNodeId`, `LocationID` and `AntennaId` are separate namespaces. I/O configuration relates antenna observations to TimingNodes; code must not infer one identity from another.
 
-### LogBook versus IF-05 TimingData
+### LogBook and IF-05 TimingData
 
-The runtime `LogBook` stores 0..N `LogBookItem` entries used by SI-01.
-A `LogBookItem` does not have to look exactly like the IF-05 record written to
-file or sent elsewhere.
+The runtime `LogBook` stores committed canonical `TimingDataRecord` values.
+The current design does not add a second logbook-specific timing-record type.
+
+That choice is deliberate. The old/reference software already treats one LBR
+record as both the logged timing fact and the object consumers read. The new
+design keeps that useful property while giving the file format a clear IF-05
+contract.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
-`32-05-IDD-timingdata-interchange.md`. That IDD is authoritative for
-`TimingDataRecord` field semantics, record kinds, `RegistrationIdentity`,
-record keys/sequences, versioning and canonical file encoding.
+`32-05-IDD-timingdata-interchange.md`. It owns record kinds,
+`RegistrationIdentity`, sequence/key semantics, versioning and canonical file
+encoding.
 
-This SDD does not repeat the IF-05 field table. It only explains how SI-01 gets
-from a LogBook change to a committed IF-05 record.
+The same immutable `TimingDataRecord` object can therefore be:
 
-The runtime `LogBook` remains free to use a different internal representation.
-A `TimingDataProvider` is an edge translation mechanism and does not move
-external/proprietary wire/file semantics into the SI-01 domain model.
+- appended by `TimingDataStore`;
+- added to `LogBook` after that append is durable;
+- read by runtime consumers;
+- offered to downstream/upstream delivery.
+
+A `TimingDataProvider` may translate to or from another external representation,
+but that translation does not introduce a second SI-01 timing-record model.
 
 ### Tag, team and registration identity resolution
 
@@ -132,300 +139,189 @@ Source identities such as `TagIdentity` may be retained/exposed separately when
 an interface needs provenance or diagnostics; they are not substitutes for the
 canonical registration identity stored by TimingData.
 
-## LogBook recording and TimingData persistence
+## TimingNode serial execution and timing-data commit
 
-### Producers and LogBookEntryCandidate
+### Active-object boundary
 
-RFID is only one producer of traceable LogBook facts. Manual registration,
-TimingNode lifecycle handling and later start/penalty/correction logic use the
-same commit boundary.
-
-The common pre-commit hand-off is conceptually a `LogBookEntryCandidate`:
+A `TimingNode` is the active serialization boundary for all mutable state that
+belongs to one timing point. The contained state objects stay passive:
 
 ```text
-LogBookEntryCandidate
-  timingNodeId
-  locationId              immutable location snapshot for this fact
-  semantic kind / domain data
-  effectiveTime
-
-  no sequenceNumber
-  no recordedAt
-  not yet committed
+TimingNode  <<active object>>
+  +-- bounded serial work queue
+  +-- one serial worker (first implementation)
+  |
+  +-- LogBook           passive, committed TimingDataRecord history
+  +-- NextUpTeams       passive
+  +-- StageStartTimes   passive
+  +-- RaceData          passive
+  +-- lifecycle/location state
+  |
+  +-- TimingDataStore
+  +-- NextUpTeamsStore
+  +-- StageStartTimesStore
+  +-- RaceDataStore
 ```
 
-The producer owns the business meaning and captures the TimingNode/location
-context applicable to the fact before enqueue. The commit path owns sequence,
-`recordedAt`, LogBookItem creation, IF-05 conversion and durability.
+The Active Object wording describes the behaviour, not a required Java base
+class. SDD-02 uses composition for the first implementation.
 
-For a revocation candidate, the producer carries the original registration's
-location, effective time, registration identity, origin and time source as
-required by IF-05 rather than using a newer/current TimingNode configuration.
+Public/application calls stay ordinary Java methods such as
+`register(teamIdentity, time)`. Crossing the TimingNode's asynchronous boundary
+requires a small immutable internal work item so the caller may return while the
+node processes the operation later. That internal item is not a public Command
+Pattern object, is not persisted and does not become another domain model.
 
-Current and expected producers include:
+The single TimingNode worker gives one clear order across registrations,
+NextUpTeams changes, reference-data updates and lifecycle changes. No producer
+lock is required around sequence allocation because only this worker performs
+the commit step.
 
-| Producer | Example LogBook fact | Status |
-| --- | --- | --- |
-| `TagProcessor` | automatic participant registration | first v1 slice |
-| manual registration command path | manual participant registration/revocation | first v1 slice |
-| TimingNode lifecycle handling | OPEN/CLOSED state fact | first v1 slice |
-| start procedure/domain logic | start-related fact | later record family |
-| penalty/correction domain logic | penalty/correction fact | later record family |
+### TimingData commit and sequence
 
-A producer shall not assign the persistent sequence, write the TimingData file,
-publish an uncommitted fact or depend on the physical IF-05 representation.
-
-![LogBook producers and durable TimingData commit path](../../../raw/prod/docs/assets/architecture/timingdata-producer-pipeline.svg)
-
-*Figure SDD01-TD01 — Multiple producers converge on one ordered LogBook commit path; IF-05 TimingData is the durable/interchange representation.*
-
-### Ordered durable commit
-
-The TimingNode owns the registration/lifecycle business flow. The LogBook owns
-the asynchronous recording lane for that TimingNode.
-
-A producer therefore does not write the TimingData file and does not wait for
-file I/O. After the TimingNode has validated/resolved the domain input it hands a
-pending LogBook entry to `LogBook.record(...)`. The first implementation of
-`LogBook` owns one bounded queue and one record worker.
+For a registration, the worker resolves/validates the domain input and asks the
+LogBook for the next sequence **only when it is ready to commit**. Sequence is
+therefore not assigned when work is placed on the queue.
 
 Conceptually:
 
 ```java
-boolean register(TeamIdentity teamIdentity, TimingTimestamp effectiveTime) {
-    LogBookEntryCandidate entry =
-        createManualRegistration(teamIdentity, effectiveTime);
+void processRegistration(RegistrationInput input) {
+    long sequence = logBook.nextSequence();
 
-    return logBook.record(entry);     // accepted means queued
-}
-```
+    TimingDataRecord record =
+        timingDataFactory.registration(input, sequence, timeSource.now());
 
-Inside the LogBook recording path:
-
-```java
-boolean record(LogBookEntryCandidate entry) {
-    return recordQueue.offer(entry);
-}
-
-void runRecordWorker() {
-    while (running) {
-        commit(recordQueue.take());
-    }
-}
-
-void commit(LogBookEntryCandidate entry) {
-    long sequence = sequenceState.peekNext(entry.timingNodeId());
-    TimingTimestamp recordedAt = timeSource.now();
-
-    LogBookItem item =
-        logBookItemFactory.create(entry, sequence, recordedAt);
-    TimingDataRecord record = timingData.toRecord(item);
-
-    timingDataStore.append(record);   // file persistence / recovery boundary
-    sequenceState.commit(sequence);
-    applyCommitted(item);             // update LogBook state
+    timingDataStore.append(record);   // returns after durable append
+    logBook.add(record);              // consumer visibility point
     committedSinks.publish(record);   // non-blocking hand-off only
 }
 ```
 
-This does not introduce `LogBookRecorder` or `LogBookCommitter` as separate
-architecture concepts. Queue and worker details are internal to the LogBook
-recording implementation. A small private/package-private helper may still be
-introduced later if it makes the Java code clearer.
-
-`recordedAt` is captured immediately before the definitive record is encoded
-for the append attempt; it is metadata rather than the durability marker.
-
-If the durable append fails, sequence state and committed LogBook state do not
-advance and a later entry may not overtake the failed one. A partial failed
-append is repaired/truncated to the last complete IF-05 line boundary before
-retry.
-
-This keeps the two representations separate without creating a second domain
-history component:
+`LogBook.nextSequence()` is based on committed state:
 
 ```text
-LogBookItem       internal operational Domain representation
-TimingDataRecord  persistent/interchange IF-05 representation
+empty LogBook                  -> 1
+last committed sequence = N    -> N + 1
 ```
 
-### Asynchronous execution and query isolation
+Calling `nextSequence()` does not consume the number. If persistence fails,
+the record is not added to LogBook and the next attempt still uses the same
+sequence. A later work item may not overtake the failed timing-data commit.
 
-The first Pi-oriented implementation needs one mandatory asynchronous boundary
-for LogBook recording. It belongs to the LogBook:
+The important ordering is:
 
 ```text
-TagProcessor / command / lifecycle / later producer
-                    |
-                    | normal TimingNode call
-                    v
-                TimingNode
-                    |
-                    | LogBook.record(...)
-                    | accepted after bounded enqueue
-                    v
-                 LogBook
-          bounded queue + record worker
-                    |
-                    | ordered commit
-                    v
-             TimingDataStore
-          file persistence / recovery
-                    |
-                    | durable
-                    v
-                 LogBook
-          committed in-memory state
+TimingNode worker
+  -> choose next sequence
+  -> create immutable TimingDataRecord
+  -> TimingDataStore.append(record)
+  -> durable
+  -> LogBook.add(record)            <-- visible to consumers from here
+  -> publish/notify downstream
 ```
 
-The LogBook worker performs the durable append and only then makes the
-corresponding `LogBookItem` visible as committed state. There is no direct
-TimingNode-to-file-store write in this flow.
+There is no direct producer-to-store path and no second TimingNode serial worker.
 
-A long-running query does not run on the LogBook record worker and does not
-require a deep copy of the complete LogBook. It captures only the small
-references/index/version boundary required by the real query, releases any short
-synchronisation, and performs expensive calculation elsewhere.
+![TimingNode producers and durable TimingData commit path](../../../raw/prod/docs/assets/architecture/timingdata-producer-pipeline.svg)
 
-Slow network signalling/retry is different: it may block independently and
-therefore sits behind its own capability-specific bounded queue or outbox.
+*Figure SDD01-TD01 — State-changing input enters the TimingNode serial boundary; a TimingData record becomes visible only after durable persistence.*
 
-![LogBook asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
+### Other TimingNode state and per-type stores
 
-*Figure SDD01-TD02 — The TimingNode hands traceable facts to a LogBook-owned bounded queue; file persistence and queries run on their appropriate execution paths.*
+Not every state type has the same durability semantics.
+
+`TimingDataStore` is special: successful durable append is part of the timing
+record commit. The LogBook is rebuilt from committed TimingData after restart.
+
+`NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` serve a
+different first purpose: preserve accepted state changes/snapshots for
+post-event analysis. Their stored data lets engineers later answer questions
+such as which teams were next-up or which stage-start times/reference data were
+known when a timing decision was made.
+
+Those files are not automatically the runtime source after reboot. For example,
+StageStartTimes can be sent again when the node is opened. Keeping its historical
+file is still valuable for later analysis.
+
+All state changes are ordered by the TimingNode worker. The first implementation
+may also perform these small/infrequent store writes on that worker. If target
+measurements show an analysis-store write can delay registration unacceptably,
+the immutable snapshot can later be handed to a bounded persistence executor.
+That optimization must not change TimingNode state ordering and must not
+introduce an unbounded hidden queue.
+
+### Query/consumer visibility
+
+Consumers only see committed timing records. A query that starts before a new
+record is added may finish against its earlier view; a later query sees the new
+record.
+
+A long query must not occupy the TimingNode worker or hold the LogBook lock for
+its whole calculation. With the expected LogBook size of roughly 1200–1500
+records, immutable TimingDataRecord objects make a shallow reference snapshot
+cheap. Copying 1500 references is roughly 6 KiB with 4-byte compressed
+references or 12 KiB with 8-byte references.
+
+To avoid turning even that small copy into repeated garbage, a consumer may own
+a reusable destination buffer:
+
+```java
+int count = logBook.copyTo(reusableBuffer);  // short synchronized copy
+calculate(reusableBuffer, count);            // no LogBook lock
+```
+
+The exact collection/array implementation and measured copy time remain SDD-02
+implementation/verification details. The architectural point is that a consumer
+gets a stable view without a second LogBook thread.
+
+![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
+
+*Figure SDD01-TD02 — One TimingNode serial worker owns mutation order; passive state and consumers do not receive their own workers.*
 
 ### Runtime flows
 
-Each flow below has a compact UML-style sequence overview followed by the more
-precise developer pseudocode. The figure shows the important calls and
-asynchronous boundary; queue/worker internals stay inside the LogBook component.
+The sequence diagrams below are intentionally high-level. They show method calls,
+the TimingNode asynchronous boundary, persistence and visibility. SDD-02 owns the
+concrete Java worker mechanism.
 
 #### Automatic RFID registration
 
 ![Automatic RFID registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-auto-registration.svg)
 
-*Figure SDD01-TD03 — TagProcessor calls its TimingNode; the TimingNode queues the resulting registration in LogBook and returns before file I/O.*
-
-```text
-RFID adapter        TagProcessor          TimingNode             LogBook             TimingDataStore
-    |                    |                    |                      |                       |
-    | observation        |                    |                      |                       |
-    |------------------->|                    |                      |                       |
-    |                    | normalize/resolve  |                      |                       |
-    |                    | register(...)      |                      |                       |
-    |                    |------------------->|                      |                       |
-    |                    |                    | record(registration) |                       |
-    |                    |                    |--------------------->|  async / queued       |
-    |                    |<-------------------| accepted             |                       |
-    |                    |                    |                      | append(record)        |
-    |                    |                    |                      |---------------------->|
-    |                    |                    |                      |<----------------------| durable
-    |                    |                    |                      | apply committed item  |
-```
-
-The RFID callback is free after the LogBook has accepted the entry into its
-bounded queue. File latency therefore does not occupy the antenna/TagProcessor
-execution context.
+*Figure SDD01-TD03 — An antenna callback submits work to the TimingNode and returns; the TimingNode worker later persists and exposes the record.*
 
 #### Manual registration
 
 ![Manual registration sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-manual-registration.svg)
 
-*Figure SDD01-TD04 — CommandHandler makes a normal TimingNode method call; the LogBook-owned queue is the asynchronous durability boundary.*
-
-```text
-Client            IF-03/CommandHandler         TimingNode              LogBook             TimingDataStore
-  |                        |                       |                       |                       |
-  | register(team,time)    |                       |                       |                       |
-  |----------------------->|                       |                       |                       |
-  |                        | register(team,time)   |                       |                       |
-  |                        |---------------------->|                       |                       |
-  |                        |                       | resolve identity      |                       |
-  |                        |                       | record(registration)  |                       |
-  |                        |                       |---------------------->| async / queued        |
-  |                        |<----------------------| accepted              |                       |
-  |<-----------------------| accepted              |                       |                       |
-  |                        |                       |                       | append(record)        |
-  |                        |                       |                       |---------------------->|
-  |                        |                       |                       |<----------------------| durable
-  |                        |                       |                       | apply committed item  |
-```
-
-No Command object is implied here. `CommandHandler` is the application entry
-point and calls the TimingNode method. The client supplies operator input; the
-TimingNode resolves the canonical IF-05 `RegistrationIdentity`, then hands the
-registration to LogBook.
+*Figure SDD01-TD04 — CommandHandler makes a normal TimingNode registration call; no Command object is implied by the interface.*
 
 #### Long query while registrations continue
 
 ![LogBook query isolation sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-query-isolation.svg)
 
-*Figure SDD01-TD05 — A query can continue while LogBook records another registration on its own worker.*
-
-```text
-Query task          LogBook            Registration producer        TimingNode        TimingDataStore
-   |                   |                         |                      |                    |
-   | capture read view |                         |                      |                    |
-   |------------------>|                         |                      |                    |
-   |<------------------| view                    |                      |                    |
-   | calculate...      |                         | register(...)        |                    |
-   |                   |                         |--------------------->|                    |
-   | calculate...      |                         |                      | record(...)        |
-   |                   |<-----------------------------------------------| async / queued      |
-   |                   |                         |<---------------------| accepted            |
-   | calculate...      | append(record)          |                      |                    |
-   |                   |--------------------------------------------------------------->|
-   |                   |<---------------------------------------------------------------| durable
-   | calculate...      | apply committed item    |                      |                    |
-   | return result     |                         |                      |                    |
-```
-
-The calculation does not keep a long LogBook lock and does not require a deep
-copy of all registrations. The exact compact read/index strategy is selected
-when the first real ranking/query implementation is built and measured on the
-target Raspberry Pi.
+*Figure SDD01-TD05 — A query works on a stable LogBook view while the TimingNode worker can commit later records.*
 
 #### Later producers
 
-![Generic LogBook producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
+![Generic TimingNode producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
 
-*Figure SDD01-TD06 — Later start, penalty and correction logic use the same TimingNode-to-LogBook recording boundary.*
-
-Start-procedure and penalty/correction logic follow the same pattern:
-
-```text
-domain-specific business logic
-          |
-          v
-      TimingNode
-          |
-          | LogBook.record(...)
-          v
-       LogBook
-  bounded queue + worker
-          |
-          v
-TimingDataStore
-file persistence / recovery
-```
-
-Their exact LogBookItem/IF-05 record families remain deferred until the
-applicable requirements are promoted.
+*Figure SDD01-TD06 — Later start, penalty and correction operations use the same TimingNode serial boundary.*
 
 #### Thread/ownership responsibilities
 
 | Execution role | May block on | Must not block |
 | --- | --- | --- |
-| producer/caller | short domain work + bounded LogBook enqueue policy | durable file I/O, long query, network delivery |
-| LogBook record worker | ordered local durable append | long query, client rendering, network retry |
-| LogBook commit/update | short in-memory mutation after durable append | long report/ranking calculation |
-| query worker/caller | its own calculation/read workload | LogBook record progress |
-| signalling/upstream worker | its own delivery/retry policy | LogBook commit |
+| ingress/caller | short validation + bounded TimingNode submission | durable file I/O, long query, network retry |
+| TimingNode serial worker | ordered domain state change; required local persistence | long query, client rendering, slow network retry |
+| query worker/caller | its own calculation on a stable read view | TimingNode state progress |
+| signalling/upstream worker | its own delivery/retry policy | TimingNode commit |
 
-For the first one-TimingNode application each TimingNode contains one LogBook;
-that LogBook owns one bounded recording queue and one dedicated record worker. A
-later multi-node implementation may share worker infrastructure only if it
-preserves independent FIFO commit order per TimingNode.
+For the first one-node implementation, one dedicated worker is the simplest
+mechanism. A later multi-node runtime may share executor threads only if each
+TimingNode still processes at most one work item at a time and preserves FIFO
+order.
 
 ## TimingData persistence and recovery
 
@@ -457,41 +353,39 @@ problem so support/operator tooling can see it.
 If we later add a cached sequence-counter file for faster startup, it is only a
 cache. The committed TimingData file remains the source used to check/rebuild it.
 
-### What must survive a restart
+### Persistence roles
 
-TimingData has the strongest persistence rule:
+TimingData has the strongest rule:
 
-- a timing record counts as committed only after the complete IF-05 record has
-  been written successfully;
-- only then is its sequence consumed and the matching LogBook item made visible;
-- the TimingData file is used to rebuild the LogBook after restart.
+- a TimingData record is committed only after its complete IF-05 representation
+  is durably appended;
+- only then is the same `TimingDataRecord` added to LogBook and visible to
+  runtime consumers;
+- the TimingData file is used to rebuild LogBook after restart.
 
-Other state can use simpler mechanisms:
+Other per-node stores have a different first purpose:
 
-- prepare-team/NextUpTeams may use a small snapshot or its own history;
-- StageStartTimes and RaceData may cache the last accepted external version;
-- display/read data can normally be rebuilt and does not need its own durable copy.
+- `NextUpTeamsStore` preserves accepted next-up state/history for analysis;
+- `StageStartTimesStore` preserves accepted start-time snapshots for analysis;
+- `RaceDataStore` preserves accepted reference-data snapshots/versions for
+  analysis.
 
-Implementation hints to verify on the target Pi:
+Those historical stores do not automatically restore live state after reboot.
+The live protocol may resend the current data, for example when a TimingNode is
+opened. Recovery semantics can be promoted later if an operational requirement
+needs them.
 
-- what exact flush/fsync call is needed before we call a record durable;
+Implementation points to verify on the target Pi:
+
+- what exact flush/fsync call makes a TimingData append durable;
 - what happens if power disappears halfway through the final line;
-- whether truncating the incomplete tail is atomic/safe on the target filesystem;
-- how we report a corrupt file instead of quietly starting with empty state;
-- when files need rotation/retention so they do not grow forever.
+- whether truncating the incomplete tail is safe on the target filesystem;
+- how a corrupt complete record is reported instead of silently ignored;
+- file rotation/retention for TimingData and analysis stores;
+- whether any non-critical store write needs asynchronous offload after
+  measurement.
 
 We do not need a database just to solve these cases.
-
-Status should eventually show useful support information such as:
-
-```text
-TimingData file / recovery health
-last committed sequence per TimingNode
-LogBook ingress queue depth/high-water
-last LogBook rebuild result
-reference-data synchronisation time/version
-other-state backup/recovery health
-```
 
 ### Startup flow
 
@@ -758,13 +652,16 @@ These flows remain separate:
 RFID / manual / lifecycle / later start / penalty logic
           |
           v
- LogBookEntryCandidate
+      TimingNode
+   bounded serial work
           |
           v
-      LogBook commit
+    TimingDataRecord
           |
+          +--> TimingDataStore (durable)
+          +--> LogBook (visible after durable append)
           +--> StageTiming / ranking inputs
-          +--> IF-05 TimingData / downstream integration
+          +--> downstream integration
 
 keypad/UI prepare/remove team
           |
@@ -789,28 +686,30 @@ conform to **IF05-REQ-001..015** in
 The following temporary design constraints cover only the internal realisation
 needed around that interface:
 
-### Record pipeline
+### TimingNode state and record pipeline
 
-- **CAND-PIPE-001** — Traceable domain/application producers shall hand an
-  immutable `LogBookEntryCandidate` to the owning TimingNode, which shall place
-  it on its bounded internal LogBook queue; durable file I/O shall not execute
-  on RFID/device/operator ingress callbacks.
-- **CAND-PIPE-002** — The record-commit path shall publish an IF-05 record to
-  downstream consumers only after the complete local record is durably appended
-  and its sequence is committed.
-- **CAND-PIPE-003** — After durable IF-05 append, the commit path shall apply the
-  corresponding `LogBookItem` synchronously to the owning TimingNode LogBook
-  before external publication.
-- **CAND-PIPE-004** — Potentially long queries and network delivery/retry shall
-  execute outside the LogBook record worker; only slow external delivery
-  requires an additional asynchronous queue/outbox boundary.
+- **CAND-PIPE-001** — Each TimingNode shall provide one bounded serial execution
+  boundary for its mutable per-node state. Contained state objects such as
+  LogBook, NextUpTeams, StageStartTimes and RaceData shall remain passive.
+- **CAND-PIPE-002** — Registration sequence shall be selected by the TimingNode
+  worker immediately before commit, not when ingress work is queued.
+- **CAND-PIPE-003** — A TimingData record shall become visible in LogBook only
+  after `TimingDataStore` reports the complete append durable.
+- **CAND-PIPE-004** — The LogBook shall hold the same canonical
+  `TimingDataRecord` values used by the TimingData persistence/interchange
+  boundary; no second logbook-specific timing-record type is required.
+- **CAND-PIPE-005** — Potentially long queries and network delivery/retry shall
+  execute outside the TimingNode serial worker.
+- **CAND-PIPE-006** — Consumers needing a stable LogBook view shall use a short
+  read/copy operation and perform long calculations after releasing LogBook
+  synchronization; implementations should avoid unnecessary per-query garbage.
 
 ### Identity resolution before IF-05 commit
 
 - **CAND-ID-001** — The RFID path shall normalise physical tag input to the
   `TagIdentity` form required for registration-identity resolution.
 - **CAND-ID-002** — The RFID path shall distinguish normal versus reserve-tag
-  semantics before creating a LogBook entry candidate.
+  semantics before the TimingNode creates the committed TimingData record.
 - **CAND-ID-003** — A normal `TagIdentity` shall resolve deterministically to
   the IF-05 `RegistrationIdentity`; a reserve `TagIdentity` shall resolve
   through locally available race/reference mapping data.
@@ -821,18 +720,22 @@ needed around that interface:
   carried into IF-05 `RegistrationIdentity`; parsing shall not require a
   postfix globally.
 
-### Local data and backup
+### Local data and per-type stores
 
 - **CAND-DATA-001** — The initial implementation shall maintain committed
-  LogBook state, ready-team state and reference state in typed application data
-  structures without requiring an external database engine.
-- **CAND-DATA-002** — The per-TimingNode LogBook shall own operational committed
-  history/state; the append-only IF-05 TimingData file shall provide its durable
-  recovery representation and sequence-recovery source.
-- **CAND-DATA-003** — TimingData recovery faults and other persistent-state
-  backup/restore failures shall be represented explicitly in system status.
-- **CAND-DATA-004** — The local start-time data set shall be synchronisable from the backoffice and remain available after loss of live backoffice connectivity.
-- **CAND-DATA-005** — The system shall track enough reference-data synchronisation metadata to determine whether local data is current/stale relative to the latest accepted update.
+  LogBook state, next-up state and reference state in typed in-memory objects
+  without requiring an external database engine.
+- **CAND-DATA-002** — `TimingDataStore` shall be the durable/recovery source
+  for committed TimingData.
+- **CAND-DATA-003** — NextUpTeams, StageStartTimes and RaceData shall each use a
+  type-specific store when their accepted state/snapshots are preserved for
+  analysis; these stores shall not be treated as runtime recovery authority
+  unless a requirement explicitly says so.
+- **CAND-DATA-004** — TimingData recovery faults and analysis-store failures
+  shall be visible in system status/diagnostics.
+- **CAND-DATA-005** — The system shall track enough reference-data
+  synchronisation metadata to determine whether local data is current/stale
+  relative to the latest accepted update.
 
 ### Ready-team/keypad data
 
