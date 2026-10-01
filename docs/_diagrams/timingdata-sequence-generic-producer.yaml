@@ -2,8 +2,8 @@ diagram:
   id: timingdata-sequence-generic-producer
   type: sequence
   title: Figure SDD01-TD06 — Generic TimingNode producer
-  width: 1280
-  height: 1120
+  width: 1100
+  height: 780
   description: Later traceable domain operations use the same bounded TimingNode serial boundary and durable TimingData commit order.
   note: Exact start, penalty and correction record families remain deferred.
 

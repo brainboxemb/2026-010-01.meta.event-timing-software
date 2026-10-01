@@ -2,8 +2,8 @@ diagram:
   id: timingdata-sequence-manual-registration
   type: sequence
   title: Figure SDD01-TD04 — Manual registration
-  width: 1500
-  height: 1260
+  width: 1200
+  height: 920
   description: CommandHandler makes a normal registration call; the TimingNode queues the work and its serial worker later performs the durable commit.
   note: register(...) is a normal Java call. No public Command object is implied.
 

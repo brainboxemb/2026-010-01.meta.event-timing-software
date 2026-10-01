@@ -2,8 +2,8 @@ diagram:
   id: timingdata-sequence-auto-registration
   type: sequence
   title: Figure SDD01-TD03 — Automatic RFID registration
-  width: 1500
-  height: 1260
+  width: 1200
+  height: 920
   description: RFID input enters the TimingNode serial boundary; the worker assigns sequence, persists the record and only then exposes it through LogBook.
   note: The two TimingNode self-messages show the bounded async hand-off and later worker execution without introducing another architecture component.
 

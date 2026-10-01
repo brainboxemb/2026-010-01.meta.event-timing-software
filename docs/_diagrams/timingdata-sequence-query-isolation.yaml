@@ -2,8 +2,8 @@ diagram:
   id: timingdata-sequence-query-isolation
   type: sequence
   title: Figure SDD01-TD05 — LogBook query isolation
-  width: 1780
-  height: 1400
+  width: 1400
+  height: 1030
   description: A query copies a short stable LogBook view and continues calculating while the TimingNode worker commits another registration.
   note: The long calculation runs outside both the TimingNode worker and the LogBook synchronization window.
 
