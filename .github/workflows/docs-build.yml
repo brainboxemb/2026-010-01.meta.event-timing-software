@@ -76,8 +76,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "43cb313545a271a15ad7195cc28c58d15489b6a1"
-          grep -F 'ref: v0.8.1' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "b4645d8810fd0e235605e5f03646e14f9653ddea"
+          grep -F 'ref: v0.9.0' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -218,8 +218,8 @@ jobs:
             --assets docs/_portal/assets \
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
-            --tool-ref v0.8.1 \
-            --tool-sha 43cb313545a271a15ad7195cc28c58d15489b6a1
+            --tool-ref v0.9.0 \
+            --tool-sha b4645d8810fd0e235605e5f03646e14f9653ddea
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
@@ -280,8 +280,8 @@ jobs:
           if provenance["relation_count"] != graph["relation_count"]:
               raise SystemExit("portal relation count does not match engineering graph")
           if provenance["tool_eng_docs"] != {
-              "ref": "v0.8.1",
-              "sha": "43cb313545a271a15ad7195cc28c58d15489b6a1",
+              "ref": "v0.9.0",
+              "sha": "b4645d8810fd0e235605e5f03646e14f9653ddea",
           }:
               raise SystemExit("portal tool provenance mismatch")
 
@@ -610,6 +610,8 @@ jobs:
                   "dcbe8505f9ac26a3764bc7528b5f4ee286c02a87",
                   # Immutable v0.8.1 compact-sequence renderer release.
                   "43cb313545a271a15ad7195cc28c58d15489b6a1",
+                  # Immutable v0.9.0 UI-wireframe renderer release.
+                  "b4645d8810fd0e235605e5f03646e14f9653ddea",
               }
               if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
                   raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
