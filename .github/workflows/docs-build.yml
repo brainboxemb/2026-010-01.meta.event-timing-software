@@ -565,6 +565,13 @@ jobs:
           test -f bld/docs/assets/architecture/system-overview.drawio
           test -f bld/docs/assets/architecture/layered-architecture.svg
           test -f bld/docs/assets/architecture/layered-architecture.drawio
+          for ui_diagram in \
+            engineering-client-timing-closed \
+            engineering-client-timing-open \
+            engineering-client-timing-reconnecting; do
+            test -f "bld/docs/assets/architecture/${ui_diagram}.svg"
+            test -f "bld/docs/assets/architecture/${ui_diagram}.drawio"
+          done
           for object_id in TimingNode CommandHandler Conductor Api; do
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.svg
             grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.drawio
