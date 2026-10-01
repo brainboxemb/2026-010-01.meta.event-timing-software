@@ -882,7 +882,7 @@ event-timing-framework  ---> timing-data-api
 test-client             ---> timing-data-api
 
 reference TimingData provider  ---> timing-data-api
-private eBART provider         ---> timing-data-api
+private external provider      ---> timing-data-api
                                   |
                                   +-- optional native/proprietary DLL
 ```

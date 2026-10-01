@@ -576,7 +576,7 @@ Rules:
 - the provider translates representation; it does not redefine IF-05 semantics;
 - proprietary fixed-field values/codes remain outside this public IDD;
 - an external format may use different line endings or physical layout;
-- a proprietary eBART-style codec may therefore use CRLF while the canonical
+- an external fixed-field codec may therefore use CRLF while the canonical
   public/reference writer uses LF;
 - SI-01 and the Engineering/Test Client shall be able to use the same compatible
   provider implementation rather than maintaining separate proprietary decoders;
