@@ -89,7 +89,7 @@ nodes:
 
   - id: observation-time
     label: Observation time
-    subtitle: 2026-10-01T12:00:00.000000000Z
+    subtitle: "2026-10-01T12:00:00.000000000Z"
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 390, y: 430, w: 330, h: 76}
