@@ -21,7 +21,7 @@ messages:
   - {from: logbook, to: query, label: "count + stable references", kind: return}
   - {from: producer, to: node, label: "register(...)", kind: call}
   - {from: node, to: node, label: "offer to bounded serial queue", kind: async}
-  - {from: node, to: producer, label: accepted, kind: return}
+  - {from: node, to: producer, label: queued, kind: return}
   - {from: node, to: node, label: "serial worker processes registration", kind: call}
   - {from: node, to: logbook, label: "nextSequence()", kind: call}
   - {from: logbook, to: node, label: "sequence N", kind: return}

@@ -179,9 +179,14 @@ the commit step.
 
 ### TimingData commit and sequence
 
-For a registration, the worker resolves/validates the domain input and asks the
-LogBook for the next sequence **only when it is ready to commit**. Sequence is
-therefore not assigned when work is placed on the queue.
+For a registration, the decision that a registration shall be recorded has
+already been made before the asynchronous hand-off. The worker does not approve
+the registration again. It may still perform deterministic resolution or
+enrichment that depends on the node's current serialized state, such as resolving
+a reserve tag through the current `RaceData`.
+
+Only when the worker is ready to commit does it ask the LogBook for the next
+sequence. Sequence is therefore not assigned when work is placed on the queue.
 
 Conceptually:
 

@@ -660,9 +660,16 @@ final class TimingNode {
 }
 ```
 
-`TimingNodeWork` is an internal immutable carrier for data that must survive
-the asynchronous hand-off. It is not an external Command Pattern API and is not
-persisted. Add only work kinds required by real use cases.
+`TimingNodeWork` is an internal immutable carrier for work that has already
+been accepted as a state change before the asynchronous hand-off. It is not a
+business-approval candidate, is not an external Command Pattern API and is not
+persisted. The worker may still resolve fields that depend on current
+TimingNode-owned state before commit. Add only work kinds required by real use
+cases.
+
+A boolean return from methods such as `register(...)` reports whether the
+bounded serial queue accepted the work item. It does not mean the worker performs
+a second business approval later.
 
 The worker invokes normal private/domain methods once the work item is selected.
 Code already running on the TimingNode worker should use direct Java calls rather
