@@ -61,11 +61,16 @@ nodes:
     kind: storage
     group: storage
     layout: {x: 1240, y: 375, w: 300, h: 120}
+  - id: events
+    label: "EventDispatcher\ntyped publish / subscribe"
+    kind: service
+    group: storage
+    layout: {x: 1240, y: 555, w: 300, h: 82}
   - id: consumers
-    label: "Queries / downstream\nimmutable result or snapshot"
+    label: "Event subscribers / queries\nimmutable events or snapshots"
     kind: interface
     group: storage
-    layout: {x: 1240, y: 600, w: 300, h: 90}
+    layout: {x: 1240, y: 665, w: 300, h: 90}
 
 edges:
   - {from: producers, to: queue, label: "bounded operation"}
@@ -75,4 +80,6 @@ edges:
   - {from: worker, to: nextup, label: "ordered access"}
   - {from: worker, to: refs, label: "ordered access"}
   - {from: worker, to: analysisstores, label: "analysis snapshots"}
+  - {from: worker, to: events, label: "TimingDataCommitted"}
+  - {from: events, to: consumers, label: "typed dispatch"}
   - {from: worker, to: consumers, label: "query result / immutable snapshot"}
