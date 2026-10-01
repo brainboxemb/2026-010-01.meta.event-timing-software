@@ -271,10 +271,15 @@ nodes:
   group: io-layer
   label: "Storage"
   items:
-    - "file / DB"
-    - "backup / restore"
+    - label: TimingDataStore
+      object_id: TimingDataStore
+      items:
+        - label: FileTimingDataStore
+          object_id: FileTimingDataStore
   kind: storage
   notation: packaging-component
+  # Keep this compact: only implemented storage is shown here. Future DB/state
+  # stores belong here when they become real adapters.
   layout: {x: 55, y: 1048, w: 200, h: 95}
 - id: devices-io
   object_id: Devices
