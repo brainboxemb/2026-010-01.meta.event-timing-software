@@ -2,7 +2,7 @@
 
 Status: working draft / non-authoritative
 
-This document explains **how the software is expected to grow from the current framework
+This document explains **how the software is expected to grow from the current application core
 into a usable timing system**. The roadmap is intended for two audiences:
 
 - a software engineer should be able to understand why the next increment exists, its
@@ -78,12 +78,12 @@ Define the first architecture baseline for the timing software.
 ### Done
 
 - architecture documents build and are reviewable;
-- framework implementation can start without inventing basic ownership;
+- application-core implementation can start without inventing basic ownership;
 - unresolved subjects remain explicit rather than being presented as decisions.
 
 ---
 
-## Step 2 — Framework repository skeleton
+## Step 2 — Application core repository skeleton
 
 Status: completed
 
@@ -99,7 +99,7 @@ Create the Java repository and prove that it builds and runs independently.
 
 ### Scope
 
-- Maven reactor with reusable framework and runnable application;
+- Maven reactor with reusable application core and runnable application;
 - Java baseline;
 - build/version identity and logging baseline;
 - unit tests and Linux/Windows CI;
@@ -112,7 +112,7 @@ Create the Java repository and prove that it builds and runs independently.
 
 ### Result
 
-- Framework and runnable application artifacts.
+- Application-core and runnable application artifacts.
 - Clean Linux and Windows build/test.
 - Traceable build identity and lifecycle.
 
@@ -136,7 +136,7 @@ Status: completed
 
 ### Purpose
 
-Turn the framework into a useful long-running application before adding timing-domain
+Turn the application core into a useful long-running application before adding timing-domain
 complexity. This step establishes the application boundary that later simulation, GUI,
 backoffice and hardware work can all use without reaching into SI-01 internals.
 

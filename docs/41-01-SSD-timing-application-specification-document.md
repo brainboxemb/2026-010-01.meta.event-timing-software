@@ -268,9 +268,9 @@ The **Timing Point Application** (SI-01) architecture is driven by these concern
 - remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
-- keep public framework/reference code independent of private production source;
+- keep the public reference/core implementation independent of private production source;
 - allow selected concrete implementations to be supplied through a small Java-8-compatible provider/extension mechanism without making normal domain/application code plugin-aware;
-- avoid framework complexity that is not justified by the application.
+- avoid reusable-core or extension complexity that is not justified by the application.
 
 ### +1 scenarios used to validate the architecture
 
@@ -298,18 +298,18 @@ The primary logical view is a responsibility/layer view. It describes semantic o
 ```{arch} ApplicationBootstrap
 :id: ApplicationBootstrap
 
-`ApplicationBootstrap` is the cross-cutting framework component that owns startup
+`ApplicationBootstrap` is the cross-cutting application-core component that owns startup
 composition from an already parsed and validated deployment configuration. It
 constructs the selected presentation, I/O and platform implementations plus the
 reusable application/domain objects, then starts the runtime. The runnable
 `event-timing-app` artifact remains a thin launcher/input adapter that reads
-concrete YAML/build-resource inputs and delegates to the framework.
+concrete YAML/build-resource inputs and delegates to the application core.
 ```
 
 ```{arch} TimingApplication
 :id: TimingApplication
 
-`TimingApplication` is the top-level reusable framework runtime object for one
+`TimingApplication` is the top-level reusable application-core runtime object for one
 running SI-01 composition. It owns the application runtime lifecycle and the
 currently composed application/domain runtime state. It is deliberately shown
 in a separate **Runtime** block rather than inside the Application layer:
@@ -950,9 +950,9 @@ support such as `BuildIdentity`; it is not the I/O layer.
 ```{arch} Logging
 :id: Logging
 
-`Logging` is reusable runtime logging infrastructure owned by the framework artifact. Reusable
-framework/application code emits records through SLF4J; the default executable selects
-`slf4j-jdk14 -> java.util.logging` and starts the framework-provided logging composition.
+`Logging` is reusable runtime logging infrastructure owned by the core artifact. Reusable
+application-core/domain code emits records through SLF4J; the default executable selects
+`slf4j-jdk14 -> java.util.logging` and starts the core-provided logging composition.
 Logging owns backend/sink lifecycle and the current global logging level; it does not own
 application or domain state.
 ```
@@ -966,7 +966,7 @@ logging-specific TCP boundary is separate from the IF-03 API/status/event
 interface and live delivery remains best effort.
 ```
 
-`ApplicationBootstrap` remains in Infrastructure / cross-cutting because startup composition touches several normal layers without becoming a normal runtime call path. The separate Runtime block shows the resulting running `TimingApplication`. The default YAML configuration loader is framework infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` runtime surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
+`ApplicationBootstrap` remains in Infrastructure / cross-cutting because startup composition touches several normal layers without becoming a normal runtime call path. The separate Runtime block shows the resulting running `TimingApplication`. The default YAML configuration loader is application-core infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` runtime surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
 
 ### Principal runtime abstractions
 
@@ -1416,16 +1416,16 @@ Logging records diagnostic/history information; status represents current operat
 Logging is a SSD architecture-level cross-cutting technology decision because it affects almost every
 component, operational diagnostics, footprint and engineering support.
 
-The A08 baseline keeps framework logging calls independent from the concrete runtime backend:
+The A08 baseline keeps application-core logging calls independent from the concrete runtime backend:
 
 ```text
-framework / application / domain code
+application core / domain code
         |
         v
       SLF4J API
         |
         v
-framework infrastructure: Logging
+application-core infrastructure: Logging
         |
         +-- initial provider: slf4j-jdk14
                          |
@@ -1445,11 +1445,11 @@ framework infrastructure: Logging
 
 Working decisions:
 
-- reusable framework code logs through the SLF4J API;
-- `event-timing-framework.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
+- reusable application-core code logs through the SLF4J API;
+- `event-timing-core.jar` depends on `slf4j-api` only and must not impose a provider/backend on consumers;
 - the executable composition selects exactly one provider;
-- the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating SLF4J records to the JDK `java.util.logging` backend configured by the framework-provided `Logging` infrastructure;
-- `event-timing-framework.jar` provides reusable `io.github.brainboxemb.eventtiming.timingpoint.infra.logging.Logging` and separate `io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver.LoggingServer` infrastructure; both use JDK JUL facilities and introduce no external backend dependency because JUL is part of the Java runtime;
+- the initial Java-8/Pi-Zero application composition uses `slf4j-jdk14`, delegating SLF4J records to the JDK `java.util.logging` backend configured by the core-provided `Logging` infrastructure;
+- `event-timing-core.jar` provides reusable `io.github.brainboxemb.eventtiming.timingpoint.infra.logging.Logging` and separate `io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver.LoggingServer` infrastructure; both use JDK JUL facilities and introduce no external backend dependency because JUL is part of the Java runtime;
 - the startup configuration defines one global semantic log level; the A08 baseline uses the normal `TRACE / DEBUG / INFO / WARN / ERROR` vocabulary and maps it to the selected backend;
 - `LoggingControl` owns the current global level and may apply a **temporary runtime override**. A runtime override is intentionally not written back to `application.yml` and resets to the configured level on restart;
 - the durable operational sink is a human-readable rotating `TimestampedFileLogHandler` with configured size limit and retained generations; its wall-clock filename is for operator readability, not uniqueness, so stale/repeated Raspberry Pi startup time must never overwrite an existing log or cause retention to prune the active file;
@@ -1569,14 +1569,14 @@ Profile/platform/mode resolution is configuration infrastructure. It is complete
 before `ApplicationBootstrap` receives the effective `ApplicationConfig`; bootstrap
 does not contain profile-specific branches.
 
-Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. Framework `EmbeddedBuildIdentityLoader` interprets the standard embedded provenance resource, while the concrete executable owns and filters that resource with its own application/build values. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
+Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. Core `EmbeddedBuildIdentityLoader` interprets the standard embedded provenance resource, while the concrete executable owns and filters that resource with its own application/build values. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
 
 Working rules:
 
 - keep secrets/credentials out of committed configuration and store only secret references there;
 - prefer explicit/manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
 - keep overlay rules deliberately limited rather than creating general inheritance/includes;
-- use YAML as the current default IF-11 file syntax and keep its SnakeYAML parser/mapping inside framework infrastructure; the logical IF-11 contract is not coupled to the SnakeYAML API;
+- use YAML as the current default IF-11 file syntax and keep its SnakeYAML parser/mapping inside application-core infrastructure; the logical IF-11 contract is not coupled to the SnakeYAML API;
 - create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
 
 ### Data and persistence architecture
@@ -1704,13 +1704,13 @@ without assuming that every architecture layer is a package or Maven artifact.
 
 Architecture-level boundaries are:
 
-- SI-01 has a reusable application/framework implementation and a deployable
+- SI-01 has a reusable application-core implementation and a deployable
   executable application;
 - the public IF-05 Java contract must be independently consumable by SI-01 and
   engineering/test tooling without depending on SI-01 internal Domain packages;
 - presentation and I/O implementations depend on application/domain contracts
   rather than owning domain semantics;
-- public framework/reference code compiles and verifies without private
+- public reference/core implementation code compiles and verifies without private
   production implementations.
 
 The exact Maven reactor, artifact names, Java package layout, shared
@@ -1718,7 +1718,7 @@ The exact Maven reactor, artifact names, Java package layout, shared
 
 #### Public/private extension model
 
-Private repositories may provide production device control, protocol implementations, deployment mappings and production data/codecs. Public framework code defines supported contracts and must compile/test without those private implementations.
+Private repositories may provide production device control, protocol implementations, deployment mappings and production data/codecs. Public core/reference implementation code defines supported contracts and must compile/test without those private implementations.
 
 SI-01 uses one small **typed provider/extension mechanism** for implementation families that may cross the public/private boundary. The currently expected provider contracts are:
 
@@ -1763,7 +1763,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
 | Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
-| Logging | SLF4J API in reusable framework; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
+| Logging | SLF4J API in reusable application core; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | per-type stores: TimingDataStore is the durable/recovery source for committed timing data; NextUpTeams/StageStartTimes/RaceData stores preserve analysis history/snapshots | ordering and visibility in SDD-01; Java store boundaries in SDD-02; wire/file contract in IF-05 |
 | API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
@@ -1789,7 +1789,7 @@ Production field host
 
 Development/test host
   Linux or Windows
-    same Timing Point Application framework/application behaviour
+    same Timing Point Application core/application behaviour
     real or stub adapters
     may host multiple independent TimingSystems for simulation
 ```

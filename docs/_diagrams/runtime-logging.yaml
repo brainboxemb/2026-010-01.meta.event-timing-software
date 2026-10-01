@@ -3,17 +3,17 @@ diagram:
   title: Figure SI01-05 — Runtime logging and live diagnostics
   width: 1420
   height: 760
-  description: Cross-cutting logging flow from provider-neutral framework calls to retained file logging and optional engineering live diagnostics.
+  description: Cross-cutting logging flow from provider-neutral application-core calls to retained file logging and optional engineering live diagnostics.
   note: The configured level is the restart baseline. A temporary runtime override is process state only and is not written back to deployment configuration.
 
 groups:
   - id: code
-    label: Reusable framework / application code
+    label: Reusable application-core / domain code
     kind: layer-domain
     layout: {x: 70, y: 120, w: 300, h: 500}
 
   - id: logging
-    label: Framework infrastructure / logging
+    label: Application-core infrastructure / logging
     kind: layer-crosscutting
     layout: {x: 410, y: 120, w: 610, h: 500}
 
@@ -24,7 +24,7 @@ groups:
 
 nodes:
   - id: slf4j-calls
-    label: "SLF4J API\nframework log calls"
+    label: "SLF4J API\napplication-core log calls"
     kind: service
     group: code
     layout: {x: 110, y: 260, w: 220, h: 90}

@@ -88,7 +88,7 @@ steps:
     estimate_project_days: 6
     actual_estimated_project_days: 1.6
     completed_date: "2026-09-13"
-    workstream: framework
+    workstream: core
     docs:
       requirements: {level: review, scope: "first executable SI-01 scope"}
       idd: {level: review, scope: "first API version/status slice"}
