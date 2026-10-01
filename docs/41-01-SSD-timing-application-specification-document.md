@@ -890,36 +890,40 @@ Figure SI01-01.
 
 #### Platform
 
-Platform contains low-level execution-environment facilities:
+Platform is the small technical foundation below the application, domain and I/O
+responsibilities. It contains JDK-only reusable primitives and low-level
+execution-environment abstractions:
 
 ```text
+bounded serial execution (SerialWorker)
+local typed events (Event<T>)
 clock / time source
-filesystem/path primitives
+filesystem / path primitives
 executors / threads
-process/runtime information
+process / runtime information
 network / OS primitives
 ```
 
-#### Runtime, infrastructure and core
+A domain or I/O component may compose a Platform primitive such as
+`SerialWorker` or `Event<T>`; the primitive itself remains unaware of
+TimingNode, TimingData, presentation or external I/O semantics.
 
-The right-hand side of the layered view separates three technical responsibilities:
+```{arch} PlatformPrimitives
+:id: PlatformPrimitives
+
+`PlatformPrimitives` represents the small reusable technical building blocks
+and execution-environment abstractions used across the framework. The current
+design includes bounded serial execution (`SerialWorker`) and a local typed
+event primitive (`Event<T>`). Concrete class and threading behaviour belongs
+to SDD-02.
+```
+
+#### Runtime and infrastructure
+
+The right-hand side of the layered view separates two technical responsibilities:
 
 - **Runtime** — the running `TimingApplication` composition and lifecycle container;
-- **Infrastructure / cross-cutting** — concrete technical facilities such as logging, diagnostics, build identity and bootstrap/composition;
-- **Core** — small JDK-only reusable primitives with no TimingNode, I/O or presentation semantics, such as bounded serial execution and local typed events.
-
-Core is a technical foundation, not another business/domain layer. A domain component may compose a Core primitive such as `SerialWorker` or `Event<T>`; the primitive itself remains unaware of the domain component.
-
-```{arch} CorePrimitives
-:id: CorePrimitives
-
-`CorePrimitives` represents the small reusable technical building blocks used
-across the framework without owning application or domain semantics. The current
-design includes bounded serial execution (`SerialWorker`) and a local typed
-event primitive (`Event<T>`). These primitives are JDK-only and know nothing
-about TimingNode, TimingData, presentation or external I/O. Concrete class and
-threading behaviour belongs to SDD-02.
-```
+- **Infrastructure / cross-cutting** — concrete technical facilities such as logging, diagnostics, build identity and bootstrap/composition.
 
 #### Cross-cutting concerns
 
@@ -1195,7 +1199,7 @@ Working rules:
 - post-fact notifications may use a small typed `Event<T>` abstraction with explicit `subscribe` / `unsubscribe` / `emit`; commands and queries are not routed through that mechanism.
 
 The event mechanism is deliberately local and simple. The generic `Event<T>`
-mechanism is a small reusable core primitive; a producing component owns a concrete
+mechanism is a small reusable Platform primitive; a producing component owns a concrete
 event such as `newTimingDataEvent : Event<TimingData>` and interested listeners
 subscribe directly to that event. There are no string topics, central event
 dispatcher or global static bus. Emitting an event reports that a fact has
