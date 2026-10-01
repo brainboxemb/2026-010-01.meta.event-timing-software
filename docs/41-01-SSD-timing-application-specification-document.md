@@ -1174,7 +1174,7 @@ Working rules:
 - post-fact notifications may use a small typed `Event<T>` abstraction with explicit `subscribe` / `unsubscribe` / `emit`; commands and queries are not routed through that mechanism.
 
 The event mechanism is deliberately local and simple. The generic `Event<T>`
-mechanism is cross-cutting infrastructure; a producing component owns a concrete
+mechanism is a small reusable core primitive; a producing component owns a concrete
 event such as `newTimingDataEvent : Event<TimingData>` and interested listeners
 subscribe directly to that event. There are no string topics, central event
 dispatcher or global static bus. Emitting an event reports that a fact has
