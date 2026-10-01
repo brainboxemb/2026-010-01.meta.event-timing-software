@@ -988,10 +988,13 @@ blocking work inline on the TimingNode worker. A slow subscriber hands the
 immutable event to its own bounded execution/delivery boundary.
 
 A committed TimingData record remains authoritative in LogBook/storage even if a
-notification subscriber is unavailable. If a subscriber requires reliable
-delivery across process failure or extended outage, it owns the appropriate
-durable outbox/reconciliation mechanism; the in-process event notification alone
-is not a durable message broker.
+notification subscriber is unavailable or the event hand-off is temporarily
+full. Event publication failure therefore cannot roll back an already committed
+record. It is reported through status/diagnostics so affected consumers can
+reconcile from authoritative state. If a subscriber requires reliable delivery
+across process failure or extended outage, it owns the appropriate durable
+outbox/reconciliation mechanism; the in-process event notification alone is not
+a durable message broker.
 
 This event model can later carry other post-fact notifications such as
 `TimingNodeStateChanged` or `StatusChanged` where those events have real
