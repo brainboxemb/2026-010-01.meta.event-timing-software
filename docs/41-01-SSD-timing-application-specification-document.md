@@ -342,7 +342,7 @@ TimingApplication
         |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
-              +-- LocationID
+              +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
               +-- TagProcessor
@@ -534,7 +534,7 @@ TimingSystem (1..N per TimingApplication)
   TimeSource                   absolute time / controllable test offset
   1..N TimingNode
     TimingNodeId              functional protocol/data identity
-    LocationID
+    LocationId
     State
     UpstreamMessagePort       TimingNode-level upstream messages
     TagProcessor
@@ -555,7 +555,7 @@ TimingData
 `TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
-identity (`TimingNodeId` and `LocationID`), lifecycle/state and the per-node
+identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01.
 
 A TimingNode is also the **active serialization and ownership boundary** for mutable per-node
@@ -1047,7 +1047,7 @@ TimingApplication
         |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
-              +-- LocationID
+              +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
               +-- TagProcessor
@@ -1063,7 +1063,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-`ApplicationId` identifies the running Timing Point Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationID` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
+`ApplicationId` identifies the running Timing Point Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationId` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
 
 <a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
@@ -1141,7 +1141,7 @@ UpstreamMessageRouter
 ![TimingNode, hardware and upstream-system messaging routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
 *Figure SI01-03 — TimingNode, hardware and upstream-system messaging routing.*
 
-`TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationID` and `AntennaId` are separate namespaces.
+`TimingNodeId` is the stable identity of a `TimingNode` and scopes its sequence, persistence and synchronisation semantics. `LocationId` and `AntennaId` are separate namespaces.
 
 Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
 
@@ -1491,7 +1491,7 @@ The identity boundaries are deliberate:
 - the application owns a stable `ApplicationId`;
 - the application composes 1..N internal `TimingSystem` contexts, each with an internal `TimingSystemId`;
 - each TimingSystem owns 1..N TimingNodes;
-- a `TimingNode` owns its stable functional `TimingNodeId` and configured `LocationID`;
+- a `TimingNode` owns its stable functional `TimingNodeId` and configured `LocationId`;
 - `TimingSystemId` is local composition/simulation identity and is not added to TimingData/upstream addressing;
 - the high-level I/O model separates Devices from Device Networks;
 - Devices names the functional device endpoints/concepts, including antennas, keypads, beepers, passive CAN devices and smart network devices;
