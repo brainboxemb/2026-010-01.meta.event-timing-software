@@ -3,7 +3,7 @@ diagram:
   title: Figure SDE03-03 — Timing view / OPEN with committed history
   width: 1180
   height: 790
-  note: Direct engineering injection enters the accepted-registration boundary; the client does not construct final TimingData.
+  note: Dev auto-reg enters the accepted-registration boundary; the client does not construct final TimingData.
 
 groups: []
 
@@ -74,21 +74,21 @@ nodes:
     layout: {x: 105, y: 300, w: 785, h: 52}
 
   - id: registration-panel
-    label: Accepted registration simulation
+    label: Auto-reg
     subtitle: Capability DIRECT_REGISTRATION_SIMULATION enabled
     kind: wireframe-surface
     notation: wireframe-panel
     layout: {x: 75, y: 390, w: 1035, h: 145}
 
   - id: registration-id
-    label: RegistrationId
+    label: ID
     subtitle: sample-001
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 105, y: 430, w: 260, h: 76}
 
   - id: observation-time
-    label: Observation time
+    label: Time
     subtitle: "2026-10-01T12:00:00.000000000Z"
     kind: wireframe-control
     notation: wireframe-input
