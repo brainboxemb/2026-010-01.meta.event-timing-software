@@ -181,7 +181,7 @@ registration path and exercise filtering before reaching the same operation.
 | Set/change location | Allow only while `CLOSED`; show explicit validation/rejection. | UC-001, UC-002, UC-009 |
 | Open/close | Reject open without a valid location; keep the active location fixed until close. | UC-002, UC-009 |
 | Inject an accepted registration | When capability-enabled, submit semantic participant identity plus supported observation time; do not supply sequence/source/location fields owned by the node. | UC-003, UC-009 |
-| Inspect registration result | Show committed TimingData/history and source sequence separately from the command-submission result. | UC-003, UC-009, UC-011 |
+| Inspect registration result | For presentation-driven registration, show the processed registration result and resulting committed TimingData/history. Keep submission-only admission terminology for device/callback ingress where no caller waits for the domain result. | UC-003, UC-009, UC-011 |
 | Lose/re-establish event connection | Mark cached information stale, rebuild current node state and registration data, then resume live updates. | UC-009 |
 
 D03 owns the actual routes, JSON fields, identifier formats, capability
