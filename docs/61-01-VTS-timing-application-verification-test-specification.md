@@ -45,6 +45,19 @@ VC-<profile>-<number>
 For example `VC-ST1-002` is case 002 in the ST-1 application-behaviour
 profile.
 
+Executable Java system-test classes use the same case identity in a
+Java-identifier-safe form:
+
+```text
+VC-ST1-001  ->  VcSt1_001Test
+VC-ST1-002  ->  VcSt1_002Test
+```
+
+The case ID is authoritative. The Java class name preserves that ID so the
+mapping remains obvious in source trees and Surefire reports; descriptive
+behaviour belongs in the VTS case title and test method name rather than in a
+long generic class name.
+
 ## ST-1 — Application behaviour
 
 ST-1 runs the packaged SI-01 application as a separate process and drives it
@@ -63,6 +76,10 @@ verifies: >-
   IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006
 ---
 ```
+
+**Executable test**
+
+`system-test/.../VcSt1_001Test.java`
 
 **Purpose**
 
@@ -114,6 +131,10 @@ verifies: >-
   IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
 ---
 ```
+
+**Executable test**
+
+`system-test/.../VcSt1_002Test.java`
 
 **Purpose**
 
