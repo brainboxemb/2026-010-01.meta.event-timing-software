@@ -4,13 +4,11 @@ activities:
   - id: T01
     lane: tooling
     kind: decision
-    title: Java toolchain baseline
     state: done
 
   - id: T02
     lane: tooling
     kind: setup
-    title: Create tool.java-project
     state: done
     estimate_project_days: 0.5
     depends_on: [T01]
@@ -18,7 +16,6 @@ activities:
   - id: T03
     lane: tooling
     kind: implementation
-    title: Maven Wrapper fixture
     state: done
     estimate_project_days: 0.5
     depends_on: [T02]
@@ -26,7 +23,6 @@ activities:
   - id: T04
     lane: tooling
     kind: decision
-    title: Pin Java 8 + Maven baseline
     state: done
     estimate_project_days: 0.5
     depends_on: [T02]
@@ -34,7 +30,6 @@ activities:
   - id: T05
     lane: tooling
     kind: implementation
-    title: Linux canonical CI
     state: done
     estimate_project_days: 0.5
     depends_on: [T03, T04]
@@ -42,7 +37,6 @@ activities:
   - id: T06
     lane: tooling
     kind: implementation
-    title: Windows compatibility CI
     state: done
     estimate_project_days: 0.5
     depends_on: [T03, T04]
@@ -50,7 +44,6 @@ activities:
   - id: T07
     lane: tooling
     kind: integration
-    title: Canonical artifact + provenance
     state: done
     estimate_project_days: 0.5
     depends_on: [T05]
@@ -58,7 +51,6 @@ activities:
   - id: T08
     lane: tooling
     kind: implementation
-    title: Version reusable workflow
     state: done
     estimate_project_days: 0.5
     depends_on: [T05, T06, T07]
@@ -66,21 +58,18 @@ activities:
   - id: A01
     lane: application
     kind: setup
-    title: Create SI-01 implementation repository
     state: done
     depends_on: [T08]
 
   - id: A02
     lane: application
     kind: documentation
-    title: Repository baseline files
     state: done
     depends_on: [A01]
 
   - id: A03
     lane: application
     kind: implementation
-    title: Maven reactor / artifact skeleton
     state: done
     estimate_project_days: 0.5
     depends_on: [A01]
@@ -88,7 +77,6 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    title: Package / responsibility boundaries
     state: done
     estimate_project_days: 0.5
     depends_on: [A03]
@@ -96,7 +84,6 @@ activities:
   - id: A05
     lane: application
     kind: implementation
-    title: Minimal runnable app lifecycle
     state: done
     estimate_project_days: 0.5
     depends_on: [A04]
@@ -104,42 +91,36 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    title: Generic fixture - Linux verify
     state: done
     depends_on: [T05]
 
   - id: V02
     lane: verification
     kind: verification
-    title: Generic fixture - Windows verify
     state: done
     depends_on: [T06]
 
   - id: V03
     lane: verification
     kind: verification
-    title: Canonical artifact smoke
     state: done
     depends_on: [T07, V02]
 
   - id: V04
     lane: verification
     kind: verification
-    title: Clean-checkout consumer proof
     state: done
     depends_on: [T08, A01]
 
   - id: V05
     lane: verification
     kind: verification
-    title: Architecture/dependency checks
     state: done
     depends_on: [A03]
 
   - id: V06
     lane: verification
     kind: verification
-    title: 0.1.0 release build / identity proof
     state: done
     depends_on: [A05, V05]
     note: >-

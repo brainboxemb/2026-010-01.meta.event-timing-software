@@ -30,7 +30,6 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    title: Shared application boundary + build identity
     state: done
     note: >-
       CommandHandler is the current shared application-facing boundary and BuildIdentity
@@ -39,7 +38,6 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    title: Application configuration + minimal TimingNode
     state: done
     depends_on: [A01]
     note: >-
@@ -49,7 +47,6 @@ activities:
   - id: A03
     lane: application
     kind: implementation
-    title: Run until shutdown + graceful stop
     state: done
     depends_on: [A02]
     note: >-
@@ -60,7 +57,6 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    title: Local console
     state: done
     depends_on: [A01, A03]
     note: >-
@@ -72,7 +68,6 @@ activities:
   - id: A05
     lane: application
     kind: implementation
-    title: Remote terminal / shell adapter
     state: done
     depends_on: [A01, A03, A04]
     note: >-
@@ -82,7 +77,6 @@ activities:
   - id: A06
     lane: application
     kind: implementation
-    title: API HTTP / JSON
     state: done
     depends_on: [A01, A02, A03]
     note: >-
@@ -93,7 +87,6 @@ activities:
   - id: A07
     lane: application
     kind: implementation
-    title: API WebSocket events
     state: done
     depends_on: [A01, A03, A06]
     note: >-
@@ -102,7 +95,6 @@ activities:
   - id: A08
     lane: application
     kind: implementation
-    title: Runtime logging + live diagnostics
     state: done
     depends_on: [A03]
     note: >-
@@ -114,7 +106,6 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    title: Shared behaviour + configuration unit tests
     state: done
     depends_on: [A01, A02]
     note: >-
@@ -124,7 +115,6 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    title: Adapter equivalence checks
     state: done
     depends_on: [A04, A05, A06, A07]
     note: >-
@@ -134,11 +124,10 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: ST-1 application behaviour black-box test
     state: done
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
     note: >-
-      VC-ST1-001 launches the packaged application as a separate JVM and verifies
+      61-01-VTS specifies VC-ST1-001. It launches the packaged application as a separate JVM and verifies
       HTTP version/status, WebSocket snapshot/reconnect and controlled remote-shell
       shutdown on Linux and native Windows. End-to-end STATUS_CHANGED remains tied
       to the first later public capability that can cause a real status change.
@@ -146,7 +135,6 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    title: Windows development-host execution proof
     state: done
     depends_on: [A03]
     note: >-
@@ -156,7 +144,6 @@ activities:
   - id: V05
     lane: verification
     kind: verification
-    title: Step-3 0.2.x release / identity proof
     state: done
     depends_on: [V03, V04]
     note: >-

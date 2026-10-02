@@ -91,6 +91,7 @@ class Step:
     result_bullets: List[str]
     demo_bullets: List[str]
     done_bullets: List[str]
+    activity_titles: Dict[str, str]
     deliverable: str
     demonstration: str
     estimate_days: int
@@ -177,6 +178,35 @@ def subsection_bullets(body: str, heading: str) -> List[str]:
         return [item for item in bullets if item]
     fallback = strip_markdown(section)
     return [fallback] if fallback else []
+
+
+def sip_activity_titles(body: str, step_number: int) -> Dict[str, str]:
+    section = extract_subsection(body, "Activities")
+    if not section:
+        return {}
+
+    result: Dict[str, str] = {}
+    row_re = re.compile(
+        r"^\|\s*`?([A-Z][A-Z0-9_-]*)`?\s*\|\s*(.+?)\s*\|\s*$"
+    )
+    for line in section.splitlines():
+        match = row_re.match(line)
+        if not match:
+            continue
+        activity_id = match.group(1)
+        if activity_id == "ID":
+            continue
+        title = strip_markdown(match.group(2))
+        if not title:
+            raise SystemExit(
+                f"Empty SIP activity title for Step {step_number} {activity_id}"
+            )
+        if activity_id in result:
+            raise SystemExit(
+                f"Duplicate SIP activity ID in Step {step_number}: {activity_id}"
+            )
+        result[activity_id] = title
+    return result
 
 
 def sip_status(body: str, step_number: int) -> str:
@@ -291,6 +321,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         body = text[match.end():end]
         status = sip_status(body, number)
+        activity_titles = sip_activity_titles(body, number)
 
         if status == "done":
             completed = cfg.get("completed_date")
@@ -325,6 +356,7 @@ def parse_sip(path: Path, plan: dict) -> List[Step]:
                 result_bullets=result_bullets,
                 demo_bullets=demo_bullets,
                 done_bullets=done_bullets,
+                activity_titles=activity_titles,
                 deliverable=" ".join(result_bullets),
                 demonstration=" ".join(demo_bullets),
                 estimate_days=estimate,
@@ -363,6 +395,25 @@ def load_step_boards(data_dir: Path, schema: dict) -> Dict[int, dict]:
                     raise SystemExit(f"Self dependency in {path}: {dependency}")
         result[number] = data
     return result
+
+
+def validate_step_board_against_sip(board: dict, step: Step) -> None:
+    declared = step.activity_titles
+    if not declared:
+        raise SystemExit(
+            f"SIP Step {step.number} has a detail board but no Activities table"
+        )
+
+    declared_ids = set(declared)
+    board_ids = {activity["id"] for activity in board["activities"]}
+
+    missing = sorted(declared_ids - board_ids)
+    extra = sorted(board_ids - declared_ids)
+    if missing or extra:
+        raise SystemExit(
+            f"SIP Step {step.number} activity mismatch: "
+            f"missing from board={missing}, not declared in SIP={extra}"
+        )
 
 
 def compact_doc_label(document: dict) -> str:
@@ -437,7 +488,7 @@ def step_board_view(board: dict, step: Step) -> dict:
             cards.append(
                 {
                     "id": activity["id"],
-                    "title": activity["title"],
+                    "title": step.activity_titles[activity["id"]],
                     "state": {
                         "label": STATE_STYLE[activity["state"]][0],
                         "tone": state_tones.get(activity["state"], "neutral"),
@@ -594,6 +645,9 @@ def main() -> None:
     unknown_boards = sorted(set(boards) - set(by_number))
     if unknown_boards:
         raise SystemExit(f"Step board(s) without SIP milestone: {unknown_boards}")
+
+    for number, board in sorted(boards.items()):
+        validate_step_board_against_sip(board, by_number[number])
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

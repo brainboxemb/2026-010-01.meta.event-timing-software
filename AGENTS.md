@@ -41,6 +41,7 @@ Use the numbered project documents for their specific roles:
 - [docs/43-01-SDD-02-java-component-design.md](docs/43-01-SDD-02-java-component-design.md) — active Java component/package/artifact design;
 - [docs/41-02-SSD-gui-application-specification-document.md](docs/41-02-SSD-gui-application-specification-document.md) — desktop GUI architecture;
 - [docs/60-SVP-software-verification-plan.md](docs/60-SVP-software-verification-plan.md) — verification strategy/evidence model;
+- [docs/61-01-VTS-timing-application-verification-test-specification.md](docs/61-01-VTS-timing-application-verification-test-specification.md) — concrete SI-01 verification cases and expected results;
 - [reference/README.md](reference/README.md) — collected source-material index;
 - [CHANGELOG.md](CHANGELOG.md) — notable repository changes.
 

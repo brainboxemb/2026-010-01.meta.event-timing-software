@@ -242,11 +242,15 @@ lifecycle/status boundary.
 Therefore:
 
 - at least one configured TimingNode is represented;
+- `LocationId` assignment and OPEN/CLOSE are operational TimingNode state
+  transitions; they are not TimingData records in this Step-4 slice;
 - a restarted TimingNode begins `CLOSED` with no current operational location;
 - a `LocationId` can be assigned or changed while CLOSED;
 - OPEN requires a current valid location;
 - the current location cannot change while OPEN;
 - an accepted semantic registration can commit only while OPEN;
+- the first persisted TimingData record may therefore be registration sequence 1,
+  provided a LocationId was assigned and the TimingNode was opened first;
 - committed registration history and live post-commit updates are observable
   through IF-03;
 - physical RFID observation/filtering remains a later input slice.

@@ -6,7 +6,8 @@ This document records the **current development direction**. It should stay shor
 should distinguish decisions from things that still need discussion or evidence.
 
 The SIP owns the implementation steps. The SDE owns the development/release environment.
-The SVP owns verification detail.
+The SVP owns verification strategy and profiles. Concrete SI-01 verification cases are
+specified in the VTS; execution results belong to retained verification evidence.
 
 ## Documentation structure and dependency discipline
 
@@ -58,6 +59,7 @@ Current examples are:
 50-SDE-02-java-build-test-toolchain
 
 60-SVP-software-verification-plan
+61-01-VTS-timing-application-verification-test-specification
 
 70-01-SUM-headless-timing-application
 ```
@@ -73,6 +75,7 @@ Numbering rules:
 - document number `43` is reserved for software-item detailed design. When several SDDs share the same software-item scope, a final sequence follows the type: `43-01-SDD-01`, `43-01-SDD-02`, ...;
 - a repeatable generic family without a natural scope identifier puts its sequence after the type. The generic SDE family therefore uses `50-SDE-01`, `50-SDE-02`, ...;
 - a singular generic document does not gain a synthetic sequence merely for symmetry, for example `60-SVP`;
+- document family `61` is reserved for software-item verification test specifications; use the software-item ID as scope, for example `61-01-VTS` for SI-01. The VTS specifies stable verification cases; it does not record current execution status or retained run evidence;
 - range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM` for SI-01;
 - an externally owned document keeps the identifier/version assigned by its owner. Document 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
 
@@ -129,6 +132,14 @@ domain baseline ---------+------> 30 system use cases
                                            |
                                            v
                                       implementation
+                                           |
+                                           +----------------------+
+                                           |                      |
+                                           v                      v
+                                  61-<SI>-VTS case      executable product
+                                           |
+                                           v
+                                  executable verification
                                            |
                                            v
                                   verification evidence

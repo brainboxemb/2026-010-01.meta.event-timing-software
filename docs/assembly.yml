@@ -27,6 +27,7 @@ documents:
   - {id: java-component-design, source: docs/43-01-SDD-02-java-component-design.md}
   - {id: backoffice-transport-design, source: docs/43-01-SDD-03-backoffice-transport-design.md}
   - {id: software-verification-plan, source: docs/60-SVP-software-verification-plan.md}
+  - {id: timing-application-verification-test-specification, source: docs/61-01-VTS-timing-application-verification-test-specification.md}
   - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
 
 indexes:
@@ -68,6 +69,7 @@ indexes:
       - title: Verification and validation
         items:
           - {document: software-verification-plan}
+          - {document: timing-application-verification-test-specification}
       - title: User / operational documentation
         items:
           - {document: timing-application-user-manual}
@@ -124,4 +126,5 @@ books:
       - java-build-test-toolchain
       - engineering-client
       - software-verification-plan
+      - timing-application-verification-test-specification
       - timing-application-user-manual

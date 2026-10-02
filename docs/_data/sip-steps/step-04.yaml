@@ -3,6 +3,11 @@ step: 4
 planning_changes:
   - date: '2026-10-02'
     change: >-
+      Roadmap aligned with the accepted SSD/IF-05 scope without changing product
+      requirements. VC-ST1-002 now also retains second-process restart/recovery
+      robustness evidence.
+  - date: '2026-10-02'
+    change: >-
       A03 and V03 completed; V04 Engineering Client running-system demo is active.
   - date: '2026-10-01'
     change: >-
@@ -24,7 +29,6 @@ activities:
   - id: D01
     lane: documentation
     kind: documentation
-    title: Engineering Client architecture + UI baseline
     state: done
     note: >-
       Timing-view layout, control states, history/live and reconnect behaviour defined.
@@ -32,7 +36,6 @@ activities:
   - id: D02
     lane: documentation
     kind: documentation
-    title: Review first-registration operational use cases
     state: done
     depends_on: [D01]
     note: >-
@@ -41,7 +44,6 @@ activities:
   - id: D02W
     lane: documentation
     kind: documentation
-    title: Translate private compatibility behaviour
     state: done
     depends_on: [D02]
     note: >-
@@ -50,7 +52,6 @@ activities:
   - id: D03
     lane: documentation
     kind: decision
-    title: Establish first TimingData + public control contracts
     state: done
     depends_on: [D02, D02W]
     note: >-
@@ -59,7 +60,6 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    title: Define deterministic first-slice examples
     state: done
     depends_on: [D03]
     note: >-
@@ -68,7 +68,6 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    title: TimingNode location and lifecycle
     state: done
     depends_on: [V01]
     note: >-
@@ -77,7 +76,6 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    title: Direct registration + TimingData
     state: done
     depends_on: [A01]
     note: >-
@@ -86,7 +84,6 @@ activities:
   - id: A03
     lane: application
     kind: integration
-    title: Engineering Client first-slice control
     state: done
     depends_on: [D01, A02]
     note: >-
@@ -97,7 +94,6 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    title: First-slice domain verification
     state: done
     depends_on: [A02]
     note: >-
@@ -106,18 +102,17 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: Automated first-registration black-box verification
     state: done
     depends_on: [A03, V02]
     note: >-
-      VC-ST1-002 is implemented by FirstRegistrationBlackBoxTest and passed as a
-      separate process through public IF-03: control, auto-reg, LogBook/live
-      observation, close and reconnect without historical event replay.
+      61-01-VTS specifies VC-ST1-002. It covers control, auto-reg, LogBook/live observation and WebSocket
+      reconnect, then performs a full SI-01 restart with the same TimingData file.
+      The committed sequence-1 record is recovered while operational state starts
+      CLOSED/no-location, and recovered history is not emitted as a new live commit.
 
   - id: V04
     lane: verification
     kind: verification
-    title: Engineering Client running-system demo
     state: active
     depends_on: [V03, A03]
     note: >-

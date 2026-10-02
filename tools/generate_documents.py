@@ -64,6 +64,7 @@ DEFERRED_DESIGN_DOCUMENTS = [
 
 VERIFICATION_DOCUMENTS = [
     "60-SVP-software-verification-plan.md",
+    "61-01-VTS-timing-application-verification-test-specification.md",
 ]
 
 USER_DOCUMENTS = [
