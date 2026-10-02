@@ -201,6 +201,7 @@ implementation requirements.
 
 ```{ifreq} Required TimingData values
 :id: IF05-REQ-001
+:status: draft
 
 Every committed TimingData record shall carry exactly one Node ID, sequence
 number, Location ID, record family, effective time and recorded time, plus every
@@ -209,6 +210,7 @@ value required by that record family.
 
 ```{ifreq} Stable TimingData record key
 :id: IF05-REQ-002
+:status: draft
 
 The pair (Node ID, sequence number) shall uniquely identify one committed
 TimingData record. Two distinct committed records shall not use the same pair.
@@ -216,6 +218,7 @@ TimingData record. Two distinct committed records shall not use the same pair.
 
 ```{ifreq} Authoritative sequence progression
 :id: IF05-REQ-003
+:status: draft
 
 For each Node ID, the first committed record in an authoritative source stream
 shall have sequence number 1. Each later committed record shall have the previous
@@ -225,6 +228,7 @@ committed record.
 
 ```{ifreq} Registration family
 :id: IF05-REQ-004
+:status: draft
 
 Each registration record in the current IF-05 slice shall identify exactly one
 registration family: automatic registration or manually initiated registration.
@@ -232,6 +236,7 @@ registration family: automatic registration or manually initiated registration.
 
 ```{ifreq} Canonical registration identity
 :id: IF05-REQ-005
+:status: draft
 
 Each registration record shall carry exactly one Registration ID as its
 canonical registration identity.
@@ -239,6 +244,7 @@ canonical registration identity.
 
 ```{ifreq} Registration ID value
 :id: IF05-REQ-006
+:status: draft
 
 Registration ID at the common IF-05 boundary shall be a non-empty string.
 Event/profile-specific allowed values, ranges and mappings shall remain outside
@@ -247,6 +253,7 @@ IF-05.
 
 ```{ifreq} Source-specific identity exclusion
 :id: IF05-REQ-007
+:status: draft
 
 The current common registration record shall not use source-specific tag,
 transponder or reference-data identifiers in place of Registration ID.
@@ -254,6 +261,7 @@ transponder or reference-data identifiers in place of Registration ID.
 
 ```{ifreq} Registration action and manual-time source
 :id: IF05-REQ-008
+:status: draft
 
 The current registration slice shall represent registration add operations.
 A manually initiated registration shall also identify whether its effective time
@@ -262,6 +270,7 @@ was system-assigned or operator-entered.
 
 ```{ifreq} Independently decodable reference record
 :id: IF05-REQ-009
+:status: draft
 
 The default/reference representation shall carry all values needed to interpret
 one complete TimingData record without requiring preceding or following
@@ -270,6 +279,7 @@ TimingData records.
 
 ```{ifreq} Unambiguous record completion
 :id: IF05-REQ-010
+:status: draft
 
 The default/reference representation shall define an unambiguous completion
 boundary for each record. Data after the last completed boundary shall not be
@@ -278,6 +288,7 @@ interpreted as a complete TimingData record.
 
 ```{ifreq} Alternative representation compatibility
 :id: IF05-REQ-011
+:status: draft
 
 Translation between a conforming alternative representation and the common
 IF-05 boundary shall preserve the stable record key, source order, Location ID,
@@ -287,6 +298,7 @@ time.
 
 ```{ifreq} Committed-record immutability
 :id: IF05-REQ-012
+:status: draft
 
 Once a TimingData record is committed, the semantic values associated with its
 stable record key shall not change. A later correction or revocation, when
@@ -296,6 +308,7 @@ committed record.
 
 ```{ifreq} Absolute timestamp semantics
 :id: IF05-REQ-013
+:status: draft
 
 Effective time and recorded time shall each represent one absolute UTC instant.
 Translation between conforming IF-05 representations shall preserve that
@@ -304,6 +317,7 @@ instant.
 
 ```{ifreq} Sequence defines source order
 :id: IF05-REQ-014
+:status: draft
 
 Within one Node ID stream, sequence number shall define authoritative record
 order. Effective time and recorded time shall not change that source order.
@@ -311,6 +325,7 @@ order. Effective time and recorded time shall not change that source order.
 
 ```{ifreq} Compatible reference additions
 :id: IF05-REQ-015
+:status: draft
 
 A reader for a supported default/reference representation version shall accept
 a record that contains additional unknown representation fields when all
@@ -319,6 +334,7 @@ required known values remain valid and the meaning of known values is unchanged.
 
 ```{ifreq} Explicit representation version
 :id: IF05-REQ-016
+:status: draft
 
 Each default/reference record shall identify the representation version used to
 encode it. A reader shall not decode an unsupported version using the semantics
