@@ -44,10 +44,10 @@ The reference design uses:
 | sequence number | `seqNr` |
 | Location ID | `locId` |
 | record family | `recType` |
-| effective time | `time` |
-| Registration ID | `regId` |
-| record/action semantics | `code` |
-| recorded time | `recTime` |
+| registration time (registration records) | `time` |
+| Registration ID (registration records) | `regId` |
+| registration/action semantics | `code` |
+| record creation time metadata (optional) | `recTime` |
 | representation version | `v` |
 
 The stable IF-05 record key `(Node ID, sequence number)` is represented by
@@ -124,10 +124,10 @@ Known members use the following JSON types and validation rules.
 | `seqNr` | integer | every record | `1..9007199254740991`; plain decimal; v1 reference-design limit |
 | `locId` | integer | every record | positive Location ID representation |
 | `recType` | string | every record | `AUTO_REG` or `MAN_REG` in the current slice |
-| `time` | string | every record | canonical effective-time text |
+| `time` | string | every record | canonical registration-time text |
 | `regId` | string | registration records | non-empty Registration ID |
 | `code` | array of strings | registration records | exact valid combination for the selected `recType`; no duplicates |
-| `recTime` | string | every record | canonical recorded-time text |
+| `recTime` | string | optional | canonical record-creation time metadata when emitted |
 
 Canonical writer member order:
 
@@ -145,7 +145,7 @@ recTime
 
 Validation rules:
 
-- every required member is present and non-null;
+- every required member is present and non-null; optional `recTime` may be omitted;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
 - `AUTO_REG` currently accepts exactly `["ADD"]`;
 - `MAN_REG` currently accepts `ADD` plus exactly one of `AUTO` or `MAN`;
@@ -179,8 +179,8 @@ Examples:
 2026-10-02T10:57:43.444123789Z
 ```
 
-`recTime` is not a durable-commit marker. It records the absolute instant
-captured when the definitive record is materialized for the commit attempt.
+`recTime`, when present, is optional record-creation metadata. It is not a
+durable-commit marker and is not part of the common IF-05 record envelope.
 
 ## JSON Lines file design
 
@@ -281,23 +281,17 @@ the next odd-numbered development format.
 
 ## ISD requirement realization
 
-| ISD requirement | v1 design realization |
+| ISD requirement | development-v1 design realization |
 | --- | --- |
-| IF05-REQ-001 | required JSON members carry common and family-specific values |
-| IF05-REQ-002 | stable key is represented by `(nodeId, seqNr)` |
-| IF05-REQ-003 | `seqNr` starts at 1 and advances contiguously in the authoritative file |
+| IF05-REQ-001 | `nodeId`, `seqNr`, `locId` and `recType` form the common JSON envelope |
+| IF05-REQ-002 | Node ID + `seqNr` identify a record when streams are combined |
+| IF05-REQ-003 | `seqNr` starts at 1 and advances contiguously per Node ID source stream |
 | IF05-REQ-004 | `recType` distinguishes `AUTO_REG` and `MAN_REG` |
-| IF05-REQ-005..007 | `regId` carries the one canonical registration identity; source-specific identities are not v1 registration members |
-| IF05-REQ-008 | `code[]` maps add plus the manual time-source distinction |
-| IF05-REQ-009 | every physical JSON line contains one complete self-contained record, including `v` |
-| IF05-REQ-010 | LF/accepted CRLF terminates a complete record; unterminated EOF data is incomplete |
-| IF05-REQ-011 | semantic-to-JSON mapping provides the reference translation target for alternative representations |
-| IF05-REQ-012 | committed JSON Lines are append-only and existing records are not rewritten |
-| IF05-REQ-013 | `time` and `recTime` use canonical UTC `Z` text |
-| IF05-REQ-014 | `seqNr` is source order; timestamps do not reorder the stream |
-| IF05-REQ-015 | readers tolerate additional unknown JSON object members when required known members remain valid |
-| IF05-REQ-016 | every record carries integer `v`; unsupported values are not decoded as another version |
+| IF05-REQ-005 | registration records carry `regId` and `time` |
+| IF05-REQ-006 | `code[]` represents ADD/REV while revoke repeats `regId` + `time` in a new record |
+| IF05-REQ-007 | JSON Lines persistence is append-only; an existing committed record is not rewritten |
 
-The v1 `seqNr` limit of `2^53-1` and the odd/even version-number convention
+JSON Lines completion rules, unknown-member handling, integer `v`, the v1
+`seqNr` limit, odd/even version-number convention and optional `recTime`
 are concrete reference-design choices. They are intentionally not additional
-ISD requirements.
+IF-05 requirements.

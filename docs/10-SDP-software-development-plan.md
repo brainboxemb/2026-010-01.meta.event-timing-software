@@ -188,22 +188,23 @@ Document roles:
 
 ### Requirement maturity
 
-Requirements may carry a `status` field. Use the following values consistently
-for both software requirements and interface requirements:
+Requirements use the standard Sphinx-Needs `status` field. Author only the
+compact codes below; generated reader views expand them to the full word. Use
+the same convention for software and interface requirements:
 
 | Status | Meaning |
 | --- | --- |
-| `draft` | still being developed; wording, scope and even existence may change |
-| `review` | proposed requirement is ready for focused review |
-| `approved` | accepted normative requirement for the current engineering baseline |
-| `retired` | no longer active; retained only where its ID/history is needed for traceability |
+| `D` | Draft — still being developed; wording, scope and even existence may change |
+| `R` | Review — proposed requirement is ready for focused review |
+| `A` | Approved — accepted normative requirement for the current engineering baseline |
+| `O` | Obsolete — no longer active; retained only where its ID/history is needed for traceability |
 
 A requirement written with `shall` is normative **at its stated maturity**.
-`status: draft` therefore does not mean the requirement has already been
+`status: D` therefore does not mean the requirement has already been
 accepted or frozen.
 
-Move a requirement back to `draft` when a review causes a material change in
-scope or meaning. Use `retired` rather than silently reusing an approved
+Move a requirement back to `D` when a review causes a material change in
+scope or meaning. Use `O` rather than silently reusing an approved
 requirement ID for a different meaning.
 
 New requirements should have an explicit status from creation. Existing
