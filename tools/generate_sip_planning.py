@@ -203,23 +203,14 @@ def planning_basis_text(steps: List[Step], plan: dict) -> str:
     baseline_days = sum(step.estimate_days for step in steps)
     remaining_days = sum(step.remaining_days for step in steps)
     actuals = plan["actuals"]
-    actual_days = float(actuals["estimated_project_days"])
-    actual_hours = float(actuals["estimated_hours"])
-    through = date.fromisoformat(str(actuals["through_date"]))
-    cadence = float(plan["cadence_project_days_per_week"])
+    spent_days = float(actuals["estimated_project_days"])
     reserve = float(plan.get("planning_reserve_fraction", 0.0))
-    cadence_text = (
-        f"{cadence:g}d/week"
-        if cadence == 1.0
-        else f"{cadence:g}d/week"
-    )
-    actual_date = through.strftime("%d %b").lstrip("0")
-    total_estimate_days = actual_days + remaining_days
+    cadence = float(plan["cadence_project_days_per_week"])
+    forecast_days = spent_days + remaining_days
     return (
-        f"Plan: {baseline_days:g}d original · ~{actual_days:g}d / ~{actual_hours:g}h actual to "
-        f"{actual_date} · ~{remaining_days:g}d remaining · "
-        f"~{total_estimate_days:g}d total estimate · "
-        f"~{cadence_text} · +{reserve * 100:g}% reserve"
+        f"TOTAL: orig ~{baseline_days:g}d · forecast ~{forecast_days:g}d  |  "
+        f"PROGRESS: spent ~{spent_days:g}d · rem ~{remaining_days:g}d  |  "
+        f"~{cadence:g}d/week · +{reserve * 100:g}% reserve"
     )
 
 
@@ -227,37 +218,40 @@ def planning_basis_bullets(steps: List[Step], plan: dict) -> List[str]:
     baseline_days = sum(step.estimate_days for step in steps)
     remaining_days = sum(step.remaining_days for step in steps)
     actuals = plan["actuals"]
-    actual_days = float(actuals["estimated_project_days"])
-    actual_hours = float(actuals["estimated_hours"])
+    spent_days = float(actuals["estimated_project_days"])
+    spent_hours = float(actuals["estimated_hours"])
     through = date.fromisoformat(str(actuals["through_date"]))
     cadence = float(plan["cadence_project_days_per_week"])
     reserve = float(plan.get("planning_reserve_fraction", 0.0))
-    actual_date = through.strftime("%d %b").lstrip("0")
-    total_estimate_days = actual_days + remaining_days
+    forecast_days = spent_days + remaining_days
+    actual_date = through.strftime("%d %b %Y").lstrip("0")
     return [
-        f"Original: {baseline_days:g}d",
-        f"Actual through {actual_date}: ~{actual_days:g}d / ~{actual_hours:g}h",
-        f"Remaining: ~{remaining_days:g}d",
-        f"Total estimate: ~{total_estimate_days:g}d",
+        f"TOTAL: orig ~{baseline_days:g}d · forecast ~{forecast_days:g}d",
+        f"PROGRESS: spent ~{spent_days:g}d · rem ~{remaining_days:g}d",
+        f"Activity snapshot: ~{spent_hours:g}h through {actual_date}",
         f"Cadence: ~{cadence:g}d/week",
         f"Reserve: +{reserve * 100:g}%",
     ]
 
 
-def step_effort_text(step: Step) -> str:
+def step_effort_lines(step: Step) -> List[str]:
     actual_days = step.actual_days if step.actual_days is not None else 0.0
-    parts = [f"orig ~{step.estimate_days:g}d"]
-    if step.actual_days is not None or step.status == "active":
-        parts.append(f"act ~{actual_days:g}d")
-    if step.status == "active":
-        parts.append(f"rem ~{step.remaining_days:g}d")
-        parts.append(f"total est ~{actual_days + step.remaining_days:g}d")
-    elif step.status == "done" and step.actual_days is not None:
-        parts.append(f"total est ~{step.actual_days:g}d")
-    elif step.status == "planned" and step.remaining_days != step.estimate_days:
-        parts.append(f"current ~{step.remaining_days:g}d")
-    return " · ".join(parts)
 
+    if step.status == "done":
+        total_days = actual_days
+        return [
+            f"TOTAL: orig ~{step.estimate_days:g}d · total ~{total_days:g}d"
+        ]
+
+    forecast_days = actual_days + step.remaining_days
+    lines = [
+        f"TOTAL: orig ~{step.estimate_days:g}d · forecast ~{forecast_days:g}d"
+    ]
+    if step.status == "active":
+        lines.append(
+            f"PROGRESS: spent ~{actual_days:g}d · rem ~{step.remaining_days:g}d"
+        )
+    return lines
 
 def phase_boundary_date(value: date) -> date:
     """Round a future calculated phase end up to the next Monday boundary."""
@@ -466,7 +460,7 @@ def step_board_view(board: dict, step: Step) -> dict:
             "title": step.title,
             "meta": [
                 step.status.upper(),
-                step_effort_text(step),
+                *step_effort_lines(step),
                 step_schedule_text(step),
             ],
             "summary": {

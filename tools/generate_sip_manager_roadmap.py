@@ -45,25 +45,32 @@ def overview_view(steps: list[base.Step], plan: dict) -> dict:
         f"{item['term']} — {item['meaning']}"
         for item in plan.get("terms", [])
     ]
+    plan_bullets = base.planning_basis_bullets(steps, plan)
     return {
         "roadmap": {
             "title": "Software Implementation Planning — overview",
             "subtitle": "Planning basis, reading guide and roadmap logic",
             "items": [
                 {
-                    "id": "overview",
-                    "title": "Planning overview",
+                    "id": "plan",
+                    "title": "Planning basis",
                     "sections": [
                         {
                             "heading": "PLAN",
-                            "bullets": base.planning_basis_bullets(steps, plan),
+                            "bullets": plan_bullets,
                         },
+                    ],
+                },
+                {
+                    "id": "guide",
+                    "title": "How to read the roadmap",
+                    "sections": [
                         {
-                            "heading": "HOW TO READ",
+                            "heading": "READING GUIDE",
                             "bullets": [
-                                "RESULT describes the capability the step is intended to leave behind.",
-                                "DEMO describes the practical end demonstration for the step.",
-                                "Document status shows expected maturity of the supporting engineering documents.",
+                                "RESULT is the capability the step is intended to leave behind.",
+                                "DEMO is the practical end demonstration for the step.",
+                                "Document status shows expected maturity of supporting engineering documents.",
                             ],
                         },
                         {
@@ -74,16 +81,21 @@ def overview_view(steps: list[base.Step], plan: dict) -> dict:
                                 "Steps 8–11 move to the target, real devices and an integrated field proof.",
                             ],
                         },
+                    ],
+                },
+                {
+                    "id": "terms",
+                    "title": "Terms",
+                    "sections": [
                         {
                             "heading": "TERMS",
                             "bullets": terms,
                         },
                     ],
-                }
+                },
             ],
         }
     }
-
 
 def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     items: list[dict] = []
@@ -100,7 +112,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
             },
             "meta": [
                 base.roadmap_end_text(step),
-                base.step_effort_text(step),
+                *base.step_effort_lines(step),
             ],
             "sections": [
                 {
