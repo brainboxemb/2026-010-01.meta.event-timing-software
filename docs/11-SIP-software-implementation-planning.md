@@ -32,6 +32,18 @@ rather than merely fill headings:
 - **Demo** is the practical end demonstration.
 - **Done** is the engineering exit criterion.
 
+Activity IDs are **local to one SIP step**. The prefixes are used consistently on
+the SIP detail cards:
+
+- `T..` — tooling / engineering-environment activity;
+- `D..` — documentation or design/decision activity;
+- `A..` — application/product implementation or integration activity;
+- `V..` — verification activity.
+
+For example, Step 3 `V03` and Step 4 `V03` are different activities. A suffix such
+as `D02W` may preserve an inserted follow-up without renumbering already referenced
+step-local activities.
+
 The roadmap estimates are focused project days. Each step may show its original estimate,
 git-derived actual effort and current remaining estimate. These are independent planning
 signals: original minus actual does not have to equal remaining. Future phase ends are
