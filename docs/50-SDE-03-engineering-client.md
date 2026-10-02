@@ -106,7 +106,7 @@ engineering capability, but it is not required by this first registration slice.
 
 ## Current UI baseline
 
-The current JavaFX window is approximately 900 x 700 pixels and contains four tabs.
+The current JavaFX window is 1180 x 790 pixels and contains five tabs.
 
 ### Status
 
@@ -115,7 +115,7 @@ The Status tab currently provides:
 - SI-01 HTTP endpoint selection;
 - `Get Version` and `Get Status`;
 - parsed application/build identity;
-- the TimingNode list and selected node state;
+- a compact summary of the first reported TimingNode state;
 - the complete raw JSON response.
 
 The parsed values are an engineering convenience. The raw response remains visible so
@@ -150,6 +150,26 @@ Live logs are not IF-03 application events and do not become TimingNode state me
 because they are visible in the same Engineering Client.
 
 ## Step-4 Timing UI baseline — first registration slice
+
+### Implementation review status
+
+The Step-4 JavaFX implementation has been reviewed against the D01 wireframes and
+control/reconnect rules in this document. The implemented Timing view now:
+
+- uses the selected TimingNode for node-addressed controls and LogBook reads;
+- shows general **Last operation** feedback with the TimingNode controls;
+- shows the current `DIRECT_REGISTRATION_SIMULATION` capability state next to
+  the auto-reg controls;
+- keeps cached values non-authoritative while disconnected/reconnecting;
+- buffers `STATUS_CHANGED` and `TIMING_DATA_COMMITTED` events received during
+  a rebuild, applies the HTTP status/LogBook baseline first, then applies the
+  buffered events in delivery order before transitioning to **LIVE**;
+- automatically starts resynchronisation after an `OUTCOME_UNKNOWN` result.
+
+The three source YAML wireframes remain the Step-4 presentation/design baseline
+published through the engineering portal. Pixel-for-pixel reproduction is not a
+verification requirement; control availability, ownership, stale/live meaning
+and rebuild ordering are the relevant design contract.
 
 The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
 It combines current authoritative node state, first-slice controls and committed
@@ -324,6 +344,12 @@ to reproduce interactively, such as disconnected, degraded or multi-TimingNode v
 
 ## CI screenshot direction
 
+Automated JavaFX documentation screenshots remain a useful follow-up, but they
+are **not a Step-4 V04 pass/fail gate**. For Step 4, the source YAML wireframes are
+the maintained design evidence and V04 uses observed running-system behaviour.
+A later deterministic screenshot pipeline may replace the wireframes with
+implementation screenshots where that improves the engineering portal.
+
 The target automated flow is:
 
 ```text
@@ -367,6 +393,11 @@ The Engineering Client remains independently testable:
 - screenshot generation verifies stable rendering, not business correctness.
 
 ## Step-4 boundary
+
+A03 implementation and the automated VC-ST1-002 black-box verification are
+complete. The remaining Step-4 closure activity is V04: the manual running-system
+Engineering Client demo documented in `test-client/STEP4-DEMO.md` and tracked by
+Java issue #127.
 
 Step 4 uses the Engineering Client as the primary manual inspection application. It does
 **not** add the optional lightweight browser/web test client.
