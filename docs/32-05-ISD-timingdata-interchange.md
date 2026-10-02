@@ -124,11 +124,15 @@ A registration record carries a **Registration ID** and **time**.
 These values are specific to registration records; they are not common
 TimingData-envelope values.
 
-A code is either:
+Registration records use one or more **code labels** to describe their meaning.
+The current draft includes:
 
-- **add** — introduces the registration; or
-- **revoke** — withdraws a previously added registration without modifying the
-  original committed record.
+- **ADD** — introduces the registration;
+- **REV** — withdraws a previously added registration without modifying the
+  original committed record;
+- additional labels may qualify the record where the selected record type needs
+  them. The current manual-registration design uses labels to distinguish how
+  the time value was obtained.
 
 A revoke record refers to the registration being withdrawn by using the same
 Registration ID and time. It is a new TimingData record and therefore receives
