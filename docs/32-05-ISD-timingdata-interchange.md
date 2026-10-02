@@ -73,7 +73,7 @@ Every TimingData record has a small common envelope:
 | record type | Always | identifies how the remaining record data shall be interpreted |
 | Registration ID | By record type | required by registration record types |
 | time | By record type | time value defined by the selected record type |
-| code | By record type | one or more labels/codes defined by the selected record type |
+| code | By record type | additional record-type-specific classification/meaning |
 
 `By record type` does not mean optional when that record type is selected. For
 example, Registration ID and time are required for a registration
@@ -124,26 +124,20 @@ A registration record carries a **Registration ID** and **time**.
 These values are specific to registration records; they are not common
 TimingData-envelope values.
 
-Registration records use one or more **code labels** to describe their meaning.
-The current draft includes:
+Registration semantics shall support:
 
-- **ADD** — introduces the registration;
-- **REV** — withdraws a previously added registration without modifying the
-  original committed record;
-- additional labels may qualify the record where the selected record type needs
-  them. The current manual-registration design uses labels to distinguish how
-  the time value was obtained.
+- adding a registration; and
+- revoking a previously added registration.
 
-A revoke record refers to the registration being withdrawn by using the same
-Registration ID and time. It is a new TimingData record and therefore receives
-its own sequence number. Whether further disambiguation is
-needed when the same Registration ID/time combination can occur more than once
-remains a draft/open interface decision.
+A revocation is represented by a new TimingData record and does not modify the
+original committed registration record. It refers to the registration being
+withdrawn using the Registration ID and time associated with that registration.
 
-The current reference design also distinguishes system-assigned versus
-operator-entered time for manual registration. That distinction is useful
-metadata in the current design, but is not yet an approved generic IF-05
-requirement.
+Whether further disambiguation is needed when the same Registration ID/time
+combination can occur more than once remains a draft/open interface decision.
+
+The concrete representation of add/revoke, automatic/manual registration and
+time-source metadata belongs to the IDD.
 
 ## Registration ID boundary
 
@@ -246,10 +240,10 @@ time to which the code applies.
 :id: IF05-REQ-006
 :status: D
 
-IF-05 shall support registration codes for ADD and REV. A record carrying REV
-shall be a new TimingData record and shall refer to the registration being
-withdrawn using the same Registration ID and time; it shall not modify the
-original committed record.
+IF-05 shall support adding a registration and revoking a previously added
+registration. A revocation shall be represented by a new TimingData record and
+shall refer to the registration being withdrawn using its Registration ID and
+time; it shall not modify the original committed record.
 ```
 
 ```{ifreq} Committed record immutability
