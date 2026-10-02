@@ -249,9 +249,9 @@ preserve the applicable IF-05 semantic values.
 :derived_from: UC-003, UC-012
 
 SI-01 shall successfully write one complete TimingData record to the configured
-local TimingData store before completing the registration commit. Only after
+local TimingData store before completing that TimingData commit. Only after
 that write succeeds may SI-01 add the record to committed LogBook state,
-publish a committed live event or report the registration commit as successful.
+publish a committed live event or report the commit as successful.
 
 If the write fails or remains incomplete, the commit shall fail and the record
 shall not be treated as committed.
@@ -264,8 +264,9 @@ shall not be treated as committed.
 
 On startup, SI-01 shall rebuild each configured TimingNode's committed TimingData
 history from valid complete persisted records in sequence-number order before
-accepting new registration work. The next sequence shall be 1 when no committed
-record exists, otherwise the last committed sequence plus 1.
+accepting new TimingData commit work for that TimingNode. The next sequence
+shall be 1 when no committed record exists, otherwise the last committed
+sequence plus 1.
 
 Recovery of committed TimingData shall not by itself restore the previous
 operational Location ID or OPEN state.
