@@ -29,30 +29,19 @@ MATURITY_TONES = {
 }
 
 
+def compact_roadmap_bullets(values: list[str], max_items: int = 3) -> list[str]:
+    """Keep the broad roadmap compact; detailed wording remains in SIP/step boards."""
+    if len(values) <= max_items:
+        selected = values
+    elif max_items == 3:
+        selected = [values[0], values[len(values) // 2], values[-1]]
+    else:
+        selected = values[:max_items]
+    return [base.concise(value, 105) for value in selected]
+
+
 def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     items: list[dict] = []
-
-    terms = list(plan.get("terms", []))
-    if terms:
-        items.append(
-            {
-                "id": "overview",
-                "title": "Planning overview",
-                "sections": [
-                    {
-                        "heading": "PLAN",
-                        "bullets": base.planning_basis_bullets(steps, plan),
-                    },
-                    {
-                        "heading": "TERMS",
-                        "bullets": [
-                            f"{item['term']} — {item['meaning']}"
-                            for item in terms
-                        ],
-                    },
-                ],
-            }
-        )
 
     for step in steps:
         label = base.STATE_STYLE[step.status][0]
@@ -71,11 +60,11 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
             "sections": [
                 {
                     "heading": "RESULT",
-                    "bullets": list(step.result_bullets),
+                    "bullets": compact_roadmap_bullets(step.result_bullets),
                 },
                 {
                     "heading": "DEMO",
-                    "bullets": list(step.demo_bullets),
+                    "bullets": compact_roadmap_bullets(step.demo_bullets),
                 },
             ],
         }
@@ -95,6 +84,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     return {
         "roadmap": {
             "title": "Software Implementation Planning — roadmap",
+            "subtitle": base.planning_basis_text(steps, plan),
             "items": items,
         }
     }
