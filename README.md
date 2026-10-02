@@ -76,7 +76,7 @@ project documents.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts and terminology.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
-- [`docs/11-SIP-software-implementation-planning.md`](docs/11-SIP-software-implementation-planning.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
+- [`docs/11-SIP-software-implementation-plan.md`](docs/11-SIP-software-implementation-plan.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
