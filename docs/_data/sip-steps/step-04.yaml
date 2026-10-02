@@ -3,9 +3,9 @@ step: 4
 planning_changes:
   - date: '2026-10-02'
     change: >-
-      Roadmap summary aligned with the accepted SSD/IF-05 scope: LocationId and
-      OPEN/CLOSE are operational state, not TimingData records. VC-ST1-002 also
-      retains a second-process restart/recovery robustness check.
+      Roadmap aligned with the accepted SSD/IF-05 scope without changing product
+      requirements. VC-ST1-002 now also retains second-process restart/recovery
+      robustness evidence.
   - date: '2026-10-02'
     change: >-
       A03 and V03 completed; V04 Engineering Client running-system demo is active.
@@ -77,8 +77,7 @@ activities:
     state: done
     depends_on: [V01]
     note: >-
-      Location and OPEN/CLOSED invariants implemented behind serialized ownership;
-      roadmap wording follows the SSD/IF-05 distinction from TimingData records.
+      Location and OPEN/CLOSED invariants implemented behind serialized ownership.
 
   - id: A02
     lane: application
@@ -87,8 +86,7 @@ activities:
     state: done
     depends_on: [A01]
     note: >-
-      Accepted registration and committed TimingData path implemented; the roadmap
-      summary follows the SSD lifecycle ordering before the first registration commit.
+      Accepted registration and committed TimingData path implemented.
 
   - id: A03
     lane: application

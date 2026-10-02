@@ -251,9 +251,6 @@ Therefore:
 - an accepted semantic registration can commit only while OPEN;
 - the first persisted TimingData record may therefore be registration sequence 1,
   provided a LocationId was assigned and the TimingNode was opened first;
-- the current Step-4 implementation/design may rebuild committed registration
-  history from its local TimingData store after restart; this does not restore
-  the previous operational LocationId or OPEN state;
 - committed registration history and live post-commit updates are observable
   through IF-03;
 - physical RFID observation/filtering remains a later input slice.
