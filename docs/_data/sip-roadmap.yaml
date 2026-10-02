@@ -18,10 +18,12 @@ actuals:
     brainboxemb/2026-010-01.meta.event-timing-software:
       "1": {first_pr: 1, last_pr: 1}
       "2": {first_pr: 2, last_pr: 35}
-      "3": {first_pr: 36}
+      "3": {first_pr: 36, last_pr: 193}
+      "4": {first_pr: 196}
     brainboxemb/2026-010-02.java.timing-point-application:
       "2": {first_pr: 2, last_pr: 24}
-      "3": {first_pr: 26}
+      "3": {first_pr: 26, last_pr: 72}
+      "4": {first_pr: 74}
 
 terms:
   - term: SI-01

@@ -16,10 +16,6 @@ import urllib.request
 import yaml
 
 
-REPOSITORIES = (
-    "brainboxemb/2026-010-01.meta.event-timing-software",
-    "brainboxemb/2026-010-02.java.event-timing-framework",
-)
 PLAN_PATH = Path("docs/_data/sip-roadmap.yaml")
 WINDOW_MINUTES = 30
 PROJECT_DAY_HOURS = 8.0
@@ -115,7 +111,8 @@ def collect_activity(
     start: datetime, through: datetime, plan: dict
 ) -> list[tuple[str, datetime, int | None]]:
     unique: dict[tuple[str, str], tuple[datetime, int | None]] = {}
-    for repository in REPOSITORIES:
+    repositories = tuple(plan["actuals"]["step_pr_attribution"])
+    for repository in repositories:
         for pull_number in merged_pr_numbers(repository, start, through):
             step = step_for_pr(repository, pull_number, plan)
             for sha, commit_time in commit_times(repository, pull_number):
@@ -288,7 +285,8 @@ def main() -> None:
 
     print("SIP actual-effort planning indication")
     print(f"Range:        {start_date} through {args.through}")
-    print(f"Repositories: {', '.join(REPOSITORIES)}")
+    repositories = tuple(plan["actuals"]["step_pr_attribution"])
+    print(f"Repositories: {', '.join(repositories)}")
     print(f"Commits:      {len(activity)} merged-PR commits")
     print(f"Window:       {WINDOW_MINUTES} min per commit (±{WINDOW_MINUTES / 2:g} min)")
     print(f"Blocks:       {len(blocks)}")
