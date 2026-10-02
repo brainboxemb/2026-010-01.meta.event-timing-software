@@ -403,9 +403,10 @@ The live protocol may resend the current data, for example when a TimingNode is
 opened. Recovery semantics can be promoted later if an operational requirement
 needs them.
 
-The successful-append commit boundary above is a software requirement. The
-stronger guarantee against sudden power loss depends on the concrete filesystem
-and flush primitive and remains a target-specific design/verification point.
+The successful append is part of commit completion: LogBook update, committed
+event publication and successful operation result all follow it. The stronger
+guarantee against sudden power loss depends on the concrete filesystem and flush
+primitive and remains a target-specific design/verification point.
 
 Implementation points to verify on the target Pi:
 
