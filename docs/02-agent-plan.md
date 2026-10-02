@@ -73,7 +73,7 @@ Expected scope:
 - identify the use cases and behaviours needed by the first executable;
 - create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `41-01-SSD`);
 - create the first system-level application-control/status IDD needed by the executable and later clients;
-- establish a traceable example from use case → SSSD/system IDD where applicable → SI-01 SSD requirement/architecture → SDD → verification case;
+- establish a traceable example from use case → SSSD/system ISD where applicable → SI-01 SSD requirement/architecture → optional interface IDD / software-item SDD → verification case;
 - make the relevant ST-1/SVP verification material concrete enough for the first executable;
 - update SSD/SDD working drafts only where the formalised slice exposes a conflict or ambiguity;
 - collect/index source material only where it is needed to resolve this slice;
@@ -98,7 +98,7 @@ PR #2 established the first reviewable SI-01 requirements/IDD slice without expa
 At closure:
 
 - `41-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
-- `32-03-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
+- `32-03-ISD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
 - IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
 - first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
 - the first operational timing instance remains `CLOSED`; open/close and later domain behaviour are not partially invented for this baseline;

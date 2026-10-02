@@ -348,7 +348,7 @@ The software plan could act as the higher-level anchor for a deliberately staged
 
 ### Interface documentation
 
-A working documentation convention is that an **Interface Design/Description Document (IDD)** is a **software-system-level document**, not documentation owned by one software item.
+Current documentation convention separates a software-system-owned **Interface Specification Document (ISD)** from an optional downstream **Interface Design Description (IDD)**. The ISD owns the normative interface contract; an IDD is used only when concrete interface design warrants a separate baseline.
 
 The intended traceability model is:
 

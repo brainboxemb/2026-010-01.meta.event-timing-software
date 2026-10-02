@@ -148,8 +148,9 @@ The segment immediately after a reserved document-family number identifies the
 **scope** when that family has a natural stable scope identifier. Software-item
 families therefore use the SI identifier: `40-<SI>-UC`, `41-<SI>-SSD/SRD`,
 `42-<SI>-SAD`, `43-<SI>-SDD[-<N>]` and `70-<SI>-SUM`. System-owned IDDs
-use the same rule with the interface identifier, so IF-03 is `32-03-IDD` and
-IF-11 is `32-11-IDD`.
+use the same rule with the interface identifier, so IF-03 is `32-03-ISD` and
+IF-11 is `32-11-ISD`. Optional interface design descriptions use family `33`,
+for example `33-05-IDD` for IF-05.
 
 When a repeatable generic family has no natural scope identifier, a document
 sequence follows the type instead. The SDE family therefore uses
