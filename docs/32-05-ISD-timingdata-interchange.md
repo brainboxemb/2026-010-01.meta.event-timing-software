@@ -96,8 +96,7 @@ Sequence rules:
 
 - numbering is scoped per Node ID;
 - the authoritative local source stream advances by exactly one for each
-  successfully committed record;
-- failed/uncommitted commit attempts do not consume a sequence number;
+  committed record;
 - a new source stream starts at **1**;
 - sequence number **0 is reserved**;
 - changing Location ID does not reset the sequence;
@@ -233,7 +232,7 @@ registration.
 :status: D
 
 An added or revoked registration record shall identify the Registration ID and
-time to which the code applies.
+time of the registration to which it refers.
 ```
 
 ```{ifreq} Registration add and revoke
