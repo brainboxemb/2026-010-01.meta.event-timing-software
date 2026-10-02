@@ -109,11 +109,11 @@ io.github.brainboxemb.eventtiming/timingpoint/
     messaging/
     storage/
   infra/
-    bootstrap/
-      config/
+    config/
     logging/
     loggingserver/
   runtime/
+    config/
 ```
 
 Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary API classes stay directly at `presentation.interfaces.api` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
@@ -142,7 +142,8 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
-- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
+- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and configuration/extension adapters;
+- reserve `runtime` for concrete application composition, the running application container and lifecycle;
 - use `io` for external hardware, messaging and storage adapters.
 
 The shared TimingData artifact has its own package root:
@@ -250,7 +251,11 @@ types early. Store **interfaces** stay next to the capability whose semantics
 they persist; concrete filesystem implementations stay under `io.storage`.
 `SerialWorker` is a small reusable execution primitive under `platform.execution`,
 composed into TimingNode rather than used as a Domain superclass. It has no
-TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
+TimingNode or persistence semantics of its own.
+
+`TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
+
+The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
@@ -334,10 +339,10 @@ io
 
 infra
   concrete cross-cutting technical support, including logging, diagnostics,
-  extension discovery and application-core bootstrap/composition
+  configuration mapping and extension discovery
 
 runtime
-  top-level composed runtime object and lifecycle mechanics
+  concrete application composition, top-level running application and lifecycle
 
 platform
   small JDK-only reusable primitives and execution-environment abstractions,
@@ -350,13 +355,13 @@ interfaces.
 ## Internal dependency direction
 
 ```text
-presentation    --> application
-application     --> domain / I/O ports
-domain          --> platform
-io              --> application/domain ports/contracts + platform
-runtime         --> application / domain / platform
-infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-platform        --> JDK and low-level environment only
+presentation --> application
+application  --> domain / I/O ports
+domain       --> platform
+io           --> application/domain ports/contracts + platform
+runtime      --> application / domain / presentation / I/O / infra / platform
+infra        --> owned support contracts + JDK/selected support libraries
+platform     --> JDK and low-level environment only
 ```
 
 Domain code does not depend on presentation or concrete I/O adapters.
@@ -393,11 +398,11 @@ event-timing-app.jar
 Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; `ApplicationConfig` may reference both as composition data;
-- the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
+- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
+- the executable application chooses and configures the provider/backend before `runtime.Composition` starts normal application composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
-- `infra.logging` must not depend on `infra.loggingserver` or `infra.bootstrap.config`; executable/bootstrap composition starts the two components separately. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
+- `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
 - `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
 - `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
 - the core artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
@@ -424,29 +429,26 @@ Its executable package is deliberately thin:
 
 ```text
 io.github.brainboxemb.eventtiming.timingpoint.app/
-  TimingApplicationMain.java
+  Main.java
 ```
 
-The application core owns the reusable SI-01 runtime, bootstrap and infrastructure components:
+The application core owns the reusable SI-01 runtime and supporting infrastructure:
 
 ```text
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
-    TimingApplication.java
-    TimingApplicationLifecycle.java
+    Application.java
+    Composition.java
+    Lifecycle.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
   infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    bootstrap/
-      ApplicationBootstrap.java
-      config/
-        ApplicationConfig.java
-        PresentationConfig.java
-        RemoteShellConfig.java
-        ApiConfig.java
-        ApiHttpConfig.java
-        ApiWebSocketConfig.java
-        YamlApplicationConfigLoader.java
+    config/
+      YamlLoader.java
     logging/
       Logging.java
       LoggingConfig.java
@@ -461,46 +463,32 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` is the Java source-organisation package for the top-level running
-composition and lifecycle objects. Figure SI01-01 now shows this explicitly as a
-separate **Runtime** block containing `TimingApplication`. Runtime is not an
-additional business/domain layer: it is the execution container that holds the
-running application/domain composition. In the current implementation
-`ApplicationBootstrap` still owns startup/cleanup of concrete presentation
-endpoints around that runtime; those endpoints retain their Presentation
-ownership even if their lifecycle is later retained directly by the runtime.
+`runtime/` owns knowledge of the concrete running application: `Application`, `Composition`, `Lifecycle` and the effective composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is where the executable object graph is assembled and its lifecycle is coordinated.
 
-The executable artifact is deliberately thin. Its launcher/input adapters remain under
-`...eventtiming.app`; reusable runtime logging belongs to application-core infrastructure:
+The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
+
+The executable artifact remains deliberately thin. Its launcher/input adapters stay under `...eventtiming.app`; reusable logging and YAML mapping remain Infrastructure support.
 
 ```text
-event-timing-core.jar
-  io.github.brainboxemb.eventtiming.timingpoint.infra.logging/
-    Logging.java
-    LoggingConfig.java
-    LoggingLevel.java
-    LoggingFileConfig.java
-    LoggingControl.java
-    TimestampedFileLogHandler.java
-    CompactLogFormatter.java
-
-  io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver/
-    LoggingServer.java
-    LoggingServerConfig.java
-    LiveLogHandler.java
-
 event-timing-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    bootstrap/
-      ApplicationBootstrap.java
-      config/
-        YamlApplicationConfigLoader.java
+    config/
+      YamlLoader.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.runtime/
+    Application.java
+    Composition.java
+    Lifecycle.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
 
 event-timing-app.jar
   io.github.brainboxemb.eventtiming.timingpoint.app/
-    TimingApplicationMain.java
+    Main.java
 ```
 
 `event-timing-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
@@ -517,62 +505,53 @@ main()
        -> selected operating-mode defaults
        -> explicit IF-11 YAML deployment overrides
        -> secret resolution
-       -> validated effective ApplicationConfig
+       -> validated effective runtime Config
   -> Logging
        -> configure JUL level + console/file handlers
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> core ApplicationBootstrap
-       -> select/construct concrete presentation/I/O/platform implementations
+  -> core runtime.Composition
+       -> select/construct concrete presentation/I/O/platform/infra objects
        -> create reusable application/domain/runtime objects
        -> install/start presentation and shutdown handling
-  -> TimingApplication runtime
+  -> runtime.Application
 ```
 
-The current Step-3 `YamlApplicationConfigLoader` implements only the explicit
+The current `infra.config.YamlLoader` implements only the explicit
 YAML subset already needed by the running application. Profile/platform/mode
 resolution is the next configuration responsibility; the architecture does not
 require a new public Java type for each source before that behaviour is
 implemented.
 
-`BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
+`BuildIdentity` and runtime `Config` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core keeps the small `TimingApplication.Builder` only for constructing
-the runtime object itself. `ApplicationBootstrap` is the concrete cross-cutting
-composition component around it and consumes the core-owned effective
-`ApplicationConfig`.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
 
-The default IF-11 file syntax is YAML and its parser/mapping belongs to reusable
-application-core infrastructure. `YamlApplicationConfigLoader` lives with the core
-bootstrap/configuration model. As profile support is implemented, configuration
-infrastructure resolves built-in profile/platform/mode defaults plus explicit
-deployment YAML into one effective `ApplicationConfig` **before**
-`ApplicationBootstrap` runs.
+The default IF-11 file syntax is YAML and its parser/mapping remains reusable infrastructure. `infra.config.YamlLoader` maps external YAML into the effective `runtime.config.Config`. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
 
 The resolver responsibility must remain data/composition oriented:
 
 - application profiles are data/default templates, not Java subclasses;
-- do not introduce profile-specific TimingApplication subclasses or a
+- do not introduce profile-specific Application subclasses or a
   profile-specific domain hierarchy;
 - profile defaults may select topology/cardinality and capability defaults;
 - platform defaults may select environment-specific values;
 - operating-mode defaults may replace real providers with simulated providers;
 - explicit IF-11 deployment values have highest non-secret precedence;
-- `ApplicationBootstrap` consumes only the resolved/validated
-  `ApplicationConfig` and contains no profile-name switches.
+- `runtime.Composition` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
 
 SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
-same typed effective `ApplicationConfig` without YAML.
+same typed effective runtime `Config` without YAML.
 
 Build-identity interpretation is reusable for the same reason. The application core owns
 `BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
 the filtered `event-timing-build.properties` resource and build-time provenance injection,
 because those values identify that executable artifact. The core loader only interprets
-the classpath resource and has no dependency on `TimingApplicationMain` or another app class.
+the classpath resource and has no dependency on `app.Main` or another app class.
 
 The implemented presentation structure is:
 
@@ -697,36 +676,34 @@ separately:
 
 ```java
 final class TimingNode {
+    private final TimingNodeLogic logic;
     private final SerialWorker serialWorker;
 
-    OpenResult open() throws TimingNodeOperationException {
-        SerialWorker.SubmitResult<OpenResult> submitResult =
-                serialWorker.submit(this::doOpen);
-
-        switch (submitResult.admission()) {
-            case ACCEPTED:
-                Future<OpenResult> futureResult = submitResult.futureResult();
-                return await(futureResult);
-            case FULL:
-                throw busy();
-            case NOT_RUNNING:
-                throw unavailable();
-            default:
-                throw unexpectedAdmission();
-        }
+    OpenResult open() {
+        return execute(logic::open, "open");
     }
 
-    SerialWorker.AdmissionResult submitObservation(Observation observation) {
-        return serialWorker.offer(
-                () -> processObservation(observation));
+    RegistrationResult commitAutomaticRegistration(
+            RegistrationId id,
+            TimingTimestamp observationTime) {
+        return execute(
+                () -> logic.commitAutomaticRegistration(id, observationTime),
+                "commitAutomaticRegistration");
+    }
+}
+
+final class TimingNodeLogic {
+    private Lifecycle lifecycle = Lifecycle.CLOSED;
+    private LocationId locationId;
+    private final LogBook logBook;
+
+    OpenResult open() {
+        // domain decision only; no queue/future/timeout mechanics here
     }
 }
 ```
 
-The variable name `futureResult` is intentional: it is the Java
-`Future<R>` representing a result that will be produced later by execution on
-the serial lane. It is not the domain result itself. The later
-`futureResult.get(...)` yields the processed `OpenResult`.
+The visible `TimingNode` keeps execution mechanics around the component boundary, while `TimingNodeLogic` keeps the stateful domain behaviour readable. Queue admission and the processed domain result remain separate; moving the mutable logic out of the boundary does not make `TimingNodeLogic` externally addressable.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
@@ -1268,9 +1245,10 @@ is no longer merely a future possibility. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
-ApplicationBootstrap
-  -> discover built-in providers
-  -> discover external provider JARs
+runtime.Composition
+  -> infra extension discovery support
+       -> discover built-in providers
+       -> discover external provider JARs
   -> ExtensionRegistry
        TimingDataProvider
        UpstreamProtocolProvider
@@ -1279,7 +1257,7 @@ ApplicationBootstrap
        DisplayProtocolProvider
   -> validate configured provider IDs
   -> create normal typed implementations
-  -> compose TimingApplication
+  -> compose runtime.Application
 ```
 
 For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
@@ -1288,7 +1266,7 @@ runtime hot reload/unload is deliberately out of scope. The provider registry
 combines built-in and external providers and rejects duplicate provider IDs.
 
 Provider contracts belong with the capability whose meaning they create;
-class-loader/discovery mechanics belong under application-core bootstrap/infra. Domain,
+class-loader/discovery mechanics belong under application-core Infrastructure support. Domain,
 application and I/O runtime code must not depend on `URLClassLoader`,
 `ServiceLoader` or a generic `Plugin` interface.
 
