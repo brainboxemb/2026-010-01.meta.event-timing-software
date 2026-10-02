@@ -202,7 +202,8 @@ domain/
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingDataStore.java                durable append/load/recovery port
+    TimingDataPersistence.java          TimingData-specific persistence contract
+    DefaultTimingDataPersistence.java   TimingData codec/identity/sequence mapping
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
@@ -233,10 +234,9 @@ io/
       RabbitMqConnector.java
       DebugConnector.java                 engineering/debug connector when implemented
   storage/
-    FileTimingDataStore.java              TimingData durable append/recovery
-    FileNextUpTeamsStore.java             next-up analysis history/snapshots
-    FileStageStartTimesStore.java         start-time analysis history/snapshots
-    FileRaceDataStore.java                race/reference analysis snapshots
+    AppendOnlyRecordStore.java             generic opaque-record storage contract
+    FileAppendOnlyRecordStore.java         LF framing • file append/recovery
+    # later generic lower-layer storage mechanisms only as real needs appear
 
 platform/
   execution/
@@ -247,8 +247,10 @@ platform/
 ```
 
 The names above record ownership/direction, not a requirement to create empty
-types early. Store **interfaces** stay next to the capability whose semantics
-they persist; concrete filesystem implementations stay under `io.storage`.
+types early. Lower layers expose generic contracts that do not import higher
+layers. TimingData-specific persistence semantics stay in Domain and use the
+generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
+completely unaware of TimingData, TimingNode and Domain types.
 `SerialWorker` is a small reusable execution primitive under `platform.execution`,
 composed into TimingNode rather than used as a Domain superclass. It has no
 TimingNode or persistence semantics of its own.
@@ -376,15 +378,32 @@ interfaces.
 
 ```text
 presentation --> application
-application  --> domain / I/O ports
-domain       --> platform
-io           --> application/domain ports/contracts + platform
+application  --> domain / I/O / platform
+domain       --> I/O / platform
+io           --> platform / JDK
 runtime      --> application / domain / presentation / I/O / infra / platform
-infra        --> owned support contracts + JDK/selected support libraries
+infra        --> owned support contracts + platform / JDK / selected support libraries
 platform     --> JDK and low-level environment only
 ```
 
-Domain code does not depend on presentation or concrete I/O adapters.
+The normal dependency direction follows the layer order and is intentionally
+easy to read from imports. A lower layer does not import a higher layer merely
+to implement one of its interfaces. Domain may depend on a generic I/O contract,
+but not on a concrete I/O implementation; Runtime composition selects the
+concrete implementation.
+
+For example:
+
+```text
+TimingNodeLogic
+  -> TimingDataPersistence
+       -> AppendOnlyRecordStore
+            <- FileAppendOnlyRecordStore selected by Runtime
+```
+
+`AppendOnlyRecordStore` contains only opaque-record storage semantics.
+`DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
+validation. This keeps `io.storage` independent from Domain.
 Executable composition may depend on the complete supported application-core surface
 and selected external libraries.
 
@@ -969,14 +988,34 @@ need to be kept:
 
 | Store | First purpose | Commit role |
 | --- | --- | --- |
-| `TimingDataStore` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
-| `NextUpTeamsStore` | preserve accepted next-up changes/snapshots for analysis | not a TimingData commit gate |
-| `StageStartTimesStore` | preserve accepted start-time snapshots for analysis | not runtime recovery authority by default |
-| `RaceDataStore` | preserve accepted race/reference snapshots/versions for analysis | not runtime recovery authority by default |
+| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| future per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
 
-Concrete file implementations live under `io.storage`. Store contracts are
-dependency-inverted ports composed into the TimingNode; the TimingNode must not
-depend on concrete filesystem classes.
+The lower I/O layer exposes storage mechanics rather than domain-specific store
+interfaces. The first implementation uses:
+
+```text
+Domain
+  DefaultTimingDataPersistence
+    - TimingDataCodec
+    - TimingNodeId validation
+    - sequence validation
+           |
+           v
+I/O
+  AppendOnlyRecordStore
+           ^
+           |
+  FileAppendOnlyRecordStore
+    - LF/CRLF framing
+    - incomplete-tail repair
+    - directory/file handling
+    - FileChannel.force(true)
+```
+
+Runtime composition creates the file store and supplies it to
+`DefaultTimingDataPersistence`. No class under `io.storage` imports a Domain
+or Application class.
 
 The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
 first implementation may call the small/infrequent analysis-store writes on the

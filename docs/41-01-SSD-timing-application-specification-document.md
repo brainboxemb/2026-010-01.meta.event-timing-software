@@ -767,9 +767,7 @@ rather than as nested component boxes.
 ```{arch} Storage
 :id: Storage
 
-`Storage` owns I/O adapters for persistence plus backup/restore mechanics.
-Concrete file/database implementations consume Domain contracts such as
-`TimingData`; Storage does not own timing-record field semantics.
+`Storage` owns generic lower-layer persistence mechanisms plus backup/restore mechanics. Storage contracts are independent of higher Application/Domain types. TimingData-specific encoding, identity/sequence validation and commit semantics remain above Storage; Runtime composition connects that semantic persistence component to the selected generic file/database mechanism.
 ```
 
 ```{arch} Devices
@@ -1647,11 +1645,10 @@ Keep the data roles simple:
 - `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
   per-node state objects;
 - the TimingNode worker is the single writer for those mutable per-node objects;
-- each state type that needs file persistence uses its own store contract;
-- `TimingDataStore` is the durable/recovery source for committed timing data;
-- `NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` preserve
-  their accepted changes/snapshots for later analysis; they are not automatically
-  the runtime recovery authority;
+- each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
+- `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
+- lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
+- future NextUpTeams/StageStartTimes/RaceData persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 For example, StageStartTimes may be sent again when a TimingNode is opened after
@@ -1768,8 +1765,8 @@ Architecture-level boundaries are:
   executable application;
 - the public IF-05 Java contract must be independently consumable by SI-01 and
   engineering/test tooling without depending on SI-01 internal Domain packages;
-- presentation and I/O implementations depend on application/domain contracts
-  rather than owning domain semantics;
+- dependencies normally follow the layer order downward; lower I/O code does not import Application/Domain types;
+- higher layers may use generic lower-layer I/O contracts while Runtime composition selects concrete I/O implementations;
 - public reference/core implementation code compiles and verifies without private
   production implementations.
 
@@ -1823,7 +1820,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable application core; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
-| Persistence | per-type stores: TimingDataStore is the durable/recovery source for committed timing data; NextUpTeams/StageStartTimes/RaceData stores preserve analysis history/snapshots | ordering and visibility in SDD-01; Java store boundaries in SDD-02; wire/file contract in IF-05 |
+| Persistence | Domain-owned TimingDataPersistence over generic lower-layer storage; file/database mechanisms do not import Domain/Application types | ordering and visibility in SDD-01; Java storage/persistence split in SDD-02; record contract in IF-05 |
 | API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
