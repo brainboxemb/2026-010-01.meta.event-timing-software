@@ -263,18 +263,23 @@ AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SI
 
 ## Current coordination focus — SIP Step 4
 
-Current stable state:
+The current implementation-planning focus is **SIP Step 4 — First registration-system
+slice**.
 
-- Step 2 closed with release `v0.1.0`;
-- Step 3 closed with accepted release `v0.2.2` from exact implementation commit `c07ccd6127ac0976018026778f7a63df7af043bc`;
-- the safe post-release implementation development successor is `0.2.3-SNAPSHOT`; this does not pre-decide the eventual Step-4 release number;
-- IF-03 owns the public application-control/status contract and IF-11 owns deployment/application configuration;
-- the Step-3 application shell, shared terminal behaviour, HTTP/WebSocket status boundary, runtime logging and engineering client are established reusable foundations;
-- `VC-ST1-001` runs as an automated separate-process black-box test on Linux/native Windows, and the v0.2.2 tag qualification also executed the exact Linux-produced application JAR on Windows.
+Step 4 deliberately stops at the accepted-registration boundary. It proves TimingNode
+lifecycle/identity, durable TimingData commit/history and public API/Engineering Client
+operation without yet adding antenna observations, tag filtering, backoffice reference
+data or multi-node field behaviour.
 
-The next bounded cross-repository focus is **SIP Step 4 — TimingNode state and domain foundation**. Start with controlled domain requirements/examples and deterministic tests for registrations/history, StageStartTimes, NextUpTeams, RaceData/reference data and the lifecycle/status semantics those capabilities genuinely require. Keep production RFID/CAN hardware, target deployment and full persistence/recovery outside this step.
+The next planned increment, Step 5, moves the input boundary outward to the built-in
+`SimulatedAntenna` for one TimingNode and adds repeatable runtime/load/recovery
+characterisation. Multi-node operation, backoffice reference data and StageTiming belong
+to the later backoffice integration step rather than being pulled into Step 5.
 
-Do not create a detailed Step-4 activity board until the first domain slices and their authority are concrete enough to name without inventing implementation structure.
+Keep the SIP as the implementation-sequence plan. Detailed current execution/evidence
+belongs in the active PRs, verification evidence and per-step activity data rather than in
+the broad roadmap.
+
 ## Ongoing supporting activity — source collection
 
 Source collection is continuous and capability-driven rather than a mandatory stage that blocks all implementation.

@@ -61,8 +61,9 @@ notes:
   - Forecasts are planning aids, not commitments.
   - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - Per-step actuals use explicit merged-PR number boundaries per repository; original estimate, actual and remaining estimate are intentionally independent planning signals.
-  - The 11-step plan totals 59 estimated project days before reserve; the increase from 55d reserves explicit effort for the Java-8 extension/provider mechanism and its upstream/device integration rather than hiding that scope in existing steps.
-  - Extension/provider effort is planned as +1d in Step 5, +1d in Step 7 and +2d in Step 10.
+  - The original 11-step baseline totals 59 estimated project days before reserve and is retained as historical planning context.
+  - Remaining estimates were re-evaluated on 2 October 2026 after Step-4 implementation evidence and the Step-5/Step-7 scope review; forecasts use the current remaining estimates, not original estimate minus actual.
+  - Step 5 now owns one-TimingNode simulated antenna/runtime behaviour; multi-node, reference-data-driven StageTiming and backoffice integration are planned in Step 7.
   - Document maturity describes the established content; completeness is approximate project-wide document coverage, not completion of only the current slice.
   - Completeness percentages are planning indicators, intentionally coarse rather than time-tracking precision.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
@@ -123,6 +124,7 @@ steps:
 
   "4":
     estimate_project_days: 6
+    remaining_estimate_project_days: 0.5
     workstream: domain
     docs:
       requirements: {level: working, scope: "TimingNode state and domain capabilities"}
@@ -138,12 +140,13 @@ steps:
 
   "5":
     estimate_project_days: 6
+    remaining_estimate_project_days: 6
     workstream: simulation
     docs:
-      requirements: {level: working, scope: "synthetic timing flow and recovery behaviour"}
-      idd: {level: working, scope: "public interfaces used by black-box scenarios"}
-      design: {level: working, scope: "synthetic adapters and persistence/recovery boundaries"}
-      verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
+      requirements: {level: working, scope: "simulated antenna input, registration admission and recovery"}
+      idd: {level: working, scope: "public/test interfaces needed to drive and observe simulated input"}
+      design: {level: working, scope: "SimulatedAntenna, tag-processing and runtime measurement boundaries"}
+      verification: {level: working, scope: "single-node burst, fairness and restart scenarios"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 80}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
@@ -152,6 +155,7 @@ steps:
 
   "6":
     estimate_project_days: 4
+    remaining_estimate_project_days: 5
     workstream: client
     docs:
       requirements: {level: working, scope: "first useful SI-02 behaviour"}
@@ -166,12 +170,13 @@ steps:
 
   "7":
     estimate_project_days: 7
+    remaining_estimate_project_days: 9
     workstream: backoffice
     docs:
-      requirements: {level: working, scope: "required backoffice data flows"}
-      idd: {level: working, scope: "semantic contract and selected transport"}
-      design: {level: working, scope: "transport/recovery behaviour"}
-      verification: {level: working, scope: "integration and outage/reconnect tests"}
+      requirements: {level: working, scope: "backoffice reference/timing flows and multi-node behaviour"}
+      idd: {level: working, scope: "reference-data, TimingData and selected transport contracts"}
+      design: {level: working, scope: "multi-node routing, StageTiming and transport/recovery behaviour"}
+      verification: {level: working, scope: "multi-node integration, outage/reconnect and reconciliation tests"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
@@ -180,6 +185,7 @@ steps:
 
   "8":
     estimate_project_days: 4
+    remaining_estimate_project_days: 4
     workstream: platform-study
     docs:
       requirements: {level: working, scope: "target hardware needs and constraints"}
@@ -194,6 +200,7 @@ steps:
 
   "9":
     estimate_project_days: 4
+    remaining_estimate_project_days: 4
     workstream: platform
     docs:
       requirements: {level: working, scope: "selected target execution/deployment needs"}
@@ -207,6 +214,7 @@ steps:
 
   "10":
     estimate_project_days: 10
+    remaining_estimate_project_days: 10
     workstream: hardware
     docs:
       requirements: {level: working, scope: "selected real-device behaviour"}
@@ -221,6 +229,7 @@ steps:
 
   "11":
     estimate_project_days: 8
+    remaining_estimate_project_days: 8
     workstream: integration
     docs:
       requirements: {level: working, scope: "representative integrated operation"}

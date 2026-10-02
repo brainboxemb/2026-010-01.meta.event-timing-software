@@ -254,6 +254,8 @@ def step_effort_text(step: Step) -> str:
         parts.append(f"total est ~{actual_days + step.remaining_days:g}d")
     elif step.status == "done" and step.actual_days is not None:
         parts.append(f"total est ~{step.actual_days:g}d")
+    elif step.status == "planned" and step.remaining_days != step.estimate_days:
+        parts.append(f"current ~{step.remaining_days:g}d")
     return " · ".join(parts)
 
 
