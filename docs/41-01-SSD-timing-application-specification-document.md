@@ -356,40 +356,33 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-```{arch} ApplicationBootstrap
-:id: ApplicationBootstrap
+```{arch} Composition
+:id: Composition
 
-`ApplicationBootstrap` is the cross-cutting application-core component that owns startup
-composition from an already parsed and validated deployment configuration. It
-constructs the selected presentation, I/O and platform implementations plus the
-reusable application/domain objects, then starts the runtime. The runnable
-`event-timing-app` artifact remains a thin launcher/input adapter that reads
-concrete YAML/build-resource inputs and delegates to the application core.
+`Composition` is the Runtime component that owns construction of the concrete
+running SI-01 object graph from validated effective configuration. It selects
+and constructs the required Presentation, I/O, Platform and Infrastructure
+objects together with the reusable application/domain objects. Those objects
+retain their own layer ownership; Runtime only knows how this executable is
+assembled.
 ```
 
-```{arch} TimingApplication
-:id: TimingApplication
+```{arch} Application
+:id: Application
 
-`TimingApplication` is the top-level reusable application-core runtime object for one
-running SI-01 composition. It owns the application runtime lifecycle and the
-currently composed application/domain runtime state. It is deliberately shown
-in a separate **Runtime** block rather than inside the Application layer:
-Runtime is the running container/assembly context, not application/business
-behaviour.
+`Application` is the top-level reusable Runtime object for one running SI-01
+composition. It owns the application lifecycle and references the currently
+composed application/domain runtime state. It is deliberately shown in a
+separate **Runtime** block rather than inside the Application layer: Runtime is
+the running container/assembly context, not application/business behaviour.
 ```
 
-`ApplicationBootstrap` constructs and starts that runtime from validated
-configuration. In the current Step-3 implementation bootstrap still owns the
-startup/cleanup scope of concrete presentation endpoints around
-`TimingApplication`; normal application/domain interactions do not route
-through bootstrap after startup. As the implementation grows, additional
-long-lived runtime resources may move under the runtime composition without
-changing their semantic layer ownership.
+`Composition` constructs and starts `Application` from validated configuration and owns the startup/cleanup wiring for the selected concrete endpoints. Normal application/domain interactions do not route through `Composition` after startup. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates and coordinates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
 ```text
-TimingApplication
+Application
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
@@ -584,7 +577,7 @@ TimingNode state. The main responsibilities are deliberately not represented as
 one parent/child tree:
 
 ```text
-TimingSystem (1..N per TimingApplication)
+TimingSystem (1..N per Application)
   TimingSystemId              internal only
   SystemStatus                complete current system overview
   UpstreamMessagePort         system-level upstream messages
@@ -613,7 +606,7 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One `TimingApplication` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One `Application` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
@@ -999,8 +992,8 @@ behaviour belongs to SDD-02.
 
 The right-hand side of the layered view separates two technical responsibilities:
 
-- **Runtime** — the running `TimingApplication` composition and lifecycle container;
-- **Infrastructure / cross-cutting** — concrete technical facilities such as logging, diagnostics, build identity and bootstrap/composition.
+- **Runtime** — the running `Application`, concrete `Composition` and lifecycle coordination;
+- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, configuration mapping and extension discovery.
 
 #### Cross-cutting concerns
 
@@ -1027,7 +1020,7 @@ logging-specific TCP boundary is separate from the IF-03 API/status/event
 interface and live delivery remains best effort.
 ```
 
-`ApplicationBootstrap` remains in Infrastructure / cross-cutting because startup composition touches several normal layers without becoming a normal runtime call path. The separate Runtime block shows the resulting running `TimingApplication`. The default YAML configuration loader is application-core infrastructure beside that bootstrap/configuration model; the executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` runtime surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
+`Composition` belongs to Runtime because it contains concrete knowledge of the running application graph. Infrastructure remains supporting/cross-cutting: the default YAML loader maps deployment input to effective runtime configuration, logging and diagnostics provide technical services, and extension discovery supplies selected implementations. The executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
 
 ### Principal runtime abstractions
 
@@ -1114,7 +1107,7 @@ The architecture deliberately uses **separate views** for software/domain decomp
 #### Software/domain decomposition
 
 ```text
-TimingApplication
+Application
   +-- ApplicationId
   |
   +-- 1..N TimingSystem
@@ -1191,7 +1184,7 @@ listener/session and packet-framing design belongs below this high-level view.
 Configuration connects identities without collapsing them:
 
 ```text
-TimingApplication
+Application
     +-- ApplicationId
 
 Devices
@@ -1466,7 +1459,7 @@ required.
 
 An application-facing status view may aggregate the 1..N TimingSystem statuses
 and application/runtime problems into one response; that aggregation does not
-move SystemStatus ownership back to the TimingApplication.
+move SystemStatus ownership back to the Application.
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
@@ -1623,11 +1616,11 @@ select defaults
   -> apply explicit deployment overrides
   -> resolve effective typed configuration
   -> validate references/settings
-  -> ApplicationBootstrap composes the runtime
+  -> runtime Composition composes the application
 ```
 
 Profile/platform/mode resolution is configuration infrastructure. It is complete
-before `ApplicationBootstrap` receives the effective `ApplicationConfig`; bootstrap
+before `Composition` receives the effective runtime `Config`; composition
 does not contain profile-specific branches.
 
 Build provenance remains separate from deployment configuration. `BuildIdentity` describes the built artifact; it is not loaded from IF-11 deployment settings. Core `EmbeddedBuildIdentityLoader` interprets the standard embedded provenance resource, while the concrete executable owns and filters that resource with its own application/build values. The embedded provenance contains stable build inputs/context — version, exact revision, source ref, build origin and dirty-state — but deliberately omits wall-clock build time, CI run identifiers and actor/user data. This keeps the artifact self-identifying for test/support work without introducing per-run variability solely from timestamp/run metadata.
@@ -1792,9 +1785,7 @@ DisplayProtocolProvider
 ```
 
 The provider contracts are capability-specific; there is no generic domain-level
-`Plugin` abstraction. `ApplicationBootstrap` discovers built-in and external
-providers at startup, builds one registry, validates configured provider IDs and
-then performs normal composition. Runtime/domain components receive normal typed
+`Plugin` abstraction. Infrastructure extension-discovery support finds built-in and external providers at startup; `Composition` uses the resulting typed registry, validates configured provider IDs and then builds the normal runtime graph. Runtime/domain components receive normal typed
 interfaces and never interact with class loaders or provider discovery.
 
 Provider discovery/loading is a startup/composition responsibility. Provider IDs
