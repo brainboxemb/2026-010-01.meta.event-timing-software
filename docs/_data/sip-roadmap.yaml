@@ -61,8 +61,9 @@ notes:
   - Forecasts are planning aids, not commitments.
   - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - Per-step actuals use explicit merged-PR number boundaries per repository; original estimate, actual and remaining estimate are intentionally independent planning signals.
-  - The 11-step plan totals 59 estimated project days before reserve; the increase from 55d reserves explicit effort for the Java-8 extension/provider mechanism and its upstream/device integration rather than hiding that scope in existing steps.
-  - Extension/provider effort is planned as +1d in Step 5, +1d in Step 7 and +2d in Step 10.
+  - The original 11-step baseline totals 59 estimated project days before reserve and is retained as historical planning context.
+  - Remaining estimates were re-evaluated on 2 October 2026 after Step-4 implementation evidence and the Step-5/Step-7 scope review; forecasts use the current remaining estimates, not original estimate minus actual.
+  - Step 5 now owns one-TimingNode simulated antenna/runtime behaviour; multi-node, reference-data-driven StageTiming and backoffice integration are planned in Step 7.
   - Document maturity describes the established content; completeness is approximate project-wide document coverage, not completion of only the current slice.
   - Completeness percentages are planning indicators, intentionally coarse rather than time-tracking precision.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
@@ -123,7 +124,7 @@ steps:
 
   "4":
     estimate_project_days: 6
-    workstream: domain
+    remaining_estimate_project_days: 0.5\n    workstream: domain
     docs:
       requirements: {level: working, scope: "TimingNode state and domain capabilities"}
       idd: {level: working, scope: "public semantics required by new domain behaviour"}
@@ -138,7 +139,7 @@ steps:
 
   "5":
     estimate_project_days: 6
-    workstream: simulation
+    remaining_estimate_project_days: 6\n    workstream: simulation
     docs:
       requirements: {level: working, scope: "simulated antenna input, registration admission and recovery"}
       idd: {level: working, scope: "public/test interfaces needed to drive and observe simulated input"}
@@ -152,7 +153,7 @@ steps:
 
   "6":
     estimate_project_days: 4
-    workstream: client
+    remaining_estimate_project_days: 5\n    workstream: client
     docs:
       requirements: {level: working, scope: "first useful SI-02 behaviour"}
       idd: {level: review, scope: "API consumed by SI-02"}
@@ -166,7 +167,7 @@ steps:
 
   "7":
     estimate_project_days: 7
-    workstream: backoffice
+    remaining_estimate_project_days: 9\n    workstream: backoffice
     docs:
       requirements: {level: working, scope: "backoffice reference/timing flows and multi-node behaviour"}
       idd: {level: working, scope: "reference-data, TimingData and selected transport contracts"}
@@ -180,7 +181,7 @@ steps:
 
   "8":
     estimate_project_days: 4
-    workstream: platform-study
+    remaining_estimate_project_days: 4\n    workstream: platform-study
     docs:
       requirements: {level: working, scope: "target hardware needs and constraints"}
       idd: {level: outline, scope: "device/electrical interfaces identified as needed"}
@@ -194,7 +195,7 @@ steps:
 
   "9":
     estimate_project_days: 4
-    workstream: platform
+    remaining_estimate_project_days: 4\n    workstream: platform
     docs:
       requirements: {level: working, scope: "selected target execution/deployment needs"}
       idd: {level: review, scope: "API used for target inspection"}
@@ -207,7 +208,7 @@ steps:
 
   "10":
     estimate_project_days: 10
-    workstream: hardware
+    remaining_estimate_project_days: 10\n    workstream: hardware
     docs:
       requirements: {level: working, scope: "selected real-device behaviour"}
       idd: {level: working, scope: "RFID/CAN/display/RTC interfaces as applicable"}
@@ -221,7 +222,7 @@ steps:
 
   "11":
     estimate_project_days: 8
-    workstream: integration
+    remaining_estimate_project_days: 8\n    workstream: integration
     docs:
       requirements: {level: working, scope: "representative integrated operation"}
       idd: {level: working, scope: "interfaces required by integrated system"}
