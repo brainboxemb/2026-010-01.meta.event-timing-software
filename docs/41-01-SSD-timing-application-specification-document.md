@@ -219,7 +219,7 @@ The dev auto-reg control shall be usable only when
 SI-01 advertises that the corresponding engineering capability is both supported
 and enabled. This control enters at the accepted semantic registration boundary
 and shall not let the client supply final TimingData, source sequence, active
-LocationId, recorded time or source identity.
+LocationId or source identity.
 ```
 
 ```{req} Reconnect rebuild before live presentation
