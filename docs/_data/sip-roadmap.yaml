@@ -9,8 +9,8 @@ actuals:
   estimated_hours: 56.4
   method: >-
     Approximation from commit activity within merged pull requests across the
-    meta and implementation repositories. Each commit contributes a 30-minute
-    activity window (15 minutes before and after); overlapping windows are merged
+    meta and implementation repositories. Each commit contributes a 60-minute
+    activity window (30 minutes before and after); overlapping windows are merged
     and counted once. The project total merges all repository activity; per-step
     values use the same method after PR attribution. Hours are divided by 8 to
     obtain project days. This is a planning indication, not time tracking.
