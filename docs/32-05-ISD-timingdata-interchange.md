@@ -84,7 +84,7 @@ one committed TimingData record. Sequence numbers are local to one Node ID
 stream; they are not one application-wide counter.
 
 The default/reference development-v1 design maps the currently supported record
-families to JSON in `33-05-IDD-timingdata-interchange.md`.
+types to JSON in `33-05-IDD-timingdata-interchange.md`.
 
 ## Record identity and sequence
 
@@ -163,34 +163,23 @@ record.
 
 ## Default/reference representation
 
-IF-05 requires one public default/reference representation so development,
-engineering/test tooling and compatible consumers can exchange TimingData
-without depending on a product-specific representation.
+The project provides one default/reference representation for development,
+engineering/test tooling and compatible consumers. Its concrete JSON/JSON Lines
+design is documented by `33-05-IDD-timingdata-interchange.md`.
 
-The current design is documented by
-`33-05-IDD-timingdata-interchange.md`.
-
-The reference representation shall:
-
-- carry all common and record-family-specific values needed to interpret one
-  record;
-- identify record identity and source order unambiguously;
-- allow one complete record to be decoded without requiring preceding or
-  following TimingData records;
-- define an unambiguous record-completion boundary;
-- identify the representation version used by each record;
-- allow compatible additions without changing the meaning of existing values;
-- prevent unsupported versions from being silently interpreted using another
-  version's semantics.
+The reference representation is a design of the IF-05 semantic model; its JSON
+member names, line framing, version field and optional metadata are not common
+TimingData-envelope values.
 
 ## Alternative representations
 
 A product/event-specific implementation may use another concrete representation,
 including a different text, fixed-field, binary or proprietary format.
 
-Such a representation does not need to use the default filename extension,
-record framing or member names. It must preserve the IF-05 semantic contract
-when data is translated to/from the common boundary.
+Such a representation does not need to reuse the default filename extension,
+record framing or member names. Its interface conformance is assessed against
+the applicable IF-05 requirements and the semantics of the record types it
+supports.
 
 ## IF-05 requirements
 

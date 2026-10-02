@@ -142,6 +142,11 @@ def render_need(
     metadata = [f"**Type:** {label}"]
     status = need.get("status")
     if isinstance(status, str) and status:
+        if directive in {"req", "ifreq"} and status not in STATUS_LABELS:
+            raise ReaderRenderError(
+                f"{object_id}: unsupported requirement status {status!r}; "
+                "expected D, R, A or O"
+            )
         metadata.append(f"**Status:** {STATUS_LABELS.get(status, status)}")
     metadata.extend(relation_items(need, needs))
     if metadata:

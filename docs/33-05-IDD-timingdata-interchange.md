@@ -140,7 +140,7 @@ recType
 time
 regId
 code
-recTime
+recTime   # when present
 ```
 
 Validation rules:
@@ -156,7 +156,8 @@ Validation rules:
 
 ## Timestamp encoding
 
-Canonical development-v1 timestamp text is:
+Canonical development-v1 timestamp text for registration `time`, and for
+optional `recTime` when present, is:
 
 ```text
 YYYY-MM-DDTHH:mm:ss[.fraction]Z
