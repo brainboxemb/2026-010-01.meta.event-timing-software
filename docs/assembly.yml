@@ -18,9 +18,10 @@ documents:
   - {id: java-build-test-toolchain, source: docs/50-SDE-02-java-build-test-toolchain.md}
   - {id: engineering-client, source: docs/50-SDE-03-engineering-client.md}
   - {id: software-system-specification, source: docs/31-SSSD-software-system-specification-document.md}
-  - {id: application-control-status, source: docs/32-03-IDD-application-control-status.md}
-  - {id: timingdata-interchange, source: docs/32-05-IDD-timingdata-interchange.md}
-  - {id: application-configuration, source: docs/32-11-IDD-application-configuration.md}
+  - {id: application-control-status, source: docs/32-03-ISD-application-control-status.md}
+  - {id: timingdata-interchange, source: docs/32-05-ISD-timingdata-interchange.md}
+  - {id: timingdata-interchange-design, source: docs/33-05-IDD-timingdata-interchange.md}
+  - {id: application-configuration, source: docs/32-11-ISD-application-configuration.md}
   - {id: timing-application-specification, source: docs/41-01-SSD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/41-02-SSD-gui-application-specification-document.md}
   - {id: data-display-design, source: docs/43-01-SDD-01-data-and-display-design.md}
@@ -51,6 +52,7 @@ indexes:
           - {document: software-system-specification}
           - {document: application-control-status}
           - {document: timingdata-interchange}
+          - {document: timingdata-interchange-design}
           - {document: application-configuration}
       - title: Software-item specifications
         items:
@@ -98,6 +100,7 @@ books:
       - software-system-specification
       - application-control-status
       - timingdata-interchange
+      - timingdata-interchange-design
       - application-configuration
       - timing-application-specification
       - data-display-design

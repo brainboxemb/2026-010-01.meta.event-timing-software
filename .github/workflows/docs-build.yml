@@ -130,8 +130,9 @@ jobs:
           cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
           cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
           cp docs/41-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/32-03-IDD-application-control-status.md bld/sphinx-needs/source/docs/
-          cp docs/32-05-IDD-timingdata-interchange.md bld/sphinx-needs/source/docs/
+          cp docs/32-03-ISD-application-control-status.md bld/sphinx-needs/source/docs/
+          cp docs/32-05-ISD-timingdata-interchange.md bld/sphinx-needs/source/docs/
+          cp docs/33-05-IDD-timingdata-interchange.md bld/sphinx-needs/source/docs/
           cp docs/61-01-VTS-timing-application-verification-test-specification.md bld/sphinx-needs/source/docs/
           cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
           cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
@@ -158,8 +159,9 @@ jobs:
 
           docs/30-UC-system-use-cases
           docs/41-01-SSD-timing-application-specification-document
-          docs/32-03-IDD-application-control-status
-          docs/32-05-IDD-timingdata-interchange
+          docs/32-03-ISD-application-control-status
+          docs/32-05-ISD-timingdata-interchange
+          docs/33-05-IDD-timingdata-interchange
           docs/61-01-VTS-timing-application-verification-test-specification
           ~~~
           EOF
@@ -558,20 +560,20 @@ jobs:
               if f'<a id="{object_id}"></a>' not in ssd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
 
-          idd = (root / "32-03-IDD-application-control-status.md").read_text(
+          isd = (root / "32-03-ISD-application-control-status.md").read_text(
               encoding="utf-8"
           )
           for number in range(1, 11):
               object_id = f"IF03-REQ-{number:03d}"
-              if f'<a id="{object_id}"></a>' not in idd:
+              if f'<a id="{object_id}"></a>' not in isd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
 
-          timingdata_idd = (root / "32-05-IDD-timingdata-interchange.md").read_text(
+          timingdata_isd = (root / "32-05-ISD-timingdata-interchange.md").read_text(
               encoding="utf-8"
           )
-          for number in range(1, 16):
+          for number in range(1, 17):
               object_id = f"IF05-REQ-{number:03d}"
-              if f'<a id="{object_id}"></a>' not in timingdata_idd:
+              if f'<a id="{object_id}"></a>' not in timingdata_isd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
           PY
 
@@ -591,7 +593,10 @@ jobs:
           test -f bld/docs/documents/50-SDE-01-software-development-environment.md
           test -f bld/docs/documents/50-SDE-02-java-build-test-toolchain.md
           test -f bld/docs/documents/41-01-SSD-timing-application-specification-document.md
-          test -f bld/docs/documents/32-05-IDD-timingdata-interchange.md
+          test -f bld/docs/documents/32-03-ISD-application-control-status.md
+          test -f bld/docs/documents/32-05-ISD-timingdata-interchange.md
+          test -f bld/docs/documents/33-05-IDD-timingdata-interchange.md
+          test -f bld/docs/documents/32-11-ISD-application-configuration.md
           test -f bld/docs/documents/43-01-SDD-02-java-component-design.md
           test -f bld/docs/documents/60-SVP-software-verification-plan.md
           test -f bld/docs/documents/61-01-VTS-timing-application-verification-test-specification.md

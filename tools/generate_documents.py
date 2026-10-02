@@ -28,8 +28,10 @@ EXTERNAL_INPUT_DOCUMENTS = [
 SYSTEM_SPEC_DOCUMENTS = [
     "30-UC-system-use-cases.md",
     "31-SSSD-software-system-specification-document.md",
-    "32-03-IDD-application-control-status.md",
-    "32-11-IDD-application-configuration.md",
+    "32-03-ISD-application-control-status.md",
+    "32-05-ISD-timingdata-interchange.md",
+    "33-05-IDD-timingdata-interchange.md",
+    "32-11-ISD-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
