@@ -1,6 +1,9 @@
 step: 4
 
 planning_changes:
+  - date: '2026-10-02'
+    change: >-
+      A03 and V03 completed; V04 Engineering Client running-system demo is active.
   - date: '2026-10-01'
     change: >-
       Step-4 verification ordered as A03 -> black-box VC-ST1-002 -> client demo.
@@ -84,12 +87,12 @@ activities:
     lane: application
     kind: integration
     title: Engineering Client first-slice control
-    state: active
+    state: done
     depends_on: [D01, A02]
     note: >-
-      Add IF-03/client support for location, open/close, capability-gated direct
-      registration simulation, registration history and live updates. Rebuild
-      current state/history after reconnect before presenting data as live.
+      IF-03/client location, open/close, capability-gated auto-reg, bounded
+      LogBook history and live updates are implemented. Reconnect rebuild buffers
+      later live events, merges them after the HTTP baseline and only then goes LIVE.
 
   - id: V02
     lane: verification
@@ -104,21 +107,21 @@ activities:
     lane: verification
     kind: verification
     title: Automated first-registration black-box verification
-    state: planned
+    state: done
     depends_on: [A03, V02]
     note: >-
-      Automate VC-ST1-002 against SI-01 as a separate process through public
-      IF-03 only: status -> location -> open -> accepted registration -> history
-      + live event -> close -> reconnect/history rebuild and dedup.
+      VC-ST1-002 is implemented by FirstRegistrationBlackBoxTest and passed as a
+      separate process through public IF-03: control, auto-reg, LogBook/live
+      observation, close and reconnect without historical event replay.
 
   - id: V04
     lane: verification
     kind: verification
     title: Engineering Client running-system demo
-    state: planned
+    state: active
     depends_on: [V03, A03]
     note: >-
       Manually run the same first-registration flow through the JavaFX Engineering
-      Client after black-box verification is green. Verify control enablement,
-      command feedback, history/live presentation and reconnect state without
-      RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+      Client after green VC-ST1-002. Follow test-client/STEP4-DEMO.md and Java
+      issue #127; record build/client identity plus concise pass/fail evidence for
+      controls, history/live presentation, reconnect/recovery and clean shutdown.

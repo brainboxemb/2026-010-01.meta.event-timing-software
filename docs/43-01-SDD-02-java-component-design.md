@@ -262,6 +262,11 @@ A production `TimingNode` is always constructed as a complete capability. `Timin
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
+The application `CommandHandler` is always composed with a complete
+`TimingNode`; there is no status-only or partially configured production
+handler. Presentation tests use complete test fixtures rather than adding a
+second production construction mode.
+
 Status-change detection is owned by the same serial boundary. A state-changing
 command compares authoritative status before and after the domain operation on
 that TimingNode lane. A real difference emits the TimingNode status event before
@@ -964,9 +969,14 @@ Code outside the TimingNode ownership boundary does not read the mutable
 LogBook list directly. A consistency-sensitive query enters the TimingNode lane
 and performs its bounded read in the same ordering as state changes.
 
-The read representation is deliberately not fixed to a copied list. For routine
-range/latest/ranking-style access, prefer direct bounded traversal of the owned
-records when that avoids unnecessary allocation and GC pressure. A query may
+The read representation is deliberately not fixed to a copied list. The current
+Step-4 bounded IF-03 range/latest implementation traverses the owned LogBook
+records directly on the TimingNode lane and builds only the final response
+representation; no temporary LogBook `List` copy escapes the owner. Network
+write/send remains outside the TimingNode lane.
+
+For future range/latest/ranking-style access, prefer direct bounded traversal of
+the owned records when that avoids unnecessary allocation and GC pressure. A query may
 instead use compact derived/indexed state, reusable scratch storage or a copied
 view when measurements show that approach is cheaper overall.
 
