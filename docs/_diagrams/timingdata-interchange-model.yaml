@@ -39,6 +39,7 @@ nodes:
     items:
       - RegistrationId
       - observed effective time
+      - "reference: AUTO_REG + [ADD]"
 
   - id: manual-registration
     label: ManualRegistrationTimingData
@@ -49,6 +50,7 @@ nodes:
     items:
       - RegistrationId
       - system-assigned or operator-entered time
+      - "reference: MAN_REG + [ADD,AUTO|MAN]"
 
   - id: timingdata-context
     label: TimingDataContext
@@ -98,7 +100,7 @@ nodes:
 
   - id: reference
     label: Default / reference profile
-    subtitle: canonical UTF-8 JSON Lines representation
+    subtitle: compact UTF-8 JSON Lines development representation
     kind: storage
     group: profile
     layout: {x: 1070, y: 540, w: 380, h: 85}

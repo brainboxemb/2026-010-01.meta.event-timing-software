@@ -26,8 +26,10 @@ The first slice covers:
 
 Other TimingData families are added only when a promoted use case or requirement
 needs them. In particular, UC-002 currently leaves OPEN/CLOSE-as-TimingData as a
-later decision, and the current use-case baseline does not require registration
-revocation.
+later decision, and the current use-case baseline does not require runtime
+registration revocation. The development representation does reserve the
+registration `REV` action shape so a later promoted revoke flow does not require
+another representation redesign.
 
 ## Inputs
 
@@ -104,35 +106,35 @@ relationships belong in SI-01 detailed design.
 
 ## Common TimingData envelope
 
-Every committed TimingData value exposes the following common semantic envelope.
-The default/reference v1 representation serializes these values directly:
+Every committed TimingData value exposes the following common semantic values:
 
 ```text
-TimingDataRecord
-  version
+TimingData
   timingNodeId
   sequenceNumber
   locationId
-  recordType
   effectiveTime
   recordedAt
-  type-specific data
+  type-specific semantics
 ```
 
-First-slice field semantics:
+Semantic field meanings:
 
-- `version` — TimingData interchange major version; first slice is `1`;
 - `timingNodeId` — stable functional identity of the TimingNode that owns the
   record stream;
 - `sequenceNumber` — monotonically increasing record sequence scoped to that
-  `TimingNodeId`;
-- `locationId` — location active for the fact represented by the record;
-- `recordType` — semantic record family;
+  TimingNodeId;
+- `locationId` — location captured for the represented timing fact;
 - `effectiveTime` — time at which the represented timing fact applies;
 - `recordedAt` — absolute time captured when SI-01 materializes the definitive
   record for the commit attempt; durable commit itself is established only by a
   successful complete append, not by this timestamp;
-- type-specific data — semantic payload required by the selected `recordType`.
+- type-specific semantics — values required by the selected TimingData family.
+
+The compact default/reference JSON representation maps these semantic values to
+`nodeId`, `seqNr`, `locId`, `time` and `recTime`. Representation fields
+`v`, `recType` and `code` identify the concrete development format and the
+registration variant/action.
 
 A record captures its `locationId`; later TimingNode reconfiguration does not
 change historical records.
@@ -171,66 +173,127 @@ The internal mechanism that tentatively allocates and durably commits the next
 sequence belongs to SI-01 design. IF-05 only defines the externally observable
 ordered stream and stable key.
 
-## TimingData v1 record types
+## TimingData v1 registration record types
 
-### REGISTRATION
+The development v1 reference representation uses a separate record type for an
+automatic registration and a manually initiated registration.
 
-Represents one committed participant registration.
+### AUTO_REG
 
-```text
-recordType = REGISTRATION
-registrationId
-origin
-timeSource
-effectiveTime
-```
+Represents an automatic registration, for example a registration derived from an
+accepted automatic observation.
 
-The v1 representation distinguishes two semantic registration variants:
+Current Step-4 add shape:
 
 ```text
-AUTOMATIC
-  origin = AUTOMATIC
-  timeSource = OBSERVED
-
-MANUAL
-  origin = MANUAL
-  timeSource = SYSTEM_ASSIGNED | OPERATOR_ENTERED
+recType = AUTO_REG
+code = [ADD]
+regId
+time
 ```
 
-An automatic registration uses the accepted observed time. A manual
-registration may use the system-assigned time or an explicitly operator-entered
-effective time.
+The record type already carries the automatic-registration meaning, so `AUTO`
+is not repeated in `code`.
 
-These discriminators describe the canonical representation. They do not require
-one universal Java record class: the common Java API may expose
-`TimingData.AutomaticRegistration` and `TimingData.ManualRegistration` directly
-for type safety.
+The reserved future revoke mirror is:
 
-Provider-specific one-character registration/action codes are not part of the
-public IF-05 contract.
+```text
+recType = AUTO_REG
+code = [REV]
+same regId
+same time
+```
+
+Runtime creation/processing of `REV` is not part of the current Step-4 slice.
+
+### MAN_REG
+
+Represents a manually initiated registration. Its second code states how the
+effective time was obtained:
+
+```text
+system-assigned time:
+  recType = MAN_REG
+  code = [ADD, AUTO]
+
+operator-entered time:
+  recType = MAN_REG
+  code = [ADD, MAN]
+```
+
+The future revoke form mirrors the original time-source code:
+
+```text
+[ADD, AUTO]  -> [REV, AUTO]
+[ADD, MAN]   -> [REV, MAN]
+```
+
+For canonical writer output, the action code (`ADD` or future `REV`) comes
+first and the MAN_REG time-source code comes second. Code-array ordering itself
+is not semantic to a reader; the combination is semantic. Duplicate,
+contradictory or unknown codes for a known record type are invalid.
+
+The common Java API may continue to expose
+`TimingData.AutomaticRegistration` and `TimingData.ManualRegistration` for
+type safety. The default codec maps those semantic types to the compact
+`recType` + `code[]` representation.
+
+Product/event-specific providers may map these semantics to their native record
+or action codes. Native provider codes are not imposed on the common Java API.
+
+### Reserved revoke matching semantics
+
+When registration revocation is promoted into an executable use case, a revoke
+record repeats the original registration's `regId` and effective/race `time`.
+Within the TimingNode stream those values identify the registration to revoke.
+The revoke record receives its own new `seqNr` and its own `recTime`; it does
+not point to the original LogBook sequence number.
+
+For a manual registration, the revoke record also mirrors the original
+`AUTO`/ `MAN` time-source code. The original committed record is never
+rewritten or deleted.
+
+The duplicate/ambiguity policy required to guarantee an unambiguous
+`regId + time` lookup is part of the deferred runtime revoke design and must be
+defined before `REV` is enabled.
 
 ## TimingData v1 record matrix
 
-| Record type | Common envelope | Type-specific required data |
-| --- | --- | --- |
-| `REGISTRATION` | version, TimingNodeId, sequence, LocationId, effectiveTime, recordedAt | `registrationId`, `origin`, `timeSource` |
+| Record type | Current Step-4 code | Required registration data | Reserved future revoke code |
+| --- | --- | --- | --- |
+| `AUTO_REG` | `["ADD"]` | `regId`, observed/effective `time` | `["REV"]` |
+| `MAN_REG` | `["ADD","AUTO"]` or `["ADD","MAN"]` | `regId`, effective `time` | `["REV","AUTO"]` or `["REV","MAN"]` |
 
 ## Canonical JSON field contract
 
-Known v1 members use the following JSON types and validation rules:
+Known development-v1 members use the following JSON types and validation rules.
+The canonical writer emits them in the order shown.
 
 | Member | JSON type | Required | v1 rule |
 | --- | --- | --- | --- |
-| `version` | integer | every record | exactly `1` |
-| `timingNodeId` | string | every record | non-empty stable TimingNode identity; carried unchanged from the configured/application identity |
-| `sequenceNumber` | integer | every record | `1..9007199254740991`; plain decimal; source-stream ordering rules apply |
-| `locationId` | integer | every record | positive LocationId representation; concrete event/profile allowed sets and meanings are outside IF-05 |
-| `recordType` | string | every record | exactly `REGISTRATION` in v1 |
-| `effectiveTime` | string | every record | canonical IF-05 TimingTimestamp text |
-| `recordedAt` | string | every record | canonical IF-05 TimingTimestamp text |
-| `registrationId` | string | every record | non-empty RegistrationId representation; concrete event/profile allowed values and meanings are outside IF-05 |
-| `origin` | string | every record | `AUTOMATIC` or `MANUAL` |
-| `timeSource` | string | every record | `OBSERVED`, `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED` |
+| `v` | integer | every record | exactly `1`; odd values denote development/unstable formats |
+| `nodeId` | string | every record | non-empty stable TimingNode identity; maps to semantic `TimingNodeId` |
+| `seqNr` | integer | every record | `1..9007199254740991`; plain decimal; maps to semantic `SequenceNumber` |
+| `locId` | integer | every record | positive LocationId representation; concrete event/profile allowed sets and meanings are outside IF-05 |
+| `recType` | string | every record | `AUTO_REG` or `MAN_REG` in the current v1 registration slice |
+| `time` | string | every record | canonical effective/race `TimingTimestamp` text |
+| `regId` | string | registration records | non-empty RegistrationId representation; concrete event/profile allowed values and meanings are outside IF-05 |
+| `code` | array of strings | registration records | exact valid code combination for the selected `recType`; no duplicates |
+| `recTime` | string | every record | canonical recorded-at `TimingTimestamp` text |
+
+Canonical member order is therefore:
+
+```text
+v
+nodeId
+seqNr
+locId
+recType
+time
+regId
+code
+recTime
+```
 
 `LocationId` and `RegistrationId` are shared value representations at the
 IF-05 boundary, not universal event policy. IF-05 owns their serialized shape
@@ -240,11 +303,13 @@ their concrete meaning, allowed values/ranges and source mappings.
 Validation rules:
 
 - every required member is present and non-null;
-- `timingNodeId` values are not normalized, case-folded or derived by IF-05;
-- `AUTOMATIC` registrations use `timeSource = OBSERVED`;
-- `MANUAL` registrations use `SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`;
-- no chronological ordering invariant is inferred from `effectiveTime` or
-  `recordedAt`; `sequenceNumber` remains the authoritative source order.
+- `nodeId` values are not normalized, case-folded or derived by IF-05;
+- `AUTO_REG` currently accepts exactly `["ADD"]`;
+- `MAN_REG` currently accepts `ADD` plus exactly one of `AUTO` or `MAN`;
+- readers may accept a valid `code` combination in another array order, but the
+  canonical writer always emits action first;
+- no chronological ordering invariant is inferred from `time` or `recTime`;
+  `seqNr` remains the authoritative source order.
 
 ## Registration identities
 
@@ -260,7 +325,7 @@ Conceptually:
 
 ```text
 TagId  -----> RaceData/reference resolution ----\
-                                                  +--> RegistrationId --> TimingData REGISTRATION
+                                                  +--> RegistrationId --> TimingData registration
 TeamId -----> RaceData/reference resolution ----/
 ```
 
@@ -279,36 +344,40 @@ this public contract.
 
 TimingData event/registration timestamps are absolute `TimingTimestamp` values.
 
-The canonical IF-05 v1 text representation is:
+The canonical IF-05 development-v1 text representation is:
 
 ```text
-YYYY-MM-DDTHH:mm:ss.nnnnnnnnnZ
+YYYY-MM-DDTHH:mm:ss[.fraction]Z
 ```
 
 Rules:
 
 - the value is an absolute UTC instant and always uses the literal `Z`;
-- fractional seconds contain exactly **9 digits**;
+- fractional seconds are optional and, when present, contain **1 to 9 digits**;
+- the canonical writer omits a fractional part for a whole second and removes
+  unnecessary trailing fractional zeroes;
+- the representation preserves the absolute instant at up to nanosecond
+  resolution; trailing zeroes do not carry independent semantic meaning;
 - offsets such as `+02:00`, implicit local time and time-zone names are not
   canonical IF-05 values;
-- the nine-digit representation defines interchange resolution/capacity, not the
-  accuracy of the underlying hardware or operating-system clock;
 - chronological comparison is by represented absolute instant, not by source
   sequence;
 - provider-specific/external formats may use another timestamp representation
   but must translate without silently changing the represented instant.
 
-Example:
+Examples:
 
 ```text
-2026-09-30T20:01:39.123000000Z
+2026-10-01T12:00:00Z
+2026-10-02T10:57:43.444Z
+2026-10-02T10:57:43.444123789Z
 ```
 
-The `recordedAt` value is metadata captured immediately before the definitive
-record is encoded/appended by the ordered commit handler. It is not a durable
-commit marker and need not equal the exact physical completion time of the file
-write. In particular, source sequence remains authoritative for record ordering
-when the wall clock is corrected.
+The semantic `recordedAt` value is serialized as `recTime`. It is metadata
+captured immediately before the definitive record is encoded/appended by the
+ordered commit handler. It is not a durable commit marker and need not equal the
+exact physical completion time of the file write. In particular, source sequence
+remains authoritative for record ordering when the wall clock is corrected.
 
 Race/stage start reference data may separately be defined as time-of-day only.
 That reference-data concept is not forced into an absolute TimingData timestamp by
@@ -320,16 +389,16 @@ race-day rules. That calculation is not part of the TimingData file encoding.
 
 ## Canonical public/reference file encoding
 
-The canonical v1 reference file is append-only UTF-8 JSON Lines and represents
-records from exactly one `TimingNodeId` source stream.
+The canonical development-v1 reference file is append-only UTF-8 JSON Lines and
+represents records from exactly one `nodeId` source stream.
 
 Rules:
 
 - encoding is UTF-8 without a byte-order mark (BOM);
-- there is no file header, footer or comment syntax; version is carried by each
+- there is no file header, footer or comment syntax; `v` is carried by each
   record;
 - one complete TimingData record is encoded on one physical line;
-- all records in one canonical file use the same `timingNodeId`;
+- all records in one canonical file use the same `nodeId`;
 - canonical writer line ending is **LF** (`0x0A`);
 - a reader may accept **CRLF** (`0x0D 0x0A`) for interoperability;
 - the line terminator is part of the complete-record boundary: valid JSON bytes
@@ -340,58 +409,48 @@ Rules:
 - every complete record line is independently JSON-decodable;
 - the canonical writer emits compact single-line JSON; insignificant whitespace
   and JSON object member ordering are not semantic to readers;
-- the canonical writer emits common envelope members in the order shown by this
-  IDD, followed by the registration-specific members;
+- the canonical writer emits members in this fixed order:
+  `v,nodeId,seqNr,locId,recType,time,regId,code,recTime`;
 - the file is append-only; existing committed records are not rewritten;
 - an incomplete trailing line after interrupted/power-loss write is not a
   committed record;
 - valid complete records before an incomplete tail remain readable;
 - a complete authoritative local file/stream keeps contiguous committed sequence
   order; recovery/import validates ordering and reports gaps, duplicates or
-  regressions explicitly;
-- canonical JSON member names and enum text are the names shown by this IDD.
+  regressions explicitly.
 
 The exact file naming, rotation/retention and filesystem durability primitive are
 deployment/software-item concerns and are not defined by IF-05.
 
 ## Reference JSON shape
 
-The following examples illustrate the canonical v1 semantic shape and timestamp
-representation.
+The following examples use the canonical compact member order.
 
-Automatic registration example:
-
-```json
-{
-  "version": 1,
-  "timingNodeId": "timing-node-01",
-  "sequenceNumber": 1,
-  "locationId": 7,
-  "recordType": "REGISTRATION",
-  "effectiveTime": "2026-09-30T20:01:39.123000000Z",
-  "recordedAt": "2026-09-30T20:01:39.123000000Z",
-  "registrationId": "registration-0042",
-  "origin": "AUTOMATIC",
-  "timeSource": "OBSERVED"
-}
-```
-
-Manual registration example:
+Automatic registration:
 
 ```json
-{
-  "version": 1,
-  "timingNodeId": "timing-node-01",
-  "sequenceNumber": 2,
-  "locationId": 7,
-  "recordType": "REGISTRATION",
-  "effectiveTime": "2026-09-30T20:01:42.000000000Z",
-  "recordedAt": "2026-09-30T20:01:45.456000000Z",
-  "registrationId": "registration-0042",
-  "origin": "MANUAL",
-  "timeSource": "OPERATOR_ENTERED"
-}
+{"v":1,"nodeId":"Test","seqNr":1,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00Z","regId":"N001","code":["ADD"],"recTime":"2026-10-02T10:57:43.444Z"}
 ```
+
+Manually initiated registration using system-assigned time:
+
+```json
+{"v":1,"nodeId":"Test","seqNr":2,"locId":24,"recType":"MAN_REG","time":"2026-10-01T12:00:05Z","regId":"N002","code":["ADD","AUTO"],"recTime":"2026-10-02T10:57:45.1Z"}
+```
+
+Manually initiated registration using operator-entered time:
+
+```json
+{"v":1,"nodeId":"Test","seqNr":3,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N003","code":["ADD","MAN"],"recTime":"2026-10-02T10:57:46Z"}
+```
+
+Reserved future revoke examples (not yet executable Step-4 behavior):
+
+```json
+{"v":1,"nodeId":"Test","seqNr":4,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00Z","regId":"N001","code":["REV"],"recTime":"2026-10-02T11:05:12.123Z"}
+{"v":1,"nodeId":"Test","seqNr":5,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N003","code":["REV","MAN"],"recTime":"2026-10-02T11:05:14Z"}
+```
+
 
 ## TimingData profiles, factory and codec
 
@@ -451,38 +510,51 @@ standalone-import requirement justifies it.
 
 ## Compatibility and versioning
 
-TimingData v1 is identified by `version = 1`.
+The default/reference representation uses **integer format versions only**.
 
-Compatibility rules:
+Version parity is intentional:
+
+- **odd** values are development/unstable formats;
+- **even** values are released/stable formats;
+- the current working format is development `v = 1`;
+- once the first contract is frozen for release it becomes stable `v = 2`;
+- a later incompatible development cycle uses `v = 3`, which may later be
+  frozen as stable `v = 4`, and so on;
+- decimal/minor values such as `1.1` are not used.
+
+Because v1 is explicitly a development format, its shape may still change while
+the Step-4 review candidate is being finalized. A v1 reader and writer are
+therefore expected to come from the same agreed development baseline.
+
+Within one supported baseline:
 
 - a canonical writer emits only members defined by the IF-05 version it
   implements;
-- a v1 reader shall tolerate and ignore additional JSON object members on a
-  record whose required v1 fields and known semantics remain valid;
-- a reader encountering an unknown `recordType` within a supported major
-  version shall retain/report the common envelope and sequence position as an
+- a reader shall tolerate and ignore additional JSON object members when the
+  required known fields and semantics remain valid;
+- a reader encountering an unknown `recType` within a supported version shall
+  retain/report the common semantic envelope and sequence position as an
   unsupported record rather than silently reinterpreting it as a known type;
-- business projections may skip an unsupported record type only with explicit
-  unsupported-data status/diagnostics; they shall not pretend the stream is fully
-  understood;
-- malformed JSON, a missing required field, an invalid field type/value or a
-  sequence violation is an invalid-record condition and shall be reported
-  explicitly during authoritative recovery/import;
-- an unsupported major `version` is an explicit compatibility failure for
-  semantic decoding. The raw line may be retained/exported, but shall not be
-  interpreted using v1 semantics;
-- compatible additions must not change the meaning of already-defined v1 fields
-  or enum values.
+- malformed JSON, a missing required field, an invalid field type/value, an
+  invalid `code` combination or a sequence violation is an invalid-record
+  condition and shall be reported explicitly during authoritative recovery/import;
+- an unsupported integer `v` is an explicit compatibility failure for semantic
+  decoding. The raw line may be retained/exported, but shall not be interpreted
+  using another version's semantics;
+- compatible additions must not silently change the meaning of already-defined
+  fields or code values.
 
-Breaking semantic changes shall not silently redefine v1.
+A stable even-numbered format is not silently redefined. Breaking work starts in
+the next odd-numbered development format.
 
 ## IF-05 requirements
 
 ```{ifreq} Common TimingData v1 envelope
 :id: IF05-REQ-001
 
-Every committed TimingData record shall contain the v1 common record envelope
-defined by this IDD.
+Every committed TimingData record shall expose the common semantic values
+defined by this IDD. The default/reference representation shall map them to the
+compact v1 fields defined here.
 ```
 
 ```{ifreq} Stable TimingData record key
@@ -498,10 +570,11 @@ Sequence numbering shall start at 1 per TimingNode stream; 0 is reserved and
 committed record keys shall not be reused.
 ```
 
-```{ifreq} TimingData v1 record families
+```{ifreq} TimingData v1 registration families
 :id: IF05-REQ-004
 
-TimingData v1 shall support `REGISTRATION` records as defined by this IDD.
+Development v1 shall support `AUTO_REG` and `MAN_REG` records as defined by
+this IDD.
 ```
 
 ```{ifreq} Canonical registration identity
@@ -527,12 +600,13 @@ Source-specific `TagId` / `TeamId` values shall resolve to canonical
 encoding and mapping rules shall remain outside IF-05.
 ```
 
-```{ifreq} Registration variant semantics
+```{ifreq} Registration code semantics
 :id: IF05-REQ-008
 
-Automatic registrations shall use observed effective time. Manual registrations
-shall distinguish system-assigned and operator-entered effective time as defined
-by this IDD.
+`AUTO_REG` add records shall use `code=["ADD"]`. `MAN_REG` add records shall
+use `code=["ADD","AUTO"]` for system-assigned time or
+`code=["ADD","MAN"]` for operator-entered time. The canonical writer shall
+emit action first.
 ```
 
 ```{ifreq} Canonical reference file encoding
@@ -568,8 +642,9 @@ representations.
 ```{ifreq} Canonical TimingTimestamp text
 :id: IF05-REQ-013
 
-Canonical IF-05 TimingTimestamp text shall use UTC `Z` form with exactly nine
-fractional-second digits as defined by this IDD.
+Canonical IF-05 TimingTimestamp text shall use UTC `Z` form with zero through
+nine fractional-second digits. Canonical writer output shall omit unnecessary
+trailing fractional zeroes while preserving the represented instant.
 ```
 
 ```{ifreq} SequenceNumber range and no-wrap rule
@@ -582,19 +657,32 @@ Canonical v1 SequenceNumber shall be a positive JSON-safe integer in the range
 ```{ifreq} Compatible v1 reader behavior
 :id: IF05-REQ-015
 
-v1 readers shall tolerate additional JSON members while treating malformed
-records, sequence violations and unsupported major versions as explicit
-compatibility/validation conditions according to this IDD.
+A v1 reader shall tolerate additional JSON members while treating malformed
+records, invalid known-code combinations, sequence violations and unsupported
+format versions as explicit compatibility/validation conditions according to
+this IDD.
+```
+
+```{ifreq} Integer version parity
+:id: IF05-REQ-016
+
+The default/reference representation shall use integer format versions only.
+Odd versions shall identify development/unstable formats and even versions shall
+identify released/stable formats.
 ```
 
 ## Deferred from this first slice
 
 - TimingNode OPEN/CLOSE TimingData representation; UC-002 leaves this as a later decision;
-- registration revocation/correction semantics and record family;
+- executable registration revocation/correction behavior, ambiguity/duplicate
+  policy and the IF-03/UI operations that invoke it; v1 only reserves the
+  `REV` representation shape described above;
 - start-procedure record family and payload;
 - penalty/correction record families and payloads;
 - unknown-team registration semantics;
 - source `TagId` provenance exposure;
 - file naming, retention, rotation and filesystem-specific durability primitives;
 - upstream transport/session/reconciliation semantics owned by IF-06;
-- IF-03 control/query resources that create or inspect these records.
+- further IF-03 control/query resources that create or inspect future record types.
+
+
