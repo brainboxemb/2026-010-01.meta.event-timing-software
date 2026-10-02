@@ -127,7 +127,7 @@ observable through a supported black-box state-changing operation.
 ---
 id: VC-ST1-002
 verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043,
+  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-047,
   IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
 ---
 ```
@@ -142,9 +142,10 @@ Verify the first public registration slice through a real SI-01 process:
 operational LocationId/lifecycle control, capability-gated engineering
 registration input, committed LogBook/history and live post-commit observation.
 
-The case also retains a second-process restart/recovery check as robustness
-evidence for the current implementation. That extra check does not create a new
-product requirement.
+The second process run verifies the restart-recovery requirement
+`SI01-REQ-047`. Invalid/corrupt/incomplete recovery cases from
+`SI01-REQ-048` remain component-level persistence/codec verification rather
+than being forced into this happy-path black-box case.
 
 **Setup**
 
@@ -164,13 +165,12 @@ product requirement.
 5. Submit one node-addressed dev auto-reg request with deterministic `id` and
    observation `time`.
 6. Verify the response returns sequence 1 and that the request did not supply
-   source identity, active location or recorded time.
+   source identity or active location.
 7. Query LogBook metadata and verify one committed record with first/last
    sequence 1.
 8. Fetch a bounded LogBook range and verify the sequence-1 record contains the
    active LocationId and supplied observation time.
-9. Verify one `TIMING_DATA_COMMITTED` live event represents the same stable
-   record key.
+9. Verify one `TIMING_DATA_COMMITTED` live event represents the same Node ID + sequence number.
 10. Request `CLOSE` and verify `CLOSED`.
 11. Disconnect and reconnect the WebSocket client.
 12. Verify the new session starts with a current `STATUS_SNAPSHOT`, the
@@ -178,12 +178,12 @@ product requirement.
     again as a new `TIMING_DATA_COMMITTED` event.
 13. Shut the first SI-01 process down through the controlled path.
 
-**Procedure — run 2 robustness evidence**
+**Procedure — run 2 restart recovery**
 
 1. Start a second SI-01 process with the same TimingData persistence file.
 2. Verify the TimingNode starts `CLOSED` with no current operational LocationId.
-3. Verify the LogBook still contains the original sequence-1 record with the same
-   stable key.
+3. Verify the LogBook still contains the original sequence-1 record with the
+   same Node ID + sequence number.
 4. Verify the WebSocket session starts with `STATUS_SNAPSHOT` and the recovered
    record is not emitted as a new `TIMING_DATA_COMMITTED` event.
 5. Shut the second process down through the controlled path.
@@ -196,8 +196,8 @@ product requirement.
   post-commit event;
 - reconnect exposes current state/history without re-emitting the historical
   record as a new commit;
-- the retained second-run robustness check recovers the committed record while
-  operational state starts CLOSED/no-location.
+- the second process run rebuilds the committed record while operational state
+  starts CLOSED/no-location.
 
 ### VC-ST1-003 — Engineering Client reconnect/rebuild integration
 
@@ -214,7 +214,7 @@ verifies: >-
 Verify through the real JavaFX Engineering Client that an external client can
 rebuild current status and bounded TimingData history after reconnect/restart,
 buffer later live events during that rebuild, merge history/live overlap by the
-stable TimingData record key and only then present the view as LIVE.
+Node ID + sequence number and only then present the view as LIVE.
 
 This manual case does not re-prove the server-side lifecycle, registration,
 LogBook persistence or restart recovery already covered by `VC-ST1-002`.
@@ -244,7 +244,7 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 8. Verify the client rebuilds current status to CLOSED with no operational
    Location ID while sequence 1 / `N0001` remains in history.
 9. Verify recovered history is not presented as a new live commit and that any
-   history/live overlap is deduplicated by stable record key.
+   history/live overlap is deduplicated by Node ID + sequence number.
 10. Verify the client reaches LIVE only after the baseline plus buffered live
     events have been reconciled.
 11. Shut SI-01 down cleanly.
@@ -255,7 +255,7 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 - mutating controls remain disabled while the baseline is incomplete;
 - history is rebuilt before LIVE presentation;
 - buffered live events are applied after the baseline;
-- duplicate history/live observations collapse to one stable record;
+- duplicate history/live observations collapse to one record;
 - recovered historical data is not presented as a new committed event;
 - the running-system flow uses no private SI-01 state.
 
