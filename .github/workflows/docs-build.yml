@@ -494,6 +494,7 @@ jobs:
               '**SI01-REQ-003 — Minimal TimingSystem / TimingNode composition**',
               '— — —',
               '- **Type:** Requirement',
+              '- **Status:** Review',
               '- **Derived from:**',
               '- **Satisfied by:**',
               '- **Verified by:**',
@@ -555,6 +556,9 @@ jobs:
               "SI01-REQ-010", "SI01-REQ-011",
               "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
               "SI01-REQ-030", "SI01-REQ-031", "SI01-REQ-032", "SI01-REQ-033",
+              "SI01-REQ-040", "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043",
+              "SI01-REQ-044", "SI01-REQ-045", "SI01-REQ-046", "SI01-REQ-047",
+              "SI01-REQ-048",
           )
           for object_id in si01_ids:
               if f'<a id="{object_id}"></a>' not in ssd:
@@ -563,7 +567,7 @@ jobs:
           isd = (root / "32-03-ISD-application-control-status.md").read_text(
               encoding="utf-8"
           )
-          for number in range(1, 11):
+          for number in range(1, 17):
               object_id = f"IF03-REQ-{number:03d}"
               if f'<a id="{object_id}"></a>' not in isd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
@@ -575,6 +579,11 @@ jobs:
               object_id = f"IF05-REQ-{number:03d}"
               if f'<a id="{object_id}"></a>' not in timingdata_isd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+          if "- **Status:** Draft" not in timingdata_isd:
+              raise SystemExit("generated reader Markdown does not expand D to Draft")
+          if "- **Status:** Review" not in isd:
+              raise SystemExit("generated reader Markdown does not expand R to Review")
           PY
 
       - name: Verify generated output and retained producer evidence
