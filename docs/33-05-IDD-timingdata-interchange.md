@@ -45,9 +45,9 @@ The reference design uses:
 | sequence number | Always | `seqNr` |
 | Location ID | Always | `locId` |
 | record type | Always | `recType` |
-| registration time | By record type | `time` |
+| time | By record type | `time` |
 | Registration ID | By record type | `regId` |
-| registration/action semantics | By record type | `code` |
+| code | By record type | `code` |
 | record creation time metadata | Optional | `recTime` |
 
 The stable IF-05 record key `(Node ID, sequence number)` is represented by
@@ -124,9 +124,9 @@ Known members use the following JSON types and validation rules.
 | `seqNr` | integer | Always | `1..9007199254740991`; plain decimal; v1 reference-design limit |
 | `locId` | integer | Always | positive Location ID representation |
 | `recType` | string | Always | identifies the concrete v1 record type |
-| `time` | string | By record type | required for `AUTO_REG` and `MAN_REG`; canonical registration-time text |
+| `time` | string | By record type | required for `AUTO_REG` and `MAN_REG`; canonical time text |
 | `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; non-empty Registration ID |
-| `code` | array of strings | By record type | required for `AUTO_REG` and `MAN_REG`; valid combination for the selected `recType` |
+| `code` | array of strings | By record type | required for `AUTO_REG` and `MAN_REG`; labels/codes valid for the selected `recType` |
 | `recTime` | string | Optional | canonical record-creation time metadata when emitted |
 
 Canonical writer member order:

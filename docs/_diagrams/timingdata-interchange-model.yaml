@@ -36,8 +36,8 @@ nodes:
       - "Always — Location ID"
       - "Always — record type"
       - "By type — Registration ID"
-      - "By type — registration time"
-      - "By type — registration action"
+      - "By type — time"
+      - "By type — code"
       - "Node ID + sequence identify record"
 
   - id: json-record

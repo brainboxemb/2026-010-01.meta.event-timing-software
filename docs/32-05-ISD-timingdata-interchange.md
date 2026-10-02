@@ -72,11 +72,11 @@ Every TimingData record has a small common envelope:
 | Location ID | Always | location captured with the record |
 | record type | Always | identifies how the remaining record data shall be interpreted |
 | Registration ID | By record type | required by registration record types |
-| registration time | By record type | required by registration record types |
-| registration action | By record type | add or revoke for registration record types |
+| time | By record type | time value defined by the selected record type |
+| code | By record type | one or more labels/codes defined by the selected record type |
 
 `By record type` does not mean optional when that record type is selected. For
-example, Registration ID and registration time are required for a registration
+example, Registration ID and time are required for a registration
 record, but are not fields of a future OPEN/CLOSE or other unrelated record
 type.
 
@@ -120,19 +120,19 @@ IF-05 currently defines registration semantics for:
 - **manual registration** — a registration initiated manually by an
   operator/tool.
 
-A registration record carries a **Registration ID** and **registration time**.
+A registration record carries a **Registration ID** and **time**.
 These values are specific to registration records; they are not common
 TimingData-envelope values.
 
-A registration action is either:
+A code is either:
 
 - **add** — introduces the registration; or
 - **revoke** — withdraws a previously added registration without modifying the
   original committed record.
 
 A revoke record refers to the registration being withdrawn by using the same
-Registration ID and registration time. It is a new TimingData record and
-therefore receives its own sequence number. Whether further disambiguation is
+Registration ID and time. It is a new TimingData record and therefore receives
+its own sequence number. Whether further disambiguation is
 needed when the same Registration ID/time combination can occur more than once
 remains a draft/open interface decision.
 
@@ -153,17 +153,17 @@ participant/reference-data rules remain outside IF-05.
 
 Registration ID is separate from record identity (Node ID + sequence number).
 
-## Registration time
+## Time
 
-For registration records, registration time represents the absolute instant
-assigned to that registration.
+For the current registration record types, `time` represents the absolute
+instant assigned to that registration.
 
 The current interface direction is to preserve that instant across conforming
 representations. The exact textual representation belongs to the IDD.
 
-Other TimingData record types may define their own time-related values when
-they are introduced. IF-05 does not require one generic time field on every
-record.
+Other TimingData record types may give `time` a different defined meaning, or
+may not use a time value at all. `time` is therefore record-type-dependent,
+not part of the always-present envelope.
 
 ## Default/reference representation
 
@@ -235,17 +235,17 @@ registration.
 :status: D
 
 An added or revoked registration record shall identify the Registration ID and
-registration time to which the registration action applies.
+time to which the code applies.
 ```
 
 ```{ifreq} Registration add and revoke
 :id: IF05-REQ-006
 :status: D
 
-IF-05 shall support registration add and registration revoke. A revoke shall be
-represented by a new TimingData record and shall refer to the registration being
-withdrawn using the same Registration ID and registration time; it shall not
-modify the original committed record.
+IF-05 shall support registration codes for ADD and REV. A record carrying REV
+shall be a new TimingData record and shall refer to the registration being
+withdrawn using the same Registration ID and time; it shall not modify the
+original committed record.
 ```
 
 ```{ifreq} Committed record immutability
@@ -260,7 +260,7 @@ TimingData record.
 ## Deferred from this first slice
 
 - TimingNode OPEN/CLOSE TimingData representation;
-- revoke disambiguation beyond Registration ID + registration time, if later needed;
+- revoke disambiguation beyond Registration ID + time, if later needed;
 - start-procedure record type and payload;
 - penalty/correction record types and payloads;
 - unknown-registration semantics;
