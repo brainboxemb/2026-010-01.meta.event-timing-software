@@ -243,14 +243,17 @@ for the current reference representation defined by
 IF-05 semantic values of each supported record.
 ```
 
-```{req} Persist before committed visibility
+```{req} Persist before commit completion
 :id: SI01-REQ-046
 :derived_from: UC-003, UC-011, IF05-REQ-010, IF05-REQ-012
 
-SI-01 shall expose a TimingData record as committed history or a committed live
-event only after append of one complete record to the configured local
-TimingData store has completed successfully. A failed or incomplete append shall
-not become committed LogBook/live state.
+SI-01 shall successfully append the complete TimingData record to the configured
+local TimingData store before completing the registration commit. Only after
+that append succeeds may SI-01 add the record to committed LogBook state,
+publish a committed live event, or report the registration commit as successful.
+
+If the append fails or remains incomplete, the commit shall fail and the record
+shall not be treated as committed.
 ```
 
 ```{req} Rebuild committed TimingData after restart
