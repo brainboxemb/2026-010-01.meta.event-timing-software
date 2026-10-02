@@ -1,6 +1,6 @@
 # TimingData Interchange Interface Design Description (IDD)
 
-Status: review candidate / development-v1 reference representation
+Status: draft / development-v1 reference representation
 
 System interface: **IF-05 — TimingData Interchange**
 

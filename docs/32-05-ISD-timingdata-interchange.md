@@ -1,6 +1,6 @@
 # TimingData Interchange Interface Specification (ISD)
 
-Status: review candidate / Step 4 D03 first TimingData slice
+Status: draft / Step 4 D03 TimingData interface
 
 System interface: **IF-05 — TimingData Interchange**
 
