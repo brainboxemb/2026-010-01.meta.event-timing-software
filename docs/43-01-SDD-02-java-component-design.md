@@ -1139,54 +1139,6 @@ If a later multi-node application shows that one thread per node is too
 expensive, multiple SerialWorkers may share a small executor while preserving
 the per-node invariants above.
 
-### Project-owned thread roles and priority direction
-
-Thread scheduling is treated as a platform execution policy rather than being
-encoded as unrelated numeric priorities inside individual components. The first
-direction uses five project-wide execution roles for **project-owned threads**:
-
-| Execution role | Initial Java priority | Intended work |
-| --- | ---: | --- |
-| `BACKGROUND` | 2 | logging, diagnostics and low-urgency maintenance |
-| `INTERFACE` | 3 | HTTP, WebSocket, Remote Shell and other presentation handling |
-| `SERVICE` | 5 | ordinary device/output processing such as display preparation/rendering |
-| `TIMING` | 7 | TimingNode SerialWorker and ordered timing/domain commit processing |
-| `INGRESS` | 9 | latency-sensitive RFID/antenna receive, timestamp/filter and admission work |
-
-The exact Java type is expected under `platform.execution`, for example
-`ExecutionPriority` or `ThreadRole`, so components select a named role rather
-than calling `Thread.setPriority(...)` with unexplained literals. The type owns
-the initial Java priority mapping; component code still owns its thread name and
-lifecycle.
-
-These priorities are **scheduling preferences, not correctness guarantees**.
-Ordering, bounded admission, overload behaviour and timing correctness must not
-depend on the OS/JVM honouring a particular relative Java priority. CPU affinity,
-Linux nice/realtime policies and similar controls remain target/deployment
-concerns and require separate measurement before adoption.
-
-Every project-owned thread should also have a stable functional name so debugger,
-thread-dump and profiler output is readable, for example
-`tp-node-01`, `tp-api-http`, `tp-shell` and `tp-log-live`.
-
-A high-priority ingress thread must perform only bounded latency-sensitive work.
-A continuous RFID/tag burst must not allow `INGRESS` to remain runnable
-indefinitely and starve `TIMING` or the rest of the process. The concrete RFID
-adapter therefore needs a measured burst/admission policy (for example bounded
-batch work, bounded hand-off or another explicit guard) before physical hardware
-integration. Vendor/library-owned threads are not assumed to obey this policy;
-where their scheduling cannot be controlled, the adapter must isolate their
-callbacks from application-owned execution.
-
-Verification is layered:
-
-- unit/component tests verify project-owned thread names and configured Java
-  priority values;
-- synthetic load tests verify forward progress, queue high-water and
-  ingress-to-commit latency under sustained/bursty work;
-- target-platform tests repeat those scenarios on the selected hardware because
-  Java thread priority mapping is JVM/OS dependent.
-
 ### Raspberry-Pi implementation rules
 
 For the initial Pi-oriented runtime:
