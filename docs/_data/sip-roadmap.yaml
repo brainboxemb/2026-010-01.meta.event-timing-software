@@ -19,7 +19,7 @@ actuals:
       "1": {first_pr: 1, last_pr: 1}
       "2": {first_pr: 2, last_pr: 35}
       "3": {first_pr: 36}
-    brainboxemb/2026-010-02.java.event-timing-framework:
+    brainboxemb/2026-010-02.java.timing-point-application:
       "2": {first_pr: 2, last_pr: 24}
       "3": {first_pr: 26}
 
