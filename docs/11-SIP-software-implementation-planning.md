@@ -187,15 +187,6 @@ Build the first useful **Timing Point Application** (SI-01) on the development h
 - runtime logging and Windows artifact execution are repeatable;
 - the step closes on the next accepted `0.2.x` release.
 
-### Closure evidence
-
-Step 3 closed on 29 September 2026 with accepted release `v0.2.2` from exact implementation
-commit `c07ccd6127ac0976018026778f7a63df7af043bc`. The release tag passed Linux canonical
-Maven verification, native full-Windows Maven verification and Windows execution of the
-exact Linux-produced application JAR. `VC-ST1-001` is part of the canonical reactor and
-verifies the packaged application as a separate process through HTTP/WebSocket plus
-controlled remote-terminal shutdown.
-
 ---
 
 ## Step 4 — First registration-system slice
@@ -209,11 +200,10 @@ Active activity: **V04 — Engineering Client running-system demo**.
 Implement the smallest useful timing-domain vertical slice before introducing
 reference data, keypad/display behaviour or production transports.
 
-The domain/recording foundation, compact node-addressed IF-03 boundary and
-Engineering Client Timing view are implemented. Automated V03 black-box
-verification is green. The remaining active Step-4 closure activity is V04:
-repeat the accepted flow through the running JavaFX Engineering Client and
-capture the manual running-system evidence.
+The step combines the smallest useful domain/recording foundation with the
+public control and observation surfaces needed to exercise it. Automated
+black-box verification should prove SI-01 and IF-03 before the Engineering
+Client is used for the final running-system demonstration.
 
 ### Goal
 
@@ -263,53 +253,24 @@ update, and close it again.
 
 ### Result
 
-- TimingNode location/lifecycle invariants are implemented behind one bounded serial owner.
-- Accepted and manual registrations share one ordered durable TimingData commit path.
-- Committed TimingData survives restart and rebuilds the LogBook before operational work starts.
-- LocationId and RegistrationId are shared value representations without hard-coded event policy.
-- Post-commit TimingData is available through a typed local event without rolling back committed data on listener failure.
-- D01 is complete with declarative Timing-view wireframes, state/enablement rules and reconnect behaviour.
-- A03a is implemented on Java main as `93c23e8` (#122): compact node-addressed IF-03 control, bounded LogBook queries and live committed TimingData.
-- A03b is implemented on Java main as `9d6b8a8` (#124): Engineering Client Timing view, node selection, control enablement, bounded LogBook rebuild and live merge/deduplication.
-- V03 is implemented on Java main as `1626485` (#126): VC-ST1-001 and VC-ST1-002 both pass as separate-process black-box tests through public interfaces.
-- V04 manual Engineering Client running-system demo remains the Step-4 closure activity.
-
-### Current implementation evidence
-
-The accepted Java-main evidence for this slice is:
-
-- `93c23e8` — A03a IF-03 control/LogBook API;
-- `9d6b8a8` — A03b Engineering Client Timing view;
-- `1626485` — V03 black-box verification and explicit system-test workflow.
-
-The V03 workflow ran the packaged application in a separate JVM. Both
-`FirstExecutableBlackBoxTest` (VC-ST1-001) and
-`FirstRegistrationBlackBoxTest` (VC-ST1-002) passed with zero failures/errors.
-VC-ST1-002 verifies the public registration flow and reconnect without replaying
-old LogBook records as new live events. It does **not** claim a process restart;
-restart/recovery remains part of the V04 demo below.
+- One TimingNode can be configured, opened, registered against and closed through the public application boundary.
+- Committed TimingData has stable source identity, location, ordering and restart-safe local history.
+- The Engineering Client can reconstruct current state/history and observe subsequent live updates.
 
 ### Verification order
 
 The running-system verification deliberately separates SI-01/IF-03 behaviour from
 the JavaFX client:
 
-1. **A03 implementation + component/adapter tests** — implement the public
-   node-addressed control/LogBook/live resources and Engineering Client service/view integration.
-2. **V03 / VC-ST1-002 black-box** — start SI-01 as a separate process and drive
-   the complete first-registration flow through public IF-03 only. The test must
-   not inspect or mutate private Java state.
-3. **V04 Engineering Client demo** — repeat the same semantic flow through the
-   JavaFX Engineering Client and verify UI enablement, feedback, LogBook/live
-   presentation and reconnect/stale/live behaviour.
+1. Implement the public node-addressed control, LogBook/live resources and Engineering Client integration.
+2. Run an automated black-box test with SI-01 as a separate process and drive the complete first-registration flow through public IF-03 only.
+3. Repeat the same semantic flow through the JavaFX Engineering Client and verify UI enablement, feedback, history/live presentation and reconnect behaviour.
 
-This order makes failures easier to localise: V03 proves SI-01 and IF-03
-independently before V04 adds the human/UI client.
+This order keeps SI-01/API failures separate from Engineering Client/UI failures.
 
 ### Demo
 
-The demo is V04 and runs only after V03/VC-ST1-002 is green.
-
+The running-system demo follows the automated black-box verification.
 
 - Start SI-01 with the registration point CLOSED and no operational location.
 - Connect the Engineering Client and rebuild current status/LogBook.
@@ -317,23 +278,21 @@ The demo is V04 and runs only after V03/VC-ST1-002 is green.
 - Open registration.
 - Inject one dev auto-reg request with deterministic `id` and `time`.
 - Inspect the committed TimingData in the LogBook and the corresponding live update.
-- Verify **Set Location** is disabled while OPEN; V03 already proves a direct IF-03 location change is rejected with `NODE_NOT_CLOSED`.
+- Verify **Set Location** is disabled while OPEN and that a direct IF-03 location change is rejected.
 - Close registration and then change LocationId successfully.
 - Restart SI-01 and verify committed TimingData LogBook is recovered without replaying old records as new live events.
 
 ### Done
 
-- D02/D02W first-slice use-case and safe compatibility review are accepted;
-- D03 defines the first TimingData and IF-03 public-control contract;
-- TimingNode location/lifecycle and accepted-registration invariants have deterministic tests;
-- direct registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
-- canonical codec, file persistence, incomplete-tail recovery and LogBook rebuild are implemented and verified;
-- committed TimingData is emitted only after durable append plus LogBook visibility;
-- IF-03 exposes node-addressed location/open/close, capabilities, dev auto-reg, bounded LogBook metadata/ranges and live TimingData updates;
-- the Engineering Client rebuilds status/LogBook state after reconnect before presenting the view as live;
-- automated VC-ST1-002 passes against SI-01 as a separate process using public IF-03 only;
-- the subsequent Engineering Client running-system demo passes through the same public boundary;
-- both verification steps succeed without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+- the first-slice TimingData and IF-03 public-control contracts are defined;
+- location/lifecycle and accepted-registration invariants have deterministic automated coverage;
+- registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
+- local persistence, recovery and LogBook rebuild behaviour are verified;
+- IF-03 exposes the required node-addressed control, bounded history and live TimingData updates;
+- the Engineering Client rebuilds state/history after reconnect before presenting data as live;
+- a separate-process black-box test succeeds through public IF-03 only;
+- the subsequent Engineering Client running-system demo succeeds through the same public boundary;
+- both verification paths work without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
 
 ---
 
