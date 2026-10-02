@@ -255,6 +255,18 @@ TimingNode or persistence semantics of its own.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
 
+Commands that change TimingNode state remain explicit methods on `TimingNode` (`open`, `close`, `setLocation`, `commitAutomaticRegistration`, ...). Read-only operations use one typed query boundary:
+
+```java
+TimingNode.Status status =
+        node.query(TimingNodeQueries.status());
+
+List<TimingData> records =
+        node.query(TimingNodeQueries.timingDataRange(fromSequence, limit));
+```
+
+A query is a typed read description, not another component or generic command bus. `TimingNode` still executes it on the same serial lane, so reads remain ordered with commands. The query object is bound to package-private `TimingNodeLogic` inside the timing package, which avoids adding a duplicate forwarding method to `TimingNode` for every new read. The Application layer keeps meaningful application-level command/query methods and maps its reads to these typed TimingNode queries.
+
 The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
