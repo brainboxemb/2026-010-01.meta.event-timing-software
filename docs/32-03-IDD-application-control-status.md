@@ -616,96 +616,22 @@ the generated engineering reader/graph provides the inverse context back to IF-0
 The SI-01 SSD references this contract instead of duplicating transport-level
 requirements.
 
-## First AP-1 verification case
+## Verification references
 
-Verification-case identifiers use `VC-<profile>-<number>` for this baseline.
+IF-03 owns the transport contract and acceptance semantics above. Concrete
+verification procedures are downstream and are specified in
+`61-01-VTS-timing-application-verification-test-specification.md`.
 
-```{vc} Query and resynchronise first-executable status
----
-id: VC-ST1-001
-verifies: >-
-  SI01-REQ-001, SI01-REQ-002, SI01-REQ-003, SI01-REQ-010,
-  SI01-REQ-020, SI01-REQ-021, SI01-REQ-031,
-  IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006
----
+Current ST-1 cases using IF-03 include:
 
-Trace target:
+- `VC-ST1-001` — query version/status, connect/reconnect the event stream and
+  verify a complete current status snapshot through the running executable;
+- `VC-ST1-002` — exercise the first-registration control/history/live flow
+  through the running executable.
 
-~~~text
-UC-001 / UC-008
-  -> SI01-REQ-010/011/020/021/022/023/031/032/033
-  -> IF03-REQ-001..010 as applicable
-  -> SI-01 status/application boundary from SSD/SDD
-  -> VC-ST1-001
-~~~
-```
-
-Procedure:
-
-1. start SI-01 as a separate process with a synthetic configuration containing at least one configured `TimingNode`;
-2. wait for the configured local IF-03 endpoint to become available;
-3. call `GET /api/v1/version` and verify the required identity fields are present;
-4. call `GET /api/v1/status` and verify the configured TimingNode is represented in `nodes` by its compact `id` and current state;
-5. connect to `/api/v1/events` and verify the first application message is a complete `STATUS_SNAPSHOT`;
-6. disconnect the WebSocket client;
-7. reconnect and verify a new complete `STATUS_SNAPSHOT` is received before further change events are relied upon;
-8. call `/status` once more and verify it is semantically consistent with the latest snapshot;
-9. shut the SI-01 process down through the supported controlled shutdown path.
-
-A07 separately verifies the `STATUS_CHANGED` broadcast path at adapter level. End-to-end black-box verification of a real `STATUS_CHANGED` event is added when a supported public capability can actually change the status. The test driver shall not fabricate or directly mutate status solely to satisfy that event case.
-
-The test driver shall not mutate internal Java objects or inspect private implementation state to obtain the pass/fail result.
-
-## Step-4 first-registration verification case
-
-```{vc} Control and observe first committed registration
----
-id: VC-ST1-002
-verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043,
-  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
----
-
-Deterministic procedure:
-
-1. start SI-01 with direct registration simulation supported and enabled;
-2. query status and verify CLOSED with no current LocationId;
-3. set a known synthetic LocationId and verify CLOSED status reflects it;
-4. request OPEN and verify OPEN with the same LocationId;
-5. attempt another location change and verify explicit NODE_NOT_CLOSED conflict;
-6. submit one node-addressed dev auto-reg request with deterministic request-body
-   `id` and `time`;
-7. verify the response returns `seq: 1` and that the client did not supply
-   source identity, active location or recordedAt;
-8. query the addressed node LogBook metadata and verify
-   `count: 1`, `first: 1`, `last: 1`;
-9. fetch a bounded LogBook range and verify sequence 1 contains the active
-   LocationId and supplied observation time;
-10. verify a TIMING_DATA_COMMITTED live event represents that same stable record key;
-11. request CLOSE and verify CLOSED;
-12. disconnect and reconnect the WebSocket client while SI-01 is still running;
-13. verify the new session begins with a current `STATUS_SNAPSHOT`, the committed
-    LogBook record is still queryable, and that old record is not emitted again as
-    a new `TIMING_DATA_COMMITTED` event;
-14. stop SI-01 through the controlled shutdown path;
-15. start a second SI-01 process with the same TimingData persistence file;
-16. verify the restarted TimingNode is `CLOSED` with no current operational
-    LocationId;
-17. verify the LogBook still contains the original sequence-1 record with the same
-    stable key;
-18. verify the new WebSocket session begins with `STATUS_SNAPSHOT` and the
-    recovered record is not emitted as a new `TIMING_DATA_COMMITTED` event;
-19. shut the second SI-01 process down through the controlled shutdown path.
-
-The requirement mapping above covers the server-side control and committed
-history/live behaviour exercised by this case. The second process run is retained
-as additional restart/recovery robustness evidence for the current Step-4
-implementation; it does not create a new product requirement.
-
-The Engineering Client history/live merge, buffering and deduplication behaviour
-described by SI01-REQ-044 / IF03-REQ-016 is verified separately by the Step-4
-Engineering Client verification.
-```
+The VTS maps each case to the applicable SSD/IDD requirements. Execution status,
+PASS/FAIL, logs and persisted test artifacts belong to generated verification
+evidence rather than this IDD.
 
 ## Remote shell scope
 

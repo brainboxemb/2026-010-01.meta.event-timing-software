@@ -92,6 +92,7 @@ project documents.
 - [`docs/50-SDE-02-java-build-test-toolchain.md`](docs/50-SDE-02-java-build-test-toolchain.md) — Java-specific build/test/toolchain refinement.
 - [`docs/50-SDE-03-engineering-client.md`](docs/50-SDE-03-engineering-client.md) — Engineering Client architecture, UI baseline and reproducible screenshot/documentation direction.
 - [`docs/60-SVP-software-verification-plan.md`](docs/60-SVP-software-verification-plan.md) — verification strategy, test profiles and evidence model.
+- [`docs/61-01-VTS-timing-application-verification-test-specification.md`](docs/61-01-VTS-timing-application-verification-test-specification.md) — concrete SI-01 verification cases and expected results; execution status stays in retained evidence.
 - [`docs/70-01-SUM-headless-timing-application.md`](docs/70-01-SUM-headless-timing-application.md) — release-oriented SI-01 user manual.
 - [`reference/README.md`](reference/README.md) — index and conventions for collected reference material.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable repository changes.
@@ -138,6 +139,7 @@ Examples:
 50-SDE-02
 50-SDE-03
 60-SVP
+61-01-VTS
 70-01-SUM
 ```
 
@@ -151,7 +153,8 @@ IF-11 is `32-11-IDD`.
 When a repeatable generic family has no natural scope identifier, a document
 sequence follows the type instead. The SDE family therefore uses
 `50-SDE-01`, `50-SDE-02`, ... . A singular generic document such as
-`60-SVP` does not need a synthetic sequence.
+`60-SVP` does not need a synthetic sequence. Software-item verification test
+specifications use `61-<SI>-VTS`, for example `61-01-VTS` for SI-01.
 
 A final sequence distinguishes multiple documents that share the same family
 and scope, for example `43-01-SDD-01`, `43-01-SDD-02`, ... for SI-01.

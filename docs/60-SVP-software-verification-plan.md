@@ -220,18 +220,18 @@ inspection, but it does not replace automated ST-1 evidence. The current A06 dir
 uses a small JavaFX client for manual version/status inspection while automated tests
 continue to own pass/fail verification.
 
-#### Current first ST-1 case
+#### ST-1 test specifications
 
-`VC-ST1-001 — Query and resynchronise first-executable status` is authored in
-`32-03-IDD-application-control-status.md`, because that IDD owns the exact IF-03
-transport procedure and acceptance semantics. The SVP does not duplicate that procedure.
+Concrete ST-1 cases are specified in
+`61-01-VTS-timing-application-verification-test-specification.md`.
 
-For Step 3 the implementation should realise `VC-ST1-001` as a verification-only
-`system-test` environment that starts the packaged SI-01 JAR as a separate JVM process.
-The test driver must not depend on product Java classes; it observes HTTP/WebSocket and
-the supported controlled-shutdown interface only. This module is verification
-infrastructure, not a third SI-01 release artifact, and should run in the normal Linux
-and native Windows Maven verification paths.
+The VTS owns each `VC-ST1-...` case purpose, setup, deterministic procedure and
+expected result. The executable `system-test` module implements those cases against
+the packaged SI-01 process through public interfaces only.
+
+This SVP deliberately does not carry the current case procedure or current PASS/FAIL
+state. Run identity, PASS/FAIL, process output, logs and other retained artifacts belong
+to generated verification evidence.
 ### ST-2 — Socket loop/network profile
 
 Purpose: add a real process/network communication boundary for the backoffice while remaining lightweight.
