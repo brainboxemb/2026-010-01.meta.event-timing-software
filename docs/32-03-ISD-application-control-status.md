@@ -1,4 +1,4 @@
-# API Interface (IDD)
+# API Interface Specification (ISD)
 
 Status: review candidate / AP-1 first-executable slice
 
@@ -6,7 +6,7 @@ System interface: **IF-03 — API**
 
 ## Purpose
 
-This Interface Design/Description Document owns the general programmable remote contract between SI-01 and the planned SI-02 GUI, engineering/service tools and automated ST-1 black-box/integration tooling.
+This Interface Specification Document owns the general programmable remote contract between SI-01 and the planned SI-02 GUI, engineering/service tools and automated ST-1 black-box/integration tooling.
 
 For AP-1 it defines only the first-executable subset needed to expose build/version identity, current status and status-change events. The interface is intentionally broader than "status": later supported remote control, test and diagnostic operations may extend IF-03 when their SIP increments require them.
 
@@ -19,7 +19,7 @@ IF-03 is a system-owned interface allocated by
 therefore downstream of that allocation and upstream of both participating software-item
 specifications. Applicable system use cases supply operational intent.
 
-The SI-01/GUI SSDs and the SVP may trace to this IDD; they are not inputs to it.
+The SI-01/GUI SSDs and the SVP may trace to this ISD; they are not inputs to it.
 
 ## Parties
 
@@ -44,7 +44,7 @@ The first-executable transport contract is:
 - WebSocket for live status/event delivery;
 - API major version represented in the resource path as `/api/v1`;
 - network boundary usable when SI-01 and the client run on different hosts;
-- the same semantic application model may also be represented through local console/remote-shell adapters, but those transports are not owned by this IDD.
+- the same semantic application model may also be represented through local console/remote-shell adapters, but those transports are not owned by this ISD.
 
 The contract must remain compatible with the current Java 8 SI-01 baseline and the selected runtime on the Raspberry Pi target. HTTP and WebSocket may use separate configured listeners/ports in the first executable; the resource paths and semantics remain one IF-03 contract.
 
@@ -536,7 +536,7 @@ The HTTP query representation shall be machine-readable JSON suitable for SI-02,
 :id: IF03-REQ-008
 :derived_from: SI01-REQ-031
 
-Unsupported or invalid HTTP requests shall produce the explicit JSON failure outcome defined in this IDD rather than a successful response containing silently invalid data.
+Unsupported or invalid HTTP requests shall produce the explicit JSON failure outcome defined in this ISD rather than a successful response containing silently invalid data.
 ```
 
 ```{ifreq} Safe default listen scope
@@ -629,13 +629,13 @@ Current ST-1 cases using IF-03 include:
 - `VC-ST1-002` — exercise the first-registration control/history/live flow
   through the running executable.
 
-The VTS maps each case to the applicable SSD/IDD requirements. Execution status,
+The VTS maps each case to the applicable SSD/ISD requirements. Execution status,
 PASS/FAIL, logs and persisted test artifacts belong to generated verification
-evidence rather than this IDD.
+evidence rather than this ISD.
 
 ## Remote shell scope
 
-The first executable may expose equivalent version/status semantics through a remote-shell adapter as required by the SIP, but AP-1 does **not** introduce a separate system IDD for that transport.
+The first executable may expose equivalent version/status semantics through a remote-shell adapter as required by the SIP, but AP-1 does **not** introduce a separate system ISD for that transport.
 
 Reason:
 
@@ -643,7 +643,7 @@ Reason:
 - remote-shell technology is an implementation/support adapter concern at this stage;
 - it must reuse the shared version/status application queries and must not own a separate status model.
 
-If the remote shell later becomes a stable externally consumed system interface, it should receive an appropriate IDD then.
+If the remote shell later becomes a stable externally consumed system interface, it should receive an appropriate ISD then.
 
 ## Deferred interface scope
 

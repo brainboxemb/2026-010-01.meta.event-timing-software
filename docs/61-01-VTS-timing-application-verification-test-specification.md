@@ -27,8 +27,8 @@ Current execution status is therefore **not** maintained in this document.
 The cases below verify accepted behaviour from:
 
 - `41-01-SSD-timing-application-specification-document.md`;
-- applicable system-owned IDDs, especially
-  `32-03-IDD-application-control-status.md`;
+- applicable system-owned ISDs, especially
+  `32-03-ISD-application-control-status.md`;
 - `60-SVP-software-verification-plan.md` for the ST profile and evidence model.
 
 The VTS may reference SDDs to understand test setup, but an SDD or VTS does not

@@ -33,7 +33,7 @@ Use the numbered project documents for their specific roles:
 - [docs/20-EXT-external-system-inputs.md](docs/20-EXT-external-system-inputs.md) — parent/external-system input baseline and revision register;
 - [docs/30-UC-system-use-cases.md](docs/30-UC-system-use-cases.md) — operational goals/use cases;
 - [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
-- [docs/11-SIP-software-implementation-planning.md](docs/11-SIP-software-implementation-planning.md) — implementation sequence/deliverables/evidence;
+- [docs/11-SIP-software-implementation-plan.md](docs/11-SIP-software-implementation-plan.md) — implementation sequence/deliverables/evidence;
 - [docs/50-SDE-01-software-development-environment.md](docs/50-SDE-01-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
 - [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;

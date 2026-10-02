@@ -37,7 +37,7 @@ system use case / external interface obligation
       +------+------+
       |             |
       v             v
-system IDD        SSD requirement
+system ISD        SSD requirement
       |             |
       +------> SSD architecture
                     |
@@ -51,8 +51,9 @@ system IDD        SSD requirement
           verification case + evidence
 ```
 
-An IDD remains software-system-owned. A software-item requirement references the
-applicable IDD obligation rather than duplicating its interface definition. The SVP and
+An ISD remains software-system-owned. A software-item requirement references the
+applicable ISD obligation rather than duplicating its interface definition. An optional
+IDD may describe concrete interface design but does not replace the ISD requirement source. The SVP and
 verification cases are downstream coverage/evidence artifacts; they are deliberately not
 normative inputs to the requirements they verify.
 

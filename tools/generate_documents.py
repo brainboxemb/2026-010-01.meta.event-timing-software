@@ -18,7 +18,7 @@ CONTEXT_DOCUMENTS = [
 
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
-    "11-SIP-software-implementation-planning.md",
+    "11-SIP-software-implementation-plan.md",
 ]
 
 EXTERNAL_INPUT_DOCUMENTS = [
@@ -28,8 +28,10 @@ EXTERNAL_INPUT_DOCUMENTS = [
 SYSTEM_SPEC_DOCUMENTS = [
     "30-UC-system-use-cases.md",
     "31-SSSD-software-system-specification-document.md",
-    "32-03-IDD-application-control-status.md",
-    "32-11-IDD-application-configuration.md",
+    "32-03-ISD-application-control-status.md",
+    "32-05-ISD-timingdata-interchange.md",
+    "33-05-IDD-timingdata-interchange.md",
+    "32-11-ISD-application-configuration.md",
 ]
 
 SOFTWARE_ITEM_SPEC_DOCUMENTS = [
@@ -45,8 +47,10 @@ ENGINEERING_DOCUMENTS = [
 
 ARCHITECTURE_DOCUMENTS = [
     "31-SSSD-software-system-specification-document.md",
-    "32-03-IDD-application-control-status.md",
-    "32-11-IDD-application-configuration.md",
+    "32-03-ISD-application-control-status.md",
+    "32-05-ISD-timingdata-interchange.md",
+    "33-05-IDD-timingdata-interchange.md",
+    "32-11-ISD-application-configuration.md",
     "41-01-SSD-timing-application-specification-document.md",
     "43-01-SDD-01-data-and-display-design.md",
     "43-01-SDD-02-java-component-design.md",

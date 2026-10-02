@@ -13,9 +13,9 @@ capability approaches implementation; no separate requirements/architecture docu
 The SI-02 specification consumes:
 
 - `31-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
-- `32-03-IDD-application-control-status.md` for the SI-01/SI-02 API contract;
+- `32-03-ISD-application-control-status.md` for the SI-01/SI-02 API contract;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
-- a future system-owned GUI/HMI IDD when that contract is defined.
+- a future system-owned GUI/HMI ISD when that contract is defined.
 
 `30-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
 
@@ -62,7 +62,7 @@ Timing Point Application
         +-- Windows/Linux target
 ```
 
-The transport and message contracts ultimately belong in a system-level IDD rather than being owned by either software item.
+The transport and message contracts ultimately belong in a system-level ISD rather than being owned by either software item.
 
 ## Relationship to the current JavaFX test client
 
@@ -100,11 +100,11 @@ As system requirements and IDDs mature, the GUI may add:
 
 These operations are handled by the **Timing Point Application** (SI-01). The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
 
-## GUI IDD as system input
+## GUI ISD as system input
 
 The graphical user interface should be treated as a **system-level interface** rather than allowing the implementation to invent screens ad hoc.
 
-A system-level GUI IDD can define items such as:
+A system-level GUI ISD can define items such as:
 
 - screen/navigation structure;
 - information that must be visible;
@@ -115,11 +115,11 @@ A system-level GUI IDD can define items such as:
 - terminology and identifiers;
 - interaction flows for open/close/start/RFID recovery and later registration operations.
 
-The future SSD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-IDD clauses as requirements instead of copying the interface definition into the software-item requirements.
+The future SSD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-ISD clauses as requirements instead of copying the interface definition into the software-item requirements.
 
-## Software-to-software interface IDD
+## Software-to-software interface ISD
 
-A separate system-level IDD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Timing Point Application** (SI-01).
+A separate system-level ISD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Timing Point Application** (SI-01).
 
 Current direction:
 

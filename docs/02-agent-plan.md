@@ -54,7 +54,7 @@ At closure:
 - SDP, SIP, SDE and SVP responsibilities are separated explicitly;
 - public/private information boundaries are recorded in `AGENTS.md` and the architecture/design working drafts;
 - generated Markdown, diagrams, architecture books and the printable SIP roadmap build successfully in CI;
-- the SIP roadmap includes effort/calendar planning plus scope-aware documentation maturity for SSSD/SSD requirements, IDD, SSD/SDD design and SVP/evidence;
+- the SIP roadmap includes effort/calendar planning plus scope-aware documentation maturity for SSSD/SSD requirements, ISD interface contracts, optional IDD/SDD design and SVP/VTS/evidence;
 - generated A3 roadmap pages were visually inspected rather than accepted from CI status alone;
 - unresolved topics remain visible as working/open items;
 - formal requirements and IDDs for later capabilities remain deliberately deferred;
@@ -72,8 +72,8 @@ Expected scope:
 
 - identify the use cases and behaviours needed by the first executable;
 - create the initial SI-01 requirement scope for startup/shutdown, build/version identity, status, minimal lifecycle/configuration and other first-executable behaviour (historically introduced as `20-01-SRD`, now incorporated into `41-01-SSD`);
-- create the first system-level application-control/status IDD needed by the executable and later clients;
-- establish a traceable example from use case → SSSD/system IDD where applicable → SI-01 SSD requirement/architecture → SDD → verification case;
+- create the first system-level application-control/status ISD needed by the executable and later clients;
+- establish a traceable example from use case → SSSD/system ISD where applicable → SI-01 SSD requirement/architecture → optional interface IDD / software-item SDD → verification case;
 - make the relevant ST-1/SVP verification material concrete enough for the first executable;
 - update SSD/SDD working drafts only where the formalised slice exposes a conflict or ambiguity;
 - collect/index source material only where it is needed to resolve this slice;
@@ -93,17 +93,17 @@ Exit criteria:
 
 ### AP-1 closure evidence
 
-PR #2 established the first reviewable SI-01 requirements/IDD slice without expanding later product capabilities.
+PR #2 established the first reviewable SI-01 requirements/ISD slice without expanding later product capabilities.
 
 At closure:
 
 - `41-01-SSD-timing-application-specification-document.md` defines only startup/shutdown, external configuration, build/version identity, first status semantics and externally testable application behaviour;
-- `32-03-IDD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
+- `32-03-ISD-application-control-status.md` owns IF-03 with concrete `/api/v1/version`, `/api/v1/status` and `/api/v1/events` contracts;
 - IF-03 defines stable first build/status JSON fields, explicit error responses, compatibility rules and reconnect/resynchronisation behaviour;
 - first-executable authentication is deliberately deferred while default network exposure remains loopback-only unless remote access is explicitly configured;
 - the first operational timing instance remains `CLOSED`; open/close and later domain behaviour are not partially invented for this baseline;
 - `VC-ST1-001` traces representative status/version behaviour from existing use cases through SI-01/IF-03 obligations to a black-box running-process verification scenario;
-- remote-shell technology remains an implementation/support-adapter choice and does not receive an unnecessary standalone IDD yet;
+- remote-shell technology remains an implementation/support-adapter choice and does not receive an unnecessary standalone ISD yet;
 - RFID, CAN, display, registration-domain and backoffice requirements remain deliberately deferred;
 - generated documentation successfully published the review candidate to `dev/pr-2/docs` from the AP-1 head commit.
 

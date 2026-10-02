@@ -56,11 +56,11 @@ design keeps that useful property while giving the file format a clear IF-05
 contract.
 
 The system-owned **IF-05 TimingData Interchange** contract is defined by
-`32-05-IDD-timingdata-interchange.md`. It owns the common TimingData semantics, shared `LocationId` and
+`32-05-ISD-timingdata-interchange.md`. It owns the common TimingData semantics, shared `LocationId` and
 `RegistrationId` value representations, sequence/key semantics and compatibility
 rules. The configured event/profile/reference model owns the concrete identifier
 domains, while the configured TimingData profile owns its concrete classes and
-matching representation/codec.
+matching representation/codec. The default/reference JSON + JSON Lines representation is described separately by `33-05-IDD-timingdata-interchange.md`.
 
 The same immutable `TimingData` object can therefore be:
 
@@ -553,7 +553,7 @@ void handle(StartTimeSnapshotReceived message) {
 }
 ```
 
-The same pattern can be used for other participant/reference mappings. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/IDD design.
+The same pattern can be used for other participant/reference mappings. Full-snapshot versus delta updates, version identifiers and correction semantics still need requirements/ISD design.
 
 ### Keypad behaviour
 
@@ -623,7 +623,7 @@ final class TeamDisplayData {
 }
 ```
 
-Fields are illustrative. The display IDD will ultimately define the system contract.
+Fields are illustrative. The display ISD will ultimately define the system contract; a separate IDD is needed only if concrete design deserves its own baseline.
 
 ### Display V1 — passive CAN display
 
@@ -704,8 +704,8 @@ Later interactions (for example automatically removing a team after a successful
 ## Rules when implementing IF-05
 
 The TimingData record/file contract is not re-specified here. SI-01 design shall
-conform to **IF05-REQ-001..015** in
-`32-05-IDD-timingdata-interchange.md`.
+conform to **IF05-REQ-001..016** in
+`32-05-ISD-timingdata-interchange.md`.
 
 The following temporary design constraints cover only the internal realisation
 needed around that interface:

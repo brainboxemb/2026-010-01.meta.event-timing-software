@@ -16,10 +16,11 @@ Use the documents as follows:
 SDP  why/how the project is developed at high level: strategy, phases, risks, resources, assumptions
 SIP  what is implemented next: concrete steps, deliverables, demonstrations and exit evidence
 SDE  where/how engineering work is performed: repositories, tooling, GitHub flow, CI, artifacts, local environments
-SVP  how the product is verified: levels, profiles, verification cases and evidence
+SVP  verification strategy: levels, profiles, environments and evidence rules
+VTS  concrete verification cases: setup, procedure and expected result
 ```
 
-The SDE may define detailed mechanisms that support the SDP/SIP/SVP, but should not duplicate their planning or verification content.
+The SDE may define detailed mechanisms that support the SDP/SIP/SVP/VTS, but should not duplicate their planning or verification content.
 
 ## Purpose
 
@@ -174,7 +175,8 @@ that convention rather than maintaining a second category map.
 For document families relevant to the engineering environment:
 
 ```text
-32-<IF>-IDD       system-owned interface documents; <IF> is the interface ID
+32-<IF>-ISD       system-owned interface specifications; <IF> is the interface ID
+33-<IF>-IDD       optional system-owned interface design descriptions; <IF> is the same interface ID
 41-<SI>-SSD       software-item combined specification; <SI> is the software-item ID
 43-<SI>-SDD-<N>   detailed design; final <N> sequences several SDDs in one SI scope
 50-SDE-<N>        generic SDE family; <N> sequences documents because no scope ID applies
@@ -182,11 +184,11 @@ For document families relevant to the engineering environment:
 ```
 
 Scope identifiers and document sequences are deliberately different concepts.
-For example, `32-03-IDD` identifies IF-03, while `50-SDE-02` identifies the
+For example, `32-03-ISD` identifies the IF-03 specification and `33-05-IDD` the optional IF-05 design, while `50-SDE-02` identifies the
 second document in the generic SDE family.
 
 Established abbreviations include `SDP`, `SIP`, `SDE`, `SRD`, `SSSD`,
-`SSD`, `SAD`, `SDD`, `IDD`, `SVP` and `UC`.
+`SSD`, `SAD`, `SDD`, `ISD`, `IDD`, `SVP`, `VTS` and `UC`.
 
 Software-item and interface identifiers remain stable across the document
 families that use them.
@@ -346,7 +348,7 @@ AGENTS.md
 current open/draft PR
 relevant predecessor PR
 active SIP/AP material
-requirements / architecture / IDDs
+requirements / architecture / ISDs / IDDs
 README.md
 CHANGELOG.md
 ```
@@ -403,7 +405,7 @@ Environment rules:
 - simple teardown/cleanup;
 - restart/failure control where recovery is under test.
 
-Detailed verification scenarios belong in the SVP and relevant SDD, not in this SDE.
+Concrete verification scenarios belong in the VTS; product design rationale remains in the applicable SDD. Neither belongs in this SDE.
 
 ## Raspberry Pi build/deployment environment
 
@@ -432,7 +434,7 @@ Use GitHub environment/repository secrets and runtime configuration mechanisms a
 
 Public example configuration uses placeholders/synthetic values.
 
-Exact application configuration semantics remain architecture/SDD/IDD concerns.
+Exact application configuration semantics remain architecture/ISD/IDD/SDD concerns.
 
 ## Tooling reproducibility
 

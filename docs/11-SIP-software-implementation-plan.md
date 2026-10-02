@@ -1,4 +1,4 @@
-# Software Implementation Planning (SIP)
+# Software Implementation Plan (SIP)
 
 Status: working draft / non-authoritative
 

@@ -355,7 +355,7 @@ created through the TimingNode ownership boundary. `SystemStatus` does not call
 into `LogBook`, lifecycle fields, location fields or other mutable TimingNode
 internals directly.
 
-An IDD response shape does not require an equally shaped internal Java object.
+An external interface response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
 `ApplicationStatusSnapshot` or `ApplicationStatusModel`.
 

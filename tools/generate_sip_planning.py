@@ -2,7 +2,7 @@
 """Generate the canonical SIP planning views.
 
 Sources:
-- docs/11-SIP-software-implementation-planning.md: canonical step content
+- docs/11-SIP-software-implementation-plan.md: canonical step content
   (title, status, goal, result, demo and done).
 - docs/_data/sip-roadmap.yaml: estimates, cadence, terms and document state.
 - docs/_data/sip-steps/step-NN.yaml: detailed activity/status drill-down only.
@@ -621,7 +621,7 @@ def write_readme(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sip", default="docs/11-SIP-software-implementation-planning.md")
+    parser.add_argument("--sip", default="docs/11-SIP-software-implementation-plan.md")
     parser.add_argument("--data-dir", default="docs/_data")
     parser.add_argument("--out", default="bld/docs/planning")
     args = parser.parse_args()

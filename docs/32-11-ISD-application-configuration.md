@@ -1,4 +1,4 @@
-# Application Configuration Interface (IDD)
+# Application Configuration Interface Specification (ISD)
 
 Status: review candidate / SIP Step-3 configuration baseline
 
@@ -6,7 +6,7 @@ System interface: **IF-11 — Application Configuration**
 
 ## Purpose
 
-This Interface Design/Description Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies internal TimingSystems and their TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
+This Interface Specification Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies internal TimingSystems and their TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
 
 It deliberately does **not** define domain behaviour, a Java class hierarchy, a specific YAML library or production secret values.
 
@@ -15,7 +15,7 @@ It deliberately does **not** define domain behaviour, a Java class hierarchy, a 
 IF-11 is a system-owned deployment/configuration interface allocated by
 `31-SSSD-software-system-specification-document.md`. Applicable system use cases and
 deployment constraints provide upstream intent. The SI-01 SSD consumes this contract;
-its internal architecture and Java SDD are downstream and are not inputs to the IDD.
+its internal architecture and Java SDD are downstream and are not inputs to the ISD.
 
 ## Boundary
 

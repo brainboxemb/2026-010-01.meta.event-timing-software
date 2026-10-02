@@ -13,9 +13,9 @@ architecture instead of repeating it.
 The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
-- `32-03-IDD-application-control-status.md` for IF-03 obligations;
-- `32-05-IDD-timingdata-interchange.md` for IF-05 TimingData obligations;
-- `32-11-IDD-application-configuration.md` for IF-11 obligations;
+- `32-03-ISD-application-control-status.md` for IF-03 obligations;
+- `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
+- `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
 `30-UC-system-use-cases.md` provides operational traceability. If SI-01 behaviour later benefits from a separate software-item use-case decomposition, that may be added as an optional software-item use-case document and referenced here; its numbering range will be assigned when such documents are actually introduced, rather than reusing the SSD/SDD ranges.
@@ -24,7 +24,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SSD.
 
-When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and IDD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
+When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and ISD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
 ## Document roles
 
@@ -39,10 +39,10 @@ Implementation detail is split over focused SDDs:
 | `43-01-SDD-01-data-and-display-design.md` | internal data/runtime behaviour: LogBook recording, commit ordering, persistence/recovery algorithms, query isolation, prepare-team/reference/display data |
 | `43-01-SDD-02-java-component-design.md` | concrete Java realisation: modules, packages, classes/interfaces, queue/executor/thread choices, provider discovery and dependency enforcement |
 | `43-01-SDD-03-backoffice-transport-design.md` | concrete transport realisation below the system/upstream semantic boundary |
-| applicable IDD | externally visible interface/file/protocol contract; an SDD shall not redefine it |
+| applicable ISD | externally visible interface/file/protocol requirements/semantics; an SDD shall not redefine them |
 
 An SDD may choose the concrete mechanism, as long as it still fits this SSD and
-the applicable IDD. Keep class names, queue types, worker threads, file-recovery
+the applicable ISD. Keep class names, queue types, worker threads, file-recovery
 steps and package layout out of the SSD unless they change the architecture.
 
 ## Software-item requirements
@@ -128,7 +128,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 schema is defined by `32-03-IDD-application-control-status.md`.
+The concrete IF-03 contract/schema is defined by `32-03-ISD-application-control-status.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -299,10 +299,10 @@ The following are now fixed for the first-executable contract:
 - IF-03 WebSocket endpoint is `/api/v1/events`;
 - WebSocket connect/reconnect starts with a complete status snapshot;
 - first-executable change events carry complete current status rather than a patch/replay protocol;
-- explicit JSON error responses and initial HTTP status mapping are defined in the IDD;
+- explicit JSON error responses and initial HTTP status mapping are defined in the ISD;
 - authentication/authorisation is explicitly deferred for the first executable while default network binding remains loopback-only;
 - verification-case identifiers use `VC-<profile>-<number>` for the first baseline;
-- no separate remote-shell IDD is required by AP-1 because that adapter reuses shared version/status semantics and is not yet a stable software-to-software contract.
+- no separate remote-shell ISD is required by AP-1 because that adapter reuses shared version/status semantics and is not yet a stable software-to-software contract.
 
 ### Remaining implementation/toolchain choices
 
@@ -1540,7 +1540,7 @@ the API/provider patch version together through Maven dependency management.
 
 ### Configuration and composition architecture
 
-Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `32-11-IDD-application-configuration.md`.
+Configuration describes deployment/composition rather than domain behaviour hard-coded in source. The concrete deployment/configuration contract is owned by **IF-11** in `32-11-ISD-application-configuration.md`.
 
 The main configuration groups are:
 
