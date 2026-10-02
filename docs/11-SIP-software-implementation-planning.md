@@ -10,9 +10,11 @@ into a usable timing system**. The roadmap is intended for two audiences:
 - a project reviewer/manager should be able to see what value or uncertainty the step
   addresses, which resources can block it, and what can be demonstrated afterwards.
 
-The SIP is the content source of truth for the generated roadmap and step cards. Detailed
-activity history, CI logs and release mechanics live in issues, pull requests, SDE and
-generated evidence.
+The SIP is the content source of truth for roadmap step content and activity identity.
+Each activity ID/title shown on a detailed step card is declared in the matching SIP step.
+The per-step YAML owns only current activity state, dependencies, estimates and compact
+card notes. Detailed activity history, CI logs and release mechanics live in issues, pull
+requests, SDE and generated evidence.
 
 ## How to read a step
 
@@ -24,6 +26,8 @@ rather than merely fill headings:
 - **Scope** says what work belongs in the step.
 - **Not in this step** is used where a boundary prevents accidental scope growth.
 - **Needs** names real dependencies or resources that can gate the work.
+- **Activities** assigns stable activity IDs/titles used by the detailed SIP card. The
+  matching YAML may add status/dependencies/notes but may not rename or invent activities.
 - **Result** is the short manager-facing outcome shown on the roadmap.
 - **Demo** is the practical end demonstration.
 - **Done** is the engineering exit criterion.
@@ -132,6 +136,30 @@ Create the Java repository and prove that it builds and runs independently.
 - development workstation;
 - GitHub CI.
 
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `T01` | Java toolchain baseline |
+| `T02` | Create tool.java-project |
+| `T03` | Maven Wrapper fixture |
+| `T04` | Pin Java 8 + Maven baseline |
+| `T05` | Linux canonical CI |
+| `T06` | Windows compatibility CI |
+| `T07` | Canonical artifact + provenance |
+| `T08` | Version reusable workflow |
+| `A01` | Create SI-01 implementation repository |
+| `A02` | Repository baseline files |
+| `A03` | Maven reactor / artifact skeleton |
+| `A04` | Package / responsibility boundaries |
+| `A05` | Minimal runnable app lifecycle |
+| `V01` | Generic fixture - Linux verify |
+| `V02` | Generic fixture - Windows verify |
+| `V03` | Canonical artifact smoke |
+| `V04` | Clean-checkout consumer proof |
+| `V05` | Architecture/dependency checks |
+| `V06` | 0.1.0 release build / identity proof |
+
 ### Result
 
 - Application-core and runnable application artifacts.
@@ -188,6 +216,24 @@ Build the first useful **Timing Point Application** (SI-01) on the development h
 - Windows development workstation;
 - built SI-01 artifacts;
 - no Raspberry Pi or timing hardware.
+
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `A01` | Shared application boundary + build identity |
+| `A02` | Application configuration + minimal TimingNode |
+| `A03` | Run until shutdown + graceful stop |
+| `A04` | Local console |
+| `A05` | Remote terminal / shell adapter |
+| `A06` | API HTTP / JSON |
+| `A07` | API WebSocket events |
+| `A08` | Runtime logging + live diagnostics |
+| `V01` | Shared behaviour + configuration unit tests |
+| `V02` | Adapter equivalence checks |
+| `V03` | ST-1 application behaviour black-box test |
+| `V04` | Windows development-host execution proof |
+| `V05` | Step-3 0.2.x release / identity proof |
 
 ### Result
 
@@ -258,6 +304,22 @@ application boundary.
 - a deterministic engineering registration input;
 - the reference TimingData codec/store;
 - the Engineering Client as test tooling.
+
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `D01` | Engineering Client architecture + UI baseline |
+| `D02` | Review first-registration operational use cases |
+| `D02W` | Translate private compatibility behaviour |
+| `D03` | Establish first TimingData + public control contracts |
+| `V01` | Define deterministic first-slice examples |
+| `A01` | TimingNode location and lifecycle |
+| `A02` | Direct registration + TimingData |
+| `A03` | Engineering Client first-slice control |
+| `V02` | First-slice domain verification |
+| `V03` | Automated first-registration black-box verification |
+| `V04` | Engineering Client running-system demo |
 
 ### Result
 
@@ -332,6 +394,19 @@ domain and persistence paths.
 - deterministic synthetic tag/reference fixtures;
 - controllable simulated input;
 - no target hardware and no private provider implementation.
+
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `D01` | Runtime execution and measurement plan |
+| `A01` | Simulated antenna and tag-processing path |
+| `A02` | Runtime markers and counters |
+| `A03` | Allocation and data-access strategy |
+| `V01` | Single-node load and burst characterization |
+| `V02` | Sustained antenna-ingress fairness |
+| `V03` | Restart and recovery with simulated input |
+| `V04` | Provider bootstrap verification |
 
 ### Result
 
