@@ -17,7 +17,7 @@ import yaml
 
 
 PLAN_PATH = Path("docs/_data/sip-roadmap.yaml")
-WINDOW_MINUTES = 30
+WINDOW_MINUTES = 60
 PROJECT_DAY_HOURS = 8.0
 
 
