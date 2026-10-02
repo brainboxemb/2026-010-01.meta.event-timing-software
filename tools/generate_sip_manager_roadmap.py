@@ -40,6 +40,63 @@ def compact_roadmap_bullets(values: list[str], max_items: int = 3) -> list[str]:
     return [base.concise(value, 105) for value in selected]
 
 
+def overview_view(steps: list[base.Step], plan: dict) -> dict:
+    terms = [
+        f"{item['term']} — {item['meaning']}"
+        for item in plan.get("terms", [])
+    ]
+    plan_bullets = base.planning_basis_bullets(steps, plan)
+    return {
+        "roadmap": {
+            "title": "Software Implementation Planning — overview",
+            "subtitle": "Planning basis, reading guide and roadmap logic",
+            "items": [
+                {
+                    "id": "plan",
+                    "title": "Planning basis",
+                    "sections": [
+                        {
+                            "heading": "PLAN",
+                            "bullets": plan_bullets,
+                        },
+                    ],
+                },
+                {
+                    "id": "guide",
+                    "title": "How to read the roadmap",
+                    "sections": [
+                        {
+                            "heading": "READING GUIDE",
+                            "bullets": [
+                                "RESULT is the capability the step is intended to leave behind.",
+                                "DEMO is the practical end demonstration for the step.",
+                                "Document status shows expected maturity of supporting engineering documents.",
+                            ],
+                        },
+                        {
+                            "heading": "ROADMAP LOGIC",
+                            "bullets": [
+                                "Steps 1–3 establish the engineering and application shell.",
+                                "Steps 4–7 add local registration, simulated input, the operator GUI and backoffice integration.",
+                                "Steps 8–11 move to the target, real devices and an integrated field proof.",
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "id": "terms",
+                    "title": "Terms",
+                    "sections": [
+                        {
+                            "heading": "TERMS",
+                            "bullets": terms,
+                        },
+                    ],
+                },
+            ],
+        }
+    }
+
 def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
     items: list[dict] = []
 
@@ -55,7 +112,7 @@ def roadmap_view(steps: list[base.Step], plan: dict) -> dict:
             },
             "meta": [
                 base.roadmap_end_text(step),
-                base.step_effort_text(step),
+                *base.step_effort_lines(step),
             ],
             "sections": [
                 {
@@ -100,12 +157,19 @@ def write_readme(
         "",
         "All files below are generated from the same SIP/YAML planning sources.",
         "",
+        "- [Planning overview](./sip-overview.svg)",
+        "- [Planning overview PDF](./sip-overview.pdf)",
         "- [Continuous roadmap](./sip-roadmap.svg)",
         f"- [Roadmap PDF](./sip-roadmap.pdf) — {page_count} A4-landscape page(s).",
-        "- [RoadmapView input](./roadmap-view.yaml) — project-owned compact presentation data.",
+        "- [Overview input](./roadmap-overview-view.yaml) — project-owned planning preface data.",
+        "- [RoadmapView input](./roadmap-view.yaml) — project-owned compact step presentation data.",
         "",
         "Actual effort is a planning indication derived from repository activity, not time registration.",
         str(plan["actuals"]["method"]),
+        "",
+        "## Planning overview",
+        "",
+        "![SIP planning overview](./sip-overview.svg)",
         "",
         "## Roadmap pages",
         "",
@@ -153,6 +217,42 @@ def main() -> None:
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    overview_path = out_dir / "roadmap-overview-view.yaml"
+    overview_path.write_text(
+        yaml.safe_dump(
+            overview_view(steps, plan),
+            sort_keys=False,
+            allow_unicode=True,
+        ),
+        encoding="utf-8",
+    )
+
+    overview_render_dir = out_dir / "_roadmap-overview-render"
+    if overview_render_dir.exists():
+        shutil.rmtree(overview_render_dir)
+
+    subprocess.run(
+        [
+            "eng-docs",
+            "roadmap",
+            "--source",
+            str(overview_path),
+            "--out",
+            str(overview_render_dir),
+        ],
+        check=True,
+    )
+
+    shutil.copyfile(
+        overview_render_dir / "roadmap.svg",
+        out_dir / "sip-overview.svg",
+    )
+    shutil.copyfile(
+        overview_render_dir / "roadmap.pdf",
+        out_dir / "sip-overview.pdf",
+    )
+    shutil.rmtree(overview_render_dir)
 
     view_path = out_dir / "roadmap-view.yaml"
     view_path.write_text(
