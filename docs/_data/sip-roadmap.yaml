@@ -4,9 +4,9 @@ cadence_project_days_per_week: 1.0
 planning_reserve_fraction: 0.25
 
 actuals:
-  through_date: "2026-09-29"
-  estimated_project_days: 7.1
-  estimated_hours: 56.4
+  through_date: "2026-10-02"
+  estimated_project_days: 15.5
+  estimated_hours: 124.1
   method: >-
     Approximation from commit activity within merged pull requests across the
     meta and implementation repositories. Each commit contributes a 60-minute
@@ -72,7 +72,7 @@ notes:
 steps:
   "1":
     estimate_project_days: 1
-    actual_estimated_project_days: 0.6
+    actual_estimated_project_days: 0.7
     completed_date: "2026-09-12"
     workstream: architecture
     docs:
@@ -89,7 +89,7 @@ steps:
 
   "2":
     estimate_project_days: 6
-    actual_estimated_project_days: 1.6
+    actual_estimated_project_days: 1.8
     completed_date: "2026-09-13"
     workstream: core
     docs:
@@ -107,7 +107,7 @@ steps:
 
   "3":
     estimate_project_days: 3
-    actual_estimated_project_days: 4.9
+    actual_estimated_project_days: 8.2
     completed_date: "2026-09-29"
     workstream: application
     docs:
@@ -124,6 +124,7 @@ steps:
 
   "4":
     estimate_project_days: 6
+    actual_estimated_project_days: 5.1
     remaining_estimate_project_days: 0.5
     workstream: domain
     docs:
