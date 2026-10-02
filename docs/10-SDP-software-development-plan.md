@@ -133,6 +133,14 @@ domain baseline ---------+------> 30 system use cases
                                            v
                                       implementation
                                            |
+                                           +----------------------+
+                                           |                      |
+                                           v                      v
+                                  61-<SI>-VTS case      executable product
+                                           |
+                                           v
+                                  executable verification
+                                           |
                                            v
                                   verification evidence
 ```

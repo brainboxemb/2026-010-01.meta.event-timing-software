@@ -190,7 +190,9 @@ domain baseline / system use cases / applicable parent-system inputs
                          -> SAD when architecture is separate
                          -> focused SDD(s)
                          -> implementation
-                         -> verification evidence
+                         -> 61-<SI>-VTS verification case
+                         -> executable verification
+                         -> retained verification evidence
 ```
 
 An externally owned requirement, IDD, protocol or standard remains upstream authority and may constrain the SSSD and, where allocated directly, an affected SSD. The document-20 register records that dependency without copying ownership into this repository.

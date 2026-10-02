@@ -475,9 +475,11 @@ Useful evidence may include:
 
 The active implementation PR should contain or link the detailed evidence for its scope. Long-term plans should only retain durable conclusions/baselines.
 
-## Verification status model
+## Traceability status vocabulary
 
-Documents and requirements should eventually support states such as:
+This is a vocabulary for future traceability tooling, not a current test-run status table.
+Current execution state belongs to retained verification evidence. Requirements/cases may
+eventually be summarised with states such as:
 
 ```text
 not verified
@@ -488,7 +490,7 @@ failed / evidence not sufficient
 verification impacted by change
 ```
 
-The exact traceability tooling is still open; initially this can remain Markdown + tests + PR evidence.
+The exact traceability tooling is still open. The VTS owns stable case definitions; executable tests and retained CI/PR evidence own actual execution results.
 
 ## Open verification topics
 

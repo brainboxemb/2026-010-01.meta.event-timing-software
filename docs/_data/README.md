@@ -1,6 +1,6 @@
 # SIP planning data
 
-The files in this directory are the machine-readable source for generated SIP planning views.
+The files in this directory are the machine-readable supporting source for generated SIP planning views. The SIP Markdown owns step content plus activity IDs/titles; YAML adds planning state and rendering metadata.
 
 The generated SVG, draw.io and PDF files are **outputs**. Do not edit planning content in generated drawings.
 
