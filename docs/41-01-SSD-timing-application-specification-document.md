@@ -198,9 +198,8 @@ OPEN.
 
 SI-01 shall provide one application/domain operation for an already-accepted
 semantic registration. The caller supplies the resolved `RegistrationId` and
-accepted observation time; SI-01 supplies its own source identity, active
-`LocationId`, next committed sequence and recorded time before committing the
-TimingData value.
+accepted time; SI-01 supplies its own source identity, active `LocationId` and
+next committed sequence before committing the TimingData value.
 ```
 
 ```{req} Committed registration observability
@@ -220,7 +219,7 @@ The dev auto-reg control shall be usable only when
 SI-01 advertises that the corresponding engineering capability is both supported
 and enabled. This control enters at the accepted semantic registration boundary
 and shall not let the client supply final TimingData, source sequence, active
-LocationId, recorded time or source identity.
+LocationId or source identity.
 ```
 
 ```{req} Reconnect rebuild before live presentation
@@ -230,7 +229,59 @@ LocationId, recorded time or source identity.
 After IF-03 reconnect, an engineering/operator client shall be able to rebuild
 current status and committed registration history before treating subsequent
 updates as a live view. Duplicate TimingData observed through history plus live
-delivery shall be identifiable by the stable TimingData record key.
+delivery shall be identifiable by Node ID together with sequence number.
+```
+
+```{req} Reference TimingData representation support
+:id: SI01-REQ-045
+:status: D
+:derived_from: UC-011, IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
+
+SI-01 shall support the current reference TimingData representation defined by
+`33-05-IDD-timingdata-interchange.md` for local persistence and engineering
+interchange. For every supported record type, encoding and decoding shall
+preserve the applicable IF-05 semantic values.
+```
+
+```{req} Write TimingData before commit completion
+:id: SI01-REQ-046
+:status: D
+:derived_from: UC-003, UC-012
+
+SI-01 shall successfully write one complete TimingData record to the configured
+local TimingData store before completing that TimingData commit. Only after
+that write succeeds may SI-01 add the record to committed LogBook state,
+publish a committed live event or report the commit as successful.
+
+If the write fails or remains incomplete, the commit shall fail and the record
+shall not be treated as committed.
+```
+
+```{req} Restore committed TimingData after restart
+:id: SI01-REQ-047
+:status: D
+:derived_from: UC-013, IF05-REQ-002, IF05-REQ-003, IF05-REQ-007
+
+On startup, SI-01 shall rebuild each configured TimingNode's committed TimingData
+history from valid complete persisted records in sequence-number order before
+accepting new TimingData commit work for that TimingNode. The next sequence
+shall be 1 when no committed record exists, otherwise the last committed
+sequence plus 1.
+
+Recovery of committed TimingData shall not by itself restore the previous
+operational Location ID or OPEN state.
+```
+
+```{req} Reject invalid TimingData recovery input
+:id: SI01-REQ-048
+:status: D
+:derived_from: UC-013
+
+When recovering the current reference representation, SI-01 shall not treat an
+incomplete trailing record as committed. A malformed complete record,
+unsupported representation version, Node ID mismatch, duplicate sequence,
+sequence gap or sequence regression shall produce an explicit recovery failure
+for that TimingNode rather than being silently skipped or renumbered.
 ```
 
 ### Step-4 lifecycle interpretation
@@ -264,7 +315,7 @@ The following areas are intentionally not made concrete by this SSD slice:
 - ready-team/start/penalty behaviour;
 - CAN/keypad/Display V1;
 - smart Display V2;
-- persistence/backup of operational timing data;
+- backup/export/retention policy and abrupt-power-loss guarantees beyond the local TimingData append/restart-recovery baseline;
 - backoffice semantic/protocol behaviour;
 - RabbitMQ-specific behaviour;
 - target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
@@ -286,8 +337,12 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
 | SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03 control/status | V1/V2 + Step-4 ST-1 |
-| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + Step-4 ST-1 |
-| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + reconnect verification |
+| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + `VC-ST1-002` |
+| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + `VC-ST1-002` / `VC-ST1-003` |
+| SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary | codec/provider tests + persisted-file evidence |
+| SI01-REQ-046 | UC-003/012 | local TimingData commit ordering | persistence/registration component tests |
+| SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery | `VC-ST1-002` second-process run |
+| SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation | codec/persistence recovery tests |
 
 ### AP-1 decisions resolved by this baseline
 

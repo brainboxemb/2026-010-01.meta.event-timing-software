@@ -349,6 +349,10 @@ and retains the same caller-visible operation semantics.
 
 ## TimingData persistence and recovery
 
+This design implements `SI01-REQ-045..048` together with the applicable IF-05
+semantics and the reference representation in
+`33-05-IDD-timingdata-interchange.md`.
+
 ### Recovering the next sequence
 
 We do not need a separate sequence-counter file in the first implementation.
@@ -381,10 +385,10 @@ cache. The committed TimingData file remains the source used to check/rebuild it
 
 TimingData has the strongest rule:
 
-- a TimingData record is committed only after its complete IF-05 representation
-  is durably appended;
-- only then is the same concrete `TimingData` value added to LogBook and visible to
-  runtime consumers;
+- a TimingData record is committed only after writing its complete reference
+  representation to the configured local store has completed successfully;
+- only then is the same concrete `TimingData` value added to LogBook, published
+  as a committed live event or returned as a successful commit result;
 - the TimingData file is used to rebuild LogBook after restart.
 
 Other per-node stores have a different first purpose:
@@ -399,9 +403,13 @@ The live protocol may resend the current data, for example when a TimingNode is
 opened. Recovery semantics can be promoted later if an operational requirement
 needs them.
 
+The successful write above is the software commit boundary. The stronger
+guarantee against sudden power loss depends on the concrete filesystem and flush
+primitive and remains a target-specific design/verification point.
+
 Implementation points to verify on the target Pi:
 
-- what exact flush/fsync call makes a TimingData append durable;
+- what exact flush/fsync call provides the required power-loss durability level;
 - what happens if power disappears halfway through the final line;
 - whether truncating the incomplete tail is safe on the target filesystem;
 - how a corrupt complete record is reported instead of silently ignored;
