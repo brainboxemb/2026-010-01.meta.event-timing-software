@@ -3,9 +3,9 @@ step: 4
 planning_changes:
   - date: '2026-10-02'
     change: >-
-      Clarified that LocationId and OPEN/CLOSE remain operational state rather
-      than TimingData records, and strengthened VC-ST1-002 with full process
-      restart recovery against the same committed TimingData file.
+      Roadmap summary aligned with the accepted SSD/IF-05 scope: LocationId and
+      OPEN/CLOSE are operational state, not TimingData records. VC-ST1-002 also
+      retains a second-process restart/recovery robustness check.
   - date: '2026-10-02'
     change: >-
       A03 and V03 completed; V04 Engineering Client running-system demo is active.
@@ -77,8 +77,8 @@ activities:
     state: done
     depends_on: [V01]
     note: >-
-      Location and OPEN/CLOSED invariants implemented behind serialized ownership.
-      These are operational TimingNode state transitions, not TimingData records.
+      Location and OPEN/CLOSED invariants implemented behind serialized ownership;
+      roadmap wording follows the SSD/IF-05 distinction from TimingData records.
 
   - id: A02
     lane: application
@@ -87,9 +87,8 @@ activities:
     state: done
     depends_on: [A01]
     note: >-
-      Accepted registration and committed TimingData path implemented. The first
-      persisted TimingData entry may be sequence 1 only after LocationId assignment
-      and OPEN have made registration operationally valid.
+      Accepted registration and committed TimingData path implemented; the roadmap
+      summary follows the SSD lifecycle ordering before the first registration commit.
 
   - id: A03
     lane: application

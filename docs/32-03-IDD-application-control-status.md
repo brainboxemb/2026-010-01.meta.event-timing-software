@@ -662,7 +662,7 @@ The test driver shall not mutate internal Java objects or inspect private implem
 ---
 id: VC-ST1-002
 verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-045,
+  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043,
   IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
 ---
 
@@ -697,10 +697,13 @@ Deterministic procedure:
     recovered record is not emitted as a new `TIMING_DATA_COMMITTED` event;
 19. shut the second SI-01 process down through the controlled shutdown path.
 
-This case verifies server-side control, history/live observation, WebSocket
-reconnect behaviour and persisted LogBook recovery across a full process restart.
-The Engineering Client history/live merge, buffering and deduplication algorithm
-required by SI01-REQ-044 / IF03-REQ-016 is verified separately by the Step-4
+The requirement mapping above covers the server-side control and committed
+history/live behaviour exercised by this case. The second process run is retained
+as additional restart/recovery robustness evidence for the current Step-4
+implementation; it does not create a new product requirement.
+
+The Engineering Client history/live merge, buffering and deduplication behaviour
+described by SI01-REQ-044 / IF03-REQ-016 is verified separately by the Step-4
 Engineering Client verification.
 ```
 
