@@ -261,6 +261,13 @@ A production `TimingNode` is always constructed as a complete capability. `Timin
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
+Status-change detection is owned by the same serial boundary. A state-changing
+command compares authoritative status before and after the domain operation on
+that TimingNode lane. A real difference emits the TimingNode status event before
+the result leaves the ordered command execution. `CommandHandler` maps that fact
+to `ApplicationStatus`; it does not perform a second before/after query outside
+the ordered boundary.
+
 The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
 
 ```java
@@ -1051,18 +1058,28 @@ or concrete infrastructure.
 Conceptually:
 
 ```java
-final class Event<T> {
-    void subscribe(Consumer<T> listener);
-    void unsubscribe(Consumer<T> listener);
-    void emit(T value);
+interface EventSource<T> {
+    boolean subscribe(Consumer<T> listener);
+    boolean unsubscribe(Consumer<T> listener);
+}
+
+final class Event<T> implements EventSource<T> {
+    DeliveryReport emit(T value);
 }
 ```
 
-A component owns the event instance; `platform.events` only supplies the generic
-subscription/emit mechanism. For TimingData the first event is:
+A component owns the mutable `Event<T>` instance and is the only code that emits
+the fact. Consumers receive an `EventSource<T>` subscription-only view, so they
+subscribe directly without gaining permission to publish the event.
+
+For TimingData the component owns:
 
 ```java
-Event<TimingData> newTimingDataEvent;
+private final Event<TimingData> newTimingDataEvent = new Event<>();
+
+public EventSource<TimingData> newTimingData() {
+    return newTimingDataEvent;
+}
 ```
 
 The commit path is therefore:
@@ -1077,7 +1094,7 @@ TimingNode serial lane
        +--> subscribed listener
 ```
 
-The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the event instance they need.
+The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the exposed event source they need.
 
 The event says that new TimingData is now available. The fact that
 `newTimingDataEvent` is emitted only after successful persistence and LogBook
@@ -1088,6 +1105,14 @@ Listeners must not become alternate owners of TimingNode mutable state. Slow
 network delivery or retry work must also not block the TimingNode serial lane;
 a listener that needs such work hands the TimingData value to its own bounded
 execution/delivery mechanism.
+
+The `Event<T>` listener registry is thread-safe and uses snapshot iteration, so
+subscribe/unsubscribe may race safely with delivery. Delivery itself is
+synchronous on the emitting thread and `Event<T>` does not serialize concurrent
+`emit(...)` calls. An owner that requires ordering or non-overlapping callbacks
+must emit from its own ordered execution boundary. TimingNode status-change and
+committed-TimingData events are therefore emitted from the TimingNode serial
+lane.
 
 This is part of the same ingress/latency risk analysis: a synchronous local listener is acceptable only when it is demonstrably short and non-blocking. A WebSocket or other transport adapter must enqueue/buffer its outbound work and return quickly, or introduce its own bounded delivery executor. The TimingNode lane is not a network backpressure mechanism.
 
