@@ -146,7 +146,7 @@ recTime
 Validation rules:
 
 - every required member is present and non-null;
-- `nodeId` is not normalized, case-folded or derived by the codec;
+- `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
 - `AUTO_REG` currently accepts exactly `["ADD"]`;
 - `MAN_REG` currently accepts `ADD` plus exactly one of `AUTO` or `MAN`;
 - readers may accept a valid `code` combination in another array order;
