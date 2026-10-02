@@ -184,7 +184,7 @@ Document roles:
 - **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
 - **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.
 - **SDD** — focused detailed design downstream of the owning SSD or SAD.
-- **SVP/verification cases** — consume requirements and interface contracts for coverage; verification planning is not a requirement input.
+- **SVP / VTS** — the SVP defines verification strategy; the VTS defines concrete stable cases. Both consume product requirements/interfaces and are downstream, not requirement inputs.
 - **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
 - **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
 - **SUM** — release/user guidance downstream of the released software/configuration baseline.

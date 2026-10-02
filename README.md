@@ -173,7 +173,7 @@ The project intentionally separates:
 - **software-system specification/design** — system use cases, SSSD, system-owned ISDs and optional IDDs;
 - **software-item specification/design** — optional item use cases; either a combined SSD or separate SRD + SAD; and focused SDDs;
 - **development environment/engineering** — SDE and toolchain/environment refinements;
-- **verification/validation** — SVP and later verification specifications/cases/reports where a distinct document is justified;
+- **verification/validation** — SVP for strategy, VTS for concrete cases, and retained/generated evidence for actual executions;
 - **user/operations** — release/user/operator guidance such as SUM;
 - **agent plan (`AP-*`)** — coordination history/work for this meta repository.
 

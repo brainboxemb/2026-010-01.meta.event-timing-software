@@ -16,10 +16,11 @@ Use the documents as follows:
 SDP  why/how the project is developed at high level: strategy, phases, risks, resources, assumptions
 SIP  what is implemented next: concrete steps, deliverables, demonstrations and exit evidence
 SDE  where/how engineering work is performed: repositories, tooling, GitHub flow, CI, artifacts, local environments
-SVP  how the product is verified: levels, profiles, verification cases and evidence
+SVP  verification strategy: levels, profiles, environments and evidence rules
+VTS  concrete verification cases: setup, procedure and expected result
 ```
 
-The SDE may define detailed mechanisms that support the SDP/SIP/SVP, but should not duplicate their planning or verification content.
+The SDE may define detailed mechanisms that support the SDP/SIP/SVP/VTS, but should not duplicate their planning or verification content.
 
 ## Purpose
 
@@ -404,7 +405,7 @@ Environment rules:
 - simple teardown/cleanup;
 - restart/failure control where recovery is under test.
 
-Detailed verification scenarios belong in the SVP and relevant SDD, not in this SDE.
+Concrete verification scenarios belong in the VTS; product design rationale remains in the applicable SDD. Neither belongs in this SDE.
 
 ## Raspberry Pi build/deployment environment
 
