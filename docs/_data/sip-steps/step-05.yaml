@@ -13,7 +13,6 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    title: Runtime execution and measurement plan
     state: planned
     note: >-
       Define the first project-owned thread/queue measurement approach, stable
@@ -23,7 +22,6 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    title: Simulated antenna and tag-processing path
     state: planned
     depends_on: [D01]
     note: >-
@@ -36,7 +34,6 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    title: Runtime markers and counters
     state: planned
     depends_on: [D01, A01]
     note: >-
@@ -48,7 +45,6 @@ activities:
   - id: A03
     lane: application
     kind: decision
-    title: Allocation and data-access strategy
     state: planned
     depends_on: [A01, A02]
     note: >-
@@ -59,7 +55,6 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    title: Single-node load and burst characterization
     state: planned
     depends_on: [A01, A02, A03]
     note: >-
@@ -71,7 +66,6 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    title: Sustained antenna-ingress fairness
     state: planned
     depends_on: [V01]
     note: >-
@@ -82,7 +76,6 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: Restart and recovery with simulated input
     state: planned
     depends_on: [A01]
     note: >-
@@ -93,7 +86,6 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    title: Provider bootstrap verification
     state: planned
     depends_on: [A01]
     note: >-

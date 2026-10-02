@@ -34,7 +34,7 @@ The same convention is intended for later declarative architecture-diagram sourc
 
 `sip-roadmap.yaml` owns working planning metadata such as estimates, cadence and compact named-document indicators used by the overview roadmap.
 
-`sip-steps/step-NN.yaml` owns the concrete planning activities shown on an A4 portrait step board. Activities are typed by lane, kind and state; dependencies and optional effort are data rather than drawing geometry.
+`docs/11-SIP-software-implementation-planning.md` owns each step activity ID and title. `sip-steps/step-NN.yaml` adds only the current planning state for those SIP-owned activities: lane, kind, state, dependencies, optional effort and compact card notes. A YAML activity ID that is not declared in the matching SIP step is rejected by the generator.
 
 The Python generator parses YAML, validates it against JSON Schema, resolves layout and renders the generated outputs. Therefore changing a card position or page layout must not require changing the engineering activity itself.
 
@@ -46,13 +46,12 @@ A step-board activity has fields such as:
 - id: T05
   lane: tooling
   kind: implementation
-  title: Linux canonical CI
   state: planned
   estimate_project_days: 0.5
   depends_on: [T03, T04]
 ```
 
-Supported lanes, kinds, states and document-maturity values are defined by the JSON Schema rather than by ad-hoc generator code.
+The human-readable activity title comes from the matching `Activities` table in the SIP. Supported lanes, kinds, states and document-maturity values are defined by the JSON Schema rather than by ad-hoc generator code.
 
 ## Documentation indicators
 

@@ -29,7 +29,6 @@ activities:
   - id: D01
     lane: documentation
     kind: documentation
-    title: Engineering Client architecture + UI baseline
     state: done
     note: >-
       Timing-view layout, control states, history/live and reconnect behaviour defined.
@@ -37,7 +36,6 @@ activities:
   - id: D02
     lane: documentation
     kind: documentation
-    title: Review first-registration operational use cases
     state: done
     depends_on: [D01]
     note: >-
@@ -46,7 +44,6 @@ activities:
   - id: D02W
     lane: documentation
     kind: documentation
-    title: Translate private compatibility behaviour
     state: done
     depends_on: [D02]
     note: >-
@@ -55,7 +52,6 @@ activities:
   - id: D03
     lane: documentation
     kind: decision
-    title: Establish first TimingData + public control contracts
     state: done
     depends_on: [D02, D02W]
     note: >-
@@ -64,7 +60,6 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    title: Define deterministic first-slice examples
     state: done
     depends_on: [D03]
     note: >-
@@ -73,7 +68,6 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    title: TimingNode location and lifecycle
     state: done
     depends_on: [V01]
     note: >-
@@ -82,7 +76,6 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    title: Direct registration + TimingData
     state: done
     depends_on: [A01]
     note: >-
@@ -91,7 +84,6 @@ activities:
   - id: A03
     lane: application
     kind: integration
-    title: Engineering Client first-slice control
     state: done
     depends_on: [D01, A02]
     note: >-
@@ -102,7 +94,6 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    title: First-slice domain verification
     state: done
     depends_on: [A02]
     note: >-
@@ -111,7 +102,6 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    title: Automated first-registration black-box verification
     state: done
     depends_on: [A03, V02]
     note: >-
@@ -123,7 +113,6 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    title: Engineering Client running-system demo
     state: active
     depends_on: [V03, A03]
     note: >-

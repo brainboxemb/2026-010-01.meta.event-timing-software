@@ -52,7 +52,6 @@
         "id",
         "lane",
         "kind",
-        "title",
         "state"
       ],
       "properties": {
@@ -80,10 +79,6 @@
             "documentation",
             "integration"
           ]
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
         },
         "state": {
           "type": "string",

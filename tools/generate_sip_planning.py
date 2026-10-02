@@ -404,12 +404,8 @@ def validate_step_board_against_sip(board: dict, step: Step) -> None:
             f"SIP Step {step.number} has a detail board but no Activities table"
         )
 
-    board_titles = {
-        activity["id"]: strip_markdown(activity["title"])
-        for activity in board["activities"]
-    }
     declared_ids = set(declared)
-    board_ids = set(board_titles)
+    board_ids = {activity["id"] for activity in board["activities"]}
 
     missing = sorted(declared_ids - board_ids)
     extra = sorted(board_ids - declared_ids)
@@ -418,13 +414,6 @@ def validate_step_board_against_sip(board: dict, step: Step) -> None:
             f"SIP Step {step.number} activity mismatch: "
             f"missing from board={missing}, not declared in SIP={extra}"
         )
-
-    for activity_id in sorted(declared_ids):
-        if declared[activity_id] != board_titles[activity_id]:
-            raise SystemExit(
-                f"SIP Step {step.number} activity {activity_id} title mismatch: "
-                f"SIP={declared[activity_id]!r}, board={board_titles[activity_id]!r}"
-            )
 
 
 def compact_doc_label(document: dict) -> str:
