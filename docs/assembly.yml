@@ -119,6 +119,7 @@ books:
       - software-system-specification
       - application-control-status
       - timingdata-interchange
+      - timingdata-interchange-design
       - application-configuration
       - timing-application-specification
       - gui-application-specification
