@@ -224,14 +224,14 @@ At closure:
 
 ## AP-4 — Bootstrap the public SI-01 implementation repository
 
-Status: completed — meta PR #7 / framework PR #2
+Status: completed — meta PR #7 / Java PR #2
 
-Goal: establish the public SI-01/framework implementation repository and execute the repository/framework-skeleton bootstrap using the proven reusable Git/Java tooling.
+Goal: establish the public SI-01 Timing Point Application implementation repository and execute the repository/application-skeleton bootstrap using the proven reusable Git/Java tooling.
 
 Repository:
 
 ```text
-brainboxemb/2026-010-02.java.event-timing-framework
+brainboxemb/2026-010-02.java.timing-point-application
 ```
 
 Final bootstrap baseline:
