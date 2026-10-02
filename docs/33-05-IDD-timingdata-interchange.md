@@ -121,7 +121,7 @@ Known members use the following JSON types and validation rules.
 | --- | --- | --- | --- |
 | `v` | integer | every record | exactly `1` for the current development format |
 | `nodeId` | string | every record | non-empty Node ID |
-| `seqNr` | integer | every record | `1..9007199254740991`; plain decimal |
+| `seqNr` | integer | every record | `1..9007199254740991`; plain decimal; v1 reference-design limit |
 | `locId` | integer | every record | positive Location ID representation |
 | `recType` | string | every record | `AUTO_REG` or `MAN_REG` in the current slice |
 | `time` | string | every record | canonical effective-time text |
@@ -245,6 +245,11 @@ are used so examples remain convenient for later test sets containing up to
 
 ## Compatibility and versioning design
 
+The ISD requires explicit per-record representation versioning. Development v1
+chooses an integer `v` member and the odd/even maturity convention below. The
+odd/even convention is a design choice of this reference representation, not an
+additional ISD requirement.
+
 The default/reference representation uses integer format versions:
 
 - **odd** values are development/unstable formats;
@@ -278,11 +283,21 @@ the next odd-numbered development format.
 
 | ISD requirement | v1 design realization |
 | --- | --- |
-| IF05-REQ-001..003 | semantic/member mapping plus `(nodeId, seqNr)` and sequence rules |
-| IF05-REQ-004..008 | `AUTO_REG` / `MAN_REG`, `regId` and `code[]` mapping |
-| IF05-REQ-009..010 | compact JSON Lines framing and incomplete-tail rule |
-| IF05-REQ-011..012 | representation boundary remains semantic; JSONL is only the reference design |
-| IF05-REQ-013 | canonical UTC `Z` timestamp text |
-| IF05-REQ-014 | `seqNr` range `1..2^53-1` |
-| IF05-REQ-015 | tolerant compatible-member reading plus explicit invalid conditions |
-| IF05-REQ-016 | odd/even integer version design |
+| IF05-REQ-001 | required JSON members carry common and family-specific values |
+| IF05-REQ-002 | stable key is represented by `(nodeId, seqNr)` |
+| IF05-REQ-003 | `seqNr` starts at 1 and advances contiguously in the authoritative file |
+| IF05-REQ-004 | `recType` distinguishes `AUTO_REG` and `MAN_REG` |
+| IF05-REQ-005..007 | `regId` carries the one canonical registration identity; source-specific identities are not v1 registration members |
+| IF05-REQ-008 | `code[]` maps add plus the manual time-source distinction |
+| IF05-REQ-009 | every physical JSON line contains one complete self-contained record, including `v` |
+| IF05-REQ-010 | LF/accepted CRLF terminates a complete record; unterminated EOF data is incomplete |
+| IF05-REQ-011 | semantic-to-JSON mapping provides the reference translation target for alternative representations |
+| IF05-REQ-012 | committed JSON Lines are append-only and existing records are not rewritten |
+| IF05-REQ-013 | `time` and `recTime` use canonical UTC `Z` text |
+| IF05-REQ-014 | `seqNr` is source order; timestamps do not reorder the stream |
+| IF05-REQ-015 | readers tolerate additional unknown JSON object members when required known members remain valid |
+| IF05-REQ-016 | every record carries integer `v`; unsupported values are not decoded as another version |
+
+The v1 `seqNr` limit of `2^53-1` and the odd/even version-number convention
+are concrete reference-design choices. They are intentionally not additional
+ISD requirements.

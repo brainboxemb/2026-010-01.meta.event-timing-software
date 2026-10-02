@@ -97,7 +97,6 @@ Sequence rules:
 - failed/uncommitted commit attempts do not consume a sequence number;
 - a new source stream starts at **1**;
 - sequence number **0 is reserved**;
-- the common/reference range is `1..9007199254740991` (`2^53 - 1`);
 - changing Location ID does not reset the sequence;
 - sequence is an ordering/traceability value, not a timestamp;
 - a committed record key is never reused;
@@ -119,7 +118,7 @@ The first TimingData slice defines two registration families:
 
 A registration record carries one canonical **Registration ID**. Source-specific
 identities such as RFID/tag identifiers or team/reference-data identifiers are
-resolved before the definitive registration record is committed.
+not part of the current common registration record.
 
 For a manual registration the record also preserves how its effective time was
 obtained:
@@ -173,15 +172,16 @@ The current design is documented by
 
 The reference representation shall:
 
-- preserve all common IF-05 semantics;
-- keep record identity and source ordering unambiguous;
-- support append-oriented persistent/interchange use;
-- distinguish complete committed records from an incomplete trailing record;
-- provide explicit representation versioning;
-- allow compatible readers to tolerate additions that do not change existing
-  semantics;
-- report malformed/incompatible records explicitly rather than silently
-  reinterpreting them.
+- carry all common and record-family-specific values needed to interpret one
+  record;
+- identify record identity and source order unambiguously;
+- allow one complete record to be decoded without requiring preceding or
+  following TimingData records;
+- define an unambiguous record-completion boundary;
+- identify the representation version used by each record;
+- allow compatible additions without changing the meaning of existing values;
+- prevent unsupported versions from being silently interpreted using another
+  version's semantics.
 
 ## Alternative representations
 
@@ -194,122 +194,135 @@ when data is translated to/from the common boundary.
 
 ## IF-05 requirements
 
-```{ifreq} Common TimingData semantics
+The requirements below define observable interface behaviour and semantic
+constraints. Concrete JSON member names, line framing, numeric encoding and
+version-number conventions belong to the IDD and are not software
+implementation requirements.
+
+```{ifreq} Required TimingData values
 :id: IF05-REQ-001
 
-Every committed TimingData record shall expose the common semantic values
-defined by this ISD.
+Every committed TimingData record shall carry exactly one Node ID, sequence
+number, Location ID, record family, effective time and recorded time, plus every
+value required by that record family.
 ```
 
 ```{ifreq} Stable TimingData record key
 :id: IF05-REQ-002
 
-The stable record key shall be Node ID plus sequence number.
+The pair (Node ID, sequence number) shall uniquely identify one committed
+TimingData record. Two distinct committed records shall not use the same pair.
 ```
 
-```{ifreq} Sequence start and non-reuse
+```{ifreq} Authoritative sequence progression
 :id: IF05-REQ-003
 
-Sequence numbering shall start at 1 per Node ID stream; 0 is reserved and
-committed record keys shall not be reused.
+For each Node ID, the first committed record in an authoritative source stream
+shall have sequence number 1. Each later committed record shall have the previous
+committed sequence number plus 1. Sequence number 0 shall not identify a
+committed record.
 ```
 
-```{ifreq} Registration families
+```{ifreq} Registration family
 :id: IF05-REQ-004
 
-The first TimingData registration slice shall support automatic and manually
-initiated registration records.
+Each registration record in the current IF-05 slice shall identify exactly one
+registration family: automatic registration or manually initiated registration.
 ```
 
 ```{ifreq} Canonical registration identity
 :id: IF05-REQ-005
 
-Registration records shall carry Registration ID rather than a source-specific
-identity.
+Each registration record shall carry exactly one Registration ID as its
+canonical registration identity.
 ```
 
-```{ifreq} Registration ID semantics
+```{ifreq} Registration ID value
 :id: IF05-REQ-006
 
-Registration ID shall be a non-empty provider-neutral string at the common
-IF-05 boundary. Concrete event/profile meanings, allowed values and deployment
-mappings shall remain outside IF-05.
+Registration ID at the common IF-05 boundary shall be a non-empty string.
+Event/profile-specific allowed values, ranges and mappings shall remain outside
+IF-05.
 ```
 
-```{ifreq} Registration source boundary
+```{ifreq} Source-specific identity exclusion
 :id: IF05-REQ-007
 
-Source-specific tag/reference identities shall be resolved to Registration ID
-before a registration is committed.
+The current common registration record shall not use source-specific tag,
+transponder or reference-data identifiers in place of Registration ID.
 ```
 
-```{ifreq} Registration action and manual-time semantics
+```{ifreq} Registration action and manual-time source
 :id: IF05-REQ-008
 
-The current registration slice shall represent add operations. Manual
-registrations shall preserve whether effective time was system-assigned or
-operator-entered. A concrete reference representation shall encode those
-semantics unambiguously.
+The current registration slice shall represent registration add operations.
+A manually initiated registration shall also identify whether its effective time
+was system-assigned or operator-entered.
 ```
 
-```{ifreq} Public reference representation
+```{ifreq} Independently decodable reference record
 :id: IF05-REQ-009
 
-IF-05 shall provide a public default/reference representation suitable for
-append-oriented TimingData persistence/interchange and independent record
-decoding.
+The default/reference representation shall carry all values needed to interpret
+one complete TimingData record without requiring preceding or following
+TimingData records.
 ```
 
-```{ifreq} Incomplete trailing record
+```{ifreq} Unambiguous record completion
 :id: IF05-REQ-010
 
-The default/reference representation shall distinguish a complete committed
-record from an incomplete trailing record after an interrupted append.
+The default/reference representation shall define an unambiguous completion
+boundary for each record. Data after the last completed boundary shall not be
+interpreted as a complete TimingData record.
 ```
 
 ```{ifreq} Alternative representation compatibility
 :id: IF05-REQ-011
 
-Alternative representations shall preserve IF-05 record identity, ordering,
-registration semantics and represented timestamps when translating to/from the
-common semantic contract.
+Translation between a conforming alternative representation and the common
+IF-05 boundary shall preserve the stable record key, source order, Location ID,
+record family, Registration ID where applicable, effective time and recorded
+time.
 ```
 
-```{ifreq} Representation-independent semantics
+```{ifreq} Committed-record immutability
 :id: IF05-REQ-012
 
-The common IF-05 semantics shall not depend on the default/reference
-representation or one software implementation of that representation.
+Once a TimingData record is committed, the semantic values associated with its
+stable record key shall not change. A later correction or revocation, when
+supported, shall be represented by another record rather than by rewriting the
+committed record.
 ```
 
 ```{ifreq} Absolute timestamp semantics
 :id: IF05-REQ-013
 
-TimingData effective and recorded timestamps shall represent absolute UTC
-instants. A concrete representation shall preserve the represented instant.
+Effective time and recorded time shall each represent one absolute UTC instant.
+Translation between conforming IF-05 representations shall preserve that
+instant.
 ```
 
-```{ifreq} Sequence range and no-wrap rule
+```{ifreq} Sequence defines source order
 :id: IF05-REQ-014
 
-The common/reference sequence range shall be `1..2^53-1`; sequence shall not
-wrap and committed values shall not be reused.
+Within one Node ID stream, sequence number shall define authoritative record
+order. Effective time and recorded time shall not change that source order.
 ```
 
-```{ifreq} Compatible reader behaviour
+```{ifreq} Compatible reference additions
 :id: IF05-REQ-015
 
-The default/reference representation shall support compatible additions while
-treating malformed records, invalid known semantics, sequence violations and
-unsupported representation versions as explicit compatibility/validation
-conditions.
+A reader for a supported default/reference representation version shall accept
+a record that contains additional unknown representation fields when all
+required known values remain valid and the meaning of known values is unchanged.
 ```
 
-```{ifreq} Explicit reference-version maturity
+```{ifreq} Explicit representation version
 :id: IF05-REQ-016
 
-The default/reference representation shall explicitly distinguish
-development/unstable versions from released/stable versions.
+Each default/reference record shall identify the representation version used to
+encode it. A reader shall not decode an unsupported version using the semantics
+of a supported version.
 ```
 
 ## Deferred from this first slice
