@@ -80,9 +80,10 @@ project documents.
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
-- [`docs/32-03-IDD-application-control-status.md`](docs/32-03-IDD-application-control-status.md) — system-owned IF-03 API contract.
-- [`docs/32-05-IDD-timingdata-interchange.md`](docs/32-05-IDD-timingdata-interchange.md) — system-owned IF-05 TimingData file/interchange contract.
-- [`docs/32-11-IDD-application-configuration.md`](docs/32-11-IDD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
+- [`docs/32-03-ISD-application-control-status.md`](docs/32-03-ISD-application-control-status.md) — system-owned IF-03 API contract.
+- [`docs/32-05-ISD-timingdata-interchange.md`](docs/32-05-ISD-timingdata-interchange.md) — system-owned IF-05 TimingData specification.
+- [`docs/33-05-IDD-timingdata-interchange.md`](docs/33-05-IDD-timingdata-interchange.md) — IF-05 default/reference JSON + JSON Lines design.
+- [`docs/32-11-ISD-application-configuration.md`](docs/32-11-ISD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
 - [`docs/41-01-SSD-timing-application-specification-document.md`](docs/41-01-SSD-timing-application-specification-document.md) — combined SI-01 requirements and architecture.
 - [`docs/41-02-SSD-gui-application-specification-document.md`](docs/41-02-SSD-gui-application-specification-document.md) — SI-02 specification/architecture working baseline.
 - [`docs/43-01-SDD-01-data-and-display-design.md`](docs/43-01-SDD-01-data-and-display-design.md) — active SI-01 data/runtime detailed design, including TimingNode ownership, operation flows, persistence and query isolation.
@@ -128,8 +129,8 @@ Examples:
 20-EXT
 30-UC
 31-SSSD
-32-03-IDD
-32-11-IDD
+32-03-ISD
+32-11-ISD
 40-01-UC        # reserved/optional SI-01 use-case document
 41-01-SSD
 41-02-SSD
@@ -168,7 +169,7 @@ The project intentionally separates:
 - **working context** — brainstorm, agent coordination and domain baseline;
 - **planning** — SDP and SIP;
 - **external/parent-system inputs** — controlled requirements, interface contracts, protocols and standards owned outside the current software-system scope;
-- **software-system specification/design** — system use cases, SSSD and system-owned IDDs;
+- **software-system specification/design** — system use cases, SSSD, system-owned ISDs and optional IDDs;
 - **software-item specification/design** — optional item use cases; either a combined SSD or separate SRD + SAD; and focused SDDs;
 - **development environment/engineering** — SDE and toolchain/environment refinements;
 - **verification/validation** — SVP and later verification specifications/cases/reports where a distinct document is justified;
@@ -184,7 +185,8 @@ A typical internally defined product-document chain is:
 ```text
 domain baseline / system use cases / applicable parent-system inputs
                          -> SSSD
-                         -> allocated system-owned IDD(s)
+                         -> allocated system-owned ISD(s)
+                         -> optional interface IDD(s) where concrete design needs a separate baseline
                          -> affected software-item use cases where useful
                          -> affected software-item SRD/SSD
                          -> SAD when architecture is separate

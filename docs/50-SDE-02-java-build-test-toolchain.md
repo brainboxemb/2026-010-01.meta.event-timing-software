@@ -4,7 +4,7 @@ Status: working baseline / AP-2
 
 This document refines the system-level Software Development Environment for Java repositories. It defines the **engineering toolchain roles, build/test matrix, artifact flow and reusable-tool boundary** needed before the first SI-01 implementation repository is bootstrapped.
 
-It does not define SI-01 product behaviour. Product requirements remain in the SRD/IDD/SAD/SDD documents, and verification intent remains owned by the SVP.
+It does not define SI-01 product behaviour. Product requirements remain in the SRD/SSD/ISD documents; architecture/design remains in SAD/IDD/SDD documents, and verification intent remains owned by the SVP.
 
 ## Why this document exists
 

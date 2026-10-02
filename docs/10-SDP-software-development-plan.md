@@ -13,6 +13,26 @@ specified in the VTS; execution results belong to retained verification evidence
 
 ### Document categories and numbering
 
+The following abbreviations are canonical for this project:
+
+| Abbreviation | Full name | Primary role |
+| --- | --- | --- |
+| SDP | Software Development Plan | project-wide development strategy |
+| SIP | Software Implementation Plan | implementation steps, roadmap and exit evidence |
+| EXT | External Inputs | register of parent/external normative sources |
+| UC | Use Cases | externally meaningful behaviour/use cases |
+| SSSD | Software System Specification Document | software-system requirements + architecture |
+| ISD | Interface Specification Document | normative system-owned interface requirements and semantics |
+| IDD | Interface Design Description | optional concrete interface design/representation implementing an ISD |
+| SRD | Software Requirements Document | software-item requirements when split from architecture |
+| SSD | Software Specification Document | software-item requirements + architecture combined |
+| SAD | Software Architecture Document | software-item architecture when split from requirements |
+| SDD | Software Design Description | focused detailed software-item design |
+| SDE | Software Development Environment | repositories, tooling, build/development environment |
+| SVP | Software Verification Plan | verification strategy, levels, environments and evidence rules |
+| VTS | Verification Test Specification | concrete stable verification cases and expected results |
+| SUM | Software User Manual | technical user/release guidance |
+
 The numeric prefix groups documents by **engineering role**. It is primarily a navigation/readability convention; it does not by itself define normative dependency order.
 
 ```text
@@ -44,8 +64,10 @@ Current examples are:
 
 30-UC-system-use-cases
 31-SSSD-software-system-specification-document
-32-03-IDD-application-control-status
-32-11-IDD-application-configuration
+32-03-ISD-application-control-status
+32-05-ISD-timingdata-interchange
+32-11-ISD-application-configuration
+33-05-IDD-timingdata-interchange
 
 40-01-UC                         reserved / optional for SI-01
 41-01-SSD-timing-application-specification-document
@@ -68,7 +90,8 @@ Numbering rules:
 
 - the leading two-digit value identifies the document category or reserved document family; it is not a dependency-order number;
 - where a reserved family has a natural stable scope identifier, that scope is the second segment. Software-item families use the software-item ID, for example `41-01-SSD` and `43-01-SDD-02`;
-- document family `32` is reserved for software-system-owned IDDs. Its second segment is the stable interface ID, so IF-03 is `32-03-IDD` and IF-11 is `32-11-IDD`; the number is not a document sequence;
+- document family `32` is reserved for software-system-owned Interface Specification Documents (ISDs). Its second segment is the stable interface ID, so IF-03 is `32-03-ISD` and IF-11 is `32-11-ISD`; the number is not a document sequence;
+- document family `33` is reserved for optional Interface Design Descriptions (IDDs). Use the same interface ID, for example `33-05-IDD` implements design choices for IF-05. Do not create an IDD when the ISD is sufficient;
 - document number `40` is reserved for optional software-item use cases, for example `40-01-UC` for SI-01;
 - document number `41` is reserved for software-item requirements/specification: use `41-<SI>-SSD` when requirements and architecture are combined, or `41-<SI>-SRD` when they are split;
 - document number `42` is reserved for a separate software-item architecture document `42-<SI>-SAD`; omit it when `41-<SI>-SSD` already combines requirements and architecture;
@@ -97,7 +120,7 @@ Product-document `Inputs` are **authority/release dependencies**, not a list of 
 The generic direction is:
 
 ```text
-parent / external system requirements, IDDs, protocols
+parent / external system requirements, interface contracts/designs, protocols
                          |
                          v
             20 external-input baseline
@@ -113,22 +136,27 @@ domain baseline ---------+------> 30 system use cases
                       +--------------------+--------------------+
                       |                                         |
                       v                                         v
-          32-<IF>-IDD(s)             40-<SI>-UC(s)
+          32-<IF>-ISD(s)             40-<SI>-UC(s)
                       |                                         |
-                      +--------------------+--------------------+
-                                           |
-                         +-----------------+-----------------+
-                         |                                   |
-                         v                                   v
-                  combined route                       split route
-                  41-<SI>-SSD                       41-<SI>-SRD
-                         |                                   |
-                         |                                   v
-                         |                            42-<SI>-SAD
-                         +-----------------+-----------------+
-                                           |
-                                           v
-                                     43-<SI>-SDD-<N>
+              +-------+-------+                                 |
+              |               |                                 |
+              v               v                                 |
+      optional 33-<IF>-IDD     +-------------------------------+
+              |                                                 |
+              |                       +-------------------------+
+              |                       |
+              |             +---------+------------------+
+              |             |                            |
+              |             v                            v
+              |      combined route                 split route
+              |      41-<SI>-SSD                 41-<SI>-SRD
+              |             |                            |
+              |             |                            v
+              |             |                     42-<SI>-SAD
+              +-------------+-------------+--------------+
+                                          |
+                                          v
+                                    43-<SI>-SDD-<N>
                                            |
                                            v
                                       implementation
@@ -150,7 +178,8 @@ The diagram shows the normal internal decomposition, not a rule that every input
 Document roles:
 
 - **SSSD** — combines software-system requirements and software-system architecture and owns software-item/interface allocation.
-- **System-owned IDD** — defines a contract allocated/owned by this software system. Once released, it constrains every affected SRD/SSD and, where architecture is split, its SAD.
+- **System-owned ISD** — defines the normative contract allocated/owned by this software system. Once released, it constrains every affected SRD/SSD.
+- **System-owned IDD** — optional design description downstream of an ISD. It records concrete representation/design choices and is primarily an input to affected SDDs; it does not replace the ISD as the source of interface requirements.
 - **Software-item UC** — optional behavioural decomposition of one or more system use cases after responsibility has been allocated to a software item.
 - **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
 - **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.

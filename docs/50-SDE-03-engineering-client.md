@@ -29,15 +29,15 @@ This SDE document owns the engineering-tool architecture, UI working baseline an
 documentation/screenshot workflow. Product behaviour and public contracts remain owned
 elsewhere:
 
-- IF-03 API semantics are owned by `32-03-IDD-application-control-status.md`;
-- IF-06 backend/upstream semantics will be owned by the applicable system IDD;
+- IF-03 API semantics are owned by `32-03-ISD-application-control-status.md`;
+- IF-06 backend/upstream semantics will be owned by the applicable system ISD;
 - SI-01 domain architecture remains owned by `41-01-SSD-timing-application-specification-document.md`;
 - transport implementation belongs in the applicable SI-01 SDD;
 - the Engineering Client implementation README owns concrete build/run instructions.
 
 This document defines the Engineering Client UI/design baseline only. IF-03 routes,
 payloads, capability semantics and failure codes remain authoritative in
-`32-03-IDD-application-control-status.md`; this UI must conform to that contract
+`32-03-ISD-application-control-status.md`; this UI must conform to that contract
 rather than redefine it.
 
 ## Repository and runtime boundary
