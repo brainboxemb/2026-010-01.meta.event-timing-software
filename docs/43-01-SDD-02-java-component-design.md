@@ -257,19 +257,21 @@ TimingNode or persistence semantics of its own.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
 
+A production `TimingNode` is always constructed as a complete capability. `TimingDataPersistence`, `TimingDataFactory` and `TimeSource` are required constructor dependencies; there is no lifecycle-only or partially configured production node. The only non-public construction seam exists for deterministic TimingNode execution-boundary tests and is documented as test-only in code.
+
 The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
 
 ```java
-TimingNode.OpenResult opened =
+TimingNodeTypes.OpenResult opened =
         node.invoke(TimingNodeCommands.open());
 
-TimingNode.CommandAdmission admitted =
+TimingNodeTypes.CommandAdmission admitted =
         node.submit(
                 TimingNodeCommands.commitAutomaticRegistration(
                         registrationId,
                         observationTime));
 
-TimingNode.Status status =
+TimingNodeTypes.Status status =
         node.query(TimingNodeQueries.status());
 ```
 
@@ -483,11 +485,10 @@ io.github.brainboxemb.eventtiming/timingpoint/
       Config.java
       Presentation.java
       Api.java
+      YamlLoader.java
   infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    config/
-      YamlLoader.java
     logging/
       Logging.java
       LoggingConfig.java
@@ -506,15 +507,13 @@ io.github.brainboxemb.eventtiming/timingpoint/
 
 The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
 
-The executable artifact remains deliberately thin. Its launcher/input adapters stay under `...eventtiming.app`; reusable logging and YAML mapping remain Infrastructure support.
+The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
 ```text
 event-timing-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    config/
-      YamlLoader.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     Application.java
@@ -524,6 +523,7 @@ event-timing-core.jar
       Config.java
       Presentation.java
       Api.java
+      YamlLoader.java
 
 event-timing-app.jar
   io.github.brainboxemb.eventtiming.timingpoint.app/
@@ -557,7 +557,7 @@ main()
   -> runtime.Application
 ```
 
-The current `infra.config.YamlLoader` implements only the explicit
+The current `runtime.config.YamlLoader` implements only the explicit
 YAML subset already needed by the running application. Profile/platform/mode
 resolution is the next configuration responsibility; the architecture does not
 require a new public Java type for each source before that behaviour is
@@ -569,7 +569,7 @@ Reusable application behaviour should not migrate into the executable merely bec
 
 The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
 
-The default IF-11 file syntax is YAML and its parser/mapping remains reusable infrastructure. `infra.config.YamlLoader` maps external YAML into the effective `runtime.config.Config`. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
+The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. `runtime.config.YamlLoader` maps external YAML into `runtime.config.Config`; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
 
 The resolver responsibility must remain data/composition oriented:
 
