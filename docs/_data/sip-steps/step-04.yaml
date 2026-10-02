@@ -105,7 +105,7 @@ activities:
     state: done
     depends_on: [A03, V02]
     note: >-
-      VC-ST1-002 covers control, auto-reg, LogBook/live observation and WebSocket
+      61-01-VTS specifies VC-ST1-002. It covers control, auto-reg, LogBook/live observation and WebSocket
       reconnect, then performs a full SI-01 restart with the same TimingData file.
       The committed sequence-1 record is recovered while operational state starts
       CLOSED/no-location, and recovered history is not emitted as a new live commit.

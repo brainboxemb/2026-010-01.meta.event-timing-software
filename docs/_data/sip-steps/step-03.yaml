@@ -127,7 +127,7 @@ activities:
     state: done
     depends_on: [A02, A04, A05, A06, A07, A08, V01, V02]
     note: >-
-      VC-ST1-001 launches the packaged application as a separate JVM and verifies
+      61-01-VTS specifies VC-ST1-001. It launches the packaged application as a separate JVM and verifies
       HTTP version/status, WebSocket snapshot/reconnect and controlled remote-shell
       shutdown on Linux and native Windows. End-to-end STATUS_CHANGED remains tied
       to the first later public capability that can cause a real status change.
