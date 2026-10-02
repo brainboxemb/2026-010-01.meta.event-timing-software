@@ -704,7 +704,7 @@ Later interactions (for example automatically removing a team after a successful
 ## Rules when implementing IF-05
 
 The TimingData record/file contract is not re-specified here. SI-01 design shall
-conform to **IF05-REQ-001..016** in
+conform to **IF05-REQ-001..007** in
 `32-05-ISD-timingdata-interchange.md`.
 
 The following temporary design constraints cover only the internal realisation

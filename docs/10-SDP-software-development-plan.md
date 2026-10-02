@@ -185,6 +185,30 @@ Document roles:
 - **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.
 - **SDD** — focused detailed design downstream of the owning SSD or SAD.
 - **SVP / VTS** — the SVP defines verification strategy; the VTS defines concrete stable cases. Both consume product requirements/interfaces and are downstream, not requirement inputs.
+
+### Requirement maturity
+
+Requirements use the standard Sphinx-Needs `status` field. Author only the
+compact codes below; generated reader views expand them to the full word. Use
+the same convention for software and interface requirements:
+
+| Status | Meaning |
+| --- | --- |
+| `D` | Draft — still being developed; wording, scope and even existence may change |
+| `R` | Review — proposed requirement is ready for focused review |
+| `A` | Approved — accepted normative requirement for the current engineering baseline |
+| `O` | Obsolete — no longer active; retained only where its ID/history is needed for traceability |
+
+A requirement written with `shall` is normative **at its stated maturity**.
+`status: D` therefore does not mean the requirement has already been
+accepted or frozen.
+
+Move a requirement back to `D` when a review causes a material change in
+scope or meaning. Use `O` rather than silently reusing an approved
+requirement ID for a different meaning.
+
+New requirements should have an explicit status from creation. Existing
+requirements can be migrated when they are next substantively reviewed.
 - **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
 - **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
 - **SUM** — release/user guidance downstream of the released software/configuration baseline.

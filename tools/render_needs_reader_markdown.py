@@ -14,6 +14,13 @@ import yaml
 OPEN_RE = re.compile(r"^\x60\x60\x60\{([A-Za-z0-9_-]+)\}\s*(.*)$")
 COLON_OPTION_RE = re.compile(r"^:([A-Za-z0-9_-]+):\s*(.*)$")
 
+STATUS_LABELS = {
+    "D": "Draft",
+    "R": "Review",
+    "A": "Approved",
+    "O": "Obsolete",
+}
+
 TYPE_LABELS = {
     "uc": "Use Case",
     "req": "Requirement",
@@ -132,7 +139,16 @@ def render_need(
 
     output.extend(body)
 
-    metadata = [f"**Type:** {label}", *relation_items(need, needs)]
+    metadata = [f"**Type:** {label}"]
+    status = need.get("status")
+    if isinstance(status, str) and status:
+        if directive in {"req", "ifreq"} and status not in STATUS_LABELS:
+            raise ReaderRenderError(
+                f"{object_id}: unsupported requirement status {status!r}; "
+                "expected D, R, A or O"
+            )
+        metadata.append(f"**Status:** {STATUS_LABELS.get(status, status)}")
+    metadata.extend(relation_items(need, needs))
     if metadata:
         output.extend(["", "— — —", ""])
         output.extend(f"- {item}" for item in metadata)

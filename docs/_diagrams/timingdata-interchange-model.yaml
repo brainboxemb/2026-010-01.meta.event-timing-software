@@ -5,7 +5,7 @@ diagram:
   # canvas whitespace makes the protocol text unnecessarily small.
   width: 1280
   height: 500
-  description: IF-05 semantic values are mapped by the reference design to compact JSON members and one-record-per-line JSON Lines framing.
+  description: IF-05 always-present and record-type-dependent values are mapped by the reference design to compact JSON members and JSON Lines framing.
   note: Java classes, factories, providers, storage classes and application execution are outside this interface-design figure.
 
 groups:
@@ -31,14 +31,14 @@ nodes:
     group: semantics
     layout: {x: 55, y: 135, w: 330, h: 255}
     items:
-      - Node ID
-      - sequence number
-      - Location ID
-      - record family
-      - effective time
-      - Registration ID
-      - recorded time
-      - "(Node ID, sequence) stable key"
+      - "Always — Node ID"
+      - "Always — sequence number"
+      - "Always — Location ID"
+      - "Always — record type"
+      - "By type — Registration ID"
+      - "By type — time"
+      - "By type — code"
+      - "Node ID + sequence identify record"
 
   - id: json-record
     label: Compact JSON object
@@ -46,13 +46,13 @@ nodes:
     group: json
     layout: {x: 475, y: 135, w: 330, h: 255}
     items:
-      - "v"
-      - "nodeId"
-      - "seqNr"
-      - "locId"
-      - "recType"
-      - "time / regId / code"
-      - "recTime"
+      - "Always — v"
+      - "Always — nodeId"
+      - "Always — seqNr"
+      - "Always — locId"
+      - "Always — recType"
+      - "By type — time / regId / code"
+      - "Optional — recTime"
       - fixed canonical writer order
 
   - id: jsonl-stream

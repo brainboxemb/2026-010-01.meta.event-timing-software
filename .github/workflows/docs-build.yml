@@ -571,7 +571,7 @@ jobs:
           timingdata_isd = (root / "32-05-ISD-timingdata-interchange.md").read_text(
               encoding="utf-8"
           )
-          for number in range(1, 17):
+          for number in range(1, 8):
               object_id = f"IF05-REQ-{number:03d}"
               if f'<a id="{object_id}"></a>' not in timingdata_isd:
                   raise SystemExit(f"generated reader Markdown missing {object_id}")

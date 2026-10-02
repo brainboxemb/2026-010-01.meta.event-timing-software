@@ -1,6 +1,6 @@
 # TimingData Interchange Interface Specification (ISD)
 
-Status: review candidate / Step 4 D03 first TimingData slice
+Status: draft / Step 4 D03 TimingData interface
 
 System interface: **IF-05 — TimingData Interchange**
 
@@ -14,7 +14,7 @@ It defines **what** every conforming TimingData representation must preserve:
 - record identity and source ordering;
 - Node ID, Location ID and Registration ID semantics;
 - automatic and manual registration semantics;
-- effective-time and recorded-time meaning;
+- time semantics defined by record types;
 - compatibility rules for the default/reference representation and alternative
   product/event-specific representations.
 
@@ -63,43 +63,45 @@ IF-05 does **not** own:
 
 ## Common TimingData semantics
 
-Every committed TimingData record has these common semantic values:
+Every TimingData record has a small common envelope:
 
-| Semantic value | Meaning |
-| --- | --- |
-| Node ID | identifies the TimingNode that owns the source stream |
-| sequence number | monotonically increasing record order within that Node ID stream |
-| Location ID | location captured for the represented timing fact |
-| record family | identifies the kind of timing fact |
-| effective time | absolute time at which the represented timing fact applies |
-| recorded time | absolute time captured when the definitive record is materialized for commit |
-| family-specific values | values required by the selected TimingData family |
+| Semantic value | Presence | Meaning |
+| --- | --- | --- |
+| Node ID | Always | identifies the TimingNode that owns the source stream |
+| sequence number | Always | record number within that Node ID stream |
+| Location ID | Always | location captured with the record |
+| record type | Always | identifies how the remaining record data shall be interpreted |
+| Registration ID | By record type | required by registration record types |
+| time | By record type | time value defined by the selected record type |
+| code | By record type | additional record-type-specific classification/meaning |
+
+`By record type` does not mean optional when that record type is selected. For
+example, Registration ID and time are required for a registration
+record, but are not fields of a future OPEN/CLOSE or other unrelated record
+type.
 
 A committed record captures its Location ID. Later TimingNode reconfiguration
-does not change historical records.
+does not change that historical value.
 
-The default/reference development-v1 design maps these values to concrete JSON
-members in `33-05-IDD-timingdata-interchange.md`.
+Within a TimingSystem, the combination of Node ID and sequence number identifies
+one committed TimingData record. Sequence numbers are local to one Node ID
+stream; they are not one application-wide counter.
 
-## Stable record key and sequence
+The default/reference development-v1 design maps the currently supported record
+types to JSON in `33-05-IDD-timingdata-interchange.md`.
 
-The stable record key is:
-
-```text
-(Node ID, sequence number)
-```
+## Record identity and sequence
 
 Sequence rules:
 
 - numbering is scoped per Node ID;
 - the authoritative local source stream advances by exactly one for each
-  successfully committed record;
-- failed/uncommitted commit attempts do not consume a sequence number;
+  committed record;
 - a new source stream starts at **1**;
 - sequence number **0 is reserved**;
 - changing Location ID does not reset the sequence;
 - sequence is an ordering/traceability value, not a timestamp;
-- a committed record key is never reused;
+- a committed sequence number is never reused within the same Node ID stream;
 - the sequence does not wrap;
 - an authoritative complete local stream is contiguous;
 - partial/imported/exported subsets may contain visible gaps, but records are not
@@ -110,227 +112,154 @@ How software allocates and durably commits the next sequence is outside IF-05.
 
 ## Registration semantics
 
-The first TimingData slice defines two registration families:
+IF-05 currently defines registration semantics for:
 
-- **automatic registration** — created after an automatic observation has been
-  accepted;
-- **manual registration** — explicitly initiated by an operator/tool.
+- **automatic registration** — a registration originating from the automatic
+  observation path;
+- **manual registration** — a registration initiated manually by an
+  operator/tool.
 
-A registration record carries one canonical **Registration ID**. Source-specific
-identities such as RFID/tag identifiers or team/reference-data identifiers are
-not part of the current common registration record.
+A registration record carries a **Registration ID** and **time**.
+These values are specific to registration records; they are not common
+TimingData-envelope values.
 
-For a manual registration the record also preserves how its effective time was
-obtained:
+Registration semantics shall support:
 
-- system-assigned time; or
-- operator-entered time.
+- adding a registration; and
+- revoking a previously added registration.
 
-The current slice defines registration **add** behaviour. Registration revoke is
-reserved for later behaviour; it is not currently executable.
+A revocation is represented by a new TimingData record and does not modify the
+original committed registration record. It refers to the registration being
+withdrawn using the Registration ID and time associated with that registration.
 
-When revoke behaviour is promoted, a revoke record shall be a new immutable
-record with its own record key. It shall not rewrite or delete the original
-record.
+Whether further disambiguation is needed when the same Registration ID/time
+combination can occur more than once remains a draft/open interface decision.
 
-The duplicate/ambiguity policy needed to identify the registration being revoked
-is deferred until that behaviour is promoted.
+The concrete representation of add/revoke, automatic/manual registration and
+time-source metadata belongs to the IDD.
 
 ## Registration ID boundary
 
-Registration ID is a provider-neutral semantic value at IF-05.
+Registration ID is a provider-neutral value used by registration record
+families. It is not required for TimingData record types that do not
+represent a registration.
 
-The common semantic form is a non-empty string. Event/profile-specific allowed
-values, number ranges, tag mappings and participant/reference-data rules remain
-outside IF-05.
+For registration records, the common semantic form is a non-empty string.
+Event/profile-specific allowed values, number ranges, tag mappings and
+participant/reference-data rules remain outside IF-05.
 
-Registration ID is separate from the TimingData record key.
+Registration ID is separate from record identity (Node ID + sequence number).
 
-## Time semantics
+## Time
 
-TimingData effective time and recorded time represent absolute UTC instants.
+For the current registration record types, `time` represents the absolute
+instant assigned to that registration.
 
-The interface semantics require:
+The current interface direction is to preserve that instant across conforming
+representations. The exact textual representation belongs to the IDD.
 
-- the represented instant is preserved;
-- comparison of timestamps is by absolute instant;
-- source sequence remains authoritative for record ordering;
-- recorded time is metadata captured when the definitive record is materialized
-  for the commit attempt;
-- recorded time is not itself a durable-commit marker.
-
-The default/reference textual timestamp representation is defined in the IDD.
+Other TimingData record types may give `time` a different defined meaning, or
+may not use a time value at all. `time` is therefore record-type-dependent,
+not part of the always-present envelope.
 
 ## Default/reference representation
 
-IF-05 requires one public default/reference representation so development,
-engineering/test tooling and compatible consumers can exchange TimingData
-without depending on a product-specific representation.
+The project provides one default/reference representation for development,
+engineering/test tooling and compatible consumers. Its concrete JSON/JSON Lines
+design is documented by `33-05-IDD-timingdata-interchange.md`.
 
-The current design is documented by
-`33-05-IDD-timingdata-interchange.md`.
-
-The reference representation shall:
-
-- carry all common and record-family-specific values needed to interpret one
-  record;
-- identify record identity and source order unambiguously;
-- allow one complete record to be decoded without requiring preceding or
-  following TimingData records;
-- define an unambiguous record-completion boundary;
-- identify the representation version used by each record;
-- allow compatible additions without changing the meaning of existing values;
-- prevent unsupported versions from being silently interpreted using another
-  version's semantics.
+The reference representation is a design of the IF-05 semantic model; its JSON
+member names, line framing, version field and optional metadata are not common
+TimingData-envelope values.
 
 ## Alternative representations
 
 A product/event-specific implementation may use another concrete representation,
 including a different text, fixed-field, binary or proprietary format.
 
-Such a representation does not need to use the default filename extension,
-record framing or member names. It must preserve the IF-05 semantic contract
-when data is translated to/from the common boundary.
+Such a representation does not need to reuse the default filename extension,
+record framing or member names. Its interface conformance is assessed against
+the applicable IF-05 requirements and the semantics of the record types it
+supports.
 
 ## IF-05 requirements
 
-The requirements below define observable interface behaviour and semantic
-constraints. Concrete JSON member names, line framing, numeric encoding and
-version-number conventions belong to the IDD and are not software
-implementation requirements.
+These requirements are still under development. Their per-requirement maturity
+is shown by `status`: `D` = Draft, `R` = Review, `A` = Approved,
+`O` = Obsolete.
 
-```{ifreq} Required TimingData values
+Concrete JSON member names, JSON Lines framing, code arrays, optional metadata
+and representation-version conventions belong to the IDD and are not IF-05
+requirements by themselves.
+
+```{ifreq} Common TimingData envelope
 :id: IF05-REQ-001
+:status: D
 
-Every committed TimingData record shall carry exactly one Node ID, sequence
-number, Location ID, record family, effective time and recorded time, plus every
-value required by that record family.
+Every TimingData record shall identify its Node ID, sequence number, Location ID
+and record type. Values required in addition to this common envelope shall be
+defined by the record type.
 ```
 
-```{ifreq} Stable TimingData record key
+```{ifreq} Record identity within a TimingSystem
 :id: IF05-REQ-002
+:status: D
 
-The pair (Node ID, sequence number) shall uniquely identify one committed
-TimingData record. Two distinct committed records shall not use the same pair.
+Within one Node ID stream, committed TimingData records shall have unique
+sequence numbers. Within a TimingSystem, Node ID together with sequence number
+shall uniquely identify a committed TimingData record.
 ```
 
-```{ifreq} Authoritative sequence progression
+```{ifreq} Sequence progression
 :id: IF05-REQ-003
+:status: D
 
-For each Node ID, the first committed record in an authoritative source stream
-shall have sequence number 1. Each later committed record shall have the previous
-committed sequence number plus 1. Sequence number 0 shall not identify a
-committed record.
+For each Node ID stream, committed sequence numbers shall start at 1 and increase
+by one for each subsequent committed TimingData record. Sequence number 0 shall
+not identify a committed record.
 ```
 
-```{ifreq} Registration family
+```{ifreq} Automatic and manual registration
 :id: IF05-REQ-004
+:status: D
 
-Each registration record in the current IF-05 slice shall identify exactly one
-registration family: automatic registration or manually initiated registration.
+IF-05 registration records shall distinguish automatic registration from manual
+registration.
 ```
 
-```{ifreq} Canonical registration identity
+```{ifreq} Registration record values
 :id: IF05-REQ-005
+:status: D
 
-Each registration record shall carry exactly one Registration ID as its
-canonical registration identity.
+An added or revoked registration record shall identify the Registration ID and
+time of the registration to which it refers.
 ```
 
-```{ifreq} Registration ID value
+```{ifreq} Registration add and revoke
 :id: IF05-REQ-006
+:status: D
 
-Registration ID at the common IF-05 boundary shall be a non-empty string.
-Event/profile-specific allowed values, ranges and mappings shall remain outside
-IF-05.
+IF-05 shall support adding a registration and revoking a previously added
+registration. A revocation shall be represented by a new TimingData record and
+shall refer to the registration being withdrawn using its Registration ID and
+time; it shall not modify the original committed record.
 ```
 
-```{ifreq} Source-specific identity exclusion
+```{ifreq} Committed record immutability
 :id: IF05-REQ-007
+:status: D
 
-The current common registration record shall not use source-specific tag,
-transponder or reference-data identifiers in place of Registration ID.
-```
-
-```{ifreq} Registration action and manual-time source
-:id: IF05-REQ-008
-
-The current registration slice shall represent registration add operations.
-A manually initiated registration shall also identify whether its effective time
-was system-assigned or operator-entered.
-```
-
-```{ifreq} Independently decodable reference record
-:id: IF05-REQ-009
-
-The default/reference representation shall carry all values needed to interpret
-one complete TimingData record without requiring preceding or following
-TimingData records.
-```
-
-```{ifreq} Unambiguous record completion
-:id: IF05-REQ-010
-
-The default/reference representation shall define an unambiguous completion
-boundary for each record. Data after the last completed boundary shall not be
-interpreted as a complete TimingData record.
-```
-
-```{ifreq} Alternative representation compatibility
-:id: IF05-REQ-011
-
-Translation between a conforming alternative representation and the common
-IF-05 boundary shall preserve the stable record key, source order, Location ID,
-record family, Registration ID where applicable, effective time and recorded
-time.
-```
-
-```{ifreq} Committed-record immutability
-:id: IF05-REQ-012
-
-Once a TimingData record is committed, the semantic values associated with its
-stable record key shall not change. A later correction or revocation, when
-supported, shall be represented by another record rather than by rewriting the
-committed record.
-```
-
-```{ifreq} Absolute timestamp semantics
-:id: IF05-REQ-013
-
-Effective time and recorded time shall each represent one absolute UTC instant.
-Translation between conforming IF-05 representations shall preserve that
-instant.
-```
-
-```{ifreq} Sequence defines source order
-:id: IF05-REQ-014
-
-Within one Node ID stream, sequence number shall define authoritative record
-order. Effective time and recorded time shall not change that source order.
-```
-
-```{ifreq} Compatible reference additions
-:id: IF05-REQ-015
-
-A reader for a supported default/reference representation version shall accept
-a record that contains additional unknown representation fields when all
-required known values remain valid and the meaning of known values is unchanged.
-```
-
-```{ifreq} Explicit representation version
-:id: IF05-REQ-016
-
-Each default/reference record shall identify the representation version used to
-encode it. A reader shall not decode an unsupported version using the semantics
-of a supported version.
+A committed TimingData record shall not be modified or renumbered. A later
+operation that changes the meaning of earlier data shall be represented by a new
+TimingData record.
 ```
 
 ## Deferred from this first slice
 
 - TimingNode OPEN/CLOSE TimingData representation;
-- executable registration revocation/correction behaviour and ambiguity policy;
-- start-procedure record family and payload;
-- penalty/correction record families and payloads;
+- revoke disambiguation beyond Registration ID + time, if later needed;
+- start-procedure record type and payload;
+- penalty/correction record types and payloads;
 - unknown-registration semantics;
 - source/tag provenance fields;
 - filename/directory policy, retention, rotation and filesystem-specific
