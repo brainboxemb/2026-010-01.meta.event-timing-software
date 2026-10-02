@@ -259,6 +259,8 @@ TimingNode or persistence semantics of its own.
 
 A production `TimingNode` is always constructed as a complete capability. `TimingDataPersistence`, `TimingDataFactory` and `TimeSource` are required constructor dependencies; there is no lifecycle-only or partially configured production node. The only non-public construction seam exists for deterministic TimingNode execution-boundary tests and is documented as test-only in code.
 
+`TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
+
 The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
 
 ```java
