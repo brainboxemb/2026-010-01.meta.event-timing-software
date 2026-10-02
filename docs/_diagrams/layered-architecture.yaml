@@ -89,12 +89,12 @@ groups:
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
-  layout: {x: 1180, y: 85, w: 230, h: 145}
+  layout: {x: 1180, y: 85, w: 230, h: 225}
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1180, y: 250, w: 230, h: 1146}
+  layout: {x: 1180, y: 330, w: 230, h: 1066}
 nodes:
 - id: local-console
   object_id: Console
@@ -379,13 +379,21 @@ nodes:
   layout: {x: 535, y: 1258, w: 260, h: 120}
 
 - id: timing-application-runtime
-  object_id: TimingApplication
+  object_id: Application
   group: runtime-layer
-  label: "TimingApplication"
-  subtitle: "top-level runtime • lifecycle"
+  label: "Application"
+  subtitle: "running application • lifecycle"
   kind: crosscutting
   notation: component
   layout: {x: 1210, y: 125, w: 170, h: 75}
+- id: runtime-composition
+  object_id: Composition
+  group: runtime-layer
+  label: "Composition"
+  subtitle: "object graph • startup wiring"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 215, w: 170, h: 75}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -393,7 +401,7 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 305, w: 170, h: 85}
+  layout: {x: 1210, y: 370, w: 170, h: 85}
 - id: logging-infra
   object_id: Logging
   group: crosscutting-layer
@@ -401,20 +409,12 @@ nodes:
   subtitle: "levels • console • retained file"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 410, w: 170, h: 85}
-- id: application-bootstrap
-  object_id: ApplicationBootstrap
-  group: crosscutting-layer
-  label: "ApplicationBootstrap"
-  subtitle: "effective config • composition"
-  kind: crosscutting
-  notation: component
-  layout: {x: 1210, y: 515, w: 170, h: 80}
+  layout: {x: 1210, y: 475, w: 170, h: 85}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1210, y: 615, w: 170, h: 80}
+  layout: {x: 1210, y: 580, w: 170, h: 80}
 edges:
 - from: logging-server
   to: logging-infra

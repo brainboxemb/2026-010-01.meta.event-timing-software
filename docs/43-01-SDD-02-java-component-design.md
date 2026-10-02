@@ -109,11 +109,11 @@ io.github.brainboxemb.eventtiming/timingpoint/
     messaging/
     storage/
   infra/
-    bootstrap/
-      config/
+    config/
     logging/
     loggingserver/
   runtime/
+    config/
 ```
 
 Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary API classes stay directly at `presentation.interfaces.api` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
@@ -142,7 +142,8 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
-- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and bootstrap/composition;
+- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and configuration/extension adapters;
+- reserve `runtime` for concrete application composition, the running application container and lifecycle;
 - use `io` for external hardware, messaging and storage adapters.
 
 The shared TimingData artifact has its own package root:
@@ -201,7 +202,8 @@ domain/
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
-    TimingDataStore.java                durable append/load/recovery port
+    TimingDataPersistence.java          TimingData-specific persistence contract
+    DefaultTimingDataPersistence.java   TimingData codec/identity/sequence mapping
   upstream/
     UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
@@ -232,25 +234,62 @@ io/
       RabbitMqConnector.java
       DebugConnector.java                 engineering/debug connector when implemented
   storage/
-    FileTimingDataStore.java              TimingData durable append/recovery
-    FileNextUpTeamsStore.java             next-up analysis history/snapshots
-    FileStageStartTimesStore.java         start-time analysis history/snapshots
-    FileRaceDataStore.java                race/reference analysis snapshots
+    AppendOnlyRecordStore.java             generic opaque-record storage contract
+    FileAppendOnlyRecordStore.java         LF framing • file append/recovery
+    # later generic lower-layer storage mechanisms only as real needs appear
 
 platform/
   execution/
     SerialWorker.java                     bounded one-at-a-time execution primitive
   events/
-    Event.java                            small typed subscribe / unsubscribe / emit primitive
+    Event.java                            owner-side typed emit primitive
+    EventSource.java                      subscription-only consumer view
   environment/                            low-level environment adapters only when real types justify them
 ```
 
 The names above record ownership/direction, not a requirement to create empty
-types early. Store **interfaces** stay next to the capability whose semantics
-they persist; concrete filesystem implementations stay under `io.storage`.
+types early. Lower layers expose generic contracts that do not import higher
+layers. TimingData-specific persistence semantics stay in Domain and use the
+generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
+completely unaware of TimingData, TimingNode and Domain types.
 `SerialWorker` is a small reusable execution primitive under `platform.execution`,
 composed into TimingNode rather than used as a Domain superclass. It has no
-TimingNode or persistence semantics of its own. `ApplicationId`, internal `TimingSystemId` and functional
+TimingNode or persistence semantics of its own.
+
+`TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
+
+A production `TimingNode` is always constructed as a complete capability. `TimingDataPersistence`, `TimingDataFactory` and `TimeSource` are required constructor dependencies; there is no lifecycle-only or partially configured production node. The only non-public construction seam exists for deterministic TimingNode execution-boundary tests and is documented as test-only in code.
+
+`TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
+
+Status-change detection is owned by the same serial boundary. A state-changing
+command compares authoritative status before and after the domain operation on
+that TimingNode lane. A real difference emits the TimingNode status event before
+the result leaves the ordered command execution. `CommandHandler` maps that fact
+to `ApplicationStatus`; it does not perform a second before/after query outside
+the ordered boundary.
+
+The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
+
+```java
+TimingNodeTypes.OpenResult opened =
+        node.invoke(TimingNodeCommands.open());
+
+TimingNodeTypes.CommandAdmission admitted =
+        node.submit(
+                TimingNodeCommands.commitAutomaticRegistration(
+                        registrationId,
+                        observationTime));
+
+TimingNodeTypes.Status status =
+        node.query(TimingNodeQueries.status());
+```
+
+`invoke(command)` is the result-bearing path: presentation/application callers may wait for the processed domain result. `submit(command)` is the producer path: it returns only immediate bounded-queue admission and deliberately does not wait for the later domain result. RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by persistence, LogBook work or another queued TimingNode operation.
+
+`query(query)` is the consistency-sensitive read path. Short reads run in the same ordering as commands. The ordering boundary is the required property; a copied LogBook snapshot is not. Query implementations should avoid routine list copies when direct bounded traversal on the node lane is cheaper, and may introduce compact derived/indexed state only when measurement justifies it. Typed command/query objects are local operation descriptions, not another component, central dispatcher or generic message bus.
+
+The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
@@ -334,10 +373,10 @@ io
 
 infra
   concrete cross-cutting technical support, including logging, diagnostics,
-  extension discovery and application-core bootstrap/composition
+  configuration mapping and extension discovery
 
 runtime
-  top-level composed runtime object and lifecycle mechanics
+  concrete application composition, top-level running application and lifecycle
 
 platform
   small JDK-only reusable primitives and execution-environment abstractions,
@@ -350,16 +389,33 @@ interfaces.
 ## Internal dependency direction
 
 ```text
-presentation    --> application
-application     --> domain / I/O ports
-domain          --> platform
-io              --> application/domain ports/contracts + platform
-runtime         --> application / domain / platform
-infra.bootstrap --> runtime + selected presentation/I/O/platform implementations
-platform        --> JDK and low-level environment only
+presentation --> application
+application  --> domain / I/O / platform
+domain       --> I/O / platform
+io           --> platform / JDK
+runtime      --> application / domain / presentation / I/O / infra / platform
+infra        --> owned support contracts + platform / JDK / selected support libraries
+platform     --> JDK and low-level environment only
 ```
 
-Domain code does not depend on presentation or concrete I/O adapters.
+The normal dependency direction follows the layer order and is intentionally
+easy to read from imports. A lower layer does not import a higher layer merely
+to implement one of its interfaces. Domain may depend on a generic I/O contract,
+but not on a concrete I/O implementation; Runtime composition selects the
+concrete implementation.
+
+For example:
+
+```text
+TimingNodeLogic
+  -> TimingDataPersistence
+       -> AppendOnlyRecordStore
+            <- FileAppendOnlyRecordStore selected by Runtime
+```
+
+`AppendOnlyRecordStore` contains only opaque-record storage semantics.
+`DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
+validation. This keeps `io.storage` independent from Domain.
 Executable composition may depend on the complete supported application-core surface
 and selected external libraries.
 
@@ -393,11 +449,11 @@ event-timing-app.jar
 Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
-- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; `ApplicationConfig` may reference both as composition data;
-- the executable application chooses and configures the provider/backend before `ApplicationBootstrap` starts normal runtime composition;
+- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
+- the executable application chooses and configures the provider/backend before `runtime.Composition` starts normal application composition;
 - the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
-- `infra.logging` must not depend on `infra.loggingserver` or `infra.bootstrap.config`; executable/bootstrap composition starts the two components separately. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
+- `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
 - `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
 - `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
 - the core artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
@@ -424,29 +480,25 @@ Its executable package is deliberately thin:
 
 ```text
 io.github.brainboxemb.eventtiming.timingpoint.app/
-  TimingApplicationMain.java
+  Main.java
 ```
 
-The application core owns the reusable SI-01 runtime, bootstrap and infrastructure components:
+The application core owns the reusable SI-01 runtime and supporting infrastructure:
 
 ```text
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
-    TimingApplication.java
-    TimingApplicationLifecycle.java
+    Application.java
+    Composition.java
+    Lifecycle.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
+      YamlLoader.java
   infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    bootstrap/
-      ApplicationBootstrap.java
-      config/
-        ApplicationConfig.java
-        PresentationConfig.java
-        RemoteShellConfig.java
-        ApiConfig.java
-        ApiHttpConfig.java
-        ApiWebSocketConfig.java
-        YamlApplicationConfigLoader.java
     logging/
       Logging.java
       LoggingConfig.java
@@ -461,46 +513,31 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` is the Java source-organisation package for the top-level running
-composition and lifecycle objects. Figure SI01-01 now shows this explicitly as a
-separate **Runtime** block containing `TimingApplication`. Runtime is not an
-additional business/domain layer: it is the execution container that holds the
-running application/domain composition. In the current implementation
-`ApplicationBootstrap` still owns startup/cleanup of concrete presentation
-endpoints around that runtime; those endpoints retain their Presentation
-ownership even if their lifecycle is later retained directly by the runtime.
+`runtime/` owns knowledge of the concrete running application: `Application`, `Composition`, `Lifecycle` and the effective composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is where the executable object graph is assembled and its lifecycle is coordinated.
 
-The executable artifact is deliberately thin. Its launcher/input adapters remain under
-`...eventtiming.app`; reusable runtime logging belongs to application-core infrastructure:
+The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
+
+The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
 ```text
-event-timing-core.jar
-  io.github.brainboxemb.eventtiming.timingpoint.infra.logging/
-    Logging.java
-    LoggingConfig.java
-    LoggingLevel.java
-    LoggingFileConfig.java
-    LoggingControl.java
-    TimestampedFileLogHandler.java
-    CompactLogFormatter.java
-
-  io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver/
-    LoggingServer.java
-    LoggingServerConfig.java
-    LiveLogHandler.java
-
 event-timing-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-    bootstrap/
-      ApplicationBootstrap.java
-      config/
-        YamlApplicationConfigLoader.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.runtime/
+    Application.java
+    Composition.java
+    Lifecycle.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
+      YamlLoader.java
 
 event-timing-app.jar
   io.github.brainboxemb.eventtiming.timingpoint.app/
-    TimingApplicationMain.java
+    Main.java
 ```
 
 `event-timing-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
@@ -517,62 +554,53 @@ main()
        -> selected operating-mode defaults
        -> explicit IF-11 YAML deployment overrides
        -> secret resolution
-       -> validated effective ApplicationConfig
+       -> validated effective runtime Config
   -> Logging
        -> configure JUL level + console/file handlers
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> core ApplicationBootstrap
-       -> select/construct concrete presentation/I/O/platform implementations
+  -> core runtime.Composition
+       -> select/construct concrete presentation/I/O/platform/infra objects
        -> create reusable application/domain/runtime objects
        -> install/start presentation and shutdown handling
-  -> TimingApplication runtime
+  -> runtime.Application
 ```
 
-The current Step-3 `YamlApplicationConfigLoader` implements only the explicit
+The current `runtime.config.YamlLoader` implements only the explicit
 YAML subset already needed by the running application. Profile/platform/mode
 resolution is the next configuration responsibility; the architecture does not
 require a new public Java type for each source before that behaviour is
 implemented.
 
-`BuildIdentity` and `ApplicationConfig` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
+`BuildIdentity` and runtime `Config` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core keeps the small `TimingApplication.Builder` only for constructing
-the runtime object itself. `ApplicationBootstrap` is the concrete cross-cutting
-composition component around it and consumes the core-owned effective
-`ApplicationConfig`.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
 
-The default IF-11 file syntax is YAML and its parser/mapping belongs to reusable
-application-core infrastructure. `YamlApplicationConfigLoader` lives with the core
-bootstrap/configuration model. As profile support is implemented, configuration
-infrastructure resolves built-in profile/platform/mode defaults plus explicit
-deployment YAML into one effective `ApplicationConfig` **before**
-`ApplicationBootstrap` runs.
+The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. `runtime.config.YamlLoader` maps external YAML into `runtime.config.Config`; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
 
 The resolver responsibility must remain data/composition oriented:
 
 - application profiles are data/default templates, not Java subclasses;
-- do not introduce profile-specific TimingApplication subclasses or a
+- do not introduce profile-specific Application subclasses or a
   profile-specific domain hierarchy;
 - profile defaults may select topology/cardinality and capability defaults;
 - platform defaults may select environment-specific values;
 - operating-mode defaults may replace real providers with simulated providers;
 - explicit IF-11 deployment values have highest non-secret precedence;
-- `ApplicationBootstrap` consumes only the resolved/validated
-  `ApplicationConfig` and contains no profile-name switches.
+- `runtime.Composition` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
 
 SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
-same typed effective `ApplicationConfig` without YAML.
+same typed effective runtime `Config` without YAML.
 
 Build-identity interpretation is reusable for the same reason. The application core owns
 `BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
 the filtered `event-timing-build.properties` resource and build-time provenance injection,
 because those values identify that executable artifact. The core loader only interprets
-the classpath resource and has no dependency on `TimingApplicationMain` or another app class.
+the classpath resource and has no dependency on `app.Main` or another app class.
 
 The implemented presentation structure is:
 
@@ -697,36 +725,34 @@ separately:
 
 ```java
 final class TimingNode {
+    private final TimingNodeLogic logic;
     private final SerialWorker serialWorker;
 
-    OpenResult open() throws TimingNodeOperationException {
-        SerialWorker.SubmitResult<OpenResult> submitResult =
-                serialWorker.submit(this::doOpen);
-
-        switch (submitResult.admission()) {
-            case ACCEPTED:
-                Future<OpenResult> futureResult = submitResult.futureResult();
-                return await(futureResult);
-            case FULL:
-                throw busy();
-            case NOT_RUNNING:
-                throw unavailable();
-            default:
-                throw unexpectedAdmission();
-        }
+    <R> R invoke(TimingNodeCommand<R> command) {
+        // admit + wait for the processed result
     }
 
-    SerialWorker.AdmissionResult submitObservation(Observation observation) {
-        return serialWorker.offer(
-                () -> processObservation(observation));
+    CommandAdmission submit(TimingNodeCommand<?> command) {
+        // admit only; producer returns immediately
+    }
+
+    <R> R query(TimingNodeQuery<R> query) {
+        // ordered consistency-sensitive read
+    }
+}
+
+final class TimingNodeLogic {
+    private Lifecycle lifecycle = Lifecycle.CLOSED;
+    private LocationId locationId;
+    private final LogBook logBook;
+
+    OpenResult open() {
+        // domain decision only; no queue/future/timeout mechanics here
     }
 }
 ```
 
-The variable name `futureResult` is intentional: it is the Java
-`Future<R>` representing a result that will be produced later by execution on
-the serial lane. It is not the domain result itself. The later
-`futureResult.get(...)` yields the processed `OpenResult`.
+The visible `TimingNode` keeps execution mechanics around the component boundary, while `TimingNodeLogic` keeps the stateful domain behaviour readable. Queue admission and the processed domain result remain separate; moving the mutable logic out of the boundary does not make `TimingNodeLogic` externally addressable.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
@@ -841,6 +867,13 @@ Usage rules:
   their small operation/execution failure model, then wait on the Future with
   the configured guard timeout.
 
+The TimingNode wrapper exposes the same distinction semantically:
+
+- `invoke(command)` uses the result-bearing `SerialWorker.submit(Callable)` path;
+- `submit(command)` uses the admission-only `SerialWorker.offer(Runnable)` path;
+- ordinary submission-only command failures occur after the producer has returned and therefore must be reported through diagnostics/status rather than silently disappearing;
+- `query(query)` is result-bearing and normally uses the same ordered lane for consistency-sensitive reads.
+
 The concrete internal queue/task implementation and shutdown-loop details may
 change. The required behaviour is:
 
@@ -927,31 +960,24 @@ worker must not process a later timing record ahead of that failed record.
 but it is contained mutable TimingNode state rather than a globally readable
 repository.
 
-Code outside the TimingNode ownership boundary does not call `LogBook.copyTo()`
-directly. A consistency-sensitive query first enters the TimingNode lane, where
-the node captures the required short immutable/read-only view. Long calculation
-continues after that lane operation has completed:
+Code outside the TimingNode ownership boundary does not read the mutable
+LogBook list directly. A consistency-sensitive query enters the TimingNode lane
+and performs its bounded read in the same ordering as state changes.
 
-```text
-query caller
-  -> TimingNode query operation
-       -> serial lane
-       -> capture LogBook/reference-data snapshot
-       -> return immutable read view
-  -> long calculation outside serial lane
-```
+The read representation is deliberately not fixed to a copied list. For routine
+range/latest/ranking-style access, prefer direct bounded traversal of the owned
+records when that avoids unnecessary allocation and GC pressure. A query may
+instead use compact derived/indexed state, reusable scratch storage or a copied
+view when measurements show that approach is cheaper overall.
 
-With roughly 1200–1500 timing records, a shallow reference snapshot remains a
-reasonable first implementation. The concrete representation may reuse storage
-or buffers internally if measurement shows allocation pressure; that
-optimization must not let external consumers retain a mutable buffer that the
-TimingNode later changes underneath them.
+The important guarantees are:
 
-This model gives two useful guarantees:
-
-- a query snapshot has a defined place in the same ordering as state changes;
-- long calculation never holds the TimingNode lane merely because it needs a
-  stable input view.
+- each consistency-sensitive read has a defined place in the same ordering as
+  state changes;
+- no external consumer retains a mutable collection owned by TimingNode;
+- long or blocking I/O work does not execute on the TimingNode lane;
+- read strategy is selected from measured CPU, allocation/GC and lane-occupancy
+  behaviour rather than convenience alone.
 
 A high-frequency status/read path may later use a worker-published immutable
 snapshot when measurement justifies it. Such a published snapshot is an
@@ -965,14 +991,34 @@ need to be kept:
 
 | Store | First purpose | Commit role |
 | --- | --- | --- |
-| `TimingDataStore` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
-| `NextUpTeamsStore` | preserve accepted next-up changes/snapshots for analysis | not a TimingData commit gate |
-| `StageStartTimesStore` | preserve accepted start-time snapshots for analysis | not runtime recovery authority by default |
-| `RaceDataStore` | preserve accepted race/reference snapshots/versions for analysis | not runtime recovery authority by default |
+| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| future per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
 
-Concrete file implementations live under `io.storage`. Store contracts are
-dependency-inverted ports composed into the TimingNode; the TimingNode must not
-depend on concrete filesystem classes.
+The lower I/O layer exposes storage mechanics rather than domain-specific store
+interfaces. The first implementation uses:
+
+```text
+Domain
+  DefaultTimingDataPersistence
+    - TimingDataCodec
+    - TimingNodeId validation
+    - sequence validation
+           |
+           v
+I/O
+  AppendOnlyRecordStore
+           ^
+           |
+  FileAppendOnlyRecordStore
+    - LF/CRLF framing
+    - incomplete-tail repair
+    - directory/file handling
+    - FileChannel.force(true)
+```
+
+Runtime composition creates the file store and supplies it to
+`DefaultTimingDataPersistence`. No class under `io.storage` imports a Domain
+or Application class.
 
 The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
 first implementation may call the small/infrequent analysis-store writes on the
@@ -980,6 +1026,8 @@ same worker. If measurements show that one of those writes delays registrations,
 the worker can hand an immutable snapshot to a bounded storage executor. Do not
 add one thread per state object and do not introduce an unbounded background
 queue.
+
+For the first registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any later asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
 
 For example, a StageStartTimes update may be:
 
@@ -1004,18 +1052,28 @@ or concrete infrastructure.
 Conceptually:
 
 ```java
-final class Event<T> {
-    void subscribe(Consumer<T> listener);
-    void unsubscribe(Consumer<T> listener);
-    void emit(T value);
+interface EventSource<T> {
+    boolean subscribe(Consumer<T> listener);
+    boolean unsubscribe(Consumer<T> listener);
+}
+
+final class Event<T> implements EventSource<T> {
+    DeliveryReport emit(T value);
 }
 ```
 
-A component owns the event instance; `platform.events` only supplies the generic
-subscription/emit mechanism. For TimingData the first event is:
+A component owns the mutable `Event<T>` instance and is the only code that emits
+the fact. Consumers receive an `EventSource<T>` subscription-only view, so they
+subscribe directly without gaining permission to publish the event.
+
+For TimingData the component owns:
 
 ```java
-Event<TimingData> newTimingDataEvent;
+private final Event<TimingData> newTimingDataEvent = new Event<>();
+
+public EventSource<TimingData> newTimingData() {
+    return newTimingDataEvent;
+}
 ```
 
 The commit path is therefore:
@@ -1030,7 +1088,7 @@ TimingNode serial lane
        +--> subscribed listener
 ```
 
-The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the event instance they need.
+The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the exposed event source they need.
 
 The event says that new TimingData is now available. The fact that
 `newTimingDataEvent` is emitted only after successful persistence and LogBook
@@ -1041,6 +1099,16 @@ Listeners must not become alternate owners of TimingNode mutable state. Slow
 network delivery or retry work must also not block the TimingNode serial lane;
 a listener that needs such work hands the TimingData value to its own bounded
 execution/delivery mechanism.
+
+The `Event<T>` listener registry is thread-safe and uses snapshot iteration, so
+subscribe/unsubscribe may race safely with delivery. Delivery itself is
+synchronous on the emitting thread and `Event<T>` does not serialize concurrent
+`emit(...)` calls. An owner that requires ordering or non-overlapping callbacks
+must emit from its own ordered execution boundary. TimingNode status-change and
+committed-TimingData events are therefore emitted from the TimingNode serial
+lane.
+
+This is part of the same ingress/latency risk analysis: a synchronous local listener is acceptable only when it is demonstrably short and non-blocking. A WebSocket or other transport adapter must enqueue/buffer its outbound work and return quickly, or introduce its own bounded delivery executor. The TimingNode lane is not a network backpressure mechanism.
 
 If listener notification fails after the record is committed, that does not
 roll back the TimingData commit. A consumer that needs reliable recovery uses
@@ -1079,8 +1147,8 @@ For the initial Pi-oriented runtime:
 - prefer explicit bounded queues over hidden/unbounded executor queues;
 - keep contained domain state passive and single-writer where practical;
 - keep concrete TimingData values immutable after creation;
-- avoid deep-copying LogBook history for routine queries;
-- reuse consumer snapshot buffers where repeated allocation would add GC churn;
+- avoid routine LogBook list copies or deep copies when direct bounded traversal is sufficient;
+- consider reusable scratch storage, compact indexes or incremental derived state only when measurement shows a clear benefit;
 - move blocking network/retry work behind capability-specific output boundaries;
 - add asynchronous analysis-store writing only when measurement justifies it;
 - measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
@@ -1268,9 +1336,10 @@ is no longer merely a future possibility. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
-ApplicationBootstrap
-  -> discover built-in providers
-  -> discover external provider JARs
+runtime.Composition
+  -> infra extension discovery support
+       -> discover built-in providers
+       -> discover external provider JARs
   -> ExtensionRegistry
        TimingDataProvider
        UpstreamProtocolProvider
@@ -1279,7 +1348,7 @@ ApplicationBootstrap
        DisplayProtocolProvider
   -> validate configured provider IDs
   -> create normal typed implementations
-  -> compose TimingApplication
+  -> compose runtime.Application
 ```
 
 For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
@@ -1288,7 +1357,7 @@ runtime hot reload/unload is deliberately out of scope. The provider registry
 combines built-in and external providers and rejects duplicate provider IDs.
 
 Provider contracts belong with the capability whose meaning they create;
-class-loader/discovery mechanics belong under application-core bootstrap/infra. Domain,
+class-loader/discovery mechanics belong under application-core Infrastructure support. Domain,
 application and I/O runtime code must not depend on `URLClassLoader`,
 `ServiceLoader` or a generic `Plugin` interface.
 
