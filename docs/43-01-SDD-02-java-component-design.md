@@ -287,7 +287,7 @@ TimingNodeTypes.Status status =
 
 `invoke(command)` is the result-bearing path: presentation/application callers may wait for the processed domain result. `submit(command)` is the producer path: it returns only immediate bounded-queue admission and deliberately does not wait for the later domain result. RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by persistence, LogBook work or another queued TimingNode operation.
 
-`query(query)` is the consistency-sensitive read path. Short reads run in the same ordering as commands. Bounded LogBook queries capture a stable shallow immutable view on that lane; formatting, ranking or other longer calculation happens afterwards. Typed command/query objects are local operation descriptions, not another component, central dispatcher or generic message bus.
+`query(query)` is the consistency-sensitive read path. Short reads run in the same ordering as commands. The ordering boundary is the required property; a copied LogBook snapshot is not. Query implementations should avoid routine list copies when direct bounded traversal on the node lane is cheaper, and may introduce compact derived/indexed state only when measurement justifies it. Typed command/query objects are local operation descriptions, not another component, central dispatcher or generic message bus.
 
 The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -960,31 +960,24 @@ worker must not process a later timing record ahead of that failed record.
 but it is contained mutable TimingNode state rather than a globally readable
 repository.
 
-Code outside the TimingNode ownership boundary does not call `LogBook.copyTo()`
-directly. A consistency-sensitive query first enters the TimingNode lane, where
-the node captures the required short immutable/read-only view. Long calculation
-continues after that lane operation has completed:
+Code outside the TimingNode ownership boundary does not read the mutable
+LogBook list directly. A consistency-sensitive query enters the TimingNode lane
+and performs its bounded read in the same ordering as state changes.
 
-```text
-query caller
-  -> TimingNode query operation
-       -> serial lane
-       -> capture LogBook/reference-data snapshot
-       -> return immutable read view
-  -> long calculation outside serial lane
-```
+The read representation is deliberately not fixed to a copied list. For routine
+range/latest/ranking-style access, prefer direct bounded traversal of the owned
+records when that avoids unnecessary allocation and GC pressure. A query may
+instead use compact derived/indexed state, reusable scratch storage or a copied
+view when measurements show that approach is cheaper overall.
 
-With roughly 1200–1500 timing records, a shallow reference snapshot remains a
-reasonable first implementation. The concrete representation may reuse storage
-or buffers internally if measurement shows allocation pressure; that
-optimization must not let external consumers retain a mutable buffer that the
-TimingNode later changes underneath them.
+The important guarantees are:
 
-This model gives two useful guarantees:
-
-- a query snapshot has a defined place in the same ordering as state changes;
-- long calculation never holds the TimingNode lane merely because it needs a
-  stable input view.
+- each consistency-sensitive read has a defined place in the same ordering as
+  state changes;
+- no external consumer retains a mutable collection owned by TimingNode;
+- long or blocking I/O work does not execute on the TimingNode lane;
+- read strategy is selected from measured CPU, allocation/GC and lane-occupancy
+  behaviour rather than convenience alone.
 
 A high-frequency status/read path may later use a worker-published immutable
 snapshot when measurement justifies it. Such a published snapshot is an
@@ -1154,8 +1147,8 @@ For the initial Pi-oriented runtime:
 - prefer explicit bounded queues over hidden/unbounded executor queues;
 - keep contained domain state passive and single-writer where practical;
 - keep concrete TimingData values immutable after creation;
-- avoid deep-copying LogBook history for routine queries;
-- reuse consumer snapshot buffers where repeated allocation would add GC churn;
+- avoid routine LogBook list copies or deep copies when direct bounded traversal is sufficient;
+- consider reusable scratch storage, compact indexes or incremental derived state only when measurement shows a clear benefit;
 - move blocking network/retry work behind capability-specific output boundaries;
 - add asynchronous analysis-store writing only when measurement justifies it;
 - measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
