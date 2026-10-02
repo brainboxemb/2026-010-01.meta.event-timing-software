@@ -3,42 +3,49 @@ step: 5
 planning_changes:
   - date: '2026-10-02'
     change: >-
-      Added explicit Step-5 runtime performance and memory engineering so
-      scheduling, allocation and data-access choices are measurement-driven.
+      Narrowed Step 5 to one-TimingNode simulated antenna input and runtime
+      behaviour. Multi-node/full-field simulation, backoffice reference-data
+      synchronisation and StageTiming move to Step 7.
+  - date: '2026-10-02'
+    change: >-
+      Added explicit runtime performance and memory engineering so scheduling,
+      allocation and data-access choices are measurement-driven.
 
 activities:
   - id: D01
     lane: documentation
     kind: decision
-    title: Runtime performance and execution policy
+    title: Runtime execution and measurement plan
     state: planned
     note: >-
-      Define the first project-wide execution policy for project-owned threads:
-      stable thread naming, named priority roles, Java priority mapping and the
-      boundary between JVM policy and target/deployment tuning. Treat priority as
-      a scheduling preference only, never as a correctness mechanism.
+      Define the first project-owned thread/queue measurement approach, stable
+      thread naming and the boundary between JVM scheduling preferences and
+      later target-specific tuning. Thread priority is not a correctness rule.
 
   - id: A01
     lane: application
     kind: implementation
-    title: Synthetic timing flow
+    title: Simulated antenna and tag-processing path
     state: planned
     depends_on: [D01]
     note: >-
-      Drive repeatable synthetic registration/device flows through the normal
-      TimingNode and persistence paths without physical timing hardware.
+      Feed deterministic tag observations through the built-in
+      SimulatedAntenna, normal tag interpretation/filtering and the existing
+      accepted-registration path for one TimingNode. Use a small synthetic local
+      reference fixture for TagId-to-RegistrationId resolution; do not add
+      backoffice synchronisation here.
 
   - id: A02
     lane: application
     kind: implementation
-    title: Performance markers and runtime counters
+    title: Runtime markers and counters
     state: planned
     depends_on: [D01, A01]
     note: >-
-      Add low-allocation monotonic timing markers and primitive counters for
-      queue admission/depth/high-water, queue wait, operation execution,
-      persistence latency, event delivery and selected thread/GC observations.
-      Avoid per-event metric-object allocation and high-volume logging.
+      Add low-allocation monotonic markers and primitive counters for queue
+      admission/depth/high-water, queue wait, processing, persistence and
+      selected thread/GC observations. Avoid per-event metric-object allocation
+      and high-volume logging.
 
   - id: A03
     lane: application
@@ -47,42 +54,50 @@ activities:
     state: planned
     depends_on: [A01, A02]
     note: >-
-      Measure and decide where direct traversal, cached/derived state, reusable
-      scratch storage, object reuse/pools or ordinary allocation are cheaper.
-      Include ranking/reference-data paths; do not introduce pools or copied
-      snapshots by default.
+      Use measurements to decide where direct traversal, cached state, reusable
+      scratch storage or ordinary allocation are appropriate. Do not introduce
+      pooling or copied snapshots by default.
 
   - id: V01
     lane: verification
     kind: verification
-    title: Synthetic scale and burst characterization
+    title: Single-node load and burst characterization
     state: planned
     depends_on: [A01, A02, A03]
     note: >-
-      Use a representative scale baseline of 2000 teams across multiple
-      TimingNodes (including a three-node scenario) plus high committed-record
-      volumes up to 9999 where applicable. Measure forward progress, ingress to
+      Exercise one TimingNode with representative synthetic tag/reference data
+      and growing committed-record volumes. Measure forward progress, input to
       commit latency, queue high-water, CPU/thread behaviour, allocation/GC and
-      query/ranking cost. These are verification baselines, not product limits.
+      history/query cost. These are engineering baselines, not product limits.
 
   - id: V02
     lane: verification
     kind: verification
-    title: Sustained RFID ingress fairness
+    title: Sustained antenna-ingress fairness
     state: planned
     depends_on: [V01]
     note: >-
-      Verify that sustained/bursty tag input cannot monopolize a high-priority
-      ingress path and starve TimingNode processing or lower-priority services.
-      Use the measurements to define any required bounded batch/admission guard.
+      Verify that sustained or bursty tag input cannot monopolize the ingress
+      path and starve required TimingNode processing or lower-priority services.
+      Add bounded batching/admission only if the measurements justify it.
 
   - id: V03
     lane: verification
     kind: verification
-    title: Restart and recovery scenarios
+    title: Restart and recovery with simulated input
     state: planned
     depends_on: [A01]
     note: >-
-      Extend black-box timing scenarios with persistence/restart/reconnect and
-      prove the synthetic path remains the same path intended for later real
-      hardware.
+      Restart SI-01 after simulated registrations, rebuild committed history and
+      continue through the same SimulatedAntenna path without sequence reuse or
+      a test-only bypass.
+
+  - id: V04
+    lane: verification
+    kind: verification
+    title: Provider bootstrap verification
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Verify built-in provider selection plus one synthetic external provider
+      through the same typed startup mechanism intended for later real adapters.

@@ -140,10 +140,10 @@ steps:
     estimate_project_days: 6
     workstream: simulation
     docs:
-      requirements: {level: working, scope: "synthetic timing flow and recovery behaviour"}
-      idd: {level: working, scope: "public interfaces used by black-box scenarios"}
-      design: {level: working, scope: "synthetic adapters and persistence/recovery boundaries"}
-      verification: {level: working, scope: "expanded ST-1 timing/restart scenarios"}
+      requirements: {level: working, scope: "simulated antenna input, registration admission and recovery"}
+      idd: {level: working, scope: "public/test interfaces needed to drive and observe simulated input"}
+      design: {level: working, scope: "SimulatedAntenna, tag-processing and runtime measurement boundaries"}
+      verification: {level: working, scope: "single-node burst, fairness and restart scenarios"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 80}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 70}
@@ -168,10 +168,10 @@ steps:
     estimate_project_days: 7
     workstream: backoffice
     docs:
-      requirements: {level: working, scope: "required backoffice data flows"}
-      idd: {level: working, scope: "semantic contract and selected transport"}
-      design: {level: working, scope: "transport/recovery behaviour"}
-      verification: {level: working, scope: "integration and outage/reconnect tests"}
+      requirements: {level: working, scope: "backoffice reference/timing flows and multi-node behaviour"}
+      idd: {level: working, scope: "reference-data, TimingData and selected transport contracts"}
+      design: {level: working, scope: "multi-node routing, StageTiming and transport/recovery behaviour"}
+      verification: {level: working, scope: "multi-node integration, outage/reconnect and reconciliation tests"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
