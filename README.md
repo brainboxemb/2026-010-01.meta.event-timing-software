@@ -130,7 +130,9 @@ Examples:
 30-UC
 31-SSSD
 32-03-ISD
+32-05-ISD
 32-11-ISD
+33-05-IDD
 40-01-UC        # reserved/optional SI-01 use-case document
 41-01-SSD
 41-02-SSD
@@ -147,7 +149,7 @@ Examples:
 The segment immediately after a reserved document-family number identifies the
 **scope** when that family has a natural stable scope identifier. Software-item
 families therefore use the SI identifier: `40-<SI>-UC`, `41-<SI>-SSD/SRD`,
-`42-<SI>-SAD`, `43-<SI>-SDD[-<N>]` and `70-<SI>-SUM`. System-owned IDDs
+`42-<SI>-SAD`, `43-<SI>-SDD[-<N>]` and `70-<SI>-SUM`. System-owned ISDs
 use the same rule with the interface identifier, so IF-03 is `32-03-ISD` and
 IF-11 is `32-11-ISD`. Optional interface design descriptions use family `33`,
 for example `33-05-IDD` for IF-05.

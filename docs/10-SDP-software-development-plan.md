@@ -53,7 +53,6 @@ Current examples are:
 
 ```text
 00-brainstorm
-01-handoff
 02-agent-plan
 03-domain-baseline
 
@@ -79,6 +78,7 @@ Current examples are:
 
 50-SDE-01-software-development-environment
 50-SDE-02-java-build-test-toolchain
+50-SDE-03-engineering-client
 
 60-SVP-software-verification-plan
 61-01-VTS-timing-application-verification-test-specification
