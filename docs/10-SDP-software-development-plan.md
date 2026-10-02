@@ -207,8 +207,9 @@ Move a requirement back to `D` when a review causes a material change in
 scope or meaning. Use `O` rather than silently reusing an approved
 requirement ID for a different meaning.
 
-New requirements should have an explicit status from creation. Existing
-requirements can be migrated when they are next substantively reviewed.
+Every software and interface requirement shall carry an explicit status.
+New requirements therefore receive `D`, `R`, `A` or `O` when they are
+created; CI rejects a requirement without one.
 - **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
 - **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
 - **SUM** — release/user guidance downstream of the released software/configuration baseline.
