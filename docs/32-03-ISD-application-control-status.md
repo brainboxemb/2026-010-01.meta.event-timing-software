@@ -478,6 +478,7 @@ This allows ST-1, engineering-client and later SI-02 development without prematu
 
 ```{ifreq} Shared semantics
 :id: IF03-REQ-001
+:status: R
 :derived_from: SI01-REQ-022, SI01-REQ-030
 
 HTTP/JSON and WebSocket representations shall map to the
@@ -488,6 +489,7 @@ adapter.
 
 ```{ifreq} Remote-host operation
 :id: IF03-REQ-002
+:status: R
 :derived_from: SI01-REQ-031
 
 The interface shall support operation across a normal IP
@@ -498,6 +500,7 @@ runs on another host such as a Raspberry Pi.
 
 ```{ifreq} Version query
 :id: IF03-REQ-003
+:status: R
 :derived_from: SI01-REQ-010, SI01-REQ-011
 
 The interface shall provide `GET /api/v1/version` representing `IF03-OP-001`.
@@ -505,6 +508,7 @@ The interface shall provide `GET /api/v1/version` representing `IF03-OP-001`.
 
 ```{ifreq} Status query
 :id: IF03-REQ-004
+:status: R
 :derived_from: SI01-REQ-020, SI01-REQ-021, SI01-REQ-022
 
 The interface shall provide `GET /api/v1/status`
@@ -513,6 +517,7 @@ representing `IF03-OP-002`.
 
 ```{ifreq} Live status/event delivery
 :id: IF03-REQ-005
+:status: R
 :derived_from: SI01-REQ-023
 
 The interface shall provide WebSocket `/api/v1/events` representing `IF03-OP-003` for the first executable.
@@ -520,6 +525,7 @@ The interface shall provide WebSocket `/api/v1/events` representing `IF03-OP-003
 
 ```{ifreq} Reconnect to current state
 :id: IF03-REQ-006
+:status: R
 :derived_from: SI01-REQ-023
 
 A client that connects/reconnects shall receive a complete current status snapshot before relying on subsequent live events.
@@ -527,6 +533,7 @@ A client that connects/reconnects shall receive a complete current status snapsh
 
 ```{ifreq} Machine-readable representation
 :id: IF03-REQ-007
+:status: R
 :derived_from: SI01-REQ-031
 
 The HTTP query representation shall be machine-readable JSON suitable for SI-02, engineering clients and automated ST-1 verification.
@@ -534,6 +541,7 @@ The HTTP query representation shall be machine-readable JSON suitable for SI-02,
 
 ```{ifreq} Explicit failure response
 :id: IF03-REQ-008
+:status: R
 :derived_from: SI01-REQ-031
 
 Unsupported or invalid HTTP requests shall produce the explicit JSON failure outcome defined in this ISD rather than a successful response containing silently invalid data.
@@ -541,6 +549,7 @@ Unsupported or invalid HTTP requests shall produce the explicit JSON failure out
 
 ```{ifreq} Safe default listen scope
 :id: IF03-REQ-009
+:status: R
 :derived_from: SI01-REQ-032
 
 Without explicit configuration the first-executable IF-03 service shall bind only to a local/loopback interface.
@@ -548,6 +557,7 @@ Without explicit configuration the first-executable IF-03 service shall bind onl
 
 ```{ifreq} Compatible extension
 :id: IF03-REQ-010
+:status: R
 :derived_from: SI01-REQ-033
 
 Clients shall be able to ignore unknown response members/event types within API major version `v1`; breaking contract changes shall not silently redefine existing `v1` semantics.
@@ -555,6 +565,7 @@ Clients shall be able to ignore unknown response members/event types within API 
 
 ```{ifreq} Step-4 location and lifecycle control
 :id: IF03-REQ-011
+:status: R
 :derived_from: SI01-REQ-040
 
 IF-03 shall expose 1..N application-wide-unique TimingNode identities with current
@@ -565,6 +576,7 @@ application/domain semantics.
 
 ```{ifreq} Engineering capability discovery
 :id: IF03-REQ-012
+:status: R
 :derived_from: SI01-REQ-043
 
 IF-03 shall provide IF03-OP-004 so the Engineering Client can determine whether
@@ -574,6 +586,7 @@ using that control.
 
 ```{ifreq} Dev auto-reg control
 :id: IF03-REQ-013
+:status: R
 :derived_from: SI01-REQ-041, SI01-REQ-043
 
 When the advertised capability is supported and enabled, IF-03 shall provide
@@ -583,6 +596,7 @@ accepted-registration operation.
 
 ```{ifreq} Committed LogBook query
 :id: IF03-REQ-014
+:status: R
 :derived_from: SI01-REQ-042
 
 IF-03 shall provide IF03-OP-009 as a node-addressed LogBook metadata and bounded
@@ -591,6 +605,7 @@ range query in source-sequence order using public IF-05 field semantics.
 
 ```{ifreq} Live committed TimingData delivery
 :id: IF03-REQ-015
+:status: R
 :derived_from: SI01-REQ-042
 
 The IF-03 WebSocket event stream shall emit `TIMING_DATA_COMMITTED` only after
@@ -600,6 +615,7 @@ LogBook.
 
 ```{ifreq} Rebuild LogBook before live presentation
 :id: IF03-REQ-016
+:status: R
 :derived_from: SI01-REQ-044
 
 A reconnecting client shall be able to combine the current status snapshot,
