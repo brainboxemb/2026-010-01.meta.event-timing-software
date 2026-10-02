@@ -3,10 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-02'
     change: >-
-      Added an explicit runtime-performance and memory-engineering activity to
-      Step 5 so thread priorities, thread naming, allocation/GC behaviour,
-      object reuse/pooling, copy-versus-traverse and cache-versus-recompute
-      decisions are measurement-driven rather than hidden implementation choices.
+      Added explicit Step-5 runtime performance and memory engineering so
+      scheduling, allocation and data-access choices are measurement-driven.
 
 activities:
   - id: D01
