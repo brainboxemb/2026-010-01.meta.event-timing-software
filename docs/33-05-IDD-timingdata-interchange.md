@@ -26,7 +26,7 @@ The reference design uses:
 - one complete JSON object per JSON Lines record;
 - one Node ID source stream per file;
 - monotonically increasing `seqNr`;
-- explicit record family in `recType`;
+- explicit record type in `recType`;
 - compact semantic codes in `code`;
 - absolute UTC timestamp text;
 - per-record integer representation version `v`.
@@ -43,7 +43,7 @@ The reference design uses:
 | Node ID | `nodeId` |
 | sequence number | `seqNr` |
 | Location ID | `locId` |
-| record family | `recType` |
+| record type | `recType` |
 | registration time (registration records) | `time` |
 | Registration ID (registration records) | `regId` |
 | registration/action semantics | `code` |

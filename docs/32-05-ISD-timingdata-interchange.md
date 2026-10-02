@@ -14,7 +14,7 @@ It defines **what** every conforming TimingData representation must preserve:
 - record identity and source ordering;
 - Node ID, Location ID and Registration ID semantics;
 - automatic and manual registration semantics;
-- effective-time and recorded-time meaning;
+- time semantics defined by record types;
 - compatibility rules for the default/reference representation and alternative
   product/event-specific representations.
 
@@ -70,11 +70,11 @@ Every TimingData record has a small common envelope:
 | Node ID | identifies the TimingNode that owns the source stream |
 | sequence number | record number within that Node ID stream |
 | Location ID | location captured with the record |
-| record family | identifies how the remaining record data shall be interpreted |
+| record type | identifies how the remaining record data shall be interpreted |
 
-Values beyond this envelope depend on the record family. A registration record
+Values beyond this envelope depend on the record type. A registration record
 therefore carries registration-specific values, while future OPEN/CLOSE,
-start-procedure, penalty or other record families may carry different values.
+start-procedure, penalty or other record types may carry different values.
 
 A committed record captures its Location ID. Later TimingNode reconfiguration
 does not change that historical value.
@@ -140,7 +140,7 @@ requirement.
 ## Registration ID boundary
 
 Registration ID is a provider-neutral value used by registration record
-families. It is not required for TimingData record families that do not
+families. It is not required for TimingData record types that do not
 represent a registration.
 
 For registration records, the common semantic form is a non-empty string.
@@ -157,7 +157,7 @@ assigned to that registration.
 The current interface direction is to preserve that instant across conforming
 representations. The exact textual representation belongs to the IDD.
 
-Other TimingData record families may define their own time-related values when
+Other TimingData record types may define their own time-related values when
 they are introduced. IF-05 does not require one generic time field on every
 record.
 
@@ -207,17 +207,17 @@ requirements by themselves.
 :status: D
 
 Every TimingData record shall identify its Node ID, sequence number, Location ID
-and record family. Values required in addition to this common envelope shall be
-defined by the record family.
+and record type. Values required in addition to this common envelope shall be
+defined by the record type.
 ```
 
 ```{ifreq} Record identity within a TimingSystem
 :id: IF05-REQ-002
 :status: D
 
-Within one Node ID stream, a committed sequence number shall identify no more
-than one committed TimingData record. Together, Node ID and sequence number
-shall identify one committed TimingData record within the TimingSystem.
+Within one Node ID stream, committed TimingData records shall have unique
+sequence numbers. Within a TimingSystem, Node ID together with sequence number
+shall uniquely identify a committed TimingData record.
 ```
 
 ```{ifreq} Sequence progression
@@ -268,8 +268,8 @@ TimingData record.
 
 - TimingNode OPEN/CLOSE TimingData representation;
 - revoke disambiguation beyond Registration ID + registration time, if later needed;
-- start-procedure record family and payload;
-- penalty/correction record families and payloads;
+- start-procedure record type and payload;
+- penalty/correction record types and payloads;
 - unknown-registration semantics;
 - source/tag provenance fields;
 - filename/directory policy, retention, rotation and filesystem-specific
