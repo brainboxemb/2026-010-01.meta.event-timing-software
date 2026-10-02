@@ -233,6 +233,17 @@ updates as a live view. Duplicate TimingData observed through history plus live
 delivery shall be identifiable by the stable TimingData record key.
 ```
 
+```{req} Recover committed TimingData after restart
+:id: SI01-REQ-045
+:derived_from: UC-013
+
+On startup, SI-01 shall recover previously committed TimingData for each
+configured TimingNode from its authoritative local TimingData store and restore
+that committed LogBook/source-sequence history with the original stable record
+keys. This recovery shall not by itself restore the previous operational
+LocationId or OPEN state.
+```
+
 ### Step-4 lifecycle interpretation
 
 The Step-4 first-registration slice extends the first executable with the first
@@ -242,11 +253,17 @@ lifecycle/status boundary.
 Therefore:
 
 - at least one configured TimingNode is represented;
+- `LocationId` assignment and OPEN/CLOSE are operational TimingNode state
+  transitions; they are not TimingData records in this Step-4 slice;
 - a restarted TimingNode begins `CLOSED` with no current operational location;
 - a `LocationId` can be assigned or changed while CLOSED;
 - OPEN requires a current valid location;
 - the current location cannot change while OPEN;
 - an accepted semantic registration can commit only while OPEN;
+- the first persisted TimingData record may therefore be registration sequence 1,
+  provided a LocationId was assigned and the TimingNode was opened first;
+- committed registration history is recovered from the TimingData store after
+  restart without restoring the previous operational LocationId or OPEN state;
 - committed registration history and live post-commit updates are observable
   through IF-03;
 - physical RFID observation/filtering remains a later input slice.
@@ -260,7 +277,7 @@ The following areas are intentionally not made concrete by this SSD slice:
 - ready-team/start/penalty behaviour;
 - CAN/keypad/Display V1;
 - smart Display V2;
-- persistence/backup of operational timing data;
+- backup/export/restore and retention policy beyond the Step-4 committed TimingData restart-recovery baseline;
 - backoffice semantic/protocol behaviour;
 - RabbitMQ-specific behaviour;
 - target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
@@ -283,7 +300,8 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
 | SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03 control/status | V1/V2 + Step-4 ST-1 |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + Step-4 ST-1 |
-| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + reconnect verification |
+| SI01-REQ-042/045 | UC-003/011/013 | LogBook/TimingData commit, local persistence and restart recovery + IF-03 history/live observation | V2 + `VC-ST1-002` including full process restart |
+| SI01-REQ-044 | UC-009 | Engineering Client reconnect rebuild using status/history/live record keys | A03 + V04 Engineering Client running-system demo |
 
 ### AP-1 decisions resolved by this baseline
 

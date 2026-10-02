@@ -3,6 +3,11 @@ step: 4
 planning_changes:
   - date: '2026-10-02'
     change: >-
+      Clarified that LocationId and OPEN/CLOSE remain operational state rather
+      than TimingData records, and strengthened VC-ST1-002 with full process
+      restart recovery against the same committed TimingData file.
+  - date: '2026-10-02'
+    change: >-
       A03 and V03 completed; V04 Engineering Client running-system demo is active.
   - date: '2026-10-01'
     change: >-
@@ -73,6 +78,7 @@ activities:
     depends_on: [V01]
     note: >-
       Location and OPEN/CLOSED invariants implemented behind serialized ownership.
+      These are operational TimingNode state transitions, not TimingData records.
 
   - id: A02
     lane: application
@@ -81,7 +87,9 @@ activities:
     state: done
     depends_on: [A01]
     note: >-
-      Accepted registration and committed TimingData path implemented.
+      Accepted registration and committed TimingData path implemented. The first
+      persisted TimingData entry may be sequence 1 only after LocationId assignment
+      and OPEN have made registration operationally valid.
 
   - id: A03
     lane: application
@@ -110,9 +118,10 @@ activities:
     state: done
     depends_on: [A03, V02]
     note: >-
-      VC-ST1-002 is implemented by FirstRegistrationBlackBoxTest and passed as a
-      separate process through public IF-03: control, auto-reg, LogBook/live
-      observation, close and reconnect without historical event replay.
+      VC-ST1-002 covers control, auto-reg, LogBook/live observation and WebSocket
+      reconnect, then performs a full SI-01 restart with the same TimingData file.
+      The committed sequence-1 record is recovered while operational state starts
+      CLOSED/no-location, and recovered history is not emitted as a new live commit.
 
   - id: V04
     lane: verification

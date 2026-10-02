@@ -624,9 +624,9 @@ Verification-case identifiers use `VC-<profile>-<number>` for this baseline.
 ---
 id: VC-ST1-001
 verifies: >-
-  SI01-REQ-003, SI01-REQ-020, SI01-REQ-021, SI01-REQ-022,
-  SI01-REQ-030, SI01-REQ-031, IF03-REQ-001, IF03-REQ-002,
-  IF03-REQ-004
+  SI01-REQ-001, SI01-REQ-002, SI01-REQ-003, SI01-REQ-010,
+  SI01-REQ-020, SI01-REQ-021, SI01-REQ-031,
+  IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006
 ---
 
 Trace target:
@@ -662,9 +662,8 @@ The test driver shall not mutate internal Java objects or inspect private implem
 ---
 id: VC-ST1-002
 verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-044,
-  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015,
-  IF03-REQ-016
+  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-045,
+  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
 ---
 
 Deterministic procedure:
@@ -684,8 +683,25 @@ Deterministic procedure:
    LocationId and supplied observation time;
 10. verify a TIMING_DATA_COMMITTED live event represents that same stable record key;
 11. request CLOSE and verify CLOSED;
-12. reconnect the event client, query LogBook metadata/ranges, deduplicate any
-    buffered overlap by record key and only then mark the view live.
+12. disconnect and reconnect the WebSocket client while SI-01 is still running;
+13. verify the new session begins with a current `STATUS_SNAPSHOT`, the committed
+    LogBook record is still queryable, and that old record is not emitted again as
+    a new `TIMING_DATA_COMMITTED` event;
+14. stop SI-01 through the controlled shutdown path;
+15. start a second SI-01 process with the same TimingData persistence file;
+16. verify the restarted TimingNode is `CLOSED` with no current operational
+    LocationId;
+17. verify the LogBook still contains the original sequence-1 record with the same
+    stable key;
+18. verify the new WebSocket session begins with `STATUS_SNAPSHOT` and the
+    recovered record is not emitted as a new `TIMING_DATA_COMMITTED` event;
+19. shut the second SI-01 process down through the controlled shutdown path.
+
+This case verifies server-side control, history/live observation, WebSocket
+reconnect behaviour and persisted LogBook recovery across a full process restart.
+The Engineering Client history/live merge, buffering and deduplication algorithm
+required by SI01-REQ-044 / IF03-REQ-016 is verified separately by the Step-4
+Engineering Client verification.
 ```
 
 ## Remote shell scope
