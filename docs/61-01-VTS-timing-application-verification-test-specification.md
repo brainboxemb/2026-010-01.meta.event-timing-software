@@ -199,19 +199,72 @@ product requirement.
 - the retained second-run robustness check recovers the committed record while
   operational state starts CLOSED/no-location.
 
-## Engineering Client verification
+### VC-ST1-003 — Engineering Client reconnect/rebuild integration
 
-The Engineering Client reconnect algorithm is not proven by VC-ST1-002 merely
-because the server supports history and live events.
+```{vc} Engineering Client reconnect/rebuild integration
+---
+id: VC-ST1-003
+verifies: >-
+  SI01-REQ-044, IF03-REQ-016
+---
+```
 
-The Step-4 Engineering Client verification separately checks the behaviour
-described by `SI01-REQ-044` / `IF03-REQ-016`: rebuild current status and
-bounded history, buffer later live events, merge/deduplicate by stable TimingData
-record key, then declare the view live.
+**Purpose**
 
-The current manual running-system procedure is maintained with the Engineering
-Client implementation until a dedicated automated client verification case is
-introduced.
+Verify through the real JavaFX Engineering Client that an external client can
+rebuild current status and bounded TimingData history after reconnect/restart,
+buffer later live events during that rebuild, merge history/live overlap by the
+stable TimingData record key and only then present the view as LIVE.
+
+This manual case does not re-prove the server-side lifecycle, registration,
+LogBook persistence or restart recovery already covered by `VC-ST1-002`.
+
+**Setup**
+
+- packaged SI-01 application started with the dedicated Step-4 demo
+  configuration/storage;
+- JavaFX Engineering Client started independently on Java 17;
+- one deterministic registration `N0001` committed during the first run;
+- public IF-03 plus the supported Remote Shell shutdown path only.
+
+**Procedure**
+
+1. Start SI-01 with empty Step-4 demo storage.
+2. Connect the Engineering Client Timing view.
+3. Verify the client shows a syncing/reconnecting state, keeps mutating controls
+   disabled during rebuild and becomes LIVE only after the baseline is ready.
+4. Set Location ID 24, OPEN the TimingNode and commit deterministic auto-reg
+   `N0001` at `2026-10-01T12:00:00Z`.
+5. Verify the client shows sequence 1 in bounded LogBook/history and one matching
+   live commit.
+6. CLOSE, change Location ID to 25 and stop SI-01 through the supported Terminal
+   control.
+7. Restart SI-01 with the same demo TimingData file and reconnect the Engineering
+   Client.
+8. Verify the client rebuilds current status to CLOSED with no operational
+   Location ID while sequence 1 / `N0001` remains in history.
+9. Verify recovered history is not presented as a new live commit and that any
+   history/live overlap is deduplicated by stable record key.
+10. Verify the client reaches LIVE only after the baseline plus buffered live
+    events have been reconciled.
+11. Shut SI-01 down cleanly.
+
+**Expected result**
+
+- reconnect/restart is visible as rebuild/sync rather than immediately LIVE;
+- mutating controls remain disabled while the baseline is incomplete;
+- history is rebuilt before LIVE presentation;
+- buffered live events are applied after the baseline;
+- duplicate history/live observations collapse to one stable record;
+- recovered historical data is not presented as a new committed event;
+- the running-system flow uses no private SI-01 state.
+
+**Execution**
+
+This is currently a manual verification case. The executable/checklist procedure
+is maintained in the Java repository at `test-client/STEP4-DEMO.md`; run-specific
+PASS/FAIL, revisions and supporting artifacts are retained with Java issue #127
+rather than in this VTS.
 
 ## Evidence
 

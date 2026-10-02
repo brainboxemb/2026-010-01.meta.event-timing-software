@@ -116,7 +116,8 @@ activities:
     state: active
     depends_on: [V03, A03]
     note: >-
-      Manually run the same first-registration flow through the JavaFX Engineering
-      Client after green VC-ST1-002. Follow test-client/STEP4-DEMO.md and Java
-      issue #127; record build/client identity plus concise pass/fail evidence for
-      controls, history/live presentation, reconnect/recovery and clean shutdown.
+      61-01-VTS specifies manual case VC-ST1-003. Run the first-registration
+      reconnect/rebuild flow through the JavaFX Engineering Client after green
+      VC-ST1-002. Follow test-client/STEP4-DEMO.md and Java issue #127; retain
+      build/client identity plus concise pass/fail evidence for controls,
+      history/live merge/dedup, reconnect/rebuild and clean shutdown.
