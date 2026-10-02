@@ -124,7 +124,8 @@ steps:
 
   "4":
     estimate_project_days: 6
-    remaining_estimate_project_days: 0.5\n    workstream: domain
+    remaining_estimate_project_days: 0.5
+    workstream: domain
     docs:
       requirements: {level: working, scope: "TimingNode state and domain capabilities"}
       idd: {level: working, scope: "public semantics required by new domain behaviour"}
@@ -139,7 +140,8 @@ steps:
 
   "5":
     estimate_project_days: 6
-    remaining_estimate_project_days: 6\n    workstream: simulation
+    remaining_estimate_project_days: 6
+    workstream: simulation
     docs:
       requirements: {level: working, scope: "simulated antenna input, registration admission and recovery"}
       idd: {level: working, scope: "public/test interfaces needed to drive and observe simulated input"}
@@ -153,7 +155,8 @@ steps:
 
   "6":
     estimate_project_days: 4
-    remaining_estimate_project_days: 5\n    workstream: client
+    remaining_estimate_project_days: 5
+    workstream: client
     docs:
       requirements: {level: working, scope: "first useful SI-02 behaviour"}
       idd: {level: review, scope: "API consumed by SI-02"}
@@ -167,7 +170,8 @@ steps:
 
   "7":
     estimate_project_days: 7
-    remaining_estimate_project_days: 9\n    workstream: backoffice
+    remaining_estimate_project_days: 9
+    workstream: backoffice
     docs:
       requirements: {level: working, scope: "backoffice reference/timing flows and multi-node behaviour"}
       idd: {level: working, scope: "reference-data, TimingData and selected transport contracts"}
@@ -181,7 +185,8 @@ steps:
 
   "8":
     estimate_project_days: 4
-    remaining_estimate_project_days: 4\n    workstream: platform-study
+    remaining_estimate_project_days: 4
+    workstream: platform-study
     docs:
       requirements: {level: working, scope: "target hardware needs and constraints"}
       idd: {level: outline, scope: "device/electrical interfaces identified as needed"}
@@ -195,7 +200,8 @@ steps:
 
   "9":
     estimate_project_days: 4
-    remaining_estimate_project_days: 4\n    workstream: platform
+    remaining_estimate_project_days: 4
+    workstream: platform
     docs:
       requirements: {level: working, scope: "selected target execution/deployment needs"}
       idd: {level: review, scope: "API used for target inspection"}
@@ -208,7 +214,8 @@ steps:
 
   "10":
     estimate_project_days: 10
-    remaining_estimate_project_days: 10\n    workstream: hardware
+    remaining_estimate_project_days: 10
+    workstream: hardware
     docs:
       requirements: {level: working, scope: "selected real-device behaviour"}
       idd: {level: working, scope: "RFID/CAN/display/RTC interfaces as applicable"}
@@ -222,7 +229,8 @@ steps:
 
   "11":
     estimate_project_days: 8
-    remaining_estimate_project_days: 8\n    workstream: integration
+    remaining_estimate_project_days: 8
+    workstream: integration
     docs:
       requirements: {level: working, scope: "representative integrated operation"}
       idd: {level: working, scope: "interfaces required by integrated system"}
