@@ -40,7 +40,8 @@
         "type": {
           "enum": [
             "uc",
-            "req"
+            "req",
+            "ifreq"
           ]
         }
       }
@@ -59,7 +60,7 @@
   "schemas": [
     {
       "id": "req-derived-from-source-type",
-      "message": "Requirement derived_from links may target use cases or requirements.",
+      "message": "Software/system requirements may derive from use cases, requirements or interface requirements.",
       "select": {
         "$ref": "#/$defs/type-req"
       },
