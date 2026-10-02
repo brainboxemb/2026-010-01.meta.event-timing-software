@@ -1300,6 +1300,12 @@ Architecture rules:
 - queues/resources are bounded and overload is visible instead of silently dropping work;
 - during shutdown, stop new input first and give accepted work time to finish.
 
+The primary latency risk is therefore **producer backpressure**, not whether every TimingNode operation is asynchronous. Device/RFID/TagProcessor ingress must use the submission-only path and return after bounded-queue admission; it does not wait for persistence or a domain result. Presentation/application callers may use a result-bearing command path when they need that result.
+
+Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. Longer formatting/ranking work uses an immutable snapshot outside that lane. Synchronous persistence may also occupy the lane initially, but its impact is controlled through bounded queues and observable queue/store latency. If measurements show unacceptable queue growth or registration delay, persistence/read delivery is split behind a bounded secondary mechanism without creating a second writer for TimingNode state.
+
+Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
+
 The SSD only sets these rules. SDD-01 describes state ordering, persistence and
 consumer visibility. SDD-02 chooses the Java queue/worker implementation. The
 current direction is the Active Object pattern implemented by composition, not a

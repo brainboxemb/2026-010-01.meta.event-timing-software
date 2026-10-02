@@ -255,17 +255,25 @@ TimingNode or persistence semantics of its own.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
 
-Commands that change TimingNode state remain explicit methods on `TimingNode` (`open`, `close`, `setLocation`, `commitAutomaticRegistration`, ...). Read-only operations use one typed query boundary:
+The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
 
 ```java
+TimingNode.OpenResult opened =
+        node.invoke(TimingNodeCommands.open());
+
+TimingNode.CommandAdmission admitted =
+        node.submit(
+                TimingNodeCommands.commitAutomaticRegistration(
+                        registrationId,
+                        observationTime));
+
 TimingNode.Status status =
         node.query(TimingNodeQueries.status());
-
-List<TimingData> records =
-        node.query(TimingNodeQueries.timingDataRange(fromSequence, limit));
 ```
 
-A query is a typed read description, not another component or generic command bus. `TimingNode` still executes it on the same serial lane, so reads remain ordered with commands. The query object is bound to package-private `TimingNodeLogic` inside the timing package, which avoids adding a duplicate forwarding method to `TimingNode` for every new read. The Application layer keeps meaningful application-level command/query methods and maps its reads to these typed TimingNode queries.
+`invoke(command)` is the result-bearing path: presentation/application callers may wait for the processed domain result. `submit(command)` is the producer path: it returns only immediate bounded-queue admission and deliberately does not wait for the later domain result. RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by persistence, LogBook work or another queued TimingNode operation.
+
+`query(query)` is the consistency-sensitive read path. Short reads run in the same ordering as commands. Bounded LogBook queries capture a stable shallow immutable view on that lane; formatting, ranking or other longer calculation happens afterwards. Typed command/query objects are local operation descriptions, not another component, central dispatcher or generic message bus.
 
 The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -691,16 +699,16 @@ final class TimingNode {
     private final TimingNodeLogic logic;
     private final SerialWorker serialWorker;
 
-    OpenResult open() {
-        return execute(logic::open, "open");
+    <R> R invoke(TimingNodeCommand<R> command) {
+        // admit + wait for the processed result
     }
 
-    RegistrationResult commitAutomaticRegistration(
-            RegistrationId id,
-            TimingTimestamp observationTime) {
-        return execute(
-                () -> logic.commitAutomaticRegistration(id, observationTime),
-                "commitAutomaticRegistration");
+    CommandAdmission submit(TimingNodeCommand<?> command) {
+        // admit only; producer returns immediately
+    }
+
+    <R> R query(TimingNodeQuery<R> query) {
+        // ordered consistency-sensitive read
     }
 }
 
@@ -829,6 +837,13 @@ Usage rules:
 - result-bearing TimingNode operations normally convert FULL/NOT_RUNNING into
   their small operation/execution failure model, then wait on the Future with
   the configured guard timeout.
+
+The TimingNode wrapper exposes the same distinction semantically:
+
+- `invoke(command)` uses the result-bearing `SerialWorker.submit(Callable)` path;
+- `submit(command)` uses the admission-only `SerialWorker.offer(Runnable)` path;
+- ordinary submission-only command failures occur after the producer has returned and therefore must be reported through diagnostics/status rather than silently disappearing;
+- `query(query)` is result-bearing and normally uses the same ordered lane for consistency-sensitive reads.
 
 The concrete internal queue/task implementation and shutdown-loop details may
 change. The required behaviour is:
@@ -970,6 +985,8 @@ the worker can hand an immutable snapshot to a bounded storage executor. Do not
 add one thread per state object and do not introduce an unbounded background
 queue.
 
+For the first registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any later asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
+
 For example, a StageStartTimes update may be:
 
 ```text
@@ -1030,6 +1047,8 @@ Listeners must not become alternate owners of TimingNode mutable state. Slow
 network delivery or retry work must also not block the TimingNode serial lane;
 a listener that needs such work hands the TimingData value to its own bounded
 execution/delivery mechanism.
+
+This is part of the same ingress/latency risk analysis: a synchronous local listener is acceptable only when it is demonstrably short and non-blocking. A WebSocket or other transport adapter must enqueue/buffer its outbound work and return quickly, or introduce its own bounded delivery executor. The TimingNode lane is not a network backpressure mechanism.
 
 If listener notification fails after the record is committed, that does not
 roll back the TimingData commit. A consumer that needs reliable recovery uses
