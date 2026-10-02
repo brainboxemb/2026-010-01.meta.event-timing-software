@@ -248,10 +248,10 @@ are used so examples remain convenient for later test sets containing up to
 
 ## Compatibility and versioning design
 
-The ISD requires explicit per-record representation versioning. Development v1
-chooses an integer `v` member and the odd/even maturity convention below. The
-odd/even convention is a design choice of this reference representation, not an
-additional ISD requirement.
+Development v1 includes explicit per-record representation versioning through
+an integer `v` member and uses the odd/even maturity convention below. Both are
+design choices of this reference representation, not additional IF-05
+requirements.
 
 The default/reference representation uses integer format versions:
 
