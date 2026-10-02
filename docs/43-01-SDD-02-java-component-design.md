@@ -242,7 +242,8 @@ platform/
   execution/
     SerialWorker.java                     bounded one-at-a-time execution primitive
   events/
-    Event.java                            small typed subscribe / unsubscribe / emit primitive
+    Event.java                            owner-side typed emit primitive
+    EventSource.java                      subscription-only consumer view
   environment/                            low-level environment adapters only when real types justify them
 ```
 
