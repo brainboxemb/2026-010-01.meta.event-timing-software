@@ -35,6 +35,28 @@ shown as concrete Monday boundaries for readability; the underlying cumulative f
 is calculated before that display rounding. Forecast dates are planning aids, not
 commitments.
 
+
+## Why the roadmap is ordered this way
+
+The roadmap deliberately adds one new source of uncertainty at a time.
+
+1. **Steps 1-3 establish the engineering and application shell.** Later work can then be
+   tested through a real running application instead of through isolated classes only.
+2. **Steps 4-5 establish local registration behaviour without external systems or real
+   timing hardware.** Step 4 proves the durable registration boundary. Step 5 moves the
+   input boundary outward to a simulated antenna and measures the runtime behaviour that
+   this introduces.
+3. **Steps 6-7 add external software around that local core.** The desktop GUI first proves
+   that a real independent client can use the API. Backoffice integration then adds
+   reference data, source synchronisation, multi-node operation and derived timing.
+4. **Steps 8-10 move the proven software onto the target and replace simulated devices with
+   real ones.** Platform, deployment and device problems are kept separate where possible.
+5. **Step 11 combines the proven pieces in a representative field setup.**
+
+A step should not claim behaviour that depends on a later step. In particular, simulated
+input is not the same as a complete simulated event: backoffice-supplied reference data,
+multi-node field simulation and real device integration have their own later steps.
+
 ---
 
 ## Step 1 — Architecture baseline
@@ -193,165 +215,143 @@ Build the first useful **Timing Point Application** (SI-01) on the development h
 
 Status: active
 
-Active activity: **V04 — Engineering Client running-system demo**.
-
 ### Purpose
 
-Implement the smallest useful timing-domain vertical slice before introducing
-reference data, keypad/display behaviour or production transports.
+Add the first real timing-domain behaviour only after the application/API shell is stable.
+The main risk in this step is not RFID or backoffice integration; it is whether one
+TimingNode can own lifecycle, identity, ordering and durable registration history without
+those concerns leaking into clients or adapters.
 
-The step combines the smallest useful domain/recording foundation with the
-public control and observation surfaces needed to exercise it. Automated
-black-box verification should prove SI-01 and IF-03 before the Engineering
-Client is used for the final running-system demonstration.
+Keeping the input deliberately simple makes that boundary testable before more sources of
+failure are introduced.
 
 ### Goal
 
-Operate one TimingNode through a complete controlled registration flow:
-configure its location while closed, open it, inject an already-accepted
-registration, persist and inspect the resulting TimingData, observe the live
-update, and close it again.
+Operate one TimingNode through a controlled registration flow using the public
+application boundary.
 
 ### Scope
 
-- Engineering Client architecture plus concrete Step-4 Timing-view/UI baseline;
-- focused UC-001, UC-002, UC-003, UC-009 and outbound UC-011 semantics;
-- shared `LocationId` and `RegistrationId` representations with event/profile-specific policy outside the shared library;
-- TimingNode location assignment/change only while `CLOSED`;
-- valid current LocationId required before `OPEN` and fixed while `OPEN`;
-- one bounded serialized TimingNode mutation/commit lane;
-- dev auto-reg operation after the antenna/filtering boundary;
-- TimingNode-owned source identity, active location, commit-time sequence and recorded time;
-- typed immutable registration TimingData plus canonical reference codec;
-- passive LogBook and append-only file persistence with startup recovery;
-- post-commit typed TimingData event;
-- compact node-addressed IF-03 location/open/close control, capability-gated dev auto-reg, bounded LogBook queries and live updates;
-- Engineering Client state/LogBook rebuild and live-update handling;
-- deterministic component/domain verification;
-- automated ST-1 black-box verification through public IF-03;
-- Engineering Client running-system demo after black-box verification is green.
+- set or change the operational `LocationId` while the TimingNode is closed;
+- open and close the TimingNode with explicit lifecycle rules;
+- submit an already-accepted registration through an engineering input;
+- let the TimingNode assign its own identity, location, sequence and recorded time;
+- create immutable TimingData through the shared TimingData contract;
+- append committed TimingData to local storage and rebuild the LogBook after restart;
+- expose control, bounded history and live updates through IF-03;
+- exercise the same public behaviour through the Engineering Client;
+- verify the running application as a separate process.
 
 ### Not in this step
 
-- simulated or physical antenna input;
-- RFID decoding, observation accumulation or filtering before the accepted-registration boundary;
-- TagId/TeamId/reference-data resolution and provider-specific mapping behaviour;
-- StageStartTimes and inbound upstream/reference-data handling;
-- RaceData;
-- NextUpTeams, keypad or display behaviour;
-- multi-TimingNode isolation;
-- RabbitMQ or real upstream delivery;
-- durable upstream outbox/acknowledgement/reconciliation;
-- SI-02 or a new browser client.
+- antenna observations, RFID decoding or filtering;
+- TagId-to-registration resolution;
+- StageStartTimes, StageTiming or ranking;
+- multi-TimingNode operation;
+- backoffice transport or reference-data synchronisation;
+- production timing devices;
+- the product Desktop GUI Application.
 
 ### Needs
 
-- accepted D03 IF-03 first-registration contract;
-- current JavaFX Engineering Client;
-- deterministic synthetic RegistrationId/LocationId examples;
-- running SI-01 composition with the reference TimingData codec/store enabled.
+- the Step-3 application/API foundation;
+- a deterministic engineering registration input;
+- the reference TimingData codec/store;
+- the Engineering Client as test tooling.
 
 ### Result
 
-- One TimingNode can be configured, opened, registered against and closed through the public application boundary.
-- Committed TimingData has stable source identity, location, ordering and restart-safe local history.
-- The Engineering Client can reconstruct current state/history and observe subsequent live updates.
-
-### Verification order
-
-The running-system verification deliberately separates SI-01/IF-03 behaviour from
-the JavaFX client:
-
-1. Implement the public node-addressed control, LogBook/live resources and Engineering Client integration.
-2. Run an automated black-box test with SI-01 as a separate process and drive the complete first-registration flow through public IF-03 only.
-3. Repeat the same semantic flow through the JavaFX Engineering Client and verify UI enablement, feedback, history/live presentation and reconnect behaviour.
-
-This order keeps SI-01/API failures separate from Engineering Client/UI failures.
+- One TimingNode owns a durable, ordered registration stream.
+- The same registration behaviour is available through the public API and Engineering Client.
+- Restart rebuilds local registration history without inventing new records.
 
 ### Demo
 
-The running-system demo follows the automated black-box verification.
-
-- Start SI-01 with the registration point CLOSED and no operational location.
-- Connect the Engineering Client and rebuild current status/LogBook.
-- Assign a valid synthetic LocationId.
-- Open registration.
-- Inject one dev auto-reg request with deterministic `id` and `time`.
-- Inspect the committed TimingData in the LogBook and the corresponding live update.
-- Verify **Set Location** is disabled while OPEN and that a direct IF-03 location change is rejected.
-- Close registration and then change LocationId successfully.
-- Restart SI-01 and verify committed TimingData LogBook is recovered without replaying old records as new live events.
+- Configure a location, open the TimingNode and submit one accepted registration.
+- Observe the committed record in history and as a live update.
+- Close, restart and confirm that the committed history is recovered.
 
 ### Done
 
-- the first-slice TimingData and IF-03 public-control contracts are defined;
-- location/lifecycle and accepted-registration invariants have deterministic automated coverage;
-- registration cannot bypass TimingNode-owned identity, active location, sequence or lifecycle rules;
-- local persistence, recovery and LogBook rebuild behaviour are verified;
-- IF-03 exposes the required node-addressed control, bounded history and live TimingData updates;
-- the Engineering Client rebuilds state/history after reconnect before presenting data as live;
-- a separate-process black-box test succeeds through public IF-03 only;
-- the subsequent Engineering Client running-system demo succeeds through the same public boundary;
-- both verification paths work without RFID hardware, filtering, RabbitMQ or backoffice infrastructure.
+- lifecycle and registration ownership rules have deterministic automated coverage;
+- a registration cannot bypass TimingNode-owned identity, location, sequence or lifecycle;
+- storage/recovery rebuilds the LogBook correctly;
+- IF-03 exposes the required control, history and live update behaviour;
+- a separate-process black-box test succeeds through IF-03;
+- the Engineering Client can repeat the same flow without using private application state.
 
 ---
 
-## Step 5 — Simulated timing flow and recovery
+## Step 5 — Simulated antenna input and runtime behaviour
 
 Status: planned
 
 ### Purpose
 
-Prove a useful timing flow end-to-end **without physical timing hardware**. This step
-should expose mistakes in routing, sequencing, persistence and restart behaviour while
-the inputs remain easy to reproduce.
+Move the test input one boundary closer to the real system without adding physical RFID
+hardware yet.
 
-It also creates the software baseline against which real hardware can later be compared:
-hardware integration should replace a synthetic edge, not invent a second application
-path.
+Step 4 starts after tag interpretation: it injects an already-accepted registration.
+Step 5 starts at the antenna side. A built-in `SimulatedAntenna` can therefore exercise
+tag observation, filtering/resolution and registration admission through the same software
+path that a later real antenna adapter must use.
+
+This is also the first useful point to measure queueing, allocation and sustained-input
+behaviour. Those measurements should guide implementation choices before target-hardware
+constraints and device drivers make failures harder to isolate.
 
 ### Goal
 
-Run realistic synthetic timing scenarios through the normal SI-01 application paths.
+Process repeatable simulated antenna input through one TimingNode using normal runtime,
+domain and persistence paths.
 
 ### Scope
 
-- synthetic registration/antenna input through supported I/O boundaries;
-- StageTiming / derived timing results;
-- multiple TimingNodes/sources where useful;
-- persistence and restart/restore for the state that actually needs it;
-- reconnect/recovery scenarios at public interfaces;
-- stronger ST-1 black-box scenarios;
-- prove the Java-8 typed extension/provider bootstrap with built-in providers plus a synthetic external test provider;
-- keep `SimulatedAntenna` built in and always available so simulation does not depend on external JARs.
+- built-in `SimulatedAntenna` through the normal Antenna interface;
+- deterministic synthetic tag observations;
+- tag interpretation/filtering needed to reach the accepted-registration operation;
+- a small synthetic local reference fixture for TagId-to-RegistrationId resolution;
+- the same TimingNode commit, TimingData, LogBook and persistence path proven in Step 4;
+- runtime counters/markers needed to understand queue wait, processing and persistence;
+- sustained/bursty input tests and basic allocation/GC observations;
+- restart/recovery while using the simulated input path;
+- prove the typed provider/bootstrap mechanism with built-in and synthetic external providers.
 
-A small browser test client may be added here only if it materially improves manual
-API testing; it is not a product/software item.
+### Not in this step
+
+- production RFID hardware or proprietary reader protocols;
+- backoffice delivery of RaceData or StageStartTimes;
+- StageTiming, ranking or other results that need backoffice reference data;
+- multi-TimingNode/full-field simulation;
+- RabbitMQ or another production backoffice transport;
+- product GUI work.
 
 ### Needs
 
-- deterministic scenario/test data;
-- controllable synthetic adapters;
-- no target hardware;
-- no private/product-specific provider implementation is required for the extension proof.
+- the Step-4 registration boundary;
+- deterministic synthetic tag/reference fixtures;
+- controllable simulated input;
+- no target hardware and no private provider implementation.
 
 ### Result
 
-- Complete synthetic timing flow works.
-- Restart/recovery behaviour is testable.
-- Hardware can later replace simulated inputs.
+- Simulated antenna observations reach the normal registration path.
+- Sustained input can be measured without bypassing TimingNode ownership.
+- Restart/recovery works with the same simulated input path used by automated tests.
 
 ### Demo
 
-- Feed a repeatable synthetic timing scenario.
-- Show derived timing results.
-- Restart SI-01 and continue the scenario.
+- Open one TimingNode and feed repeatable tag observations through `SimulatedAntenna`.
+- Show which observations become committed registrations and inspect the runtime counters.
+- Restart SI-01 and continue using the same simulated input configuration.
 
 ### Done
 
-- normal timing flow is reproducible in automated tests;
-- persistence/recovery semantics are explicit for implemented state;
-- synthetic inputs use the same application/domain paths intended for real adapters.
+- simulated antenna input uses the same public adapter/domain boundary intended for real antennas;
+- accepted observations reach the existing durable registration path without a test-only domain bypass;
+- sustained/bursty input has repeatable measurements and does not starve required TimingNode work;
+- recovery preserves committed registrations and sequence continuity;
+- provider loading is verified with public built-in/synthetic implementations.
 
 ---
 
@@ -361,170 +361,174 @@ Status: planned
 
 ### Purpose
 
-Create the first real external user application once SI-01 has something useful to show.
-The GUI is both a product capability and an independent consumer test for the API.
+Introduce the first real operator-facing client only after SI-01 has stable state and
+registration behaviour worth presenting.
 
-The current JavaFX engineering client does **not** predetermine this GUI technology.
+Building the GUI here tests a different risk from Step 5: whether an independent
+application can operate SI-01 using only the public API. Keeping it before backoffice
+integration prevents broker/reference-data problems from being mixed with basic client
+connection, stale-state and reconnect behaviour.
+
+The Engineering Client remains test tooling and does not decide the product GUI technology.
 
 ### Goal
 
-Create the first useful **Desktop GUI Application** (SI-02) as a separate API
-client.
+Create the first useful **Desktop GUI Application** (SI-02) as an independent API client.
 
 ### Scope
 
-First useful increment:
-
-- GUI technology/runtime/packaging decision;
-- endpoint selection and connect/disconnect;
-- application and TimingNode status;
-- selected timing data from the Step-4/5 model;
-- clear connected/disconnected/stale state;
-- reconnect behaviour;
-- no dependency on SI-01 internal classes/files.
+- choose GUI technology, runtime and packaging;
+- select/connect to an SI-01 endpoint;
+- show application and TimingNode status;
+- show the registration/history data available from Steps 4-5;
+- execute the supported operator controls;
+- make connected, disconnected and stale state explicit;
+- rebuild current state after reconnect;
+- keep SI-02 independent from SI-01 internal classes and files.
 
 ### Needs
 
-- stable enough API and timing model from Steps 3-5;
-- development workstation;
-- explicit GUI technology decision when the step starts.
+- stable IF-03 behaviour from Steps 3-5;
+- representative running SI-01 test data;
+- an explicit GUI technology decision when the step starts.
 
 ### Result
 
-- Real independent desktop GUI exists.
-- GUI uses only the API.
-- GUI technology is chosen explicitly.
+- A separate operator GUI can connect to and operate SI-01 through the public API.
+- Connection loss and stale state are visible instead of being hidden.
+- SI-02 remains independently buildable from SI-01.
 
 ### Demo
 
-- Connect the GUI to a running SI-01.
-- Show live timing/status data.
-- Disconnect, reconnect and recover state.
+- Connect SI-02 to a running SI-01 and operate one TimingNode.
+- Show current status and registration history/live updates.
+- Disconnect, reconnect and rebuild the current view.
 
 ### Done
 
-- GUI and SI-01 build independently;
-- connection/status behaviour has useful automated coverage;
-- GUI technology and packaging choice are documented with their rationale.
+- SI-02 and SI-01 build independently;
+- normal operation uses only public SI-01 interfaces;
+- connection/reconnect/stale-state behaviour has useful automated coverage;
+- the GUI technology and packaging choice are documented with their rationale.
 
 ---
 
-## Step 7 — Backoffice integration on development infrastructure
+## Step 7 — Backoffice and multi-node integration
 
 Status: planned
 
 ### Purpose
 
-Add external data exchange while everything can still run on development machines. This
-keeps backoffice failure/reconnect work separate from later target-hardware debugging and
-proves that local timing behaviour is not accidentally coupled to broker availability.
+Add external reference data and source synchronisation while the whole setup can still run
+on development machines.
+
+This is the right point to add multi-TimingNode operation: independent node streams and
+routing become important when reference data and committed timing data move between SI-01
+and a backoffice test setup. It also provides the missing inputs for StageTiming. Doing
+this before target/hardware bring-up keeps protocol, routing and reconciliation failures
+separate from physical-device problems.
 
 ### Goal
 
-Connect SI-01 to the required backoffice flows using reproducible test infrastructure.
+Run a representative multi-node SI-01 setup that exchanges reference/timing data with a
+reproducible backoffice test environment.
 
 ### Scope
 
-- reference/input data needed locally;
-- outbound registrations/results as required;
-- source identity/order where relevant;
-- disconnect/reconnect/reconciliation behaviour;
-- concrete transport adapter when the external contract is known;
-- exercise provider selection for `TimingData` and `UpstreamProtocol` behind their stable public contracts, using public synthetic/reference implementations for verification;
-- integration tests using synthetic/public test topology.
+- receive and apply synthetic/public RaceData and StageStartTimes;
+- resolve the reference data needed for local timing calculations;
+- add StageTiming/derived timing behaviour that depends on those references;
+- send committed TimingData/results upstream as required by the promoted contract;
+- host and address multiple independent TimingNodes in one process;
+- keep node lifecycle, sequence, history and reference state isolated;
+- exercise a representative multi-node test topology rather than a special simulation bypass;
+- handle disconnect, reconnect and required reconciliation/recovery;
+- select and test the concrete development transport(s), including RabbitMQ when that contract is ready;
+- exercise the typed `UpstreamProtocol` provider boundary using public test implementations.
 
 ### Needs
 
-- backoffice/interface information;
-- broker/test environment if RabbitMQ is the selected transport;
-- synthetic identities and test credentials/configuration.
+- Steps 4-6 local behaviour and public interfaces;
+- backoffice semantic/interface information;
+- synthetic/public reference data and identities;
+- reproducible broker/socket test infrastructure where required.
 
 ### Result
 
-- Backoffice data flow works in test.
-- Local operation survives a broker outage.
-- Transport remains outside domain behaviour.
+- Multiple TimingNodes keep independent state and ordered data streams.
+- Reference data can be received and used for local derived timing.
+- Local registration continues through a backoffice outage and synchronisation can resume.
 
 ### Demo
 
-- Exchange representative data.
-- Stop the external service.
-- Continue locally and reconnect cleanly.
+- Start a small multi-node SI-01 test setup and load reference/start-time data.
+- Feed simulated registrations and inspect node-specific derived timing and outbound data.
+- Interrupt the backoffice service, continue local work, reconnect and reconcile.
 
 ### Done
 
-- implemented flows have repeatable integration tests;
-- disconnect/reconnect semantics are explicit;
-- transport/proprietary details do not leak into generic domain APIs.
+- multi-node addressing and state isolation have repeatable automated coverage;
+- reference-data application and derived timing use explicit domain ownership;
+- outbound source identity/order remain intact across the selected transport;
+- outage/reconnect behaviour is repeatable and does not stop required local registration;
+- transport-specific details remain outside the generic domain contracts.
 
 ---
 
-## Step 8 — Target hardware and platform study
+## Step 8 — Target platform decision
 
 Status: planned
 
 ### Purpose
 
-Choose the physical target **after** the software architecture and main flows are proven.
-A Raspberry Pi Zero/Zero W has been the working target, but availability and the complete
-hardware need should be treated as project questions rather than assumptions.
+Choose the physical target only after the main software flows and their runtime shape are
+understood.
 
-This step is a decision/research step, not yet device integration. It should answer
-whether suitable off-the-shelf hardware exists or whether a small carrier/custom PCB is
-worthwhile.
+A Raspberry Pi Zero-class system is a working direction, not a decision that should force
+the design without evidence. By this point the project can compare candidate hardware
+against a real application, known interfaces and measured workload instead of against a
+speculative feature list.
 
 ### Goal
 
-Select a credible target-platform direction and understand cost, availability and
-hardware gaps before procurement/prototyping.
+Select the target platform and identify what must be bought or built for target bring-up.
 
 ### Scope
 
-Investigate at least:
-
-- availability and lifecycle risk of Raspberry Pi Zero-class options and alternatives;
-- OS/runtime support for SI-01;
-- networking, storage and power needs;
-- whether a small local display is useful and practical, including e-ink options;
-- RTC need and available RTC solutions;
-- CAN controller/transceiver need and integration options;
-- required GPIO/I/O/connectors and serviceability;
-- off-the-shelf board/stack versus HAT/carrier/custom PCB;
-- rough prototype BOM and assembly cost if a custom PCB is justified;
-- low-cost PCB assembly services as an option, without selecting a supplier in advance.
-
-### Questions to answer
-
-- Can the required system be assembled from readily available off-the-shelf parts?
-- Is a custom PCB solving a real integration/availability problem or merely adding work?
-- Which hardware must be procured before the next step?
-- Does the platform choice change any already-tested software boundary?
+- candidate compute platform availability and lifecycle risk;
+- supported OS and Java runtime;
+- memory, storage, networking and power needs;
+- RTC requirement and options;
+- CAN controller/transceiver requirements;
+- local display/keypad/beeper connection needs where applicable;
+- GPIO/connectors and serviceability;
+- off-the-shelf stack versus carrier/HAT/custom PCB;
+- rough prototype BOM/assembly cost where a custom board solves a real problem.
 
 ### Needs
 
-- current availability and price research when the step starts;
-- candidate board/module datasheets;
-- rough electrical/interface requirements;
-- small prototype quantity/cost assumptions.
+- measured software/runtime behaviour from Step 5;
+- known external/device needs from the preceding software work;
+- current candidate-board/module information and prices.
 
 ### Result
 
-- Target-platform shortlist and decision.
-- Hardware gaps and risks are visible.
-- Prototype cost/order path is understood.
+- One target-platform direction is selected with its main risks understood.
+- Required prototype hardware and any custom-board need are explicit.
+- Step 9 can start without reopening the basic platform choice.
 
 ### Demo
 
-- Compare credible target options.
-- Show the proposed hardware block diagram.
-- Show rough BOM/prototype cost and risks.
+- Compare the credible platform options against the known software/device needs.
+- Show the selected hardware block diagram.
+- Show the prototype parts/cost path and remaining platform risks.
 
 ### Done
 
-- target direction is selected with recorded rationale;
+- target direction and rationale are recorded;
 - required hardware/features and procurement risks are explicit;
-- off-the-shelf versus custom-PCB choice is justified;
-- next-step hardware can be ordered or assembled without reopening basic platform questions.
+- off-the-shelf versus custom-board choice is justified;
+- the next target prototype can be ordered or assembled.
 
 ---
 
@@ -534,49 +538,51 @@ Status: planned
 
 ### Purpose
 
-Prove SI-01 on the selected physical platform before adding all real timing devices. This
-separates OS/runtime/deployment problems from RFID/CAN/display integration problems.
+Prove the software stack on the selected target before adding real timing devices.
 
-If Step 8 selects a Pi-based solution this is the first deliberate Pi bring-up step. If
-another target or a small custom carrier is selected, the same proof applies there.
+Step 5 characterises software behaviour on a controlled development host. Step 9 answers a
+different question: whether the selected target has enough real CPU, memory, storage and
+runtime headroom, and whether deployment/restart can be made repeatable.
 
 ### Goal
 
-Run the representative software stack on the selected target platform.
+Run the representative SI-01/SI-02 software stack on the selected target platform.
 
 ### Scope
 
-- acquire/assemble the selected target hardware;
-- install/provision the chosen OS/runtime;
+- acquire/assemble and provision the selected target;
+- install the chosen OS and Java runtime;
 - deploy and start SI-01;
-- connect through the API and desktop GUI;
-- record basic startup/memory/CPU/thread observations;
-- decide which deployment/update automation is actually useful.
+- connect through the public API and SI-02;
+- repeat representative Step-5/7 workloads on the target;
+- record startup, memory, CPU, thread, storage and restart observations;
+- tune deployment/runtime settings only where measurements justify it;
+- decide which update/deployment automation is actually useful.
 
 ### Needs
 
-- hardware selected in Step 8;
-- storage/power/network accessories;
-- representative SI-01 build.
+- Step-8 platform decision and prototype hardware;
+- representative SI-01/SI-02 builds;
+- the repeatable software workloads established earlier.
 
 ### Result
 
-- SI-01 runs on selected target hardware.
-- Real runtime behaviour is measured.
-- Deployment needs are known from use.
+- SI-01 runs repeatably on the selected target.
+- Target resource limits are based on measurements rather than desktop assumptions.
+- The deployment/start/restart path is known before device integration begins.
 
 ### Demo
 
-- Boot the target and start SI-01.
-- Connect through API/GUI.
-- Show runtime observations and restart.
+- Boot/provision the target and start SI-01.
+- Connect SI-02 and run a representative simulated/reference-data workload.
+- Show target measurements and a clean restart.
 
 ### Done
 
-- target execution is repeatable enough for development;
-- selected OS/runtime/install path is recorded;
-- actual target limitations, if any, are backed by measurements;
-- required deployment automation is identified from experience rather than assumed.
+- target execution and restart are repeatable enough for continued development;
+- OS/runtime/install choices are recorded;
+- important target limitations are backed by measurements;
+- deployment/runtime tuning is based on observed need.
 
 ---
 
@@ -586,9 +592,12 @@ Status: planned
 
 ### Purpose
 
-Replace the synthetic edges proven in Step 5 with representative real timing hardware.
-Because the application/domain flows already work, failures here can be isolated to
-device contracts, electrical integration, drivers and adapter behaviour.
+Replace the simulated device edges with representative real hardware after the target and
+software paths are already proven.
+
+This keeps hardware/protocol faults local to adapters and electrical/device integration.
+A real device should feed the same domain path that its simulated counterpart already
+exercised; device integration must not create a second timing architecture.
 
 ### Goal
 
@@ -596,42 +605,42 @@ Connect the required real timing devices to SI-01 on the selected target platfor
 
 ### Scope
 
-Expected areas, refined from the Step-8 platform decision:
+Refine the exact list from the Step-8 platform decision, including as required:
 
-- RFID observations and lifecycle;
-- CAN and CAN-connected devices where required;
-- local display behaviour where selected;
-- RTC integration where selected;
-- keypad/other local controls where required;
-- device status and useful recovery/error behaviour;
-- extension-provided `Antenna`, CAN-protocol and display-protocol implementations behind the typed provider contracts where the selected hardware requires them;
-- comparison with the equivalent synthetic test flows, retaining the built-in `SimulatedAntenna` as the reference path.
+- RFID reader/antenna observations and device lifecycle;
+- CAN and CAN-connected devices;
+- local display behaviour;
+- RTC;
+- keypad and other local controls;
+- device status, reconnect/reset and useful error reporting;
+- extension-provided Antenna/CAN/display protocol implementations behind the public provider contracts;
+- regression comparison with the equivalent simulated paths.
 
 ### Needs
 
-- selected target platform;
+- target platform proven in Step 9;
 - representative RFID/CAN/display/RTC hardware as applicable;
 - device/protocol information;
-- synthetic scenarios retained as regression references.
+- simulated scenarios retained as reference tests.
 
 ### Result
 
-- Real timing devices use normal SI-01 paths.
-- Device status/recovery is observable.
-- Synthetic and real flows remain comparable.
+- Real devices feed the same application/domain paths already proven with simulation.
+- Device health and recovery are observable.
+- Simulated tests remain usable as the fast regression baseline.
 
 ### Demo
 
-- Run a representative real-device flow.
-- Show timing data/results through the GUI.
-- Demonstrate one device recovery case.
+- Run a representative real-device registration/input flow.
+- Observe the resulting state/data through SI-02.
+- Disconnect or reset one device and demonstrate the supported recovery behaviour.
 
 ### Done
 
 - implemented adapters use normal application/domain contracts;
-- representative hardware behaviour is verified;
-- synthetic tests remain usable for fast regression;
-- unsupported hardware behaviour remains explicit.
+- representative real-device behaviour is verified;
+- the equivalent simulated tests still pass;
+- unsupported hardware behaviour is explicit rather than hidden in generic code.
 
 ---
 
@@ -641,47 +650,52 @@ Status: planned
 
 ### Purpose
 
-Bring the already-proven pieces together and learn what remains before treating the
-system as an operational baseline. This is where integration/recovery gaps should surface;
-it is not intended to reopen architecture choices that earlier steps already proved.
+Combine the pieces only after their main failure modes have been tested separately.
+
+The purpose is not to invent another architecture or add speculative hardening. It is to
+run a representative system long enough to expose integration, operational and recovery
+problems that only appear when target hardware, real devices, GUI and backoffice are used
+together.
 
 ### Goal
 
-Demonstrate the complete representative timing system as one integrated setup.
+Demonstrate a representative timing system as one integrated setup and turn observed gaps
+into concrete follow-up work.
 
 ### Scope
 
 - selected target platform and real timing devices;
 - Desktop GUI Application;
-- backoffice connection and outage/reconnect behaviour;
-- persistence/restart and service recovery;
-- useful operational logging/diagnostics;
-- representative longer-running timing scenario;
-- identify only the hardening work actually exposed by the integrated proof.
+- backoffice connection plus outage/reconnect behaviour;
+- persistence and restart/service recovery;
+- operational logging/diagnostics;
+- representative longer-running timing session;
+- recovery from selected external/device failures;
+- record only hardening work exposed by the integrated proof.
 
 ### Needs
 
-- outputs of Steps 6-10;
+- completed outputs of Steps 6-10;
 - representative field/test setup;
-- access to the required integration services.
+- required integration services.
 
 ### Result
 
-- Representative integrated system works.
-- Recovery paths are demonstrated.
-- Remaining hardening work is evidence-based.
+- The representative integrated setup can run and recover from selected failures.
+- Operators can observe the important system state through normal interfaces.
+- Remaining hardening work is based on field/integration evidence.
 
 ### Demo
 
-- Run a representative timing session.
-- Interrupt one external dependency/device.
-- Recover and complete the session.
+- Run a representative timing session from input through GUI/backoffice.
+- Interrupt one external dependency or device.
+- Recover and finish the session without losing committed timing history.
 
 ### Done
 
-- integrated scenario is repeatable;
-- important failure/recovery behaviour is visible and verified;
-- unresolved operational work is recorded as concrete follow-up rather than speculative roadmap filler;
+- the integrated scenario is repeatable;
+- selected failure/recovery behaviour is visible and verified;
+- unresolved operational work is recorded as specific follow-up items;
 - a suitable software baseline/release is produced.
 
 ---
