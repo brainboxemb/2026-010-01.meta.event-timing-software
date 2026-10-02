@@ -39,7 +39,7 @@ nodes:
     items:
       - RegistrationId
       - observed effective time
-      - reference: AUTO_REG + [ADD]
+      - "reference: AUTO_REG + [ADD]"
 
   - id: manual-registration
     label: ManualRegistrationTimingData
@@ -50,7 +50,7 @@ nodes:
     items:
       - RegistrationId
       - system-assigned or operator-entered time
-      - reference: MAN_REG + [ADD,AUTO|MAN]
+      - "reference: MAN_REG + [ADD,AUTO|MAN]"
 
   - id: timingdata-context
     label: TimingDataContext
