@@ -72,7 +72,7 @@ interface BackofficeInboundListener {
 
 These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
-The final system-level backoffice IDD can define the semantic obligations that both sides must fulfil while transport-specific/private specifications define their actual encoding where required.
+The final system-level backoffice ISD can define the semantic obligations that both sides must fulfil. A separate IDD or private transport specification can define concrete encoding where required.
 
 ## Registration-source separation
 
@@ -299,7 +299,7 @@ Working direction:
 4. transport acknowledgement/reconciliation advances pending state;
 5. failure remains pending and visible through status.
 
-The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules belong to later requirements/IDD/detail design.
+The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules belong to later requirements/ISD/IDD/detail design.
 
 ## Status model
 
@@ -470,7 +470,7 @@ Temporary identifiers only.
 
 ## Open questions
 
-- What exact semantic messages belong in the public backoffice IDD?
+- What exact semantic messages belong in the public backoffice ISD?
 - What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
 - Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?

@@ -48,7 +48,7 @@ parent / surrounding system
         +--> 40-<N>-SSD when an obligation is already allocated directly
 ```
 
-System-owned interfaces are different: if the SSSD allocates and this project owns an interface contract, that IDD uses document family `32` with the stable interface ID as its second segment; current examples are `32-03-IDD` for IF-03 and `32-11-IDD` for IF-11.
+System-owned interfaces are different: if the SSSD allocates and this project owns an interface contract, its ISD uses document family `32` with the stable interface ID as its second segment; current examples are `32-03-ISD` for IF-03 and `32-11-ISD` for IF-11. An optional concrete interface design may use family `33` as an IDD.
 
 ## Entry discipline
 

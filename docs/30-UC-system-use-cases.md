@@ -27,7 +27,7 @@ Relevant parent-system/external inputs are registered in `20-EXT-external-system
                               +---------------+---------------+
                               |                               |
                               v                               v
-                    32-<IF> system IDDs             optional software-item UC
+                    32-<IF> system ISDs             optional software-item UC
                               |                               |
                               +---------------+---------------+
                                               |
@@ -374,7 +374,7 @@ be presented as proof that the target's reference state changed.
 **First-registration slice:** D03 defines the identity and outbound semantic
 representation needed for committed registration TimingData. The exact
 `TimingNodeId`/`LocationId` wire types and validation belong to the
-TimingData/IDD contract. Real RabbitMQ delivery, durable outbox/restart,
+TimingData/ISD contract. Real RabbitMQ delivery, durable outbox/restart,
 acknowledgement/reconciliation and inbound reference-data simulation are later
 increments.
 
@@ -612,7 +612,7 @@ For this slice the behavioural identity rules are:
 - a `LocationId` may be unassigned while `CLOSED`, but a valid operational location is required before `OPEN`;
 - changing location while `OPEN` is rejected;
 - committed TimingData captures the active location at acceptance time, so later reconfiguration cannot change historical records;
-- the exact public types, allowed formats/values and null/unassigned representation are defined once in the TimingData/IDD contract rather than duplicated here.
+- the exact public types, allowed formats/values and null/unassigned representation are defined once in the TimingData/ISD contract rather than duplicated here.
 
 The first protocol review (D03) must resolve:
 
@@ -659,7 +659,7 @@ When requirements are promoted, prefer explicit references such as:
 ```text
 UC-003
   -> SYS-REG-xxx
-  -> IDD-... where external behaviour applies
+  -> ISD-... where external behaviour applies
   -> SI01-REQ-...
   -> SDD registration/RFID/`TimingNodeId`-routing elements
   -> VC-... / ST-1, ST-2, ST-3, HIL evidence
