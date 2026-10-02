@@ -38,17 +38,17 @@ The reference design uses:
 
 ## Semantic-to-JSON mapping
 
-| ISD semantic value | v1 JSON member |
-| --- | --- |
-| Node ID | `nodeId` |
-| sequence number | `seqNr` |
-| Location ID | `locId` |
-| record type | `recType` |
-| registration time (registration records) | `time` |
-| Registration ID (registration records) | `regId` |
-| registration/action semantics | `code` |
-| record creation time metadata (optional) | `recTime` |
-| representation version | `v` |
+| Semantic value | Presence | v1 JSON member |
+| --- | --- | --- |
+| representation version | Always | `v` |
+| Node ID | Always | `nodeId` |
+| sequence number | Always | `seqNr` |
+| Location ID | Always | `locId` |
+| record type | Always | `recType` |
+| registration time | By record type | `time` |
+| Registration ID | By record type | `regId` |
+| registration/action semantics | By record type | `code` |
+| record creation time metadata | Optional | `recTime` |
 
 The stable IF-05 record key `(Node ID, sequence number)` is represented by
 `(nodeId, seqNr)`.
@@ -117,17 +117,17 @@ new `seqNr` and `recTime`, and never rewrites the original record.
 
 Known members use the following JSON types and validation rules.
 
-| Member | JSON type | Required | v1 design rule |
+| Member | JSON type | Presence | v1 design rule |
 | --- | --- | --- | --- |
-| `v` | integer | every record | exactly `1` for the current development format |
-| `nodeId` | string | every record | non-empty Node ID |
-| `seqNr` | integer | every record | `1..9007199254740991`; plain decimal; v1 reference-design limit |
-| `locId` | integer | every record | positive Location ID representation |
-| `recType` | string | every record | `AUTO_REG` or `MAN_REG` in the current slice |
-| `time` | string | every record | canonical registration-time text |
-| `regId` | string | registration records | non-empty Registration ID |
-| `code` | array of strings | registration records | exact valid combination for the selected `recType`; no duplicates |
-| `recTime` | string | optional | canonical record-creation time metadata when emitted |
+| `v` | integer | Always | exactly `1` for the current development format |
+| `nodeId` | string | Always | non-empty Node ID |
+| `seqNr` | integer | Always | `1..9007199254740991`; plain decimal; v1 reference-design limit |
+| `locId` | integer | Always | positive Location ID representation |
+| `recType` | string | Always | identifies the concrete v1 record type |
+| `time` | string | By record type | required for `AUTO_REG` and `MAN_REG`; canonical registration-time text |
+| `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; non-empty Registration ID |
+| `code` | array of strings | By record type | required for `AUTO_REG` and `MAN_REG`; valid combination for the selected `recType` |
+| `recTime` | string | Optional | canonical record-creation time metadata when emitted |
 
 Canonical writer member order:
 
@@ -145,7 +145,9 @@ recTime   # when present
 
 Validation rules:
 
-- every required member is present and non-null; optional `recTime` may be omitted;
+- every `Always` member is present and non-null;
+- every `By record type` member required by the selected `recType` is present and non-null;
+- `Optional` members such as `recTime` may be omitted;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
 - `AUTO_REG` currently accepts exactly `["ADD"]`;
 - `MAN_REG` currently accepts `ADD` plus exactly one of `AUTO` or `MAN`;

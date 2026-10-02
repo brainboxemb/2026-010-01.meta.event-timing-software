@@ -65,16 +65,20 @@ IF-05 does **not** own:
 
 Every TimingData record has a small common envelope:
 
-| Semantic value | Meaning |
-| --- | --- |
-| Node ID | identifies the TimingNode that owns the source stream |
-| sequence number | record number within that Node ID stream |
-| Location ID | location captured with the record |
-| record type | identifies how the remaining record data shall be interpreted |
+| Semantic value | Presence | Meaning |
+| --- | --- | --- |
+| Node ID | Always | identifies the TimingNode that owns the source stream |
+| sequence number | Always | record number within that Node ID stream |
+| Location ID | Always | location captured with the record |
+| record type | Always | identifies how the remaining record data shall be interpreted |
+| Registration ID | By record type | required by registration record types |
+| registration time | By record type | required by registration record types |
+| registration action | By record type | add or revoke for registration record types |
 
-Values beyond this envelope depend on the record type. A registration record
-therefore carries registration-specific values, while future OPEN/CLOSE,
-start-procedure, penalty or other record types may carry different values.
+`By record type` does not mean optional when that record type is selected. For
+example, Registration ID and registration time are required for a registration
+record, but are not fields of a future OPEN/CLOSE or other unrelated record
+type.
 
 A committed record captures its Location ID. Later TimingNode reconfiguration
 does not change that historical value.
