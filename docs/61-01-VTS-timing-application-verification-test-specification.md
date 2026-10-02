@@ -127,7 +127,7 @@ observable through a supported black-box state-changing operation.
 ---
 id: VC-ST1-002
 verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043,
+  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-047,
   IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
 ---
 ```
@@ -142,9 +142,10 @@ Verify the first public registration slice through a real SI-01 process:
 operational LocationId/lifecycle control, capability-gated engineering
 registration input, committed LogBook/history and live post-commit observation.
 
-The case also retains a second-process restart/recovery check as robustness
-evidence for the current implementation. That extra check does not create a new
-product requirement.
+The second process run verifies the SI-01 restart-recovery requirement
+`SI01-REQ-047`. Invalid/corrupt/incomplete recovery edge cases from
+`SI01-REQ-048` remain component-level persistence/codec verification rather
+than being forced into this happy-path black-box case.
 
 **Setup**
 
@@ -178,7 +179,7 @@ product requirement.
     again as a new `TIMING_DATA_COMMITTED` event.
 13. Shut the first SI-01 process down through the controlled path.
 
-**Procedure — run 2 robustness evidence**
+**Procedure — run 2 restart recovery**
 
 1. Start a second SI-01 process with the same TimingData persistence file.
 2. Verify the TimingNode starts `CLOSED` with no current operational LocationId.
@@ -196,8 +197,8 @@ product requirement.
   post-commit event;
 - reconnect exposes current state/history without re-emitting the historical
   record as a new commit;
-- the retained second-run robustness check recovers the committed record while
-  operational state starts CLOSED/no-location.
+- the second process run rebuilds the committed record while operational state
+  starts CLOSED/no-location.
 
 ### VC-ST1-003 — Engineering Client reconnect/rebuild integration
 
