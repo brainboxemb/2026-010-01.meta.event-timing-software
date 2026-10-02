@@ -3,9 +3,7 @@ step: 5
 planning_changes:
   - date: '2026-10-02'
     change: >-
-      Narrowed Step 5 to one-TimingNode simulated antenna input and runtime
-      behaviour. Multi-node/full-field simulation, backoffice reference-data
-      synchronisation and StageTiming move to Step 7.
+      Narrowed Step 5 to one-TimingNode simulated antenna input and runtime behaviour.
   - date: '2026-10-02'
     change: >-
       Added explicit runtime performance and memory engineering so scheduling,
