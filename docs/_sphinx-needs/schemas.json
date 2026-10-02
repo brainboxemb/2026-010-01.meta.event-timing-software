@@ -54,9 +54,76 @@
           ]
         }
       }
+    },
+    "type-requirement": {
+      "properties": {
+        "type": {
+          "enum": [
+            "req",
+            "ifreq"
+          ]
+        }
+      }
     }
   },
   "schemas": [
+    {
+      "id": "requirement-status-code",
+      "message": "Requirement status may only be D, R, A or O.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O",
+                null
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "if05-requirement-status-required",
+      "message": "IF-05 requirements must carry an explicit D/R/A/O maturity status.",
+      "select": {
+        "properties": {
+          "type": {
+            "const": "ifreq"
+          },
+          "id": {
+            "pattern": "^IF05-REQ-[0-9]{3}$"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "validate": {
+        "local": {
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O"
+              ]
+            }
+          }
+        }
+      }
+    },
     {
       "id": "req-derived-from-source-type",
       "message": "Requirement derived_from links may target use cases or requirements.",
