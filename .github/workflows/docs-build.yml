@@ -321,6 +321,9 @@ jobs:
           portal_view = json.loads(
               (root / "docs/assets/engineering-graph.json").read_text(encoding="utf-8")
           )
+          if portal_view.get("default_object") is not None:
+              raise SystemExit("portal view still has an implicit default object")
+
           source_context = portal_view["objects"]["IF05-REQ-007"].get("source_context")
           if not source_context:
               raise SystemExit("portal view missing IF05-REQ-007 authored source context")
@@ -348,6 +351,8 @@ jobs:
               raise SystemExit("Engineering Explorer missing compact workbench heading")
           if 'data-eng-workspace' in explorer:
               raise SystemExit("Engineering Explorer unexpectedly contains comparison workspace")
+          if '<a href="../">Home</a>' not in explorer:
+              raise SystemExit("Engineering Explorer missing neutral Home navigation")
 
           workspace_page = site / "workspace" / "index.html"
           if not workspace_page.is_file():
@@ -385,6 +390,8 @@ jobs:
               raise SystemExit("tree disclosure still depends on Material nav-link behavior")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
+          if '<a href="../">Home</a>' not in workspace:
+              raise SystemExit("Traceability Comparison missing neutral Home navigation")
 
           explorer_js = (
               site / "assets" / "javascripts" / "explorer.js"
