@@ -143,3 +143,6 @@ Change the SDP when the **development direction** changes: target, major softwar
 broad phase or project-level risk.
 
 Ordinary task progress belongs in the SIP, issues and pull requests.
+
+Document structure, numbering and reusable templates are defined in
+`12-documentation-guide.md`.
