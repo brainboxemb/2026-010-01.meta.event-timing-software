@@ -17,7 +17,7 @@ nodes:
 
   - id: target
     label: Target
-    subtitle: "127.0.0.1  |  engineering-client.yml"
+    subtitle: "127.0.0.1  |  client config file"
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 55, y: 100, w: 265, h: 54}
@@ -30,21 +30,21 @@ nodes:
     layout: {x: 335, y: 106, w: 145, h: 42}
 
   - id: events-connection
-    label: "Events :35025"
+    label: "Events :eventPort"
     subtitle: CONNECTED
     kind: wireframe-live
     notation: wireframe-button
     layout: {x: 490, y: 106, w: 165, h: 42}
 
   - id: terminal-connection
-    label: "Terminal :9001"
+    label: "Terminal :shellPort"
     subtitle: Connect
     kind: wireframe-action
     notation: wireframe-button
     layout: {x: 665, y: 106, w: 160, h: 42}
 
   - id: device-log-connection
-    label: "Device log :9002"
+    label: "Device log :logPort"
     subtitle: Connect
     kind: wireframe-action
     notation: wireframe-button
