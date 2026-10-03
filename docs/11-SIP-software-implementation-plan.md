@@ -3,13 +3,7 @@
 Status: working draft / non-authoritative
 
 
-## Document guide
-
-- **Role:** define the implementation roadmap, step scope, activities, estimates and exit criteria.
-- **Inputs:** accepted product/document baselines and current implementation state.
-- **Owns:** implementation sequence and planning; it does not define product requirements or interface semantics.
-- **Downstream:** step boards, issues, implementation PRs and planning views.
-- **Key terms:** `SIP` — Software Implementation Plan; `D..` — documentation/design activity; `A..` — application activity; `V..` — verification activity; `T..` — tooling activity.
+## Purpose
 
 This document explains **how the software is expected to grow from the current application core
 into a usable timing system**. The roadmap is intended for two audiences:
@@ -24,6 +18,14 @@ Each activity ID/title shown on a detailed step card is declared in the matching
 The per-step YAML owns only current activity state, dependencies, estimates and compact
 card notes. Detailed activity history, CI logs and release mechanics live in issues, pull
 requests, SDE and generated evidence.
+
+## Relationship to other documents
+
+The SDP defines the project-wide development strategy and document conventions. The SIP
+uses accepted product/design baselines plus the current implementation state to plan the
+implementation sequence. It does not define product requirements or interface semantics.
+SDE documents define the engineering environment; SVP/VTS define verification strategy
+and cases; issues, pull requests and generated evidence record execution of the plan.
 
 ## How to read a step
 
