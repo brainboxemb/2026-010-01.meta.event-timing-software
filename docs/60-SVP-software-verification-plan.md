@@ -3,13 +3,7 @@
 Status: working draft / non-authoritative
 
 
-## Document guide
-
-- **Role:** define software verification strategy, levels, environments and evidence rules.
-- **Inputs:** accepted product requirements, interface contracts and system/software-item architecture.
-- **Owns:** verification strategy and reusable verification profiles; not individual stable test procedures or run results.
-- **Downstream:** VTS cases, executable tests and retained verification evidence.
-- **Key terms:** `SVP` — Software Verification Plan; `VTS` — Verification Test Specification; `VC` — Verification Case; `ST` — System Test profile family.
+## Purpose
 
 This Software Verification Plan defines the initial verification strategy for the software system. It is introduced early so public interfaces, testability, fault handling and target execution can be checked as the software grows.
 
