@@ -175,13 +175,26 @@ def render_relation_table(
     *,
     endpoint: str,
     objects: dict[str, dict],
+    incoming: bool = False,
 ) -> list[str]:
     lines = [f"## {title}", ""]
+    if incoming:
+        lines.extend(
+            [
+                (
+                    "These relations are declared by the listed source objects. "
+                    "For example, an incoming `derived_from` means the listed "
+                    "source object is derived from this object."
+                ),
+                "",
+            ]
+        )
     if not relations:
         return [*lines, "None in the current engineering graph.", ""]
 
-    heading = "Target" if endpoint == "target" else "Source"
-    lines.extend([f"| Relation | {heading} |", "| --- | --- |"])
+    heading = "Target" if endpoint == "target" else "Source object"
+    relation_heading = "Relation" if not incoming else "Relation declared by source"
+    lines.extend([f"| {relation_heading} | {heading} |", "| --- | --- |"])
     for relation in relations:
         related_id = relation[endpoint]
         related = objects[related_id]
@@ -219,7 +232,7 @@ def render_object_page(obj: dict, view: dict) -> str:
 
     lines.extend(
         render_relation_table(
-            "Outgoing relationships",
+            "References from this object",
             obj["outgoing"],
             endpoint="target",
             objects=view["objects"],
@@ -227,10 +240,11 @@ def render_object_page(obj: dict, view: dict) -> str:
     )
     lines.extend(
         render_relation_table(
-            "Incoming relationships",
+            "Objects that reference this object",
             obj["incoming"],
             endpoint="source",
             objects=view["objects"],
+            incoming=True,
         )
     )
 
