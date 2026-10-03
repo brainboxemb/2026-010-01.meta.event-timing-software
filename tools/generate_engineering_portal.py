@@ -449,29 +449,27 @@ hide:
   <a href="../objects/">Object index</a>
 </div>
 
-<div class="eng-architecture-workspace" data-eng-explorer>
+<div class="eng-explorer-workspace" data-eng-explorer>
   <section class="eng-context">
-    <h2>Architecture context</h2>
     <div class="eng-diagram">
       {svg}
     </div>
-    <p>
-      Click a diagram object or choose an engineering object below. The full
-      architecture remains visible while the selected object is inspected.
-    </p>
+    <p>Click a diagram object or choose any engineering object below.</p>
+    <h2>Engineering objects</h2>
     <div class="eng-object-picker">{chips}</div>
   </section>
 
-  <aside class="eng-detail" data-eng-detail aria-live="polite">
+  <aside class="eng-detail eng-explorer-detail" data-eng-detail aria-live="polite">
     Select an engineering object.
   </aside>
 </div>
 
 ## About this view
 
-The Engineering Explorer is the architecture-oriented view. The generated
-SI-01 architecture stays visible while one selected requirement, use case,
-architecture element or verification case is inspected beside it.
+The Engineering Explorer keeps the generated SI-01 architecture on the **left**
+and the selected engineering object on the **right**. Selecting an architecture
+element or an object below updates the right-hand detail pane without replacing
+the architecture context.
 
 For relation-by-relation comparison, use the separate
 [Traceability comparison](../workspace/) workspace.
@@ -481,13 +479,48 @@ For relation-by-relation comparison, use the separate
 
 
 def render_workspace(view: dict) -> str:
-    options = "".join(
-        (
-            f'<option value="{html.escape(object_id)}">'
-            f"{html.escape(object_id)} — {html.escape(view['objects'][object_id]['title'])}"
-            "</option>"
+    documents: dict[str, list[tuple[int, dict]]] = {{}}
+    for obj in view["objects"].values():
+        match = SOURCE_RE.match(obj["source"])
+        if match:
+            path = match.group("path")
+            line = int(match.group("line"))
+        else:
+            path = obj["source"]
+            line = 0
+        documents.setdefault(path, []).append((line, obj))
+
+    groups = []
+    for path in sorted(documents):
+        items = []
+        for _, obj in sorted(
+            documents[path],
+            key=lambda item: (item[0], item[1]["id"]),
+        ):
+            items.append(
+                '<button class="eng-tree-item" type="button" '
+                f'data-workspace-root-id="{html.escape(obj["id"])}" '
+                f'data-object-type="{html.escape(obj["type_label"])}" '
+                f'data-object-search="{html.escape((obj["id"] + " " + obj["title"]).lower())}">'
+                f'<span class="eng-tree-item__id">{html.escape(obj["id"])}</span>'
+                f'<span class="eng-tree-item__title">{html.escape(obj["title"])}</span>'
+                "</button>"
+            )
+        label = Path(path).name.removesuffix(".md")
+        groups.append(
+            '<details class="eng-tree-group" data-eng-tree-group open>'
+            f'<summary>{html.escape(label)}</summary>'
+            '<div class="eng-tree-group__items">'
+            + "".join(items)
+            + "</div></details>"
         )
-        for object_id in sorted(view["objects"])
+
+    type_labels = sorted({{
+        obj["type_label"] for obj in view["objects"].values()
+    }})
+    type_options = "".join(
+        f'<option value="{html.escape(label)}">{html.escape(label)}</option>'
+        for label in type_labels
     )
     graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
     return f"""---
@@ -506,31 +539,54 @@ hide:
 </div>
 
 <div data-eng-workspace>
-  <div class="eng-workspace-selector">
-    <label for="eng-workspace-root-select">Left / root object</label>
-    <select id="eng-workspace-root-select" data-eng-workspace-root-select>
-      {options}
-    </select>
-  </div>
+  <div class="eng-trace-layout">
+    <aside class="eng-object-browser" aria-label="Engineering object browser">
+      <div class="eng-object-browser__filters">
+        <label>
+          <span>Filter objects</span>
+          <input
+            type="search"
+            placeholder="ID or title"
+            autocomplete="off"
+            data-eng-tree-search
+          >
+        </label>
+        <label>
+          <span>Type</span>
+          <select data-eng-tree-type>
+            <option value="">All types</option>
+            {type_options}
+          </select>
+        </label>
+      </div>
+      <div class="eng-object-tree" data-eng-object-tree>
+        {"".join(groups)}
+      </div>
+    </aside>
 
-  <div class="eng-workspace">
-  <section class="eng-detail" data-eng-root-detail aria-live="polite">
-    Select an engineering object.
-  </section>
-  <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
-    Select a related object to compare.
-  </aside>
+    <section class="eng-detail" data-eng-root-detail aria-live="polite">
+      Select an engineering object.
+    </section>
+
+    <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
+      Select a related object to compare.
+    </aside>
   </div>
 </div>
 
 ## About this view
 
-The selected engineering object stays visible on the **left**. Click an
-Incoming, Outgoing or one-hop relation to open that related engineering object
-on the **right** without replacing the selected object.
+Choose the root object from the ordered browser on the **left**. The browser
+follows the authored document/source order and is not grouped by object type.
+The selected object stays visible in the centre pane. Click an Incoming,
+Outgoing or one-hop relation to open the related engineering object on the
+**right** without replacing the selected root object.
 
-Use the separate [Engineering Explorer](../explorer/) when the full clickable
-architecture diagram should remain visible.
+The filter controls narrow the browser without changing its source/document
+ordering. The URL preserves both the selected root object and compared object.
+
+Use the separate [Engineering Explorer](../explorer/) when the clickable
+architecture diagram should remain visible beside one selected object.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """
