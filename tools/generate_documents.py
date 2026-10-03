@@ -19,7 +19,7 @@ CONTEXT_DOCUMENTS = [
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-plan.md",
-    "12-documentation-guide.md",
+    "12-GPD-documentation-guide.md",
 ]
 
 EXTERNAL_INPUT_DOCUMENTS = [
