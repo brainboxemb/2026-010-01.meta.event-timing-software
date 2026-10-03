@@ -90,32 +90,26 @@ nodes:
     notation: wireframe-input
     layout: {x: 315, y: 288, w: 150, h: 72}
 
-  - id: set-location
-    label: Set location
-    kind: wireframe-action
-    notation: wireframe-button
-    layout: {x: 475, y: 310, w: 120, h: 36}
-
   - id: open
     label: Open
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 620, y: 310, w: 105, h: 36}
+    layout: {x: 475, y: 310, w: 105, h: 36}
 
   - id: close
     label: Close
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 735, y: 310, w: 105, h: 36}
+    layout: {x: 590, y: 310, w: 105, h: 36}
 
   - id: last-operation
     label: Last API operation
     subtitle: "NODE_NOT_OPEN — response retained for inspection"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 865, y: 288, w: 405, h: 72}
+    layout: {x: 720, y: 288, w: 550, h: 72}
 
   - id: registration
     label: Registration test input
