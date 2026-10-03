@@ -277,15 +277,12 @@ Concrete version encoding and unknown-member/event handling belong to the IDD.
 The first development realization is usable across a normal IP network path when remote
 access is explicitly configured.
 
-Authentication/authorisation is not defined for the current development baseline. Until a
-later security increment defines it:
+The current deployment baseline assumes a trusted closed network and does not require
+application-level authentication or authorisation for IF-03.
 
-- default exposure is local/loopback only;
+- default development exposure remains local/loopback only;
 - non-loopback exposure requires explicit configuration;
-- remote development demonstrations use only a trusted development/test network.
-
-These are interface/deployment safety requirements, not a statement that a production
-deployment is intended to remain unauthenticated.
+- remote operation is limited to the trusted deployment/development network.
 
 ## IF-03 requirements
 
@@ -463,6 +460,4 @@ for the first registration/control/history flow.
 ## Open points
 
 - define the exact result when OPEN is requested with a different LocationId while
-  the TimingNode is already OPEN;
-- define the production authentication/authorisation model when that capability is
-  introduced.
+  the TimingNode is already OPEN.
