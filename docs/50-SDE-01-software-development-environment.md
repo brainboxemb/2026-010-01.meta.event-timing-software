@@ -2,6 +2,15 @@
 
 Status: working draft / non-authoritative
 
+
+## Document guide
+
+- **Role:** define the shared engineering environment, repository/workflow and tooling conventions.
+- **Inputs:** development strategy and practical repository/tooling constraints.
+- **Owns:** how engineering work is performed and reviewed; not product requirements or implementation-step scope.
+- **Downstream:** implementation repositories, local development workflows and CI/documentation tooling.
+- **Key terms:** `SDE` — Software Development Environment; `CI` — Continuous Integration; `PR` — Pull Request; `SIP` — Software Implementation Plan; `SVP` — Software Verification Plan.
+
 This Software Development Environment document defines the **concrete engineering environment and repository conventions** used to develop, build, test, document and review the software system.
 
 The SDE is project/software-system level and applies across software items and implementation repositories unless a repository documents a justified exception.
