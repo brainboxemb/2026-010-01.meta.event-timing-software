@@ -2,6 +2,15 @@
 
 Status: working draft / non-authoritative
 
+
+## Document guide
+
+- **Role:** define project-wide software-development strategy and document/dependency conventions.
+- **Inputs:** project goals, engineering constraints and accepted system/product direction.
+- **Owns:** development strategy, document-family conventions and authority/dependency rules; not implementation-step scheduling.
+- **Downstream:** SIP, SDE and the document set that follows these conventions.
+- **Key terms:** `SDP` — Software Development Plan; `SIP` — Software Implementation Plan; `SDE` — Software Development Environment; `SVP` — Software Verification Plan; `VTS` — Verification Test Specification.
+
 This document records the **current development direction**. It should stay short and
 should distinguish decisions from things that still need discussion or evidence.
 
