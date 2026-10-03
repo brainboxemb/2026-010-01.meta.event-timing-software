@@ -138,9 +138,9 @@ body.eng-workspace-page {
 .eng-trace-layout {
   display: grid;
   grid-template-columns:
-    minmax(10rem, 22%)
+    minmax(12rem, 28%)
     4px
-    minmax(16rem, 39%)
+    minmax(16rem, 36%)
     4px
     minmax(16rem, 1fr);
   gap: 1px;
@@ -247,7 +247,7 @@ body.eng-workspace-page {
 .eng-object-tree .eng-tree-group__toggle {
   justify-content: space-between;
   gap: 0.35rem;
-  padding: 0.14rem 0.18rem;
+  padding: 0.12rem 0.1rem;
   font-weight: 600;
 }
 
@@ -290,28 +290,28 @@ body.eng-workspace-page {
 }
 
 .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.42rem !important;
+  padding-left: 0.32rem !important;
   font-weight: 500 !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.68rem !important;
+  padding-left: 0.54rem !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.94rem !important;
+  padding-left: 0.76rem !important;
 }
 
 .eng-object-tree .eng-tree-item {
-  padding: 0.08rem 0.18rem 0.08rem 0.42rem;
+  padding: 0.07rem 0.1rem 0.07rem 0.32rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.68rem;
+  padding-left: 0.54rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.94rem;
+  padding-left: 0.76rem;
 }
 
 .eng-tree-item__label {
