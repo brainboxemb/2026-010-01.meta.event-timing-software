@@ -479,7 +479,7 @@ For relation-by-relation comparison, use the separate
 
 
 def render_workspace(view: dict) -> str:
-    documents: dict[str, list[tuple[int, dict]]] = {{}}
+    documents: dict[str, list[tuple[int, dict]]] = {}
     for obj in view["objects"].values():
         match = SOURCE_RE.match(obj["source"])
         if match:
@@ -515,9 +515,9 @@ def render_workspace(view: dict) -> str:
             + "</div></details>"
         )
 
-    type_labels = sorted({{
+    type_labels = sorted({
         obj["type_label"] for obj in view["objects"].values()
-    }})
+    })
     type_options = "".join(
         f'<option value="{html.escape(label)}">{html.escape(label)}</option>'
         for label in type_labels
