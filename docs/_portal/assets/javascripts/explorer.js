@@ -421,12 +421,33 @@
         }
       }
 
+      function expandUsefulBranches(group) {
+        if (!group) return;
+        setGroupExpanded(group, true);
+
+        const children = directVisibleTreeChildren(group);
+        if (!children.leaves.length && children.groups.length === 1) {
+          expandLinearBranch(children.groups[0]);
+          return;
+        }
+
+        children.groups.forEach((child) => {
+          const childChildren = directVisibleTreeChildren(child);
+          if (
+            !childChildren.leaves.length &&
+            childChildren.groups.length === 1
+          ) {
+            expandLinearBranch(child);
+          }
+        });
+      }
+
       function toggleGroup(group) {
         if (!group) return;
         if (group.classList.contains("is-expanded")) {
           setGroupExpanded(group, false);
         } else {
-          expandLinearBranch(group);
+          expandUsefulBranches(group);
         }
       }
 
@@ -583,7 +604,7 @@
           const group = toggle.closest("[data-eng-tree-group]");
           if (event.key === "ArrowRight") {
             event.preventDefault();
-            expandLinearBranch(group);
+            expandUsefulBranches(group);
           } else if (event.key === "ArrowLeft") {
             event.preventDefault();
             setGroupExpanded(group, false);

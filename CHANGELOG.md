@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Expand linear child branches when opening a traceability document so one click exposes the first useful choices without flattening sibling branches.
+
 - Start Engineering Explorer and Traceability Comparison neutrally when no object is requested, remove the implicit TimingNode preference, add a small balanced tree base inset, and qualify the specific SSD requirements smart-expansion path.
 
 - Increase custom engineering workbench typography by an exact 1px while preserving the compact spacing and pane geometry.

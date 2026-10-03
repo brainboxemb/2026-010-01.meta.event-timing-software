@@ -706,13 +706,6 @@ jobs:
                     "Software-item architecture"
                   );
 
-                  if (requirements) {
-                    const requirementsToggle = requirements.querySelector(
-                      ":scope > [data-eng-tree-toggle]"
-                    );
-                    if (requirementsToggle) requirementsToggle.click();
-                  }
-
                   const firstExecutable = groupByLabel(
                     "First-executable requirements",
                     requirements || root
