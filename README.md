@@ -82,7 +82,7 @@ project documents.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
 - [`docs/32-03-ISD-application-control-status.md`](docs/32-03-ISD-application-control-status.md) — system-owned IF-03 API semantic contract.
 - [`docs/33-03-IDD-api-http-websocket.md`](docs/33-03-IDD-api-http-websocket.md) — IF-03 HTTP/JSON + WebSocket design.
-- [`docs/32-04-ISD-web-interface.md`](docs/32-04-ISD-web-operator-hmi.md) — system-owned IF-04 Web interface contract.
+- [`docs/32-04-ISD-web-interface.md`](docs/32-04-ISD-web-interface.md) — system-owned IF-04 Web interface contract.
 - [`docs/32-05-ISD-timingdata-interchange.md`](docs/32-05-ISD-timingdata-interchange.md) — system-owned IF-05 TimingData specification.
 - [`docs/33-05-IDD-timingdata-interchange.md`](docs/33-05-IDD-timingdata-interchange.md) — IF-05 default/reference JSON + JSON Lines design.
 - [`docs/32-11-ISD-application-configuration.md`](docs/32-11-ISD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
