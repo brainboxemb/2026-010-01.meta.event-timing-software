@@ -5,14 +5,6 @@ Status: review candidate
 System interface: **IF-03 — API**
 
 
-## Document guide
-
-- **Role:** define the semantic contract of **IF-03 — API**.
-- **Inputs:** SSSD interface allocation and applicable system use cases.
-- **Owns:** API operations, state/result/failure semantics, ordering and compatibility rules; not concrete HTTP/JSON/WebSocket encoding.
-- **Downstream:** the IF-03 IDD, software-item specifications and conforming API clients.
-- **Key terms:** `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description; `OP` — Operation; `SI` — Software Item.
-
 ## Purpose
 
 This Interface Specification Document defines the **semantic contract** between the
@@ -28,7 +20,7 @@ is defined by `33-03-IDD-api-http-websocket.md`.
 A browser/tablet operator interface served directly by SI-01 is a different system
 interface: **IF-04 — Web Interface**.
 
-## Inputs
+## Relationship to other documents
 
 IF-03 is allocated by
 `31-SSSD-software-system-specification-document.md` and implements the operator and
@@ -440,23 +432,6 @@ history and later live events using stable TimingData record identity before dec
 view live.
 ```
 
-## Interface design
-
-The current concrete realization is defined by
-`33-03-IDD-api-http-websocket.md`.
-
-That IDD owns, among other things:
-
-- HTTP methods and resource paths;
-- JSON member names and shapes;
-- WebSocket path and event envelopes;
-- concrete result/error strings;
-- HTTP status-code mapping;
-- UTF-8 and content-type details;
-- API-major path representation;
-- current listener/port arrangement.
-
-Changing those design details shall not silently change the semantics specified here.
 
 ## Open points
 
