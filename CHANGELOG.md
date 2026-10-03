@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make the Traceability Comparison substantially denser for desktop engineering use: smaller typography/controls, independent scroll panes for tree/root/compare views, reliable hidden filtering, type counts/result counts, and automatic pane reset to each newly selected object heading.
+
 - Restore the Engineering Explorer's pre-comparison composition with the architecture context on the left and the selected engineering object visible on the right; replace the Traceability Comparison's flat root selector with a source-ordered document tree plus search/type filters.
 
 - Split the Engineering Portal interaction into two explicit pages: keep the full clickable SI-01 architecture visible in the Engineering Explorer, and provide a separate Traceability Comparison workspace with an in-page root-object selector for fixed-left / related-right Incoming/Outgoing review.
