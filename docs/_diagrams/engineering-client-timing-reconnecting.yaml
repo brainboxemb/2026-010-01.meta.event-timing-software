@@ -1,6 +1,6 @@
 diagram:
   id: engineering-client-timing-reconnecting
-  title: Figure SDE03-04 — Timing view / RECONNECTING and stale
+  title: Figure SDE03-04 — Timing view / SYNCING and stale
   width: 1180
   height: 790
   note: Cached information remains visible but non-authoritative until status/LogBook gap recovery and buffered-event merge complete.
@@ -23,10 +23,16 @@ nodes:
     layout: {x: 65, y: 120, w: 1050, h: 44}
 
   - id: connection
-    label: RECONNECTING
+    label: SYNCING
     kind: wireframe-stale
     notation: wireframe-status
     layout: {x: 945, y: 180, w: 140, h: 30}
+
+  - id: sync-action
+    label: Sync view
+    kind: wireframe-disabled
+    notation: wireframe-button
+    layout: {x: 675, y: 180, w: 125, h: 30}
 
   - id: stale
     label: STALE
@@ -34,9 +40,9 @@ nodes:
     notation: wireframe-status
     layout: {x: 820, y: 180, w: 95, h: 30}
 
-  - id: rebuild
-    label: Rebuild in progress
-    subtitle: status snapshot + bounded LogBook ranges; live events buffered and deduplicated by record key
+  - id: sync-view
+    label: Synchronising view
+    subtitle: status + capabilities + bounded LogBook ranges; live events buffered and deduplicated by record key
     kind: wireframe-stale
     notation: wireframe-panel
     layout: {x: 75, y: 215, w: 1035, h: 90}

@@ -90,6 +90,11 @@ The current principal services are:
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
 | `LiveLogClient` | `LoggingServer` | live diagnostic records and temporary runtime log-level control |
 
+The IF-03 HTTP and WebSocket client services share one process-wide JDK
+`HttpClient` transport. Repeated UI actions may create short-lived request
+objects, but they must not create a new JDK HTTP selector/worker thread group
+for every operation.
+
 Step 4 adds one narrowly scoped engineering capability through IF-03:
 direct injection of an **already accepted semantic registration**. That control
 enters the normal TimingNode registration operation after antenna/decoding/filtering.
