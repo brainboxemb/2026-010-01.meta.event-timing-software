@@ -254,13 +254,9 @@ operation that changes the meaning of earlier data shall be represented by a new
 TimingData record.
 ```
 
-## Not part of the current IF-05 baseline
+## Open points
 
-- TimingNode OPEN/CLOSE TimingData representation;
-- revoke disambiguation beyond Registration ID + time, if later needed;
-- start-procedure record type and payload;
-- penalty/correction record types and payloads;
-- unknown-registration semantics;
-- source/tag provenance fields;
-- filename/directory policy, retention, rotation and filesystem-specific
-  durability primitives;
+- define the TimingNode OPEN/CLOSE TimingData semantics in the planned lifecycle-record
+  increment;
+- decide whether Registration ID + time is sufficient to identify a registration when a
+  revoke record refers to an earlier registration.
