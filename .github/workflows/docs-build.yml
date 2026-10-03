@@ -544,6 +544,7 @@ jobs:
             --no-sandbox \
             --disable-gpu \
             --disable-dev-shm-usage \
+            --window-size=1920,1200 \
             --virtual-time-budget=3500 \
             --dump-dom \
             "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045" \
