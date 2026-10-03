@@ -349,28 +349,28 @@ body.eng-explorer-page .md-content__inner {
 }
 
 .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.14rem !important;
+  padding-left: 0.20rem !important;
   font-weight: 500 !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.28rem !important;
+  padding-left: 0.40rem !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.42rem !important;
+  padding-left: 0.60rem !important;
 }
 
 .eng-object-tree .eng-tree-item {
-  padding: 0.05rem 0 0.05rem 0.14rem;
+  padding: 0.05rem 0 0.05rem 0.20rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.28rem;
+  padding-left: 0.40rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.42rem;
+  padding-left: 0.60rem;
 }
 
 .eng-tree-item__label {
