@@ -293,12 +293,12 @@ body.eng-workspace-page .md-content__inner {
   transform: rotate(90deg);
 }
 
-.eng-tree-group__items {
-  display: none;
+.md-typeset .eng-tree-group__items {
+  display: none !important;
 }
 
-.eng-tree-group.is-expanded > .eng-tree-group__items {
-  display: block;
+.md-typeset .eng-tree-group.is-expanded > .eng-tree-group__items {
+  display: block !important;
 }
 
 .eng-tree-group__items .eng-tree-group__toggle {
