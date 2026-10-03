@@ -3,7 +3,7 @@
 These files are the starting point for new project documents.
 
 Do not create a new document in an existing family from an empty file. Copy the
-matching template, rename it according to `../12-documentation-guide.md`, replace the
+matching template, rename it according to `../12-GPD-documentation-guide.md`, replace the
 marked placeholders and then add the document-specific content.
 
 The templates intentionally contain reusable explanatory text. Keep that text when it
@@ -21,6 +21,7 @@ Relationship to other documents
 
 Available templates:
 
+- `GPD-template.md` — general project/support guidance when no more specific document type fits;
 - `UC-template.md` — system use cases;
 - `SSSD-template.md` — software-system specification/architecture;
 - `ISD-template.md` — system-owned interface specification;
