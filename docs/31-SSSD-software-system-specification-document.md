@@ -149,7 +149,7 @@ The **Desktop GUI Application** (SI-02) is an IP network client of the **Timing 
 
 ### **Timing Point Application** (SI-01) ↔ browser/tablet operator
 
-A browser or tablet-class browser may operate SI-01 directly through **IF-04 Web Operator HMI**. This browser-facing presentation interface belongs to SI-01 and is not the **Desktop GUI Application** (SI-02). The current architecture allocates one Web binding per configured TimingNode.
+A browser or tablet-class browser may operate SI-01 directly through **IF-04 Web Interface**. This browser-facing presentation interface belongs to SI-01 and is not the **Desktop GUI Application** (SI-02). The current architecture allocates one Web binding per configured TimingNode.
 
 ### **Timing Point Application** (SI-01) ↔ backend
 
@@ -172,7 +172,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | ISD candidate |
 | **IF-03 API** | SI-02 / engineering & test clients ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
-| **IF-04 Web Operator HMI** | Operator/browser ↔ SI-01 | browser/tablet-facing Web presentation; one binding per TimingNode | Direct local operator status and control | `32-04-ISD-web-operator-hmi.md` |
+| **IF-04 Web Interface** | Operator/browser ↔ SI-01 | browser-based protocol; one binding per TimingNode | Browser-based TimingNode status and control | `32-04-ISD-web-interface.md` |
 | **IF-05 TimingData Interchange** | SI-01 / engineering & test tools / compatible data consumers | append-only file / record interchange | Canonical timing-record semantics, identity, ordering, versioning and reference encoding | `32-05-ISD-timingdata-interchange.md` + `33-05-IDD-timingdata-interchange.md` |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system ISD; proprietary wire/design details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
@@ -224,7 +224,7 @@ Engineering/test clients
   +-- IF-03 over available IP path --> SI-01
 
 Browser / tablet operator
-  +-- IF-04 Web Operator HMI --> SI-01
+  +-- IF-04 Web Interface --> SI-01
 
 DisplayRev2Wifi / Smart Display V2
   +-- discovers SI-01 service through mDNS
