@@ -87,6 +87,12 @@ A restarted TimingNode begins `CLOSED` with no current operational LocationId un
 later requirement explicitly defines another recovery rule. Historical TimingData does
 not by itself recreate live operational state.
 
+## Operation identifiers
+
+Operations use the identifier form `IF03-OP-<number>`, where **OP** means
+**Operation**. The identifier names a stable semantic interface operation; it is
+independent of a concrete HTTP route, message name or other wire representation.
+
 ## Semantic operations
 
 ### IF03-OP-001 — Get build/version identity
