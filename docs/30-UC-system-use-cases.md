@@ -10,6 +10,14 @@ Use cases describe **desired externally meaningful behaviour and goals**, not im
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
+## Terms and abbreviations
+
+- **UC** — Use Case
+- **SSSD** — Software System Specification Document
+- **ISD** — Interface Specification Document
+- **SI** — Software Item
+
+
 ## Relationship to other documents
 
 System use cases are part of the software-system specification/design family. They express behaviour of the **software system as a whole** before that behaviour is decomposed across software items.
