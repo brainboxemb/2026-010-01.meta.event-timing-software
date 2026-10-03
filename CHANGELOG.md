@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore the Engineering Explorer's pre-comparison composition with the architecture context on the left and the selected engineering object visible on the right; replace the Traceability Comparison's flat root selector with a source-ordered document tree plus search/type filters.
+
 - Split the Engineering Portal interaction into two explicit pages: keep the full clickable SI-01 architecture visible in the Engineering Explorer, and provide a separate Traceability Comparison workspace with an in-page root-object selector for fixed-left / related-right Incoming/Outgoing review.
 
 - Rename the Application-layer presentation entry point from `CommandHandler` to `PresentationGateway`; define gateway names by the adjacent side whose traffic they mediate, keeping `PresentationGateway` transport-independent and distinct from the I/O-owned `UpstreamGateway` transport/integration boundary.
