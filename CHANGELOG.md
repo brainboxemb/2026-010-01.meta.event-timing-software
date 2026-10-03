@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make the Traceability Comparison a true resizable split-pane workbench: reliable custom tree disclosure controls, tighter left alignment/indentation, a wider default tree pane, draggable/keyboard-accessible separators, and persisted pane proportions.
+
 - Build the Traceability Comparison navigation as a MkDocs view component from native Sphinx-Needs document/section metadata, preserving authored heading/source order and using Material-style nested navigation instead of duplicating section classifications in engineering objects.
 
 - Replace the Traceability Comparison's card-like source browser with a conventional compact expandable tree: source-document nodes use disclosure chevrons, child engineering objects are indented borderless rows, and the selected object receives one subtle row highlight while existing filters/order/scroll behavior remain intact.
