@@ -515,12 +515,16 @@ def render_workspace(view: dict) -> str:
             + "</div></details>"
         )
 
-    type_labels = sorted({
-        obj["type_label"] for obj in view["objects"].values()
-    })
+    type_counts: dict[str, int] = {}
+    for obj in view["objects"].values():
+        label = obj["type_label"]
+        type_counts[label] = type_counts.get(label, 0) + 1
     type_options = "".join(
-        f'<option value="{html.escape(label)}">{html.escape(label)}</option>'
-        for label in type_labels
+        (
+            f'<option value="{html.escape(label)}">'
+            f"{html.escape(label)} ({count})</option>"
+        )
+        for label, count in sorted(type_counts.items())
     )
     graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
     return f"""---
@@ -529,9 +533,9 @@ hide:
   - toc
 ---
 
-# Traceability comparison
+<h1 class="eng-trace-title">Traceability comparison</h1>
 
-<div class="eng-workspace-nav" aria-label="Engineering portal navigation">
+<div class="eng-workspace-nav eng-workspace-nav--compact" aria-label="Engineering portal navigation">
   <a href="../">Portal</a>
   <a href="../explorer/">Engineering Explorer</a>
   <a href="../book/">Architecture Book</a>
@@ -542,22 +546,20 @@ hide:
   <div class="eng-trace-layout">
     <aside class="eng-object-browser" aria-label="Engineering object browser">
       <div class="eng-object-browser__filters">
-        <label>
-          <span>Filter objects</span>
-          <input
-            type="search"
-            placeholder="ID or title"
-            autocomplete="off"
-            data-eng-tree-search
-          >
-        </label>
-        <label>
-          <span>Type</span>
-          <select data-eng-tree-type>
-            <option value="">All types</option>
-            {type_options}
-          </select>
-        </label>
+        <input
+          type="search"
+          aria-label="Filter engineering objects"
+          placeholder="filter ID / title"
+          autocomplete="off"
+          data-eng-tree-search
+        >
+        <select aria-label="Filter by object type" data-eng-tree-type>
+          <option value="">all types ({view["object_count"]})</option>
+          {type_options}
+        </select>
+        <span class="eng-object-browser__count" data-eng-tree-count>
+          {view["object_count"]} objects
+        </span>
       </div>
       <div class="eng-object-tree" data-eng-object-tree>
         {"".join(groups)}
@@ -573,20 +575,6 @@ hide:
     </aside>
   </div>
 </div>
-
-## About this view
-
-Choose the root object from the ordered browser on the **left**. The browser
-follows the authored document/source order and is not grouped by object type.
-The selected object stays visible in the centre pane. Click an Incoming,
-Outgoing or one-hop relation to open the related engineering object on the
-**right** without replacing the selected root object.
-
-The filter controls narrow the browser without changing its source/document
-ordering. The URL preserves both the selected root object and compared object.
-
-Use the separate [Engineering Explorer](../explorer/) when the clickable
-architecture diagram should remain visible beside one selected object.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """

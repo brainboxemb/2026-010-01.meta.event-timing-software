@@ -1,5 +1,14 @@
+[hidden] {
+  display: none !important;
+}
+
 .md-grid {
   max-width: 104rem;
+}
+
+html.eng-workspace-page,
+body.eng-workspace-page {
+  overflow-y: hidden;
 }
 
 .eng-workspace-nav {
@@ -21,6 +30,23 @@
 .eng-workspace-nav a:hover,
 .eng-workspace-nav a:focus {
   border-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .eng-trace-title {
+  margin: -0.25rem 0 0.12rem;
+  font-size: 1rem;
+  line-height: 1.05;
+}
+
+.eng-workspace-nav--compact {
+  gap: 0.18rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.61rem;
+}
+
+.eng-workspace-nav--compact a {
+  padding: 0.12rem 0.28rem;
+  border-radius: 0;
 }
 
 /* Engineering Explorer: restore the original wide architecture + detail composition. */
@@ -115,17 +141,26 @@
 /* Traceability Comparison: ordered object tree + root object + compared object. */
 .eng-trace-layout {
   display: grid;
-  grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
-  gap: 0.9rem;
-  align-items: start;
+  grid-template-columns: minmax(12.5rem, 0.6fr) minmax(0, 1.4fr) minmax(0, 1.4fr);
+  gap: 1px;
+  align-items: stretch;
+  height: calc(100vh - 8.8rem);
+  min-height: 30rem;
+  overflow: hidden;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  background: var(--md-default-fg-color--lightest);
 }
 
 .eng-object-browser {
-  position: sticky;
-  top: 4.8rem;
-  max-height: calc(100vh - 6rem);
-  overflow: auto;
-  padding: 0.75rem;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 0.28rem;
+  border: 0;
+  border-radius: 0;
 }
 
 .eng-object-browser__filters {
@@ -133,40 +168,41 @@
   top: 0;
   z-index: 2;
   display: grid;
-  gap: 0.55rem;
-  margin: -0.15rem -0.15rem 0.75rem;
-  padding: 0.15rem 0.15rem 0.55rem;
+  gap: 0.15rem;
+  margin: -0.08rem -0.08rem 0.18rem;
+  padding: 0.08rem 0.08rem 0.18rem;
   background: var(--md-default-bg-color);
-}
-
-.eng-object-browser__filters label {
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.66rem;
-  font-weight: 600;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
 
 .eng-object-browser__filters input,
 .eng-object-browser__filters select {
   width: 100%;
   min-width: 0;
-  padding: 0.38rem 0.45rem;
+  height: 1.45rem;
+  padding: 0.05rem 0.22rem;
   border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0.35rem;
+  border-radius: 0;
   background: var(--md-default-bg-color);
   color: var(--md-default-fg-color);
-  font: inherit;
-  font-weight: 400;
+  font-size: 0.58rem;
+  line-height: 1.1;
+}
+
+.eng-object-browser__count {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.55rem;
+  line-height: 1.05;
 }
 
 .eng-object-tree {
   display: grid;
-  gap: 0.45rem;
+  gap: 0;
 }
 
 .eng-tree-group {
   border-top: 1px solid var(--md-default-fg-color--lightest);
-  padding-top: 0.35rem;
+  padding-top: 0;
 }
 
 .eng-tree-group:first-child {
@@ -177,22 +213,28 @@
 .eng-tree-group summary {
   cursor: pointer;
   overflow-wrap: anywhere;
-  font-size: 0.68rem;
+  padding: 0.12rem 0.1rem;
+  font-size: 0.57rem;
   font-weight: 700;
+  line-height: 1.08;
 }
 
 .eng-tree-group__items {
   display: grid;
-  gap: 0.25rem;
-  margin-top: 0.35rem;
-  padding-left: 0.45rem;
+  gap: 0;
+  margin-top: 0;
+  padding-left: 0.22rem;
 }
 
 .eng-tree-item {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   width: 100%;
-  gap: 0.08rem;
-  padding: 0.35rem 0.4rem;
+  gap: 0.22rem;
+  padding: 0.08rem 0.12rem;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  line-height: 1.05;
 }
 
 .eng-tree-item.is-selected {
@@ -200,26 +242,42 @@
 }
 
 .eng-tree-item__id {
-  font-size: 0.68rem;
+  font-size: 0.54rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .eng-tree-item__title {
+  min-width: 0;
+  overflow: hidden;
   color: var(--md-default-fg-color--light);
-  font-size: 0.66rem;
-  line-height: 1.25;
+  font-size: 0.54rem;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Shared object detail presentation. */
 .eng-detail {
-  padding: 0.85rem;
+  padding: 0.42rem;
   min-width: 0;
-  font-size: 0.78rem;
-  line-height: 1.45;
+  font-size: 0.56rem;
+  line-height: 1.28;
+}
+
+.eng-trace-layout > .eng-detail {
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 0;
+  border-radius: 0;
 }
 
 .eng-detail__role {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.18rem;
   color: var(--md-default-fg-color--light);
   font-size: 0.66rem;
   font-weight: 600;
@@ -228,74 +286,76 @@
 }
 
 .eng-detail__header h2 {
-  margin: 0.2rem 0 0.25rem;
-  font-size: 1.15rem;
-  line-height: 1.2;
+  margin: 0.08rem 0 0.1rem;
+  font-size: 0.84rem;
+  line-height: 1.1;
 }
 
 .eng-detail h3 {
-  margin: 1rem 0 0.45rem;
-  font-size: 0.95rem;
-  line-height: 1.25;
+  margin: 0.45rem 0 0.14rem;
+  font-size: 0.68rem;
+  line-height: 1.1;
 }
 
 .eng-detail code {
-  font-size: 0.7rem;
+  font-size: 0.58rem;
 }
 
 .eng-object-type {
   display: inline-block;
-  border-radius: 1rem;
-  padding: 0.15rem 0.5rem;
+  border-radius: 0;
+  padding: 0.06rem 0.2rem;
   background: var(--md-code-bg-color);
-  font-size: 0.62rem;
+  font-size: 0.52rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .eng-detail__summary {
-  margin: 0.7rem 0;
+  margin: 0.28rem 0;
 }
 
 .eng-detail__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.7rem 0;
+  gap: 0.14rem;
+  margin: 0.28rem 0;
 }
 
 .eng-detail__actions .md-button {
-  padding: 0.45em 0.75em;
-  font-size: 0.7rem;
+  padding: 0.16em 0.3em;
+  border-radius: 0;
+  font-size: 0.54rem;
 }
 
 .eng-detail__relations,
 .eng-detail__focus {
-  margin-top: 1.25rem;
+  margin-top: 0.5rem;
 }
 
 .eng-relation {
   display: grid;
   width: 100%;
-  grid-template-columns: 5.2rem minmax(0, 1fr);
-  gap: 0.35rem;
-  padding: 0.35rem 0.45rem;
-  margin: 0.25rem 0;
+  grid-template-columns: 4.1rem minmax(0, 1fr);
+  gap: 0.2rem;
+  padding: 0.14rem 0.18rem;
+  margin: 0.08rem 0;
+  border-radius: 0;
 }
 
 .eng-relation__type {
   color: var(--md-default-fg-color--light);
-  font-size: 0.62rem;
+  font-size: 0.5rem;
   text-transform: uppercase;
 }
 
 .eng-relation__object {
   min-width: 0;
-  font-size: 0.72rem;
+  font-size: 0.58rem;
 }
 
 .eng-compare-empty {
-  padding: 1.2rem 0.4rem;
+  padding: 0.45rem 0.2rem;
   color: var(--md-default-fg-color--light);
 }
 
@@ -304,14 +364,27 @@
 }
 
 @media screen and (max-width: 900px) {
+  html.eng-workspace-page,
+  body.eng-workspace-page {
+    overflow-y: auto;
+  }
+
   .eng-explorer-workspace,
   .eng-trace-layout {
     grid-template-columns: 1fr;
   }
 
+  .eng-trace-layout {
+    height: auto;
+    overflow: visible;
+  }
+
   .eng-explorer-detail,
-  .eng-object-browser {
+  .eng-object-browser,
+  .eng-trace-layout > .eng-detail {
     position: static;
+    height: auto;
     max-height: none;
+    overflow: visible;
   }
 }
