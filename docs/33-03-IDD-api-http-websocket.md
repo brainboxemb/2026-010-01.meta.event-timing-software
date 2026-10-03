@@ -6,6 +6,15 @@ System interface: **IF-03 — API**
 
 Specification: `32-03-ISD-application-control-status.md`
 
+
+## Document guide
+
+- **Role:** define the concrete HTTP/JSON + WebSocket realization of **IF-03 — API**.
+- **Inputs:** `32-03-ISD-application-control-status.md`.
+- **Owns:** HTTP methods/paths, JSON shapes, WebSocket envelopes, concrete result/error encoding and transport-level compatibility details.
+- **Downstream:** SI-01 implementation/design, API clients and interface-level tests.
+- **Key terms:** `IDD` — Interface Design Description; `ISD` — Interface Specification Document; `IF` — system interface; `OP` — semantic Operation defined by the ISD; `HTTP` — Hypertext Transfer Protocol.
+
 ## Purpose
 
 This Interface Design Description maps the semantic IF-03 operations to the current
