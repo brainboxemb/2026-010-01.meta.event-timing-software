@@ -18,6 +18,15 @@ append-only JSON Lines file.
 This document deliberately does not define Java classes, factories, providers,
 threads, queues or storage implementation classes.
 
+## Terms and abbreviations
+
+- **IDD** — Interface Design Description
+- **ISD** — Interface Specification Document
+- **IF** — system interface
+- **JSONL** — JSON Lines
+- **TimingData** — committed interchange record model
+
+
 ## Relationship to other documents
 
 This IDD implements the default/reference representation of
