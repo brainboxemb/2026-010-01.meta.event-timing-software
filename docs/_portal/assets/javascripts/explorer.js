@@ -225,7 +225,7 @@
         root.querySelectorAll("[data-eng-resizer]")
       );
       const paneStorageKey = "engineering-traceability-pane-shares-v1";
-      let paneShares = [0.22, 0.39, 0.39];
+      let paneShares = [0.28, 0.36, 0.36];
       const initialUrl = new URL(window.location.href);
       let rootId = "";
       let compareId = "";
@@ -369,7 +369,7 @@
           });
 
           resizer.addEventListener("dblclick", () => {
-            paneShares = [0.22, 0.39, 0.39];
+            paneShares = [0.28, 0.36, 0.36];
             applyPaneShares(paneShares, true);
           });
         });
