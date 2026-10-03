@@ -32,6 +32,13 @@ Where an external input can be published safely, link/reference its exact contro
 | --- | --- | --- | --- | --- | --- |
 | LEGACY-WEB | Private legacy-system input | Private legacy web/interface design baseline | Controlled private baseline | Legacy client/interface compatibility review before Step-4 public-contract decisions | Private compatibility input only. Keep source identity, content and protocol detail outside the public repository. Record only abstract behavioural conclusions that are safe and necessary for the new-system design. It is not automatically normative for the new software system. |
 
+## Terms and abbreviations
+
+- **EXT** — External Inputs
+- **SSSD** — Software System Specification Document
+- **IDD** — Interface Design Description
+
+
 ## Relationship to other documents
 
 ```text
