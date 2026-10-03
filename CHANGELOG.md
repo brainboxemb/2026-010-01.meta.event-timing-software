@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Replace the Traceability Comparison's card-like source browser with a conventional compact expandable tree: source-document nodes use disclosure chevrons, child engineering objects are indented borderless rows, and the selected object receives one subtle row highlight while existing filters/order/scroll behavior remain intact.
+
 - Make the Traceability Comparison substantially denser for desktop engineering use: smaller typography/controls, independent scroll panes for tree/root/compare views, reliable hidden filtering, type counts/result counts, and automatic pane reset to each newly selected object heading.
 
 - Restore the Engineering Explorer's pre-comparison composition with the architecture context on the left and the selected engineering object visible on the right; replace the Traceability Comparison's flat root selector with a source-ordered document tree plus search/type filters.
