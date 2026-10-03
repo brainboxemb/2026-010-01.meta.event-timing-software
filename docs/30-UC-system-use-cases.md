@@ -2,18 +2,11 @@
 
 Status: working draft / non-authoritative
 
-
-## Document guide
-
-- **Role:** describe externally meaningful system behaviour as actor/goal use cases.
-- **Inputs:** domain baseline and applicable registered external/parent-system inputs.
-- **Owns:** system-level goals, main flows and alternative/failure behaviour; not implementation or test procedures.
-- **Downstream:** SSSD, system-owned interface specifications and allocated software-item requirements.
-- **Key terms:** `UC` — Use Case; `SSSD` — Software System Specification Document; `ISD` — Interface Specification Document; `SI` — Software Item.
+## Purpose
 
 This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
 
-Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SSDs and verification cases may reference these use cases.
+Use cases describe **desired externally meaningful behaviour and goals**, not implementation details.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
