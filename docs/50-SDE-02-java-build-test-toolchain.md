@@ -2,6 +2,15 @@
 
 Status: working baseline / AP-2
 
+
+## Document guide
+
+- **Role:** refine the SDE for Java build, test, artifact and runtime-toolchain concerns.
+- **Inputs:** SDE policy and supported Java/platform constraints.
+- **Owns:** Java/Maven toolchain roles, build/test matrix and artifact flow; not SI-01 product behaviour.
+- **Downstream:** Java implementation repositories and CI workflows.
+- **Key terms:** `SDE` — Software Development Environment; `JDK` — Java Development Kit; `Maven` — Java build/dependency tool; `CI` — Continuous Integration.
+
 This document refines the system-level Software Development Environment for Java repositories. It defines the **engineering toolchain roles, build/test matrix, artifact flow and reusable-tool boundary** needed before the first SI-01 implementation repository is bootstrapped.
 
 It does not define SI-01 product behaviour. Product requirements remain in the SRD/SSD/ISD documents; architecture/design remains in SAD/IDD/SDD documents, and verification intent remains owned by the SVP.
