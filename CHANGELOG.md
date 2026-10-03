@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add a subtle non-layout-affecting boundary around the Traceability Comparison tree pane while preserving the compact edge alignment.
+
 - Tighten Traceability Comparison tree edges/indentation, add a compact `Collapse all` control beside the type filter, and align the Engineering Explorer with the same dense full-width workbench styling without changing its architecture/detail behavior.
 
 - Make the Traceability Comparison tree fully portal-owned: remove remaining Material navigation classes that interfered with disclosure/indentation, eliminate unnecessary tree-pane padding, tighten workspace top spacing, and qualify real collapsed/open/closed child visibility in Chrome.
