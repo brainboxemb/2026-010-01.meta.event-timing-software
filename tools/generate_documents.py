@@ -29,6 +29,8 @@ SYSTEM_SPEC_DOCUMENTS = [
     "30-UC-system-use-cases.md",
     "31-SSSD-software-system-specification-document.md",
     "32-03-ISD-application-control-status.md",
+    "33-03-IDD-api-http-websocket.md",
+    "32-04-ISD-web-interface.md",
     "32-05-ISD-timingdata-interchange.md",
     "33-05-IDD-timingdata-interchange.md",
     "32-11-ISD-application-configuration.md",
@@ -48,8 +50,10 @@ ENGINEERING_DOCUMENTS = [
 ARCHITECTURE_DOCUMENTS = [
     "31-SSSD-software-system-specification-document.md",
     "32-03-ISD-application-control-status.md",
+    "33-03-IDD-api-http-websocket.md",
+    "32-04-ISD-web-interface.md",
     "32-05-ISD-timingdata-interchange.md",
-    "33-05-IDD-timingdata-interchange.md",
+    "33-05-IDD-timingdata-interchange.md"
     "32-11-ISD-application-configuration.md",
     "41-01-SSD-timing-application-specification-document.md",
     "43-01-SDD-01-data-and-display-design.md",
