@@ -85,10 +85,12 @@ The current principal services are:
 
 | Service | SI-01 boundary | Role |
 | --- | --- | --- |
-| `ApiClient` | IF-03 HTTP/JSON | version/status queries and later supported commands/test control |
+| `ClientConfig` | local file | target host, per-boundary ports and Engineering Client presentation/logging settings |
+| `ApiClient` | IF-03 HTTP/JSON | version/status queries and supported commands/test control |
 | `ApiEventClient` | IF-03 WebSocket | status/event snapshots and live event inspection |
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
-| `LiveLogClient` | `LoggingServer` | live diagnostic records and temporary runtime log-level control |
+| `LiveLogClient` | `LoggingServer` | SI-01 live diagnostic records and temporary runtime log-level control |
+| `ClientLog` | local runtime | Engineering Client startup/configuration/connection/request/error logging and local log presentation |
 
 The IF-03 HTTP and WebSocket client services share one process-wide JDK
 `HttpClient` transport. Repeated UI actions may create short-lived request
