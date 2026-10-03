@@ -11,6 +11,14 @@ defines SI-01's integration responsibilities, and IF-06/other IDDs define what i
 visible on the external interface. This document does not create another protocol
 definition.
 
+## Terms and abbreviations
+
+- **SDD** — Software Design Description
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **RabbitMQ** — messaging-broker technology used by one transport realization
+
+
 ## Relationship to other documents
 
 This SDD refines the SI-01 SSD for the transport implementation below the upstream
