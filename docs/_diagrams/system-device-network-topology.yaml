@@ -51,7 +51,7 @@ nodes:
     layout: {x: 805, y: 165, w: 350, h: 75}
 
   - id: web-operator
-    label: "Browser / tablet operator\nIF-04 Web Operator HMI"
+    label: "Browser / tablet operator\nIF-04 Web Interface"
     kind: client
     group: clients
     layout: {x: 805, y: 280, w: 350, h: 75}
