@@ -4,6 +4,15 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
+
+## Document guide
+
+- **Role:** define SI-01 transport realization below the upstream/backoffice semantic boundary.
+- **Inputs:** SI-01 SSD, applicable upstream interface contract and Java component-design constraints.
+- **Owns:** connector/transport structure and separation of transport from routing/domain semantics; it does not define the external protocol semantics.
+- **Downstream:** socket/RabbitMQ transport implementations and integration tests.
+- **Key terms:** `SDD` — Software Design Description; `SSD` — Software Specification Document; `SI` — Software Item; `RabbitMQ` — messaging-broker technology used by one transport realization.
+
 This SDD explains **how the upstream connection is implemented**. The SSD still
 defines SI-01's integration responsibilities, and IF-06/other IDDs define what is
 visible on the external interface. This document does not create another protocol
