@@ -8,8 +8,13 @@
       .replaceAll("'", "&#039;");
   }
 
-  function relationLabel(type) {
-    return String(type).replaceAll("_", " ");
+  function relationLabel(type, incoming) {
+    const label = String(type).replaceAll("_", " ");
+    if (!incoming) return label;
+    if (type === "derived_from") return "derived from this";
+    if (type === "satisfies") return "satisfies this";
+    if (type === "verifies") return "verifies this";
+    return label + " this";
   }
 
   function initializeExplorer() {
@@ -31,7 +36,7 @@
       return node.dataset.objectId || node.dataset.engineeringId || "";
     }
 
-    function objectButton(id, relationType) {
+    function objectButton(id, relationType, incoming) {
       const object = data.objects[id];
       if (!object) return "";
       return (
@@ -39,7 +44,7 @@
         escapeHtml(id) +
         '">' +
         '<span class="eng-relation__type">' +
-        escapeHtml(relationLabel(relationType)) +
+        escapeHtml(relationLabel(relationType, incoming)) +
         "</span>" +
         '<span class="eng-relation__object">' +
         escapeHtml(object.id) +
@@ -50,7 +55,7 @@
       );
     }
 
-    function relationSection(title, relations, endpointKey) {
+    function relationSection(title, relations, endpointKey, incoming) {
       if (!relations.length) {
         return (
           '<section class="eng-detail__relations">' +
@@ -63,8 +68,13 @@
         '<section class="eng-detail__relations"><h3>' +
         escapeHtml(title) +
         "</h3>" +
+        (incoming
+          ? "<p>The relation is declared by the listed object.</p>"
+          : "") +
         relations
-          .map((relation) => objectButton(relation[endpointKey], relation.type))
+          .map((relation) =>
+            objectButton(relation[endpointKey], relation.type, incoming)
+          )
           .join("") +
         "</section>"
       );
@@ -79,7 +89,7 @@
         "<h3>One-hop context</h3>" +
         "<p>Incoming and outgoing graph neighbors at exact depth 1.</p>" +
         '<div class="eng-focus-list">' +
-        neighbors.map((neighbor) => objectButton(neighbor, "one hop")).join("") +
+        neighbors.map((neighbor) => objectButton(neighbor, "one hop", false)).join("") +
         "</div></section>"
       );
     }
@@ -119,8 +129,8 @@
         escapeHtml(object.source_url) +
         '">Open source definition</a>' +
         "</div>" +
-        relationSection("Outgoing", object.outgoing, "target") +
-        relationSection("Incoming", object.incoming, "source") +
+        relationSection("References from this object", object.outgoing, "target", false) +
+        relationSection("Objects that reference this object", object.incoming, "source", true) +
         focusSection(id);
 
       if (updateUrl) {
