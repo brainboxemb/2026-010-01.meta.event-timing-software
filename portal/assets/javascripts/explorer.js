@@ -1,0 +1,668 @@
+(function () {
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function relationLabel(type, incoming) {
+    const label = String(type).replaceAll("_", " ");
+    if (!incoming) return label;
+    if (type === "derived_from") return "derived from this";
+    if (type === "satisfies") return "satisfies this";
+    if (type === "verifies") return "verifies this";
+    return label + " this";
+  }
+
+  function initializePortalViews() {
+    const dataNode = document.getElementById("eng-graph-data");
+    if (!dataNode) return;
+
+    let data;
+    try {
+      data = JSON.parse(dataNode.textContent);
+    } catch (error) {
+      console.error("Unable to parse engineering graph data", error);
+      return;
+    }
+
+    function relationButton(id, relationType, incoming, mode) {
+      const object = data.objects[id];
+      if (!object) return "";
+      const attribute =
+        mode === "compare"
+          ? 'data-compare-object-id="' + escapeHtml(id) + '"'
+          : 'data-object-id="' + escapeHtml(id) + '"';
+      return (
+        '<button class="eng-relation" type="button" ' +
+        attribute +
+        ">" +
+        '<span class="eng-relation__type">' +
+        escapeHtml(relationLabel(relationType, incoming)) +
+        "</span>" +
+        '<span class="eng-relation__object">' +
+        escapeHtml(object.id) +
+        " — " +
+        escapeHtml(object.title) +
+        "</span>" +
+        "</button>"
+      );
+    }
+
+    function relationSection(title, relations, endpointKey, incoming, mode) {
+      const explanation = incoming
+        ? "Declared by the listed source object and directed to this object."
+        : "Declared by this object and directed to the listed target object.";
+      if (!relations.length) {
+        return (
+          '<section class="eng-detail__relations">' +
+          "<h3>" +
+          escapeHtml(title) +
+          "</h3><p>" +
+          escapeHtml(explanation) +
+          "</p><p>None in this production slice.</p></section>"
+        );
+      }
+      return (
+        '<section class="eng-detail__relations"><h3>' +
+        escapeHtml(title) +
+        "</h3><p>" +
+        escapeHtml(explanation) +
+        "</p>" +
+        relations
+          .map((relation) =>
+            relationButton(relation[endpointKey], relation.type, incoming, mode)
+          )
+          .join("") +
+        "</section>"
+      );
+    }
+
+    function focusSection(id, mode) {
+      const focus = data.focus_depth_1[id];
+      if (!focus) return "";
+      const neighbors = focus.objects.filter((objectId) => objectId !== id);
+      return (
+        '<section class="eng-detail__focus">' +
+        "<h3>One-hop context</h3>" +
+        "<p>Incoming and outgoing graph neighbors at exact depth 1.</p>" +
+        '<div class="eng-focus-list">' +
+        neighbors
+          .map((neighbor) => relationButton(neighbor, "one hop", false, mode))
+          .join("") +
+        "</div></section>"
+      );
+    }
+
+    function objectPanel(object, roleLabel, mode) {
+      return (
+        (roleLabel
+          ? '<div class="eng-detail__role">' +
+            escapeHtml(roleLabel) +
+            "</div>"
+          : "") +
+        '<div class="eng-detail__header">' +
+        '<span class="eng-object-type">' +
+        escapeHtml(object.type_label) +
+        "</span>" +
+        "<h2>" +
+        escapeHtml(object.title) +
+        "</h2>" +
+        "<code>" +
+        escapeHtml(object.id) +
+        "</code>" +
+        "</div>" +
+        (object.content_html
+          ? '<div class="eng-detail__summary">' + object.content_html + "</div>"
+          : "") +
+        '<div class="eng-detail__actions">' +
+        '<a class="md-button md-button--primary" href="../objects/' +
+        encodeURIComponent(object.id) +
+        '/">Open details & relations</a>' +
+        '<a class="md-button" href="' +
+        escapeHtml(object.source_url) +
+        '">Open source definition</a>' +
+        "</div>" +
+        relationSection(
+          "Outgoing relationships",
+          object.outgoing,
+          "target",
+          false,
+          mode
+        ) +
+        relationSection(
+          "Incoming relationships",
+          object.incoming,
+          "source",
+          true,
+          mode
+        ) +
+        focusSection(object.id, mode)
+      );
+    }
+
+    function initializeExplorer() {
+      const root = document.querySelector("[data-eng-explorer]");
+      if (!root) return;
+      const detail = root.querySelector("[data-eng-detail]");
+      const initialUrl = new URL(window.location.href);
+
+      function selectedId(node) {
+        return node.dataset.objectId || node.dataset.engineeringId || "";
+      }
+
+      function render(id, updateHistory) {
+        const object = data.objects[id];
+        if (!object || !detail) return;
+
+        root
+          .querySelectorAll("[data-object-id], [data-engineering-id]")
+          .forEach((node) => {
+            node.classList.toggle("is-selected", selectedId(node) === id);
+          });
+
+        detail.innerHTML = objectPanel(object, "Selected object", "navigate");
+
+        if (updateHistory) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("object", id);
+          url.searchParams.delete("compare");
+          history.replaceState({}, "", url);
+        }
+      }
+
+      root.addEventListener("click", (event) => {
+        const target = event.target.closest(
+          "[data-object-id], [data-engineering-id]"
+        );
+        if (target && root.contains(target)) {
+          render(selectedId(target), true);
+        }
+      });
+
+      root.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const target = event.target.closest(
+          "[data-object-id], [data-engineering-id]"
+        );
+        if (target && root.contains(target)) {
+          event.preventDefault();
+          render(selectedId(target), true);
+        }
+      });
+
+      const requested = initialUrl.searchParams.get("object");
+      if (requested && data.objects[requested]) {
+        render(requested, false);
+      }
+    }
+
+    function initializeWorkspace() {
+      const root = document.querySelector("[data-eng-workspace]");
+      if (!root) return;
+
+      const rootDetail = root.querySelector("[data-eng-root-detail]");
+      const compareDetail = root.querySelector("[data-eng-compare-detail]");
+      const objectBrowser = root.querySelector(".eng-object-browser");
+      const filterPanel = root.querySelector(".eng-object-browser__filters");
+      const searchInput = root.querySelector("[data-eng-tree-search]");
+      const typeFilter = root.querySelector("[data-eng-tree-type]");
+      const collapseAllButton = root.querySelector(
+        "[data-eng-tree-collapse-all]"
+      );
+      const resultCount = root.querySelector("[data-eng-tree-count]");
+      const treeItems = Array.from(
+        root.querySelectorAll("[data-workspace-root-id]")
+      );
+      const treeGroups = Array.from(
+        root.querySelectorAll("[data-eng-tree-group]")
+      );
+      const treeToggles = Array.from(
+        root.querySelectorAll("[data-eng-tree-toggle]")
+      );
+      const traceLayout = root.querySelector(".eng-trace-layout");
+      const paneResizers = Array.from(
+        root.querySelectorAll("[data-eng-resizer]")
+      );
+      const paneStorageKey = "engineering-traceability-pane-shares-v1";
+      let paneShares = [0.28, 0.36, 0.36];
+      const initialUrl = new URL(window.location.href);
+      let rootId = "";
+      let compareId = "";
+
+      function normalizePaneShares(shares) {
+        if (!Array.isArray(shares) || shares.length !== 3) return null;
+        const values = shares.map(Number);
+        if (values.some((value) => !Number.isFinite(value) || value <= 0)) {
+          return null;
+        }
+        const total = values.reduce((sum, value) => sum + value, 0);
+        if (!Number.isFinite(total) || total <= 0) return null;
+        return values.map((value) => value / total);
+      }
+
+      function persistPaneShares() {
+        try {
+          localStorage.setItem(paneStorageKey, JSON.stringify(paneShares));
+        } catch (error) {
+          // Storage may be unavailable; resizing must still work for this page.
+        }
+      }
+
+      function updateResizerAria() {
+        if (paneResizers.length < 2) return;
+        paneResizers[0].setAttribute(
+          "aria-valuenow",
+          String(Math.round(paneShares[0] * 100))
+        );
+        paneResizers[1].setAttribute(
+          "aria-valuenow",
+          String(Math.round((paneShares[0] + paneShares[1]) * 100))
+        );
+      }
+
+      function applyPaneShares(shares, persist) {
+        const normalized = normalizePaneShares(shares);
+        if (!normalized || !traceLayout) return;
+        paneShares = normalized;
+
+        if (window.matchMedia("(max-width: 900px)").matches) {
+          traceLayout.style.removeProperty("grid-template-columns");
+          return;
+        }
+
+        const available = Math.max(0, traceLayout.clientWidth - 8);
+        if (!available) return;
+        const widths = paneShares.map((share) => Math.round(share * available));
+        traceLayout.style.gridTemplateColumns =
+          widths[0] +
+          "px 4px " +
+          widths[1] +
+          "px 4px " +
+          widths[2] +
+          "px";
+        updateResizerAria();
+        if (persist) persistPaneShares();
+      }
+
+      function restorePaneShares() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(paneStorageKey));
+          const normalized = normalizePaneShares(saved);
+          if (normalized) paneShares = normalized;
+        } catch (error) {
+          // Keep defaults when stored state is unavailable or invalid.
+        }
+        applyPaneShares(paneShares, false);
+      }
+
+      function resizeBoundary(index, deltaPixels, startShares) {
+        if (!traceLayout) return;
+        const available = Math.max(1, traceLayout.clientWidth - 8);
+        const widths = startShares.map((share) => share * available);
+        const minimums = [150, 240, 240];
+
+        if (index === 0) {
+          const pairTotal = widths[0] + widths[1];
+          widths[0] = Math.min(
+            pairTotal - minimums[1],
+            Math.max(minimums[0], widths[0] + deltaPixels)
+          );
+          widths[1] = pairTotal - widths[0];
+        } else {
+          const pairTotal = widths[1] + widths[2];
+          widths[1] = Math.min(
+            pairTotal - minimums[2],
+            Math.max(minimums[1], widths[1] + deltaPixels)
+          );
+          widths[2] = pairTotal - widths[1];
+        }
+
+        applyPaneShares(
+          widths.map((width) => width / available),
+          false
+        );
+      }
+
+      function initializePaneResizers() {
+        if (!traceLayout || paneResizers.length !== 2) return;
+        restorePaneShares();
+
+        paneResizers.forEach((resizer, index) => {
+          resizer.setAttribute("aria-valuemin", "10");
+          resizer.setAttribute("aria-valuemax", "90");
+
+          resizer.addEventListener("pointerdown", (event) => {
+            if (window.matchMedia("(max-width: 900px)").matches) return;
+            event.preventDefault();
+            const startX = event.clientX;
+            const startShares = paneShares.slice();
+            resizer.classList.add("is-dragging");
+            if (resizer.setPointerCapture) {
+              resizer.setPointerCapture(event.pointerId);
+            }
+
+            const move = (moveEvent) => {
+              resizeBoundary(index, moveEvent.clientX - startX, startShares);
+            };
+            const finish = () => {
+              resizer.classList.remove("is-dragging");
+              persistPaneShares();
+              resizer.removeEventListener("pointermove", move);
+              resizer.removeEventListener("pointerup", finish);
+              resizer.removeEventListener("pointercancel", finish);
+            };
+
+            resizer.addEventListener("pointermove", move);
+            resizer.addEventListener("pointerup", finish);
+            resizer.addEventListener("pointercancel", finish);
+          });
+
+          resizer.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+              return;
+            }
+            event.preventDefault();
+            const direction = event.key === "ArrowLeft" ? -1 : 1;
+            resizeBoundary(index, direction * 24, paneShares.slice());
+            persistPaneShares();
+          });
+
+          resizer.addEventListener("dblclick", () => {
+            paneShares = [0.28, 0.36, 0.36];
+            applyPaneShares(paneShares, true);
+          });
+        });
+
+        window.addEventListener("resize", () => {
+          applyPaneShares(paneShares, false);
+        });
+      }
+
+      function setGroupExpanded(group, expanded) {
+        if (!group) return;
+        group.classList.toggle("is-expanded", expanded);
+        const toggle = group.querySelector(":scope > [data-eng-tree-toggle]");
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        }
+      }
+
+      function directVisibleTreeChildren(group) {
+        if (!group) return { groups: [], leaves: [] };
+        const items = group.querySelector(
+          ":scope > .eng-tree-group__items"
+        );
+        if (!items) return { groups: [], leaves: [] };
+
+        const groups = Array.from(
+          items.querySelectorAll(":scope > [data-eng-tree-group]")
+        ).filter((child) => !child.hidden);
+        const leaves = Array.from(
+          items.querySelectorAll(
+            ":scope > .eng-tree-leaf > [data-workspace-root-id]"
+          )
+        ).filter((leaf) => !leaf.hidden);
+        return { groups, leaves };
+      }
+
+      function expandLinearBranch(group) {
+        let current = group;
+        while (current) {
+          setGroupExpanded(current, true);
+          const children = directVisibleTreeChildren(current);
+          if (children.leaves.length || children.groups.length !== 1) {
+            break;
+          }
+          current = children.groups[0];
+        }
+      }
+
+      function expandUsefulBranches(group) {
+        if (!group) return;
+        setGroupExpanded(group, true);
+
+        const children = directVisibleTreeChildren(group);
+        if (!children.leaves.length && children.groups.length === 1) {
+          expandLinearBranch(children.groups[0]);
+          return;
+        }
+
+        children.groups.forEach((child) => {
+          const childChildren = directVisibleTreeChildren(child);
+          if (
+            !childChildren.leaves.length &&
+            childChildren.groups.length === 1
+          ) {
+            expandLinearBranch(child);
+          }
+        });
+      }
+
+      function toggleGroup(group) {
+        if (!group) return;
+        if (group.classList.contains("is-expanded")) {
+          setGroupExpanded(group, false);
+        } else {
+          expandUsefulBranches(group);
+        }
+      }
+
+      function updateTreeSelection() {
+        let selectedNode = null;
+        treeItems.forEach((node) => {
+          const selected = node.dataset.workspaceRootId === rootId;
+          node.classList.toggle("is-selected", selected);
+          if (selected) {
+            selectedNode = node;
+            node.setAttribute("aria-current", "true");
+            let group = node.closest("[data-eng-tree-group]");
+            while (group) {
+              setGroupExpanded(group, true);
+              group = group.parentElement
+                ? group.parentElement.closest("[data-eng-tree-group]")
+                : null;
+            }
+          } else {
+            node.removeAttribute("aria-current");
+          }
+        });
+        if (selectedNode && objectBrowser) {
+          const browserRect = objectBrowser.getBoundingClientRect();
+          const nodeRect = selectedNode.getBoundingClientRect();
+          const filterHeight = filterPanel
+            ? filterPanel.getBoundingClientRect().height
+            : 0;
+          const visibleHeight = Math.max(
+            0,
+            objectBrowser.clientHeight - filterHeight
+          );
+          const targetTop =
+            objectBrowser.scrollTop +
+            (nodeRect.top - browserRect.top) -
+            filterHeight -
+            Math.max(0, (visibleHeight - nodeRect.height) / 2);
+          objectBrowser.scrollTop = Math.max(0, targetTop);
+        }
+      }
+
+      function updateCompareSelection() {
+        root.querySelectorAll("[data-compare-object-id]").forEach((node) => {
+          node.classList.toggle(
+            "is-selected",
+            node.dataset.compareObjectId === compareId
+          );
+        });
+      }
+
+      function updateUrl() {
+        const url = new URL(window.location.href);
+        if (rootId) {
+          url.searchParams.set("object", rootId);
+        } else {
+          url.searchParams.delete("object");
+        }
+        if (rootId && compareId) {
+          url.searchParams.set("compare", compareId);
+        } else {
+          url.searchParams.delete("compare");
+        }
+        history.replaceState({}, "", url);
+      }
+
+      function applyTreeFilter() {
+        const query = (searchInput ? searchInput.value : "")
+          .trim()
+          .toLowerCase();
+        const selectedType = typeFilter ? typeFilter.value : "";
+
+        treeItems.forEach((node) => {
+          const matchesQuery =
+            !query || (node.dataset.objectSearch || "").includes(query);
+          const matchesType =
+            !selectedType || node.dataset.objectType === selectedType;
+          node.hidden = !(matchesQuery && matchesType);
+        });
+
+        treeGroups.forEach((group) => {
+          const visible = Array.from(
+            group.querySelectorAll("[data-workspace-root-id]")
+          ).some((node) => !node.hidden);
+          group.hidden = !visible;
+          if ((query || selectedType) && visible) {
+            setGroupExpanded(group, true);
+          }
+        });
+
+        if (resultCount) {
+          const visibleCount = treeItems.filter((node) => !node.hidden).length;
+          resultCount.textContent =
+            visibleCount + (visibleCount === 1 ? " object" : " objects");
+        }
+      }
+
+      function renderRoot(id, updateHistory) {
+        const object = data.objects[id];
+        if (!object || !rootDetail) return;
+        rootId = id;
+        compareId = "";
+        rootDetail.innerHTML = objectPanel(object, "Selected object", "compare");
+        rootDetail.scrollTop = 0;
+        renderCompare("", false);
+        updateTreeSelection();
+        if (updateHistory) updateUrl();
+      }
+
+      function renderCompare(id, updateHistory) {
+        if (!compareDetail) return;
+        const object = data.objects[id];
+        if (!object) {
+          compareId = "";
+          compareDetail.innerHTML =
+            '<div class="eng-compare-empty">' +
+            "<strong>Compare a related object</strong>" +
+            "<p>Click an Incoming, Outgoing or one-hop relation in the selected object. " +
+            "The root object stays visible while the related object opens here.</p>" +
+            "</div>";
+        } else {
+          compareId = id;
+          compareDetail.innerHTML = objectPanel(
+            object,
+            "Compared object",
+            "compare"
+          );
+          compareDetail.scrollTop = 0;
+        }
+        updateCompareSelection();
+        if (updateHistory) updateUrl();
+      }
+
+      root.addEventListener("click", (event) => {
+        const toggleTarget = event.target.closest("[data-eng-tree-toggle]");
+        if (toggleTarget && root.contains(toggleTarget)) {
+          toggleGroup(toggleTarget.closest("[data-eng-tree-group]"));
+          return;
+        }
+
+        const treeTarget = event.target.closest("[data-workspace-root-id]");
+        if (treeTarget && root.contains(treeTarget)) {
+          renderRoot(treeTarget.dataset.workspaceRootId, true);
+          return;
+        }
+
+        const compareTarget = event.target.closest("[data-compare-object-id]");
+        if (compareTarget && root.contains(compareTarget)) {
+          renderCompare(compareTarget.dataset.compareObjectId, true);
+        }
+      });
+
+      treeToggles.forEach((toggle) => {
+        toggle.addEventListener("keydown", (event) => {
+          const group = toggle.closest("[data-eng-tree-group]");
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            expandUsefulBranches(group);
+          } else if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            setGroupExpanded(group, false);
+          }
+        });
+      });
+
+      if (collapseAllButton) {
+        collapseAllButton.addEventListener("click", () => {
+          treeGroups.forEach((group) => setGroupExpanded(group, false));
+        });
+      }
+
+      if (searchInput) searchInput.addEventListener("input", applyTreeFilter);
+      if (typeFilter) typeFilter.addEventListener("change", applyTreeFilter);
+
+      const requested = initialUrl.searchParams.get("object");
+      const initial =
+        requested && data.objects[requested] ? requested : "";
+      const compared = initialUrl.searchParams.get("compare");
+
+      if (initial) {
+        renderRoot(initial, false);
+        if (compared && data.objects[compared] && compared !== initial) {
+          renderCompare(compared, false);
+        }
+      }
+      applyTreeFilter();
+      updateUrl();
+      initializePaneResizers();
+    }
+
+    const workspacePage = Boolean(
+      document.querySelector("[data-eng-workspace]")
+    );
+    const explorerPage = Boolean(
+      document.querySelector("[data-eng-explorer]")
+    );
+    document.documentElement.classList.toggle(
+      "eng-workspace-page",
+      workspacePage
+    );
+    document.body.classList.toggle("eng-workspace-page", workspacePage);
+    document.documentElement.classList.toggle(
+      "eng-explorer-page",
+      explorerPage
+    );
+    document.body.classList.toggle("eng-explorer-page", explorerPage);
+
+    initializeExplorer();
+    initializeWorkspace();
+  }
+
+  if (typeof document$ !== "undefined") {
+    document$.subscribe(initializePortalViews);
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializePortalViews);
+  } else {
+    initializePortalViews();
+  }
+})();

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Web Interface Specification (ISD) &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TimingData Interchange Interface Specification (ISD)" href="32-05-ISD-timingdata-interchange.html" />
+    <link rel="prev" title="API Interface Specification (ISD)" href="32-03-ISD-application-control-status.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="web-interface-specification-isd">
+<h1>Web Interface Specification (ISD)<a class="headerlink" href="#web-interface-specification-isd" title="Link to this heading">¶</a></h1>
+<p>Status: initial working baseline</p>
+<p>System interface: <strong>IF-04 — Web Interface</strong></p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This Interface Specification Document defines the semantic protocol between a
+browser-based Web client and one configured <strong>TimingNode</strong> of the
+<strong>Timing Point Application</strong> (SI-01).</p>
+<p>The interface defines the state, commands, results and ordering that a conforming
+Web client can use. It does not define page layout, widgets, styling or other GUI
+design.</p>
+<p>Concrete URL paths, HTTP/WebSocket methods, payload member names and browser
+transport details belong in an optional IF-04 Interface Design Description when
+that realization is designed.</p>
+</section>
+<section id="terms-and-abbreviations">
+<h2>Terms and abbreviations<a class="headerlink" href="#terms-and-abbreviations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>IF</strong> — system interface</p></li>
+<li><p><strong>ISD</strong> — Interface Specification Document</p></li>
+<li><p><strong>IDD</strong> — Interface Design Description</p></li>
+<li><p><strong>OP</strong> — Operation</p></li>
+<li><p><strong>SI</strong> — Software Item</p></li>
+</ul>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>IF-04 is allocated by
+<code class="docutils literal notranslate"><span class="pre">31-SSSD-software-system-specification-document.md</span></code>.</p>
+<p>The first baseline is driven mainly by:</p>
+<ul class="simple">
+<li><p>UC-001 — connect to a registration system;</p></li>
+<li><p>UC-002 — configure, open and close a registration point.</p></li>
+</ul>
+</section>
+<section id="parties">
+<h2>Parties<a class="headerlink" href="#parties" title="Link to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Browser-based Web client
+          |
+          | IF-04
+          v
+Timing Point Application (SI-01)
+          |
+          v
+one configured TimingNode
+</pre></div>
+</div>
+<p>SI-01 owns TimingNode state and command acceptance. The Web client does not own
+or duplicate lifecycle business rules.</p>
+</section>
+<section id="binding-and-addressing">
+<h2>Binding and addressing<a class="headerlink" href="#binding-and-addressing" title="Link to this heading">¶</a></h2>
+<p>Each configured TimingNode has one configured Web binding.</p>
+<p>The Web binding therefore identifies the TimingNode to which IF-04 commands and
+queries apply. A normal IF-04 command does not need to carry a separate
+TimingNodeId merely to select the node already identified by that binding.</p>
+<p>The binding address/port is presentation configuration and is not part of the
+TimingNode domain identity.</p>
+<p>A process containing multiple TimingNodes may expose multiple IF-04 bindings.</p>
+</section>
+<section id="operation-identifiers">
+<h2>Operation identifiers<a class="headerlink" href="#operation-identifiers" title="Link to this heading">¶</a></h2>
+<p>Operations use the identifier form <code class="docutils literal notranslate"><span class="pre">IF04-OP-&lt;number&gt;</span></code>, where <strong>OP</strong> means
+<strong>Operation</strong>. The identifier names a stable semantic interface operation; it is
+independent of a concrete HTTP route, message name or other wire representation.</p>
+</section>
+<section id="if04-op-001-get-current-timingnode-state">
+<h2>IF04-OP-001 — Get current TimingNode state<a class="headerlink" href="#if04-op-001-get-current-timingnode-state" title="Link to this heading">¶</a></h2>
+<p>Returns the current state of the TimingNode associated with the Web binding.</p>
+<p>The semantic state contains at least:</p>
+<ul class="simple">
+<li><p>TimingNodeId;</p></li>
+<li><p>current operational LocationId, or no assigned location;</p></li>
+<li><p>lifecycle state <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code> or <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>;</p></li>
+<li><p>explicit problem/error state where relevant to operation.</p></li>
+</ul>
+<p>Returned state represents SI-01 application/domain state, not browser-local
+presentation state.</p>
+</section>
+<section id="if04-op-002-open-at-a-location">
+<h2>IF04-OP-002 — Open at a location<a class="headerlink" href="#if04-op-002-open-at-a-location" title="Link to this heading">¶</a></h2>
+<p>Input:</p>
+<ul class="simple">
+<li><p>requested <code class="docutils literal notranslate"><span class="pre">LocationId</span></code>.</p></li>
+</ul>
+<p>For a CLOSED TimingNode, applying the requested LocationId and changing lifecycle
+to OPEN are <strong>one ordered application/domain operation</strong>.</p>
+<p>A conforming IF-04 client shall not implement normal OPEN as two independently
+ordered protocol operations:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>set LocationId
+open
+</pre></div>
+</div>
+<p>Instead, OPEN carries the requested LocationId as part of the same command.</p>
+<p>This ensures that another concurrently active presentation client cannot insert a
+different location change between selecting the location and opening the
+TimingNode.</p>
+<p>Successful semantic outcomes include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OPENED</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ALREADY_OPEN</span></code>.</p></li>
+</ul>
+<p>The exact result when an OPEN request supplies a different LocationId while the
+TimingNode is already OPEN remains an open point.</p>
+</section>
+<section id="if04-op-003-close">
+<h2>IF04-OP-003 — Close<a class="headerlink" href="#if04-op-003-close" title="Link to this heading">¶</a></h2>
+<p>Requests the TimingNode associated with the Web binding to change to CLOSED.</p>
+<p>When the TimingNode is OPEN and CLOSE is accepted, the resulting state is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p>
+<p>A CLOSE request while the TimingNode is already CLOSED is rejected. The semantic
+reason may remain available inside SI-01, while a concrete compatibility mapping
+may expose only a general failed-request outcome.</p>
+<p>A successful state change is visible through subsequent IF-04 state observation.</p>
+</section>
+<section id="command-ordering">
+<h2>Command ordering<a class="headerlink" href="#command-ordering" title="Link to this heading">¶</a></h2>
+<p>Commands received through IF-04 may race with commands received through other
+presentation paths.</p>
+<p>State-changing work for one TimingNode shall therefore have one
+application-owned order. IF-04 shall not expose a partially applied compound
+operation.</p>
+<p>In particular, IF04-OP-002 has one externally observable ordering point for the
+requested LocationId plus the CLOSED-to-OPEN transition.</p>
+<p>This specifies external behaviour. It does not prescribe a mutex, worker class or
+thread implementation.</p>
+</section>
+<section id="failure-semantics">
+<h2>Failure semantics<a class="headerlink" href="#failure-semantics" title="Link to this heading">¶</a></h2>
+<p>IF-04 distinguishes at least:</p>
+<ul class="simple">
+<li><p>invalid request value;</p></li>
+<li><p>command rejected by current domain state;</p></li>
+<li><p>unavailable or busy processing;</p></li>
+<li><p>failed processing;</p></li>
+<li><p>operation timeout with outcome unknown;</p></li>
+<li><p>unexpected internal failure.</p></li>
+</ul>
+<p>A timeout does not mean already accepted work was cancelled. A client can query
+current state before deciding whether to retry a state-changing command.</p>
+<p>IF-04 requires success and rejection to be distinguishable. A concrete
+compatibility mapping may expose less detailed failure information than SI-01
+keeps internally. Human-readable text is diagnostic.</p>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">¶</a></h2>
+<p>The IF-04 semantic operations, state values and results form the stable contract.</p>
+<p>A concrete Web realization may use a compatibility mapping for representation
+details such as endpoint names, field names or field encodings/types. Such a
+mapping shall preserve the IF-04 semantic meaning and command ordering defined by
+this ISD.</p>
+<p>Compatible extensions shall not silently change the meaning of existing IF-04
+operations, state values or results. A breaking semantic change requires a new
+interface version or an explicitly defined compatible migration.</p>
+<p>Concrete endpoint names, payload fields, representation types and version
+encoding belong to the IF-04 design/configuration layer rather than this ISD.</p>
+</section>
+<section id="if-04-requirements">
+<h2>IF-04 requirements<a class="headerlink" href="#if-04-requirements" title="Link to this heading">¶</a></h2>
+<div class="need_container docutils container" id="SNCB-50bb2796">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-001">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Per-TimingNode Web binding</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-001" title="IF04-REQ-001">IF04-REQ-001</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-001" title="IF04-REQ-001">UC-001</a>, <a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-001">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 shall support one configured Web binding per TimingNode. The binding shall
+identify the TimingNode to which IF-04 operations apply without making the Web
+endpoint part of TimingNode domain identity.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-912e17af">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-002">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Current TimingNode state</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-002" title="IF04-REQ-002">IF04-REQ-002</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-001" title="IF04-REQ-002">UC-001</a>, <a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-002">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 shall expose the bound TimingNode identity, current operational LocationId
+when assigned, OPEN/CLOSED lifecycle state and relevant explicit problem state.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-8128a10a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-003">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Open with LocationId</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-003" title="IF04-REQ-003">IF04-REQ-003</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-003">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 OPEN shall carry the requested LocationId and shall represent LocationId
+selection plus the CLOSED-to-OPEN transition as one ordered TimingNode operation.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-2d40eb87">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-004">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Close operation</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-004" title="IF04-REQ-004">IF04-REQ-004</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-004">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 shall provide an explicit CLOSE operation for the bound TimingNode.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-6093d1ed">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-005">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Shared TimingNode semantics</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-005" title="IF04-REQ-005">IF04-REQ-005</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-005">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 shall use SI-01 TimingNode application/domain semantics rather than own a
+separate lifecycle or LocationId state model.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-52883925">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-006">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Explicit failure outcome</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-006" title="IF04-REQ-006">IF04-REQ-006</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-001" title="IF04-REQ-006">UC-001</a>, <a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-006">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Invalid, rejected, unavailable and outcome-unknown operations shall be
+distinguishable from successful operations. A concrete compatibility mapping may
+reduce the available failure detail.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-954d5574">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF04-REQ-007">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Compatible Web realizations</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF04-REQ-007" title="IF04-REQ-007">IF04-REQ-007</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">derived from: <span class="derived_from"><span><a class="reference internal" href="30-UC-system-use-cases.html#UC-001" title="IF04-REQ-007">UC-001</a>, <a class="reference internal" href="30-UC-system-use-cases.html#UC-002" title="IF04-REQ-007">UC-002</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-04 shall allow concrete Web realizations to map endpoint names, field names
+and representation types while preserving the semantic operations, values,
+results and ordering defined by this ISD.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="open-points">
+<h2>Open points<a class="headerlink" href="#open-points" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>OPEN with a different LocationId while already OPEN;</p></li>
+<li><p>concrete default Web transport and payload design;</p></li>
+<li><p>compatibility-mapping mechanism for deployment-specific representation details.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="30-UC-system-use-cases.html">System use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Web Interface Specification (ISD)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terms-and-abbreviations">Terms and abbreviations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parties">Parties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#binding-and-addressing">Binding and addressing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#operation-identifiers">Operation identifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if04-op-001-get-current-timingnode-state">IF04-OP-001 — Get current TimingNode state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if04-op-002-open-at-a-location">IF04-OP-002 — Open at a location</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if04-op-003-close">IF04-OP-003 — Close</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-ordering">Command ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#failure-semantics">Failure semantics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility">Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if-04-requirements">IF-04 requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-points">Open points</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33-05-IDD-timingdata-interchange.html">TimingData Interchange Interface Design Description (IDD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html">Timing Application Verification Test Specification (VTS)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="32-03-ISD-application-control-status.html" title="previous chapter">API Interface Specification (ISD)</a></li>
+      <li>Next: <a href="32-05-ISD-timingdata-interchange.html" title="next chapter">TimingData Interchange Interface Specification (ISD)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/32-04-ISD-web-interface.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

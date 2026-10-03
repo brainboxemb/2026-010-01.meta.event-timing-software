@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="820" viewBox="0 0 1360 820">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDE03-05 — API-first Development Client workbench</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Current UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.</text>
+<rect data-notation="wireframe-panel" x="30" y="80" width="1300" height="710" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="40.0" y="97.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Development Client</text>
+<line x1="30.0" y1="111.0" x2="1330.0" y2="111.0" stroke="#666666" stroke-width="1"/>
+<rect data-notation="wireframe-input" x="55" y="118" width="265" height="54" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="63.0" y="130.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Target</text>
+<rect x="62.0" y="141.0" width="251.0" height="25.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="70.0" y="153.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">127.0.0.1  |  client config file</text>
+<rect data-notation="wireframe-button" x="335" y="121" width="145" height="48" rx="5" ry="5" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="407.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">API :8081</text>
+<text x="407.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">READY</text>
+<rect data-notation="wireframe-button" x="490" y="121" width="165" height="48" rx="5" ry="5" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="572.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Events :eventPort</text>
+<text x="572.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECTED</text>
+<rect data-notation="wireframe-button" x="665" y="121" width="160" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="745.0" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Terminal :shellPort</text>
+<text x="745.0" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECT</text>
+<rect data-notation="wireframe-button" x="835" y="121" width="175" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="922.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Device log :logPort</text>
+<text x="922.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECT</text>
+<rect data-notation="wireframe-button" x="1020" y="121" width="135" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="1087.5" y="145.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Reload config</text>
+<rect data-notation="wireframe-status" x="1165" y="121" width="135" height="48" rx="14.0" ry="14.0" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="1232.5" y="137.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">Client log</text>
+<text x="1232.5" y="152.7" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">ACTIVE</text>
+<rect data-notation="wireframe-tabs" x="55" y="180" width="1245" height="44" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="210.6" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">API</text>
+<line x1="366.2" y1="180.0" x2="366.2" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="521.9" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Events</text>
+<line x1="677.5" y1="180.0" x2="677.5" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="833.1" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Logs</text>
+<line x1="988.8" y1="180.0" x2="988.8" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="1144.4" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Terminal</text>
+<rect data-notation="wireframe-panel" x="55" y="230" width="1245" height="145" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="65.0" y="247.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">API / selected TimingNode</text>
+<line x1="55.0" y1="261.0" x2="1300.0" y2="261.0" stroke="#666666" stroke-width="1"/>
+<text x="65.0" y="275.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">timing-node-01  |  state CLOSED  |  LocationId 24</text>
+<rect data-notation="wireframe-button" x="80" y="310" width="95" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="127.5" y="328.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Version</text>
+<rect data-notation="wireframe-button" x="185" y="310" width="95" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="232.5" y="328.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Status</text>
+<rect data-notation="wireframe-input" x="315" y="288" width="150" height="72" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="323.0" y="300.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Location</text>
+<rect x="322.0" y="311.0" width="136.0" height="43.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="330.0" y="332.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">24</text>
+<rect data-notation="wireframe-button" x="475" y="310" width="105" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="527.5" y="328.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Open</text>
+<rect data-notation="wireframe-button" x="590" y="310" width="105" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="642.5" y="328.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Close</text>
+<rect data-notation="wireframe-input" x="720" y="288" width="550" height="72" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="728.0" y="300.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Last API operation</text>
+<rect x="727.0" y="311.0" width="536.0" height="43.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="735.0" y="332.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">NODE_NOT_OPEN — response retained for inspection</text>
+<rect data-notation="wireframe-panel" x="55" y="395" width="1245" height="135" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="65.0" y="412.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Registration test input</text>
+<line x1="55.0" y1="426.0" x2="1300.0" y2="426.0" stroke="#666666" stroke-width="1"/>
+<text x="65.0" y="440.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Structured convenience input; SI-01 remains authoritative</text>
+<rect data-notation="wireframe-input" x="80" y="455" width="110" height="68" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="88.0" y="467.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Prefix</text>
+<rect x="87.0" y="478.0" width="96.0" height="39.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="95.0" y="497.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">N</text>
+<rect data-notation="wireframe-input" x="200" y="455" width="150" height="68" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="208.0" y="467.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Number</text>
+<rect x="207.0" y="478.0" width="136.0" height="39.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="215.0" y="497.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">0001</text>
+<rect data-notation="wireframe-input" x="380" y="455" width="180" height="68" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="388.0" y="467.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Date</text>
+<rect x="387.0" y="478.0" width="166.0" height="39.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="395.0" y="497.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">2026-10-03</text>
+<rect data-notation="wireframe-input" x="570" y="455" width="160" height="68" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="578.0" y="467.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Time</text>
+<rect x="577.0" y="478.0" width="146.0" height="39.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="585.0" y="497.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">15:33:00</text>
+<rect data-notation="wireframe-button" x="750" y="476" width="75" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="787.5" y="494.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Now</text>
+<rect data-notation="wireframe-button" x="845" y="476" width="145" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="917.5" y="494.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Send auto-reg</text>
+<rect data-notation="wireframe-input" x="1010" y="455" width="260" height="68" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="1018.0" y="467.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Wire value</text>
+<rect x="1017.0" y="478.0" width="246.0" height="39.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="1025.0" y="497.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">N0001 @ canonical UTC timestamp</text>
+<rect data-notation="wireframe-table" x="55" y="550" width="1245" height="150" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="65.0" y="567.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">LogBook / committed TimingData</text>
+<line x1="55.0" y1="581.0" x2="1300.0" y2="581.0" stroke="#666666" stroke-width="1"/>
+<text x="65.0" y="595.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">source order; row selection exposes complete public record</text>
+<text x="65.0" y="612.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Seq | Type     | Location | Registration | Time</text>
+<line x1="55.0" y1="622.8" x2="1300.0" y2="622.8" stroke="#666666" stroke-width="0.7"/>
+<text x="65.0" y="633.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">17  | OPEN     | 24       | -            | 15:30:00</text>
+<line x1="55.0" y1="644.4" x2="1300.0" y2="644.4" stroke="#666666" stroke-width="0.7"/>
+<text x="65.0" y="655.2" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">18  | AUTO_REG | 24       | N0001        | 15:33:00</text>
+<line x1="55.0" y1="666.0" x2="1300.0" y2="666.0" stroke="#666666" stroke-width="0.7"/>
+<text x="65.0" y="676.8" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">19  | CLOSE    | 24       | -            | 15:40:12</text>
+<line x1="55.0" y1="687.6" x2="1300.0" y2="687.6" stroke="#666666" stroke-width="0.7"/>
+<rect data-notation="wireframe-input" x="55" y="720" width="1245" height="48" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="63.0" y="732.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Raw response / selected record</text>
+<rect x="62.0" y="743.0" width="1231.0" height="19.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="70.0" y="752.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Complete API JSON remains available; structured UI never hides a domain rejection.</text>
+</svg>

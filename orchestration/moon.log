@@ -1,0 +1,36 @@
+[ WARN 2026-10-03 20:38:30.628] moon_task_hasher::task_hasher  Attempted to hash input docs/11-SIP-software-implementation-planning.md but it does not exist, skipping 
+▮▮▮▮ software:docs.diagrams (d29ba471)
+software:docs.planning | Documentation capability: docs.planning
+software:docs.planning | action=planning
+software:docs.planning | source_revision=6e193ecad7051c8647abcd4202c1250fe6dfe425
+software:docs.planning | owner_revision=6e193ecad7051c8647abcd4202c1250fe6dfe425
+software:docs.planning | tool_eng_docs_sha=7d13ae32c5ac3ac3fea0192559a034b9778a517d
+software:docs.planning | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_sip_planning.py
+software:docs.planning | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_sip_manager_roadmap.py
+▮▮▮▮ software:docs.planning (cached, 3ms, 8a1de674)
+software:docs.diagrams | Documentation capability: docs.diagrams
+software:docs.diagrams | action=diagrams
+software:docs.diagrams | source_revision=f493095453f2877a0820303d369d1c948ba0a4e4
+software:docs.diagrams | owner_revision=f493095453f2877a0820303d369d1c948ba0a4e4
+software:docs.diagrams | tool_eng_docs_sha=7d13ae32c5ac3ac3fea0192559a034b9778a517d
+software:docs.diagrams | > eng-docs diagrams --source docs/_diagrams --theme docs/_diagram-theme/default.yaml --out bld/docs/architecture
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_architecture_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_timing_detail_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_data_display_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.14/x64/bin/python tools/generate_system_model_diagrams.py
+▮▮▮▮ software:docs.diagrams (840ms, d29ba471)
+▮▮▮▮ software:docs.assemble (441d1bec)
+software:docs.assemble | Documentation capability: docs.assemble
+software:docs.assemble | action=assemble
+software:docs.assemble | source_revision=f493095453f2877a0820303d369d1c948ba0a4e4
+software:docs.assemble | owner_revision=f493095453f2877a0820303d369d1c948ba0a4e4
+software:docs.assemble | tool_eng_docs_sha=7d13ae32c5ac3ac3fea0192559a034b9778a517d
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-publication.yml --producer event-timing-software.architecture-publication --source-revision f493095453f2877a0820303d369d1c948ba0a4e4 --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-raw.yml --producer event-timing-software.architecture-raw --source-revision f493095453f2877a0820303d369d1c948ba0a4e4 --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/planning --out bld/docs-producers/planning/assets.yml --producer event-timing-software.planning --source-revision 6e193ecad7051c8647abcd4202c1250fe6dfe425 --lifecycle docs --relationship producer-source
+software:docs.assemble | > eng-docs assemble --root . --config docs/assembly.yml --out bld/docs --source-repository brainboxemb/2026-010-01.meta.event-timing-software --source-revision f493095453f2877a0820303d369d1c948ba0a4e4
+▮▮▮▮ software:docs.assemble (1s 215ms, 441d1bec)
+
+Tasks: 3 completed (1 cached)
+ Time: 2s 176ms
+
