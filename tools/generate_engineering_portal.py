@@ -440,9 +440,9 @@ hide:
   - toc
 ---
 
-# Engineering explorer
+<h1 class="eng-explorer-title">Engineering explorer</h1>
 
-<div class="eng-workspace-nav" aria-label="Engineering portal navigation">
+<div class="eng-workspace-nav eng-workspace-nav--compact" aria-label="Engineering portal navigation">
   <a href="../">Portal</a>
   <a href="../workspace/">Traceability comparison</a>
   <a href="../book/">Architecture Book</a>
@@ -517,10 +517,18 @@ hide:
           autocomplete="off"
           data-eng-tree-search
         >
-        <select aria-label="Filter by object type" data-eng-tree-type>
-          <option value="">all types ({view["object_count"]})</option>
-          {type_options}
-        </select>
+        <div class="eng-object-browser__filter-row">
+          <select aria-label="Filter by object type" data-eng-tree-type>
+            <option value="">all types ({view["object_count"]})</option>
+            {type_options}
+          </select>
+          <button
+            class="eng-tree-collapse-all"
+            type="button"
+            data-eng-tree-collapse-all
+            title="Collapse all tree groups"
+          >Collapse all</button>
+        </div>
         <span class="eng-object-browser__count" data-eng-tree-count>
           {view["object_count"]} objects
         </span>
