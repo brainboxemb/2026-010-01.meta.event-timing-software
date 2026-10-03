@@ -361,6 +361,18 @@ jobs:
               raise SystemExit("traceability object tree missing IF05-REQ-007")
           if '32-05-ISD-timingdata-interchange' not in workspace:
               raise SystemExit("traceability object tree lost source-document grouping")
+          for section_label in (
+              "Normal operation",
+              "System, backoffice and recovery",
+              "Status",
+              "Step-4 first-registration operation",
+          ):
+              if section_label not in workspace:
+                  raise SystemExit(
+                      f"traceability object tree missing authored section: {section_label}"
+                  )
+          if 'data-tree-level="1"' not in workspace:
+              raise SystemExit("traceability object tree missing nested heading levels")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
 
@@ -443,6 +455,10 @@ jobs:
           grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Step-4 first-registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'md-nav__link eng-tree-group__toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
@@ -864,6 +880,7 @@ jobs:
           cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
           cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"
           cp docs/_portal/requirements.txt "$staging/evidence/portal/requirements.txt"
+          cp docs/_portal/hooks/engineering_workspace.py "$staging/evidence/portal/engineering_workspace.py"
 
       - name: Upload prepared documentation publication
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
