@@ -515,12 +515,16 @@ def render_workspace(view: dict) -> str:
             + "</div></details>"
         )
 
-    type_labels = sorted({
-        obj["type_label"] for obj in view["objects"].values()
-    })
+    type_counts: dict[str, int] = {}
+    for obj in view["objects"].values():
+        label = obj["type_label"]
+        type_counts[label] = type_counts.get(label, 0) + 1
     type_options = "".join(
-        f'<option value="{html.escape(label)}">{html.escape(label)}</option>'
-        for label in type_labels
+        (
+            f'<option value="{html.escape(label)}">'
+            f"{html.escape(label)} ({count})</option>"
+        )
+        for label, count in sorted(type_counts.items())
     )
     graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
     return f"""---
@@ -542,22 +546,20 @@ hide:
   <div class="eng-trace-layout">
     <aside class="eng-object-browser" aria-label="Engineering object browser">
       <div class="eng-object-browser__filters">
-        <label>
-          <span>Filter objects</span>
-          <input
-            type="search"
-            placeholder="ID or title"
-            autocomplete="off"
-            data-eng-tree-search
-          >
-        </label>
-        <label>
-          <span>Type</span>
-          <select data-eng-tree-type>
-            <option value="">All types</option>
-            {type_options}
-          </select>
-        </label>
+        <input
+          type="search"
+          aria-label="Filter engineering objects"
+          placeholder="filter ID / title"
+          autocomplete="off"
+          data-eng-tree-search
+        >
+        <select aria-label="Filter by object type" data-eng-tree-type>
+          <option value="">all types ({view["object_count"]})</option>
+          {type_options}
+        </select>
+        <span class="eng-object-browser__count" data-eng-tree-count>
+          {view["object_count"]} objects
+        </span>
       </div>
       <div class="eng-object-tree" data-eng-object-tree>
         {"".join(groups)}
