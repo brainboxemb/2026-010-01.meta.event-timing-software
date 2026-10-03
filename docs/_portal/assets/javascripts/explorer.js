@@ -219,10 +219,12 @@
       let compareId = "";
 
       function updateTreeSelection() {
+        let selectedNode = null;
         treeItems.forEach((node) => {
           const selected = node.dataset.workspaceRootId === rootId;
           node.classList.toggle("is-selected", selected);
           if (selected) {
+            selectedNode = node;
             node.setAttribute("aria-current", "true");
             const group = node.closest("[data-eng-tree-group]");
             if (group) group.open = true;
@@ -230,6 +232,9 @@
             node.removeAttribute("aria-current");
           }
         });
+        if (selectedNode) {
+          selectedNode.scrollIntoView({ block: "nearest" });
+        }
       }
 
       function updateCompareSelection() {
