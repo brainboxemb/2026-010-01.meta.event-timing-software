@@ -47,8 +47,8 @@ nodes:
     group: ingress
     layout: {x: 100, y: 605, w: 250, h: 85}
 
-  - id: command-handler
-    label: "CommandHandler\npresentation commands / queries"
+  - id: presentation-gateway
+    label: "PresentationGateway\npresentation operations / status / events"
     kind: application
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}
@@ -85,16 +85,16 @@ nodes:
 
 edges:
   - from: operator-ingress
-    to: command-handler
+    to: presentation-gateway
     from_anchor: {side: right, position: 0.50}
     to_anchor: {side: left, position: 0.50}
 
-  - from: command-handler
+  - from: presentation-gateway
     to: timing-node-01
     from_anchor: {side: bottom, position: 0.28}
     to_anchor: {side: top, position: 0.50}
 
-  - from: command-handler
+  - from: presentation-gateway
     to: timing-node-02
     from_anchor: {side: bottom, position: 0.72}
     to_anchor: {side: top, position: 0.50}

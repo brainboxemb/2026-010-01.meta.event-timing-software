@@ -9,7 +9,7 @@ diagram:
 
 participants:
   - {id: client, label: Operator / client, kind: client}
-  - {id: api, label: IF-03 / CommandHandler, kind: interface}
+  - {id: api, label: IF-03 / PresentationGateway, kind: interface}
   - {id: node, label: TimingNode, kind: model}
   - {id: logbook, label: "LogBook\ncommitted TimingData", kind: model}
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}

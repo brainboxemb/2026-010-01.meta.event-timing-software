@@ -561,7 +561,7 @@ technology.
 
 `Console` is the local text presentation interface. It delegates common
 terminal parsing/session behaviour to `SharedTerminalHandler` and reaches
-application behaviour through the shared `CommandHandler`; it does not own
+application behaviour through the shared `PresentationGateway`; it does not own
 application/domain state.
 ```
 
@@ -578,7 +578,7 @@ a separate external interface and transport concern.
 
 `SharedTerminalHandler` owns command parsing and terminal-session behaviour that
 is genuinely shared by Console and RemoteShell. It converges those interfaces on
-the same `CommandHandler` used by other presentation interfaces.
+the same `PresentationGateway` used by other presentation interfaces.
 ```
 
 `presentation.common` is reserved for behaviour genuinely shared across
@@ -599,8 +599,8 @@ application/
   Conductor
     lifecycle and application-wide coordination
 
-  CommandHandler
-    shared presentation command/query boundary
+  PresentationGateway
+    shared presentation-facing application gateway
 
   UpstreamMessageRouter
     upstream-only application/domain target resolution and routing
@@ -612,19 +612,24 @@ application/
 `Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes.
 ```
 
-```{arch} CommandHandler
+```{arch} PresentationGateway
 ---
-id: CommandHandler
+id: PresentationGateway
 satisfies: >-
   SI01-REQ-022, SI01-REQ-030, SI01-REQ-031,
   IF03-REQ-001, IF03-REQ-004
 ---
 
-`CommandHandler` is the shared entry point for presentation
-requests. It may serve simple application reads such as
+`PresentationGateway` is the shared entry point for presentation
+requests. It is owned by the Application layer; `Presentation` in the name identifies
+the adjacent side whose traffic the gateway mediates, not the layer that owns it.
+This uses the same directional naming principle as `UpstreamGateway`, while the two
+remain separate responsibilities: `PresentationGateway` is transport-independent
+application access and `UpstreamGateway` owns external upstream transport/integration.
+It may serve simple application reads such as
 `version()`. Application-wide operations delegate to
 `Conductor` where lifecycle or cross-node coordination is
-required. When a presentation command or query targets a TimingNode, `CommandHandler` resolves the owning `TimingSystem` and target `TimingNode`, then calls that node's application/domain operation. The TimingNode owns the crossing of its serial execution boundary; presentation code does not submit directly to its queue or read its mutable state. Operations whose result depends on current TimingNode state return only after that operation has executed on the node's ordered path. `Conductor` is not a mandatory hop for TimingNode-scoped work.
+required. When a presentation command or query targets a TimingNode, `PresentationGateway` resolves the owning `TimingSystem` and target `TimingNode`, then calls that node's application/domain operation. The TimingNode owns the crossing of its serial execution boundary; presentation code does not submit directly to its queue or read its mutable state. Operations whose result depends on current TimingNode state return only after that operation has executed on the node's ordered path. `Conductor` is not a mandatory hop for TimingNode-scoped work.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
@@ -1320,7 +1325,7 @@ Stable domain facts behind these views are maintained in `03-domain-baseline.md`
 
 ### Command, query and event model
 
-All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `CommandHandler.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
+All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `PresentationGateway.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
 
 ```text
 local console ----------------+
@@ -1388,7 +1393,7 @@ mandatory `TimingNode extends ActiveObject` class hierarchy.
 
 External ingress still keeps its functional routing responsibilities:
 
-- `CommandHandler` routes presentation commands/queries;
+- `PresentationGateway` exposes presentation-facing operations, reads, metadata/capabilities and events;
 - configured device/antenna mappings resolve device observations to TimingNodes;
 - `UpstreamMessageRouter` resolves system-level versus TimingNode-targeted
   upstream messages;

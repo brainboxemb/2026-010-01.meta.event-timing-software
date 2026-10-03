@@ -5,11 +5,11 @@ diagram:
   width: 1220
   height: 900
   description: A caller invokes a normal synchronous OPEN operation. TimingNode queues internal work, executes it against current state and only then returns the domain result.
-  note: A Java Future may connect the queued work to the waiting method internally; it is not exposed to CommandHandler or the client.
+  note: A Java Future may connect the queued work to the waiting method internally; it is not exposed to PresentationGateway or the client.
 
 participants:
   - {id: client, label: Operator / Engineering Client, kind: client}
-  - {id: api, label: Presentation / CommandHandler, kind: interface}
+  - {id: api, label: Presentation / PresentationGateway, kind: interface}
   - {id: node, label: TimingNode, kind: model}
 
 messages:

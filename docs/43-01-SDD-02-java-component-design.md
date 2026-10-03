@@ -262,15 +262,21 @@ A production `TimingNode` is always constructed as a complete capability. `Timin
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
-The application `CommandHandler` is always composed with a complete
+The application `PresentationGateway` is always composed with a complete
 `TimingNode`; there is no status-only or partially configured production
-handler. Presentation tests use complete test fixtures rather than adding a
+gateway. Presentation tests use complete test fixtures rather than adding a
 second production construction mode.
+
+`PresentationGateway` is an Application-layer component named for the adjacent
+Presentation side whose traffic it mediates. Gateway names describe the side of
+the architectural boundary, not the owning package/layer. `UpstreamGateway`
+follows the same naming principle on the I/O/upstream boundary, but owns external
+transport/integration rather than presentation-facing application operations.
 
 Status-change detection is owned by the same serial boundary. A state-changing
 command compares authoritative status before and after the domain operation on
 that TimingNode lane. A real difference emits the TimingNode status event before
-the result leaves the ordered command execution. `CommandHandler` maps that fact
+the result leaves the ordered command execution. `PresentationGateway` maps that fact
 to `ApplicationStatus`; it does not perform a second before/after query outside
 the ordered boundary.
 
@@ -627,7 +633,7 @@ presentation/
 
 Console and remote shell are separate presentation interfaces. They share only the
 line-oriented command-session behaviour in `presentation.common.terminal`; both call
-the same `CommandHandler` and shutdown callback.
+the same `PresentationGateway` and shutdown callback.
 
 Console, Remote Shell and API are baseline Timing Point Application capabilities.
 Application profiles do not add/remove or redefine their command/status semantics.
@@ -641,7 +647,7 @@ HttpEndpoint
   +-- GET /api/v1/version
   +-- GET /api/v1/status
             \
-             +--> CommandHandler.version() / status()
+             +--> PresentationGateway.version() / status()
             /
 WebSocketEndpoint
   +-- WS /api/v1/events
@@ -688,9 +694,9 @@ Client to exercise the exact same public or proprietary TimingData translator.
 The Engineering Client remains engineering support rather than the planned SI-02
 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
-The shared presentation/application boundary remains small:
-`CommandHandler.version()` returns build identity and
-`CommandHandler.status()` obtains the current TimingNode status through the
+The shared Presentation-facing application gateway remains small:
+`PresentationGateway.version()` returns build identity and
+`PresentationGateway.status()` obtains the current TimingNode status through the
 TimingNode query/ownership boundary used by the current presentation adapters;
 it does not assemble status by reading node-owned fields directly.
 
