@@ -5,19 +5,13 @@ Status: working/review baseline
 Software item: **SI-01 — Timing Point Application**
 
 
-## Document guide
-
-- **Role:** define the requirements and architecture of **SI-01 — Timing Point Application**.
-- **Inputs:** SSSD allocation, applicable system-owned ISDs and directly allocated external/parent-system inputs.
-- **Owns:** SI-01 requirements, component responsibilities, internal architectural boundaries and constraints.
-- **Downstream:** focused SI-01 SDDs, implementation and verification specifications.
-- **Key terms:** `SSD` — Software Specification Document; `SI` — Software Item; `SSSD` — Software System Specification Document; `ISD` — Interface Specification Document; `SDD` — Software Design Description.
+## Purpose
 
 This document combines the SI-01 requirements and architecture in one baseline.
 Requirements keep their `SI01-REQ-...` identifiers. Detailed SDDs build on this
 architecture instead of repeating it.
 
-## Inputs
+## Relationship to other documents
 
 The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
 
@@ -34,7 +28,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and ISD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
-## Document roles
+## Design boundary
 
 Use this SSD for the **requirements and architecture** of SI-01: what the main
 parts are responsible for, how they relate, and which constraints detailed
