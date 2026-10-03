@@ -14,7 +14,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
 - `32-03-ISD-application-control-status.md` for IF-03 obligations;
-- `32-04-ISD-web-operator-hmi.md` for IF-04 browser/operator obligations;
+- `32-04-ISD-web-interface.md` for IF-04 browser/operator obligations;
 - `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
 - `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
