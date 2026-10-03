@@ -11,6 +11,15 @@ This SSD is intentionally architecture-heavy today because SI-02 implementation 
 started. Software-item requirements will be promoted into this same document as the GUI
 capability approaches implementation; no separate requirements/architecture document pair is planned.
 
+## Terms and abbreviations
+
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **SSSD** — Software System Specification Document
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+
+
 ## Relationship to other documents
 
 The SI-02 specification consumes:
