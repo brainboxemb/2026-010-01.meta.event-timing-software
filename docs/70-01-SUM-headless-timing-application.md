@@ -86,7 +86,7 @@ in this manual before the next software release.
 No external application configuration is required by the released v0.2.1 executable
 baseline.
 
-### Current 0.2.2-SNAPSHOT development line
+### Current 0.2.3-SNAPSHOT development line
 
 The current development application uses one external YAML file. The implemented slice
 contains one TimingNode identity plus optional remote-terminal and HTTP listeners:
@@ -129,7 +129,7 @@ This baseline performs the short lifecycle used by that release and exits.
 After building:
 
 ```powershell
-java -jar app\target\event-timing-app-0.2.2-SNAPSHOT.jar config\application.yml
+java -jar app\target\timing-point-app-0.2.3-SNAPSHOT.jar config\application.yml
 ```
 
 The configured application remains running. On a normal Windows/Linux foreground

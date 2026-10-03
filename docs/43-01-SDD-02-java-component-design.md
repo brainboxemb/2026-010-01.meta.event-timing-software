@@ -41,14 +41,14 @@ responsibilities are not split into separate API/default JARs:
 
 ```text
 reactor/
-├── pom.xml                    event-timing-parent
+├── pom.xml                    timing-point-parent
 ├── shared/
 │   └── timing-data/
 │       └── pom.xml            event-timing-data.jar
 ├── core/
-│   └── pom.xml                event-timing-core.jar
+│   └── pom.xml                timing-point-core.jar
 └── app/
-    └── pom.xml                event-timing-app.jar
+    └── pom.xml                timing-point-app.jar
 ```
 
 Working coordinates:
@@ -56,10 +56,10 @@ Working coordinates:
 ```text
 groupId: io.github.brainboxemb.eventtiming
 
-parent:          event-timing-parent
+parent:          timing-point-parent
 TimingData:      event-timing-data
-core:            event-timing-core
-executable:      event-timing-app
+core:            timing-point-core
+executable:      timing-point-app
 ```
 
 The root POM only groups/configures the build; it is not a runtime component.
@@ -429,7 +429,7 @@ and selected external libraries.
 Logging follows the same library-versus-executable composition boundary.
 
 ```text
-event-timing-core.jar
+timing-point-core.jar
   -> slf4j-api only
   -> io.github.brainboxemb.eventtiming.timingpoint.infra.logging
        +-- Logging
@@ -443,7 +443,7 @@ event-timing-core.jar
        +-- LiveLogHandler
        +-- client-initiated live diagnostics + temporary level control
 
-event-timing-app.jar
+timing-point-app.jar
   -> selects exactly one SLF4J provider
   -> initial provider: slf4j-jdk14
   -> delegates SLF4J records to java.util.logging
@@ -479,7 +479,7 @@ application core to provide the default JUL logging infrastructure and its confi
 
 ## Default executable application
 
-`event-timing-app` is the first executable consumer of the application-core library.
+`timing-point-app` is the first executable consumer of the application-core library.
 
 Its executable package is deliberately thin:
 
@@ -525,7 +525,7 @@ The package namespace carries the context, so runtime class names stay short. Th
 The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
 ```text
-event-timing-core.jar
+timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
@@ -540,12 +540,12 @@ event-timing-core.jar
       Api.java
       YamlLoader.java
 
-event-timing-app.jar
+timing-point-app.jar
   io.github.brainboxemb.eventtiming.timingpoint.app/
     Main.java
 ```
 
-`event-timing-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
+`timing-point-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
 
 The target executable startup/configuration flow is:
 
@@ -679,7 +679,7 @@ test-client/
 ```
 
 `test-client/` is a standalone Java-17 application and does not depend on
-`event-timing-core` or `event-timing-app` implementation code. It may,
+`timing-point-core` or `timing-point-app` implementation code. It may,
 however, depend on the separately reusable `event-timing-data` artifact because
 TimingData codec/provider reuse is now a real cross-executable requirement. This
 preserves the external-client boundary while allowing SI-01 and the Engineering
@@ -833,6 +833,31 @@ outcome semantics differ from definite submission rejection.
 The first implementation remains a small composed worker backed by one bounded
 queue and one dedicated thread. Its public result types make the two result
 moments explicit:
+
+Project-owned SI-01 runtime threads use the diagnostic name form
+`tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
+threads easy to separate from JDK, Maven/JGit and third-party library threads in
+a debugger, profiler or thread dump. The owner abbreviations used by the current
+runtime are `prl` (Presentation), `dml` (Domain), `inf` (Infrastructure) and
+`run` (Runtime/composition).
+
+Examples:
+
+```text
+tp-prl-console
+tp-prl-api-http
+tp-prl-remote-shell
+tp-inf-live-log
+tp-inf-live-log-writer
+tp-run-shutdown
+tp-dml-node-<NodeId>
+```
+
+Name a thread for the functional component that owns the work, not merely the
+low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
+therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
+primitive. The final suffix is the configured NodeId, not a worker/index number.
+Threads owned by the JDK or external libraries keep their own names.
 
 ```java
 final class SerialWorker implements AutoCloseable {
@@ -1421,7 +1446,7 @@ Useful automated rules may include:
 - public code contains no real deployment mappings or proprietary values;
 - domain/application/runtime components do not depend on extension class-loader mechanics;
 - duplicate provider IDs and unknown configured provider IDs fail deterministically;
-- the executable consumes `event-timing-core` rather than copying/forking application-core source;
+- the executable consumes `timing-point-core` rather than copying/forking application-core source;
 - the core artifact does not carry a concrete SLF4J provider/backend transitively;
 - an executable runtime contains exactly one intended SLF4J provider.
 

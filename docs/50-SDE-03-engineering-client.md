@@ -45,7 +45,7 @@ rather than redefine it.
 Current placement:
 
 ```text
-2026-010-02.java.event-timing-framework/
+2026-010-02.java.timing-point-application/
 ├── core/            SI-01 reusable Java-8 application core
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
@@ -57,8 +57,8 @@ Current placement:
 ```
 
 For live SI-01 operation the Engineering Client communicates only through
-supported external interfaces. It does not import `event-timing-core` or
-`event-timing-app` implementation classes.
+supported external interfaces. It does not import `timing-point-core` or
+`timing-point-app` implementation classes.
 
 TimingData inspection/conversion is a separate engineering capability. The
 Engineering Client may depend on the small shared `event-timing-data` artifact and
