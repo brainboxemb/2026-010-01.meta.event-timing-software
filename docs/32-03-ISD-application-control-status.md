@@ -249,7 +249,11 @@ Successful response is HTTP `200`:
 The operation is accepted only while the TimingNode is CLOSED. A successful
 change is reflected by subsequent status queries and a `STATUS_CHANGED` event.
 
-### IF03-OP-006 — Open registration
+This separate operation remains useful for explicit engineering/configuration
+work, but it is not a prerequisite for the normal OPEN presentation action
+defined below.
+
+### IF03-OP-006 — Open registration at a location
 
 HTTP mapping:
 
@@ -257,9 +261,40 @@ HTTP mapping:
 POST /api/v1/node/{id}/open
 ```
 
-The request has no semantic body. Successful HTTP `200` results are
-`OPENED` or `ALREADY_OPEN`. OPEN without a configured current LocationId is
-a domain conflict and does not change state.
+Request:
+
+```json
+{
+  "locationId": 24
+}
+```
+
+The value uses the shared IF-05 `LocationId` representation. The OPEN request
+therefore carries the operational location selected by the presentation client.
+
+For a CLOSED TimingNode, applying the requested LocationId and changing the
+lifecycle to OPEN are one application/domain operation. A presentation client
+shall not need to issue a separate location command immediately before OPEN.
+This keeps the user's intent atomic at the TimingNode serial execution boundary
+when multiple presentation clients submit commands concurrently.
+
+Successful HTTP `200` results are `OPENED` or `ALREADY_OPEN`.
+
+Some historical control architectures represented location configuration and
+OPEN as separate messages because timing generation and presentation/control
+were separate device responsibilities. IF-03 does not preserve that transport
+decomposition as the normal presentation workflow; the current contract couples
+the selected LocationId to OPEN while retaining IF03-OP-005 for explicit
+closed-state engineering/configuration use.
+
+The exact idempotency rule for a request that supplies a different LocationId
+while the TimingNode is already OPEN remains an explicit review point. Clients
+shall not rely on such a request changing the active LocationId until that rule
+is fixed in this contract.
+
+Console and RemoteShell are not transports owned by this ISD, but their shared
+application command semantics should represent the same `open(LocationId)`
+operation rather than reconstructing a two-command presentation sequence.
 
 ### IF03-OP-007 — Close registration
 
@@ -571,7 +606,9 @@ Clients shall be able to ignore unknown response members/event types within API 
 IF-03 shall expose 1..N application-wide-unique TimingNode identities with current
 optional LocationId and OPEN/CLOSED state and shall provide node-addressed
 IF03-OP-005/006/007 location/open/close control using the shared SI-01
-application/domain semantics.
+application/domain semantics. IF03-OP-006 shall carry the requested LocationId
+and represent location selection plus the CLOSED-to-OPEN transition as one
+TimingNode-owned application operation.
 ```
 
 ```{ifreq} Engineering capability discovery
