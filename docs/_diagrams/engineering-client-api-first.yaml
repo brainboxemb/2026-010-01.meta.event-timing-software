@@ -10,7 +10,6 @@ groups: []
 nodes:
   - id: shell
     label: Engineering Client
-    subtitle: API-first engineering workbench
     kind: wireframe-surface
     notation: wireframe-panel
     layout: {x: 30, y: 80, w: 1300, h: 710}
@@ -23,25 +22,25 @@ nodes:
     layout: {x: 55, y: 118, w: 265, h: 54}
 
   - id: api-connection
-    label: "API :8081\\nREADY"
+    label: "API :8081\nREADY"
     kind: wireframe-live
     notation: wireframe-button
     layout: {x: 335, y: 121, w: 145, h: 48}
 
   - id: events-connection
-    label: "Events :eventPort\\nCONNECTED"
+    label: "Events :eventPort\nCONNECTED"
     kind: wireframe-live
     notation: wireframe-button
     layout: {x: 490, y: 121, w: 165, h: 48}
 
   - id: terminal-connection
-    label: "Terminal :shellPort\\nCONNECT"
+    label: "Terminal :shellPort\nCONNECT"
     kind: wireframe-action
     notation: wireframe-button
     layout: {x: 665, y: 121, w: 160, h: 48}
 
   - id: device-log-connection
-    label: "Device log :logPort\\nCONNECT"
+    label: "Device log :logPort\nCONNECT"
     kind: wireframe-action
     notation: wireframe-button
     layout: {x: 835, y: 121, w: 175, h: 48}
@@ -53,7 +52,7 @@ nodes:
     layout: {x: 1020, y: 121, w: 135, h: 48}
 
   - id: client-log-indicator
-    label: "Client log\\nACTIVE"
+    label: "Client log\nACTIVE"
     kind: wireframe-live
     notation: wireframe-status
     layout: {x: 1165, y: 121, w: 135, h: 48}
