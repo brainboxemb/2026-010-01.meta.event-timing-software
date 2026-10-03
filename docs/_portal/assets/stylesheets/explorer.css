@@ -23,48 +23,36 @@
   border-color: var(--md-accent-fg-color);
 }
 
-.eng-workspace-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  margin: 0 0 0.9rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0.5rem;
-  background: var(--md-default-bg-color);
-}
-
-.eng-workspace-selector label {
-  flex: 0 0 auto;
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.eng-workspace-selector select {
-  min-width: 0;
-  width: min(48rem, 100%);
-  padding: 0.35rem 0.45rem;
-  border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0.35rem;
-  background: var(--md-default-bg-color);
-  color: var(--md-default-fg-color);
+/* Engineering Explorer: restore the original wide architecture + detail composition. */
+.eng-explorer-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
+  gap: 0.9rem;
+  align-items: start;
 }
 
 .eng-context,
-.eng-detail {
+.eng-detail,
+.eng-object-browser {
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.5rem;
   background: var(--md-default-bg-color);
 }
 
 .eng-context {
-  margin-bottom: 0.9rem;
-  padding: 0.75rem 0.85rem;
+  padding: 0.8rem;
 }
 
 .eng-context h2 {
-  margin: 0 0 0.65rem;
+  margin: 0.9rem 0 0.5rem;
   font-size: 1rem;
+}
+
+.eng-explorer-detail {
+  position: sticky;
+  top: 4.8rem;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
 }
 
 .eng-diagram {
@@ -92,11 +80,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
 .eng-object-chip,
-.eng-relation {
+.eng-relation,
+.eng-tree-item {
   appearance: none;
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.35rem;
@@ -115,42 +104,112 @@
 .eng-object-chip:focus,
 .eng-relation:hover,
 .eng-relation:focus,
+.eng-tree-item:hover,
+.eng-tree-item:focus,
 .eng-object-chip.is-selected,
-.eng-relation.is-selected {
+.eng-relation.is-selected,
+.eng-tree-item.is-selected {
   border-color: var(--md-accent-fg-color);
 }
 
-/* Architecture view: full diagram left, one selected object right. */
-.eng-architecture-workspace {
+/* Traceability Comparison: ordered object tree + root object + compared object. */
+.eng-trace-layout {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
+  grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
   gap: 0.9rem;
   align-items: start;
 }
 
-.eng-architecture-workspace > .eng-context {
-  margin-bottom: 0;
-}
-
-.eng-architecture-workspace > .eng-detail {
+.eng-object-browser {
   position: sticky;
   top: 4.8rem;
   max-height: calc(100vh - 6rem);
   overflow: auto;
+  padding: 0.75rem;
 }
 
-/* Traceability view: selected object left, clicked relation right. */
-.eng-workspace {
+.eng-object-browser__filters {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.9rem;
-  align-items: start;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
 }
 
-.eng-detail {
-  padding: 0.9rem;
+.eng-object-browser__filters label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.eng-object-browser__filters input,
+.eng-object-browser__filters select {
+  width: 100%;
   min-width: 0;
-  font-size: 0.8rem;
+  padding: 0.38rem 0.45rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font: inherit;
+  font-weight: 400;
+}
+
+.eng-object-tree {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.eng-tree-group {
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  padding-top: 0.35rem;
+}
+
+.eng-tree-group:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.eng-tree-group summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.eng-tree-group__items {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  padding-left: 0.45rem;
+}
+
+.eng-tree-item {
+  display: grid;
+  width: 100%;
+  gap: 0.08rem;
+  padding: 0.35rem 0.4rem;
+}
+
+.eng-tree-item.is-selected {
+  background: var(--md-code-bg-color);
+}
+
+.eng-tree-item__id {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.eng-tree-item__title {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.66rem;
+  line-height: 1.25;
+}
+
+/* Shared object detail presentation. */
+.eng-detail {
+  padding: 0.85rem;
+  min-width: 0;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
@@ -165,7 +224,7 @@
 
 .eng-detail__header h2 {
   margin: 0.2rem 0 0.25rem;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   line-height: 1.2;
 }
 
@@ -213,9 +272,9 @@
 .eng-relation {
   display: grid;
   width: 100%;
-  grid-template-columns: 5.4rem minmax(0, 1fr);
+  grid-template-columns: 5.2rem minmax(0, 1fr);
   gap: 0.35rem;
-  padding: 0.38rem 0.45rem;
+  padding: 0.35rem 0.45rem;
   margin: 0.25rem 0;
 }
 
@@ -227,7 +286,7 @@
 
 .eng-relation__object {
   min-width: 0;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
 }
 
 .eng-compare-empty {
@@ -240,12 +299,13 @@
 }
 
 @media screen and (max-width: 900px) {
-  .eng-architecture-workspace,
-  .eng-workspace {
+  .eng-explorer-workspace,
+  .eng-trace-layout {
     grid-template-columns: 1fr;
   }
 
-  .eng-architecture-workspace > .eng-detail {
+  .eng-explorer-detail,
+  .eng-object-browser {
     position: static;
     max-height: none;
   }
