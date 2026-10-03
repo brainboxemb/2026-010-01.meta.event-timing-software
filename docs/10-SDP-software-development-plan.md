@@ -10,321 +10,6 @@ The SIP owns the implementation steps. The SDE owns the development/release envi
 The SVP owns verification strategy and profiles. Concrete SI-01 verification cases are
 specified in the VTS; execution results belong to retained verification evidence.
 
-## Documentation structure and dependency discipline
-
-### Document categories and numbering
-
-The following abbreviations are canonical for this project:
-
-| Abbreviation | Full name | Primary role |
-| --- | --- | --- |
-| SDP | Software Development Plan | project-wide development strategy |
-| SIP | Software Implementation Plan | implementation steps, roadmap and exit evidence |
-| EXT | External Inputs | register of parent/external normative sources |
-| UC | Use Cases | externally meaningful behaviour/use cases |
-| SSSD | Software System Specification Document | software-system requirements + architecture |
-| ISD | Interface Specification Document | normative system-owned interface requirements and semantics |
-| IDD | Interface Design Description | optional concrete interface design/representation implementing an ISD |
-| SRD | Software Requirements Document | software-item requirements when split from architecture |
-| SSD | Software Specification Document | software-item requirements + architecture combined |
-| SAD | Software Architecture Document | software-item architecture when split from requirements |
-| SDD | Software Design Description | focused detailed software-item design |
-| SDE | Software Development Environment | repositories, tooling, build/development environment |
-| SVP | Software Verification Plan | verification strategy, levels, environments and evidence rules |
-| VTS | Verification Test Specification | concrete stable verification cases and expected results |
-| SUM | Software User Manual | technical user/release guidance |
-
-The numeric prefix groups documents by **engineering role**. It is primarily a navigation/readability convention; it does not by itself define normative dependency order.
-
-```text
-00–09  working / project context
-10–19  planning
-20–29  external / parent-system inputs
-30–39  software-system specification and design
-40      software-item use cases
-41      software-item requirements / combined specification
-42      software-item architecture
-43      software-item detailed design
-50–59  development environment / engineering
-60–69  verification and validation
-70–79  user / operational documentation
-```
-
-Current examples are:
-
-```text
-00-brainstorm
-02-agent-plan
-03-domain-baseline
-
-10-SDP
-11-SIP
-
-20-EXT-external-system-inputs
-
-30-UC-system-use-cases
-31-SSSD-software-system-specification-document
-32-03-ISD-application-control-status
-32-05-ISD-timingdata-interchange
-32-11-ISD-application-configuration
-33-05-IDD-timingdata-interchange
-
-40-01-UC                         reserved / optional for SI-01
-41-01-SSD-timing-application-specification-document
-41-02-SSD-gui-application-specification-document
-
-43-01-SDD-01-data-and-display-design
-43-01-SDD-02-java-component-design
-43-01-SDD-03-backoffice-transport-design
-
-50-SDE-01-software-development-environment
-50-SDE-02-java-build-test-toolchain
-50-SDE-03-engineering-client
-
-60-SVP-software-verification-plan
-61-01-VTS-timing-application-verification-test-specification
-
-70-01-SUM-headless-timing-application
-```
-
-Numbering rules:
-
-- the leading two-digit value identifies the document category or reserved document family; it is not a dependency-order number;
-- where a reserved family has a natural stable scope identifier, that scope is the second segment. Software-item families use the software-item ID, for example `41-01-SSD` and `43-01-SDD-02`;
-- document family `32` is reserved for software-system-owned Interface Specification Documents (ISDs). Its second segment is the stable interface ID, so IF-03 is `32-03-ISD` and IF-11 is `32-11-ISD`; the number is not a document sequence;
-- document family `33` is reserved for optional Interface Design Descriptions (IDDs). Use the same interface ID, for example `33-05-IDD` implements design choices for IF-05. Do not create an IDD when the ISD is sufficient;
-- document number `40` is reserved for optional software-item use cases, for example `40-01-UC` for SI-01;
-- document number `41` is reserved for software-item requirements/specification: use `41-<SI>-SSD` when requirements and architecture are combined, or `41-<SI>-SRD` when they are split;
-- document number `42` is reserved for a separate software-item architecture document `42-<SI>-SAD`; omit it when `41-<SI>-SSD` already combines requirements and architecture;
-- document number `43` is reserved for software-item detailed design. When several SDDs share the same software-item scope, a final sequence follows the type: `43-01-SDD-01`, `43-01-SDD-02`, ...;
-- a repeatable generic family without a natural scope identifier puts its sequence after the type. The generic SDE family therefore uses `50-SDE-01`, `50-SDE-02`, ...;
-- a singular generic document does not gain a synthetic sequence merely for symmetry, for example `60-SVP`;
-- document family `61` is reserved for software-item verification test specifications; use the software-item ID as scope, for example `61-01-VTS` for SI-01. The VTS specifies stable verification cases; it does not record current execution status or retained run evidence;
-- range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM` for SI-01;
-- an externally owned document keeps the identifier/version assigned by its owner. Document 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
-
-A new document should fit an existing category/family before another one is
-invented. Scope identifiers and document sequences have different meanings and
-must not trade places merely to keep filenames numerically contiguous.
-### Document-family templates
-
-Documents in the same family should use the same basic reading structure. This is a
-**template, not a straitjacket**: omit a section when it adds no value, and add a
-document-specific section when the subject needs it. Do not invent a different
-introductory structure for every document.
-
-For specification, design and verification documents, use this order near the start:
-
-```text
-Purpose
-Relationship to other documents
-Terms and abbreviations        # only when the document uses important abbreviations
-<document-family content>
-```
-
-The relationship section may contain reusable explanatory text and a small diagram.
-Generic engineering explanation that is true for every document of that family belongs
-in the family template instead of being rewritten differently in each document.
-Document-specific relationship text should only add what is specific to that document.
-
-Do not repeat the same relationship at both the start and end of a document. For
-example, an ISD should explain once that an optional IDD provides concrete interface
-design; it should not repeat that fact later in a second generic "Interface design"
-section unless that later section contains actual interface-specific design decisions.
-
-Use a dedicated **Terms and abbreviations** section instead of an inline "Key terms"
-sentence. Include only abbreviations or terms that materially help a reader of that
-document; do not enumerate obvious words merely to fill the template.
-
-#### UC — use-case document
-
-A system UC document describes externally meaningful behaviour of the software system
-before that behaviour is decomposed across software items. Its standard relationship
-section should explain the normal direction:
-
-```text
-domain / parent-system inputs
-          |
-          v
-     system use cases
-          |
-          v
-         SSSD
-          |
-   allocates items/interfaces
-          |
-    +-----+-----+
-    |           |
-    v           v
-system ISDs   optional software-item UC
-    |           |
-    +-----+-----+
-          |
-          v
-         SSD
-          |
-          v
-         SDD
-```
-
-A software-item use case is optional and should only be introduced when describing one
-item's actor/goal behaviour separately makes the subsequent SSD clearer. A use case is
-not a test case; requirements realise use cases and verification cases verify the
-resulting requirements and interfaces.
-
-#### SSSD — software-system specification
-
-The SSSD owns software-system requirements, software-item allocation, system-owned
-interface allocation and cross-item architecture. Its standard relationship section
-places it after system intent/use cases and before system-owned ISDs and software-item
-specifications. It should not repeat software-item detailed design.
-
-#### ISD — interface specification
-
-An ISD defines the semantic contract of one system-owned interface. The SSSD allocates
-the interface; affected software-item specifications consume the ISD. An optional IDD
-may define a concrete protocol, encoding or representation for that interface. The IDD
-does not replace or redefine the ISD semantics.
-
-#### IDD — interface design description
-
-An IDD implements one ISD at the concrete representation/design level. The ISD remains
-the semantic contract; the IDD owns choices such as resource names, message or file
-encoding, member names, framing and representation-version rules. Software-item design
-and implementation consume both where applicable.
-
-#### SSD — software-item specification
-
-An SSD combines the requirements and architecture of one software item. It consumes the
-SSSD allocation plus applicable ISDs and directly allocated external obligations. Focused
-SDDs refine its internal design. Verification documents are downstream and do not define
-product behaviour.
-
-#### SDD — software design description
-
-An SDD refines one focused part of a software-item design. It implements the SSD
-architecture and respects applicable ISDs/IDDs without redefining their external
-contracts. Concrete implementation follows the SDD.
-
-#### SVP and VTS — verification
-
-The SVP defines verification strategy, levels, environments and evidence rules. A VTS
-defines stable verification cases and expected results for accepted requirements and
-interfaces. Executable tests implement those cases; retained evidence records the actual
-execution and result. Verification documents are downstream of the product definition.
-
-### External and parent-system inputs
-
-The software system defined here is itself a subsystem of a larger operational system. Some requirements and interface contracts can therefore be defined **above the current software-system scope**.
-
-`20-EXT-external-system-inputs.md` records those controlled upstream inputs: parent-system requirements, externally owned IDDs, protocols, standards or equivalent contracts, including the exact version/revision when known and the part of this software system they constrain.
-
-The external source remains the authority. The local document-20 record is a baseline/traceability index and must not silently copy, weaken or reinterpret an externally controlled contract. Private/proprietary source material may remain outside this public repository while its applicable identity/revision is recorded generically when that can be done safely.
-
-### Normative authority and release dependencies
-
-Product-document `Inputs` are **authority/release dependencies**, not a list of every document that was useful while writing. Ordinary downstream references belong under traceability/related-document sections and do not make the referenced document an input.
-
-The generic direction is:
-
-```text
-parent / external system requirements, interface contracts/designs, protocols
-                         |
-                         v
-            20 external-input baseline
-                         |
-domain baseline ---------+------> 30 system use cases
-                         |                 |
-                         +-----------------+
-                                           v
-                                      31 SSSD
-                                           |
-                                 allocates interfaces/items
-                                           |
-                      +--------------------+--------------------+
-                      |                                         |
-                      v                                         v
-          32-<IF>-ISD(s)             40-<SI>-UC(s)
-                      |                                         |
-              +-------+-------+                                 |
-              |               |                                 |
-              v               v                                 |
-      optional 33-<IF>-IDD     +-------------------------------+
-              |                                                 |
-              |                       +-------------------------+
-              |                       |
-              |             +---------+------------------+
-              |             |                            |
-              |             v                            v
-              |      combined route                 split route
-              |      41-<SI>-SSD                 41-<SI>-SRD
-              |             |                            |
-              |             |                            v
-              |             |                     42-<SI>-SAD
-              +-------------+-------------+--------------+
-                                          |
-                                          v
-                                    43-<SI>-SDD-<N>
-                                           |
-                                           v
-                                      implementation
-                                           |
-                                           +----------------------+
-                                           |                      |
-                                           v                      v
-                                  61-<SI>-VTS case      executable product
-                                           |
-                                           v
-                                  executable verification
-                                           |
-                                           v
-                                  verification evidence
-```
-
-The diagram shows the normal internal decomposition, not a rule that every input must pass through every box. An externally imposed requirement/IDD/protocol may directly constrain the SSSD and an affected software-item SRD/SSD when the allocation is already explicit.
-
-Document roles:
-
-- **SSSD** — combines software-system requirements and software-system architecture and owns software-item/interface allocation.
-- **System-owned ISD** — defines the normative contract allocated/owned by this software system. Once released, it constrains every affected SRD/SSD.
-- **System-owned IDD** — optional design description downstream of an ISD. It records concrete representation/design choices and is primarily an input to affected SDDs; it does not replace the ISD as the source of interface requirements.
-- **Software-item UC** — optional behavioural decomposition of one or more system use cases after responsibility has been allocated to a software item.
-- **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
-- **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.
-- **SDD** — focused detailed design downstream of the owning SSD or SAD.
-- **SVP / VTS** — the SVP defines verification strategy; the VTS defines concrete stable cases. Both consume product requirements/interfaces and are downstream, not requirement inputs.
-
-### Requirement maturity
-
-Requirements use the standard Sphinx-Needs `status` field. Author only the
-compact codes below; generated reader views expand them to the full word. Use
-the same convention for software and interface requirements:
-
-| Status | Meaning |
-| --- | --- |
-| `D` | Draft — still being developed; wording, scope and even existence may change |
-| `R` | Review — proposed requirement is ready for focused review |
-| `A` | Approved — accepted normative requirement for the current engineering baseline |
-| `O` | Obsolete — no longer active; retained only where its ID/history is needed for traceability |
-
-A requirement written with `shall` is normative **at its stated maturity**.
-`status: D` therefore does not mean the requirement has already been
-accepted or frozen.
-
-Move a requirement back to `D` when a review causes a material change in
-scope or meaning. Use `O` rather than silently reusing an approved
-requirement ID for a different meaning.
-
-Every software and interface requirement shall carry an explicit status.
-New requirements therefore receive `D`, `R`, `A` or `O` when they are
-created; CI rejects a requirement without one.
-- **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
-- **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
-- **SUM** — release/user guidance downstream of the released software/configuration baseline.
-
-For independently released documents, a released document records the exact version/revision of every normative input. In the current repository-wide release model, one repository release/tag/commit may identify the coherent local document baseline, but the dependency graph must remain acyclic so independent document release remains possible later.
-
-
 ## Current direction
 
 The project currently centres on the **Timing Point Application** (SI-01):
@@ -451,6 +136,220 @@ Only risks that can materially change the direction belong here.
 | Hardware behaviour differs from simulations. | Keep adapters replaceable and verify against representative hardware when available. |
 | Backoffice details leak into application/domain APIs. | Keep application semantics separate from transport/proprietary mappings. |
 | Part-time cadence loses context. | Keep steps small, demonstrable and documented at their actual decision points. |
+
+## Documentation structure and dependency discipline
+
+### Document categories and numbering
+
+The following abbreviations are canonical for this project:
+
+| Abbreviation | Full name | Primary role |
+| --- | --- | --- |
+| SDP | Software Development Plan | project-wide development strategy |
+| SIP | Software Implementation Plan | implementation steps, roadmap and exit evidence |
+| EXT | External Inputs | register of parent/external normative sources |
+| UC | Use Cases | externally meaningful behaviour/use cases |
+| SSSD | Software System Specification Document | software-system requirements + architecture |
+| ISD | Interface Specification Document | normative system-owned interface requirements and semantics |
+| IDD | Interface Design Description | optional concrete interface design/representation implementing an ISD |
+| SRD | Software Requirements Document | software-item requirements when split from architecture |
+| SSD | Software Specification Document | software-item requirements + architecture combined |
+| SAD | Software Architecture Document | software-item architecture when split from requirements |
+| SDD | Software Design Description | focused detailed software-item design |
+| SDE | Software Development Environment | repositories, tooling, build/development environment |
+| SVP | Software Verification Plan | verification strategy, levels, environments and evidence rules |
+| VTS | Verification Test Specification | concrete stable verification cases and expected results |
+| SUM | Software User Manual | technical user/release guidance |
+
+The numeric prefix groups documents by **engineering role**. It is primarily a navigation/readability convention; it does not by itself define normative dependency order.
+
+```text
+00–09  working / project context
+10–19  planning
+20–29  external / parent-system inputs
+30–39  software-system specification and design
+40      software-item use cases
+41      software-item requirements / combined specification
+42      software-item architecture
+43      software-item detailed design
+50–59  development environment / engineering
+60–69  verification and validation
+70–79  user / operational documentation
+```
+
+Current examples are:
+
+```text
+00-brainstorm
+02-agent-plan
+03-domain-baseline
+
+10-SDP
+11-SIP
+
+20-EXT-external-system-inputs
+
+30-UC-system-use-cases
+31-SSSD-software-system-specification-document
+32-03-ISD-application-control-status
+32-05-ISD-timingdata-interchange
+32-11-ISD-application-configuration
+33-05-IDD-timingdata-interchange
+
+40-01-UC                         reserved / optional for SI-01
+41-01-SSD-timing-application-specification-document
+41-02-SSD-gui-application-specification-document
+
+43-01-SDD-01-data-and-display-design
+43-01-SDD-02-java-component-design
+43-01-SDD-03-backoffice-transport-design
+
+50-SDE-01-software-development-environment
+50-SDE-02-java-build-test-toolchain
+50-SDE-03-engineering-client
+
+60-SVP-software-verification-plan
+61-01-VTS-timing-application-verification-test-specification
+
+70-01-SUM-headless-timing-application
+```
+
+Numbering rules:
+
+- the leading two-digit value identifies the document category or reserved document family; it is not a dependency-order number;
+- where a reserved family has a natural stable scope identifier, that scope is the second segment. Software-item families use the software-item ID, for example `41-01-SSD` and `43-01-SDD-02`;
+- document family `32` is reserved for software-system-owned Interface Specification Documents (ISDs). Its second segment is the stable interface ID, so IF-03 is `32-03-ISD` and IF-11 is `32-11-ISD`; the number is not a document sequence;
+- document family `33` is reserved for optional Interface Design Descriptions (IDDs). Use the same interface ID, for example `33-05-IDD` implements design choices for IF-05. Do not create an IDD when the ISD is sufficient;
+- document number `40` is reserved for optional software-item use cases, for example `40-01-UC` for SI-01;
+- document number `41` is reserved for software-item requirements/specification: use `41-<SI>-SSD` when requirements and architecture are combined, or `41-<SI>-SRD` when they are split;
+- document number `42` is reserved for a separate software-item architecture document `42-<SI>-SAD`; omit it when `41-<SI>-SSD` already combines requirements and architecture;
+- document number `43` is reserved for software-item detailed design. When several SDDs share the same software-item scope, a final sequence follows the type: `43-01-SDD-01`, `43-01-SDD-02`, ...;
+- a repeatable generic family without a natural scope identifier puts its sequence after the type. The generic SDE family therefore uses `50-SDE-01`, `50-SDE-02`, ...;
+- a singular generic document does not gain a synthetic sequence merely for symmetry, for example `60-SVP`;
+- document family `61` is reserved for software-item verification test specifications; use the software-item ID as scope, for example `61-01-VTS` for SI-01. The VTS specifies stable verification cases; it does not record current execution status or retained run evidence;
+- range 70–79 item-specific documents use the stable software-item segment where applicable, for example `70-01-SUM` for SI-01;
+- an externally owned document keeps the identifier/version assigned by its owner. Document 20 records the external input and its applicable revision; it does not renumber the external authority as if this project owned it.
+
+A new document should fit an existing category/family before another one is
+invented. Scope identifiers and document sequences have different meanings and
+must not trade places merely to keep filenames numerically contiguous.
+### Document templates
+
+Reusable document templates, including their standard introductory text, live in
+`docs/templates/`. A new document in an existing family starts from the matching
+template rather than from an empty file. The templates define the normal section order
+and reusable family explanation; document-specific content replaces the placeholders.
+
+### External and parent-system inputs
+
+The software system defined here is itself a subsystem of a larger operational system. Some requirements and interface contracts can therefore be defined **above the current software-system scope**.
+
+`20-EXT-external-system-inputs.md` records those controlled upstream inputs: parent-system requirements, externally owned IDDs, protocols, standards or equivalent contracts, including the exact version/revision when known and the part of this software system they constrain.
+
+The external source remains the authority. The local document-20 record is a baseline/traceability index and must not silently copy, weaken or reinterpret an externally controlled contract. Private/proprietary source material may remain outside this public repository while its applicable identity/revision is recorded generically when that can be done safely.
+
+### Normative authority and release dependencies
+
+Product-document `Inputs` are **authority/release dependencies**, not a list of every document that was useful while writing. Ordinary downstream references belong under traceability/related-document sections and do not make the referenced document an input.
+
+The generic direction is:
+
+```text
+parent / external system requirements, interface contracts/designs, protocols
+                         |
+                         v
+            20 external-input baseline
+                         |
+domain baseline ---------+------> 30 system use cases
+                         |                 |
+                         +-----------------+
+                                           v
+                                      31 SSSD
+                                           |
+                                 allocates interfaces/items
+                                           |
+                      +--------------------+--------------------+
+                      |                                         |
+                      v                                         v
+          32-<IF>-ISD(s)             40-<SI>-UC(s)
+                      |                                         |
+              +-------+-------+                                 |
+              |               |                                 |
+              v               v                                 |
+      optional 33-<IF>-IDD     +-------------------------------+
+              |                                                 |
+              |                       +-------------------------+
+              |                       |
+              |             +---------+------------------+
+              |             |                            |
+              |             v                            v
+              |      combined route                 split route
+              |      41-<SI>-SSD                 41-<SI>-SRD
+              |             |                            |
+              |             |                            v
+              |             |                     42-<SI>-SAD
+              +-------------+-------------+--------------+
+                                          |
+                                          v
+                                    43-<SI>-SDD-<N>
+                                           |
+                                           v
+                                      implementation
+                                           |
+                                           +----------------------+
+                                           |                      |
+                                           v                      v
+                                  61-<SI>-VTS case      executable product
+                                           |
+                                           v
+                                  executable verification
+                                           |
+                                           v
+                                  verification evidence
+```
+
+The diagram shows the normal internal decomposition, not a rule that every input must pass through every box. An externally imposed requirement/IDD/protocol may directly constrain the SSSD and an affected software-item SRD/SSD when the allocation is already explicit.
+
+Document roles:
+
+- **SSSD** — combines software-system requirements and software-system architecture and owns software-item/interface allocation.
+- **System-owned ISD** — defines the normative contract allocated/owned by this software system. Once released, it constrains every affected SRD/SSD.
+- **System-owned IDD** — optional design description downstream of an ISD. It records concrete representation/design choices and is primarily an input to affected SDDs; it does not replace the ISD as the source of interface requirements.
+- **Software-item UC** — optional behavioural decomposition of one or more system use cases after responsibility has been allocated to a software item.
+- **SSD** — combines a software item's requirements and architecture. It consumes the SSSD plus applicable external and system-owned interface obligations.
+- **SRD / SAD** — the split alternative: the SRD owns software-item requirements and the SAD owns the corresponding architecture. Do not maintain an SSD and SRD/SAD pair for the same scope.
+- **SDD** — focused detailed design downstream of the owning SSD or SAD.
+- **SVP / VTS** — the SVP defines verification strategy; the VTS defines concrete stable cases. Both consume product requirements/interfaces and are downstream, not requirement inputs.
+
+### Requirement maturity
+
+Requirements use the standard Sphinx-Needs `status` field. Author only the
+compact codes below; generated reader views expand them to the full word. Use
+the same convention for software and interface requirements:
+
+| Status | Meaning |
+| --- | --- |
+| `D` | Draft — still being developed; wording, scope and even existence may change |
+| `R` | Review — proposed requirement is ready for focused review |
+| `A` | Approved — accepted normative requirement for the current engineering baseline |
+| `O` | Obsolete — no longer active; retained only where its ID/history is needed for traceability |
+
+A requirement written with `shall` is normative **at its stated maturity**.
+`status: D` therefore does not mean the requirement has already been
+accepted or frozen.
+
+Move a requirement back to `D` when a review causes a material change in
+scope or meaning. Use `O` rather than silently reusing an approved
+requirement ID for a different meaning.
+
+Every software and interface requirement shall carry an explicit status.
+New requirements therefore receive `D`, `R`, `A` or `O` when they are
+created; CI rejects a requirement without one.
+- **SDP/SIP** — project/development-control documents. They plan direction and implementation sequence but do not define product requirements by being listed as an input.
+- **SDE** — engineering-environment authority. It is deliberately in its own category rather than being treated as a third planning document.
+- **SUM** — release/user guidance downstream of the released software/configuration baseline.
+
+For independently released documents, a released document records the exact version/revision of every normative input. In the current repository-wide release model, one repository release/tag/commit may identify the coherent local document baseline, but the dependency graph must remain acyclic so independent document release remains possible later.
 
 ## When to update this plan
 
