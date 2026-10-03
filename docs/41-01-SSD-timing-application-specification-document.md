@@ -201,9 +201,10 @@ SI-01 shall implement IF-03 `v1` such that compatible additions can be made with
 :derived_from: UC-001, UC-002, UC-008, UC-009
 
 SI-01 shall expose the current operational `LocationId` and `OPEN`/`CLOSED`
-state, allow the location to be assigned or changed only while CLOSED, require a
-valid current location before OPEN succeeds, and keep that location fixed while
-OPEN.
+state. A LocationId may be assigned or changed explicitly only while CLOSED.
+Every normal OPEN application command shall carry the requested valid LocationId;
+for a CLOSED TimingNode SI-01 shall apply that LocationId and the CLOSED-to-OPEN
+transition as one ordered operation, then keep the active location fixed while OPEN.
 ```
 
 ```{req} Accepted semantic registration operation
@@ -338,7 +339,8 @@ The following areas are intentionally not made concrete by this SSD slice:
 - RabbitMQ-specific behaviour;
 - target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
 - production authentication/authorisation and final security policy;
-- browser-specific CORS/origin policy.
+- browser-specific CORS/origin policy for IF-03 clients; the direct browser-facing
+  operator interface is allocated separately as IF-04.
 
 These areas remain in the use-case/working-specification baseline until a later planned increment promotes their requirements.
 
