@@ -258,15 +258,15 @@ def render_object_page(obj: dict, view: dict) -> str:
         "",
         f"**Type:** {obj['type_label']}  ",
         (
-            "**Workspace:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
+            "**Comparison workspace:** "
+            f'<a href="../../workspace/?object={html.escape(obj["id"])}">'
             "open object comparison workspace</a>  "
         ),
         f"**Source definition:** [open authored source]({obj['source_url']})  ",
         (
-            "**Architecture context:** "
+            "**Engineering Explorer:** "
             f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
-            "open explorer with architecture selection</a>"
+            "open with architecture context</a>"
         ),
         "",
         (
@@ -333,7 +333,9 @@ evidence.
 ## Start here
 
 - [Engineering explorer](explorer.md) — keep the real SI-01 architecture visible
-  while inspecting requirements, use cases, architecture and verification.
+  while inspecting one selected engineering object.
+- [Traceability comparison](workspace.md) — keep one engineering object fixed
+  on the left while opening related Incoming/Outgoing objects on the right.
 - [Engineering object index](objects/index.md) — searchable generated object
   pages with incoming/outgoing and one-hop context.
 - [Engineering Client UI](engineering-client-ui.md) — review the Step-4 Timing
@@ -426,7 +428,7 @@ def render_explorer(view: dict, svg: str) -> str:
     chips = "".join(
         (
             '<button class="eng-object-chip" type="button" '
-            f'data-root-object-id="{html.escape(object_id)}">'
+            f'data-object-id="{html.escape(object_id)}">'
             f"{html.escape(object_id)}</button>"
         )
         for object_id in sorted(view["objects"])
@@ -442,45 +444,76 @@ hide:
 
 <div class="eng-workspace-nav" aria-label="Engineering portal navigation">
   <a href="../">Portal</a>
+  <a href="../workspace/">Traceability comparison</a>
   <a href="../book/">Architecture Book</a>
   <a href="../objects/">Object index</a>
 </div>
 
-<div data-eng-explorer>
-  <details class="eng-context">
-    <summary>Architecture and object selection</summary>
-    <div class="eng-context__body">
-      <div class="eng-diagram">
-        {svg}
-      </div>
-      <p>
-        Use the architecture or object list to choose the object that stays on
-        the left side of the workspace.
-      </p>
-      <div class="eng-object-picker">{chips}</div>
+<div class="eng-architecture-workspace" data-eng-explorer>
+  <section class="eng-context">
+    <h2>Architecture context</h2>
+    <div class="eng-diagram">
+      {svg}
     </div>
-  </details>
+    <p>
+      Click a diagram object or choose an engineering object below. The full
+      architecture remains visible while the selected object is inspected.
+    </p>
+    <div class="eng-object-picker">{chips}</div>
+  </section>
 
-  <div class="eng-workspace">
-    <section class="eng-detail" data-eng-root-detail aria-live="polite">
-      Select an engineering object.
-    </section>
-    <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
-      Select a related object to compare.
-    </aside>
-  </div>
+  <aside class="eng-detail" data-eng-detail aria-live="polite">
+    Select an engineering object.
+  </aside>
+</div>
+
+## About this view
+
+The Engineering Explorer is the architecture-oriented view. The generated
+SI-01 architecture stays visible while one selected requirement, use case,
+architecture element or verification case is inspected beside it.
+
+For relation-by-relation comparison, use the separate
+[Traceability comparison](../workspace/) workspace.
+
+<script id="eng-graph-data" type="application/json">{graph_json}</script>
+"""
+
+
+def render_workspace(view: dict) -> str:
+    graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
+    return f"""---
+hide:
+  - navigation
+  - toc
+---
+
+# Traceability comparison
+
+<div class="eng-workspace-nav" aria-label="Engineering portal navigation">
+  <a href="../">Portal</a>
+  <a href="../explorer/">Engineering Explorer</a>
+  <a href="../book/">Architecture Book</a>
+  <a href="../objects/">Object index</a>
+</div>
+
+<div class="eng-workspace" data-eng-workspace>
+  <section class="eng-detail" data-eng-root-detail aria-live="polite">
+    Select an engineering object.
+  </section>
+  <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
+    Select a related object to compare.
+  </aside>
 </div>
 
 ## About this view
 
 The selected engineering object stays visible on the **left**. Click an
 Incoming, Outgoing or one-hop relation to open that related engineering object
-on the **right** without replacing the selected object. This keeps both ends of
-the traceability relationship visible at the same time.
+on the **right** without replacing the selected object.
 
-The architecture remains available as an additional way to select the left-hand
-object. Each object panel has its own **Open source definition** action for the
-exact authored Markdown location.
+Use the separate [Engineering Explorer](../explorer/) when the full clickable
+architecture diagram should remain visible.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """
@@ -544,6 +577,9 @@ def write_portal(
     )
     (output_dir / "explorer.md").write_text(
         render_explorer(view, svg), encoding="utf-8"
+    )
+    (output_dir / "workspace.md").write_text(
+        render_workspace(view), encoding="utf-8"
     )
     (output_dir / "objects" / "index.md").write_text(
         render_object_index(view), encoding="utf-8"
