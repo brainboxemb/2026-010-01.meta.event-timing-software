@@ -276,9 +276,10 @@ body.eng-explorer-page .md-content__inner {
   display: block;
 }
 
+.md-typeset .eng-object-tree li,
 .eng-tree-group,
 .eng-tree-leaf {
-  margin: 0;
+  margin: 0 !important;
   padding: 0;
 }
 
