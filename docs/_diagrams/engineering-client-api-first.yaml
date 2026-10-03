@@ -1,6 +1,6 @@
 diagram:
   id: engineering-client-api-first
-  title: Figure SDE03-05 — API-first Engineering Client workbench
+  title: Figure SDE03-05 — API-first Development Client workbench
   width: 1360
   height: 820
   note: Reviewed next UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.
@@ -9,7 +9,7 @@ groups: []
 
 nodes:
   - id: shell
-    label: Engineering Client
+    label: Development Client
     kind: wireframe-surface
     notation: wireframe-panel
     layout: {x: 30, y: 80, w: 1300, h: 710}
