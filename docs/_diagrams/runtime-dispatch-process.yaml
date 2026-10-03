@@ -48,7 +48,7 @@ nodes:
     layout: {x: 100, y: 605, w: 250, h: 85}
 
   - id: presentation-gateway
-    label: "PresentationGateway\npresentation operations / status / events"
+    label: "PresentationGateway\npresentation commands / queries"
     kind: application
     group: runtime
     layout: {x: 520, y: 155, w: 610, h: 80}
