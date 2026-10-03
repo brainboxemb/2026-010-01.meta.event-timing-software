@@ -258,5 +258,7 @@ TimingData record.
 
 - define the TimingNode OPEN/CLOSE TimingData semantics in the planned lifecycle-record
   increment;
+- define whether and how the start procedure is represented as TimingData, including
+  which start-procedure events or state changes become committed records;
 - decide whether Registration ID + time is sufficient to identify a registration when a
   revoke record refers to an earlier registration.
