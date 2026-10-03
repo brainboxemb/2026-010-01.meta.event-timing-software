@@ -95,6 +95,11 @@ The IF-03 HTTP and WebSocket client services share one process-wide JDK
 objects, but they must not create a new JDK HTTP selector/worker thread group
 for every operation.
 
+The Engineering Client's own asynchronous request worker is named
+`ec-request`. JDK-owned transport threads keep their native `HttpClient-*`
+names; seeing one stable group is expected, while a new numbered group for
+every UI action indicates accidental transport recreation.
+
 Step 4 adds one narrowly scoped engineering capability through IF-03:
 direct injection of an **already accepted semantic registration**. That control
 enters the normal TimingNode registration operation after antenna/decoding/filtering.
