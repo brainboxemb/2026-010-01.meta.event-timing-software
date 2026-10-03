@@ -254,5 +254,4 @@ Those design choices shall preserve the semantics defined by this ISD.
 
 - OPEN with a different LocationId while already OPEN;
 - concrete default Web transport and payload design;
-- compatibility-mapping mechanism for deployment-specific representation details;
-- authentication/authorisation for non-development deployment.
+- compatibility-mapping mechanism for deployment-specific representation details.
