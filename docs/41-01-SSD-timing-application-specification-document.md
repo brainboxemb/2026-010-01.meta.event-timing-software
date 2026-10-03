@@ -11,6 +11,15 @@ This document combines the SI-01 requirements and architecture in one baseline.
 Requirements keep their `SI01-REQ-...` identifiers. Detailed SDDs build on this
 architecture instead of repeating it.
 
+## Terms and abbreviations
+
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **SSSD** — Software System Specification Document
+- **ISD** — Interface Specification Document
+- **SDD** — Software Design Description
+
+
 ## Relationship to other documents
 
 The SI-01 specification consumes the software-system allocation and the interface obligations that apply to SI-01:
