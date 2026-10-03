@@ -259,14 +259,14 @@ def render_object_page(obj: dict, view: dict) -> str:
         f"**Type:** {obj['type_label']}  ",
         (
             "**Workspace:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=source">'
-            "open source + object side by side</a>  "
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
+            "open object comparison workspace</a>  "
         ),
         f"**Source definition:** [open authored source]({obj['source_url']})  ",
         (
             "**Architecture context:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=architecture">'
-            "open architecture + object</a>"
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
+            "open explorer with architecture selection</a>"
         ),
         "",
         (
