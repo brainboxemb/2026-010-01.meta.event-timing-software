@@ -87,11 +87,19 @@ The current status model exposes 1..N TimingNodes. For each node it provides:
 
 - `TimingNodeId`;
 - current operational `LocationId`, or no assigned location;
-- lifecycle state `CLOSED` or `OPEN`.
+- operational state `CLOSED`, `OPEN` or `ERROR`.
+
+`ERROR` means the TimingNode is not available for normal operational commands because
+a contained node-local failure prevented safe operation. The first such case is startup
+TimingData recovery failure.
 
 Status can also expose machine-readable problem entries. A problem has a stable code,
-severity and human-readable explanation. Clients shall not make business decisions by
-parsing human-readable problem text.
+severity and human-readable explanation. A TimingNode-scoped problem identifies the
+affected TimingNode. Clients shall make decisions from the machine-readable state/code,
+not by parsing human-readable problem text.
+
+For the current recovery-containment baseline, a TimingData startup-recovery failure
+uses problem code `TIMING_DATA_RECOVERY_FAILED` with severity `ERROR`.
 
 A restarted TimingNode begins `CLOSED` with no current operational LocationId unless a
 later requirement explicitly defines another recovery rule. Historical TimingData does
@@ -439,6 +447,22 @@ is committed and visible in the TimingNode LogBook.
 A reconnecting client shall be able to combine current status, bounded committed LogBook
 history and later live events using stable TimingData record identity before declaring its
 view live.
+```
+
+
+```{ifreq} Degraded TimingNode status
+:id: IF03-REQ-017
+:status: D
+:derived_from: UC-020
+
+IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall represent a
+contained TimingNode startup failure using node state `ERROR` and a machine-readable
+problem associated with the affected TimingNodeId.
+
+A TimingData startup-recovery failure shall use problem code
+`TIMING_DATA_RECOVERY_FAILED` with severity `ERROR`. Normal state-changing or
+registration operations addressed to a TimingNode in `ERROR` shall return an explicit
+failure outcome rather than being accepted as normal operation.
 ```
 
 

@@ -124,7 +124,7 @@ Response shape:
 ```
 
 `locationId` is `null` when no operational location is assigned. `state` is
-`CLOSED` or `OPEN`.
+`CLOSED`, `OPEN` or `ERROR`.
 
 Problem entries use:
 
@@ -132,9 +132,38 @@ Problem entries use:
 {
   "code": "<stable-machine-code>",
   "severity": "WARNING|ERROR",
+  "nodeId": "TN-01",
   "message": "<human-readable-summary>"
 }
 ```
+
+`nodeId` is present for a TimingNode-scoped problem and omitted for an
+application-wide problem.
+
+A contained TimingData recovery failure is represented for example as:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "TN-01",
+      "locationId": null,
+      "state": "ERROR"
+    }
+  ],
+  "problems": [
+    {
+      "code": "TIMING_DATA_RECOVERY_FAILED",
+      "severity": "ERROR",
+      "nodeId": "TN-01",
+      "message": "TimingData recovery failed for TN-01"
+    }
+  ]
+}
+```
+
+The message is diagnostic text; clients use `state`, `code` and `nodeId` for
+machine behaviour.
 
 ## IF03-OP-004 — Capabilities
 
