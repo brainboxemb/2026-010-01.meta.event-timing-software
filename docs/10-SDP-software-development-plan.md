@@ -3,14 +3,6 @@
 Status: working draft / non-authoritative
 
 
-## Document guide
-
-- **Role:** define project-wide software-development strategy and document/dependency conventions.
-- **Inputs:** project goals, engineering constraints and accepted system/product direction.
-- **Owns:** development strategy, document-family conventions and authority/dependency rules; not implementation-step scheduling.
-- **Downstream:** SIP, SDE and the document set that follows these conventions.
-- **Key terms:** `SDP` — Software Development Plan; `SIP` — Software Implementation Plan; `SDE` — Software Development Environment; `SVP` — Software Verification Plan; `VTS` — Verification Test Specification.
-
 This document records the **current development direction**. It should stay short and
 should distinguish decisions from things that still need discussion or evidence.
 
@@ -114,6 +106,113 @@ Numbering rules:
 A new document should fit an existing category/family before another one is
 invented. Scope identifiers and document sequences have different meanings and
 must not trade places merely to keep filenames numerically contiguous.
+### Document-family templates
+
+Documents in the same family should use the same basic reading structure. This is a
+**template, not a straitjacket**: omit a section when it adds no value, and add a
+document-specific section when the subject needs it. Do not invent a different
+introductory structure for every document.
+
+For specification, design and verification documents, use this order near the start:
+
+```text
+Purpose
+Relationship to other documents
+Terms and abbreviations        # only when the document uses important abbreviations
+<document-family content>
+```
+
+The relationship section may contain reusable explanatory text and a small diagram.
+Generic engineering explanation that is true for every document of that family belongs
+in the family template instead of being rewritten differently in each document.
+Document-specific relationship text should only add what is specific to that document.
+
+Do not repeat the same relationship at both the start and end of a document. For
+example, an ISD should explain once that an optional IDD provides concrete interface
+design; it should not repeat that fact later in a second generic "Interface design"
+section unless that later section contains actual interface-specific design decisions.
+
+Use a dedicated **Terms and abbreviations** section instead of an inline "Key terms"
+sentence. Include only abbreviations or terms that materially help a reader of that
+document; do not enumerate obvious words merely to fill the template.
+
+#### UC — use-case document
+
+A system UC document describes externally meaningful behaviour of the software system
+before that behaviour is decomposed across software items. Its standard relationship
+section should explain the normal direction:
+
+```text
+domain / parent-system inputs
+          |
+          v
+     system use cases
+          |
+          v
+         SSSD
+          |
+   allocates items/interfaces
+          |
+    +-----+-----+
+    |           |
+    v           v
+system ISDs   optional software-item UC
+    |           |
+    +-----+-----+
+          |
+          v
+         SSD
+          |
+          v
+         SDD
+```
+
+A software-item use case is optional and should only be introduced when describing one
+item's actor/goal behaviour separately makes the subsequent SSD clearer. A use case is
+not a test case; requirements realise use cases and verification cases verify the
+resulting requirements and interfaces.
+
+#### SSSD — software-system specification
+
+The SSSD owns software-system requirements, software-item allocation, system-owned
+interface allocation and cross-item architecture. Its standard relationship section
+places it after system intent/use cases and before system-owned ISDs and software-item
+specifications. It should not repeat software-item detailed design.
+
+#### ISD — interface specification
+
+An ISD defines the semantic contract of one system-owned interface. The SSSD allocates
+the interface; affected software-item specifications consume the ISD. An optional IDD
+may define a concrete protocol, encoding or representation for that interface. The IDD
+does not replace or redefine the ISD semantics.
+
+#### IDD — interface design description
+
+An IDD implements one ISD at the concrete representation/design level. The ISD remains
+the semantic contract; the IDD owns choices such as resource names, message or file
+encoding, member names, framing and representation-version rules. Software-item design
+and implementation consume both where applicable.
+
+#### SSD — software-item specification
+
+An SSD combines the requirements and architecture of one software item. It consumes the
+SSSD allocation plus applicable ISDs and directly allocated external obligations. Focused
+SDDs refine its internal design. Verification documents are downstream and do not define
+product behaviour.
+
+#### SDD — software design description
+
+An SDD refines one focused part of a software-item design. It implements the SSD
+architecture and respects applicable ISDs/IDDs without redefining their external
+contracts. Concrete implementation follows the SDD.
+
+#### SVP and VTS — verification
+
+The SVP defines verification strategy, levels, environments and evidence rules. A VTS
+defines stable verification cases and expected results for accepted requirements and
+interfaces. Executable tests implement those cases; retained evidence records the actual
+execution and result. Verification documents are downstream of the product definition.
+
 ### External and parent-system inputs
 
 The software system defined here is itself a subsystem of a larger operational system. Some requirements and interface contracts can therefore be defined **above the current software-system scope**.
