@@ -4,6 +4,15 @@ Status: working draft / non-authoritative
 
 Software item: **SI-02 — Desktop GUI Application**
 
+
+## Document guide
+
+- **Role:** define the working requirements/architecture baseline of **SI-02 — Desktop GUI Application**.
+- **Inputs:** SSSD allocation, IF-03 ISD/IDD and directly allocated external/parent-system inputs.
+- **Owns:** SI-02 desktop-client responsibilities and architecture; it does not own IF-03 or IF-04 semantics.
+- **Downstream:** SI-02 detailed design, implementation and verification specifications when promoted.
+- **Key terms:** `SSD` — Software Specification Document; `SI` — Software Item; `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description.
+
 This SSD is intentionally architecture-heavy today because SI-02 implementation has not
 started. Software-item requirements will be promoted into this same document as the GUI
 capability approaches implementation; no separate requirements/architecture document pair is planned.
