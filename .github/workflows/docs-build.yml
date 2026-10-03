@@ -564,13 +564,22 @@ jobs:
                 const objectLeft = objectLabel
                   ? objectLabel.getBoundingClientRect().left
                   : Number.POSITIVE_INFINITY;
+                const searchOffset = searchLeft - browserLeft;
+                const topOffset = topLeft - browserLeft;
+                const objectOffset = objectLeft - browserLeft;
+                document.body.dataset.treeGeometry =
+                  [
+                    searchOffset.toFixed(1),
+                    topOffset.toFixed(1),
+                    objectOffset.toFixed(1)
+                  ].join(",");
                 document.body.dataset.treeEdgeSpacing =
-                  Math.abs(searchLeft - browserLeft) <= 3 &&
-                  Math.abs(topLeft - browserLeft) <= 3
+                  Math.abs(searchOffset) <= 3 &&
+                  Math.abs(topOffset) <= 3
                     ? "passed"
                     : "failed";
                 document.body.dataset.treeIndentCompact =
-                  objectLeft - browserLeft <= 24
+                  objectOffset <= 24
                     ? "passed"
                     : "failed";
               }
@@ -640,6 +649,15 @@ jobs:
           html = Path(
               "bld/engineering-portal/browser-workspace-interaction.html"
           ).read_text(encoding="utf-8")
+          geometry = re.search(
+              r'data-tree-geometry="([^"]*)"',
+              html,
+          )
+          print(
+              "tree-geometry offsets search, top, object:",
+              geometry.group(1) if geometry else "<missing>",
+          )
+
           checks = {
               "tree-toggle-interaction": "passed",
               "tree-material-isolation": "passed",
