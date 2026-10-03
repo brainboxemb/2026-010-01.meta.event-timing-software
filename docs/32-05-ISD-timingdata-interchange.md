@@ -254,7 +254,7 @@ operation that changes the meaning of earlier data shall be represented by a new
 TimingData record.
 ```
 
-## Deferred from this first slice
+## Not part of the current IF-05 baseline
 
 - TimingNode OPEN/CLOSE TimingData representation;
 - revoke disambiguation beyond Registration ID + time, if later needed;
