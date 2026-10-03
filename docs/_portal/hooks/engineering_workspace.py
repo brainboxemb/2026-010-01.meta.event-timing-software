@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 import html
 import json
 from pathlib import Path
@@ -59,29 +58,41 @@ def _common_prefix(paths: list[list[str]]) -> list[str]:
 
 
 def _tree_node() -> dict[str, Any]:
-    return {"children": OrderedDict(), "items": []}
+    return {"children": {}, "entries": []}
+
+
+def _render_need(need: dict[str, Any]) -> str:
+    object_id = html.escape(need["id"])
+    title = html.escape(need.get("title") or need["id"])
+    type_name = html.escape(need.get("type_name") or need.get("type") or "")
+    search = html.escape(f"{need['id']} {need.get('title') or ''}".lower())
+    return (
+        '<li class="md-nav__item eng-tree-leaf" role="none">'
+        '<button class="md-nav__link eng-tree-item" type="button" role="treeitem" '
+        f'data-workspace-root-id="{object_id}" '
+        f'data-object-type="{type_name}" '
+        f'data-object-search="{search}">'
+        '<span class="eng-tree-item__label">'
+        f'<strong class="eng-tree-item__id">{object_id}</strong>'
+        f'<span class="eng-tree-item__title">{title}</span>'
+        "</span></button></li>"
+    )
 
 
 def _render_group(label: str, node: dict[str, Any], *, level: int) -> str:
     children: list[str] = []
-    for child_label, child_node in node["children"].items():
-        children.append(_render_group(child_label, child_node, level=level + 1))
-    for need in node["items"]:
-        object_id = html.escape(need["id"])
-        title = html.escape(need.get("title") or need["id"])
-        type_name = html.escape(need.get("type_name") or need.get("type") or "")
-        search = html.escape(f"{need['id']} {need.get('title') or ''}".lower())
-        children.append(
-            '<li class="md-nav__item eng-tree-leaf" role="none">'
-            '<button class="md-nav__link eng-tree-item" type="button" role="treeitem" '
-            f'data-workspace-root-id="{object_id}" '
-            f'data-object-type="{type_name}" '
-            f'data-object-search="{search}">'
-            '<span class="eng-tree-item__label">'
-            f'<strong class="eng-tree-item__id">{object_id}</strong>'
-            f'<span class="eng-tree-item__title">{title}</span>'
-            "</span></button></li>"
-        )
+    for kind, value in node["entries"]:
+        if kind == "group":
+            child_label = value
+            children.append(
+                _render_group(
+                    child_label,
+                    node["children"][child_label],
+                    level=level + 1,
+                )
+            )
+        else:
+            children.append(_render_need(value))
 
     return (
         '<li class="md-nav__item eng-tree-group" role="none" '
@@ -98,7 +109,7 @@ def _render_group(label: str, node: dict[str, Any], *, level: int) -> str:
 
 
 def _render_tree(needs: dict[str, dict[str, Any]]) -> str:
-    by_document: OrderedDict[str, list[dict[str, Any]]] = OrderedDict()
+    by_document: dict[str, list[dict[str, Any]]] = {}
     ordered = sorted(
         needs.values(),
         key=lambda need: (
@@ -123,8 +134,11 @@ def _render_tree(needs: dict[str, dict[str, Any]]) -> str:
             path = full_path[len(prefix) :]
             node = root
             for section in path:
-                node = node["children"].setdefault(section, _tree_node())
-            node["items"].append(need)
+                if section not in node["children"]:
+                    node["children"][section] = _tree_node()
+                    node["entries"].append(("group", section))
+                node = node["children"][section]
+            node["entries"].append(("need", need))
 
         documents.append(_render_group(_document_label(docname), root, level=0))
 
