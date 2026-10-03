@@ -34,7 +34,7 @@ Use the numbered project documents for their specific roles:
 - [docs/30-UC-system-use-cases.md](docs/30-UC-system-use-cases.md) — operational goals/use cases;
 - [docs/10-SDP-software-development-plan.md](docs/10-SDP-software-development-plan.md) — development strategy/risks;
 - [docs/11-SIP-software-implementation-plan.md](docs/11-SIP-software-implementation-plan.md) — implementation sequence/deliverables/evidence;
-- [docs/12-documentation-guide.md](docs/12-documentation-guide.md) — document families, numbering, relationships and reusable document templates;
+- [docs/12-GPD-documentation-guide.md](docs/12-GPD-documentation-guide.md) — document families, numbering, relationships and reusable document templates;
 - [docs/50-SDE-01-software-development-environment.md](docs/50-SDE-01-software-development-environment.md) — local repository/workflow/tooling/environment conventions;
 - [docs/31-SSSD-software-system-specification-document.md](docs/31-SSSD-software-system-specification-document.md) — software-system architecture/item register/interfaces;
 - [docs/41-01-SSD-timing-application-specification-document.md](docs/41-01-SSD-timing-application-specification-document.md) — SI-01 architecture;
@@ -73,7 +73,7 @@ For a new document in an existing family, start from the matching file in
 [docs/templates/](docs/templates/README.md). Do not create the document from an empty
 file and then invent new generic introductory wording.
 
-The [documentation guide](docs/12-documentation-guide.md) owns document numbering,
+The [documentation guide](docs/12-GPD-documentation-guide.md) owns document numbering,
 family relationships and template usage. The SDP owns development direction, not the
 documentation convention.
 
