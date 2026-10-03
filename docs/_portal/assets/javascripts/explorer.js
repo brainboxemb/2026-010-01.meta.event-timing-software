@@ -210,6 +210,7 @@
       const filterPanel = root.querySelector(".eng-object-browser__filters");
       const searchInput = root.querySelector("[data-eng-tree-search]");
       const typeFilter = root.querySelector("[data-eng-tree-type]");
+      const resultCount = root.querySelector("[data-eng-tree-count]");
       const treeItems = Array.from(
         root.querySelectorAll("[data-workspace-root-id]")
       );
@@ -294,6 +295,12 @@
           group.hidden = !visible;
           if ((query || selectedType) && visible) group.open = true;
         });
+
+        if (resultCount) {
+          const visibleCount = treeItems.filter((node) => !node.hidden).length;
+          resultCount.textContent =
+            visibleCount + (visibleCount === 1 ? " object" : " objects");
+        }
       }
 
       function renderRoot(id, updateHistory) {
