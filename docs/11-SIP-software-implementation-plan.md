@@ -2,6 +2,15 @@
 
 Status: working draft / non-authoritative
 
+
+## Document guide
+
+- **Role:** define the implementation roadmap, step scope, activities, estimates and exit criteria.
+- **Inputs:** accepted product/document baselines and current implementation state.
+- **Owns:** implementation sequence and planning; it does not define product requirements or interface semantics.
+- **Downstream:** step boards, issues, implementation PRs and planning views.
+- **Key terms:** `SIP` — Software Implementation Plan; `D..` — documentation/design activity; `A..` — application activity; `V..` — verification activity; `T..` — tooling activity.
+
 This document explains **how the software is expected to grow from the current application core
 into a usable timing system**. The roadmap is intended for two audiences:
 
