@@ -533,9 +533,9 @@ hide:
   - toc
 ---
 
-# Traceability comparison
+<h1 class="eng-trace-title">Traceability comparison</h1>
 
-<div class="eng-workspace-nav" aria-label="Engineering portal navigation">
+<div class="eng-workspace-nav eng-workspace-nav--compact" aria-label="Engineering portal navigation">
   <a href="../">Portal</a>
   <a href="../explorer/">Engineering Explorer</a>
   <a href="../book/">Architecture Book</a>
