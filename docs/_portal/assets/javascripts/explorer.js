@@ -309,6 +309,7 @@
         rootId = id;
         compareId = "";
         rootDetail.innerHTML = objectPanel(object, "Selected object", "compare");
+        rootDetail.scrollTop = 0;
         renderCompare("", false);
         updateTreeSelection();
         if (updateHistory) updateUrl();
@@ -332,6 +333,7 @@
             "Compared object",
             "compare"
           );
+          compareDetail.scrollTop = 0;
         }
         updateCompareSelection();
         if (updateHistory) updateUrl();
