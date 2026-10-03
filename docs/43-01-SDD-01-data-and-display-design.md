@@ -10,6 +10,14 @@ This SDD explains **how the data flows inside SI-01**: how LogBook entries are
 recorded, when a TimingData record is committed, how restart/recovery works, and
 how queries, prepare-team data and display data use that state.
 
+## Terms and abbreviations
+
+- **SDD** — Software Design Description
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **IF-05** — TimingData Interchange
+
+
 ## Relationship to other documents
 
 This SDD refines the SI-01 SSD for internal data/runtime behaviour. It consumes the
