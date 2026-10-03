@@ -1,6 +1,6 @@
 # API Interface Specification (ISD)
 
-Status: review candidate / Step-4 semantic contract
+Status: review candidate
 
 System interface: **IF-03 — API**
 
@@ -108,7 +108,7 @@ Returns the complete current IF-03 status model.
 A newly connected or reconnected client first receives a complete current status snapshot
 before relying on later change events.
 
-The Step-4 semantic event set includes:
+The current semantic event set includes:
 
 - current status snapshot;
 - status changed;
@@ -125,7 +125,7 @@ Returns the supported/enabled state of optional IF-03 capabilities. Clients use 
 avoid assuming that an engineering or optional function exists merely because a client
 knows how to display it.
 
-The Step-4 capability set includes direct accepted-registration simulation.
+The current capability set includes direct accepted-registration simulation.
 
 ### IF03-OP-005 — Set current operational location
 
@@ -343,7 +343,7 @@ before relying on later live changes.
 :derived_from: UC-008, UC-009
 
 The IF-03 realization shall provide a machine-readable representation suitable for SI-02,
-engineering clients and automated verification.
+engineering clients and automated test tooling.
 ```
 
 ```{ifreq} Explicit failure outcome
@@ -448,14 +448,6 @@ That IDD owns, among other things:
 - current listener/port arrangement.
 
 Changing those design details shall not silently change the semantics specified here.
-
-## Verification references
-
-Concrete verification procedures are downstream in
-`61-01-VTS-timing-application-verification-test-specification.md`.
-
-Current Step-4 verification uses IF-03 for process-level version/status/event checks and
-for the first registration/control/history flow.
 
 ## Open points
 
