@@ -193,6 +193,8 @@ body.eng-explorer-page .md-content__inner {
   padding: 0;
   border: 0;
   border-radius: 0;
+  outline: 1px solid var(--md-default-fg-color--lightest);
+  outline-offset: -1px;
 }
 
 .eng-object-browser__filters {
