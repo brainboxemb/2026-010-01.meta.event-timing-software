@@ -194,6 +194,7 @@ allocation is already explicit.
 
 The families have these normal roles:
 
+- **GPD** records general project/support guidance when no more specific established document type fits. It is not part of the product-definition chain.
 - **SSSD** owns software-system requirements, software-item allocation, system-owned
   interface allocation and cross-item architecture.
 - **ISD** owns the semantic contract of one system-owned interface.
