@@ -24,6 +24,14 @@ in the same implementation repository as SI-01 because its interface-inspection 
 currently evolves together with SI-01. Repository co-location does not make it part of
 the SI-01 software item.
 
+## Terms and abbreviations
+
+- **SDE** — Software Development Environment
+- **IF-03** — API interface
+- **SI-01** — Timing Point Application
+- **SI-02** — Desktop GUI Application
+
+
 ## Relationship to other documents
 
 This SDE document owns the engineering-tool architecture, UI working baseline and
