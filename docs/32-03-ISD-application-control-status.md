@@ -20,6 +20,15 @@ is defined by `33-03-IDD-api-http-websocket.md`.
 A browser/tablet operator interface served directly by SI-01 is a different system
 interface: **IF-04 — Web Interface**.
 
+## Terms and abbreviations
+
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+- **OP** — Operation
+- **SI** — Software Item
+
+
 ## Relationship to other documents
 
 IF-03 is allocated by
