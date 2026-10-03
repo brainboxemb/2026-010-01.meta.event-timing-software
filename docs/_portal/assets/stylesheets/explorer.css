@@ -194,27 +194,35 @@ body.eng-workspace-page {
 .eng-object-tree {
   min-width: 0;
   font-size: 0.56rem;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
+.eng-object-tree .md-nav__list,
 .eng-tree-root,
 .eng-tree-group__items {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.eng-object-tree li,
+.eng-object-tree li::marker {
+  list-style: none !important;
+  content: "" !important;
 }
 
 .eng-tree-root {
   display: block;
 }
 
-.eng-tree-group {
+.eng-tree-group,
+.eng-tree-leaf {
   margin: 0;
   padding: 0;
 }
 
-.eng-tree-group__toggle,
-.eng-tree-item {
+.eng-object-tree .md-nav__link.eng-tree-group__toggle,
+.eng-object-tree .md-nav__link.eng-tree-item {
   appearance: none;
   display: flex;
   align-items: center;
@@ -228,36 +236,22 @@ body.eng-workspace-page {
   cursor: pointer;
   text-align: left;
   font: inherit;
+  line-height: 1.15;
 }
 
-.eng-tree-group__toggle {
-  gap: 0.18rem;
-  padding: 0.14rem 0.12rem;
-  font-weight: 700;
+.eng-object-tree .md-nav__link.eng-tree-group__toggle {
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.14rem 0.18rem;
+  font-weight: 600;
 }
 
-.eng-tree-group__toggle:hover,
-.eng-tree-group__toggle:focus,
-.eng-tree-item:hover,
-.eng-tree-item:focus {
+.eng-object-tree .md-nav__link.eng-tree-group__toggle:hover,
+.eng-object-tree .md-nav__link.eng-tree-group__toggle:focus,
+.eng-object-tree .md-nav__link.eng-tree-item:hover,
+.eng-object-tree .md-nav__link.eng-tree-item:focus {
   background: var(--md-code-bg-color);
   outline: none;
-}
-
-.eng-tree-group__chevron {
-  flex: 0 0 auto;
-  width: 0;
-  height: 0;
-  border-top: 0.18rem solid transparent;
-  border-bottom: 0.18rem solid transparent;
-  border-left: 0.25rem solid currentColor;
-  opacity: 0.65;
-  transform-origin: 0.08rem center;
-  transition: transform 100ms ease;
-}
-
-.eng-tree-group.is-expanded > .eng-tree-group__toggle .eng-tree-group__chevron {
-  transform: rotate(90deg);
 }
 
 .eng-tree-group__label {
@@ -267,32 +261,65 @@ body.eng-workspace-page {
   white-space: nowrap;
 }
 
+.eng-tree-group__chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 100ms ease;
+}
+
+.eng-tree-group.is-expanded > .eng-tree-group__toggle .eng-tree-group__chevron {
+  transform: rotate(90deg);
+}
+
 .eng-tree-group__items {
   display: none;
-  padding-left: 0.72rem;
-  border-left: 1px solid var(--md-default-fg-color--lightest);
-  margin-left: 0.22rem;
 }
 
 .eng-tree-group.is-expanded > .eng-tree-group__items {
   display: block;
 }
 
-.eng-tree-item {
-  gap: 0.24rem;
-  padding: 0.08rem 0.12rem 0.08rem 0.22rem;
-  line-height: 1.1;
+.eng-tree-group__items .eng-tree-group__toggle {
+  padding-left: 0.7rem !important;
+  font-weight: 500 !important;
 }
 
-.eng-tree-item.is-selected {
-  background: var(--md-accent-fg-color--transparent);
-  color: var(--md-accent-fg-color);
+.eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
+  padding-left: 1.2rem !important;
+}
+
+.eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
+  padding-left: 1.7rem !important;
+}
+
+.eng-object-tree .md-nav__link.eng-tree-item {
+  padding: 0.08rem 0.18rem 0.08rem 0.7rem;
+}
+
+.eng-tree-group__items .eng-tree-group__items .eng-tree-item {
+  padding-left: 1.2rem;
+}
+
+.eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
+  padding-left: 1.7rem;
+}
+
+.eng-tree-item__label {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  gap: 0.22rem;
 }
 
 .eng-tree-item__id {
   flex: 0 0 auto;
   font-size: 0.54rem;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
 }
 
@@ -303,6 +330,14 @@ body.eng-workspace-page {
   font-size: 0.54rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.eng-tree-item.is-selected {
+  color: var(--md-accent-fg-color);
+}
+
+.eng-tree-item.is-selected .eng-tree-item__id {
+  font-weight: 700;
 }
 
 .eng-tree-item.is-selected .eng-tree-item__title {
