@@ -4,16 +4,7 @@ Status: draft / development-v1 realization
 
 System interface: **IF-03 — API**
 
-Specification: `32-03-ISD-application-control-status.md`
 
-
-## Document guide
-
-- **Role:** define the concrete HTTP/JSON + WebSocket realization of **IF-03 — API**.
-- **Inputs:** `32-03-ISD-application-control-status.md`.
-- **Owns:** HTTP methods/paths, JSON shapes, WebSocket envelopes, concrete result/error encoding and transport-level compatibility details.
-- **Downstream:** SI-01 implementation/design, API clients and interface-level tests.
-- **Key terms:** `IDD` — Interface Design Description; `ISD` — Interface Specification Document; `IF` — system interface; `OP` — semantic Operation defined by the ISD; `HTTP` — Hypertext Transfer Protocol.
 
 ## Purpose
 
@@ -23,6 +14,14 @@ HTTP/JSON + WebSocket development-v1 realization.
 The ISD owns operation and state semantics. This document owns concrete wire design:
 resource paths, HTTP methods, JSON member names, event envelopes, concrete result/error
 strings and status-code mapping.
+
+## Relationship to other documents
+
+This IDD implements the concrete development-v1 realization of
+`32-03-ISD-application-control-status.md`. The ISD remains the semantic IF-03 contract;
+this document defines how that contract is represented over HTTP/JSON and WebSocket.
+Software-item design, implementation, clients and interface tests consume this design
+where the concrete v1 representation matters.
 
 ## Transport baseline
 
