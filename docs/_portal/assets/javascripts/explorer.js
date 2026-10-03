@@ -206,6 +206,8 @@
 
       const rootDetail = root.querySelector("[data-eng-root-detail]");
       const compareDetail = root.querySelector("[data-eng-compare-detail]");
+      const objectBrowser = root.querySelector(".eng-object-browser");
+      const filterPanel = root.querySelector(".eng-object-browser__filters");
       const searchInput = root.querySelector("[data-eng-tree-search]");
       const typeFilter = root.querySelector("[data-eng-tree-type]");
       const treeItems = Array.from(
@@ -232,8 +234,22 @@
             node.removeAttribute("aria-current");
           }
         });
-        if (selectedNode) {
-          selectedNode.scrollIntoView({ block: "center" });
+        if (selectedNode && objectBrowser) {
+          const browserRect = objectBrowser.getBoundingClientRect();
+          const nodeRect = selectedNode.getBoundingClientRect();
+          const filterHeight = filterPanel
+            ? filterPanel.getBoundingClientRect().height
+            : 0;
+          const visibleHeight = Math.max(
+            0,
+            objectBrowser.clientHeight - filterHeight
+          );
+          const targetTop =
+            objectBrowser.scrollTop +
+            (nodeRect.top - browserRect.top) -
+            filterHeight -
+            Math.max(0, (visibleHeight - nodeRect.height) / 2);
+          objectBrowser.scrollTop = Math.max(0, targetTop);
         }
       }
 
