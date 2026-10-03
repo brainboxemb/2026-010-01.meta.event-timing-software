@@ -3,7 +3,7 @@
 Status: working engineering baseline
 
 Engineering tool: **Engineering Client**  
-Implementation location: `test-client/` in `2026-010-02.java.event-timing-framework`
+Implementation location: `test-client/` in `2026-010-02.java.timing-point-application`
 
 ## Purpose
 
