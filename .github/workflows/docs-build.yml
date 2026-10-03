@@ -578,10 +578,29 @@ jobs:
             "http://127.0.0.1:8765/workspace-interaction-test/?object=IF05-REQ-007&compare=SI01-REQ-045" \
             > bld/engineering-portal/browser-workspace-interaction.html
 
-          grep -q 'data-tree-toggle-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
-          grep -q 'data-tree-material-isolation="passed"' bld/engineering-portal/browser-workspace-interaction.html
-          grep -q 'data-pane-resize-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
-          grep -q 'data-pane-resize-persisted="passed"' bld/engineering-portal/browser-workspace-interaction.html
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          html = Path(
+              "bld/engineering-portal/browser-workspace-interaction.html"
+          ).read_text(encoding="utf-8")
+          checks = {
+              "tree-toggle-interaction": "passed",
+              "tree-material-isolation": "passed",
+              "pane-resize-interaction": "passed",
+              "pane-resize-persisted": "passed",
+          }
+          failures = []
+          for name, expected in checks.items():
+              match = re.search(rf'data-{name}="([^"]*)"', html)
+              actual = match.group(1) if match else "<missing>"
+              print(f"{name}: {actual}")
+              if actual != expected:
+                  failures.append((name, actual, expected))
+          if failures:
+              raise SystemExit(f"browser interaction failures: {failures}")
+          PY
 
           rm -rf bld/engineering-portal/site/workspace-interaction-test
           ! grep -q 'treeToggleInteraction' bld/engineering-portal/site/workspace/index.html
