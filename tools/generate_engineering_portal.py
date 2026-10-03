@@ -498,21 +498,26 @@ def render_workspace(view: dict) -> str:
             key=lambda item: (item[0], item[1]["id"]),
         ):
             items.append(
-                '<button class="eng-tree-item" type="button" '
+                '<li role="none">'
+                '<button class="eng-tree-item" type="button" role="treeitem" '
                 f'data-workspace-root-id="{html.escape(obj["id"])}" '
                 f'data-object-type="{html.escape(obj["type_label"])}" '
                 f'data-object-search="{html.escape((obj["id"] + " " + obj["title"]).lower())}">'
                 f'<span class="eng-tree-item__id">{html.escape(obj["id"])}</span>'
                 f'<span class="eng-tree-item__title">{html.escape(obj["title"])}</span>'
-                "</button>"
+                "</button></li>"
             )
         label = Path(path).name.removesuffix(".md")
         groups.append(
-            '<details class="eng-tree-group" data-eng-tree-group>'
-            f'<summary>{html.escape(label)}</summary>'
-            '<div class="eng-tree-group__items">'
+            '<li class="eng-tree-group" role="none" data-eng-tree-group>'
+            '<button class="eng-tree-group__toggle" type="button" '
+            'role="treeitem" aria-expanded="false" data-eng-tree-toggle>'
+            '<span class="eng-tree-group__chevron" aria-hidden="true"></span>'
+            f'<span class="eng-tree-group__label">{html.escape(label)}</span>'
+            "</button>"
+            '<ul class="eng-tree-group__items" role="group">'
             + "".join(items)
-            + "</div></details>"
+            + "</ul></li>"
         )
 
     type_counts: dict[str, int] = {}
@@ -561,9 +566,11 @@ hide:
           {view["object_count"]} objects
         </span>
       </div>
-      <div class="eng-object-tree" data-eng-object-tree>
-        {"".join(groups)}
-      </div>
+      <nav class="eng-object-tree" aria-label="Engineering objects">
+        <ul class="eng-tree-root" role="tree" data-eng-object-tree>
+          {"".join(groups)}
+        </ul>
+      </nav>
     </aside>
 
     <section class="eng-detail" data-eng-root-detail aria-live="polite">
