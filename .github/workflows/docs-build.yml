@@ -373,8 +373,29 @@ jobs:
                   )
           if 'data-tree-level="1"' not in workspace:
               raise SystemExit("traceability object tree missing nested heading levels")
+          if workspace.count('data-eng-resizer=') != 2:
+              raise SystemExit("traceability comparison page missing two pane resizers")
+          if 'role="separator"' not in workspace:
+              raise SystemExit("traceability pane resizers missing separator semantics")
+          if 'md-nav__link eng-tree-group__toggle' in workspace:
+              raise SystemExit("tree disclosure still depends on Material nav-link behavior")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
+
+          explorer_js = (
+              site / "assets" / "javascripts" / "explorer.js"
+          ).read_text(encoding="utf-8")
+          for behavior in (
+              "engineering-traceability-pane-shares-v1",
+              "pointerdown",
+              "ArrowLeft",
+              "ArrowRight",
+              "localStorage",
+          ):
+              if behavior not in explorer_js:
+                  raise SystemExit(
+                      f"traceability pane resize behavior missing: {behavior}"
+                  )
 
           search = (site / "search/search_index.json").read_text(encoding="utf-8")
           for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
@@ -458,7 +479,10 @@ jobs:
           grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Step-4 first-registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'md-nav__link eng-tree-group__toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-resizer="tree-root"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-resizer="root-compare"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'role="separator"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          ! grep -q 'md-nav__link eng-tree-group__toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
