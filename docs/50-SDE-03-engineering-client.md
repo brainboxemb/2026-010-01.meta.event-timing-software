@@ -161,10 +161,10 @@ because they are visible in the same Engineering Client.
 
 ## Step-4 Timing UI baseline — first registration slice
 
-### Implementation review status
+### Implementation alignment status
 
-The Step-4 JavaFX implementation has been reviewed against the D01 wireframes and
-control/reconnect rules in this document. The implemented Timing view now:
+The Step-4 JavaFX implementation is aligned with the current D01 wireframes and
+control/resynchronisation rules in this document. The implemented Timing view now:
 
 - uses the selected TimingNode for node-addressed controls and LogBook reads;
 - shows general **Last operation** feedback with the TimingNode controls;
@@ -180,6 +180,9 @@ The three source YAML wireframes remain the Step-4 presentation/design baseline
 published through the engineering portal. Pixel-for-pixel reproduction is not a
 verification requirement; control availability, ownership, stale/live meaning
 and resynchronisation ordering are the relevant design contract.
+
+This documentation/UI baseline is still under project review. Review comments may
+change the D01 proposal before the manual VC-ST1-003/V04 running-system check.
 
 The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
 It combines current authoritative node state, first-slice controls and committed
@@ -410,9 +413,10 @@ The Engineering Client remains independently testable:
 ## Step-4 boundary
 
 A03 implementation and the automated VC-ST1-002 black-box verification are
-complete. The remaining Step-4 closure activity is V04: the manual running-system
-Engineering Client demo documented in `test-client/STEP4-DEMO.md` and tracked by
-Java issue #127.
+complete. The Engineering Client documentation/UI baseline is still under review.
+After review comments are resolved, the remaining execution activity is
+VC-ST1-003/V04: the manual running-system Engineering Client demo documented in
+`test-client/STEP4-DEMO.md` and tracked by Java issue #127.
 
 Step 4 uses the Engineering Client as the primary manual inspection application. It does
 **not** add the optional lightweight browser/web test client.
