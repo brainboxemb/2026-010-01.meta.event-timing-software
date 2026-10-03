@@ -342,8 +342,10 @@ jobs:
                   raise SystemExit(
                       f"portal explorer missing architecture identity: {object_id}"
                   )
-          if 'data-eng-detail' not in explorer or 'data-eng-workspace' in explorer:
-              raise SystemExit("Engineering Explorer page lost its single-object architecture layout")
+          if 'data-eng-detail' not in explorer or 'eng-explorer-workspace' not in explorer:
+              raise SystemExit("Engineering Explorer page lost architecture + selected-object composition")
+          if 'data-eng-workspace' in explorer:
+              raise SystemExit("Engineering Explorer unexpectedly contains comparison workspace")
 
           workspace_page = site / "workspace" / "index.html"
           if not workspace_page.is_file():
@@ -351,8 +353,14 @@ jobs:
           workspace = workspace_page.read_text(encoding="utf-8")
           if 'data-eng-root-detail' not in workspace or 'data-eng-compare-detail' not in workspace:
               raise SystemExit("traceability comparison page missing two-object workspace")
-          if 'data-eng-workspace-root-select' not in workspace:
-              raise SystemExit("traceability comparison page missing root object selector")
+          if 'data-eng-object-tree' not in workspace:
+              raise SystemExit("traceability comparison page missing ordered object tree")
+          if 'data-eng-tree-search' not in workspace or 'data-eng-tree-type' not in workspace:
+              raise SystemExit("traceability comparison page missing tree filters")
+          if 'data-workspace-root-id="IF05-REQ-007"' not in workspace:
+              raise SystemExit("traceability object tree missing IF05-REQ-007")
+          if '32-05-ISD-timingdata-interchange' not in workspace:
+              raise SystemExit("traceability object tree lost source-document grouping")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
 
@@ -424,7 +432,12 @@ jobs:
           grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'data-eng-workspace-root-select' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-object-tree' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-tree-search' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-tree-type' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
@@ -437,7 +450,8 @@ jobs:
             > bld/engineering-portal/browser-explorer.html
 
           grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
-          grep -q 'Architecture context' bld/engineering-portal/browser-explorer.html
+          grep -q 'eng-explorer-workspace' bld/engineering-portal/browser-explorer.html
+          grep -q 'data-eng-detail' bld/engineering-portal/browser-explorer.html
           grep -q 'data-engineering-id="TimingNode"' bld/engineering-portal/browser-explorer.html
           grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
           grep -q 'Open details &amp; relations' bld/engineering-portal/browser-explorer.html
