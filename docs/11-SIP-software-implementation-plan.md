@@ -385,6 +385,8 @@ domain and persistence paths.
 - deterministic synthetic tag observations;
 - tag interpretation/filtering needed to reach the accepted-registration operation;
 - a small synthetic local reference fixture for TagId-to-RegistrationId resolution;
+- define and implement TimingNode OPEN/CLOSE as committed TimingData in the same
+  TimingNode-owned source stream as registrations;
 - the same TimingNode commit, TimingData, LogBook and persistence path proven in Step 4;
 - runtime counters/markers needed to understand queue wait, processing and persistence;
 - sustained/bursty input tests and basic allocation/GC observations;
@@ -412,32 +414,44 @@ domain and persistence paths.
 | ID | Activity |
 | --- | --- |
 | `D01` | Runtime execution and measurement plan |
+| `D02` | Define OPEN/CLOSE TimingData semantics and reference mapping |
 | `A01` | Simulated antenna and tag-processing path |
 | `A02` | Runtime markers and counters |
 | `A03` | Allocation and data-access strategy |
+| `A04` | Commit OPEN/CLOSE through the normal TimingData path |
 | `V01` | Single-node load and burst characterization |
 | `V02` | Sustained antenna-ingress fairness |
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
+| `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
 
 ### Result
 
 - Simulated antenna observations reach the normal registration path.
+- Successful TimingNode OPEN/CLOSE transitions are represented in the normal committed
+  TimingData source stream according to the Step-5 IF-05/IDD update.
 - Sustained input can be measured without bypassing TimingNode ownership.
 - Restart/recovery works with the same simulated input path used by automated tests.
 
 ### Demo
 
-- Open one TimingNode and feed repeatable tag observations through `SimulatedAntenna`.
-- Show which observations become committed registrations and inspect the runtime counters.
-- Restart SI-01 and continue using the same simulated input configuration.
+- Open one TimingNode and show the committed OPEN TimingData record.
+- Feed repeatable tag observations through `SimulatedAntenna` and show which observations
+  become committed registrations.
+- Close the TimingNode and show the CLOSE record in the same source sequence.
+- Inspect the runtime counters, restart SI-01 and continue using the same simulated input
+  configuration without sequence reuse.
 
 ### Done
 
 - simulated antenna input uses the same public adapter/domain boundary intended for real antennas;
 - accepted observations reach the existing durable registration path without a test-only domain bypass;
+- successful OPEN/CLOSE transitions commit according to the Step-5 IF-05/IDD semantics
+  without a second lifecycle record owner;
+- rejected lifecycle requests do not create unintended TimingData records, and idempotent
+  behaviour follows the explicit D02 decision;
 - sustained/bursty input has repeatable measurements and does not starve required TimingNode work;
-- recovery preserves committed registrations and sequence continuity;
+- recovery preserves lifecycle/registration records and sequence continuity;
 - provider loading is verified with public built-in/synthetic implementations.
 
 ---

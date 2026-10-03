@@ -1,0 +1,193 @@
+diagram:
+  id: engineering-client-api-first
+  title: Figure SDE03-05 — API-first Engineering Client workbench
+  width: 1360
+  height: 820
+  note: Reviewed next UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.
+
+groups: []
+
+nodes:
+  - id: shell
+    label: Engineering Client
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 30, y: 80, w: 1300, h: 710}
+
+  - id: target
+    label: Target
+    subtitle: "127.0.0.1  |  client config file"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 55, y: 118, w: 265, h: 54}
+
+  - id: api-connection
+    label: "API :8081\nREADY"
+    kind: wireframe-live
+    notation: wireframe-button
+    layout: {x: 335, y: 121, w: 145, h: 48}
+
+  - id: events-connection
+    label: "Events :eventPort\nCONNECTED"
+    kind: wireframe-live
+    notation: wireframe-button
+    layout: {x: 490, y: 121, w: 165, h: 48}
+
+  - id: terminal-connection
+    label: "Terminal :shellPort\nCONNECT"
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 665, y: 121, w: 160, h: 48}
+
+  - id: device-log-connection
+    label: "Device log :logPort\nCONNECT"
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 835, y: 121, w: 175, h: 48}
+
+  - id: reload-config
+    label: Reload config
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 1020, y: 121, w: 135, h: 48}
+
+  - id: client-log-indicator
+    label: "Client log\nACTIVE"
+    kind: wireframe-live
+    notation: wireframe-status
+    layout: {x: 1165, y: 121, w: 135, h: 48}
+
+  - id: tabs
+    label: "API | Events | Logs | Terminal"
+    subtitle: API
+    kind: wireframe-surface
+    notation: wireframe-tabs
+    layout: {x: 55, y: 180, w: 1245, h: 44}
+
+  - id: api-summary
+    label: API / selected TimingNode
+    subtitle: "timing-node-01  |  state CLOSED  |  LocationId 24"
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 55, y: 230, w: 1245, h: 145}
+
+  - id: get-version
+    label: Version
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 80, y: 310, w: 95, h: 36}
+
+  - id: get-status
+    label: Status
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 185, y: 310, w: 95, h: 36}
+
+  - id: location
+    label: Location
+    subtitle: "24"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 315, y: 288, w: 150, h: 72}
+
+  - id: set-location
+    label: Set location
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 475, y: 310, w: 120, h: 36}
+
+  - id: open
+    label: Open
+    subtitle: send request
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 620, y: 310, w: 105, h: 36}
+
+  - id: close
+    label: Close
+    subtitle: send request
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 735, y: 310, w: 105, h: 36}
+
+  - id: last-operation
+    label: Last API operation
+    subtitle: "NODE_NOT_OPEN — response retained for inspection"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 865, y: 288, w: 405, h: 72}
+
+  - id: registration
+    label: Registration test input
+    subtitle: Structured convenience input; SI-01 remains authoritative
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 55, y: 395, w: 1245, h: 135}
+
+  - id: prefix
+    label: Prefix
+    subtitle: "N"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 80, y: 455, w: 110, h: 68}
+
+  - id: number
+    label: Number
+    subtitle: "0001"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 200, y: 455, w: 150, h: 68}
+
+  - id: reg-date
+    label: Date
+    subtitle: "2026-10-03"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 380, y: 455, w: 180, h: 68}
+
+  - id: reg-time
+    label: Time
+    subtitle: "15:33:00"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 570, y: 455, w: 160, h: 68}
+
+  - id: now
+    label: Now
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 750, y: 476, w: 75, h: 36}
+
+  - id: auto-reg
+    label: Send auto-reg
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 845, y: 476, w: 145, h: 36}
+
+  - id: raw-request-note
+    label: Wire value
+    subtitle: "N0001 @ canonical UTC timestamp"
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 1010, y: 455, w: 260, h: 68}
+
+  - id: history
+    label: LogBook / committed TimingData
+    subtitle: source order; row selection exposes complete public record
+    kind: wireframe-surface
+    notation: wireframe-table
+    items:
+      - "Seq | Type     | Location | Registration | Time"
+      - "17  | OPEN     | 24       | -            | 15:30:00"
+      - "18  | AUTO_REG | 24       | N0001        | 15:33:00"
+      - "19  | CLOSE    | 24       | -            | 15:40:12"
+    layout: {x: 55, y: 550, w: 1245, h: 150}
+
+  - id: raw-response
+    label: Raw response / selected record
+    subtitle: Complete API JSON remains available; structured UI never hides a domain rejection.
+    kind: wireframe-control
+    notation: wireframe-input
+    layout: {x: 55, y: 720, w: 1245, h: 48}
+
+edges: []

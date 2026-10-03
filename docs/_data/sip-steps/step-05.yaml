@@ -8,6 +8,10 @@ planning_changes:
     change: >-
       Added explicit runtime performance and memory engineering so scheduling,
       allocation and data-access choices are measurement-driven.
+  - date: '2026-10-03'
+    change: >-
+      Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
+      before implementation and verification. Step-4 baseline is unchanged.
 
 activities:
   - id: D01
@@ -18,6 +22,16 @@ activities:
       Define the first project-owned thread/queue measurement approach, stable
       thread naming and the boundary between JVM scheduling preferences and
       later target-specific tuning. Thread priority is not a correctness rule.
+
+  - id: D02
+    lane: documentation
+    kind: decision
+    state: planned
+    note: >-
+      Define TimingNode OPEN/CLOSE TimingData semantics and the default/reference
+      representation. Update 32-05 IF-05 and 33-05 IDD during Step 5, including
+      transition time, captured LocationId, record-type presence rules and the
+      rule that rejected lifecycle commands do not create committed TimingData.
 
   - id: A01
     lane: application
@@ -51,6 +65,17 @@ activities:
       Use measurements to decide where direct traversal, cached state, reusable
       scratch storage or ordinary allocation are appropriate. Do not introduce
       pooling or copied snapshots by default.
+
+  - id: A04
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D02]
+    note: >-
+      Commit successful TimingNode OPEN/CLOSE transitions through the same
+      TimingNode-owned sequence, LogBook and persistence path as other committed
+      TimingData. Do not add a second lifecycle record owner or a UI/test-only
+      persistence bypass.
 
   - id: V01
     lane: verification
@@ -91,3 +116,14 @@ activities:
     note: >-
       Verify built-in provider selection plus one synthetic external provider
       through the same typed startup mechanism intended for later real adapters.
+
+  - id: V05
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A04]
+    note: >-
+      Verify OPEN/CLOSE TimingData in source order with registrations, including
+      persisted restart/recovery and sequence continuity. Verify rejected or
+      idempotent lifecycle requests according to the Step-5 D02 semantics and
+      confirm that no unintended lifecycle record is committed.

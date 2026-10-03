@@ -85,10 +85,12 @@ The current principal services are:
 
 | Service | SI-01 boundary | Role |
 | --- | --- | --- |
-| `ApiClient` | IF-03 HTTP/JSON | version/status queries and later supported commands/test control |
+| `ClientConfig` | local file | target host, per-boundary ports and Engineering Client presentation/logging settings |
+| `ApiClient` | IF-03 HTTP/JSON | version/status queries and supported commands/test control |
 | `ApiEventClient` | IF-03 WebSocket | status/event snapshots and live event inspection |
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
-| `LiveLogClient` | `LoggingServer` | live diagnostic records and temporary runtime log-level control |
+| `LiveLogClient` | `LoggingServer` | SI-01 live diagnostic records and temporary runtime log-level control |
+| `ClientLog` | local runtime | Engineering Client startup/configuration/connection/request/error logging and local log presentation |
 
 The IF-03 HTTP and WebSocket client services share one process-wide JDK
 `HttpClient` transport. Repeated UI actions may create short-lived request
@@ -159,6 +161,163 @@ new log records and can query/change the temporary runtime-global logging level.
 Live logs are not IF-03 application events and do not become TimingNode state merely
 because they are visible in the same Engineering Client.
 
+## Reviewed next UI baseline — API-first engineering workbench
+
+The next Engineering Client revision is **API-first**. The client exists primarily to
+exercise and inspect the public API contract; Events, Remote Shell and diagnostic
+logging support that job but do not define the main screen.
+
+<a id="fig-sde03-05"></a>
+![API-first Engineering Client workbench](../../../raw/prod/docs/assets/architecture/engineering-client-api-first.svg)
+*Figure SDE03-05 — Reviewed API-first workbench direction. Ports and connection
+states belong to their individual external boundaries; the UI does not predict
+whether SI-01 will accept a domain command.*
+
+This reviewed direction supersedes the Step-4 tab ordering and the Step-4 rule that
+cached TimingNode lifecycle state should normally disable domain-action controls.
+The Step-4 wireframes remain useful evidence of the implementation that is being
+verified by VC-ST1-003; they are not the target layout for the next client revision.
+
+### Target and connection bar
+
+The top of the window represents one configured SI-01 target. Configuration comes
+from one Engineering Client configuration file rather than unrelated endpoint fields
+inside separate tabs.
+
+The bar shows the target host plus one compact control/status per external boundary:
+
+| Boundary | Display/interaction |
+| --- | --- |
+| IF-03 HTTP API | configured port plus **READY/UNREACHABLE** state; HTTP is not presented as a persistent socket connection |
+| IF-03 event WebSocket | configured port plus explicit connect/disconnect and connection state |
+| Remote Shell | configured port plus explicit connect/disconnect and connection state |
+| SI-01 `LoggingServer` | configured port plus explicit **Device log** connect/disconnect and connection state |
+| Engineering Client local log | always local to the client; visible as **Client log ACTIVE**, not confused with SI-01 diagnostics |
+
+A port therefore never appears without saying which boundary it belongs to. A green
+state for one boundary does not imply that the other boundaries are connected.
+
+The target toolbar may provide **Reload config** for iterative engineering use, but the
+configuration file remains the source of the endpoint values. The UI shall not grow a
+second configuration model spread over the tabs.
+
+The configuration baseline needs, at minimum:
+
+- target host/address;
+- IF-03 HTTP port;
+- IF-03 event/WebSocket port when it is independently configured;
+- Remote Shell port;
+- `LoggingServer` port;
+- Engineering Client local-log path/level;
+- registration-input presentation defaults such as an initial prefix.
+
+Exact configuration member names and persistence format are implementation design
+decisions; this SDE does not turn them into an SI-01 public interface.
+
+### Tab structure
+
+The reviewed tab order is:
+
+```text
+API | Events | Logs | Terminal
+```
+
+**API** is the first tab and primary work surface. It combines the useful parts of the
+current Status and Timing tabs:
+
+- version/status requests and parsed identity/state;
+- selected TimingNode;
+- LocationId request;
+- Open and Close requests;
+- engineering registration request;
+- committed LogBook/TimingData inspection;
+- last processed operation result;
+- complete raw API response/error or selected public record.
+
+The separate Status tab is therefore not required in the target layout. Structured
+presentation is a convenience; raw public data remains available because the client is
+an engineering tool.
+
+**Events** remains a raw/live IF-03 event inspection surface.
+
+**Logs** has at least two explicit sources:
+
+- **Client** — the Engineering Client's own runtime log;
+- **SI-01 / Device** — records received from the connected `LoggingServer`.
+
+The sources remain distinguishable in the UI and in exported/copied text. Connecting
+SI-01 logging shall not be required to see or retain the client's own log.
+
+**Terminal** remains the Remote Shell client. Its connection is controlled from the
+target bar; opening the Terminal tab is not itself a connection side effect.
+
+A future Upstream/DebugConnector work surface may add another tab when that public
+engineering capability exists; the API-first layout shall not pre-create domain
+behaviour for it.
+
+### Deliberately low client intelligence
+
+The Engineering Client is a protocol/domain **observer and request initiator**, not a
+second implementation of TimingNode acceptance rules.
+
+The UI may disable a control when:
+
+- the required transport/boundary is unavailable;
+- the running application explicitly reports that the engineering capability does not
+  exist or is disabled;
+- that same control has an in-flight request and duplicate submission would obscure the
+  result.
+
+The UI shall **not** disable Set Location, Open, Close or a supported registration
+request merely because cached state suggests SI-01 will reject it. For example, an
+engineer must be able to send **Close** while the displayed node is CLOSED and inspect
+the actual public result.
+
+Displayed lifecycle state, LocationId and capability state remain valuable context, but
+they are not local permission rules. SI-01 remains authoritative. Expected domain
+rejections are shown as first-class operation results together with raw response data.
+
+This deliberately differs from a production operator GUI, where preventing obviously
+invalid actions may be desirable. The Engineering Client must make negative-path and
+boundary testing easy.
+
+### Registration input
+
+The ordinary structured registration input is optimized for readable engineering use
+without owning event/profile semantics.
+
+Registration ID entry is split into:
+
+- **Prefix** — a short presentation value, optionally initialized from client
+  configuration;
+- **Number** — a numeric entry field.
+
+The request value is the exact concatenation presented by the client (for example
+`N` + `0001` -> `N0001`). The client does not look up teams/participants or decide
+whether that Registration ID is valid for the running event/profile.
+
+Time entry is also presentation-oriented:
+
+- date is shown separately from clock time;
+- ordinary clock-time entry is readable to whole seconds;
+- **Now** fills the fields from the client clock;
+- the client converts the structured value to the canonical API timestamp when sending.
+
+The normal form does not require an engineer to type hundredths/nanoseconds. Where
+deterministic sub-second protocol testing is needed, an advanced/raw value may be
+provided without making fractional entry part of the everyday form.
+
+### Logging behaviour
+
+The Engineering Client shall use the project logging direction for its **own** runtime
+records as well as displaying SI-01 diagnostics. Client startup, configuration loading,
+connection transitions, request failures and unexpected UI/service errors belong in
+the client log.
+
+The Logs tab therefore does not mean only "device logging". Client logging remains
+available when SI-01 is offline, which is especially important when diagnosing why a
+connection could not be established.
+
 ## Step-4 Timing UI baseline — first registration slice
 
 ### Implementation alignment status
@@ -176,13 +335,15 @@ control/resynchronisation rules in this document. The implemented Timing view no
   the buffered events in delivery order before transitioning to **LIVE**;
 - automatically starts resynchronisation after an `OUTCOME_UNKNOWN` result.
 
-The three source YAML wireframes remain the Step-4 presentation/design baseline
-published through the engineering portal. Pixel-for-pixel reproduction is not a
-verification requirement; control availability, ownership, stale/live meaning
-and resynchronisation ordering are the relevant design contract.
+The three Step-4 source YAML wireframes remain the presentation record for the current
+VC-ST1-003 implementation/demo. Pixel-for-pixel reproduction is not a verification
+requirement; ownership, stale/live meaning and resynchronisation ordering remain
+relevant to that verification.
 
-This documentation/UI baseline is still under project review. Review comments may
-change the D01 proposal before the manual VC-ST1-003/V04 running-system check.
+The reviewed API-first baseline above is the target for the next Engineering Client
+revision. It intentionally changes tab ordering, connection presentation and
+state-based control gating; those changes do not retroactively change what the current
+Step-4 V04 demo is intended to observe.
 
 The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
 It combines current authoritative node state, first-slice controls and committed
@@ -253,7 +414,10 @@ Reconnect and manual **Sync view** handling follow the same D03 resynchronisatio
 
 A reconnect does not visually pretend that cached values are authoritative.
 
-### Control availability
+### Step-4 control availability
+
+The current Step-4 implementation uses lifecycle-aware enable/disable rules while it is
+being verified by VC-ST1-003:
 
 | Client state | Set Location | Open | Close | Auto-reg |
 | --- | --- | --- | --- | --- |
@@ -263,10 +427,9 @@ A reconnect does not visually pretend that cached values are authoritative.
 | LIVE + OPEN + simulation capability enabled | disabled | disabled | enabled | enabled |
 | LIVE + OPEN + simulation capability unsupported/disabled | disabled | disabled | enabled | hidden or disabled with capability explanation |
 
-The UI disables obviously invalid actions, but SI-01 remains authoritative.
-A race or stale UI may still produce a domain conflict; the client displays the
-processed result and refreshes authoritative state rather than assuming the local
-button state was proof of domain acceptance.
+These are **not** the target gating rules for the next API-first revision. The reviewed
+baseline above keeps SI-01 authoritative by allowing supported requests even when the
+currently displayed domain state predicts a rejection.
 
 ### Operation-result presentation
 
