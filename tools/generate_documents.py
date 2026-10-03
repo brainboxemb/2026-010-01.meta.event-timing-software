@@ -53,7 +53,7 @@ ARCHITECTURE_DOCUMENTS = [
     "33-03-IDD-api-http-websocket.md",
     "32-04-ISD-web-interface.md",
     "32-05-ISD-timingdata-interchange.md",
-    "33-05-IDD-timingdata-interchange.md"
+    "33-05-IDD-timingdata-interchange.md",
     "32-11-ISD-application-configuration.md",
     "41-01-SSD-timing-application-specification-document.md",
     "43-01-SDD-01-data-and-display-design.md",
