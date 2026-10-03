@@ -34,6 +34,9 @@ theme:
 plugins:
   - search
 
+hooks:
+  - hooks/engineering_workspace.py
+
 markdown_extensions:
   - admonition
   - attr_list

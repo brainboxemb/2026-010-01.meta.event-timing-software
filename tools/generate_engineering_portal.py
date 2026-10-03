@@ -479,47 +479,6 @@ For relation-by-relation comparison, use the separate
 
 
 def render_workspace(view: dict) -> str:
-    documents: dict[str, list[tuple[int, dict]]] = {}
-    for obj in view["objects"].values():
-        match = SOURCE_RE.match(obj["source"])
-        if match:
-            path = match.group("path")
-            line = int(match.group("line"))
-        else:
-            path = obj["source"]
-            line = 0
-        documents.setdefault(path, []).append((line, obj))
-
-    groups = []
-    for path in sorted(documents):
-        items = []
-        for _, obj in sorted(
-            documents[path],
-            key=lambda item: (item[0], item[1]["id"]),
-        ):
-            items.append(
-                '<li role="none">'
-                '<button class="eng-tree-item" type="button" role="treeitem" '
-                f'data-workspace-root-id="{html.escape(obj["id"])}" '
-                f'data-object-type="{html.escape(obj["type_label"])}" '
-                f'data-object-search="{html.escape((obj["id"] + " " + obj["title"]).lower())}">'
-                f'<span class="eng-tree-item__id">{html.escape(obj["id"])}</span>'
-                f'<span class="eng-tree-item__title">{html.escape(obj["title"])}</span>'
-                "</button></li>"
-            )
-        label = Path(path).name.removesuffix(".md")
-        groups.append(
-            '<li class="eng-tree-group" role="none" data-eng-tree-group>'
-            '<button class="eng-tree-group__toggle" type="button" '
-            'role="treeitem" aria-expanded="false" data-eng-tree-toggle>'
-            '<span class="eng-tree-group__chevron" aria-hidden="true"></span>'
-            f'<span class="eng-tree-group__label">{html.escape(label)}</span>'
-            "</button>"
-            '<ul class="eng-tree-group__items" role="group">'
-            + "".join(items)
-            + "</ul></li>"
-        )
-
     type_counts: dict[str, int] = {}
     for obj in view["objects"].values():
         label = obj["type_label"]
@@ -566,11 +525,7 @@ hide:
           {view["object_count"]} objects
         </span>
       </div>
-      <nav class="eng-object-tree" aria-label="Engineering objects">
-        <ul class="eng-tree-root" role="tree" data-eng-object-tree>
-          {"".join(groups)}
-        </ul>
-      </nav>
+      <!-- ENGINEERING_OBJECT_TREE -->
     </aside>
 
     <section class="eng-detail" data-eng-root-detail aria-live="polite">

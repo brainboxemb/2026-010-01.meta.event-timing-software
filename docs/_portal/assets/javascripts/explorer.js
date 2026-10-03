@@ -246,8 +246,13 @@
           if (selected) {
             selectedNode = node;
             node.setAttribute("aria-current", "true");
-            const group = node.closest("[data-eng-tree-group]");
-            if (group) setGroupExpanded(group, true);
+            let group = node.closest("[data-eng-tree-group]");
+            while (group) {
+              setGroupExpanded(group, true);
+              group = group.parentElement
+                ? group.parentElement.closest("[data-eng-tree-group]")
+                : null;
+            }
           } else {
             node.removeAttribute("aria-current");
           }
