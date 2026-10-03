@@ -77,7 +77,7 @@ project documents.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts and terminology.
 - [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — project development direction, phases, resources and risks.
 - [`docs/11-SIP-software-implementation-plan.md`](docs/11-SIP-software-implementation-plan.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
-- [`docs/12-documentation-guide.md`](docs/12-documentation-guide.md) — document families, numbering, relationships and the rules for using [`docs/templates/`](docs/templates/README.md).
+- [`docs/12-GPD-documentation-guide.md`](docs/12-GPD-documentation-guide.md) — document families, numbering, relationships and the rules for using [`docs/templates/`](docs/templates/README.md).
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
@@ -129,7 +129,7 @@ Examples:
 03-domain-baseline
 10-SDP
 11-SIP
-12-documentation-guide
+12-GPD-documentation-guide
 20-EXT
 30-UC
 31-SSSD
