@@ -5,6 +5,8 @@ Status: working draft / non-authoritative
 Software item: **SI-02 — Desktop GUI Application**
 
 
+## Purpose
+
 This SSD is intentionally architecture-heavy today because SI-02 implementation has not
 started. Software-item requirements will be promoted into this same document as the GUI
 capability approaches implementation; no separate requirements/architecture document pair is planned.
@@ -32,8 +34,6 @@ the working specification/architecture direction until that requirement slice is
 Software item: **Desktop GUI Application** (SI-02)
 
 This Software Architecture Document describes the initial architecture direction for the planned desktop GUI. The GUI is a separate software item from the **Timing Point Application** (SI-01) and communicates with it through system-defined network interfaces.
-
-## Purpose
 
 The GUI provides an operator-facing desktop application for monitoring and controlling the timing application.
 
