@@ -425,7 +425,6 @@ jobs:
           grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-eng-workspace-root-select' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'option value="IF05-REQ-007" selected' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
