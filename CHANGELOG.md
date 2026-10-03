@@ -6,6 +6,10 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Increase custom engineering workbench typography by an exact 1px while preserving the compact spacing and pane geometry.
+
+- Auto-expand linear Traceability Comparison heading chains on disclosure so authored hierarchy stays visible without requiring repeated clicks through single-choice levels.
+
 - Add a subtle non-layout-affecting boundary around the Traceability Comparison tree pane while preserving the compact edge alignment.
 
 - Tighten Traceability Comparison tree edges/indentation, add a compact `Collapse all` control beside the type filter, and align the Engineering Explorer with the same dense full-width workbench styling without changing its architecture/detail behavior.
