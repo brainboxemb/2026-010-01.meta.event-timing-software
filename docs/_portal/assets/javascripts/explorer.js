@@ -220,9 +220,164 @@
       const treeToggles = Array.from(
         root.querySelectorAll("[data-eng-tree-toggle]")
       );
+      const traceLayout = root.querySelector(".eng-trace-layout");
+      const paneResizers = Array.from(
+        root.querySelectorAll("[data-eng-resizer]")
+      );
+      const paneStorageKey = "engineering-traceability-pane-shares-v1";
+      let paneShares = [0.22, 0.39, 0.39];
       const initialUrl = new URL(window.location.href);
       let rootId = "";
       let compareId = "";
+
+      function normalizePaneShares(shares) {
+        if (!Array.isArray(shares) || shares.length !== 3) return null;
+        const values = shares.map(Number);
+        if (values.some((value) => !Number.isFinite(value) || value <= 0)) {
+          return null;
+        }
+        const total = values.reduce((sum, value) => sum + value, 0);
+        if (!Number.isFinite(total) || total <= 0) return null;
+        return values.map((value) => value / total);
+      }
+
+      function persistPaneShares() {
+        try {
+          localStorage.setItem(paneStorageKey, JSON.stringify(paneShares));
+        } catch (error) {
+          // Storage may be unavailable; resizing must still work for this page.
+        }
+      }
+
+      function updateResizerAria() {
+        if (paneResizers.length < 2) return;
+        paneResizers[0].setAttribute(
+          "aria-valuenow",
+          String(Math.round(paneShares[0] * 100))
+        );
+        paneResizers[1].setAttribute(
+          "aria-valuenow",
+          String(Math.round((paneShares[0] + paneShares[1]) * 100))
+        );
+      }
+
+      function applyPaneShares(shares, persist) {
+        const normalized = normalizePaneShares(shares);
+        if (!normalized || !traceLayout) return;
+        paneShares = normalized;
+
+        if (window.matchMedia("(max-width: 900px)").matches) {
+          traceLayout.style.removeProperty("grid-template-columns");
+          return;
+        }
+
+        const available = Math.max(0, traceLayout.clientWidth - 8);
+        if (!available) return;
+        const widths = paneShares.map((share) => Math.round(share * available));
+        traceLayout.style.gridTemplateColumns =
+          widths[0] +
+          "px 4px " +
+          widths[1] +
+          "px 4px " +
+          widths[2] +
+          "px";
+        updateResizerAria();
+        if (persist) persistPaneShares();
+      }
+
+      function restorePaneShares() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(paneStorageKey));
+          const normalized = normalizePaneShares(saved);
+          if (normalized) paneShares = normalized;
+        } catch (error) {
+          // Keep defaults when stored state is unavailable or invalid.
+        }
+        applyPaneShares(paneShares, false);
+      }
+
+      function resizeBoundary(index, deltaPixels, startShares) {
+        if (!traceLayout) return;
+        const available = Math.max(1, traceLayout.clientWidth - 8);
+        const widths = startShares.map((share) => share * available);
+        const minimums = [150, 240, 240];
+
+        if (index === 0) {
+          const pairTotal = widths[0] + widths[1];
+          widths[0] = Math.min(
+            pairTotal - minimums[1],
+            Math.max(minimums[0], widths[0] + deltaPixels)
+          );
+          widths[1] = pairTotal - widths[0];
+        } else {
+          const pairTotal = widths[1] + widths[2];
+          widths[1] = Math.min(
+            pairTotal - minimums[2],
+            Math.max(minimums[1], widths[1] + deltaPixels)
+          );
+          widths[2] = pairTotal - widths[1];
+        }
+
+        applyPaneShares(
+          widths.map((width) => width / available),
+          false
+        );
+      }
+
+      function initializePaneResizers() {
+        if (!traceLayout || paneResizers.length !== 2) return;
+        restorePaneShares();
+
+        paneResizers.forEach((resizer, index) => {
+          resizer.setAttribute("aria-valuemin", "10");
+          resizer.setAttribute("aria-valuemax", "90");
+
+          resizer.addEventListener("pointerdown", (event) => {
+            if (window.matchMedia("(max-width: 900px)").matches) return;
+            event.preventDefault();
+            const startX = event.clientX;
+            const startShares = paneShares.slice();
+            resizer.classList.add("is-dragging");
+            if (resizer.setPointerCapture) {
+              resizer.setPointerCapture(event.pointerId);
+            }
+
+            const move = (moveEvent) => {
+              resizeBoundary(index, moveEvent.clientX - startX, startShares);
+            };
+            const finish = () => {
+              resizer.classList.remove("is-dragging");
+              persistPaneShares();
+              resizer.removeEventListener("pointermove", move);
+              resizer.removeEventListener("pointerup", finish);
+              resizer.removeEventListener("pointercancel", finish);
+            };
+
+            resizer.addEventListener("pointermove", move);
+            resizer.addEventListener("pointerup", finish);
+            resizer.addEventListener("pointercancel", finish);
+          });
+
+          resizer.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+              return;
+            }
+            event.preventDefault();
+            const direction = event.key === "ArrowLeft" ? -1 : 1;
+            resizeBoundary(index, direction * 24, paneShares.slice());
+            persistPaneShares();
+          });
+
+          resizer.addEventListener("dblclick", () => {
+            paneShares = [0.22, 0.39, 0.39];
+            applyPaneShares(paneShares, true);
+          });
+        });
+
+        window.addEventListener("resize", () => {
+          applyPaneShares(paneShares, false);
+        });
+      }
 
       function setGroupExpanded(group, expanded) {
         if (!group) return;
@@ -409,6 +564,7 @@
       }
       applyTreeFilter();
       updateUrl();
+      initializePaneResizers();
     }
 
     const workspacePage = Boolean(
