@@ -80,7 +80,9 @@ project documents.
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
-- [`docs/32-03-ISD-application-control-status.md`](docs/32-03-ISD-application-control-status.md) — system-owned IF-03 API contract.
+- [`docs/32-03-ISD-application-control-status.md`](docs/32-03-ISD-application-control-status.md) — system-owned IF-03 API semantic contract.
+- [`docs/33-03-IDD-api-http-websocket.md`](docs/33-03-IDD-api-http-websocket.md) — IF-03 HTTP/JSON + WebSocket design.
+- [`docs/32-04-ISD-web-operator-hmi.md`](docs/32-04-ISD-web-operator-hmi.md) — system-owned IF-04 Web Operator HMI contract.
 - [`docs/32-05-ISD-timingdata-interchange.md`](docs/32-05-ISD-timingdata-interchange.md) — system-owned IF-05 TimingData specification.
 - [`docs/33-05-IDD-timingdata-interchange.md`](docs/33-05-IDD-timingdata-interchange.md) — IF-05 default/reference JSON + JSON Lines design.
 - [`docs/32-11-ISD-application-configuration.md`](docs/32-11-ISD-application-configuration.md) — system-owned IF-11 deployment/configuration contract.
@@ -130,8 +132,10 @@ Examples:
 30-UC
 31-SSSD
 32-03-ISD
+32-04-ISD
 32-05-ISD
 32-11-ISD
+33-03-IDD
 33-05-IDD
 40-01-UC        # reserved/optional SI-01 use-case document
 41-01-SSD
