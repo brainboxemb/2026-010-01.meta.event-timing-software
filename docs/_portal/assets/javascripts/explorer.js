@@ -154,7 +154,7 @@
         return node.dataset.objectId || node.dataset.engineeringId || "";
       }
 
-      function render(id, updateUrl) {
+      function render(id, updateHistory) {
         const object = data.objects[id];
         if (!object || !detail) return;
 
@@ -166,7 +166,7 @@
 
         detail.innerHTML = objectPanel(object, "Selected object", "navigate");
 
-        if (updateUrl) {
+        if (updateHistory) {
           const url = new URL(window.location.href);
           url.searchParams.set("object", id);
           url.searchParams.delete("compare");
@@ -203,14 +203,36 @@
     function initializeWorkspace() {
       const root = document.querySelector("[data-eng-workspace]");
       if (!root) return;
+
       const rootDetail = root.querySelector("[data-eng-root-detail]");
       const compareDetail = root.querySelector("[data-eng-compare-detail]");
-      const rootSelect = root.querySelector("[data-eng-workspace-root-select]");
+      const searchInput = root.querySelector("[data-eng-tree-search]");
+      const typeFilter = root.querySelector("[data-eng-tree-type]");
+      const treeItems = Array.from(
+        root.querySelectorAll("[data-workspace-root-id]")
+      );
+      const treeGroups = Array.from(
+        root.querySelectorAll("[data-eng-tree-group]")
+      );
       const initialUrl = new URL(window.location.href);
       let rootId = "";
       let compareId = "";
 
-      function updateSelection() {
+      function updateTreeSelection() {
+        treeItems.forEach((node) => {
+          const selected = node.dataset.workspaceRootId === rootId;
+          node.classList.toggle("is-selected", selected);
+          if (selected) {
+            node.setAttribute("aria-current", "true");
+            const group = node.closest("[data-eng-tree-group]");
+            if (group) group.open = true;
+          } else {
+            node.removeAttribute("aria-current");
+          }
+        });
+      }
+
+      function updateCompareSelection() {
         root.querySelectorAll("[data-compare-object-id]").forEach((node) => {
           node.classList.toggle(
             "is-selected",
@@ -230,14 +252,37 @@
         history.replaceState({}, "", url);
       }
 
+      function applyTreeFilter() {
+        const query = (searchInput ? searchInput.value : "")
+          .trim()
+          .toLowerCase();
+        const selectedType = typeFilter ? typeFilter.value : "";
+
+        treeItems.forEach((node) => {
+          const matchesQuery =
+            !query || (node.dataset.objectSearch || "").includes(query);
+          const matchesType =
+            !selectedType || node.dataset.objectType === selectedType;
+          node.hidden = !(matchesQuery && matchesType);
+        });
+
+        treeGroups.forEach((group) => {
+          const visible = Array.from(
+            group.querySelectorAll("[data-workspace-root-id]")
+          ).some((node) => !node.hidden);
+          group.hidden = !visible;
+          if ((query || selectedType) && visible) group.open = true;
+        });
+      }
+
       function renderRoot(id, updateHistory) {
         const object = data.objects[id];
         if (!object || !rootDetail) return;
         rootId = id;
         compareId = "";
-        if (rootSelect) rootSelect.value = id;
         rootDetail.innerHTML = objectPanel(object, "Selected object", "compare");
         renderCompare("", false);
+        updateTreeSelection();
         if (updateHistory) updateUrl();
       }
 
@@ -249,8 +294,8 @@
           compareDetail.innerHTML =
             '<div class="eng-compare-empty">' +
             "<strong>Compare a related object</strong>" +
-            "<p>Click an Incoming, Outgoing or one-hop relation on the left. " +
-            "The selected object stays visible while the related object opens here.</p>" +
+            "<p>Click an Incoming, Outgoing or one-hop relation in the selected object. " +
+            "The root object stays visible while the related object opens here.</p>" +
             "</div>";
         } else {
           compareId = id;
@@ -260,31 +305,25 @@
             "compare"
           );
         }
-        updateSelection();
+        updateCompareSelection();
         if (updateHistory) updateUrl();
       }
 
-      if (rootSelect) {
-        rootSelect.addEventListener("change", () => {
-          renderRoot(rootSelect.value, true);
-        });
-      }
-
       root.addEventListener("click", (event) => {
-        const target = event.target.closest("[data-compare-object-id]");
-        if (target && root.contains(target)) {
-          renderCompare(target.dataset.compareObjectId, true);
+        const treeTarget = event.target.closest("[data-workspace-root-id]");
+        if (treeTarget && root.contains(treeTarget)) {
+          renderRoot(treeTarget.dataset.workspaceRootId, true);
+          return;
+        }
+
+        const compareTarget = event.target.closest("[data-compare-object-id]");
+        if (compareTarget && root.contains(compareTarget)) {
+          renderCompare(compareTarget.dataset.compareObjectId, true);
         }
       });
 
-      root.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        const target = event.target.closest("[data-compare-object-id]");
-        if (target && root.contains(target)) {
-          event.preventDefault();
-          renderCompare(target.dataset.compareObjectId, true);
-        }
-      });
+      if (searchInput) searchInput.addEventListener("input", applyTreeFilter);
+      if (typeFilter) typeFilter.addEventListener("change", applyTreeFilter);
 
       const requested = initialUrl.searchParams.get("object");
       const initial =
@@ -295,6 +334,7 @@
       if (compared && data.objects[compared] && compared !== initial) {
         renderCompare(compared, false);
       }
+      applyTreeFilter();
       updateUrl();
     }
 
