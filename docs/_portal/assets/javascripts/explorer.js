@@ -371,6 +371,7 @@
     const workspacePage = Boolean(
       document.querySelector("[data-eng-workspace]")
     );
+    document.documentElement.classList.toggle("eng-workspace-page", workspacePage);
     document.body.classList.toggle("eng-workspace-page", workspacePage);
 
     initializeExplorer();
