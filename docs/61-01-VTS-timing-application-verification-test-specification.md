@@ -199,9 +199,9 @@ than being forced into this happy-path black-box case.
 - the second process run rebuilds the committed record while operational state
   starts CLOSED/no-location.
 
-### VC-ST1-003 — Engineering Client reconnect/rebuild integration
+### VC-ST1-003 — Engineering Client reconnect/resynchronisation integration
 
-```{vc} Engineering Client reconnect/rebuild integration
+```{vc} Engineering Client reconnect/resynchronisation integration
 ---
 id: VC-ST1-003
 verifies: >-
@@ -212,9 +212,9 @@ verifies: >-
 **Purpose**
 
 Verify through the real JavaFX Engineering Client that an external client can
-rebuild current status and bounded TimingData history after reconnect/restart,
-buffer later live events during that rebuild, merge history/live overlap by the
-Node ID + sequence number and only then present the view as LIVE.
+resynchronise current status and bounded TimingData history after reconnect/restart,
+buffer later live events during that synchronisation, merge history/live overlap
+by the Node ID + sequence number and only then present the view as LIVE.
 
 This manual case does not re-prove the server-side lifecycle, registration,
 LogBook persistence or restart recovery already covered by `VC-ST1-002`.
@@ -232,7 +232,7 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 1. Start SI-01 with empty Step-4 demo storage.
 2. Connect the Engineering Client Timing view.
 3. Verify the client shows a syncing/reconnecting state, keeps mutating controls
-   disabled during rebuild and becomes LIVE only after the baseline is ready.
+   disabled during synchronisation and becomes LIVE only after the baseline is ready.
 4. Set Location ID 24, OPEN the TimingNode and commit deterministic auto-reg
    `N0001` at `2026-10-01T12:00:00Z`.
 5. Verify the client shows sequence 1 in bounded LogBook/history and one matching
@@ -241,7 +241,7 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
    control.
 7. Restart SI-01 with the same demo TimingData file and reconnect the Engineering
    Client.
-8. Verify the client rebuilds current status to CLOSED with no operational
+8. Verify the client resynchronises current status to CLOSED with no operational
    Location ID while sequence 1 / `N0001` remains in history.
 9. Verify recovered history is not presented as a new live commit and that any
    history/live overlap is deduplicated by Node ID + sequence number.
@@ -251,9 +251,9 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Expected result**
 
-- reconnect/restart is visible as rebuild/sync rather than immediately LIVE;
+- reconnect/restart is visible as synchronisation rather than immediately LIVE;
 - mutating controls remain disabled while the baseline is incomplete;
-- history is rebuilt before LIVE presentation;
+- history is resynchronised before LIVE presentation;
 - buffered live events are applied after the baseline;
 - duplicate history/live observations collapse to one record;
 - recovered historical data is not presented as a new committed event;

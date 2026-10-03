@@ -22,6 +22,12 @@ nodes:
     notation: wireframe-tabs
     layout: {x: 65, y: 120, w: 1050, h: 44}
 
+  - id: sync-view
+    label: Sync view
+    kind: wireframe-action
+    notation: wireframe-button
+    layout: {x: 840, y: 180, w: 130, h: 30}
+
   - id: connection
     label: LIVE
     kind: wireframe-live
