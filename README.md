@@ -75,8 +75,9 @@ project documents.
 - [`docs/00-brainstorm.md`](docs/00-brainstorm.md) — working area for ideas, questions, alternatives and early software thoughts.
 - [`docs/02-agent-plan.md`](docs/02-agent-plan.md) — meta-project/agent plan; uses `AP-*` identifiers to remain distinct from SIP software steps.
 - [`docs/03-domain-baseline.md`](docs/03-domain-baseline.md) — working domain facts and terminology.
-- [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — development direction plus the generic document-category/dependency convention.
+- [`docs/10-SDP-software-development-plan.md`](docs/10-SDP-software-development-plan.md) — project development direction, phases, resources and risks.
 - [`docs/11-SIP-software-implementation-plan.md`](docs/11-SIP-software-implementation-plan.md) — concrete implementation sequence with scope, deliverables, demonstrations and exit evidence.
+- [`docs/12-documentation-guide.md`](docs/12-documentation-guide.md) — document families, numbering, relationships and the rules for using [`docs/templates/`](docs/templates/README.md).
 - [`docs/20-EXT-external-system-inputs.md`](docs/20-EXT-external-system-inputs.md) — register/baseline for requirements, IDDs, protocols and other controlled inputs owned by a parent or external system.
 - [`docs/30-UC-system-use-cases.md`](docs/30-UC-system-use-cases.md) — software-system operational use cases.
 - [`docs/31-SSSD-software-system-specification-document.md`](docs/31-SSSD-software-system-specification-document.md) — combined software-system requirements and architecture, software-item allocation and interface catalogue.
@@ -104,11 +105,11 @@ Generated documentation for an active pull request is published to `dev/pr-<N>/d
 
 ## Document ordering convention
 
-The leading number is a **document number/range**, not an encoded dependency order. The SDP owns the detailed rule; the repository uses these categories consistently:
+The leading number is a **document number/range**, not an encoded dependency order. The documentation guide owns the detailed rule; the repository uses these categories consistently:
 
 ```text
 00–09  working/project context
-10–19  planning
+10–19  project planning / guidance
 20–29  external / parent-system inputs
 30–39  software-system specification and design
 40      software-item use cases
@@ -128,6 +129,7 @@ Examples:
 03-domain-baseline
 10-SDP
 11-SIP
+12-documentation-guide
 20-EXT
 30-UC
 31-SSSD
