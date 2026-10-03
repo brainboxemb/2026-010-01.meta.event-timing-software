@@ -15,6 +15,15 @@ The ISD owns operation and state semantics. This document owns concrete wire des
 resource paths, HTTP methods, JSON member names, event envelopes, concrete result/error
 strings and status-code mapping.
 
+## Terms and abbreviations
+
+- **IDD** — Interface Design Description
+- **ISD** — Interface Specification Document
+- **IF** — system interface
+- **OP** — Operation defined by the ISD
+- **HTTP** — Hypertext Transfer Protocol
+
+
 ## Relationship to other documents
 
 This IDD implements the concrete development-v1 realization of
