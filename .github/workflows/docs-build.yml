@@ -342,6 +342,19 @@ jobs:
                   raise SystemExit(
                       f"portal explorer missing architecture identity: {object_id}"
                   )
+          if 'data-eng-detail' not in explorer or 'data-eng-workspace' in explorer:
+              raise SystemExit("Engineering Explorer page lost its single-object architecture layout")
+
+          workspace_page = site / "workspace" / "index.html"
+          if not workspace_page.is_file():
+              raise SystemExit("engineering portal missing traceability comparison page")
+          workspace = workspace_page.read_text(encoding="utf-8")
+          if 'data-eng-root-detail' not in workspace or 'data-eng-compare-detail' not in workspace:
+              raise SystemExit("traceability comparison page missing two-object workspace")
+          if 'data-eng-workspace-root-select' not in workspace:
+              raise SystemExit("traceability comparison page missing root object selector")
+          if 'data-engineering-id=' in workspace:
+              raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
 
           search = (site / "search/search_index.json").read_text(encoding="utf-8")
           for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
@@ -400,7 +413,7 @@ jobs:
             --disable-dev-shm-usage \
             --virtual-time-budget=2500 \
             --dump-dom \
-            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&compare=SI01-REQ-045" \
+            "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045" \
             > bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           grep -q '<code>IF05-REQ-007</code>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
@@ -411,6 +424,7 @@ jobs:
           grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-workspace-root-select' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
@@ -423,9 +437,12 @@ jobs:
             > bld/engineering-portal/browser-explorer.html
 
           grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
+          grep -q 'Architecture context' bld/engineering-portal/browser-explorer.html
+          grep -q 'data-engineering-id="TimingNode"' bld/engineering-portal/browser-explorer.html
           grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
           grep -q 'Open details &amp; relations' bld/engineering-portal/browser-explorer.html
           grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
+          ! grep -q 'data-eng-compare-detail' bld/engineering-portal/browser-explorer.html
 
           "$chrome" \
             --headless \
@@ -505,7 +522,7 @@ jobs:
             --virtual-time-budget=2500 \
             --window-size=1600,1000 \
             --screenshot=bld/engineering-portal/workspace-IF05-REQ-007.png \
-            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&compare=SI01-REQ-045"
+            "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045"
 
       - name: Render generated Markdown for human review
         shell: bash
