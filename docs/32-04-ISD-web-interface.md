@@ -4,6 +4,15 @@ Status: initial working baseline
 
 System interface: **IF-04 — Web Interface**
 
+
+## Document guide
+
+- **Role:** define the semantic protocol of **IF-04 — Web Interface** for one Web binding/TimingNode.
+- **Inputs:** SSSD interface allocation and applicable system use cases.
+- **Owns:** Web-interface operations, state/result/failure semantics, ordering and compatibility obligations; not GUI layout or concrete wire names.
+- **Downstream:** an optional IF-04 IDD, SI-01 design and conforming Web realizations.
+- **Key terms:** `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description; `OP` — Operation; `SI` — Software Item.
+
 ## Purpose
 
 This Interface Specification Document defines the semantic protocol between a
