@@ -233,7 +233,7 @@
           }
         });
         if (selectedNode) {
-          selectedNode.scrollIntoView({ block: "nearest" });
+          selectedNode.scrollIntoView({ block: "center" });
         }
       }
 
