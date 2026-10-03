@@ -57,6 +57,12 @@ TimingNode domain identity.
 
 A process containing multiple TimingNodes may expose multiple IF-04 bindings.
 
+## Operation identifiers
+
+Operations use the identifier form `IF04-OP-<number>`, where **OP** means
+**Operation**. The identifier names a stable semantic interface operation; it is
+independent of a concrete HTTP route, message name or other wire representation.
+
 ## IF04-OP-001 — Get current TimingNode state
 
 Returns the current state of the TimingNode associated with the Web binding.
