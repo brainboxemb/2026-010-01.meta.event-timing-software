@@ -3,7 +3,7 @@ diagram:
   title: Figure SYS-02 — System device and logical interface topology
   width: 1540
   height: 900
-  note: Solid relationships show logical system interfaces between endpoints. Intermediate LAN/Wi-Fi equipment is a deployment option, not an IF-03 or IF-09 dependency.
+  note: Solid relationships show logical system interfaces between endpoints. Intermediate LAN/Wi-Fi equipment is a deployment option, not an IF-03, IF-04 or IF-09 dependency.
 
 groups:
   - id: field
@@ -45,28 +45,34 @@ nodes:
     layout: {x: 260, y: 625, w: 280, h: 75}
 
   - id: si02
-    label: "Desktop GUI Application (SI-02)\nIP client"
+    label: "Desktop GUI Application (SI-02)\nIF-03 API client"
     kind: client
     group: clients
-    layout: {x: 805, y: 190, w: 350, h: 75}
+    layout: {x: 805, y: 165, w: 350, h: 75}
+
+  - id: web-operator
+    label: "Browser / tablet operator\nIF-04 Web Interface"
+    kind: client
+    group: clients
+    layout: {x: 805, y: 280, w: 350, h: 75}
 
   - id: test-client
-    label: "Engineering / test client\nJavaFX • script • optional web"
+    label: "Engineering / test client\nJavaFX • script • optional browser client"
     kind: client
     group: clients
-    layout: {x: 805, y: 375, w: 350, h: 75}
+    layout: {x: 805, y: 395, w: 350, h: 75}
 
   - id: display2
     label: "DisplayRev2Wifi / Smart Display V2\nsmart IP client • discovers SI-01 via mDNS"
     kind: external
     group: clients
-    layout: {x: 805, y: 560, w: 350, h: 85}
+    layout: {x: 805, y: 510, w: 350, h: 85}
 
   - id: network-note
     label: "Transport path may be direct / same-host / point-to-point\nor use LAN / Wi-Fi infrastructure. A router is not part of the logical interface."
     kind: interface
     group: clients
-    layout: {x: 785, y: 690, w: 390, h: 80}
+    layout: {x: 785, y: 650, w: 390, h: 80}
 
   - id: backoffice
     label: "Backend system"
@@ -97,25 +103,34 @@ edges:
     to: si01
     label: IF-03
     from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.25}
+    to_anchor: {side: right, position: 0.18}
+
+  - from: web-operator
+    to: si01
+    label: IF-04
+    route:
+      - {x: 735, y: 317.5}
+      - {x: 735, y: 218.0}
+    from_anchor: {side: left, position: 0.50}
+    to_anchor: {side: right, position: 0.40}
 
   - from: test-client
     to: si01
     label: IF-03
     route:
-      - {x: 745, y: 412.5}
-      - {x: 745, y: 227.5}
+      - {x: 720, y: 432.5}
+      - {x: 720, y: 238.0}
     from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.50}
+    to_anchor: {side: right, position: 0.62}
 
   - from: display2
     to: si01
     label: IF-09
     route:
-      - {x: 730, y: 602.5}
-      - {x: 730, y: 251.0}
+      - {x: 705, y: 552.5}
+      - {x: 705, y: 255.0}
     from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.75}
+    to_anchor: {side: right, position: 0.82}
 
   - from: si01
     to: backoffice

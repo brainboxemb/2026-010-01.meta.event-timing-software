@@ -132,8 +132,8 @@
       }
     },
     {
-      "id": "ifreq-derived-from-requirement",
-      "message": "Interface requirement derived_from links may target software requirements.",
+      "id": "ifreq-derived-from-source-type",
+      "message": "Interface requirements may derive from use cases, requirements or interface requirements.",
       "select": {
         "$ref": "#/$defs/type-ifreq"
       },
@@ -142,7 +142,7 @@
           "derived_from": {
             "items": {
               "local": {
-                "$ref": "#/$defs/type-req"
+                "$ref": "#/$defs/upstream-requirement-source"
               }
             }
           }

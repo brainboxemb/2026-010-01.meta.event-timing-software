@@ -2,11 +2,21 @@
 
 Status: working draft / non-authoritative
 
+## Purpose
+
 This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
 
-Use cases are intentionally placed between the domain baseline and formal requirements. They describe **desired externally meaningful behaviour and goals**, not implementation details. Later system requirements, IDDs, software-item SSDs and verification cases may reference these use cases.
+Use cases describe **desired externally meaningful behaviour and goals**, not implementation details.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
+
+## Terms and abbreviations
+
+- **UC** — Use Case
+- **SSSD** — Software System Specification Document
+- **ISD** — Interface Specification Document
+- **SI** — Software Item
+
 
 ## Relationship to other documents
 
@@ -15,9 +25,9 @@ System use cases are part of the software-system specification/design family. Th
 Relevant parent-system/external inputs are registered in `20-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
 
 ```text
-00-04 Domain baseline -----------+
+03 Domain baseline -----------+
                                  |
-20-01 External/parent inputs ----+--> 30-UC System use cases
+20-EXT External/parent inputs ----+--> 30-UC System use cases
                                               |
                                               v
                                          31-SSSD
@@ -32,10 +42,10 @@ Relevant parent-system/external inputs are registered in `20-EXT-external-system
                               +---------------+---------------+
                                               |
                                               v
-                                         40-<N>-SSD
+                                         41-<SI>-SSD
                                               |
                                               v
-                                         41-<N>-SDD
+                                         43-<SI>-SDD
 ```
 
 A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SSD clearer. It should reference the originating system use case and must not merely copy it.
@@ -157,25 +167,26 @@ for registrations, and close it again.
 
 **Main flow:**
 
-1. While the registration point is `CLOSED`, the operator sets or changes the operational `LocationId`.
-2. The application shows the selected location and current `CLOSED` state.
-3. The operator requests `OPEN`.
-4. The registration system accepts the request only when a valid operational location is configured and other required open conditions are satisfied.
+1. While the registration point is `CLOSED`, the operator selects the operational `LocationId` for the next open.
+2. The operator requests `OPEN` for that selected location as one operation.
+3. The registration system validates the requested location and other required open conditions.
+4. When accepted, the registration system applies the LocationId and changes the registration point to `OPEN` as one ordered operation.
 5. The application shows the registration point as `OPEN` with that location.
 6. Registrations may now be accepted for that location.
 7. The operator requests `CLOSE`.
 8. The application shows the registration point as `CLOSED`.
-9. The last selected location may remain visible after close and can then be changed before a later open.
+9. The last selected location may remain visible after close; another location can be selected for a later OPEN request.
 
-The operational location is fixed while registration is `OPEN`. Changing the
-location therefore requires closing first.
+The operational location is fixed while registration is `OPEN`. A normal operator
+OPEN action therefore carries the intended LocationId instead of depending on a
+separately ordered location command immediately before OPEN.
 
 Whether open/close actions are themselves represented in TimingData or sent
 upstream is a later interface/protocol decision.
 
 **Alternative/failure flows:**
 
-- `OPEN` is requested without a valid operational location;
+- `OPEN` is requested with an invalid operational location;
 - a location change is requested while registration is `OPEN`;
 - another required open condition is not satisfied;
 - the command cannot be completed or its resulting state cannot be confirmed.
@@ -601,7 +612,7 @@ compatibility-source protocol.
 
 | Use case | First-slice inspection/control need | Explicitly later |
 | --- | --- | --- |
-| UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, set or change location while `CLOSED`, open registration only with a valid location, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
+| UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, request OPEN with the selected valid LocationId as one operation, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
 | UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, source decoding, observation accumulation/filtering, provider-specific input behaviour and persistence/recovery. |
 | UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
 | UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |
@@ -609,7 +620,7 @@ compatibility-source protocol.
 For this slice the behavioural identity rules are:
 
 - every TimingNode already has a configured, non-empty `TimingNodeId`; there is no runtime "unset TimingNodeId" state;
-- a `LocationId` may be unassigned while `CLOSED`, but a valid operational location is required before `OPEN`;
+- a `LocationId` may be unassigned while `CLOSED`; the normal OPEN operation carries the valid operational LocationId that becomes active when OPEN succeeds;
 - changing location while `OPEN` is rejected;
 - committed TimingData captures the active location at acceptance time, so later reconfiguration cannot change historical records;
 - the exact public types, allowed formats/values and null/unassigned representation are defined once in the TimingData/ISD contract rather than duplicated here.

@@ -5,6 +5,7 @@ Status: working engineering baseline
 Engineering tool: **Engineering Client**  
 Implementation location: `test-client/` in `2026-010-02.java.timing-point-application`
 
+
 ## Purpose
 
 The Engineering Client is the project's interactive development, integration and
@@ -23,7 +24,15 @@ in the same implementation repository as SI-01 because its interface-inspection 
 currently evolves together with SI-01. Repository co-location does not make it part of
 the SI-01 software item.
 
-## Document role
+## Terms and abbreviations
+
+- **SDE** — Software Development Environment
+- **IF-03** — API interface
+- **SI-01** — Timing Point Application
+- **SI-02** — Desktop GUI Application
+
+
+## Relationship to other documents
 
 This SDE document owns the engineering-tool architecture, UI working baseline and
 documentation/screenshot workflow. Product behaviour and public contracts remain owned

@@ -2,28 +2,22 @@
 
 Status: working draft / non-authoritative
 
+
+## Purpose
+
 This Software Verification Plan defines the initial verification strategy for the software system. It is introduced early so public interfaces, testability, fault handling and target execution can be checked as the software grows.
 
 The SVP applies across software items unless a software-item-specific verification document later adds more detail.
 
-## Verification objectives
+## Terms and abbreviations
 
-Verification should provide evidence that:
+- **SVP** — Software Verification Plan
+- **VTS** — Verification Test Specification
+- **VC** — Verification Case
+- **ST** — System Test profile family
 
-- requirements and interface contracts are implemented correctly;
-- software-item boundaries remain usable independently;
-- domain behaviour is deterministic and unit-testable;
-- application behaviour can be tested automatically through its public interface;
-- real and stub/proprietary adapters conform to the same public contracts;
-- backoffice semantics remain correct across stub, socket and RabbitMQ transports;
-- faults and reconnect/recovery paths behave deliberately;
-- local operation remains available where required during backoffice/network outages;
-- multiple registration assets/sources remain isolated and correctly routed;
-- SI-01 runs correctly on the intended Raspberry Pi Zero / Zero W target;
-- public core/reference implementation code can be consumed by external reference and private integration projects;
-- generated documentation and build artifacts are reproducible and reviewable.
 
-## Traceability direction
+## Relationship to other documents
 
 The intended traceability chain follows the product-authority direction established in
 the SDP:
@@ -58,6 +52,25 @@ verification cases are downstream coverage/evidence artifacts; they are delibera
 normative inputs to the requirements they verify.
 
 Verification identifiers and exact requirement-reference syntax are still to be refined.
+
+
+## Verification objectives
+
+Verification should provide evidence that:
+
+- requirements and interface contracts are implemented correctly;
+- software-item boundaries remain usable independently;
+- domain behaviour is deterministic and unit-testable;
+- application behaviour can be tested automatically through its public interface;
+- real and stub/proprietary adapters conform to the same public contracts;
+- backoffice semantics remain correct across stub, socket and RabbitMQ transports;
+- faults and reconnect/recovery paths behave deliberately;
+- local operation remains available where required during backoffice/network outages;
+- multiple registration assets/sources remain isolated and correctly routed;
+- SI-01 runs correctly on the intended Raspberry Pi Zero / Zero W target;
+- public core/reference implementation code can be consumed by external reference and private integration projects;
+- generated documentation and build artifacts are reproducible and reviewable.
+
 
 ## Verification levels
 

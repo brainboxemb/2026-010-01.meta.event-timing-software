@@ -2,13 +2,24 @@
 
 Status: working draft / non-authoritative
 
+## Purpose
+
 This Software System Specification Document combines the current **software-system requirements baseline** with the **software-system architecture**. It defines the software items, their allocated responsibilities, system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
 
 It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Timing Point Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
 
 Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
-## Inputs
+## Terms and abbreviations
+
+- **SSSD** — Software System Specification Document
+- **SI** — Software Item
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+
+
+## Relationship to other documents
 
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
 
@@ -23,7 +34,7 @@ A system-owned ISD created from an interface allocation made by this SSSD is dow
 
 The SIP, SDE, software-item SSDs/SDDs and SVP may reference the SSSD, but they are not inputs to it merely because they discuss the same capability.
 
-## Document role
+### Document chain
 
 The normal product-document authority direction is:
 
@@ -31,7 +42,7 @@ The normal product-document authority direction is:
 parent / external system contracts
               |
               v
-20-01 external-input baseline
+20-EXT external-input register
               |
 domain --------+----> 30-UC system use cases
               |                 |
@@ -108,32 +119,33 @@ Software-item identity is stated by the document and traceability metadata; the 
 | **SI-01** | Timing Point Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the API | Operator workstation/laptop |
 
-Supporting core modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A small web test client may be added later without creating another software item.
+Supporting core modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A browser-based engineering/test client may also consume IF-03 without becoming another software item; it is distinct from the direct SI-01 Web Interface allocated as IF-04.
 
 Application profiles are deployment/composition templates of **the same SI-01 Timing Point Application**. A profile may select different default topology/capabilities, but it is not a separate software item and does not create different TimingNode/domain semantics. Concrete deployment profile definitions are outside this public system baseline until an explicit public requirement owns them.
 
 ## System context
 
 ```text
-                         Operator
-                            |
-                            v
-                    SI-02 Desktop GUI
-                            |
-                            v
+                              Operator
+                         /                 \
+                        v                   v
+               SI-02 Desktop GUI      Browser / tablet
+                        |                   |
+                      IF-03               IF-04
+                         \                 /
+                          v               v
                     SI-01 Timing Point Application
                        ^            ^
                        |            |
-              engineering/test   scripts / optional
-              JavaFX client      web test client
-                    /      |       \
-                   v       v        v
-             field devices local   Backend
-             RFID / CAN     state   integration
-             / displays
+              engineering/test    Backend
+              API clients         integration
+                    |
+                    v
+             field devices / local state
 ```
 
-GUI and engineering/test clients may disconnect without changing where timing state is kept: it remains in the **Timing Point Application** (SI-01).
+GUI, Web and engineering/test clients may disconnect without changing where timing state
+is kept: it remains in the **Timing Point Application** (SI-01).
 
 <a id="fig-sys-01"></a>
 ![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
@@ -145,6 +157,10 @@ GUI and engineering/test clients may disconnect without changing where timing st
 
 The **Desktop GUI Application** (SI-02) is an IP network client of the **Timing Point Application** (SI-01). It presents operator status and control but does not access the application's memory, files or Java objects directly. The logical IF-03 relationship does not require a Wi-Fi router: a direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry the interface.
 
+
+### **Timing Point Application** (SI-01) ↔ browser/tablet operator
+
+A browser or tablet-class browser may operate SI-01 directly through **IF-04 Web Interface**. This browser-facing presentation interface belongs to SI-01 and is not the **Desktop GUI Application** (SI-02). The current architecture allocates one Web binding per configured TimingNode.
 
 ### **Timing Point Application** (SI-01) ↔ backend
 
@@ -166,8 +182,8 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | ISD candidate |
-| **IF-03 API** | SI-02 / engineering & test clients ↔ SI-01 | HTTP/JSON + WebSocket over an available IP path | General remote query/control/diagnostics/test API; first slice is version/status/events | `32-03-ISD-application-control-status.md` candidate |
-| **IF-04 Desktop Operator HMI** | Operator ↔ SI-02 | desktop GUI | Desktop screens, controls and operator feedback | GUI/HMI ISD candidate |
+| **IF-03 API** | SI-02 / engineering & test clients ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
+| **IF-04 Web Interface** | Operator/browser ↔ SI-01 | browser-based protocol; one binding per TimingNode | Browser-based TimingNode status and control | `32-04-ISD-web-interface.md` |
 | **IF-05 TimingData Interchange** | SI-01 / engineering & test tools / compatible data consumers | append-only file / record interchange | Canonical timing-record semantics, identity, ordering, versioning and reference encoding | `32-05-ISD-timingdata-interchange.md` + `33-05-IDD-timingdata-interchange.md` |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system ISD; proprietary wire/design details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
@@ -185,7 +201,7 @@ The following rules apply across software-item boundaries:
 - operator and engineering clients should use shared application semantics rather than implement different business rules per client;
 - network clients read state from and send commands to the **Timing Point Application** (SI-01); timing state remains in that application;
 - loss of the **Desktop GUI Application** (SI-02) or an engineering/test client must not by itself stop local operation of the **Timing Point Application** (SI-01);
-- IF-03 and IF-09 are endpoint-to-endpoint logical interfaces and must not make a physical Wi-Fi router an architectural prerequisite;
+- IF-03, IF-04 and IF-09 shall not make a physical Wi-Fi router an architectural prerequisite where their selected transport only needs an available local/IP path;
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
 - transport-specific implementation detail should not leak into the semantic system interface unless that transport is itself part of the external contract;
@@ -218,6 +234,9 @@ SI-02 Desktop GUI
 Engineering/test clients
   +-- IF-03 over available IP path --> SI-01
 
+Browser / tablet operator
+  +-- IF-04 Web Interface --> SI-01
+
 DisplayRev2Wifi / Smart Display V2
   +-- discovers SI-01 service through mDNS
   +-- IF-09 client session --> SI-01
@@ -226,7 +245,7 @@ Backend
   +-- IF-06 over configured external path --> SI-01
 ```
 
-An available IP path may be direct/point-to-point, same-host or loopback during development/test, or may run over normal LAN/Wi-Fi infrastructure in a field deployment. A Wi-Fi router/access point is therefore **optional deployment infrastructure**, not part of the semantic definition of IF-03 or IF-09.
+An available IP path may be direct/point-to-point, same-host or loopback during development/test, or may run over normal LAN/Wi-Fi infrastructure in a field deployment. A Wi-Fi router/access point is therefore **optional deployment infrastructure**, not part of the semantic definition of IF-03, IF-04 or IF-09.
 
 ### Connectivity and reachability state
 
@@ -267,7 +286,7 @@ Software-item interaction is defined in terms of system-owned semantics. Interna
 
 The architecture must support constrained field deployment and normal Linux/Windows development/test environments without changing the software-item boundaries. Automated integration verification must be able to exercise network interfaces without provisioning a physical Wi-Fi router unless the test explicitly targets router/AP behaviour.
 
-## Relationship to software-item architecture
+## Software-item design boundary
 
 The SSD for the **Timing Point Application** (SI-01) owns, among other things:
 

@@ -3,6 +3,7 @@
 Status: working release-oriented user manual  
 Software item: **SI-01 — Headless Timing Application**
 
+
 ## 1. Purpose, audience and applicability
 
 This is a **technical software user manual**, not an end-user/operator manual for the

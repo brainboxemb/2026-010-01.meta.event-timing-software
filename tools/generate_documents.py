@@ -19,6 +19,7 @@ CONTEXT_DOCUMENTS = [
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-plan.md",
+    "12-GPD-documentation-guide.md",
 ]
 
 EXTERNAL_INPUT_DOCUMENTS = [
@@ -29,6 +30,8 @@ SYSTEM_SPEC_DOCUMENTS = [
     "30-UC-system-use-cases.md",
     "31-SSSD-software-system-specification-document.md",
     "32-03-ISD-application-control-status.md",
+    "33-03-IDD-api-http-websocket.md",
+    "32-04-ISD-web-interface.md",
     "32-05-ISD-timingdata-interchange.md",
     "33-05-IDD-timingdata-interchange.md",
     "32-11-ISD-application-configuration.md",
@@ -48,6 +51,8 @@ ENGINEERING_DOCUMENTS = [
 ARCHITECTURE_DOCUMENTS = [
     "31-SSSD-software-system-specification-document.md",
     "32-03-ISD-application-control-status.md",
+    "33-03-IDD-api-http-websocket.md",
+    "32-04-ISD-web-interface.md",
     "32-05-ISD-timingdata-interchange.md",
     "33-05-IDD-timingdata-interchange.md",
     "32-11-ISD-application-configuration.md",
@@ -224,7 +229,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Planning", ""])
+    doc_index.extend(["", "## Planning / project guidance", ""])
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")

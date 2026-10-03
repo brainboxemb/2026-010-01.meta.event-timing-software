@@ -4,6 +4,7 @@ Status: draft / Step 4 D03 TimingData interface
 
 System interface: **IF-05 — TimingData Interchange**
 
+
 ## Purpose
 
 This Interface Specification Document defines the normative TimingData
@@ -28,7 +29,15 @@ The current slice does not define TimingNode OPEN/CLOSE as TimingData records an
 does not enable registration revocation at runtime. A future design may add
 revoke records without changing the identity/order principles defined here.
 
-## Inputs
+## Terms and abbreviations
+
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+- **TimingData** — committed interchange record model
+
+
+## Relationship to other documents
 
 IF-05 is a system-owned interface allocated by
 `31-SSSD-software-system-specification-document.md`.
@@ -254,15 +263,8 @@ operation that changes the meaning of earlier data shall be represented by a new
 TimingData record.
 ```
 
-## Deferred from this first slice
+## Open points
 
-- TimingNode OPEN/CLOSE TimingData representation;
-- revoke disambiguation beyond Registration ID + time, if later needed;
+- TimingNode OPEN/CLOSE record type and payload;
 - start-procedure record type and payload;
-- penalty/correction record types and payloads;
-- unknown-registration semantics;
-- source/tag provenance fields;
-- filename/directory policy, retention, rotation and filesystem-specific
-  durability primitives;
-- upstream transport/session/reconciliation semantics owned by IF-06;
-- further IF-03 resources that create or inspect future record types.
+- revoke disambiguation beyond Registration ID + time, if needed.

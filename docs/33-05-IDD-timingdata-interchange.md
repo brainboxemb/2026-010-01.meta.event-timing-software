@@ -4,7 +4,7 @@ Status: draft / development-v1 reference representation
 
 System interface: **IF-05 — TimingData Interchange**
 
-Implements: `32-05-ISD-timingdata-interchange.md`
+
 
 ## Purpose
 
@@ -17,6 +17,23 @@ append-only JSON Lines file.
 
 This document deliberately does not define Java classes, factories, providers,
 threads, queues or storage implementation classes.
+
+## Terms and abbreviations
+
+- **IDD** — Interface Design Description
+- **ISD** — Interface Specification Document
+- **IF** — system interface
+- **JSONL** — JSON Lines
+- **TimingData** — committed interchange record model
+
+
+## Relationship to other documents
+
+This IDD implements the default/reference representation of
+`32-05-ISD-timingdata-interchange.md`. The ISD remains the semantic IF-05 contract;
+this document defines its current JSON/JSON Lines representation. Software-item design,
+reference codecs/stores and compatible consumers use this design without redefining the
+IF-05 semantics.
 
 ## Design overview
 

@@ -4,6 +4,7 @@ Status: working / review baseline
 
 Software item: **SI-01 — Timing Point Application**
 
+
 ## Purpose
 
 This document specifies the concrete verification cases used to test SI-01.
@@ -22,7 +23,16 @@ The document roles are deliberately separate:
 
 Current execution status is therefore **not** maintained in this document.
 
-## Inputs and references
+## Terms and abbreviations
+
+- **VTS** — Verification Test Specification
+- **VC** — Verification Case
+- **SVP** — Software Verification Plan
+- **SI** — Software Item
+- **ST** — System Test profile
+
+
+## Relationship to other documents
 
 The cases below verify accepted behaviour from:
 

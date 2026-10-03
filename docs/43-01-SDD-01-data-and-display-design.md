@@ -4,9 +4,25 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
+## Purpose
+
 This SDD explains **how the data flows inside SI-01**: how LogBook entries are
 recorded, when a TimingData record is committed, how restart/recovery works, and
 how queries, prepare-team data and display data use that state.
+
+## Terms and abbreviations
+
+- **SDD** — Software Design Description
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **IF-05** — TimingData Interchange
+
+
+## Relationship to other documents
+
+This SDD refines the SI-01 SSD for internal data/runtime behaviour. It consumes the
+SI-01 architecture and applicable interface contracts, especially IF-05. SDD-02 then
+maps this design to concrete Java components, packages, queues and threads.
 
 The SSD still defines the architecture. IF-05 still defines the TimingData
 record/file format. SDD-02 chooses the concrete Java classes, queues and worker
