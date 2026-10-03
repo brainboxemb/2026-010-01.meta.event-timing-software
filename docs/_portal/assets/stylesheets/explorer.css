@@ -204,7 +204,7 @@ body.eng-explorer-page .md-content__inner {
   display: grid;
   gap: 1px;
   margin: 0;
-  padding: 0;
+  padding: 0 4px;
   background: var(--md-default-bg-color);
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
@@ -257,6 +257,8 @@ body.eng-explorer-page .md-content__inner {
 
 .eng-object-tree {
   min-width: 0;
+  padding: 0 4px;
+  box-sizing: border-box;
   font-size: calc(0.56rem + 1px);
   line-height: 1.2;
 }
