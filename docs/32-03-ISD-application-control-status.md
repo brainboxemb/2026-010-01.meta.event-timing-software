@@ -454,8 +454,9 @@ Concrete verification procedures are downstream in
 Current Step-4 verification uses IF-03 for process-level version/status/event checks and
 for the first registration/control/history flow.
 
-## Not part of the current IF-03 baseline
+## Open points
 
-Later IF-03 increments may add start procedure, RFID recovery/control, ready-team
-management, manual registration/revocation and broader diagnostics. They should be added
-when the corresponding use case/SIP increment approaches implementation.
+- define the exact result when OPEN is requested with a different LocationId while
+  the TimingNode is already OPEN;
+- define the production authentication/authorisation model when that capability is
+  introduced.
