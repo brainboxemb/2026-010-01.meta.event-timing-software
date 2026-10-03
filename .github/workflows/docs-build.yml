@@ -498,9 +498,16 @@ jobs:
           window.addEventListener("load", () => {
             window.setTimeout(() => {
               const root = document.querySelector("[data-eng-workspace]");
-              const collapsed = root && root.querySelector(
-                '[data-eng-tree-toggle][aria-expanded="false"]'
-              );
+              const collapsed = root && Array.from(
+                root.querySelectorAll(
+                  '[data-eng-tree-toggle][aria-expanded="false"]'
+                )
+              ).find((toggle) => {
+                return (
+                  getComputedStyle(toggle).display !== "none" &&
+                  toggle.getClientRects().length > 0
+                );
+              });
               if (collapsed) {
                 const group = collapsed.closest("[data-eng-tree-group]");
                 const children = group && group.querySelector(
