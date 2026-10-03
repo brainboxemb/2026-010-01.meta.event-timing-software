@@ -217,9 +217,26 @@
       const treeGroups = Array.from(
         root.querySelectorAll("[data-eng-tree-group]")
       );
+      const treeToggles = Array.from(
+        root.querySelectorAll("[data-eng-tree-toggle]")
+      );
       const initialUrl = new URL(window.location.href);
       let rootId = "";
       let compareId = "";
+
+      function setGroupExpanded(group, expanded) {
+        if (!group) return;
+        group.classList.toggle("is-expanded", expanded);
+        const toggle = group.querySelector(":scope > [data-eng-tree-toggle]");
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        }
+      }
+
+      function toggleGroup(group) {
+        if (!group) return;
+        setGroupExpanded(group, !group.classList.contains("is-expanded"));
+      }
 
       function updateTreeSelection() {
         let selectedNode = null;
@@ -230,7 +247,7 @@
             selectedNode = node;
             node.setAttribute("aria-current", "true");
             const group = node.closest("[data-eng-tree-group]");
-            if (group) group.open = true;
+            if (group) setGroupExpanded(group, true);
           } else {
             node.removeAttribute("aria-current");
           }
@@ -293,7 +310,9 @@
             group.querySelectorAll("[data-workspace-root-id]")
           ).some((node) => !node.hidden);
           group.hidden = !visible;
-          if ((query || selectedType) && visible) group.open = true;
+          if ((query || selectedType) && visible) {
+            setGroupExpanded(group, true);
+          }
         });
 
         if (resultCount) {
@@ -340,6 +359,12 @@
       }
 
       root.addEventListener("click", (event) => {
+        const toggleTarget = event.target.closest("[data-eng-tree-toggle]");
+        if (toggleTarget && root.contains(toggleTarget)) {
+          toggleGroup(toggleTarget.closest("[data-eng-tree-group]"));
+          return;
+        }
+
         const treeTarget = event.target.closest("[data-workspace-root-id]");
         if (treeTarget && root.contains(treeTarget)) {
           renderRoot(treeTarget.dataset.workspaceRootId, true);
@@ -350,6 +375,19 @@
         if (compareTarget && root.contains(compareTarget)) {
           renderCompare(compareTarget.dataset.compareObjectId, true);
         }
+      });
+
+      treeToggles.forEach((toggle) => {
+        toggle.addEventListener("keydown", (event) => {
+          const group = toggle.closest("[data-eng-tree-group]");
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            setGroupExpanded(group, true);
+          } else if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            setGroupExpanded(group, false);
+          }
+        });
       });
 
       if (searchInput) searchInput.addEventListener("input", applyTreeFilter);
