@@ -129,9 +129,14 @@
 }
 
 .eng-object-browser__filters {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: grid;
   gap: 0.55rem;
-  margin-bottom: 0.75rem;
+  margin: -0.15rem -0.15rem 0.75rem;
+  padding: 0.15rem 0.15rem 0.55rem;
+  background: var(--md-default-bg-color);
 }
 
 .eng-object-browser__filters label {
