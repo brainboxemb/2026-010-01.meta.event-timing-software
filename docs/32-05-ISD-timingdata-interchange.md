@@ -264,5 +264,4 @@ TimingData record.
 - source/tag provenance fields;
 - filename/directory policy, retention, rotation and filesystem-specific
   durability primitives;
-- upstream transport/session/reconciliation semantics owned by IF-06;
-- further IF-03 resources that create or inspect future record types.
+- transport/session/reconciliation behaviour outside the TimingData interchange contract.
