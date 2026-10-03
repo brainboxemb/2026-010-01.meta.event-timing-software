@@ -11,6 +11,7 @@ nav:
   - Portal: index.md
   - Architecture Book: book.md
   - Engineering explorer: explorer.md
+  - Traceability comparison: workspace.md
   - Engineering Client UI: engineering-client-ui.md
   - Objects:
       - Engineering object index: objects/index.md
