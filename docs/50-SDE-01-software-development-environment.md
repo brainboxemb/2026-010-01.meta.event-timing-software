@@ -9,6 +9,15 @@ This Software Development Environment document defines the **concrete engineerin
 
 The SDE is project/software-system level and applies across software items and implementation repositories unless a repository documents a justified exception.
 
+## Terms and abbreviations
+
+- **SDE** — Software Development Environment
+- **CI** — Continuous Integration
+- **PR** — Pull Request
+- **SIP** — Software Implementation Plan
+- **SVP** — Software Verification Plan
+
+
 ## Relationship to other documents
 
 The SDE is not the high-level development plan and it is not the detailed implementation sequence.
