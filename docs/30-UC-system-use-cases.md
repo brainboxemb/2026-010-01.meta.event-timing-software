@@ -17,9 +17,9 @@ System use cases are part of the software-system specification/design family. Th
 Relevant parent-system/external inputs are registered in `20-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
 
 ```text
-00-04 Domain baseline -----------+
+03 Domain baseline -----------+
                                  |
-20-01 External/parent inputs ----+--> 30-UC System use cases
+20-EXT External/parent inputs ----+--> 30-UC System use cases
                                               |
                                               v
                                          31-SSSD
@@ -34,10 +34,10 @@ Relevant parent-system/external inputs are registered in `20-EXT-external-system
                               +---------------+---------------+
                                               |
                                               v
-                                         40-<N>-SSD
+                                         41-<SI>-SSD
                                               |
                                               v
-                                         41-<N>-SDD
+                                         43-<SI>-SDD
 ```
 
 A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item's actor/goal behaviour separately makes the subsequent SSD clearer. It should reference the originating system use case and must not merely copy it.
