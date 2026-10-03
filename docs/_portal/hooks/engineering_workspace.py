@@ -68,7 +68,7 @@ def _render_need(need: dict[str, Any]) -> str:
     search = html.escape(f"{need['id']} {need.get('title') or ''}".lower())
     return (
         '<li class="md-nav__item eng-tree-leaf" role="none">'
-        '<button class="md-nav__link eng-tree-item" type="button" role="treeitem" '
+        '<button class="eng-tree-item" type="button" role="treeitem" '
         f'data-workspace-root-id="{object_id}" '
         f'data-object-type="{type_name}" '
         f'data-object-search="{search}">'
@@ -97,7 +97,7 @@ def _render_group(label: str, node: dict[str, Any], *, level: int) -> str:
     return (
         '<li class="md-nav__item eng-tree-group" role="none" '
         f'data-eng-tree-group data-tree-level="{level}">'
-        '<button class="md-nav__link eng-tree-group__toggle" type="button" '
+        '<button class="eng-tree-group__toggle" type="button" '
         'role="treeitem" aria-expanded="false" data-eng-tree-toggle>'
         f'<span class="eng-tree-group__label">{html.escape(label)}</span>'
         '<span class="eng-tree-group__chevron" aria-hidden="true">›</span>'
