@@ -6,6 +6,7 @@
   max-width: 104rem;
 }
 
+html.eng-workspace-page,
 body.eng-workspace-page {
   overflow-y: hidden;
 }
@@ -363,6 +364,7 @@ body.eng-workspace-page {
 }
 
 @media screen and (max-width: 900px) {
+  html.eng-workspace-page,
   body.eng-workspace-page {
     overflow-y: auto;
   }
