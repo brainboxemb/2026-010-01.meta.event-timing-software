@@ -11,6 +11,19 @@ body.eng-workspace-page {
   overflow-y: hidden;
 }
 
+body.eng-workspace-page .md-main__inner {
+  margin-top: 0.2rem;
+}
+
+body.eng-workspace-page .md-content {
+  padding-top: 0;
+}
+
+body.eng-workspace-page .md-content__inner {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 .eng-workspace-nav {
   display: flex;
   flex-wrap: wrap;
@@ -145,7 +158,7 @@ body.eng-workspace-page {
     minmax(16rem, 1fr);
   gap: 1px;
   align-items: stretch;
-  height: calc(100vh - 8.8rem);
+  height: calc(100vh - 7.25rem);
   min-height: 30rem;
   overflow: hidden;
   border: 1px solid var(--md-default-fg-color--lightest);
@@ -159,7 +172,7 @@ body.eng-workspace-page {
   overflow-y: scroll;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding: 0.28rem;
+  padding: 0;
   border: 0;
   border-radius: 0;
 }
@@ -170,8 +183,8 @@ body.eng-workspace-page {
   z-index: 2;
   display: grid;
   gap: 0.15rem;
-  margin: -0.08rem -0.08rem 0.18rem;
-  padding: 0.08rem 0.08rem 0.18rem;
+  margin: 0 0 0.12rem;
+  padding: 0 0 0.12rem;
   background: var(--md-default-bg-color);
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
@@ -202,7 +215,6 @@ body.eng-workspace-page {
   line-height: 1.2;
 }
 
-.eng-object-tree .md-nav__list,
 .eng-tree-root,
 .eng-tree-group__items {
   margin: 0 !important;
@@ -247,7 +259,7 @@ body.eng-workspace-page {
 .eng-object-tree .eng-tree-group__toggle {
   justify-content: space-between;
   gap: 0.35rem;
-  padding: 0.12rem 0.1rem;
+  padding: 0.1rem 0.08rem;
   font-weight: 600;
 }
 
@@ -281,37 +293,37 @@ body.eng-workspace-page {
   transform: rotate(90deg);
 }
 
-.eng-tree-group__items {
-  display: none;
+.md-typeset .eng-tree-group__items {
+  display: none !important;
 }
 
-.eng-tree-group.is-expanded > .eng-tree-group__items {
-  display: block;
+.md-typeset .eng-tree-group.is-expanded > .eng-tree-group__items {
+  display: block !important;
 }
 
 .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.32rem !important;
+  padding-left: 0.26rem !important;
   font-weight: 500 !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.54rem !important;
+  padding-left: 0.46rem !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.76rem !important;
+  padding-left: 0.66rem !important;
 }
 
 .eng-object-tree .eng-tree-item {
-  padding: 0.07rem 0.1rem 0.07rem 0.32rem;
+  padding: 0.06rem 0.08rem 0.06rem 0.26rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.54rem;
+  padding-left: 0.46rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 0.76rem;
+  padding-left: 0.66rem;
 }
 
 .eng-tree-item__label {

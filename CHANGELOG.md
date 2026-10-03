@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make the Traceability Comparison tree fully portal-owned: remove remaining Material navigation classes that interfered with disclosure/indentation, eliminate unnecessary tree-pane padding, tighten workspace top spacing, and qualify real collapsed/open/closed child visibility in Chrome.
+
 - Keep the Traceability Comparison browser interaction probe isolated from the publishable portal tree so CI can exercise disclosure/resizing without mutating production HTML.
 
 - Make the Traceability Comparison a true resizable split-pane workbench: reliable custom tree disclosure controls, tighter left alignment/indentation, a wider default tree pane, draggable/keyboard-accessible separators, and persisted pane proportions.
