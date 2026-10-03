@@ -3,7 +3,7 @@ diagram:
   title: Figure SDE03-05 — API-first Development Client workbench
   width: 1360
   height: 820
-  note: Reviewed next UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.
+  note: Current UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.
 
 groups: []
 
