@@ -4,6 +4,15 @@ Status: review candidate
 
 System interface: **IF-03 — API**
 
+
+## Document guide
+
+- **Role:** define the semantic contract of **IF-03 — API**.
+- **Inputs:** SSSD interface allocation and applicable system use cases.
+- **Owns:** API operations, state/result/failure semantics, ordering and compatibility rules; not concrete HTTP/JSON/WebSocket encoding.
+- **Downstream:** the IF-03 IDD, software-item specifications and conforming API clients.
+- **Key terms:** `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description; `OP` — Operation; `SI` — Software Item.
+
 ## Purpose
 
 This Interface Specification Document defines the **semantic contract** between the
