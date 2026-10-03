@@ -23,6 +23,15 @@ The document roles are deliberately separate:
 
 Current execution status is therefore **not** maintained in this document.
 
+## Terms and abbreviations
+
+- **VTS** — Verification Test Specification
+- **VC** — Verification Case
+- **SVP** — Software Verification Plan
+- **SI** — Software Item
+- **ST** — System Test profile
+
+
 ## Relationship to other documents
 
 The cases below verify accepted behaviour from:
