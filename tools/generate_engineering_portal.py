@@ -508,7 +508,7 @@ def render_workspace(view: dict) -> str:
             )
         label = Path(path).name.removesuffix(".md")
         groups.append(
-            '<details class="eng-tree-group" data-eng-tree-group open>'
+            '<details class="eng-tree-group" data-eng-tree-group>'
             f'<summary>{html.escape(label)}</summary>'
             '<div class="eng-tree-group__items">'
             + "".join(items)
