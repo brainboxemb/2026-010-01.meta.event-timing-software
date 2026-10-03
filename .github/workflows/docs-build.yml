@@ -351,6 +351,8 @@ jobs:
           workspace = workspace_page.read_text(encoding="utf-8")
           if 'data-eng-root-detail' not in workspace or 'data-eng-compare-detail' not in workspace:
               raise SystemExit("traceability comparison page missing two-object workspace")
+          if 'data-eng-workspace-root-select' not in workspace:
+              raise SystemExit("traceability comparison page missing root object selector")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
 
@@ -422,6 +424,8 @@ jobs:
           grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-workspace-root-select' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'option value="IF05-REQ-007" selected' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
