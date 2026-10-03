@@ -210,6 +210,9 @@
       const filterPanel = root.querySelector(".eng-object-browser__filters");
       const searchInput = root.querySelector("[data-eng-tree-search]");
       const typeFilter = root.querySelector("[data-eng-tree-type]");
+      const collapseAllButton = root.querySelector(
+        "[data-eng-tree-collapse-all]"
+      );
       const resultCount = root.querySelector("[data-eng-tree-count]");
       const treeItems = Array.from(
         root.querySelectorAll("[data-workspace-root-id]")
@@ -550,6 +553,12 @@
         });
       });
 
+      if (collapseAllButton) {
+        collapseAllButton.addEventListener("click", () => {
+          treeGroups.forEach((group) => setGroupExpanded(group, false));
+        });
+      }
+
       if (searchInput) searchInput.addEventListener("input", applyTreeFilter);
       if (typeFilter) typeFilter.addEventListener("change", applyTreeFilter);
 
@@ -570,8 +579,19 @@
     const workspacePage = Boolean(
       document.querySelector("[data-eng-workspace]")
     );
-    document.documentElement.classList.toggle("eng-workspace-page", workspacePage);
+    const explorerPage = Boolean(
+      document.querySelector("[data-eng-explorer]")
+    );
+    document.documentElement.classList.toggle(
+      "eng-workspace-page",
+      workspacePage
+    );
     document.body.classList.toggle("eng-workspace-page", workspacePage);
+    document.documentElement.classList.toggle(
+      "eng-explorer-page",
+      explorerPage
+    );
+    document.body.classList.toggle("eng-explorer-page", explorerPage);
 
     initializeExplorer();
     initializeWorkspace();
