@@ -528,9 +528,27 @@ hide:
       <!-- ENGINEERING_OBJECT_TREE -->
     </aside>
 
+    <div
+      class="eng-pane-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize engineering object browser"
+      tabindex="0"
+      data-eng-resizer="tree-root"
+    ></div>
+
     <section class="eng-detail" data-eng-root-detail aria-live="polite">
       Select an engineering object.
     </section>
+
+    <div
+      class="eng-pane-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize selected and compared object panes"
+      tabindex="0"
+      data-eng-resizer="root-compare"
+    ></div>
 
     <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
       Select a related object to compare.

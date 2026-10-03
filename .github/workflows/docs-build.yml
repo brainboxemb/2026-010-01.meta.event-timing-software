@@ -373,8 +373,29 @@ jobs:
                   )
           if 'data-tree-level="1"' not in workspace:
               raise SystemExit("traceability object tree missing nested heading levels")
+          if workspace.count('data-eng-resizer=') != 2:
+              raise SystemExit("traceability comparison page missing two pane resizers")
+          if 'role="separator"' not in workspace:
+              raise SystemExit("traceability pane resizers missing separator semantics")
+          if 'md-nav__link eng-tree-group__toggle' in workspace:
+              raise SystemExit("tree disclosure still depends on Material nav-link behavior")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
+
+          explorer_js = (
+              site / "assets" / "javascripts" / "explorer.js"
+          ).read_text(encoding="utf-8")
+          for behavior in (
+              "engineering-traceability-pane-shares-v1",
+              "pointerdown",
+              "ArrowLeft",
+              "ArrowRight",
+              "localStorage",
+          ):
+              if behavior not in explorer_js:
+                  raise SystemExit(
+                      f"traceability pane resize behavior missing: {behavior}"
+                  )
 
           search = (site / "search/search_index.json").read_text(encoding="utf-8")
           for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
@@ -458,7 +479,80 @@ jobs:
           grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Step-4 first-registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'md-nav__link eng-tree-group__toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-resizer="tree-root"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-resizer="root-compare"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'role="separator"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          ! grep -q 'md-nav__link eng-tree-group__toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("bld/engineering-portal/site/workspace/index.html")
+          html = path.read_text(encoding="utf-8")
+          probe = r"""
+          <script>
+          window.addEventListener("load", () => {
+            window.setTimeout(() => {
+              const root = document.querySelector("[data-eng-workspace]");
+              const collapsed = root && root.querySelector(
+                '[data-eng-tree-toggle][aria-expanded="false"]'
+              );
+              if (collapsed) {
+                collapsed.click();
+                document.body.dataset.treeToggleInteraction =
+                  collapsed.getAttribute("aria-expanded") === "true"
+                    ? "passed"
+                    : "failed";
+              } else {
+                document.body.dataset.treeToggleInteraction = "no-collapsed-node";
+              }
+
+              const splitter = root && root.querySelector(
+                '[data-eng-resizer="tree-root"]'
+              );
+              const layout = root && root.querySelector(".eng-trace-layout");
+              if (splitter && layout) {
+                const before = layout.style.gridTemplateColumns;
+                splitter.dispatchEvent(
+                  new KeyboardEvent("keydown", {
+                    key: "ArrowRight",
+                    bubbles: true
+                  })
+                );
+                const after = layout.style.gridTemplateColumns;
+                document.body.dataset.paneResizeInteraction =
+                  before !== after ? "passed" : "failed";
+                document.body.dataset.paneResizePersisted =
+                  localStorage.getItem(
+                    "engineering-traceability-pane-shares-v1"
+                  )
+                    ? "passed"
+                    : "failed";
+              }
+            }, 400);
+          });
+          </script>
+          """
+          path.write_text(
+              html.replace("</body>", probe + "</body>"),
+              encoding="utf-8",
+          )
+          PY
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --window-size=1920,1200 \
+            --virtual-time-budget=3500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045" \
+            > bld/engineering-portal/browser-workspace-interaction.html
+
+          grep -q 'data-tree-toggle-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
+          grep -q 'data-pane-resize-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
+          grep -q 'data-pane-resize-persisted="passed"' bld/engineering-portal/browser-workspace-interaction.html
 
           "$chrome" \
             --headless \

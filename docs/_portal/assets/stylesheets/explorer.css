@@ -137,7 +137,12 @@ body.eng-workspace-page {
 /* Traceability Comparison: ordered object tree + root object + compared object. */
 .eng-trace-layout {
   display: grid;
-  grid-template-columns: minmax(12.5rem, 0.6fr) minmax(0, 1.4fr) minmax(0, 1.4fr);
+  grid-template-columns:
+    minmax(12rem, 28%)
+    4px
+    minmax(16rem, 36%)
+    4px
+    minmax(16rem, 1fr);
   gap: 1px;
   align-items: stretch;
   height: calc(100vh - 8.8rem);
@@ -221,8 +226,8 @@ body.eng-workspace-page {
   padding: 0;
 }
 
-.eng-object-tree .md-nav__link.eng-tree-group__toggle,
-.eng-object-tree .md-nav__link.eng-tree-item {
+.eng-object-tree .eng-tree-group__toggle,
+.eng-object-tree .eng-tree-item {
   appearance: none;
   display: flex;
   align-items: center;
@@ -239,17 +244,17 @@ body.eng-workspace-page {
   line-height: 1.15;
 }
 
-.eng-object-tree .md-nav__link.eng-tree-group__toggle {
+.eng-object-tree .eng-tree-group__toggle {
   justify-content: space-between;
   gap: 0.35rem;
-  padding: 0.14rem 0.18rem;
+  padding: 0.12rem 0.1rem;
   font-weight: 600;
 }
 
-.eng-object-tree .md-nav__link.eng-tree-group__toggle:hover,
-.eng-object-tree .md-nav__link.eng-tree-group__toggle:focus,
-.eng-object-tree .md-nav__link.eng-tree-item:hover,
-.eng-object-tree .md-nav__link.eng-tree-item:focus {
+.eng-object-tree .eng-tree-group__toggle:hover,
+.eng-object-tree .eng-tree-group__toggle:focus,
+.eng-object-tree .eng-tree-item:hover,
+.eng-object-tree .eng-tree-item:focus {
   background: var(--md-code-bg-color);
   outline: none;
 }
@@ -285,28 +290,28 @@ body.eng-workspace-page {
 }
 
 .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 0.7rem !important;
+  padding-left: 0.32rem !important;
   font-weight: 500 !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 1.2rem !important;
+  padding-left: 0.54rem !important;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-group__toggle {
-  padding-left: 1.7rem !important;
+  padding-left: 0.76rem !important;
 }
 
-.eng-object-tree .md-nav__link.eng-tree-item {
-  padding: 0.08rem 0.18rem 0.08rem 0.7rem;
+.eng-object-tree .eng-tree-item {
+  padding: 0.07rem 0.1rem 0.07rem 0.32rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 1.2rem;
+  padding-left: 0.54rem;
 }
 
 .eng-tree-group__items .eng-tree-group__items .eng-tree-group__items .eng-tree-item {
-  padding-left: 1.7rem;
+  padding-left: 0.76rem;
 }
 
 .eng-tree-item__label {
@@ -344,6 +349,30 @@ body.eng-workspace-page {
   color: inherit;
 }
 
+
+.eng-pane-resizer {
+  position: relative;
+  width: 4px;
+  min-width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  background: var(--md-default-fg-color--lightest);
+  touch-action: none;
+  user-select: none;
+}
+
+.eng-pane-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+
+.eng-pane-resizer:hover,
+.eng-pane-resizer:focus,
+.eng-pane-resizer.is-dragging {
+  background: var(--md-accent-fg-color);
+  outline: none;
+}
 
 /* Shared object detail presentation. */
 .eng-detail {
@@ -460,6 +489,10 @@ body.eng-workspace-page {
   .eng-explorer-workspace,
   .eng-trace-layout {
     grid-template-columns: 1fr;
+  }
+
+  .eng-pane-resizer {
+    display: none;
   }
 
   .eng-trace-layout {
