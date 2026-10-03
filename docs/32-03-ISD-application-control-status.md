@@ -271,7 +271,7 @@ Concrete version encoding and unknown-member/event handling belong to the IDD.
 The first development realization is usable across a normal IP network path when remote
 access is explicitly configured.
 
-Authentication/authorisation is deferred for the current development baseline. Until a
+Authentication/authorisation is not defined for the current development baseline. Until a
 later security increment defines it:
 
 - default exposure is local/loopback only;
