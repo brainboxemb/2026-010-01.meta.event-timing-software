@@ -1,19 +1,19 @@
 diagram:
   id: engineering-client
-  title: Figure SDE03-01 — Engineering Client architecture
+  title: Figure SDE03-01 — Development Client architecture
   width: 1380
   height: 820
-  description: Engineering Client UI and independent client services connected only through supported SI-01 external boundaries.
+  description: Development Client UI and independent client services connected only through supported SI-01 external boundaries.
   note: API is the primary work surface. Target endpoints come from one client configuration; client-local logging and SI-01 diagnostic logging remain distinct.
 
 groups:
   - id: ui
-    label: Engineering Client / JavaFX presentation
+    label: Development Client / JavaFX presentation
     kind: layer-presentation
     layout: {x: 40, y: 90, w: 390, h: 650}
 
   - id: services
-    label: Independent engineering client services
+    label: Independent development client services
     kind: layer-application
     layout: {x: 465, y: 90, w: 380, h: 650}
 
@@ -102,7 +102,7 @@ nodes:
     layout: {x: 520, y: 505, w: 270, h: 70}
 
   - id: client-log
-    label: "ClientLog\nlocal Engineering Client records"
+    label: "ClientLog\nlocal Development Client records"
     kind: service
     group: services
     layout: {x: 520, y: 600, w: 270, h: 58}
