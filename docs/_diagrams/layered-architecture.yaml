@@ -149,7 +149,7 @@ nodes:
   object_id: PresentationGateway
   group: application-layer
   label: "PresentationGateway"
-  subtitle: "presentation operations / status / events"
+  subtitle: "presentation commands / queries"
   kind: application
   notation: component
   layout: {x: 390, y: 373, w: 280, h: 75}
