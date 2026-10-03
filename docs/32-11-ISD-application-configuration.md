@@ -1,6 +1,6 @@
 # Application Configuration Interface Specification (ISD)
 
-Status: review candidate / SIP Step-3 configuration baseline
+Status: review candidate
 
 System interface: **IF-11 — Application Configuration**
 
@@ -181,16 +181,13 @@ io
 `TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
-The `deviceNetworks.can` section configures the network owned by
-`CanNetworkController`; exact bus/driver/discovery fields are added when that
-implementation slice exists.
+The `deviceNetworks.can` section configures the CAN network boundary. Exact
+bus/driver/discovery fields belong to the concrete device-network design.
 
-The `deviceNetworks.network` section configures `NetworkDeviceService`, the
-bidirectional network-device boundary. Detailed service discovery,
-listen/session and protocol-framing settings are added only when IF-09 becomes
-concrete. IF-09 remains an IP/network interface and does not require a physical
-Wi-Fi router or WLAN. Exact mDNS service naming and network application protocol
-remain deferred rather than being invented in IF-11 now.
+The `deviceNetworks.network` section configures the bidirectional network-device
+boundary. Detailed service-discovery, session and protocol-framing design is
+outside IF-11; this interface only owns the deployment values needed to compose
+the selected network-device service.
 
 Concrete antenna configuration owns its driver/protocol/device settings. Its
 `provider` value selects a registered `AntennaProvider`; `simulated` is the
@@ -253,9 +250,9 @@ application message bus.
 
 Storage settings remain under I/O because they configure external persistence.
 
-### Step-4 TimingData storage
+### TimingData storage
 
-The Step-4 single-TimingNode executable adds the first concrete storage setting:
+The reference single-TimingNode configuration includes this storage setting:
 
 ```yaml
 io:
@@ -278,9 +275,8 @@ Rules:
 - startup recovery opens/validates this file and rebuilds committed LogBook
   state before the TimingNode begins accepting operational work;
 - public examples use generic local paths and do not disclose deployment paths;
-- this first slice intentionally does not define a generalized per-node storage
-  registry or multi-TimingNode file mapping. That topology is added when the
-  multi-node runtime slice requires it.
+- a generalized per-node storage registry or multi-TimingNode file mapping is
+  not defined by the current configuration contract.
 
 The storage path does not contain a LocationId or RegistrationId policy. Those
 identifier domains remain event/profile/reference-data concerns.
@@ -314,7 +310,7 @@ become fields of the TimingNode domain object.
 
 A TimingNode therefore does not need to know that an HTTP listener, WebSocket, shell or external GUI/test client exists. Presentation interfaces map their requests to the application boundary.
 
-The currently implemented A05-A07 subset is:
+The current executable subset is:
 
 ```yaml
 presentation:
@@ -341,7 +337,7 @@ settings configure presentation listeners and do not become TimingNode fields.
 ### Logging
 
 Logging is cross-cutting deployment configuration and is not TimingNode/domain state.
-The A08 baseline configures a startup level, a retained file sink and an optional
+The logging configuration provides a startup level, a retained file sink and an optional
 engineering live-diagnostics listener.
 
 Representative direction:
@@ -405,7 +401,7 @@ rabbitmq
   passwordSecret: RABBITMQ_PASSWORD
 ```
 
-The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies later to HTTP authentication, upstream/backoffice credentials, certificates and similar sensitive values.
+The referenced secret value is resolved from environment/deployment secret storage at startup. The same principle applies to upstream credentials, certificates and similar sensitive values.
 
 This baseline does not require a general `SecretProvider` hierarchy.
 
@@ -486,8 +482,8 @@ and locations must either be supplied explicitly or follow a separately
 specified deterministic public rule; profile resolution must not invent
 ambiguous functional identities.
 
-The exact selector syntax and any concrete public profile set are deferred until
-a real configuration consumer and its public requirements need them.
+The exact selector syntax and any concrete public profile set are not defined by
+this semantic configuration contract.
 
 ## Validation
 
@@ -549,23 +545,18 @@ Public configuration examples use synthetic identities and endpoints.
 
 Real deployment identities, production topology, credentials, encryption keys, proprietary mappings, private provider names and private protocol values remain outside the public repositories. Public examples use only generic/reference provider IDs and synthetic configuration.
 
-## Implemented configuration slices
+## Current baseline coverage
 
-Step 3 introduced only the configuration fields needed by the first executable:
+The current configuration contract includes:
 
 - external configuration loading;
-- stable application/TimingNode identity;
-- first IF-03 presentation bindings;
-- logging configuration and startup failure reporting.
+- stable application and TimingNode identity;
+- presentation listener/binding settings;
+- logging configuration;
+- the reference TimingData storage path and startup recovery dependency.
 
-Step 4 adds the first concrete storage consumer:
-
-- `io.storage.timingData.path` for the authoritative append-only TimingData
-  file used by the current single-TimingNode reference composition;
-- storage recovery before operational work is accepted.
-
-Hardware, upstream messaging, security and multi-node storage mapping remain
-capability-driven later slices.
+Hardware-specific settings, upstream connector details and multi-node storage
+mapping are included only where their configuration semantics are defined.
 
 ## Traceability
 
