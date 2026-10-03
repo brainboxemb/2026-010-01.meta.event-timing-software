@@ -9,7 +9,7 @@ groups: []
 
 nodes:
   - id: shell
-    label: Engineering Client
+    label: Development Client
     subtitle: IF-03 endpoint http://127.0.0.1:8081
     kind: wireframe-surface
     notation: wireframe-panel
