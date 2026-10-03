@@ -112,10 +112,11 @@ TimingNode is already OPEN remains an open point.
 
 Requests the TimingNode associated with the Web binding to change to CLOSED.
 
-Successful semantic outcomes include:
+When the TimingNode is OPEN and CLOSE is accepted, the resulting state is `CLOSED`.
 
-- `CLOSED`;
-- `ALREADY_CLOSED`.
+A CLOSE request while the TimingNode is already CLOSED is rejected. The semantic
+reason may remain available inside SI-01, while a concrete compatibility mapping
+may expose only a general failed-request outcome.
 
 A successful state change is visible through subsequent IF-04 state observation.
 
@@ -148,8 +149,9 @@ IF-04 distinguishes at least:
 A timeout does not mean already accepted work was cancelled. A client can query
 current state before deciding whether to retry a state-changing command.
 
-Stable machine-readable result/failure meaning belongs to the interface. Human
-readable text is diagnostic.
+IF-04 requires success and rejection to be distinguishable. A concrete
+compatibility mapping may expose less detailed failure information than SI-01
+keeps internally. Human-readable text is diagnostic.
 
 ## Compatibility
 
@@ -219,8 +221,9 @@ separate lifecycle or LocationId state model.
 :status: D
 :derived_from: UC-001, UC-002
 
-Invalid, rejected, unavailable and outcome-unknown operations shall expose an
-explicit failure outcome rather than silently reporting success.
+Invalid, rejected, unavailable and outcome-unknown operations shall be
+distinguishable from successful operations. A concrete compatibility mapping may
+reduce the available failure detail.
 ```
 
 ```{ifreq} Compatible Web realizations
