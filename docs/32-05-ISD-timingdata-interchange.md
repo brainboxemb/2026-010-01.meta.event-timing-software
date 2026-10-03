@@ -29,6 +29,14 @@ The current slice does not define TimingNode OPEN/CLOSE as TimingData records an
 does not enable registration revocation at runtime. A future design may add
 revoke records without changing the identity/order principles defined here.
 
+## Terms and abbreviations
+
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+- **TimingData** — committed interchange record model
+
+
 ## Relationship to other documents
 
 IF-05 is a system-owned interface allocated by
