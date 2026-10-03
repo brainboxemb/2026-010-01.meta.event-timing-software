@@ -435,6 +435,8 @@ jobs:
           grep -q 'data-eng-object-tree' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-eng-tree-search' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-eng-tree-type' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-eng-tree-count' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Requirement (22)' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
@@ -534,7 +536,7 @@ jobs:
             --disable-gpu \
             --disable-dev-shm-usage \
             --virtual-time-budget=2500 \
-            --window-size=1600,1000 \
+            --window-size=1920,1200 \
             --screenshot=bld/engineering-portal/workspace-IF05-REQ-007.png \
             "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045"
 
