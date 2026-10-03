@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1020" viewBox="0 0 1360 1020">
+<defs>
+<marker id="seq-filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+<marker id="seq-open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L9,3 L0,6" fill="none" stroke="#5f6368" stroke-width="1.5"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD08 — Concurrent OPEN and SET_LOCATION ordering</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">SET_LOCATION must not validate CLOSED from a pre-queue external read; by the time it executes, OPEN may already have changed the node state.</text>
+<rect x="0.0" y="100.0" width="190.0" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="95.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Caller A</text>
+<line data-sequence-lifeline="callerA" x1="95.0" y1="158.0" x2="95.0" y2="689.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="585.0" y="100.0" width="190.0" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="680.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Caller B</text>
+<line data-sequence-lifeline="callerB" x1="680.0" y1="158.0" x2="680.0" y2="689.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1170.0" y="100.0" width="190.0" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="1265.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<line data-sequence-lifeline="node" x1="1265.0" y1="158.0" x2="1265.0" y2="689.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect data-sequence-activation="0" x="1259.0" y="195.0" width="12.0" height="348.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="1" x="1263.0" y="299.0" width="12.0" height="365.3" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="2" x="1267.0" y="419.6" width="12.0" height="252.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="3" x="1271.0" y="471.6" width="12.0" height="200.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="4" x="1271.0" y="592.3" width="12.0" height="80.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<line data-sequence-message="1" x1="95.0" y1="205.0" x2="1259.0" y2="205.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="677.0" y="193.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">open()</text>
+<path data-sequence-message="2" data-sequence-self-message="true" d="M 1271.0 257.0 H 1313.0 V 281.0 H 1271.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="1279.0" y="245.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue OPEN + Future A</text>
+<line data-sequence-message="3" x1="680.0" y1="309.0" x2="1263.0" y2="309.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="971.5" y="297.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">setLocation(location-02)</text>
+<path data-sequence-message="4" data-sequence-self-message="true" d="M 1275.0 361.0 H 1317.0 V 385.0 H 1275.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="1283.0" y="349.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue SET_LOCATION + Future B</text>
+<path data-sequence-message="5" data-sequence-self-message="true" d="M 1279.0 429.6 H 1321.0 V 453.6 H 1279.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1287.0" y="409.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker executes OPEN</text>
+<text x="1287.0" y="426.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">against CLOSED state</text>
+<path data-sequence-message="6" data-sequence-self-message="true" d="M 1283.0 481.6 H 1325.0 V 505.6 H 1283.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1291.0" y="469.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">state = OPEN</text>
+<line data-sequence-message="7" x1="1271.0" y1="533.6" x2="95.0" y2="533.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="683.0" y="521.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OpenResult.OPENED</text>
+<path data-sequence-message="8" data-sequence-self-message="true" d="M 1283.0 602.3 H 1325.0 V 626.3 H 1283.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1291.0" y="582.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker executes SET_LOCATION</text>
+<text x="1291.0" y="598.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">against OPEN state</text>
+<line data-sequence-message="9" x1="1271.0" y1="654.3" x2="680.0" y2="654.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="975.5" y="642.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">SetLocationResult.NODE_NOT_CLOSED</text>
+</svg>

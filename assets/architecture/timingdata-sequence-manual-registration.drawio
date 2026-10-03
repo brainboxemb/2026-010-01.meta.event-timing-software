@@ -1,0 +1,123 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="timingdata-sequence-manual-registration" name="Figure SDD01-TD04 — Manual registration">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="1010" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sequence-participant-client" value="Operator / client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="0.5" y="100.0" width="189.0" height="745.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-api" value="IF-03 / PresentationGateway" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="263.0" y="100.0" width="189.0" height="745.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-node" value="TimingNode" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="525.5" y="100.0" width="189.0" height="745.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-logbook" value="LogBook&lt;br&gt;committed TimingData" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="788.0" y="100.0" width="189.0" height="745.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-store" value="TimingDataStore&lt;br&gt;file persistence / recovery" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#f4cccc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1050.5" y="100.0" width="189.0" height="745.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-0" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="sequence-participant-api">
+          <mxGeometry x="88.5" y="95.0" width="12.0" height="625.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-1" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="88.5" y="147.0" width="12.0" height="521.3" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-2" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="92.5" y="284.3" width="12.0" height="392.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-3" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-logbook">
+          <mxGeometry x="88.5" y="336.3" width="12.0" height="72.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-4" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#f4cccc;strokeColor=#b85450;" vertex="1" parent="sequence-participant-store">
+          <mxGeometry x="88.5" y="440.3" width="12.0" height="72.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-5" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-logbook">
+          <mxGeometry x="88.5" y="544.3" width="12.0" height="72.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-message-1" value="register(identity, time)" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="95.0" y="205.0" as="sourcePoint" />
+            <mxPoint x="351.5" y="205.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-2" value="register(identity, time)" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="363.5" y="257.0" as="sourcePoint" />
+            <mxPoint x="614.0" y="257.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-3" value="queue internal&lt;br&gt;work + Future" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="626.0" y="325.6" as="sourcePoint" />
+            <mxPoint x="626.0" y="349.6" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="668.0" y="325.6" />
+              <mxPoint x="668.0" y="349.6" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-4" value="worker validates against&lt;br&gt;current TimingNode state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="630.0" y="394.3" as="sourcePoint" />
+            <mxPoint x="630.0" y="418.3" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="672.0" y="394.3" />
+              <mxPoint x="672.0" y="418.3" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-5" value="nextSequence()" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="630.0" y="446.3" as="sourcePoint" />
+            <mxPoint x="876.5" y="446.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-6" value="sequence N" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="876.5" y="498.3" as="sourcePoint" />
+            <mxPoint x="630.0" y="498.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-7" value="append(record N)" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="630.0" y="550.3" as="sourcePoint" />
+            <mxPoint x="1139.0" y="550.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-8" value="durable" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1139.0" y="602.3" as="sourcePoint" />
+            <mxPoint x="630.0" y="602.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-9" value="add(record N)" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="630.0" y="654.3" as="sourcePoint" />
+            <mxPoint x="876.5" y="654.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-10" value="visible" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="876.5" y="706.3" as="sourcePoint" />
+            <mxPoint x="630.0" y="706.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-11" value="RegistrationResult.COMMITTED" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="618.0" y="758.3" as="sourcePoint" />
+            <mxPoint x="363.5" y="758.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-12" value="committed result" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="351.5" y="810.3" as="sourcePoint" />
+            <mxPoint x="95.0" y="810.3" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1110" viewBox="0 0 1360 1110">
+<defs>
+<marker id="seq-filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+<marker id="seq-open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L9,3 L0,6" fill="none" stroke="#5f6368" stroke-width="1.5"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD09 — Timeout and state re-query</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Timeout reports an unknown outcome to that caller. It is not OpenResult.REJECTED and does not imply rollback.</text>
+<rect x="0.0" y="100.0" width="190.0" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="95.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Operator / Engineering Client</text>
+<line data-sequence-lifeline="client" x1="95.0" y1="158.0" x2="95.0" y2="880.6" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="585.0" y="100.0" width="190.0" height="58.0" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="680.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Presentation / PresentationGateway</text>
+<line data-sequence-lifeline="api" x1="680.0" y1="158.0" x2="680.0" y2="880.6" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1170.0" y="100.0" width="190.0" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="1265.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<line data-sequence-lifeline="node" x1="1265.0" y1="158.0" x2="1265.0" y2="880.6" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect data-sequence-activation="0" x="674.0" y="195.0" width="12.0" height="228.0" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1.4"/>
+<rect data-sequence-activation="1" x="1259.0" y="247.0" width="12.0" height="124.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="2" x="1259.0" y="455.0" width="12.0" height="356.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="3" x="1263.0" y="507.0" width="12.0" height="304.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="4" x="674.0" y="559.0" width="12.0" height="296.6" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1.4"/>
+<rect data-sequence-activation="5" x="1267.0" y="611.0" width="12.0" height="192.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="6" x="1271.0" y="731.6" width="12.0" height="80.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<line data-sequence-message="1" x1="95.0" y1="205.0" x2="674.0" y2="205.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="384.5" y="193.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPEN</text>
+<line data-sequence-message="2" x1="686.0" y1="257.0" x2="1259.0" y2="257.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="972.5" y="245.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">open()</text>
+<path data-sequence-message="3" data-sequence-self-message="true" d="M 1271.0 309.0 H 1313.0 V 333.0 H 1271.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="1279.0" y="297.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue OPEN work + hidden Future</text>
+<line data-sequence-message="4" x1="1259.0" y1="361.0" x2="686.0" y2="361.0" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="972.5" y="349.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">TimingNodeTimeoutException</text>
+<line data-sequence-message="5" x1="674.0" y1="413.0" x2="95.0" y2="413.0" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="384.5" y="401.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">timeout — outcome unknown</text>
+<path data-sequence-message="6" data-sequence-self-message="true" d="M 1271.0 465.0 H 1313.0 V 489.0 H 1271.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1279.0" y="453.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker later executes OPEN</text>
+<path data-sequence-message="7" data-sequence-self-message="true" d="M 1275.0 517.0 H 1317.0 V 541.0 H 1275.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1283.0" y="505.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">state = OPEN; Future completes</text>
+<line data-sequence-message="8" x1="95.0" y1="569.0" x2="674.0" y2="569.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="384.5" y="557.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">STATUS</text>
+<line data-sequence-message="9" x1="686.0" y1="621.0" x2="1267.0" y2="621.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="976.5" y="609.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">status()</text>
+<path data-sequence-message="10" data-sequence-self-message="true" d="M 1279.0 673.0 H 1321.0 V 697.0 H 1279.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="1287.0" y="661.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue consistency-sensitive read</text>
+<path data-sequence-message="11" data-sequence-self-message="true" d="M 1283.0 741.6 H 1325.0 V 765.6 H 1283.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1291.0" y="721.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker captures</text>
+<text x="1291.0" y="738.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">current state = OPEN</text>
+<line data-sequence-message="12" x1="1271.0" y1="793.6" x2="686.0" y2="793.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="978.5" y="781.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">TimingNodeStatus.OPEN</text>
+<line data-sequence-message="13" x1="674.0" y1="845.6" x2="95.0" y2="845.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="384.5" y="833.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPEN</text>
+</svg>

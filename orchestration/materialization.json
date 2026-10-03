@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "tool_git_project_version": "0.2.4",
+  "moon_version": "moon 2.5.4",
+  "task": "software:docs.assemble",
+  "source_revision": "97d45a1936786bf8cf5bd556d8c3605f554179a0",
+  "status": "success",
+  "exit_code": 0,
+  "started_at": "2026-10-03T20:27:56Z",
+  "finished_at": "2026-10-03T20:27:59Z",
+  "duration_ms": 2116
+}

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1650" height="1100" viewBox="0 0 1650 1100">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">TimingNode data — active CAN display and smart network data service</text>
+<line x1="360.0" y1="174.6" x2="627.5" y2="245.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="619.5" y1="175.0" x2="717.5" y2="245.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="906.2" y1="175.0" x2="817.5" y2="245.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="648.8" y1="320.0" x2="325.5" y2="420.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="716.6" y1="320.0" x2="574.1" y2="420.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="787.5" y1="320.0" x2="834.0" y2="420.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="861.4" y1="320.0" x2="1105.3" y2="420.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="210.8" y1="510.0" x2="279.2" y2="610.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="462.6" y1="510.0" x2="357.4" y2="610.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1050.0" y1="499.6" x2="465.0" y2="622.5" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="810.0" y1="510.0" x2="710.0" y2="610.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="465.0" y1="655.0" x2="515.0" y2="655.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="330.0" y1="497.9" x2="865.0" y2="615.5" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="636.7" y1="510.0" x2="918.3" y2="610.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="900.0" y1="510.0" x2="1000.0" y2="610.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="1174.7" y1="510.0" x2="1085.3" y2="610.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="665.0" y1="700.0" x2="665.0" y2="800.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="665.0" y1="900.0" x2="665.0" y2="975.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="330.0" y1="487.8" x2="1265.0" y2="629.9" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="660.0" y1="496.0" x2="1265.0" y2="620.9" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="991.2" y1="510.0" x2="1293.8" y2="610.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="465.0" y1="655.0" x2="1265.0" y2="655.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1430.0" y1="700.0" x2="1430.0" y2="800.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1433.5" y1="965.0" x2="1431.5" y2="900.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1431.5" y1="900.0" x2="1433.5" y2="965.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="40" y="90" width="320" height="85" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="200.0" y="123.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Upstream system</text>
+<text x="200.0" y="142.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">race data + stage start times</text>
+<rect x="410" y="90" width="300" height="85" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="560.0" y="123.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">CAN keypad</text>
+<text x="560.0" y="142.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">add / remove team to prepare</text>
+<rect x="760" y="90" width="400" height="85" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="960.0" y="123.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Registration candidates</text>
+<text x="960.0" y="142.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RFID • start • manual • penalty • open</text>
+<rect x="520" y="245" width="500" height="75" rx="8" ry="8" fill="#d0e0e3" stroke="#6c8ebf" stroke-width="2"/>
+<text x="770.0" y="282.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode serialized ingress</text>
+<rect x="30" y="420" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="180.0" y="456.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RaceData</text>
+<text x="180.0" y="475.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">participant/team/tag reference data</text>
+<rect x="360" y="420" width="300" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="510.0" y="456.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">StageStartTimes</text>
+<text x="510.0" y="475.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">stage start-time reference</text>
+<rect x="690" y="420" width="330" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="855.0" y="456.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">NextUpTeams</text>
+<text x="855.0" y="475.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">teams expected next + traceable history</text>
+<rect x="1050" y="420" width="330" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1215.0" y="456.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">LogBook</text>
+<text x="1215.0" y="475.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">registrations + TimingNodeId ordering</text>
+<rect x="155" y="610" width="310" height="90" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="310.0" y="646.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">StageTiming</text>
+<text x="310.0" y="665.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">elapsed time + local ranking</text>
+<rect x="515" y="610" width="300" height="90" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="665.0" y="646.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">DisplayModel</text>
+<text x="665.0" y="665.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">passive DisplayRev1Can model</text>
+<rect x="865" y="610" width="360" height="90" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1045.0" y="646.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Simple file backup / restore</text>
+<text x="1045.0" y="665.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">TimingNode state + sequence recovery</text>
+<rect x="1265" y="610" width="330" height="90" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="1430.0" y="646.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">Published timing/status/reference data</text>
+<text x="1430.0" y="665.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">current snapshot + updates</text>
+<rect x="480" y="800" width="370" height="100" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="665.0" y="841.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">CanNetworkController</text>
+<text x="665.0" y="860.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">CAN discovery • device state • communication</text>
+<rect x="1240" y="800" width="380" height="100" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1430.0" y="841.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">NetworkDeviceService</text>
+<text x="1430.0" y="860.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">bidirectional network-device boundary</text>
+<rect x="510" y="975" width="310" height="80" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="665.0" y="1006.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">DisplayRev1Can</text>
+<text x="665.0" y="1025.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">passive CAN display</text>
+<rect x="1260" y="965" width="350" height="95" rx="8" ry="8" fill="#eeeeee" stroke="#777777" stroke-width="2"/>
+<text x="1435.0" y="1003.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">DisplayRev2Wifi</text>
+<text x="1435.0" y="1022.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">smart client • owns render + sync</text>
+</svg>

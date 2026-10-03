@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TimingData Interchange Interface Design Description (IDD) &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Timing Application Verification Test Specification (VTS)" href="61-01-VTS-timing-application-verification-test-specification.html" />
+    <link rel="prev" title="TimingData Interchange Interface Specification (ISD)" href="32-05-ISD-timingdata-interchange.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="timingdata-interchange-interface-design-description-idd">
+<h1>TimingData Interchange Interface Design Description (IDD)<a class="headerlink" href="#timingdata-interchange-interface-design-description-idd" title="Link to this heading">¶</a></h1>
+<p>Status: draft / development-v1 reference representation</p>
+<p>System interface: <strong>IF-05 — TimingData Interchange</strong></p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This Interface Design Description defines the current <strong>default/reference
+development-v1 representation</strong> of IF-05 TimingData.</p>
+<p>The ISD owns the normative TimingData semantics and requirements. This IDD
+describes how that contract is represented as compact JSON records in an
+append-only JSON Lines file.</p>
+<p>This document deliberately does not define Java classes, factories, providers,
+threads, queues or storage implementation classes.</p>
+</section>
+<section id="terms-and-abbreviations">
+<h2>Terms and abbreviations<a class="headerlink" href="#terms-and-abbreviations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>IDD</strong> — Interface Design Description</p></li>
+<li><p><strong>ISD</strong> — Interface Specification Document</p></li>
+<li><p><strong>IF</strong> — system interface</p></li>
+<li><p><strong>JSONL</strong> — JSON Lines</p></li>
+<li><p><strong>TimingData</strong> — committed interchange record model</p></li>
+</ul>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>This IDD implements the default/reference representation of
+<code class="docutils literal notranslate"><span class="pre">32-05-ISD-timingdata-interchange.md</span></code>. The ISD remains the semantic IF-05 contract;
+this document defines its current JSON/JSON Lines representation. Software-item design,
+reference codecs/stores and compatible consumers use this design without redefining the
+IF-05 semantics.</p>
+</section>
+<section id="design-overview">
+<h2>Design overview<a class="headerlink" href="#design-overview" title="Link to this heading">¶</a></h2>
+<p>The reference design uses:</p>
+<ul class="simple">
+<li><p>one compact JSON object per TimingData record;</p></li>
+<li><p>one complete JSON object per JSON Lines record;</p></li>
+<li><p>one Node ID source stream per file;</p></li>
+<li><p>monotonically increasing <code class="docutils literal notranslate"><span class="pre">seqNr</span></code>;</p></li>
+<li><p>explicit record type in <code class="docutils literal notranslate"><span class="pre">recType</span></code>;</p></li>
+<li><p>compact semantic codes in <code class="docutils literal notranslate"><span class="pre">code</span></code>;</p></li>
+<li><p>absolute UTC timestamp text;</p></li>
+<li><p>per-record integer representation version <code class="docutils literal notranslate"><span class="pre">v</span></code>.</p></li>
+</ul>
+<p><a id="fig-if05-01"></a>
+<img alt="TimingData v1 interchange model" src="../_images/timingdata-interchange-model.svg" /></p>
+<p><em>Figure IF05-01 — IF-05 semantics mapped to development-v1 JSON and JSON Lines.</em></p>
+</section>
+<section id="semantic-to-json-mapping">
+<h2>Semantic-to-JSON mapping<a class="headerlink" href="#semantic-to-json-mapping" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Semantic value</p></th>
+<th class="head"><p>Presence</p></th>
+<th class="head"><p>v1 JSON member</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>representation version</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Node ID</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nodeId</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>sequence number</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">seqNr</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Location ID</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">locId</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>record type</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">recType</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>time</p></td>
+<td><p>By record type</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Registration ID</p></td>
+<td><p>By record type</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">regId</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>code</p></td>
+<td><p>By record type</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">code</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>record creation time metadata</p></td>
+<td><p>Optional</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">recTime</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>The stable IF-05 record key <code class="docutils literal notranslate"><span class="pre">(Node</span> <span class="pre">ID,</span> <span class="pre">sequence</span> <span class="pre">number)</span></code> is represented by
+<code class="docutils literal notranslate"><span class="pre">(nodeId,</span> <span class="pre">seqNr)</span></code>.</p>
+</section>
+<section id="registration-record-mapping">
+<h2>Registration record mapping<a class="headerlink" href="#registration-record-mapping" title="Link to this heading">¶</a></h2>
+<section id="auto-reg">
+<h3>AUTO_REG<a class="headerlink" href="#auto-reg" title="Link to this heading">¶</a></h3>
+<p>Automatic registration add:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>recType = AUTO_REG
+code    = [ADD]
+</pre></div>
+</div>
+<p>The record type already carries the automatic-registration meaning, so <code class="docutils literal notranslate"><span class="pre">AUTO</span></code>
+is not repeated in <code class="docutils literal notranslate"><span class="pre">code</span></code>.</p>
+<p>Reserved future revoke mapping:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>recType = AUTO_REG
+code    = [REV]
+same regId
+same time
+</pre></div>
+</div>
+</section>
+<section id="man-reg">
+<h3>MAN_REG<a class="headerlink" href="#man-reg" title="Link to this heading">¶</a></h3>
+<p>Manual registration using system-assigned time:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>recType = MAN_REG
+code    = [ADD, AUTO]
+</pre></div>
+</div>
+<p>Manual registration using operator-entered time:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>recType = MAN_REG
+code    = [ADD, MAN]
+</pre></div>
+</div>
+<p>Reserved future revoke mappings:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[ADD, AUTO] -&gt; [REV, AUTO]
+[ADD, MAN]  -&gt; [REV, MAN]
+</pre></div>
+</div>
+<p>Canonical writer output places the action (<code class="docutils literal notranslate"><span class="pre">ADD</span></code> or future <code class="docutils literal notranslate"><span class="pre">REV</span></code>) first.
+Array order is not semantic to a reader; the valid code combination is.
+Duplicate, contradictory or unknown codes for a known record type are invalid.</p>
+<p>A future revoke record repeats the original <code class="docutils literal notranslate"><span class="pre">regId</span></code> and <code class="docutils literal notranslate"><span class="pre">time</span></code>, receives a
+new <code class="docutils literal notranslate"><span class="pre">seqNr</span></code> and <code class="docutils literal notranslate"><span class="pre">recTime</span></code>, and never rewrites the original record.</p>
+</section>
+</section>
+<section id="development-v1-record-matrix">
+<h2>Development-v1 record matrix<a class="headerlink" href="#development-v1-record-matrix" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Record type</p></th>
+<th class="head"><p>Current add code</p></th>
+<th class="head"><p>Required registration data</p></th>
+<th class="head"><p>Reserved future revoke code</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[&quot;ADD&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">regId</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[&quot;REV&quot;]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[&quot;ADD&quot;,&quot;AUTO&quot;]</span></code> or <code class="docutils literal notranslate"><span class="pre">[&quot;ADD&quot;,&quot;MAN&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">regId</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[&quot;REV&quot;,&quot;AUTO&quot;]</span></code> or <code class="docutils literal notranslate"><span class="pre">[&quot;REV&quot;,&quot;MAN&quot;]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="development-v1-json-contract">
+<h2>Development-v1 JSON contract<a class="headerlink" href="#development-v1-json-contract" title="Link to this heading">¶</a></h2>
+<p>Known members use the following JSON types and validation rules.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>JSON type</p></th>
+<th class="head"><p>Presence</p></th>
+<th class="head"><p>v1 design rule</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Always</p></td>
+<td><p>exactly <code class="docutils literal notranslate"><span class="pre">1</span></code> for the current development format</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nodeId</span></code></p></td>
+<td><p>string</p></td>
+<td><p>Always</p></td>
+<td><p>non-empty Node ID</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">seqNr</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Always</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1..9007199254740991</span></code>; plain decimal; v1 reference-design limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">locId</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Always</p></td>
+<td><p>positive Location ID representation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">recType</span></code></p></td>
+<td><p>string</p></td>
+<td><p>Always</p></td>
+<td><p>identifies the concrete v1 record type</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+<td><p>string</p></td>
+<td><p>By record type</p></td>
+<td><p>required for <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> and <code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code>; canonical time text</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">regId</span></code></p></td>
+<td><p>string</p></td>
+<td><p>By record type</p></td>
+<td><p>required for <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> and <code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code>; non-empty Registration ID</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">code</span></code></p></td>
+<td><p>array of strings</p></td>
+<td><p>By record type</p></td>
+<td><p>required for <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> and <code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code>; labels/codes valid for the selected <code class="docutils literal notranslate"><span class="pre">recType</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">recTime</span></code></p></td>
+<td><p>string</p></td>
+<td><p>Optional</p></td>
+<td><p>canonical record-creation time metadata when emitted</p></td>
+</tr>
+</tbody>
+</table>
+<p>Canonical writer member order:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>v
+nodeId
+seqNr
+locId
+recType
+time
+regId
+code
+recTime   # when present
+</pre></div>
+</div>
+<p>Validation rules:</p>
+<ul class="simple">
+<li><p>every <code class="docutils literal notranslate"><span class="pre">Always</span></code> member is present and non-null;</p></li>
+<li><p>every <code class="docutils literal notranslate"><span class="pre">By</span> <span class="pre">record</span> <span class="pre">type</span></code> member required by the selected <code class="docutils literal notranslate"><span class="pre">recType</span></code> is present and non-null;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Optional</span></code> members such as <code class="docutils literal notranslate"><span class="pre">recTime</span></code> may be omitted;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nodeId</span></code> is not normalized, case-folded or derived by the reference reader/writer;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> currently accepts exactly <code class="docutils literal notranslate"><span class="pre">[&quot;ADD&quot;]</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code> currently accepts <code class="docutils literal notranslate"><span class="pre">ADD</span></code> plus exactly one of <code class="docutils literal notranslate"><span class="pre">AUTO</span></code> or <code class="docutils literal notranslate"><span class="pre">MAN</span></code>;</p></li>
+<li><p>readers may accept a valid <code class="docutils literal notranslate"><span class="pre">code</span></code> combination in another array order;</p></li>
+<li><p>canonical writer output always emits action first;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seqNr</span></code> remains authoritative source order; no chronological ordering is
+inferred from <code class="docutils literal notranslate"><span class="pre">time</span></code> or <code class="docutils literal notranslate"><span class="pre">recTime</span></code>.</p></li>
+</ul>
+</section>
+<section id="timestamp-encoding">
+<h2>Timestamp encoding<a class="headerlink" href="#timestamp-encoding" title="Link to this heading">¶</a></h2>
+<p>Canonical development-v1 timestamp text for registration <code class="docutils literal notranslate"><span class="pre">time</span></code>, and for
+optional <code class="docutils literal notranslate"><span class="pre">recTime</span></code> when present, is:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>YYYY-MM-DDTHH:mm:ss[.fraction]Z
+</pre></div>
+</div>
+<p>Rules:</p>
+<ul class="simple">
+<li><p>literal <code class="docutils literal notranslate"><span class="pre">Z</span></code> represents UTC;</p></li>
+<li><p>fractional seconds are optional and contain <strong>1 to 9 digits</strong> when present;</p></li>
+<li><p>canonical writer output omits the fractional part for a whole second;</p></li>
+<li><p>unnecessary trailing fractional zeroes are removed;</p></li>
+<li><p>offsets such as <code class="docutils literal notranslate"><span class="pre">+02:00</span></code>, implicit local time and timezone names are not
+canonical v1 values.</p></li>
+</ul>
+<p>Examples:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-10-01T12:00:00Z
+2026-10-02T10:57:43.444Z
+2026-10-02T10:57:43.444123789Z
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">recTime</span></code>, when present, is optional record-creation metadata. It is not a
+durable-commit marker and is not part of the common IF-05 record envelope.</p>
+</section>
+<section id="json-lines-file-design">
+<h2>JSON Lines file design<a class="headerlink" href="#json-lines-file-design" title="Link to this heading">¶</a></h2>
+<p>The default/reference development-v1 file uses UTF-8 JSON Lines (<code class="docutils literal notranslate"><span class="pre">.jsonl</span></code>) and
+contains records from exactly one <code class="docutils literal notranslate"><span class="pre">nodeId</span></code> source stream.</p>
+<p>Rules:</p>
+<ul class="simple">
+<li><p>encoding is UTF-8 without BOM;</p></li>
+<li><p>there is no file header, footer or comment syntax;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">v</span></code> is carried by every record;</p></li>
+<li><p>one complete TimingData JSON object is written per physical line;</p></li>
+<li><p>all records in one file use the same <code class="docutils literal notranslate"><span class="pre">nodeId</span></code>;</p></li>
+<li><p>canonical writer line ending is <strong>LF</strong> (<code class="docutils literal notranslate"><span class="pre">0x0A</span></code>);</p></li>
+<li><p>a reader may accept <strong>CRLF</strong> (<code class="docutils literal notranslate"><span class="pre">0x0D</span> <span class="pre">0x0A</span></code>);</p></li>
+<li><p>a line terminator completes the record boundary;</p></li>
+<li><p>valid JSON bytes at EOF without LF/CRLF are an incomplete trailing record and
+are not committed;</p></li>
+<li><p>blank lines are invalid input;</p></li>
+<li><p>every complete line is independently JSON-decodable;</p></li>
+<li><p>canonical writer output is compact single-line JSON;</p></li>
+<li><p>insignificant JSON whitespace and member ordering are not semantic to readers;</p></li>
+<li><p>committed records are append-only and are not rewritten;</p></li>
+<li><p>valid complete records before an incomplete trailing line remain readable;</p></li>
+<li><p>recovery/import validates Node ID and sequence ordering and reports gaps,
+duplicates or regressions explicitly.</p></li>
+</ul>
+<p>The exact filename, directory mapping, rotation/retention policy and filesystem
+durability primitive are outside IF-05. A different TimingData representation
+does not have to use <code class="docutils literal notranslate"><span class="pre">.jsonl</span></code>.</p>
+</section>
+<section id="reference-json-examples">
+<h2>Reference JSON examples<a class="headerlink" href="#reference-json-examples" title="Link to this heading">¶</a></h2>
+<p>Automatic registration:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"nodeId"</span><span class="p">:</span><span class="s2">"Test"</span><span class="p">,</span><span class="nt">"seqNr"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"locId"</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="nt">"recType"</span><span class="p">:</span><span class="s2">"AUTO_REG"</span><span class="p">,</span><span class="nt">"time"</span><span class="p">:</span><span class="s2">"2026-10-01T12:00:00Z"</span><span class="p">,</span><span class="nt">"regId"</span><span class="p">:</span><span class="s2">"N0001"</span><span class="p">,</span><span class="nt">"code"</span><span class="p">:[</span><span class="s2">"ADD"</span><span class="p">],</span><span class="nt">"recTime"</span><span class="p">:</span><span class="s2">"2026-10-02T10:57:43.444Z"</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Manual registration using system-assigned time:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"nodeId"</span><span class="p">:</span><span class="s2">"Test"</span><span class="p">,</span><span class="nt">"seqNr"</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">"locId"</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="nt">"recType"</span><span class="p">:</span><span class="s2">"MAN_REG"</span><span class="p">,</span><span class="nt">"time"</span><span class="p">:</span><span class="s2">"2026-10-01T12:00:05Z"</span><span class="p">,</span><span class="nt">"regId"</span><span class="p">:</span><span class="s2">"N0002"</span><span class="p">,</span><span class="nt">"code"</span><span class="p">:[</span><span class="s2">"ADD"</span><span class="p">,</span><span class="s2">"AUTO"</span><span class="p">],</span><span class="nt">"recTime"</span><span class="p">:</span><span class="s2">"2026-10-02T10:57:45.1Z"</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Manual registration using operator-entered time:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"nodeId"</span><span class="p">:</span><span class="s2">"Test"</span><span class="p">,</span><span class="nt">"seqNr"</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">"locId"</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="nt">"recType"</span><span class="p">:</span><span class="s2">"MAN_REG"</span><span class="p">,</span><span class="nt">"time"</span><span class="p">:</span><span class="s2">"2026-10-01T11:59:58.25Z"</span><span class="p">,</span><span class="nt">"regId"</span><span class="p">:</span><span class="s2">"N0003"</span><span class="p">,</span><span class="nt">"code"</span><span class="p">:[</span><span class="s2">"ADD"</span><span class="p">,</span><span class="s2">"MAN"</span><span class="p">],</span><span class="nt">"recTime"</span><span class="p">:</span><span class="s2">"2026-10-02T10:57:46Z"</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Reserved future revoke examples:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"nodeId"</span><span class="p">:</span><span class="s2">"Test"</span><span class="p">,</span><span class="nt">"seqNr"</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="nt">"locId"</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="nt">"recType"</span><span class="p">:</span><span class="s2">"AUTO_REG"</span><span class="p">,</span><span class="nt">"time"</span><span class="p">:</span><span class="s2">"2026-10-01T12:00:00Z"</span><span class="p">,</span><span class="nt">"regId"</span><span class="p">:</span><span class="s2">"N0001"</span><span class="p">,</span><span class="nt">"code"</span><span class="p">:[</span><span class="s2">"REV"</span><span class="p">],</span><span class="nt">"recTime"</span><span class="p">:</span><span class="s2">"2026-10-02T11:05:12.123Z"</span><span class="p">}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"nodeId"</span><span class="p">:</span><span class="s2">"Test"</span><span class="p">,</span><span class="nt">"seqNr"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">"locId"</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="nt">"recType"</span><span class="p">:</span><span class="s2">"MAN_REG"</span><span class="p">,</span><span class="nt">"time"</span><span class="p">:</span><span class="s2">"2026-10-01T11:59:58.25Z"</span><span class="p">,</span><span class="nt">"regId"</span><span class="p">:</span><span class="s2">"N0003"</span><span class="p">,</span><span class="nt">"code"</span><span class="p">:[</span><span class="s2">"REV"</span><span class="p">,</span><span class="s2">"MAN"</span><span class="p">],</span><span class="nt">"recTime"</span><span class="p">:</span><span class="s2">"2026-10-02T11:05:14Z"</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The Registration IDs above are synthetic test/example data. Four numeric digits
+are used so examples remain convenient for later test sets containing up to
+2000 teams; IF-05 does not impose that display convention on Registration ID.</p>
+</section>
+<section id="compatibility-and-versioning-design">
+<h2>Compatibility and versioning design<a class="headerlink" href="#compatibility-and-versioning-design" title="Link to this heading">¶</a></h2>
+<p>Development v1 includes explicit per-record representation versioning through
+an integer <code class="docutils literal notranslate"><span class="pre">v</span></code> member and uses the odd/even maturity convention below. Both are
+design choices of this reference representation, not additional IF-05
+requirements.</p>
+<p>The default/reference representation uses integer format versions:</p>
+<ul class="simple">
+<li><p><strong>odd</strong> values are development/unstable formats;</p></li>
+<li><p><strong>even</strong> values are released/stable formats;</p></li>
+<li><p>current working format: <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">1</span></code>;</p></li>
+<li><p>first frozen/released contract: expected <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">2</span></code>;</p></li>
+<li><p>later incompatible development work starts at <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">3</span></code>, then may freeze as
+<code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">4</span></code>;</p></li>
+<li><p>decimal/minor versions such as <code class="docutils literal notranslate"><span class="pre">1.1</span></code> are not used.</p></li>
+</ul>
+<p>Within one supported baseline:</p>
+<ul class="simple">
+<li><p>a canonical writer emits only members defined by the version it implements;</p></li>
+<li><p>a reader tolerates additional JSON members when all required known fields
+remain valid;</p></li>
+<li><p>an unknown <code class="docutils literal notranslate"><span class="pre">recType</span></code> in an otherwise supported version is retained/reported
+as unsupported rather than reinterpreted as a known type;</p></li>
+<li><p>malformed JSON, missing required fields, invalid field types/values, invalid
+<code class="docutils literal notranslate"><span class="pre">code</span></code> combinations and sequence violations are explicit invalid-record
+conditions;</p></li>
+<li><p>an unsupported integer <code class="docutils literal notranslate"><span class="pre">v</span></code> is an explicit semantic-decoding compatibility
+failure;</p></li>
+<li><p>raw unsupported lines may be retained/exported but are not interpreted using
+another version’s semantics;</p></li>
+<li><p>compatible additions do not silently change existing member/code meaning.</p></li>
+</ul>
+<p>A stable even-numbered format is not silently redefined. Breaking work starts in
+the next odd-numbered development format.</p>
+</section>
+<section id="isd-requirement-realization">
+<h2>ISD requirement realization<a class="headerlink" href="#isd-requirement-realization" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ISD requirement</p></th>
+<th class="head"><p>development-v1 design realization</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>IF05-REQ-001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nodeId</span></code>, <code class="docutils literal notranslate"><span class="pre">seqNr</span></code>, <code class="docutils literal notranslate"><span class="pre">locId</span></code> and <code class="docutils literal notranslate"><span class="pre">recType</span></code> form the common JSON envelope</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF05-REQ-002</p></td>
+<td><p>Node ID + <code class="docutils literal notranslate"><span class="pre">seqNr</span></code> identify a record when streams are combined</p></td>
+</tr>
+<tr class="row-even"><td><p>IF05-REQ-003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">seqNr</span></code> starts at 1 and advances contiguously per Node ID source stream</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF05-REQ-004</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">recType</span></code> distinguishes <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> and <code class="docutils literal notranslate"><span class="pre">MAN_REG</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>IF05-REQ-005</p></td>
+<td><p>registration records carry <code class="docutils literal notranslate"><span class="pre">regId</span></code> and <code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>IF05-REQ-006</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">code[]</span></code> represents ADD/REV while revoke repeats <code class="docutils literal notranslate"><span class="pre">regId</span></code> + <code class="docutils literal notranslate"><span class="pre">time</span></code> in a new record</p></td>
+</tr>
+<tr class="row-even"><td><p>IF05-REQ-007</p></td>
+<td><p>JSON Lines persistence is append-only; an existing committed record is not rewritten</p></td>
+</tr>
+</tbody>
+</table>
+<p>JSON Lines completion rules, unknown-member handling, integer <code class="docutils literal notranslate"><span class="pre">v</span></code>, the v1
+<code class="docutils literal notranslate"><span class="pre">seqNr</span></code> limit, odd/even version-number convention and optional <code class="docutils literal notranslate"><span class="pre">recTime</span></code>
+are concrete reference-design choices. They are intentionally not additional
+IF-05 requirements.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="30-UC-system-use-cases.html">System use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-04-ISD-web-interface.html">Web Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TimingData Interchange Interface Design Description (IDD)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terms-and-abbreviations">Terms and abbreviations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-overview">Design overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#semantic-to-json-mapping">Semantic-to-JSON mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#registration-record-mapping">Registration record mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-v1-record-matrix">Development-v1 record matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-v1-json-contract">Development-v1 JSON contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timestamp-encoding">Timestamp encoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#json-lines-file-design">JSON Lines file design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-json-examples">Reference JSON examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility-and-versioning-design">Compatibility and versioning design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#isd-requirement-realization">ISD requirement realization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html">Timing Application Verification Test Specification (VTS)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="32-05-ISD-timingdata-interchange.html" title="previous chapter">TimingData Interchange Interface Specification (ISD)</a></li>
+      <li>Next: <a href="61-01-VTS-timing-application-verification-test-specification.html" title="next chapter">Timing Application Verification Test Specification (VTS)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/33-05-IDD-timingdata-interchange.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

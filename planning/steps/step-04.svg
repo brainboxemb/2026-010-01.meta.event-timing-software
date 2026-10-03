@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 595.28 841.89">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="16.00" y="16.00" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="28.00" y="32.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14.00" font-weight="bold" fill="#2f3337">4</text>
+<text x="50.00" y="32.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="16.00" font-weight="bold" fill="#2f3337">First registration-system slice</text>
+<text x="16.00" y="52.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">ACTIVE | TOTAL: orig ~6d · forecast ~5.6d | PROGRESS: spent ~5.1d · rem ~0.5d | forecast end 12 Oct 2026</text>
+<text x="16.00" y="68.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">GOAL</text>
+<line x1="49.11" y1="65.75" x2="579.28" y2="65.75" stroke="#d9dde1" stroke-width="1"/>
+<text x="16.00" y="85.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Operate one TimingNode through a controlled registration flow using the public application boundary.</text>
+<text x="16.00" y="102.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">RESULT</text>
+<line x1="58.00" y1="99.75" x2="293.64" y2="99.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="115.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="119.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">One TimingNode owns a durable, ordered registration stream.</text>
+<circle cx="19.00" cy="128.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="132.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">The same registration behaviour is available through the</text>
+<text x="26.00" y="142.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">public API and Engineering Client.</text>
+<circle cx="19.00" cy="151.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="155.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Restart rebuilds local registration history without inventing</text>
+<text x="26.00" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">new records.</text>
+<text x="301.64" y="102.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">END DEMO</text>
+<line x1="354.75" y1="99.75" x2="579.28" y2="99.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="304.64" cy="115.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="119.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Configure a location, open the TimingNode and submit one</text>
+<text x="311.64" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">accepted registration.</text>
+<circle cx="304.64" cy="138.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="142.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Observe the committed record in history and as a live update.</text>
+<circle cx="304.64" cy="151.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="155.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Close, restart and confirm that the committed history is</text>
+<text x="311.64" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">recovered.</text>
+<text x="16.00" y="185.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION</text>
+<line x1="97.10" y1="182.75" x2="579.28" y2="182.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="194.75" width="54.35" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="43.17" y="205.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">03-DOM W-80</text>
+<rect x="76.35" y="194.75" width="50.50" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="101.60" y="205.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">30-UC R-70</text>
+<rect x="132.85" y="194.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="165.80" y="205.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">41-01-SSD R-55</text>
+<rect x="204.75" y="194.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="237.70" y="205.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">32-03-IDD R-70</text>
+<rect x="276.65" y="194.75" width="54.35" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="303.82" y="205.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">60-SVP W-60</text>
+<text x="16.00" y="228.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION / DECISIONS</text>
+<line x1="147.78" y1="225.75" x2="579.28" y2="225.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="238.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D01</text>
+<rect x="163.03" y="243.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="254.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="276.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering Client</text>
+<text x="24.00" y="288.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">architecture + UI baseline</text>
+<text x="24.00" y="302.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Timing-view layout, control...</text>
+<rect x="206.43" y="238.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D02</text>
+<text x="235.26" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="353.45" y="243.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="254.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="276.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Review first-registration</text>
+<text x="214.43" y="288.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">operational use cases</text>
+<text x="214.43" y="302.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">First-slice use cases fixed...</text>
+<rect x="396.85" y="238.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D02W</text>
+<text x="432.30" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D02</text>
+<rect x="543.88" y="243.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="254.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="276.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Translate private</text>
+<text x="404.85" y="288.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">compatibility behaviour</text>
+<text x="404.85" y="302.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Safe compatibility behaviour...</text>
+<rect x="16.00" y="320.25" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="335.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D03</text>
+<text x="44.84" y="335.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D02 D02W</text>
+<rect x="163.03" y="325.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="336.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="357.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Establish first TimingData +</text>
+<text x="24.00" y="369.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">public control contracts</text>
+<text x="24.00" y="384.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">TimingData and IF-03...</text>
+<text x="16.00" y="410.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">APPLICATION / PRODUCT</text>
+<line x1="126.45" y1="407.75" x2="579.28" y2="407.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="420.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A01</text>
+<text x="44.84" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after V01</text>
+<rect x="163.03" y="425.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="436.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="458.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">TimingNode location and</text>
+<text x="24.00" y="470.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">lifecycle</text>
+<text x="24.00" y="484.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Location and OPEN/CLOSED...</text>
+<rect x="206.43" y="420.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A02</text>
+<text x="235.26" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A01</text>
+<rect x="353.45" y="425.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="436.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="458.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Direct registration +</text>
+<text x="214.43" y="470.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">TimingData</text>
+<text x="214.43" y="484.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Accepted registration and...</text>
+<rect x="396.85" y="420.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A03</text>
+<text x="425.69" y="435.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 A02</text>
+<rect x="543.88" y="425.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="436.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="458.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering Client</text>
+<text x="404.85" y="470.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">first-slice control</text>
+<text x="404.85" y="484.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">IF-03/client location,...</text>
+<text x="16.00" y="511.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">VERIFICATION / TEST</text>
+<line x1="109.57" y1="508.25" x2="579.28" y2="508.25" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="521.25" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V01</text>
+<text x="44.45" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D03</text>
+<rect x="163.03" y="526.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="537.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="558.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define deterministic</text>
+<text x="24.00" y="570.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">first-slice examples</text>
+<text x="24.00" y="585.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Deterministic lifecycle and...</text>
+<rect x="206.43" y="521.25" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V02</text>
+<text x="234.88" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A02</text>
+<rect x="353.45" y="526.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="537.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="558.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">First-slice domain</text>
+<text x="214.43" y="570.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">verification</text>
+<text x="214.43" y="585.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Lifecycle, sequence and...</text>
+<rect x="396.85" y="521.25" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V03</text>
+<text x="425.30" y="536.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A03 V02</text>
+<rect x="543.88" y="526.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="537.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="558.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Automated first-registration</text>
+<text x="404.85" y="570.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">black-box verification</text>
+<text x="404.85" y="585.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">61-01-VTS specifies...</text>
+<rect x="16.00" y="602.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="617.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V04</text>
+<text x="44.45" y="617.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after V03 A03</text>
+<rect x="155.33" y="607.75" width="35.10" height="15.00" rx="7" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="172.88" y="618.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">ACTIVE</text>
+<text x="24.00" y="640.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering Client</text>
+<text x="24.00" y="652.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">running-system demo</text>
+<text x="24.00" y="666.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">61-01-VTS specifies manual...</text>
+<text x="16.00" y="693.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES</text>
+<line x1="110.00" y1="690.25" x2="579.28" y2="690.25" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="706.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="710.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-02 — Roadmap aligned with the accepted SSD/IF-05 scope without changing product requirements. VC-ST1-002 now also</text>
+<text x="26.00" y="720.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">retains second-process restart/recovery robustness evidence.</text>
+<circle cx="19.00" cy="729.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="733.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-02 — A03 and V03 completed; V04 Engineering Client running-system demo is active.</text>
+<circle cx="19.00" cy="742.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="746.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-01 — Step-4 verification ordered as A03 -&gt; black-box VC-ST1-002 -&gt; client demo.</text>
+<circle cx="19.00" cy="755.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="759.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-01 — D01 Timing UI baseline completed; A03 client/API integration is active.</text>
+<circle cx="19.00" cy="768.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="772.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-09-30 — D02/D02W accepted in PR #214; D03 TimingData and public-control contract work started.</text>
+<circle cx="19.00" cy="781.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="785.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-09-30 — Step 4 narrowed to location, open/close, direct registration and observable TimingData.</text>
+<circle cx="19.00" cy="794.15" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="798.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-09-30 — Start times, next-up/display, antenna filtering, multi-node and inbound upstream simulation moved later.</text>
+</svg>
