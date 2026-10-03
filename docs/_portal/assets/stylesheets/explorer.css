@@ -139,7 +139,7 @@
   grid-template-columns: minmax(12.5rem, 0.6fr) minmax(0, 1.4fr) minmax(0, 1.4fr);
   gap: 1px;
   align-items: stretch;
-  height: calc(100vh - 7.8rem);
+  height: calc(100vh - 8.8rem);
   min-height: 30rem;
   overflow: hidden;
   border: 1px solid var(--md-default-fg-color--lightest);
@@ -149,7 +149,8 @@
 .eng-object-browser {
   height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   padding: 0.28rem;
@@ -262,7 +263,8 @@
 .eng-trace-layout > .eng-detail {
   height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   border: 0;
