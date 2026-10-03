@@ -6,10 +6,15 @@ Software item: **SI-01 — Timing Point Application**
 
 ## Purpose
 
-
 This SDD describes the **Java implementation** of the SI-01 design: Maven
 modules, packages, classes/interfaces, composition, queues/threads and provider
 loading.
+
+## Relationship to other documents
+
+This SDD refines the SI-01 SSD and SDD-01 into concrete Java structure. Applicable
+ISDs/IDDs remain the external contract; this document selects Java mechanisms that
+realise those decisions. The Java implementation and component tests are downstream.
 
 The SSD says what the architecture must do. SDD-01 describes the LogBook/data
 flow. IDDs such as IF-05 define external/file contracts. This document picks the
