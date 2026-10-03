@@ -376,7 +376,7 @@ jobs:
               "Normal operation",
               "System, backoffice and recovery",
               "Status",
-              "Step-4 first-registration operation",
+              "First registration operation",
           ):
               if section_label not in workspace:
                   raise SystemExit(
