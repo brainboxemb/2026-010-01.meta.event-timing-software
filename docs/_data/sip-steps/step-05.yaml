@@ -10,9 +10,8 @@ planning_changes:
       allocation and data-access choices are measurement-driven.
   - date: '2026-10-03'
     change: >-
-      Assigned TimingNode OPEN/CLOSE TimingData to Step 5. The Step-5 design
-      activity updates IF-05 semantics/reference mapping before implementation
-      and verification; the current Step-4 IF-05 baseline remains unchanged.
+      Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
+      before implementation and verification. Step-4 baseline is unchanged.
 
 activities:
   - id: D01
