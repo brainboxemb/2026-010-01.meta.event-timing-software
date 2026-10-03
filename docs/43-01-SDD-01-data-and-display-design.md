@@ -4,14 +4,8 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
+## Purpose
 
-## Document guide
-
-- **Role:** define focused SI-01 internal data/runtime design.
-- **Inputs:** SI-01 SSD and applicable interface contracts, especially IF-05.
-- **Owns:** LogBook/TimingData commit flow, persistence/recovery behaviour, query isolation and related internal data-flow design.
-- **Downstream:** Java component design and implementation.
-- **Key terms:** `SDD` — Software Design Description; `SSD` — Software Specification Document; `SI` — Software Item; `IF-05` — TimingData Interchange.
 
 This SDD explains **how the data flows inside SI-01**: how LogBook entries are
 recorded, when a TimingData record is committed, how restart/recovery works, and
