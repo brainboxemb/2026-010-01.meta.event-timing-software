@@ -248,13 +248,18 @@ an engineering tool.
 
 **Events** remains a raw/live IF-03 event inspection surface.
 
-**Logs** has at least two explicit sources:
+**Logs** has at least two explicit source tabs, in this order:
 
-- **Client** — the Development Client's own runtime log;
-- **SI-01 / Device** — records received from the connected `LoggingServer`.
+- **Device Log** — records received from the connected SI-01 `LoggingServer`;
+- **Client Log** — the Development Client's own runtime log.
+
+Each source has its own **current level** and **set level** controls. Device Log changes
+the temporary SI-01 runtime level through `LoggingServer`; Client Log changes only the
+Development Client's local runtime threshold. The two level states are independent.
 
 The sources remain distinguishable in the UI and in exported/copied text. Connecting
-SI-01 logging shall not be required to see or retain the client's own log.
+SI-01 logging shall not be required to see, retain or change the level of the client's
+own log.
 
 **Terminal** remains the Remote Shell client. Its connection is controlled from the
 target bar; opening the Terminal tab is not itself a connection side effect.
@@ -334,8 +339,10 @@ HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]
 
 The client log source shall identify the actual Development Client source context rather
 than use one generic client marker for every line. The Logs tab therefore does not mean
-only "device logging". Client logging remains available when SI-01 is offline, which is
-especially important when diagnosing why a connection could not be established.
+only "device logging". Client logging and its runtime level control remain available when
+SI-01 is offline, which is especially important when diagnosing why a connection could
+not be established. A runtime Client Log level change does not rewrite the configured
+startup level; restarting the Development Client restores the configured value.
 
 ## Historical Step-4 Timing UI baseline — first registration slice
 
