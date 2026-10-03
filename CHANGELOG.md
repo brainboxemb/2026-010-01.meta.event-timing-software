@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Split the Engineering Portal interaction into two explicit pages: keep the full clickable SI-01 architecture visible in the Engineering Explorer, and provide a separate Traceability Comparison workspace for fixed-left / related-right Incoming/Outgoing review.
+
 - Restore the Engineering Explorer's primary side-by-side traceability workflow: keep the selected engineering object on the left, open clicked Incoming/Outgoing/one-hop relations on the right, keep per-object source links, and retain the clickable architecture only as an additional selection aid.
 
 - Align Java naming with the software boundary: keep Event Timing as the family/shared namespace, rename SI-01-specific Maven artifacts to `timing-point-*`, and define the `tp-<owner>-<role>[-<identity>]` convention for project-owned Timing Point runtime threads while leaving JDK/third-party thread names unchanged.
