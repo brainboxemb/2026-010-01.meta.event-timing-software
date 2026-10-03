@@ -6,6 +6,15 @@ System interface: **IF-05 — TimingData Interchange**
 
 Implements: `32-05-ISD-timingdata-interchange.md`
 
+
+## Document guide
+
+- **Role:** define the default/reference concrete representation of **IF-05 — TimingData Interchange**.
+- **Inputs:** `32-05-ISD-timingdata-interchange.md`.
+- **Owns:** JSON/JSON Lines member names, types, encoding, file framing and representation-version rules.
+- **Downstream:** reference codec/store implementations and compatible TimingData consumers.
+- **Key terms:** `IDD` — Interface Design Description; `ISD` — Interface Specification Document; `IF` — system interface; `JSONL` — JSON Lines; `TimingData` — committed interchange record model.
+
 ## Purpose
 
 This Interface Design Description defines the current **default/reference
