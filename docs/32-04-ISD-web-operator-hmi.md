@@ -234,7 +234,7 @@ presentation design belong to its own specification/design documents.
 
 IF-04 is the direct browser/tablet HMI exposed by SI-01.
 
-## Deferred IF-04 design
+## Later IF-04 design work
 
 A later IF-04 IDD may define:
 
