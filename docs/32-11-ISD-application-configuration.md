@@ -4,6 +4,15 @@ Status: review candidate
 
 System interface: **IF-11 — Application Configuration**
 
+
+## Document guide
+
+- **Role:** define the semantic deployment/configuration contract of **IF-11 — Application Configuration**.
+- **Inputs:** SSSD interface allocation, applicable use cases and deployment constraints.
+- **Owns:** effective configuration structure, ownership, precedence and validation semantics; not Java classes, parser libraries or product-domain behaviour.
+- **Downstream:** SI-01 specification/design and conforming configuration loaders/providers.
+- **Key terms:** `IF` — system interface; `ISD` — Interface Specification Document; `SI` — Software Item; `ApplicationConfig` — effective resolved application configuration.
+
 ## Purpose
 
 This Interface Specification Document defines the deployment/configuration contract consumed by SI-01. It describes how a deployment identifies internal TimingSystems and their TimingNodes, I/O assets, presentation bindings, runtime settings and secret references before application composition starts.
