@@ -69,8 +69,8 @@
         escapeHtml(title) +
         "</h3>" +
         (incoming
-          ? "<p>The relation is declared by the listed object.</p>"
-          : "") +
+          ? "<p>Declared by the listed source object and directed to this object.</p>"
+          : "<p>Declared by this object and directed to the listed target object.</p>") +
         relations
           .map((relation) =>
             objectButton(relation[endpointKey], relation.type, incoming)
@@ -129,8 +129,8 @@
         escapeHtml(object.source_url) +
         '">Open source definition</a>' +
         "</div>" +
-        relationSection("References from this object", object.outgoing, "target", false) +
-        relationSection("Objects that reference this object", object.incoming, "source", true) +
+        relationSection("Outgoing relationships", object.outgoing, "target", false) +
+        relationSection("Incoming relationships", object.incoming, "source", true) +
         focusSection(id);
 
       if (updateUrl) {

@@ -182,9 +182,20 @@ def render_relation_table(
         lines.extend(
             [
                 (
-                    "These relations are declared by the listed source objects. "
-                    "For example, an incoming `derived_from` means the listed "
-                    "source object is derived from this object."
+                    "Incoming relations are declared by the listed source objects "
+                    "and point to this object. For example, an incoming "
+                    "`derived_from` means the listed source object is derived "
+                    "from this object."
+                ),
+                "",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                (
+                    "Outgoing relations are declared by this object and point to "
+                    "the listed target objects."
                 ),
                 "",
             ]
@@ -232,7 +243,7 @@ def render_object_page(obj: dict, view: dict) -> str:
 
     lines.extend(
         render_relation_table(
-            "References from this object",
+            "Outgoing relationships",
             obj["outgoing"],
             endpoint="target",
             objects=view["objects"],
@@ -240,7 +251,7 @@ def render_object_page(obj: dict, view: dict) -> str:
     )
     lines.extend(
         render_relation_table(
-            "Objects that reference this object",
+            "Incoming relationships",
             obj["incoming"],
             endpoint="source",
             objects=view["objects"],
