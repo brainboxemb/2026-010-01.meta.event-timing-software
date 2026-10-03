@@ -2,6 +2,15 @@
 
 Status: working draft / non-authoritative
 
+
+## Document guide
+
+- **Role:** define software-system requirements, software-item allocation and software-system architecture.
+- **Inputs:** domain baseline, system use cases and applicable registered external/parent-system inputs.
+- **Owns:** software-item responsibilities, system-owned interface allocation and cross-item architectural constraints.
+- **Downstream:** system-owned ISDs/IDDs and affected software-item specifications.
+- **Key terms:** `SSSD` — Software System Specification Document; `SI` — Software Item; `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description.
+
 This Software System Specification Document combines the current **software-system requirements baseline** with the **software-system architecture**. It defines the software items, their allocated responsibilities, system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
 
 It deliberately does **not** define the internal threading, messaging, persistence, package structure, device processing or implementation technology of the **Timing Point Application** (SI-01). Those concerns belong in the applicable software-item specification and, only where justified, a focused detailed-design document.
