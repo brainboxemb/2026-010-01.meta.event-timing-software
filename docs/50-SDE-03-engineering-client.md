@@ -170,20 +170,25 @@ control/reconnect rules in this document. The implemented Timing view now:
 - shows general **Last operation** feedback with the TimingNode controls;
 - shows the current `DIRECT_REGISTRATION_SIMULATION` capability state next to
   the auto-reg controls;
-- keeps cached values non-authoritative while disconnected/reconnecting;
+- keeps cached values non-authoritative while disconnected, syncing or stale;
 - buffers `STATUS_CHANGED` and `TIMING_DATA_COMMITTED` events received during
-  a rebuild, applies the HTTP status/LogBook baseline first, then applies the
-  buffered events in delivery order before transitioning to **LIVE**;
+  resynchronisation, applies the HTTP status/LogBook baseline first, then applies
+  the buffered events in delivery order before transitioning to **LIVE**;
 - automatically starts resynchronisation after an `OUTCOME_UNKNOWN` result.
 
 The three source YAML wireframes remain the Step-4 presentation/design baseline
 published through the engineering portal. Pixel-for-pixel reproduction is not a
 verification requirement; control availability, ownership, stale/live meaning
-and rebuild ordering are the relevant design contract.
+and resynchronisation ordering are the relevant design contract.
 
 The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
 It combines current authoritative node state, first-slice controls and committed
 LogBook data without making the client an owner of domain state.
+
+The user-facing **Sync view** action manually starts the same resynchronisation
+used after reconnect. It does **not** rebuild or modify SI-01 domain data. It
+reloads current status, capabilities and the bounded LogBook baseline into the
+client, reconciles buffered live events and only then marks the view **LIVE**.
 
 IF-03 already represents 1..N TimingNodes. The first Java runtime may still
 compose only one node, in which case selection is implicit. The client design
@@ -224,16 +229,16 @@ While OPEN:
 The client never supplies TimingNodeId, source sequence, active LocationId or
 `recordedAt` for dev auto-reg simulation.
 
-### RECONNECTING / stale state
+### SYNCING / stale state
 
 <a id="fig-sde03-04"></a>
-![Timing view — reconnecting and stale](../../../raw/prod/docs/assets/architecture/engineering-client-timing-reconnecting.svg)
-*Figure SDE03-04 — Cached Timing view while IF-03 state/LogBook gaps are being rebuilt after reconnect.*
+![Timing view — syncing and stale](../../../raw/prod/docs/assets/architecture/engineering-client-timing-reconnecting.svg)
+*Figure SDE03-04 — Cached Timing view while IF-03 state/LogBook gaps are being resynchronised after reconnect or **Sync view**.*
 
 When the IF-03 live connection is lost, cached information remains visible for
 diagnosis but is marked **STALE** and all state-changing controls are disabled.
 
-Reconnect handling follows D03:
+Reconnect and manual **Sync view** handling follow the same D03 resynchronisation sequence:
 
 1. connect the WebSocket and receive the complete status snapshot;
 2. begin buffering later live events;
@@ -249,7 +254,7 @@ A reconnect does not visually pretend that cached values are authoritative.
 
 | Client state | Set Location | Open | Close | Auto-reg |
 | --- | --- | --- | --- | --- |
-| disconnected / reconnecting / stale | disabled | disabled | disabled | disabled |
+| disconnected / syncing / stale | disabled | disabled | disabled | disabled |
 | LIVE + CLOSED + no LocationId | enabled | disabled | disabled | disabled |
 | LIVE + CLOSED + LocationId assigned | enabled | enabled | disabled | disabled |
 | LIVE + OPEN + simulation capability enabled | disabled | disabled | enabled | enabled |
@@ -326,7 +331,7 @@ the existing web application's current expectations for:
 - live event/update behaviour;
 - identifiers;
 - timing-data shape;
-- reconnect/rebuild behaviour.
+- reconnect/resynchronisation behaviour.
 
 The purpose is not to make the legacy web application authoritative. The purpose is to
 avoid gratuitous incompatibility where a clean public representation can be reused or
@@ -384,7 +389,7 @@ Candidate generated views are:
 1. Status / connection baseline;
 2. Timing / CLOSED without LocationId;
 3. Timing / OPEN with dev auto-reg and a bounded LogBook page;
-4. Timing / RECONNECTING with stale cached data;
+4. Timing / SYNCING with stale cached data;
 5. Logs/Terminal only where those screenshots materially improve user documentation.
 
 The user manual may reference these generated screenshots once this pipeline exists.
