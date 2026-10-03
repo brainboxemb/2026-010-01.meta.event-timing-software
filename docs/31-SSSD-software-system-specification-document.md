@@ -10,6 +10,15 @@ It deliberately does **not** define the internal threading, messaging, persisten
 
 Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
+## Terms and abbreviations
+
+- **SSSD** — Software System Specification Document
+- **SI** — Software Item
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+
+
 ## Relationship to other documents
 
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
