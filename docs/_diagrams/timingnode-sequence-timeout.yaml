@@ -9,7 +9,7 @@ diagram:
 
 participants:
   - {id: client, label: Operator / Engineering Client, kind: client}
-  - {id: api, label: Presentation / CommandHandler, kind: interface}
+  - {id: api, label: Presentation / PresentationGateway, kind: interface}
   - {id: node, label: TimingNode, kind: model}
 
 messages:

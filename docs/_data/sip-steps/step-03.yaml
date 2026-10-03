@@ -32,7 +32,7 @@ activities:
     kind: implementation
     state: done
     note: >-
-      CommandHandler is the current shared application-facing boundary and BuildIdentity
+      PresentationGateway is the current shared application-facing boundary and BuildIdentity
       remains build provenance rather than deployment configuration.
 
   - id: A02
@@ -119,7 +119,7 @@ activities:
     depends_on: [A04, A05, A06, A07]
     note: >-
       Local console, remote terminal, HTTP and WebSocket adapters reuse the shared
-      CommandHandler/status semantics and are covered by adapter-level tests.
+      PresentationGateway/status semantics and are covered by adapter-level tests.
 
   - id: V03
     lane: verification

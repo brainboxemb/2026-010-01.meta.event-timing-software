@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rename the Application-layer presentation entry point from `CommandHandler` to `PresentationGateway`; define gateway names by the adjacent side whose traffic they mediate, keeping `PresentationGateway` transport-independent and distinct from the I/O-owned `UpstreamGateway` transport/integration boundary.
+
 - Restore the Engineering Explorer's primary side-by-side traceability workflow: keep the selected engineering object on the left, open clicked Incoming/Outgoing/one-hop relations on the right, keep per-object source links, and retain the clickable architecture only as an additional selection aid.
 
 - Align Java naming with the software boundary: keep Event Timing as the family/shared namespace, rename SI-01-specific Maven artifacts to `timing-point-*`, and define the `tp-<owner>-<role>[-<identity>]` convention for project-owned Timing Point runtime threads while leaving JDK/third-party thread names unchanged.
