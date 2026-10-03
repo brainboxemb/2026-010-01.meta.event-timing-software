@@ -23,8 +23,6 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 `03-domain-baseline.md` supplies shared terminology/domain facts. It is supporting source knowledge rather than a substitute for a released requirement/interface baseline.
 
-The **SIP is not an input** to this specification: it chooses when accepted capability is implemented. The **SDE** enables the engineering environment but is not product authority. The **SVP is not an input** either: it defines how accepted requirements and interfaces are verified. Focused SDDs are downstream design refinements of this SSD.
-
 When documents are independently released, each released SSD shall identify the exact revision/version of its SSSD, applicable external inputs and ISD inputs. While this repository releases the local document set together, the repository release/tag/commit is the shared local baseline identifier.
 
 ## Document roles
@@ -194,7 +192,7 @@ The first-executable IF-03 service shall default to local/loopback-only access. 
 SI-01 shall implement IF-03 so compatible additions can be introduced without silently changing existing operation or value semantics; breaking interface semantics shall require a new major interface version or an explicitly documented compatible migration.
 ```
 
-#### Step-4 first-registration operation
+#### First registration operation
 
 ```{req} Operational location and lifecycle
 :id: SI01-REQ-040
@@ -304,91 +302,41 @@ sequence gap or sequence regression shall produce an explicit recovery failure
 for that TimingNode rather than being silently skipped or renumbered.
 ```
 
-### Step-4 lifecycle interpretation
+### Lifecycle interpretation
 
-The Step-4 first-registration slice extends the first executable with the first
-real TimingNode operational state while preserving the existing application
-lifecycle/status boundary.
-
-Therefore:
+The first registration baseline uses the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
-- `LocationId` assignment and OPEN/CLOSE are operational TimingNode state
-  transitions; they are not TimingData records in this Step-4 slice;
-- a restarted TimingNode begins `CLOSED` with no current operational location;
-- a `LocationId` can be assigned or changed while CLOSED;
-- OPEN requires a current valid location;
+- explicit LocationId assignment is allowed only while CLOSED;
+- normal OPEN carries the requested valid LocationId and applies that LocationId
+  together with the CLOSED-to-OPEN transition as one ordered operation;
+- a restarted TimingNode begins CLOSED with no current operational location;
 - the current location cannot change while OPEN;
 - an accepted semantic registration can commit only while OPEN;
-- the first persisted TimingData record may therefore be registration sequence 1,
-  provided a LocationId was assigned and the TimingNode was opened first;
 - committed registration history and live post-commit updates are observable
-  through IF-03;
-- physical RFID observation/filtering remains a later input slice.
-
-### Explicitly deferred requirements
-
-The following areas are intentionally not made concrete by this SSD slice:
-
-- RFID power/read/filter/decryption behaviour before the accepted-registration boundary;
-- TagId/TeamId/reference-data resolution and provider-specific identity mapping;
-- ready-team/start/penalty behaviour;
-- CAN/keypad/Display V1;
-- smart Display V2;
-- backup/export/retention policy and abrupt-power-loss guarantees beyond the local TimingData append/restart-recovery baseline;
-- backoffice semantic/protocol behaviour;
-- RabbitMQ-specific behaviour;
-- target-image/update/rollback requirements beyond what the later Pi deployment increment needs;
-- production authentication/authorisation and final security policy;
-- browser-specific CORS/origin policy for IF-03 clients; the direct browser-facing
-  operator interface is allocated separately as IF-04.
-
-These areas remain in the use-case/working-specification baseline until a later planned increment promotes their requirements.
+  through the applicable presentation interface;
+- physical RFID observation/filtering is outside the accepted-registration
+  application operation.
 
 ### Traceability view
 
-| Requirement | Upstream authority | Interface/design allocation | Planned verification |
-| --- | --- | --- | --- |
-| SI01-REQ-001/002 | UC-001; SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime | build/start/stop + ST-1 process control |
-| SI01-REQ-003 | UC-001/014; SSSD software-item topology | IF-11 + SI-01 runtime composition | `VC-ST1-001` status inspection |
-| SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary | V2/V3 + `VC-ST1-001` |
-| SI01-REQ-020/021/022 | UC-001/008/009; SSSD status/control allocation | Status service/model + IF-01/02/03 | V1/V2 + `VC-ST1-001` |
-| SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 WebSocket/event adapter | V2/V3 + `VC-ST1-001` |
-| SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary | architecture/component checks + `VC-ST1-001` |
-| SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
-| SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
-| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03/IF-04 control/status | V1/V2 + Step-4 ST-1 |
-| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + `VC-ST1-002` |
-| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + `VC-ST1-002` / `VC-ST1-003` |
-| SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary | codec/provider tests + persisted-file evidence |
-| SI01-REQ-046 | UC-003/012 | local TimingData commit ordering | persistence/registration component tests |
-| SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery | `VC-ST1-002` second-process run |
-| SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation | codec/persistence recovery tests |
-
-### First-executable interface decisions
-
-The following are fixed for the current baseline:
-
-- build/version identity and status semantics are owned by the IF-03 ISD;
-- the current HTTP/JSON + WebSocket resource paths, member names, event envelopes and HTTP error mapping are owned by `33-03-IDD-api-http-websocket.md`;
-- connecting/reconnecting IF-03 clients establish a complete current status snapshot before relying on later live changes;
-- first-executable status-change events carry complete current status rather than a patch/replay protocol;
-- authentication/authorisation is not yet defined for production use while default network binding remains loopback-only;
-- verification-case identifiers use `VC-<profile>-<number>` for the first baseline;
-- no separate remote-shell ISD is required yet because that adapter reuses shared application semantics and is not a stable software-to-software contract.
-
-### Remaining implementation/toolchain choices
-
-The following do **not** block this requirement baseline and belong in the implementation/toolchain increments:
-
-- concrete Java HTTP/WebSocket library;
-- concrete remote-shell implementation;
-- JSON/configuration/logging libraries;
-- Maven/JDK provisioning details;
-- concrete code/package classes implementing the shared status model;
-- exact mechanism used to cause the first deterministic status transition in `VC-ST1-001`.
-
-A chosen implementation technology must satisfy this SSD and IF-03 rather than redefining them.
+| Requirement | Upstream authority | Interface/design allocation |
+| --- | --- | --- |
+| SI01-REQ-001/002 | UC-001; SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime |
+| SI01-REQ-003 | UC-001/014; SSSD software-item topology | IF-11 + SI-01 runtime composition |
+| SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
+| SI01-REQ-020/021/022 | UC-001/008/009; SSSD status/control allocation | Status service/model + IF-01/02/03 |
+| SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 event adapter |
+| SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary |
+| SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
+| SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
+| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03/IF-04 control/status |
+| SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
+| SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
+| SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |
+| SI01-REQ-046 | UC-003/012 | local TimingData commit ordering |
+| SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
+| SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 
 ## Software-item architecture
 
@@ -1953,7 +1901,6 @@ Failures should stay visible and should not silently lose timing history. Retry
 counts, timeouts and the exact durability guarantee are detailed-design choices
 once we have real implementation/measurement evidence.
 
-Detailed verification strategy belongs in `60-SVP-software-verification-plan.md`.
 
 ### Detailed-design documents
 
@@ -1987,7 +1934,6 @@ Implementation questions go in the relevant SDD.
 
 Open architecture questions include:
 
-- production authentication/authorisation and final network exposure policy;
 - operational policy for material wall-clock corrections when it affects timing
   correctness or operator action;
 - final upstream/backoffice semantic responsibilities as IF-06 is promoted;
