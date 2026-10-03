@@ -6,6 +6,10 @@
   max-width: 104rem;
 }
 
+body.eng-workspace-page {
+  overflow-y: hidden;
+}
+
 .eng-workspace-nav {
   display: flex;
   flex-wrap: wrap;
@@ -359,6 +363,10 @@
 }
 
 @media screen and (max-width: 900px) {
+  body.eng-workspace-page {
+    overflow-y: auto;
+  }
+
   .eng-explorer-workspace,
   .eng-trace-layout {
     grid-template-columns: 1fr;
