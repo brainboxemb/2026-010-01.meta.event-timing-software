@@ -67,7 +67,7 @@ def _render_need(need: dict[str, Any]) -> str:
     type_name = html.escape(need.get("type_name") or need.get("type") or "")
     search = html.escape(f"{need['id']} {need.get('title') or ''}".lower())
     return (
-        '<li class="md-nav__item eng-tree-leaf" role="none">'
+        '<li class="eng-tree-leaf" role="none">'
         '<button class="eng-tree-item" type="button" role="treeitem" '
         f'data-workspace-root-id="{object_id}" '
         f'data-object-type="{type_name}" '
@@ -95,14 +95,14 @@ def _render_group(label: str, node: dict[str, Any], *, level: int) -> str:
             children.append(_render_need(value))
 
     return (
-        '<li class="md-nav__item eng-tree-group" role="none" '
+        '<li class="eng-tree-group" role="none" '
         f'data-eng-tree-group data-tree-level="{level}">'
         '<button class="eng-tree-group__toggle" type="button" '
         'role="treeitem" aria-expanded="false" data-eng-tree-toggle>'
         f'<span class="eng-tree-group__label">{html.escape(label)}</span>'
         '<span class="eng-tree-group__chevron" aria-hidden="true">›</span>'
         "</button>"
-        '<ul class="md-nav__list eng-tree-group__items" role="group">'
+        '<ul class="eng-tree-group__items" role="group">'
         + "".join(children)
         + "</ul></li>"
     )
@@ -143,8 +143,8 @@ def _render_tree(needs: dict[str, dict[str, Any]]) -> str:
         documents.append(_render_group(_document_label(docname), root, level=0))
 
     return (
-        '<nav class="md-nav eng-object-tree" aria-label="Engineering objects">'
-        '<ul class="md-nav__list eng-tree-root" role="tree" data-eng-object-tree>'
+        '<nav class="eng-object-tree" aria-label="Engineering objects">'
+        '<ul class="eng-tree-root" role="tree" data-eng-object-tree>'
         + "".join(documents)
         + "</ul></nav>"
     )
