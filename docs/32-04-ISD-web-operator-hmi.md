@@ -234,17 +234,9 @@ presentation design belong to its own specification/design documents.
 
 IF-04 is the direct browser/tablet HMI exposed by SI-01.
 
-## Later IF-04 design work
+## Open points
 
-A later IF-04 IDD may define:
-
-- exact browser URL/route structure;
-- HTTP/WebSocket or other browser transport realization;
-- page/widget layout;
-- responsive/tablet dimensions;
-- concrete status/result visual treatment;
-- local assets/caching strategy;
-- browser security/CORS/origin rules where applicable;
-- reconnect implementation details.
-
-Those choices shall preserve the interface semantics defined here.
+- define the exact result/feedback when OPEN is requested with a different LocationId
+  while the TimingNode is already OPEN;
+- define the concrete browser realization and interaction layout in an IF-04 IDD when
+  implementation approaches.
