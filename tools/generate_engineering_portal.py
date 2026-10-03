@@ -576,20 +576,6 @@ hide:
   </div>
 </div>
 
-## About this view
-
-Choose the root object from the ordered browser on the **left**. The browser
-follows the authored document/source order and is not grouped by object type.
-The selected object stays visible in the centre pane. Click an Incoming,
-Outgoing or one-hop relation to open the related engineering object on the
-**right** without replacing the selected root object.
-
-The filter controls narrow the browser without changing its source/document
-ordering. The URL preserves both the selected root object and compared object.
-
-Use the separate [Engineering Explorer](../explorer/) when the clickable
-architecture diagram should remain visible beside one selected object.
-
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """
 
