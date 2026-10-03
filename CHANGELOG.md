@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore the Engineering Explorer's primary side-by-side traceability workflow: keep the selected engineering object on the left, open clicked Incoming/Outgoing/one-hop relations on the right, keep per-object source links, and retain the clickable architecture only as an additional selection aid.
+
 - Align Java naming with the software boundary: keep Event Timing as the family/shared namespace, rename SI-01-specific Maven artifacts to `timing-point-*`, and define the `tp-<owner>-<role>[-<identity>]` convention for project-owned Timing Point runtime threads while leaving JDK/third-party thread names unchanged.
 
 - Refine TimingNode operation semantics around one serialized mutable-state ownership boundary: synchronous state-dependent commands wait for their processed domain result while Java Future mechanics stay internal; submission-only ingress remains explicit; timeout reports unknown outcome rather than rollback; consistency-sensitive reads use TimingNode-owned queries/snapshots; add concrete runtime sequence examples and restore SDD-01 to the Architecture Book.
