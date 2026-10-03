@@ -222,6 +222,7 @@ jobs:
             --assets docs/_portal/assets \
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
+            --source-root . \
             --tool-ref v0.9.1 \
             --tool-sha 7d13ae32c5ac3ac3fea0192559a034b9778a517d
 
@@ -317,6 +318,24 @@ jobs:
           if set(provenance["diagram_objects"]) != required_diagram_ids:
               raise SystemExit("portal clickable architecture identities do not match graph diagram references")
 
+          portal_view = json.loads(
+              (root / "docs/assets/engineering-graph.json").read_text(encoding="utf-8")
+          )
+          source_context = portal_view["objects"]["IF05-REQ-007"].get("source_context")
+          if not source_context:
+              raise SystemExit("portal view missing IF05-REQ-007 authored source context")
+          if source_context.get("path") != "docs/32-05-ISD-timingdata-interchange.md":
+              raise SystemExit("IF05-REQ-007 source context path mismatch")
+          source_lines = "\n".join(line["text"] for line in source_context["lines"])
+          if "Committed record immutability" not in source_lines:
+              raise SystemExit("IF05-REQ-007 source context lost authored requirement heading")
+
+          object_page = (
+              site / "objects" / "IF05-REQ-007" / "index.html"
+          ).read_text(encoding="utf-8")
+          if "open source + object side by side" not in object_page:
+              raise SystemExit("IF05-REQ-007 object page missing workspace action")
+
           explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
           for object_id in required_diagram_ids:
               if f'data-engineering-id="{object_id}"' not in explorer:
@@ -373,6 +392,24 @@ jobs:
             echo "No Chrome/Chromium executable available on runner"
             exit 1
           fi
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&context=source" \
+            > bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+
+          grep -q '<code>IF05-REQ-007</code>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'docs/32-05-ISD-timingdata-interchange.md' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Committed record immutability' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'A committed TimingData record shall not be modified or renumbered' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Incoming relationships' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'derived from this' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'aria-pressed="true">Source</button>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
@@ -457,6 +494,17 @@ jobs:
             --window-size=1600,1000 \
             --screenshot=bld/engineering-portal/explorer-TimingNode.png \
             "http://127.0.0.1:8765/explorer/?object=TimingNode"
+
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --window-size=1600,1000 \
+            --screenshot=bld/engineering-portal/workspace-IF05-REQ-007.png \
+            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&context=source"
 
       - name: Render generated Markdown for human review
         shell: bash
@@ -774,6 +822,7 @@ jobs:
           cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
           cp -a bld/engineering-portal/site "$staging/portal"
           cp bld/engineering-portal/explorer-TimingNode.png "$staging/evidence/portal/explorer-TimingNode.png"
+          cp bld/engineering-portal/workspace-IF05-REQ-007.png "$staging/evidence/portal/workspace-IF05-REQ-007.png"
           cp bld/engineering-portal/engineering-client-ui.png "$staging/evidence/portal/engineering-client-ui.png"
           cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
           cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"

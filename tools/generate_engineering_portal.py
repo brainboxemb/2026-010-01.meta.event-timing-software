@@ -52,7 +52,41 @@ def source_url(repository: str, revision: str, source: str) -> str:
     return f"https://github.com/{repository}/blob/{revision}/{source}"
 
 
-def make_view(graph: dict, repository: str) -> dict:
+def source_context(source_root: Path, source: str) -> dict | None:
+    match = SOURCE_RE.match(source)
+    if not match:
+        return None
+
+    relative = Path(match.group("path"))
+    root = source_root.resolve()
+    path = (root / relative).resolve()
+    if root != path and root not in path.parents:
+        raise PortalError(f"source path escapes repository root: {relative}")
+    if not path.is_file():
+        raise PortalError(f"engineering source file is missing: {relative}")
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    line = int(match.group("line"))
+    if line < 1 or line > len(lines):
+        raise PortalError(
+            f"engineering source line is outside file: {relative}:{line}"
+        )
+
+    start = max(1, line - 14)
+    end = min(len(lines), line + 26)
+    return {
+        "path": relative.as_posix(),
+        "line": line,
+        "start": start,
+        "end": end,
+        "lines": [
+            {"number": number, "text": lines[number - 1]}
+            for number in range(start, end + 1)
+        ],
+    }
+
+
+def make_view(graph: dict, repository: str, source_root: Path) -> dict:
     revision = graph["source_revision"]
     objects: dict[str, dict] = {}
 
@@ -72,6 +106,7 @@ def make_view(graph: dict, repository: str) -> dict:
             ),
             "source": item["source"],
             "source_url": source_url(repository, revision, item["source"]),
+            "source_context": source_context(source_root, item["source"]),
             "diagram_refs": item.get("diagram_refs") or [],
             "outgoing": [],
             "incoming": [],
@@ -222,11 +257,16 @@ def render_object_page(obj: dict, view: dict) -> str:
         f"# {obj['id']} — {obj['title']}",
         "",
         f"**Type:** {obj['type_label']}  ",
+        (
+            "**Workspace:** "
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=source">'
+            "open source + object side by side</a>  "
+        ),
         f"**Source definition:** [open authored source]({obj['source_url']})  ",
         (
             "**Architecture context:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
-            "open in explorer</a>"
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=architecture">'
+            "open architecture + object</a>"
         ),
         "",
         (
@@ -408,10 +448,20 @@ hide:
 
 <div class="eng-workspace" data-eng-explorer>
   <section class="eng-context">
-    <div class="eng-diagram">
-      {svg}
+    <div class="eng-context-toolbar" role="group" aria-label="Workspace context">
+      <button type="button" data-eng-context-mode="architecture">Architecture</button>
+      <button type="button" data-eng-context-mode="source">Source</button>
     </div>
-    <p>Click a diagram object or choose any graph object below.</p>
+    <div data-eng-context-panel="architecture">
+      <div class="eng-diagram">
+        {svg}
+      </div>
+      <p>Click a diagram object or choose any graph object below.</p>
+    </div>
+    <div class="eng-source-panel" data-eng-context-panel="source" hidden>
+      <div class="eng-source-header" data-eng-source-header></div>
+      <div class="eng-source-code" data-eng-source></div>
+    </div>
     <h2>Engineering objects</h2>
     <div class="eng-object-picker">{chips}</div>
   </section>
@@ -422,14 +472,15 @@ hide:
 
 ## About this view
 
-The generated SI-01 architecture stays visible while the selected engineering
-object and its traceability context are inspected. The diagram, detail panel and
-object pages are derived reader views pinned to one source revision; they do not
-own engineering meaning.
+The workspace keeps the selected engineering object and traceability context on
+the right while the left side can show either the generated SI-01 architecture
+or the exact authored Markdown context around that object's source location.
+Both views are pinned to the same source revision; neither owns engineering
+meaning.
 
-Use **Open details & relations** to stay inside the portal and inspect the object's
-full relation context. Use **Open source definition** to open the hand-authored
-Markdown definition at the exact pinned source line in GitHub.
+Use **Source** when reviewing an object against its authored definition without
+leaving the workspace. **Open source definition** still opens the hand-authored
+Markdown at the exact pinned source line in GitHub.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """
@@ -443,11 +494,12 @@ def write_portal(
     assets_dir: Path,
     repository: str,
     publication_branch: str,
+    source_root: Path,
     tool_ref: str,
     tool_sha: str,
 ) -> None:
     graph = load_graph(graph_path)
-    view = make_view(graph, repository)
+    view = make_view(graph, repository, source_root)
     svg, diagram_objects = prepare_inline_svg(
         architecture_path, view["objects"]
     )
@@ -535,6 +587,7 @@ def main() -> int:
     parser.add_argument("--assets", required=True)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--publication-branch", required=True)
+    parser.add_argument("--source-root", required=True)
     parser.add_argument("--tool-ref", required=True)
     parser.add_argument("--tool-sha", required=True)
     args = parser.parse_args()
@@ -546,6 +599,7 @@ def main() -> int:
         assets_dir=Path(args.assets),
         repository=args.repository,
         publication_branch=args.publication_branch,
+        source_root=Path(args.source_root),
         tool_ref=args.tool_ref,
         tool_sha=args.tool_sha,
     )

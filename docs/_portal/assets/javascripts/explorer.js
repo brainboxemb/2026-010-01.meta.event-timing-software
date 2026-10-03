@@ -31,9 +31,35 @@
     }
 
     const detail = root.querySelector("[data-eng-detail]");
+    const sourceHeader = root.querySelector("[data-eng-source-header]");
+    const sourceBody = root.querySelector("[data-eng-source]");
+    const contextButtons = root.querySelectorAll("[data-eng-context-mode]");
+    const contextPanels = root.querySelectorAll("[data-eng-context-panel]");
+    const initialUrl = new URL(window.location.href);
+    let contextMode =
+      initialUrl.searchParams.get("context") === "source"
+        ? "source"
+        : "architecture";
 
     function selectedId(node) {
       return node.dataset.objectId || node.dataset.engineeringId || "";
+    }
+
+    function setContextMode(mode, updateUrl) {
+      contextMode = mode === "source" ? "source" : "architecture";
+      contextButtons.forEach((button) => {
+        const selected = button.dataset.engContextMode === contextMode;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
+      contextPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.engContextPanel !== contextMode;
+      });
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("context", contextMode);
+        history.replaceState({}, "", url);
+      }
     }
 
     function objectButton(id, relationType, incoming) {
@@ -56,21 +82,25 @@
     }
 
     function relationSection(title, relations, endpointKey, incoming) {
+      const explanation = incoming
+        ? "Declared by the listed source object and directed to this object."
+        : "Declared by this object and directed to the listed target object.";
       if (!relations.length) {
         return (
           '<section class="eng-detail__relations">' +
           "<h3>" +
           escapeHtml(title) +
-          "</h3><p>None in this production slice.</p></section>"
+          "</h3><p>" +
+          escapeHtml(explanation) +
+          "</p><p>None in this production slice.</p></section>"
         );
       }
       return (
         '<section class="eng-detail__relations"><h3>' +
         escapeHtml(title) +
-        "</h3>" +
-        (incoming
-          ? "<p>Declared by the listed source object and directed to this object.</p>"
-          : "<p>Declared by this object and directed to the listed target object.</p>") +
+        "</h3><p>" +
+        escapeHtml(explanation) +
+        "</p>" +
         relations
           .map((relation) =>
             objectButton(relation[endpointKey], relation.type, incoming)
@@ -89,9 +119,58 @@
         "<h3>One-hop context</h3>" +
         "<p>Incoming and outgoing graph neighbors at exact depth 1.</p>" +
         '<div class="eng-focus-list">' +
-        neighbors.map((neighbor) => objectButton(neighbor, "one hop", false)).join("") +
+        neighbors
+          .map((neighbor) => objectButton(neighbor, "one hop", false))
+          .join("") +
         "</div></section>"
       );
+    }
+
+    function renderSource(object) {
+      if (!sourceHeader || !sourceBody) return;
+      const context = object.source_context;
+      if (!context) {
+        sourceHeader.innerHTML =
+          "<strong>Source context unavailable</strong>";
+        sourceBody.innerHTML =
+          "<p>This object has no line-addressable authored source location.</p>";
+        return;
+      }
+
+      sourceHeader.innerHTML =
+        '<div class="eng-source-title">' +
+        "<strong>" +
+        escapeHtml(context.path) +
+        "</strong>" +
+        "<span>line " +
+        escapeHtml(context.line) +
+        " · showing " +
+        escapeHtml(context.start) +
+        "–" +
+        escapeHtml(context.end) +
+        "</span>" +
+        "</div>" +
+        '<a class="md-button" href="' +
+        escapeHtml(object.source_url) +
+        '">Open authored source</a>';
+
+      sourceBody.innerHTML = context.lines
+        .map((line) => {
+          const focused = line.number === context.line ? " is-source-line" : "";
+          return (
+            '<div class="eng-source-line' +
+            focused +
+            '">' +
+            '<span class="eng-source-line__number">' +
+            escapeHtml(line.number) +
+            "</span>" +
+            '<span class="eng-source-line__text">' +
+            escapeHtml(line.text || " ") +
+            "</span>" +
+            "</div>"
+          );
+        })
+        .join("");
     }
 
     function render(id, updateUrl) {
@@ -103,6 +182,8 @@
         .forEach((node) => {
           node.classList.toggle("is-selected", selectedId(node) === id);
         });
+
+      renderSource(object);
 
       detail.innerHTML =
         '<div class="eng-detail__header">' +
@@ -129,16 +210,33 @@
         escapeHtml(object.source_url) +
         '">Open source definition</a>' +
         "</div>" +
-        relationSection("Outgoing relationships", object.outgoing, "target", false) +
-        relationSection("Incoming relationships", object.incoming, "source", true) +
+        relationSection(
+          "Outgoing relationships",
+          object.outgoing,
+          "target",
+          false
+        ) +
+        relationSection(
+          "Incoming relationships",
+          object.incoming,
+          "source",
+          true
+        ) +
         focusSection(id);
 
       if (updateUrl) {
         const url = new URL(window.location.href);
         url.searchParams.set("object", id);
+        url.searchParams.set("context", contextMode);
         history.replaceState({}, "", url);
       }
     }
+
+    contextButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setContextMode(button.dataset.engContextMode, true);
+      });
+    });
 
     root.addEventListener("click", (event) => {
       const target = event.target.closest(
@@ -160,9 +258,10 @@
       }
     });
 
-    const requested = new URL(window.location.href).searchParams.get("object");
+    const requested = initialUrl.searchParams.get("object");
     const initial =
       requested && data.objects[requested] ? requested : data.default_object;
+    setContextMode(contextMode, false);
     render(initial, false);
   }
 
