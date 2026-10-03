@@ -16,7 +16,7 @@ documents:
   - {id: external-system-inputs, source: docs/20-EXT-external-system-inputs.md}
   - {id: software-development-environment, source: docs/50-SDE-01-software-development-environment.md}
   - {id: java-build-test-toolchain, source: docs/50-SDE-02-java-build-test-toolchain.md}
-  - {id: engineering-client, source: docs/50-SDE-03-engineering-client.md}
+  - {id: development-client, source: docs/50-SDE-03-development-client.md}
   - {id: software-system-specification, source: docs/31-SSSD-software-system-specification-document.md}
   - {id: application-control-status, source: docs/32-03-ISD-application-control-status.md}
   - {id: timingdata-interchange, source: docs/32-05-ISD-timingdata-interchange.md}
@@ -67,7 +67,7 @@ indexes:
         items:
           - {document: software-development-environment}
           - {document: java-build-test-toolchain}
-          - {document: engineering-client}
+          - {document: development-client}
       - title: Verification and validation
         items:
           - {document: software-verification-plan}
@@ -128,7 +128,7 @@ books:
       - backoffice-transport-design
       - software-development-environment
       - java-build-test-toolchain
-      - engineering-client
+      - development-client
       - software-verification-plan
       - timing-application-verification-test-specification
       - timing-application-user-manual
