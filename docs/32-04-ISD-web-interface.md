@@ -19,6 +19,15 @@ Concrete URL paths, HTTP/WebSocket methods, payload member names and browser
 transport details belong in an optional IF-04 Interface Design Description when
 that realization is designed.
 
+## Terms and abbreviations
+
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **IDD** — Interface Design Description
+- **OP** — Operation
+- **SI** — Software Item
+
+
 ## Relationship to other documents
 
 IF-04 is allocated by
