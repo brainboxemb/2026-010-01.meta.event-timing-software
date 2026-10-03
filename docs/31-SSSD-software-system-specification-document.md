@@ -33,7 +33,7 @@ The normal product-document authority direction is:
 parent / external system contracts
               |
               v
-20-01 external-input baseline
+20-EXT external-input register
               |
 domain --------+----> 30-UC system use cases
               |                 |
