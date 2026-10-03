@@ -487,8 +487,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("bld/engineering-portal/site/workspace/index.html")
-          html = path.read_text(encoding="utf-8")
+          source = Path("bld/engineering-portal/site/workspace/index.html")
+          target = Path(
+              "bld/engineering-portal/site/workspace-interaction-test/index.html"
+          )
+          target.parent.mkdir(parents=True, exist_ok=True)
+          html = source.read_text(encoding="utf-8")
           probe = r"""
           <script>
           window.addEventListener("load", () => {
@@ -533,7 +537,7 @@ jobs:
           });
           </script>
           """
-          path.write_text(
+          target.write_text(
               html.replace("</body>", probe + "</body>"),
               encoding="utf-8",
           )
@@ -547,12 +551,17 @@ jobs:
             --window-size=1920,1200 \
             --virtual-time-budget=3500 \
             --dump-dom \
-            "http://127.0.0.1:8765/workspace/?object=IF05-REQ-007&compare=SI01-REQ-045" \
+            "http://127.0.0.1:8765/workspace-interaction-test/?object=IF05-REQ-007&compare=SI01-REQ-045" \
             > bld/engineering-portal/browser-workspace-interaction.html
 
           grep -q 'data-tree-toggle-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
           grep -q 'data-pane-resize-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
           grep -q 'data-pane-resize-persisted="passed"' bld/engineering-portal/browser-workspace-interaction.html
+
+          rm -rf bld/engineering-portal/site/workspace-interaction-test
+          ! grep -q 'treeToggleInteraction' bld/engineering-portal/site/workspace/index.html
+          ! grep -q 'paneResizeInteraction' bld/engineering-portal/site/workspace/index.html
+          ! grep -q 'paneResizePersisted' bld/engineering-portal/site/workspace/index.html
 
           "$chrome" \
             --headless \
