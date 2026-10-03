@@ -147,13 +147,19 @@ readable text is diagnostic.
 
 ## Compatibility
 
+The IF-04 semantic operations, state values and results form the stable contract.
+
+A concrete Web realization may use a compatibility mapping for representation
+details such as endpoint names, field names or field encodings/types. Such a
+mapping shall preserve the IF-04 semantic meaning and command ordering defined by
+this ISD.
+
 Compatible extensions shall not silently change the meaning of existing IF-04
-operations, state values or results.
+operations, state values or results. A breaking semantic change requires a new
+interface version or an explicitly defined compatible migration.
 
-A breaking semantic change requires a new interface version or an explicitly
-defined compatible migration.
-
-Concrete version encoding belongs to the IF-04 design description.
+Concrete endpoint names, payload fields, representation types and version
+encoding belong to the IF-04 design/configuration layer rather than this ISD.
 
 ## IF-04 requirements
 
@@ -211,6 +217,16 @@ Invalid, rejected, unavailable and outcome-unknown operations shall expose an
 explicit failure outcome rather than silently reporting success.
 ```
 
+```{ifreq} Compatible Web realizations
+:id: IF04-REQ-007
+:status: D
+:derived_from: UC-001, UC-002
+
+IF-04 shall allow concrete Web realizations to map endpoint names, field names
+and representation types while preserving the semantic operations, values,
+results and ordering defined by this ISD.
+```
+
 ## Interface design
 
 An optional `33-04-IDD` may later define the concrete Web realization,
@@ -228,5 +244,6 @@ Those design choices shall preserve the semantics defined by this ISD.
 ## Open points
 
 - OPEN with a different LocationId while already OPEN;
-- concrete IF-04 Web transport and payload design;
+- concrete default Web transport and payload design;
+- compatibility-mapping mechanism for deployment-specific representation details;
 - authentication/authorisation for non-development deployment.
