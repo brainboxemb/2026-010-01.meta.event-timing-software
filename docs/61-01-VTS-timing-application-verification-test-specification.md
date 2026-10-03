@@ -5,14 +5,6 @@ Status: working / review baseline
 Software item: **SI-01 — Timing Point Application**
 
 
-## Document guide
-
-- **Role:** define stable verification cases for SI-01.
-- **Inputs:** SI-01 requirements, applicable interface contracts and the SVP verification model.
-- **Owns:** verification-case purpose, setup, procedure and expected results; not product behaviour or current PASS/FAIL status.
-- **Downstream:** executable system/component tests and retained run evidence.
-- **Key terms:** `VTS` — Verification Test Specification; `VC` — Verification Case; `SVP` — Software Verification Plan; `SI` — Software Item; `ST` — System Test profile.
-
 ## Purpose
 
 This document specifies the concrete verification cases used to test SI-01.
@@ -31,7 +23,7 @@ The document roles are deliberately separate:
 
 Current execution status is therefore **not** maintained in this document.
 
-## Inputs and references
+## Relationship to other documents
 
 The cases below verify accepted behaviour from:
 
