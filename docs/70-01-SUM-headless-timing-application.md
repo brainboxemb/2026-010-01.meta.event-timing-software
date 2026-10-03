@@ -3,6 +3,15 @@
 Status: working release-oriented user manual  
 Software item: **SI-01 — Headless Timing Application**
 
+
+## Document guide
+
+- **Role:** provide technical release/user guidance for obtaining, configuring, running and diagnosing SI-01.
+- **Inputs:** the released SI-01 product baseline and applicable engineering/runtime documentation.
+- **Owns:** user-facing technical run/release guidance; it does not define product requirements or architecture.
+- **Downstream:** developers, integrators, testers and support/operations users of a specific software baseline.
+- **Key terms:** `SUM` — Software User Manual; `SI` — Software Item; `JDK` — Java Development Kit; `Maven` — Java build/dependency tool.
+
 ## 1. Purpose, audience and applicability
 
 This is a **technical software user manual**, not an end-user/operator manual for the
