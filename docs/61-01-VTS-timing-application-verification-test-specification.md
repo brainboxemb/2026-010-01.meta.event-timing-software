@@ -61,6 +61,7 @@ Java-identifier-safe form:
 ```text
 VC-ST1-001  ->  VcSt1_001Test
 VC-ST1-002  ->  VcSt1_002Test
+VC-ST1-004  ->  VcSt1_004Test
 ```
 
 The case ID is authoritative. The Java class name preserves that ID so the

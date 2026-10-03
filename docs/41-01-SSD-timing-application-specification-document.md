@@ -131,7 +131,7 @@ status model that is separate from log output.
 ```{req} Minimum first-executable status content
 :id: SI01-REQ-021
 :status: R
-:derived_from: UC-001, UC-008
+:derived_from: UC-001, UC-008, UC-020
 
 The first-executable status shall expose enough information
 to determine at least:
@@ -139,11 +139,10 @@ to determine at least:
 - application/build identity;
 - application state;
 - configured `TimingNode` `TimingNodeId` value(s);
-- the current minimal lifecycle state represented for those
-  TimingNodes;
-- explicit degraded/error information for first-executable
-  configuration/startup failures that remain observable
-  while the process can continue serving status.
+- the current operational state represented for those TimingNodes;
+- explicit degraded/error information for contained first-executable
+  configuration/startup failures, including the affected TimingNode identity and
+  a machine-readable problem indication while the process continues serving status.
 ```
 
 The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
@@ -314,11 +313,36 @@ sequence gap or sequence regression shall produce an explicit recovery failure
 for that TimingNode rather than being silently skipped or renumbered.
 ```
 
+```{req} Contain TimingNode recovery failure
+:id: SI01-REQ-049
+:status: D
+:derived_from: UC-020
+
+After application-level configuration has been accepted, a failure while restoring
+or validating recoverable state for one configured TimingNode shall be contained to
+that TimingNode where continued application operation remains safe.
+
+SI-01 shall:
+
+- place the affected TimingNode in `ERROR` instead of presenting it as `CLOSED`
+  or `OPEN`;
+- reject normal state-changing and registration operations for that TimingNode;
+- continue starting/running the application and its diagnostic presentation
+  interfaces;
+- keep independently healthy TimingNodes available in a multi-node composition; and
+- expose the contained failure through the authoritative application status model.
+
+Failures of mandatory application-wide configuration or infrastructure that prevent
+safe construction of the diagnostic runtime are outside this containment rule.
+```
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
+- a TimingNode that cannot safely complete contained startup recovery is represented
+  as `ERROR` and does not accept normal operational commands;
 - explicit LocationId assignment is allowed only while CLOSED;
 - normal OPEN carries the requested valid LocationId and applies that LocationId
   together with the CLOSED-to-OPEN transition as one ordered operation;
@@ -349,6 +373,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-046 | UC-003/012 | local TimingData commit ordering |
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
+| SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 
 ## Software-item architecture
 

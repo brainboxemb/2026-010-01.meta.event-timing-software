@@ -101,6 +101,51 @@ reading order or implementation sequence.
 | UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
 | UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
+| UC-020 | Diagnose degraded TimingNode startup | Operator / platform | Keep the application diagnosable when one TimingNode cannot restore its local state. |
+
+```{uc} Diagnose degraded TimingNode startup
+:id: UC-020
+
+**Goal:** keep SI-01 reachable and diagnosable when one configured TimingNode cannot
+complete local state recovery.
+
+**Primary actor:** operator / platform.
+
+**Preconditions:**
+
+- application-level configuration is valid enough to construct the runtime and
+  diagnostic presentation interfaces;
+- one configured TimingNode encounters a contained startup/recovery failure.
+
+**Main flow:**
+
+1. SI-01 starts and validates application-level configuration.
+2. A TimingNode detects that its recoverable local state cannot be restored safely,
+   for example because persisted TimingData belongs to another TimingNodeId.
+3. SI-01 keeps that TimingNode out of normal operation and marks it `ERROR`.
+4. The application continues starting/running its diagnostic presentation interfaces.
+5. Status identifies the affected TimingNode and exposes a machine-readable problem
+   plus a human-readable diagnostic summary.
+6. The operator can query status through the supported local/remote interfaces and
+   determine why the TimingNode did not become operational.
+7. Normal state-changing and registration operations for the errored TimingNode are
+   rejected explicitly.
+8. In a multi-TimingNode composition, independently healthy TimingNodes remain
+   available unless an application-wide failure prevents safe operation.
+9. The application can still be shut down through the supported controlled path.
+
+**Alternative/failure flows:**
+
+- invalid application-wide configuration or failure of mandatory application-wide
+  infrastructure may still prevent the process from providing diagnostic interfaces;
+- a later recovery/reinitialisation mechanism may move the TimingNode out of `ERROR`,
+  but that mechanism is outside this initial containment use case.
+
+**Observable result:** a node-local recovery problem does not turn into an opaque
+process crash; the running application exposes the failed TimingNode and its diagnostic
+problem through normal status interfaces.
+
+```
 
 ### Engineering, simulation and verification
 

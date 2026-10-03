@@ -271,8 +271,8 @@ jobs:
               for object_id, item in objects.items()
               if item.get("type") == "uc"
           }
-          if len(use_cases) != 19:
-              raise SystemExit(f"expected 19 current system use cases, got {len(use_cases)}")
+          if len(use_cases) != 20:
+              raise SystemExit(f"expected 20 current system use cases, got {len(use_cases)}")
           for object_id, item in sorted(use_cases.items()):
               content = item.get("content", "")
               for token in ("**Goal:**", "**Main flow:**"):
@@ -485,7 +485,7 @@ jobs:
           grep -q 'data-eng-tree-search' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-eng-tree-type' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-eng-tree-count' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'Requirement (22)' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Requirement (23)' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
