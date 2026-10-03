@@ -178,7 +178,7 @@ logging support that job but do not define the main screen.
 
 <a id="fig-sde03-05"></a>
 ![API-first Development Client workbench](../../../raw/prod/docs/assets/architecture/engineering-client-api-first.svg)
-*Figure SDE03-05 — Reviewed API-first workbench direction. Ports and connection
+*Figure SDE03-05 — Current API-first workbench baseline. Ports and connection
 states belong to their individual external boundaries; the UI does not predict
 whether SI-01 will accept a domain command.*
 
