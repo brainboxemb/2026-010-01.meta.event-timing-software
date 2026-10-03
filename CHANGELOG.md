@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Start Engineering Explorer and Traceability Comparison neutrally when no object is requested, remove the implicit TimingNode preference, add a small balanced tree base inset, and qualify the specific SSD requirements smart-expansion path.
+
 - Increase custom engineering workbench typography by an exact 1px while preserving the compact spacing and pane geometry.
 
 - Auto-expand linear Traceability Comparison heading chains on disclosure so authored hierarchy stays visible without requiring repeated clicks through single-choice levels.
