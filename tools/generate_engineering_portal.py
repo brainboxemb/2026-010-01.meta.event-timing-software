@@ -144,9 +144,7 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
         "source_graph": graph["source_graph"],
         "object_count": len(objects),
         "relation_count": len(graph["relations"]),
-        "default_object": (
-            "TimingNode" if "TimingNode" in objects else sorted(objects)[0]
-        ),
+        "default_object": None,
         "objects": objects,
         "focus_depth_1": focus_depth_1,
     }
