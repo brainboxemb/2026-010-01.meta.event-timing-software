@@ -11,6 +11,14 @@ This Interface Specification Document defines the deployment/configuration contr
 
 It deliberately does **not** define domain behaviour, a Java class hierarchy, a specific YAML library or production secret values.
 
+## Terms and abbreviations
+
+- **IF** — system interface
+- **ISD** — Interface Specification Document
+- **SI** — Software Item
+- **ApplicationConfig** — effective resolved application configuration
+
+
 ## Relationship to other documents
 
 IF-11 is a system-owned deployment/configuration interface allocated by
