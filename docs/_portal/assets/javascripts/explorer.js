@@ -205,6 +205,7 @@
       if (!root) return;
       const rootDetail = root.querySelector("[data-eng-root-detail]");
       const compareDetail = root.querySelector("[data-eng-compare-detail]");
+      const rootSelect = root.querySelector("[data-eng-workspace-root-select]");
       const initialUrl = new URL(window.location.href);
       let rootId = "";
       let compareId = "";
@@ -234,6 +235,7 @@
         if (!object || !rootDetail) return;
         rootId = id;
         compareId = "";
+        if (rootSelect) rootSelect.value = id;
         rootDetail.innerHTML = objectPanel(object, "Selected object", "compare");
         renderCompare("", false);
         if (updateHistory) updateUrl();
@@ -260,6 +262,12 @@
         }
         updateSelection();
         if (updateHistory) updateUrl();
+      }
+
+      if (rootSelect) {
+        rootSelect.addEventListener("change", () => {
+          renderRoot(rootSelect.value, true);
+        });
       }
 
       root.addEventListener("click", (event) => {
