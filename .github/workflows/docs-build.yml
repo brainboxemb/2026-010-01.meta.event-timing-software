@@ -597,6 +597,64 @@ jobs:
                 ).some((toggle) => toggle.getAttribute("aria-expanded") === "true");
                 document.body.dataset.collapseAllInteraction =
                   expanded === 0 && !ariaOpen ? "passed" : "failed";
+
+                const directChildren = (group) => {
+                  const list = group.querySelector(
+                    ":scope > .eng-tree-group__items"
+                  );
+                  if (!list) return { groups: [], leaves: [] };
+                  return {
+                    groups: Array.from(
+                      list.querySelectorAll(
+                        ":scope > [data-eng-tree-group]"
+                      )
+                    ).filter((child) => !child.hidden),
+                    leaves: Array.from(
+                      list.querySelectorAll(
+                        ":scope > .eng-tree-leaf > [data-workspace-root-id]"
+                      )
+                    ).filter((leaf) => !leaf.hidden)
+                  };
+                };
+
+                const linearChain = (group) => {
+                  const chain = [group];
+                  let current = group;
+                  while (current) {
+                    const children = directChildren(current);
+                    if (
+                      children.leaves.length ||
+                      children.groups.length !== 1
+                    ) {
+                      break;
+                    }
+                    current = children.groups[0];
+                    chain.push(current);
+                  }
+                  return chain;
+                };
+
+                const candidate = Array.from(
+                  root.querySelectorAll("[data-eng-tree-group]")
+                )
+                  .map((group) => linearChain(group))
+                  .find((chain) => chain.length >= 2);
+                if (candidate) {
+                  const toggle = candidate[0].querySelector(
+                    ":scope > [data-eng-tree-toggle]"
+                  );
+                  if (toggle) toggle.click();
+                  document.body.dataset.linearBranchExpansion =
+                    candidate.every((group) =>
+                      group.classList.contains("is-expanded")
+                    )
+                      ? "passed"
+                      : "failed";
+                  collapseAll.click();
+                } else {
+                  document.body.dataset.linearBranchExpansion =
+                    "no-linear-branch";
+                }
               }
 
               const splitter = root && root.querySelector(
@@ -664,6 +722,7 @@ jobs:
               "tree-edge-spacing": "passed",
               "tree-indent-compact": "passed",
               "collapse-all-interaction": "passed",
+              "linear-branch-expansion": "passed",
               "pane-resize-interaction": "passed",
               "pane-resize-persisted": "passed",
           }
