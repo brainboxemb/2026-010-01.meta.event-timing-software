@@ -333,8 +333,8 @@ jobs:
           object_page = (
               site / "objects" / "IF05-REQ-007" / "index.html"
           ).read_text(encoding="utf-8")
-          if "open source + object side by side" not in object_page:
-              raise SystemExit("IF05-REQ-007 object page missing workspace action")
+          if "open object comparison workspace" not in object_page:
+              raise SystemExit("IF05-REQ-007 object page missing comparison workspace action")
 
           explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
           for object_id in required_diagram_ids:
