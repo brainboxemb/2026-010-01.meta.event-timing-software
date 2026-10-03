@@ -333,8 +333,8 @@ jobs:
           object_page = (
               site / "objects" / "IF05-REQ-007" / "index.html"
           ).read_text(encoding="utf-8")
-          if "open source + object side by side" not in object_page:
-              raise SystemExit("IF05-REQ-007 object page missing workspace action")
+          if "open object comparison workspace" not in object_page:
+              raise SystemExit("IF05-REQ-007 object page missing comparison workspace action")
 
           explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
           for object_id in required_diagram_ids:
@@ -400,16 +400,17 @@ jobs:
             --disable-dev-shm-usage \
             --virtual-time-budget=2500 \
             --dump-dom \
-            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&context=source" \
+            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&compare=SI01-REQ-045" \
             > bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           grep -q '<code>IF05-REQ-007</code>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'docs/32-05-ISD-timingdata-interchange.md' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q '<code>SI01-REQ-045</code>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'Committed record immutability' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Reference TimingData representation support' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
           grep -q 'A committed TimingData record shall not be modified or renumbered' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'Incoming relationships' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'derived from this' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-          grep -q 'aria-pressed="true">Source</button>' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+          grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 
           "$chrome" \
             --headless \
@@ -504,7 +505,7 @@ jobs:
             --virtual-time-budget=2500 \
             --window-size=1600,1000 \
             --screenshot=bld/engineering-portal/workspace-IF05-REQ-007.png \
-            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&context=source"
+            "http://127.0.0.1:8765/explorer/?object=IF05-REQ-007&compare=SI01-REQ-045"
 
       - name: Render generated Markdown for human review
         shell: bash

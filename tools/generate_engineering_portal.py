@@ -259,14 +259,14 @@ def render_object_page(obj: dict, view: dict) -> str:
         f"**Type:** {obj['type_label']}  ",
         (
             "**Workspace:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=source">'
-            "open source + object side by side</a>  "
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
+            "open object comparison workspace</a>  "
         ),
         f"**Source definition:** [open authored source]({obj['source_url']})  ",
         (
             "**Architecture context:** "
-            f'<a href="../../explorer/?object={html.escape(obj["id"])}&context=architecture">'
-            "open architecture + object</a>"
+            f'<a href="../../explorer/?object={html.escape(obj["id"])}">'
+            "open explorer with architecture selection</a>"
         ),
         "",
         (
@@ -426,7 +426,7 @@ def render_explorer(view: dict, svg: str) -> str:
     chips = "".join(
         (
             '<button class="eng-object-chip" type="button" '
-            f'data-object-id="{html.escape(object_id)}">'
+            f'data-root-object-id="{html.escape(object_id)}">'
             f"{html.escape(object_id)}</button>"
         )
         for object_id in sorted(view["objects"])
@@ -446,41 +446,41 @@ hide:
   <a href="../objects/">Object index</a>
 </div>
 
-<div class="eng-workspace" data-eng-explorer>
-  <section class="eng-context">
-    <div class="eng-context-toolbar" role="group" aria-label="Workspace context">
-      <button type="button" data-eng-context-mode="architecture">Architecture</button>
-      <button type="button" data-eng-context-mode="source">Source</button>
-    </div>
-    <div data-eng-context-panel="architecture">
+<div data-eng-explorer>
+  <details class="eng-context">
+    <summary>Architecture and object selection</summary>
+    <div class="eng-context__body">
       <div class="eng-diagram">
         {svg}
       </div>
-      <p>Click a diagram object or choose any graph object below.</p>
+      <p>
+        Use the architecture or object list to choose the object that stays on
+        the left side of the workspace.
+      </p>
+      <div class="eng-object-picker">{chips}</div>
     </div>
-    <div class="eng-source-panel" data-eng-context-panel="source" hidden>
-      <div class="eng-source-header" data-eng-source-header></div>
-      <div class="eng-source-code" data-eng-source></div>
-    </div>
-    <h2>Engineering objects</h2>
-    <div class="eng-object-picker">{chips}</div>
-  </section>
-  <aside class="eng-detail" data-eng-detail aria-live="polite">
-    Select an engineering object.
-  </aside>
+  </details>
+
+  <div class="eng-workspace">
+    <section class="eng-detail" data-eng-root-detail aria-live="polite">
+      Select an engineering object.
+    </section>
+    <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
+      Select a related object to compare.
+    </aside>
+  </div>
 </div>
 
 ## About this view
 
-The workspace keeps the selected engineering object and traceability context on
-the right while the left side can show either the generated SI-01 architecture
-or the exact authored Markdown context around that object's source location.
-Both views are pinned to the same source revision; neither owns engineering
-meaning.
+The selected engineering object stays visible on the **left**. Click an
+Incoming, Outgoing or one-hop relation to open that related engineering object
+on the **right** without replacing the selected object. This keeps both ends of
+the traceability relationship visible at the same time.
 
-Use **Source** when reviewing an object against its authored definition without
-leaving the workspace. **Open source definition** still opens the hand-authored
-Markdown at the exact pinned source line in GitHub.
+The architecture remains available as an additional way to select the left-hand
+object. Each object panel has its own **Open source definition** action for the
+exact authored Markdown location.
 
 <script id="eng-graph-data" type="application/json">{graph_json}</script>
 """

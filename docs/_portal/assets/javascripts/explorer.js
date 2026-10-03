@@ -30,43 +30,21 @@
       return;
     }
 
-    const detail = root.querySelector("[data-eng-detail]");
-    const sourceHeader = root.querySelector("[data-eng-source-header]");
-    const sourceBody = root.querySelector("[data-eng-source]");
-    const contextButtons = root.querySelectorAll("[data-eng-context-mode]");
-    const contextPanels = root.querySelectorAll("[data-eng-context-panel]");
+    const rootDetail = root.querySelector("[data-eng-root-detail]");
+    const compareDetail = root.querySelector("[data-eng-compare-detail]");
     const initialUrl = new URL(window.location.href);
-    let contextMode =
-      initialUrl.searchParams.get("context") === "source"
-        ? "source"
-        : "architecture";
+    let rootId = "";
+    let compareId = "";
 
     function selectedId(node) {
-      return node.dataset.objectId || node.dataset.engineeringId || "";
+      return node.dataset.rootObjectId || node.dataset.engineeringId || "";
     }
 
-    function setContextMode(mode, updateUrl) {
-      contextMode = mode === "source" ? "source" : "architecture";
-      contextButtons.forEach((button) => {
-        const selected = button.dataset.engContextMode === contextMode;
-        button.classList.toggle("is-selected", selected);
-        button.setAttribute("aria-pressed", selected ? "true" : "false");
-      });
-      contextPanels.forEach((panel) => {
-        panel.hidden = panel.dataset.engContextPanel !== contextMode;
-      });
-      if (updateUrl) {
-        const url = new URL(window.location.href);
-        url.searchParams.set("context", contextMode);
-        history.replaceState({}, "", url);
-      }
-    }
-
-    function objectButton(id, relationType, incoming) {
+    function compareButton(id, relationType, incoming) {
       const object = data.objects[id];
       if (!object) return "";
       return (
-        '<button class="eng-relation" type="button" data-object-id="' +
+        '<button class="eng-relation" type="button" data-compare-object-id="' +
         escapeHtml(id) +
         '">' +
         '<span class="eng-relation__type">' +
@@ -103,7 +81,7 @@
         "</p>" +
         relations
           .map((relation) =>
-            objectButton(relation[endpointKey], relation.type, incoming)
+            compareButton(relation[endpointKey], relation.type, incoming)
           )
           .join("") +
         "</section>"
@@ -120,72 +98,18 @@
         "<p>Incoming and outgoing graph neighbors at exact depth 1.</p>" +
         '<div class="eng-focus-list">' +
         neighbors
-          .map((neighbor) => objectButton(neighbor, "one hop", false))
+          .map((neighbor) => compareButton(neighbor, "one hop", false))
           .join("") +
         "</div></section>"
       );
     }
 
-    function renderSource(object) {
-      if (!sourceHeader || !sourceBody) return;
-      const context = object.source_context;
-      if (!context) {
-        sourceHeader.innerHTML =
-          "<strong>Source context unavailable</strong>";
-        sourceBody.innerHTML =
-          "<p>This object has no line-addressable authored source location.</p>";
-        return;
-      }
-
-      sourceHeader.innerHTML =
-        '<div class="eng-source-title">' +
-        "<strong>" +
-        escapeHtml(context.path) +
-        "</strong>" +
-        "<span>line " +
-        escapeHtml(context.line) +
-        " · showing " +
-        escapeHtml(context.start) +
-        "–" +
-        escapeHtml(context.end) +
-        "</span>" +
+    function objectPanel(object, role) {
+      const roleLabel = role === "root" ? "Selected object" : "Compared object";
+      return (
+        '<div class="eng-detail__role">' +
+        escapeHtml(roleLabel) +
         "</div>" +
-        '<a class="md-button" href="' +
-        escapeHtml(object.source_url) +
-        '">Open authored source</a>';
-
-      sourceBody.innerHTML = context.lines
-        .map((line) => {
-          const focused = line.number === context.line ? " is-source-line" : "";
-          return (
-            '<div class="eng-source-line' +
-            focused +
-            '">' +
-            '<span class="eng-source-line__number">' +
-            escapeHtml(line.number) +
-            "</span>" +
-            '<span class="eng-source-line__text">' +
-            escapeHtml(line.text || " ") +
-            "</span>" +
-            "</div>"
-          );
-        })
-        .join("");
-    }
-
-    function render(id, updateUrl) {
-      const object = data.objects[id];
-      if (!object || !detail) return;
-
-      root
-        .querySelectorAll("[data-object-id], [data-engineering-id]")
-        .forEach((node) => {
-          node.classList.toggle("is-selected", selectedId(node) === id);
-        });
-
-      renderSource(object);
-
-      detail.innerHTML =
         '<div class="eng-detail__header">' +
         '<span class="eng-object-type">' +
         escapeHtml(object.type_label) +
@@ -198,9 +122,7 @@
         "</code>" +
         "</div>" +
         (object.content_html
-          ? '<div class="eng-detail__summary">' +
-            object.content_html +
-            "</div>"
+          ? '<div class="eng-detail__summary">' + object.content_html + "</div>"
           : "") +
         '<div class="eng-detail__actions">' +
         '<a class="md-button md-button--primary" href="../objects/' +
@@ -222,47 +144,110 @@
           "source",
           true
         ) +
-        focusSection(id);
-
-      if (updateUrl) {
-        const url = new URL(window.location.href);
-        url.searchParams.set("object", id);
-        url.searchParams.set("context", contextMode);
-        history.replaceState({}, "", url);
-      }
+        focusSection(object.id)
+      );
     }
 
-    contextButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        setContextMode(button.dataset.engContextMode, true);
+    function updateSelection() {
+      root
+        .querySelectorAll("[data-root-object-id], [data-engineering-id]")
+        .forEach((node) => {
+          node.classList.toggle("is-selected", selectedId(node) === rootId);
+        });
+      root.querySelectorAll("[data-compare-object-id]").forEach((node) => {
+        node.classList.toggle(
+          "is-selected",
+          node.dataset.compareObjectId === compareId
+        );
       });
-    });
+    }
+
+    function updateUrl() {
+      const url = new URL(window.location.href);
+      url.searchParams.set("object", rootId);
+      if (compareId) {
+        url.searchParams.set("compare", compareId);
+      } else {
+        url.searchParams.delete("compare");
+      }
+      url.searchParams.delete("context");
+      history.replaceState({}, "", url);
+    }
+
+    function renderRoot(id, updateHistory) {
+      const object = data.objects[id];
+      if (!object || !rootDetail) return;
+      rootId = id;
+      compareId = "";
+      rootDetail.innerHTML = objectPanel(object, "root");
+      renderCompare("", false);
+      updateSelection();
+      if (updateHistory) updateUrl();
+    }
+
+    function renderCompare(id, updateHistory) {
+      if (!compareDetail) return;
+      const object = data.objects[id];
+      if (!object) {
+        compareId = "";
+        compareDetail.innerHTML =
+          '<div class="eng-compare-empty">' +
+          "<strong>Compare a related object</strong>" +
+          "<p>Click an Incoming, Outgoing or one-hop relation on the left. " +
+          "The selected object stays visible while the related object opens here.</p>" +
+          "</div>";
+      } else {
+        compareId = id;
+        compareDetail.innerHTML = objectPanel(object, "compare");
+      }
+      updateSelection();
+      if (updateHistory) updateUrl();
+    }
 
     root.addEventListener("click", (event) => {
-      const target = event.target.closest(
-        "[data-object-id], [data-engineering-id]"
+      const compareTarget = event.target.closest("[data-compare-object-id]");
+      if (compareTarget && root.contains(compareTarget)) {
+        renderCompare(compareTarget.dataset.compareObjectId, true);
+        return;
+      }
+
+      const rootTarget = event.target.closest(
+        "[data-root-object-id], [data-engineering-id]"
       );
-      if (target && root.contains(target)) {
-        render(selectedId(target), true);
+      if (rootTarget && root.contains(rootTarget)) {
+        renderRoot(selectedId(rootTarget), true);
       }
     });
 
     root.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
-      const target = event.target.closest(
-        "[data-object-id], [data-engineering-id]"
-      );
-      if (target && root.contains(target)) {
+
+      const compareTarget = event.target.closest("[data-compare-object-id]");
+      if (compareTarget && root.contains(compareTarget)) {
         event.preventDefault();
-        render(selectedId(target), true);
+        renderCompare(compareTarget.dataset.compareObjectId, true);
+        return;
+      }
+
+      const rootTarget = event.target.closest(
+        "[data-root-object-id], [data-engineering-id]"
+      );
+      if (rootTarget && root.contains(rootTarget)) {
+        event.preventDefault();
+        renderRoot(selectedId(rootTarget), true);
       }
     });
 
     const requested = initialUrl.searchParams.get("object");
     const initial =
       requested && data.objects[requested] ? requested : data.default_object;
-    setContextMode(contextMode, false);
-    render(initial, false);
+    const compared = initialUrl.searchParams.get("compare");
+
+    renderRoot(initial, false);
+    if (compared && data.objects[compared] && compared !== initial) {
+      renderCompare(compared, false);
+    }
+    updateUrl();
   }
 
   if (typeof document$ !== "undefined") {
