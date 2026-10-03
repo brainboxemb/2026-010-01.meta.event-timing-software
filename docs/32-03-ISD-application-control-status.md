@@ -17,7 +17,7 @@ HTTP status-code mappings. The current development-v1 HTTP/JSON + WebSocket real
 is defined by `33-03-IDD-api-http-websocket.md`.
 
 A browser/tablet operator interface served directly by SI-01 is a different system
-interface: **IF-04 — Web Operator HMI**.
+interface: **IF-04 — Web Interface**.
 
 ## Inputs
 
