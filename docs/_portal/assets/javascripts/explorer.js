@@ -368,6 +368,11 @@
       updateUrl();
     }
 
+    const workspacePage = Boolean(
+      document.querySelector("[data-eng-workspace]")
+    );
+    document.body.classList.toggle("eng-workspace-page", workspacePage);
+
     initializeExplorer();
     initializeWorkspace();
   }
