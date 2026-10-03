@@ -4,14 +4,8 @@ Status: working draft / focused detailed design
 
 Software item: **SI-01 — Timing Point Application**
 
+## Purpose
 
-## Document guide
-
-- **Role:** define the concrete Java component/package/artifact realization of SI-01.
-- **Inputs:** SI-01 SSD, SDD-01 and applicable external/interface design contracts.
-- **Owns:** Maven/module structure, packages, Java classes/interfaces, composition, queues/executors and provider-loading mechanisms.
-- **Downstream:** Java implementation and component-level tests.
-- **Key terms:** `SDD` — Software Design Description; `SSD` — Software Specification Document; `SI` — Software Item; `JAR` — Java archive; `Maven` — Java build/dependency tool.
 
 This SDD describes the **Java implementation** of the SI-01 design: Maven
 modules, packages, classes/interfaces, composition, queues/threads and provider
