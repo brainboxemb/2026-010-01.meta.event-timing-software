@@ -481,6 +481,14 @@ For relation-by-relation comparison, use the separate
 
 
 def render_workspace(view: dict) -> str:
+    options = "".join(
+        (
+            f'<option value="{html.escape(object_id)}">'
+            f"{html.escape(object_id)} — {html.escape(view['objects'][object_id]['title'])}"
+            "</option>"
+        )
+        for object_id in sorted(view["objects"])
+    )
     graph_json = json.dumps(view, separators=(",", ":")).replace("</", "<\\/")
     return f"""---
 hide:
@@ -497,13 +505,22 @@ hide:
   <a href="../objects/">Object index</a>
 </div>
 
-<div class="eng-workspace" data-eng-workspace>
+<div data-eng-workspace>
+  <div class="eng-workspace-selector">
+    <label for="eng-workspace-root-select">Left / root object</label>
+    <select id="eng-workspace-root-select" data-eng-workspace-root-select>
+      {options}
+    </select>
+  </div>
+
+  <div class="eng-workspace">
   <section class="eng-detail" data-eng-root-detail aria-live="polite">
     Select an engineering object.
   </section>
   <aside class="eng-detail" data-eng-compare-detail aria-live="polite">
     Select a related object to compare.
   </aside>
+  </div>
 </div>
 
 ## About this view
