@@ -2,14 +2,7 @@
 
 Status: working draft / non-authoritative
 
-
-## Document guide
-
-- **Role:** define software-system requirements, software-item allocation and software-system architecture.
-- **Inputs:** domain baseline, system use cases and applicable registered external/parent-system inputs.
-- **Owns:** software-item responsibilities, system-owned interface allocation and cross-item architectural constraints.
-- **Downstream:** system-owned ISDs/IDDs and affected software-item specifications.
-- **Key terms:** `SSSD` — Software System Specification Document; `SI` — Software Item; `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description.
+## Purpose
 
 This Software System Specification Document combines the current **software-system requirements baseline** with the **software-system architecture**. It defines the software items, their allocated responsibilities, system-owned interfaces, deployment relationships and constraints that apply across software-item boundaries.
 
@@ -17,7 +10,7 @@ It deliberately does **not** define the internal threading, messaging, persisten
 
 Stable working domain facts and terminology are consolidated in `03-domain-baseline.md` and should not be silently reinterpreted here.
 
-## Inputs
+## Relationship to other documents
 
 The SSSD is derived from upstream system intent, not from software-item design, implementation planning or verification planning:
 
@@ -32,7 +25,7 @@ A system-owned ISD created from an interface allocation made by this SSSD is dow
 
 The SIP, SDE, software-item SSDs/SDDs and SVP may reference the SSSD, but they are not inputs to it merely because they discuss the same capability.
 
-## Document role
+### Document chain
 
 The normal product-document authority direction is:
 
@@ -284,7 +277,7 @@ Software-item interaction is defined in terms of system-owned semantics. Interna
 
 The architecture must support constrained field deployment and normal Linux/Windows development/test environments without changing the software-item boundaries. Automated integration verification must be able to exercise network interfaces without provisioning a physical Wi-Fi router unless the test explicitly targets router/AP behaviour.
 
-## Relationship to software-item architecture
+## Software-item design boundary
 
 The SSD for the **Timing Point Application** (SI-01) owns, among other things:
 
