@@ -454,7 +454,7 @@ Concrete verification procedures are downstream in
 Current Step-4 verification uses IF-03 for process-level version/status/event checks and
 for the first registration/control/history flow.
 
-## Deferred interface scope
+## Not part of the current IF-03 baseline
 
 Later IF-03 increments may add start procedure, RFID recovery/control, ready-team
 management, manual registration/revocation and broader diagnostics. They should be added
