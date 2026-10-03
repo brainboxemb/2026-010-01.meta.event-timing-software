@@ -4,7 +4,7 @@ diagram:
   width: 1380
   height: 820
   description: Engineering Client UI and independent client services connected only through supported SI-01 external boundaries.
-  note: The Timing view uses the accepted Step-4 IF-03 HTTP + WebSocket contract. Upstream/DebugConnector control remains a later engineering capability.
+  note: API is the primary work surface. Target endpoints come from one client configuration; client-local logging and SI-01 diagnostic logging remain distinct.
 
 groups:
   - id: ui
@@ -24,13 +24,13 @@ groups:
 
 nodes:
   - id: client-shell
-    label: "TestClientFxApplication\nJavaFX shell / presentation"
+    label: "TestClientFxApplication\nJavaFX shell / target toolbar"
     kind: client
     group: ui
     layout: {x: 85, y: 135, w: 300, h: 75}
 
   - id: status-view
-    label: "Status\nversion + status + raw JSON"
+    label: "API (primary)\nstatus + control + history"
     kind: presentation
     group: ui
     layout: {x: 75, y: 255, w: 150, h: 70}
@@ -48,13 +48,13 @@ nodes:
     layout: {x: 75, y: 350, w: 150, h: 70}
 
   - id: logs-view
-    label: "Logs\nlive diagnostics"
+    label: "Logs\nclient + SI-01 diagnostics"
     kind: presentation
     group: ui
     layout: {x: 245, y: 350, w: 150, h: 70}
 
   - id: timing-view
-    label: "Timing (Step 4)\nTimingNode / TimingData"
+    label: "API detail\nraw result + TimingData"
     kind: presentation
     group: ui
     layout: {x: 75, y: 485, w: 150, h: 78}
@@ -70,6 +70,12 @@ nodes:
     kind: client
     group: ui
     layout: {x: 120, y: 625, w: 230, h: 72}
+
+  - id: client-config
+    label: "ClientConfig\ntarget host + per-boundary ports"
+    kind: service
+    group: services
+    layout: {x: 520, y: 120, w: 270, h: 58}
 
   - id: api-client
     label: "ApiClient\nHTTP / JSON"
@@ -94,6 +100,12 @@ nodes:
     kind: service
     group: services
     layout: {x: 520, y: 505, w: 270, h: 70}
+
+  - id: client-log
+    label: "ClientLog\nlocal Engineering Client records"
+    kind: service
+    group: services
+    layout: {x: 520, y: 600, w: 270, h: 58}
 
   - id: if03
     label: "IF-03 API\nHTTP / JSON + WebSocket"
@@ -126,13 +138,15 @@ nodes:
     layout: {x: 945, y: 655, w: 320, h: 58}
 
 edges:
-  - {from: status-view, to: api-client}
-  - {from: timing-view, to: api-client, label: "status / control / history"}
+  - {from: client-shell, to: client-config, label: "load target/config"}
+  - {from: status-view, to: api-client, label: "status / control / history"}
+  - {from: timing-view, to: api-client, label: "raw API / TimingData"}
   - {from: timing-view, to: event-client, label: "live TimingData"}
   - {from: upstream-view, to: api-client, dashed: true, label: "later capabilities / test control"}
   - {from: events-view, to: event-client}
   - {from: terminal-view, to: shell-client}
-  - {from: logs-view, to: log-client}
+  - {from: logs-view, to: client-log, label: "local"}
+  - {from: logs-view, to: log-client, label: "SI-01"}
   - {from: doc-fixtures, to: client-shell, dashed: true, label: "visual fixtures only"}
 
   - {from: api-client, to: if03}
