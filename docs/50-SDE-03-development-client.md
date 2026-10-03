@@ -1,14 +1,14 @@
-# Engineering Client development and UI baseline
+# Development Client development and UI baseline
 
 Status: working engineering baseline
 
-Engineering tool: **Engineering Client**  
+Development tool: **Development Client**  
 Implementation location: `test-client/` in `2026-010-02.java.timing-point-application`
 
 
 ## Purpose
 
-The Engineering Client is the project's interactive development, integration and
+The Development Client is the project's interactive development, integration and
 diagnostic application for exercising the public boundaries of the **Timing Point
 Application** (SI-01).
 
@@ -34,7 +34,7 @@ the SI-01 software item.
 
 ## Relationship to other documents
 
-This SDE document owns the engineering-tool architecture, UI working baseline and
+This SDE document owns the development-tool architecture, UI working baseline and
 documentation/screenshot workflow. Product behaviour and public contracts remain owned
 elsewhere:
 
@@ -42,9 +42,9 @@ elsewhere:
 - IF-06 backend/upstream semantics will be owned by the applicable system ISD;
 - SI-01 domain architecture remains owned by `41-01-SSD-timing-application-specification-document.md`;
 - transport implementation belongs in the applicable SI-01 SDD;
-- the Engineering Client implementation README owns concrete build/run instructions.
+- the Development Client implementation README owns concrete build/run instructions.
 
-This document defines the Engineering Client UI/design baseline only. IF-03 routes,
+This document defines the Development Client UI/design baseline only. IF-03 routes,
 payloads, capability semantics and failure codes remain authoritative in
 `32-03-ISD-application-control-status.md`; this UI must conform to that contract
 rather than redefine it.
@@ -59,23 +59,23 @@ Current placement:
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
 ├── shared/timing-data/ shared TimingData model + codec/provider SPI
-└── test-client/     Engineering Client
+└── test-client/     Development Client
                     standalone Java 17 + JavaFX application
                     may depend on event-timing-data only
                     no SI-01 core/app implementation dependency
 ```
 
-For live SI-01 operation the Engineering Client communicates only through
+For live SI-01 operation the Development Client communicates only through
 supported external interfaces. It does not import `timing-point-core` or
 `timing-point-app` implementation classes.
 
 TimingData inspection/conversion is a separate engineering capability. The
-Engineering Client may depend on the small shared `event-timing-data` artifact and
+Development Client may depend on the small shared `event-timing-data` artifact and
 load the same compatible `TimingDataProvider` implementations that SI-01 can
 use, without copying provider-specific decoding rules into client code.
 
 Keeping it in the same repository is intentional while interface changes and
-engineering-client changes normally belong to the same development increment. A
+development-client changes normally belong to the same development increment. A
 separate repository becomes useful only when evidence shows an independent release
 cycle, independent ownership, substantial external reuse, or lower coordination cost
 from splitting it.
@@ -83,8 +83,8 @@ from splitting it.
 ## Component architecture
 
 <a id="fig-sde03-01"></a>
-![Engineering Client architecture](../../../raw/prod/docs/assets/architecture/engineering-client.svg)
-*Figure SDE03-01 — Engineering Client UI, independent client services and SI-01 engineering boundaries.*
+![Development Client architecture](../../../raw/prod/docs/assets/architecture/engineering-client.svg)
+*Figure SDE03-01 — Development Client UI, independent client services and SI-01 engineering boundaries.*
 
 The JavaFX event handlers remain presentation code. Network/protocol work is kept in
 small independent client services so the UI does not become the owner of IF-03, shell or
@@ -94,31 +94,31 @@ The current principal services are:
 
 | Service | SI-01 boundary | Role |
 | --- | --- | --- |
-| `ClientConfig` | local file | target host, per-boundary ports and Engineering Client presentation/logging settings |
+| `ClientConfig` | local file | target host, per-boundary ports and Development Client presentation/logging settings |
 | `ApiClient` | IF-03 HTTP/JSON | version/status queries and supported commands/test control |
 | `ApiEventClient` | IF-03 WebSocket | status/event snapshots and live event inspection |
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
 | `LiveLogClient` | `LoggingServer` | SI-01 live diagnostic records and temporary runtime log-level control |
-| `ClientLog` | local runtime | Engineering Client startup/configuration/connection/request/error logging and local log presentation |
+| `ClientLog` | local runtime | Development Client startup/configuration/connection/request/error logging and local log presentation |
 
 The IF-03 HTTP and WebSocket client services share one process-wide JDK
 `HttpClient` transport. Repeated UI actions may create short-lived request
 objects, but they must not create a new JDK HTTP selector/worker thread group
 for every operation.
 
-The Engineering Client's own asynchronous request worker is named
-`ec-request`. JDK-owned transport threads keep their native `HttpClient-*`
+The Development Client's own asynchronous request worker is named
+`dc-request`. JDK-owned transport threads keep their native `HttpClient-*`
 names; seeing one stable group is expected, while a new numbered group for
 every UI action indicates accidental transport recreation.
 
 Step 4 adds one narrowly scoped engineering capability through IF-03:
 direct injection of an **already accepted semantic registration**. That control
 enters the normal TimingNode registration operation after antenna/decoding/filtering.
-When exercising a running SI-01 through IF-03, the Engineering Client does not
+When exercising a running SI-01 through IF-03, the Development Client does not
 construct committed TimingData directly and does not choose the TimingNode-owned
 source identity, active location or sequence.
 
-For offline/import/export/compatibility inspection, the Engineering Client may
+For offline/import/export/compatibility inspection, the Development Client may
 decode or encode TimingData through the shared TimingData API/provider boundary.
 That capability does not make the client an owner of live SI-01 domain state.
 
@@ -168,29 +168,28 @@ The Logs tab connects to the separate `LoggingServer` diagnostics boundary. It s
 new log records and can query/change the temporary runtime-global logging level.
 
 Live logs are not IF-03 application events and do not become TimingNode state merely
-because they are visible in the same Engineering Client.
+because they are visible in the same Development Client.
 
-## Reviewed next UI baseline — API-first engineering workbench
+## Current UI baseline — API-first development workbench
 
-The next Engineering Client revision is **API-first**. The client exists primarily to
+The Development Client is **API-first**. The client exists primarily to
 exercise and inspect the public API contract; Events, Remote Shell and diagnostic
 logging support that job but do not define the main screen.
 
 <a id="fig-sde03-05"></a>
-![API-first Engineering Client workbench](../../../raw/prod/docs/assets/architecture/engineering-client-api-first.svg)
+![API-first Development Client workbench](../../../raw/prod/docs/assets/architecture/engineering-client-api-first.svg)
 *Figure SDE03-05 — Reviewed API-first workbench direction. Ports and connection
 states belong to their individual external boundaries; the UI does not predict
 whether SI-01 will accept a domain command.*
 
-This reviewed direction supersedes the Step-4 tab ordering and the Step-4 rule that
-cached TimingNode lifecycle state should normally disable domain-action controls.
-The Step-4 wireframes remain useful evidence of the implementation that is being
-verified by VC-ST1-003; they are not the target layout for the next client revision.
+This is the current Development Client baseline. It supersedes the earlier Step-4 tab
+ordering and lifecycle-gated controls. The older Step-4 wireframes remain historical
+verification/design context only; they are not the current UI acceptance baseline.
 
 ### Target and connection bar
 
 The top of the window represents one configured SI-01 target. Configuration comes
-from one Engineering Client configuration file rather than unrelated endpoint fields
+from one Development Client configuration file rather than unrelated endpoint fields
 inside separate tabs.
 
 The bar shows the target host plus one compact control/status per external boundary:
@@ -201,7 +200,7 @@ The bar shows the target host plus one compact control/status per external bound
 | IF-03 event WebSocket | configured port plus explicit connect/disconnect and connection state |
 | Remote Shell | configured port plus explicit connect/disconnect and connection state |
 | SI-01 `LoggingServer` | configured port plus explicit **Device log** connect/disconnect and connection state |
-| Engineering Client local log | always local to the client; visible as **Client log ACTIVE**, not confused with SI-01 diagnostics |
+| Development Client local log | always local to the client; visible as **Client log ACTIVE**, not confused with SI-01 diagnostics |
 
 A port therefore never appears without saying which boundary it belongs to. A green
 state for one boundary does not imply that the other boundaries are connected.
@@ -217,7 +216,7 @@ The configuration baseline needs, at minimum:
 - IF-03 event/WebSocket port when it is independently configured;
 - Remote Shell port;
 - `LoggingServer` port;
-- Engineering Client local-log path/level;
+- Development Client local-log path/level;
 - registration-input presentation defaults such as an initial prefix.
 
 Exact configuration member names and persistence format are implementation design
@@ -236,7 +235,7 @@ current Status and Timing tabs:
 
 - version/status requests and parsed identity/state;
 - selected TimingNode;
-- LocationId request;
+- LocationId input used directly by **Open**;
 - Open and Close requests;
 - engineering registration request;
 - committed LogBook/TimingData inspection;
@@ -251,7 +250,7 @@ an engineering tool.
 
 **Logs** has at least two explicit sources:
 
-- **Client** — the Engineering Client's own runtime log;
+- **Client** — the Development Client's own runtime log;
 - **SI-01 / Device** — records received from the connected `LoggingServer`.
 
 The sources remain distinguishable in the UI and in exported/copied text. Connecting
@@ -266,7 +265,7 @@ behaviour for it.
 
 ### Deliberately low client intelligence
 
-The Engineering Client is a protocol/domain **observer and request initiator**, not a
+The Development Client is a protocol/domain **observer and request initiator**, not a
 second implementation of TimingNode acceptance rules.
 
 The UI may disable a control when:
@@ -277,17 +276,21 @@ The UI may disable a control when:
 - that same control has an in-flight request and duplicate submission would obscure the
   result.
 
-The UI shall **not** disable Set Location, Open, Close or a supported registration
-request merely because cached state suggests SI-01 will reject it. For example, an
-engineer must be able to send **Close** while the displayed node is CLOSED and inspect
-the actual public result.
+The UI shall **not** disable Open, Close or a supported registration request merely
+because cached state suggests SI-01 will reject it. For example, a developer must be
+able to send **Close** while the displayed node is CLOSED and inspect the actual public
+result.
+
+The separate IF-03 Set Location operation remains part of the public protocol and may be
+used by automated or explicit protocol tests, but it is not a prominent control in the
+normal Development Client workbench because normal OPEN already carries LocationId.
 
 Displayed lifecycle state, LocationId and capability state remain valuable context, but
 they are not local permission rules. SI-01 remains authoritative. Expected domain
 rejections are shown as first-class operation results together with raw response data.
 
 This deliberately differs from a production operator GUI, where preventing obviously
-invalid actions may be desirable. The Engineering Client must make negative-path and
+invalid actions may be desirable. The Development Client must make negative-path and
 boundary testing easy.
 
 ### Registration input
@@ -318,16 +321,23 @@ provided without making fractional entry part of the everyday form.
 
 ### Logging behaviour
 
-The Engineering Client shall use the project logging direction for its **own** runtime
+The Development Client shall use the project logging direction for its **own** runtime
 records as well as displaying SI-01 diagnostics. Client startup, configuration loading,
 connection transitions, request failures and unexpected UI/service errors belong in
 the client log.
 
-The Logs tab therefore does not mean only "device logging". Client logging remains
-available when SI-01 is offline, which is especially important when diagnosing why a
-connection could not be established.
+Both log sources use the same readable line shape:
 
-## Step-4 Timing UI baseline — first registration slice
+```text
+HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]
+```
+
+The client log source shall identify the actual Development Client source context rather
+than use one generic client marker for every line. The Logs tab therefore does not mean
+only "device logging". Client logging remains available when SI-01 is offline, which is
+especially important when diagnosing why a connection could not be established.
+
+## Historical Step-4 Timing UI baseline — first registration slice
 
 ### Implementation alignment status
 
@@ -349,10 +359,9 @@ VC-ST1-003 implementation/demo. Pixel-for-pixel reproduction is not a verificati
 requirement; ownership, stale/live meaning and resynchronisation ordering remain
 relevant to that verification.
 
-The reviewed API-first baseline above is the target for the next Engineering Client
-revision. It intentionally changes tab ordering, connection presentation and
-state-based control gating; those changes do not retroactively change what the current
-Step-4 V04 demo is intended to observe.
+The API-first baseline above is the current Development Client target. The following
+Step-4 material is retained only as historical context for the earlier implementation
+and VC-ST1-003 evolution.
 
 The **Timing** tab is the Step-4 working surface for one **selected** TimingNode.
 It combines current authoritative node state, first-slice controls and committed
@@ -464,8 +473,11 @@ The first table is a paged view of the selected TimingNode LogBook and shows
 committed source order plus the fields most useful during Step-4 integration:
 
 ```text
-sequence | variant/type | LocationId | RegistrationId | effectiveTime | recordedAt
+sequence | type | code | LocationId | RegistrationId | effectiveTime | recordedAt
 ```
+
+`type` is the TimingData record type/variant and `code` contains the record's code label(s);
+they are shown as separate columns and are not concatenated into one display value.
 
 The stable record key is `TimingNodeId + sequenceNumber`. Because the current
 view already identifies one TimingNode, the table may omit the repeated
@@ -487,7 +499,7 @@ not accidental contract drift.
 
 ## Capability-driven engineering controls
 
-The Engineering Client must not assume that dev auto-reg is
+The Development Client must not assume that dev auto-reg is
 available in every SI-01 deployment. The running application advertises whether
 that engineering capability is supported and enabled; otherwise the control is
 disabled or absent.
@@ -517,7 +529,7 @@ with a thin compatibility layer where practical.
 
 UI screenshots should be reproducible evidence, not ad-hoc desktop captures.
 
-The intended Engineering Client documentation mode uses deterministic **public synthetic
+The intended Development Client documentation mode uses deterministic **public synthetic
 fixtures** to populate the UI without requiring a live backend, RabbitMQ broker, timing
 hardware or proprietary data.
 
@@ -547,7 +559,7 @@ GitHub Actions / Linux
         |
         +-- JDK 17 + pinned JavaFX dependencies
         +-- virtual display (Xvfb when required by JavaFX toolkit)
-        +-- start Engineering Client in documentation/demo mode
+        +-- start Development Client in documentation/demo mode
         +-- select a named deterministic view
         +-- render JavaFX scene/window snapshot to PNG
         +-- retain screenshot artifact
@@ -573,7 +585,7 @@ interface contracts.
 
 ## Test strategy
 
-The Engineering Client remains independently testable:
+The Development Client remains independently testable:
 
 - service/client classes are unit tested without JavaFX handlers;
 - UI presentation can use deterministic fixture models;
@@ -585,17 +597,17 @@ The Engineering Client remains independently testable:
 ## Step-4 boundary
 
 A03 implementation and the automated VC-ST1-002 black-box verification are
-complete. The Engineering Client documentation/UI baseline is still under review.
-After review comments are resolved, the remaining execution activity is
-VC-ST1-003/V04: the manual running-system Engineering Client demo documented in
+complete. The current Development Client documentation/UI baseline is the API-first workbench
+above. The remaining Step-4 execution activity is VC-ST1-003/V04: the manual
+running-system Development Client demo documented in
 `test-client/STEP4-DEMO.md` and tracked by Java issue #127.
 
-Step 4 uses the Engineering Client as the primary manual inspection application. It does
+Step 4 uses the Development Client as the primary manual inspection application. It does
 **not** add the optional lightweight browser/web test client.
 
 The first Step-4 protocol documents must therefore be sufficient to support:
 
-- the Engineering Client;
+- the Development Client;
 - headless black-box/system verification;
 - straightforward compatibility with the existing web application where practical;
 - later upstream/connector increments without changing the first committed TimingData identity semantics.
