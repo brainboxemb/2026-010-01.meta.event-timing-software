@@ -502,14 +502,38 @@ jobs:
                 '[data-eng-tree-toggle][aria-expanded="false"]'
               );
               if (collapsed) {
+                const group = collapsed.closest("[data-eng-tree-group]");
+                const children = group && group.querySelector(
+                  ":scope > .eng-tree-group__items"
+                );
+                const before = children
+                  ? getComputedStyle(children).display
+                  : "missing";
                 collapsed.click();
+                const afterOpen = children
+                  ? getComputedStyle(children).display
+                  : "missing";
+                collapsed.click();
+                const afterClose = children
+                  ? getComputedStyle(children).display
+                  : "missing";
                 document.body.dataset.treeToggleInteraction =
-                  collapsed.getAttribute("aria-expanded") === "true"
+                  before === "none" &&
+                  afterOpen !== "none" &&
+                  afterClose === "none" &&
+                  collapsed.getAttribute("aria-expanded") === "false"
                     ? "passed"
                     : "failed";
               } else {
                 document.body.dataset.treeToggleInteraction = "no-collapsed-node";
               }
+
+              const customTree = root && root.querySelector(".eng-object-tree");
+              document.body.dataset.treeMaterialIsolation =
+                customTree &&
+                !customTree.querySelector('[class*="md-nav"]')
+                  ? "passed"
+                  : "failed";
 
               const splitter = root && root.querySelector(
                 '[data-eng-resizer="tree-root"]'
@@ -555,6 +579,7 @@ jobs:
             > bld/engineering-portal/browser-workspace-interaction.html
 
           grep -q 'data-tree-toggle-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
+          grep -q 'data-tree-material-isolation="passed"' bld/engineering-portal/browser-workspace-interaction.html
           grep -q 'data-pane-resize-interaction="passed"' bld/engineering-portal/browser-workspace-interaction.html
           grep -q 'data-pane-resize-persisted="passed"' bld/engineering-portal/browser-workspace-interaction.html
 
