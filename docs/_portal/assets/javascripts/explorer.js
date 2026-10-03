@@ -195,9 +195,9 @@
       });
 
       const requested = initialUrl.searchParams.get("object");
-      const initial =
-        requested && data.objects[requested] ? requested : data.default_object;
-      render(initial, false);
+      if (requested && data.objects[requested]) {
+        render(requested, false);
+      }
     }
 
     function initializeWorkspace() {
@@ -479,8 +479,12 @@
 
       function updateUrl() {
         const url = new URL(window.location.href);
-        url.searchParams.set("object", rootId);
-        if (compareId) {
+        if (rootId) {
+          url.searchParams.set("object", rootId);
+        } else {
+          url.searchParams.delete("object");
+        }
+        if (rootId && compareId) {
           url.searchParams.set("compare", compareId);
         } else {
           url.searchParams.delete("compare");
@@ -598,12 +602,14 @@
 
       const requested = initialUrl.searchParams.get("object");
       const initial =
-        requested && data.objects[requested] ? requested : data.default_object;
+        requested && data.objects[requested] ? requested : "";
       const compared = initialUrl.searchParams.get("compare");
 
-      renderRoot(initial, false);
-      if (compared && data.objects[compared] && compared !== initial) {
-        renderCompare(compared, false);
+      if (initial) {
+        renderRoot(initial, false);
+        if (compared && data.objects[compared] && compared !== initial) {
+          renderCompare(compared, false);
+        }
       }
       applyTreeFilter();
       updateUrl();

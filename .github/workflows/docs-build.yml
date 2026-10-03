@@ -321,6 +321,9 @@ jobs:
           portal_view = json.loads(
               (root / "docs/assets/engineering-graph.json").read_text(encoding="utf-8")
           )
+          if portal_view.get("default_object") is not None:
+              raise SystemExit("portal view still has an implicit default object")
+
           source_context = portal_view["objects"]["IF05-REQ-007"].get("source_context")
           if not source_context:
               raise SystemExit("portal view missing IF05-REQ-007 authored source context")
@@ -348,6 +351,8 @@ jobs:
               raise SystemExit("Engineering Explorer missing compact workbench heading")
           if 'data-eng-workspace' in explorer:
               raise SystemExit("Engineering Explorer unexpectedly contains comparison workspace")
+          if '<a href="../">Home</a>' not in explorer:
+              raise SystemExit("Engineering Explorer missing neutral Home navigation")
 
           workspace_page = site / "workspace" / "index.html"
           if not workspace_page.is_file():
@@ -385,6 +390,8 @@ jobs:
               raise SystemExit("tree disclosure still depends on Material nav-link behavior")
           if 'data-engineering-id=' in workspace:
               raise SystemExit("traceability comparison page unexpectedly embeds architecture diagram")
+          if '<a href="../">Home</a>' not in workspace:
+              raise SystemExit("Traceability Comparison missing neutral Home navigation")
 
           explorer_js = (
               site / "assets" / "javascripts" / "explorer.js"
@@ -574,12 +581,13 @@ jobs:
                     objectOffset.toFixed(1)
                   ].join(",");
                 document.body.dataset.treeEdgeSpacing =
-                  Math.abs(searchOffset) <= 3 &&
-                  Math.abs(topOffset) <= 3
+                  Math.abs(searchOffset - 4) <= 1.5 &&
+                  Math.abs(topOffset - 4) <= 1.5
                     ? "passed"
                     : "failed";
                 document.body.dataset.treeIndentCompact =
-                  objectOffset <= 24
+                  objectOffset > topOffset &&
+                  objectOffset <= 20
                     ? "passed"
                     : "failed";
               }
@@ -655,6 +663,90 @@ jobs:
                   document.body.dataset.linearBranchExpansion =
                     "no-linear-branch";
                 }
+
+                const groupByLabel = (label, scope = root) =>
+                  Array.from(
+                    scope.querySelectorAll("[data-eng-tree-group]")
+                  ).find((group) => {
+                    const labelNode = group.querySelector(
+                      ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+                    );
+                    return (
+                      labelNode &&
+                      labelNode.textContent.trim() === label
+                    );
+                  });
+
+                const ssd = groupByLabel(
+                  "41-01-SSD-timing-application-specification-document"
+                );
+                if (ssd) {
+                  const ssdToggle = ssd.querySelector(
+                    ":scope > [data-eng-tree-toggle]"
+                  );
+                  if (ssdToggle) ssdToggle.click();
+
+                  const topChildren = directChildren(ssd).groups;
+                  const topLabels = topChildren.map((group) => {
+                    const label = group.querySelector(
+                      ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+                    );
+                    return label ? label.textContent.trim() : "";
+                  });
+                  const requirements = topChildren.find((group) => {
+                    const label = group.querySelector(
+                      ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+                    );
+                    return (
+                      label &&
+                      label.textContent.trim() === "Software-item requirements"
+                    );
+                  });
+                  const architecture = topLabels.includes(
+                    "Software-item architecture"
+                  );
+
+                  if (requirements) {
+                    const requirementsToggle = requirements.querySelector(
+                      ":scope > [data-eng-tree-toggle]"
+                    );
+                    if (requirementsToggle) requirementsToggle.click();
+                  }
+
+                  const firstExecutable = groupByLabel(
+                    "First-executable requirements",
+                    requirements || root
+                  );
+                  const usefulChoices = firstExecutable
+                    ? directChildren(firstExecutable).groups
+                        .map((group) => {
+                          const label = group.querySelector(
+                            ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+                          );
+                          return label ? label.textContent.trim() : "";
+                        })
+                    : [];
+
+                  document.body.dataset.ssdRequirementsExpansion =
+                    ssd.classList.contains("is-expanded") &&
+                    topLabels.includes("Software-item requirements") &&
+                    architecture &&
+                    requirements &&
+                    requirements.classList.contains("is-expanded") &&
+                    firstExecutable &&
+                    firstExecutable.classList.contains("is-expanded") &&
+                    usefulChoices.includes("Process lifecycle and configuration") &&
+                    usefulChoices.includes("Build and version identity") &&
+                    usefulChoices.includes("Status") &&
+                    usefulChoices.includes("Application boundary and testability") &&
+                    usefulChoices.includes("Step-4 first-registration operation")
+                      ? "passed"
+                      : "failed";
+                  collapseAll.click();
+                } else {
+                  document.body.dataset.ssdRequirementsExpansion =
+                    "missing-ssd";
+                }
               }
 
               const splitter = root && root.querySelector(
@@ -723,6 +815,7 @@ jobs:
               "tree-indent-compact": "passed",
               "collapse-all-interaction": "passed",
               "linear-branch-expansion": "passed",
+              "ssd-requirements-expansion": "passed",
               "pane-resize-interaction": "passed",
               "pane-resize-persisted": "passed",
           }
@@ -741,6 +834,46 @@ jobs:
           ! grep -q 'treeToggleInteraction' bld/engineering-portal/site/workspace/index.html
           ! grep -q 'paneResizeInteraction' bld/engineering-portal/site/workspace/index.html
           ! grep -q 'paneResizePersisted' bld/engineering-portal/site/workspace/index.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/" \
+            > bld/engineering-portal/browser-landing.html
+
+          grep -q 'Event Timing Engineering Portal' bld/engineering-portal/browser-landing.html
+          grep -q 'Start here' bld/engineering-portal/browser-landing.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/explorer/" \
+            > bld/engineering-portal/browser-explorer-neutral.html
+
+          grep -q 'Select an engineering object.' bld/engineering-portal/browser-explorer-neutral.html
+          ! grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer-neutral.html
+
+          "$chrome" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=2500 \
+            --dump-dom \
+            "http://127.0.0.1:8765/workspace/" \
+            > bld/engineering-portal/browser-workspace-neutral.html
+
+          grep -q 'Select an engineering object.' bld/engineering-portal/browser-workspace-neutral.html
+          grep -q 'Select a related object to compare.' bld/engineering-portal/browser-workspace-neutral.html
+          ! grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-neutral.html
 
           "$chrome" \
             --headless \
