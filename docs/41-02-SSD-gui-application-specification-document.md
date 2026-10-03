@@ -106,7 +106,7 @@ The **Desktop GUI Application** (SI-02) owns its desktop screen structure, navig
 presentation models and interaction design within this SSD and its later detailed design.
 It is not IF-04.
 
-**IF-04 — Web Operator HMI** is the separate browser/tablet interface exposed directly by
+**IF-04 — Web Interface** is the separate browser/tablet interface exposed directly by
 SI-01.
 
 ## Software-to-software interface
