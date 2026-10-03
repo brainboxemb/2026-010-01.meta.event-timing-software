@@ -1,0 +1,112 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="engineering-client" name="Figure SDE03-01 — Engineering Client architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1380" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group-ui" value="Engineering Client / JavaFX presentation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef4ff;strokeColor=#6c8ebf;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="390" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="group-services" value="Independent engineering client services" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#82b366;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="465" y="90" width="380" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="group-si01" value="Timing Point Application / external engineering boundaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff0ee;strokeColor=#b85450;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="880" y="90" width="455" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="client-shell" value="TestClientFxApplication&lt;br&gt;JavaFX shell / presentation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="85" y="135" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="status-view" value="Status&lt;br&gt;version + status + raw JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="75" y="255" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="events-view" value="Events&lt;br&gt;WebSocket inspection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="245" y="255" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="terminal-view" value="Terminal&lt;br&gt;Remote Shell" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="75" y="350" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="logs-view" value="Logs&lt;br&gt;live diagnostics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="245" y="350" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-view" value="Timing (Step 4)&lt;br&gt;TimingNode / TimingData" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="75" y="485" width="150" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="upstream-view" value="Upstream (later)&lt;br&gt;capability + test control" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="245" y="485" width="150" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-fixtures" value="Documentation mode&lt;br&gt;deterministic public fixtures" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="120" y="625" width="230" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="api-client" value="ApiClient&lt;br&gt;HTTP / JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="205" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="event-client" value="ApiEventClient&lt;br&gt;WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="305" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="shell-client" value="RemoteShellClient&lt;br&gt;line-oriented TCP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="405" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="log-client" value="LiveLogClient&lt;br&gt;diagnostics TCP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="505" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="if03" value="IF-03 API&lt;br&gt;HTTP / JSON + WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="945" y="185" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="remote-shell" value="Remote Shell&lt;br&gt;engineering terminal boundary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="945" y="320" width="320" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="logging-server" value="LoggingServer&lt;br&gt;live diagnostics boundary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="945" y="435" width="320" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="debug-connector" value="DebugConnector (Step 4)&lt;br&gt;under UpstreamGateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="945" y="565" width="320" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="real-connector" value="RabbitMqConnector&lt;br&gt;may coexist when configured" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="945" y="655" width="320" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="status-view" target="api-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="status / control / history" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="timing-view" target="api-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="live TimingData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="timing-view" target="event-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="later capabilities / test control" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="upstream-view" target="api-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="events-view" target="event-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="terminal-view" target="shell-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="logs-view" target="log-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="visual fixtures only" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="doc-fixtures" target="client-shell">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="api-client" target="if03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="event-client" target="if03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="shell-client" target="remote-shell">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="log-client" target="logging-server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-13" value="API-controlled debug injection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="if03" target="debug-connector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-14" value="observable result / status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="debug-connector" target="if03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

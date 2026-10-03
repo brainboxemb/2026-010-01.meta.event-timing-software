@@ -1,0 +1,225 @@
+.md-grid {
+  max-width: 104rem;
+}
+
+.eng-workspace-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: -0.25rem 0 0.85rem;
+  font-size: 0.72rem;
+}
+
+.eng-workspace-nav a {
+  display: inline-block;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-default-bg-color);
+}
+
+.eng-workspace-nav a:hover,
+.eng-workspace-nav a:focus {
+  border-color: var(--md-accent-fg-color);
+}
+
+.eng-context,
+.eng-detail {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  background: var(--md-default-bg-color);
+}
+
+.eng-context {
+  margin-bottom: 0.9rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.eng-context h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.eng-diagram {
+  overflow: auto;
+}
+
+.eng-architecture {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eng-architecture [data-engineering-id] {
+  cursor: pointer;
+  outline: none;
+}
+
+.eng-architecture [data-engineering-id]:hover,
+.eng-architecture [data-engineering-id]:focus,
+.eng-architecture [data-engineering-id].is-selected {
+  filter: drop-shadow(0 0 4px var(--md-accent-fg-color));
+}
+
+.eng-object-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.eng-object-chip,
+.eng-relation {
+  appearance: none;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  cursor: pointer;
+  text-align: left;
+}
+
+.eng-object-chip {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.eng-object-chip:hover,
+.eng-object-chip:focus,
+.eng-relation:hover,
+.eng-relation:focus,
+.eng-object-chip.is-selected,
+.eng-relation.is-selected {
+  border-color: var(--md-accent-fg-color);
+}
+
+/* Architecture view: full diagram left, one selected object right. */
+.eng-architecture-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.eng-architecture-workspace > .eng-context {
+  margin-bottom: 0;
+}
+
+.eng-architecture-workspace > .eng-detail {
+  position: sticky;
+  top: 4.8rem;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
+}
+
+/* Traceability view: selected object left, clicked relation right. */
+.eng-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.eng-detail {
+  padding: 0.9rem;
+  min-width: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.eng-detail__role {
+  margin-bottom: 0.5rem;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.eng-detail__header h2 {
+  margin: 0.2rem 0 0.25rem;
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.eng-detail h3 {
+  margin: 1rem 0 0.45rem;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.eng-detail code {
+  font-size: 0.7rem;
+}
+
+.eng-object-type {
+  display: inline-block;
+  border-radius: 1rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--md-code-bg-color);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eng-detail__summary {
+  margin: 0.7rem 0;
+}
+
+.eng-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.7rem 0;
+}
+
+.eng-detail__actions .md-button {
+  padding: 0.45em 0.75em;
+  font-size: 0.7rem;
+}
+
+.eng-detail__relations,
+.eng-detail__focus {
+  margin-top: 1.25rem;
+}
+
+.eng-relation {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.35rem;
+  padding: 0.38rem 0.45rem;
+  margin: 0.25rem 0;
+}
+
+.eng-relation__type {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.eng-relation__object {
+  min-width: 0;
+  font-size: 0.74rem;
+}
+
+.eng-compare-empty {
+  padding: 1.2rem 0.4rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.eng-compare-empty strong {
+  color: var(--md-default-fg-color);
+}
+
+@media screen and (max-width: 900px) {
+  .eng-architecture-workspace,
+  .eng-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .eng-architecture-workspace > .eng-detail {
+    position: static;
+    max-height: none;
+  }
+}

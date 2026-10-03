@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1010" viewBox="0 0 1240 1010">
+<defs>
+<marker id="seq-filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+<marker id="seq-open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L9,3 L0,6" fill="none" stroke="#5f6368" stroke-width="1.5"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD04 — Manual registration</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">The Future linking queue submission to the final result is internal to TimingNode; the caller sees a normal synchronous operation result.</text>
+<rect x="0.5" y="100.0" width="189.0" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="95.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Operator / client</text>
+<line data-sequence-lifeline="client" x1="95.0" y1="158.0" x2="95.0" y2="845.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="263.0" y="100.0" width="189.0" height="58.0" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="357.5" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">IF-03 / CommandHandler</text>
+<line data-sequence-lifeline="api" x1="357.5" y1="158.0" x2="357.5" y2="845.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="525.5" y="100.0" width="189.0" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="620.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<line data-sequence-lifeline="node" x1="620.0" y1="158.0" x2="620.0" y2="845.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="788.0" y="100.0" width="189.0" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="882.5" y="120.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">LogBook</text>
+<text x="882.5" y="138.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">committed TimingData</text>
+<line data-sequence-lifeline="logbook" x1="882.5" y1="158.0" x2="882.5" y2="845.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1050.5" y="100.0" width="189.0" height="58.0" fill="#f4cccc" stroke="#b85450" stroke-width="2"/>
+<text x="1145.0" y="120.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingDataStore</text>
+<text x="1145.0" y="138.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">file persistence / recovery</text>
+<line data-sequence-lifeline="store" x1="1145.0" y1="158.0" x2="1145.0" y2="845.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect data-sequence-activation="0" x="351.5" y="195.0" width="12.0" height="625.3" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1.4"/>
+<rect data-sequence-activation="1" x="614.0" y="247.0" width="12.0" height="521.3" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="2" x="618.0" y="384.3" width="12.0" height="392.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="3" x="876.5" y="436.3" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="4" x="1139.0" y="540.3" width="12.0" height="72.0" fill="#f4cccc" stroke="#b85450" stroke-width="1.4"/>
+<rect data-sequence-activation="5" x="876.5" y="644.3" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<line data-sequence-message="1" x1="95.0" y1="205.0" x2="351.5" y2="205.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="223.2" y="193.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">register(identity, time)</text>
+<line data-sequence-message="2" x1="363.5" y1="257.0" x2="614.0" y2="257.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="488.8" y="245.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">register(identity, time)</text>
+<path data-sequence-message="3" data-sequence-self-message="true" d="M 626.0 325.6 H 668.0 V 349.6 H 626.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="634.0" y="305.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue internal</text>
+<text x="634.0" y="322.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">work + Future</text>
+<path data-sequence-message="4" data-sequence-self-message="true" d="M 630.0 394.3 H 672.0 V 418.3 H 630.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="638.0" y="374.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker validates against</text>
+<text x="638.0" y="390.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">current TimingNode state</text>
+<line data-sequence-message="5" x1="630.0" y1="446.3" x2="876.5" y2="446.3" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="753.2" y="434.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">nextSequence()</text>
+<line data-sequence-message="6" x1="876.5" y1="498.3" x2="630.0" y2="498.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="753.2" y="486.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">sequence N</text>
+<line data-sequence-message="7" x1="630.0" y1="550.3" x2="1139.0" y2="550.3" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="884.5" y="538.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">append(record N)</text>
+<line data-sequence-message="8" x1="1139.0" y1="602.3" x2="630.0" y2="602.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="884.5" y="590.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">durable</text>
+<line data-sequence-message="9" x1="630.0" y1="654.3" x2="876.5" y2="654.3" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="753.2" y="642.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">add(record N)</text>
+<line data-sequence-message="10" x1="876.5" y1="706.3" x2="630.0" y2="706.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="753.2" y="694.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">visible</text>
+<line data-sequence-message="11" x1="618.0" y1="758.3" x2="363.5" y2="758.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="490.8" y="746.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">RegistrationResult.COMMITTED</text>
+<line data-sequence-message="12" x1="351.5" y1="810.3" x2="95.0" y2="810.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="223.2" y="798.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">committed result</text>
+</svg>

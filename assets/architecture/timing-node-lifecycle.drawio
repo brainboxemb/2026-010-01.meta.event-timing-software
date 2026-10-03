@@ -1,0 +1,37 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="timing-node-lifecycle" name="TimingNode lifecycle — operational lifecycle and health are separate">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="closed" value="CLOSED&lt;br&gt;not accepting normal TimingNode operation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="170" y="210" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="open" value="OPEN&lt;br&gt;TimingNode operation enabled" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="770" y="210" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="health" value="Subsystem health is orthogonal&lt;br&gt;HEALTHY • DEGRADED • ERROR do not silently change OPEN/CLOSED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="355" y="440" width="560" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="example" value="Example: OPEN + RFID INITIALISING/ERROR&lt;br&gt;=&gt; TimingNode remains OPEN while health is degraded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="355" y="650" width="560" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="Open command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="closed" target="open">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="Close command" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="open" target="closed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="closed" target="health">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="open" target="health">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="health" target="example">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

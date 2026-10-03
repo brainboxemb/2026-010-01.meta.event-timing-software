@@ -1,0 +1,189 @@
+{
+  "$defs": {
+    "type-uc": {
+      "properties": {
+        "type": {
+          "const": "uc"
+        }
+      }
+    },
+    "type-req": {
+      "properties": {
+        "type": {
+          "const": "req"
+        }
+      }
+    },
+    "type-ifreq": {
+      "properties": {
+        "type": {
+          "const": "ifreq"
+        }
+      }
+    },
+    "type-arch": {
+      "properties": {
+        "type": {
+          "const": "arch"
+        }
+      }
+    },
+    "type-vc": {
+      "properties": {
+        "type": {
+          "const": "vc"
+        }
+      }
+    },
+    "upstream-requirement-source": {
+      "properties": {
+        "type": {
+          "enum": [
+            "uc",
+            "req",
+            "ifreq"
+          ]
+        }
+      }
+    },
+    "requirement-target": {
+      "properties": {
+        "type": {
+          "enum": [
+            "req",
+            "ifreq"
+          ]
+        }
+      }
+    },
+    "type-requirement": {
+      "properties": {
+        "type": {
+          "enum": [
+            "req",
+            "ifreq"
+          ]
+        }
+      }
+    }
+  },
+  "schemas": [
+    {
+      "id": "requirement-status-code",
+      "message": "Requirement status may only be D, R, A or O.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "requirement-status-required",
+      "message": "Every software/interface requirement must carry an explicit D/R/A/O maturity status.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "local": {
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "req-derived-from-source-type",
+      "message": "Software/system requirements may derive from use cases, requirements or interface requirements.",
+      "select": {
+        "$ref": "#/$defs/type-req"
+      },
+      "validate": {
+        "network": {
+          "derived_from": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/upstream-requirement-source"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "ifreq-derived-from-requirement",
+      "message": "Interface requirement derived_from links may target software requirements.",
+      "select": {
+        "$ref": "#/$defs/type-ifreq"
+      },
+      "validate": {
+        "network": {
+          "derived_from": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/type-req"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "arch-satisfies-requirement",
+      "message": "Architecture satisfies links may target software/interface requirements.",
+      "select": {
+        "$ref": "#/$defs/type-arch"
+      },
+      "validate": {
+        "network": {
+          "satisfies": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "vc-verifies-requirement",
+      "message": "Verification verifies links may target software/interface requirements.",
+      "select": {
+        "$ref": "#/$defs/type-vc"
+      },
+      "validate": {
+        "network": {
+          "verifies": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

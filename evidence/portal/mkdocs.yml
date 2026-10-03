@@ -1,0 +1,47 @@
+site_name: Event Timing Engineering Portal
+site_description: Derived engineering navigation and traceability portal
+repo_url: https://github.com/brainboxemb/2026-010-01.meta.event-timing-software
+repo_name: brainboxemb/2026-010-01.meta.event-timing-software
+
+docs_dir: ../../bld/engineering-portal/docs
+site_dir: ../../bld/engineering-portal/site
+strict: true
+
+nav:
+  - Portal: index.md
+  - Architecture Book: book.md
+  - Engineering explorer: explorer.md
+  - Traceability comparison: workspace.md
+  - Engineering Client UI: engineering-client-ui.md
+  - Objects:
+      - Engineering object index: objects/index.md
+
+not_in_nav: |
+  objects/*.md
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.preview
+    - navigation.path
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+
+extra_javascript:
+  - assets/javascripts/explorer.js
+
+extra_css:
+  - assets/stylesheets/explorer.css

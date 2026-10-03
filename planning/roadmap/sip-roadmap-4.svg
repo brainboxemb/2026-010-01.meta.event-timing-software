@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm" viewBox="0 0 841.89 595.28">
+<rect width="100%" height="100%" fill="white"/>
+<text x="18.00" y="35.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="17.00" font-weight="bold" fill="#2f3337">Software Implementation Planning — roadmap</text>
+<text x="18.00" y="61.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.00" font-weight="normal" fill="#666666">TOTAL: orig ~59d · forecast ~62d  |  PROGRESS: spent ~15.5d · rem ~46.5d  |  ~1d/week · +25% reserve</text>
+<rect x="18.00" y="75.50" width="261.96" height="321.38" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="1"/>
+<rect x="27.00" y="84.50" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="39.00" y="100.70" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.50" font-weight="bold" fill="#2f3337">10</text>
+<rect x="230.09" y="84.50" width="40.88" height="16.00" rx="8" fill="#f1f1f1" stroke="#888888"/>
+<text x="250.53" y="95.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="270.96" y="111.00" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555f68">end 06 Sep 2027</text>
+<text x="27.00" y="129.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">Real timing-device integration</text>
+<text x="27.00" y="144.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">TOTAL: orig ~10d · forecast ~10d</text>
+<text x="27.00" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">RESULT</text>
+<line x1="119.00" y1="162.75" x2="270.96" y2="162.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="30.00" cy="175.85" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="180.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Real devices feed the same application/domain</text>
+<text x="37.00" y="190.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">paths already proven with simulation.</text>
+<circle cx="30.00" cy="200.10" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="204.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Device health and recovery are observable.</text>
+<circle cx="30.00" cy="213.72" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="218.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Simulated tests remain usable as the fast</text>
+<text x="37.00" y="228.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">regression baseline.</text>
+<text x="27.00" y="252.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DEMO</text>
+<line x1="119.00" y1="249.88" x2="270.96" y2="249.88" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="30.00" cy="262.98" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="267.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Run a representative real-device</text>
+<text x="37.00" y="278.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">registration/input flow.</text>
+<circle cx="30.00" cy="287.23" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="291.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Observe the resulting state/data through SI-02.</text>
+<circle cx="30.00" cy="300.85" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="305.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Disconnect or reset one device and demonstrate the</text>
+<text x="37.00" y="315.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">supported recovery behaviour.</text>
+<text x="27.00" y="340.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DOCUMENT STATUS</text>
+<line x1="119.00" y1="337.00" x2="270.96" y2="337.00" stroke="#d9dde1" stroke-width="1"/>
+<rect x="27.00" y="346.00" width="53.25" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="53.62" y="357.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">30-UC R-95</text>
+<rect x="86.25" y="346.00" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="121.12" y="357.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">41-01-SSD R-95</text>
+<rect x="162.00" y="346.00" width="57.38" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="190.69" y="357.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">60-SVP R-95</text>
+<rect x="27.00" y="366.00" width="69.75" height="16.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="61.88" y="377.40" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#244b73">70-01-SUM W-70</text>
+<rect x="289.96" y="75.50" width="261.96" height="332.00" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="1"/>
+<rect x="298.96" y="84.50" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="310.96" y="100.70" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.50" font-weight="bold" fill="#2f3337">11</text>
+<rect x="502.05" y="84.50" width="40.88" height="16.00" rx="8" fill="#f1f1f1" stroke="#888888"/>
+<text x="522.49" y="95.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="542.93" y="111.00" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555f68">end 15 Nov 2027</text>
+<text x="298.96" y="129.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">Integrated system and field proof</text>
+<text x="298.96" y="144.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">TOTAL: orig ~8d · forecast ~8d</text>
+<text x="298.96" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">RESULT</text>
+<line x1="390.96" y1="162.75" x2="542.93" y2="162.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="301.96" cy="175.85" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="180.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">The representative integrated setup can run and</text>
+<text x="308.96" y="190.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">recover from selected failures.</text>
+<circle cx="301.96" cy="200.10" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="204.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Operators can observe the important system state</text>
+<text x="308.96" y="215.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">through normal interfaces.</text>
+<circle cx="301.96" cy="224.35" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="228.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Remaining hardening work is based on</text>
+<text x="308.96" y="239.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">field/integration evidence.</text>
+<text x="298.96" y="263.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DEMO</text>
+<line x1="390.96" y1="260.50" x2="542.93" y2="260.50" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="301.96" cy="273.60" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="278.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Run a representative timing session from input</text>
+<text x="308.96" y="288.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">through GUI/backoffice.</text>
+<circle cx="301.96" cy="297.85" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="302.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Interrupt one external dependency or device.</text>
+<circle cx="301.96" cy="311.48" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="315.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Recover and finish the session without losing</text>
+<text x="308.96" y="326.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">committed timing history.</text>
+<text x="298.96" y="350.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DOCUMENT STATUS</text>
+<line x1="390.96" y1="347.62" x2="542.93" y2="347.62" stroke="#d9dde1" stroke-width="1"/>
+<rect x="298.96" y="356.62" width="53.25" height="16.00" rx="5" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="325.59" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#31582b">30-UC A-95</text>
+<rect x="358.21" y="356.62" width="69.75" height="16.00" rx="5" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="393.09" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#31582b">41-01-SSD A-95</text>
+<rect x="433.96" y="356.62" width="57.38" height="16.00" rx="5" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="462.65" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#31582b">60-SVP A-95</text>
+<rect x="298.96" y="376.62" width="69.75" height="16.00" rx="5" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="333.84" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#31582b">70-01-SUM A-90</text>
+<rect x="374.71" y="376.62" width="57.38" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="403.40" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">11-SIP R-95</text>
+<text x="775.89" y="581.28" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#777">Page 4/4</text>
+</svg>

@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="engineering-client-timing-reconnecting" name="Figure SDE03-04 — Timing view / SYNCING and stale">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="790" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="shell" value="&lt;b&gt;Engineering Client&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;IF-03 endpoint http://127.0.0.1:8081&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="35" y="85" width="1110" height="660" as="geometry" />
+        </mxCell>
+        <mxCell id="tabs" value="Status &amp;nbsp; | &amp;nbsp; Events &amp;nbsp; | &amp;nbsp; &lt;b&gt;Timing&lt;/b&gt; &amp;nbsp; | &amp;nbsp; Terminal &amp;nbsp; | &amp;nbsp; Logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=middle;align=center;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-tabs">
+          <mxGeometry x="65" y="120" width="1050" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="connection" value="SYNCING" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#b58b24;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=50;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-status">
+          <mxGeometry x="945" y="180" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sync-action" value="Sync view" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="675" y="180" width="125" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="stale" value="STALE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#b58b24;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=50;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-status">
+          <mxGeometry x="820" y="180" width="95" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sync-view" value="&lt;b&gt;Synchronising view&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;status + capabilities + bounded LogBook ranges; live events buffered and deduplicated by record key&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#b58b24;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="75" y="215" width="1035" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="location" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;LocationId&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;24 (cached)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="95" y="330" width="245" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="lifecycle" value="OPEN (cached)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=50;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-status">
+          <mxGeometry x="365" y="352" width="135" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="set-location" value="Set location" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="530" y="350" width="125" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="open" value="Open" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="680" y="350" width="100" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="close" value="Close" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="795" y="350" width="100" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="inject" value="Auto-reg" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="920" y="350" width="165" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="history" value="&lt;b&gt;Cached LogBook&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;Retained for inspection; bounded gap fetch in progress&lt;/span&gt;&lt;br&gt;Seq | Type | Location | RegistrationId | Effective | Recorded&lt;br&gt;1 | automatic | 24 | N001 | 12:00:00.000 | 12:00:00.125&lt;br&gt;2 | manual | 24 | N002 | 12:00:04.000 | 12:00:04.030" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b7b7b7;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-table">
+          <mxGeometry x="75" y="445" width="1035" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="rule" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;Live transition&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;Apply snapshot -&amp;gt; fetch LogBook gap -&amp;gt; merge buffered events -&amp;gt; deduplicate -&amp;gt; LIVE&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#b58b24;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="75" y="660" width="1035" height="58" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

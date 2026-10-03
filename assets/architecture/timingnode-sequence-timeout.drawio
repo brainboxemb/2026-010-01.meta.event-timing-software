@@ -1,0 +1,138 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="timingnode-sequence-timeout" name="Figure SDD01-TD09 — Timeout and state re-query">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="1110" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sequence-participant-client" value="Operator / Engineering Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="0.0" y="100.0" width="190.0" height="780.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-api" value="Presentation / CommandHandler" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="585.0" y="100.0" width="190.0" height="780.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-node" value="TimingNode" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=58;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1170.0" y="100.0" width="190.0" height="780.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-0" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="sequence-participant-api">
+          <mxGeometry x="89.0" y="95.0" width="12.0" height="228.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-1" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="89.0" y="147.0" width="12.0" height="124.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-2" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="89.0" y="355.0" width="12.0" height="356.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-3" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="93.0" y="407.0" width="12.0" height="304.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-4" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="sequence-participant-api">
+          <mxGeometry x="89.0" y="459.0" width="12.0" height="296.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-5" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="97.0" y="511.0" width="12.0" height="192.6" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-activation-6" value="" style="points=[];html=1;whiteSpace=wrap;fillColor=#fffaf0;strokeColor=#d6b656;" vertex="1" parent="sequence-participant-node">
+          <mxGeometry x="101.0" y="631.6" width="12.0" height="80.0" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-message-1" value="OPEN" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="95.0" y="205.0" as="sourcePoint" />
+            <mxPoint x="674.0" y="205.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-2" value="open()" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="686.0" y="257.0" as="sourcePoint" />
+            <mxPoint x="1259.0" y="257.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-3" value="queue OPEN work + hidden Future" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1271.0" y="309.0" as="sourcePoint" />
+            <mxPoint x="1271.0" y="333.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1313.0" y="309.0" />
+              <mxPoint x="1313.0" y="333.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-4" value="TimingNodeTimeoutException" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1259.0" y="361.0" as="sourcePoint" />
+            <mxPoint x="686.0" y="361.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-5" value="timeout — outcome unknown" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="674.0" y="413.0" as="sourcePoint" />
+            <mxPoint x="95.0" y="413.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-6" value="worker later executes OPEN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1271.0" y="465.0" as="sourcePoint" />
+            <mxPoint x="1271.0" y="489.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1313.0" y="465.0" />
+              <mxPoint x="1313.0" y="489.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-7" value="state = OPEN; Future completes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1275.0" y="517.0" as="sourcePoint" />
+            <mxPoint x="1275.0" y="541.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1317.0" y="517.0" />
+              <mxPoint x="1317.0" y="541.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-8" value="STATUS" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="95.0" y="569.0" as="sourcePoint" />
+            <mxPoint x="674.0" y="569.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-9" value="status()" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="686.0" y="621.0" as="sourcePoint" />
+            <mxPoint x="1267.0" y="621.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-10" value="queue consistency-sensitive read" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1279.0" y="673.0" as="sourcePoint" />
+            <mxPoint x="1279.0" y="697.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1321.0" y="673.0" />
+              <mxPoint x="1321.0" y="697.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-11" value="worker captures&lt;br&gt;current state = OPEN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1283.0" y="741.6" as="sourcePoint" />
+            <mxPoint x="1283.0" y="765.6" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1325.0" y="741.6" />
+              <mxPoint x="1325.0" y="765.6" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-12" value="TimingNodeStatus.OPEN" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1271.0" y="793.6" as="sourcePoint" />
+            <mxPoint x="686.0" y="793.6" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-13" value="OPEN" style="edgeStyle=none;rounded=0;html=1;whiteSpace=wrap;fontSize=13;strokeColor=#5f6368;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="674.0" y="845.6" as="sourcePoint" />
+            <mxPoint x="95.0" y="845.6" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

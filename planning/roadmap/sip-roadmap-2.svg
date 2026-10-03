@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm" viewBox="0 0 841.89 595.28">
+<rect width="100%" height="100%" fill="white"/>
+<text x="18.00" y="35.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="17.00" font-weight="bold" fill="#2f3337">Software Implementation Planning — roadmap</text>
+<text x="18.00" y="61.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.00" font-weight="normal" fill="#666666">TOTAL: orig ~59d · forecast ~62d  |  PROGRESS: spent ~15.5d · rem ~46.5d  |  ~1d/week · +25% reserve</text>
+<rect x="18.00" y="75.50" width="261.96" height="352.00" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="1"/>
+<rect x="27.00" y="84.50" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="39.00" y="100.70" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.50" font-weight="bold" fill="#2f3337">4</text>
+<rect x="232.96" y="84.50" width="38.00" height="16.00" rx="8" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="251.96" y="95.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#244b73">ACTIVE</text>
+<text x="270.96" y="111.00" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555f68">end 12 Oct 2026</text>
+<text x="27.00" y="129.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">First registration-system slice</text>
+<text x="27.00" y="144.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">TOTAL: orig ~6d · forecast ~5.6d</text>
+<text x="27.00" y="154.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">PROGRESS: spent ~5.1d · rem ~0.5d</text>
+<text x="27.00" y="175.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">RESULT</text>
+<line x1="119.00" y1="172.12" x2="270.96" y2="172.12" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="30.00" cy="185.22" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="189.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">One TimingNode owns a durable, ordered</text>
+<text x="37.00" y="200.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">registration stream.</text>
+<circle cx="30.00" cy="209.47" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="213.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">The same registration behaviour is available</text>
+<text x="37.00" y="224.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">through the public API and Engineering Client.</text>
+<circle cx="30.00" cy="233.72" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="238.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Restart rebuilds local registration history</text>
+<text x="37.00" y="248.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">without inventing new records.</text>
+<text x="27.00" y="272.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DEMO</text>
+<line x1="119.00" y1="269.88" x2="270.96" y2="269.88" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="30.00" cy="282.98" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="287.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Configure a location, open the TimingNode and</text>
+<text x="37.00" y="298.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">submit one accepted registration.</text>
+<circle cx="30.00" cy="307.23" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="311.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Observe the committed record in history and as a</text>
+<text x="37.00" y="322.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">live update.</text>
+<circle cx="30.00" cy="331.48" r="1.55" fill="#6a8bb0"/>
+<text x="37.00" y="335.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Close, restart and confirm that the committed</text>
+<text x="37.00" y="346.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">history is recovered.</text>
+<text x="27.00" y="370.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DOCUMENT STATUS</text>
+<line x1="119.00" y1="367.62" x2="270.96" y2="367.62" stroke="#d9dde1" stroke-width="1"/>
+<rect x="27.00" y="376.62" width="57.38" height="16.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="55.69" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#244b73">03-DOM W-80</text>
+<rect x="90.38" y="376.62" width="53.25" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="117.00" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">30-UC R-70</text>
+<rect x="149.62" y="376.62" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="184.50" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">41-01-SSD R-55</text>
+<rect x="27.00" y="396.62" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="61.88" y="408.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">32-03-IDD R-70</text>
+<rect x="102.75" y="396.62" width="57.38" height="16.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="131.44" y="408.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#244b73">60-SVP W-60</text>
+<rect x="289.96" y="75.50" width="261.96" height="357.00" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="1"/>
+<rect x="298.96" y="84.50" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="310.96" y="100.70" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.50" font-weight="bold" fill="#2f3337">5</text>
+<rect x="502.05" y="84.50" width="40.88" height="16.00" rx="8" fill="#f1f1f1" stroke="#888888"/>
+<text x="522.49" y="95.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="542.93" y="111.00" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555f68">end 30 Nov 2026</text>
+<text x="298.96" y="129.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">Simulated antenna input and runtime</text>
+<text x="298.96" y="143.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">behaviour</text>
+<text x="298.96" y="159.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">TOTAL: orig ~6d · forecast ~6d</text>
+<text x="298.96" y="180.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">RESULT</text>
+<line x1="390.96" y1="177.12" x2="542.93" y2="177.12" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="301.96" cy="190.22" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="194.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Simulated antenna observations reach the normal</text>
+<text x="308.96" y="205.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">registration path.</text>
+<circle cx="301.96" cy="214.47" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="218.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Sustained input can be measured without bypassing</text>
+<text x="308.96" y="229.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">TimingNode ownership.</text>
+<circle cx="301.96" cy="238.72" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="243.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Restart/recovery works with the same simulated</text>
+<text x="308.96" y="253.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">input path used by automated tests.</text>
+<text x="298.96" y="277.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DEMO</text>
+<line x1="390.96" y1="274.88" x2="542.93" y2="274.88" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="301.96" cy="287.98" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="292.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Open one TimingNode and feed repeatable tag</text>
+<text x="308.96" y="303.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">observations through SimulatedAntenna.</text>
+<circle cx="301.96" cy="312.23" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="316.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Show which observations become committed</text>
+<text x="308.96" y="327.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">registrations and inspect the runtime counters.</text>
+<circle cx="301.96" cy="336.48" r="1.55" fill="#6a8bb0"/>
+<text x="308.96" y="340.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Restart SI-01 and continue using the same</text>
+<text x="308.96" y="351.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">simulated input configuration.</text>
+<text x="298.96" y="375.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DOCUMENT STATUS</text>
+<line x1="390.96" y1="372.62" x2="542.93" y2="372.62" stroke="#d9dde1" stroke-width="1"/>
+<rect x="298.96" y="381.62" width="53.25" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="325.59" y="393.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">30-UC R-80</text>
+<rect x="358.21" y="381.62" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="393.09" y="393.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">41-01-SSD R-70</text>
+<rect x="433.96" y="381.62" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="468.84" y="393.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">32-03-IDD R-80</text>
+<rect x="298.96" y="401.62" width="57.38" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="327.65" y="413.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">60-SVP R-70</text>
+<rect x="561.93" y="75.50" width="261.96" height="332.00" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="1"/>
+<rect x="570.93" y="84.50" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="582.93" y="100.70" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.50" font-weight="bold" fill="#2f3337">6</text>
+<rect x="774.01" y="84.50" width="40.88" height="16.00" rx="8" fill="#f1f1f1" stroke="#888888"/>
+<text x="794.45" y="95.90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="814.89" y="111.00" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#555f68">end 11 Jan 2027</text>
+<text x="570.93" y="129.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="11.50" font-weight="bold" fill="#2f3337">Desktop GUI Application</text>
+<text x="570.93" y="144.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#6a7279">TOTAL: orig ~4d · forecast ~5d</text>
+<text x="570.93" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">RESULT</text>
+<line x1="662.93" y1="162.75" x2="814.89" y2="162.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="573.93" cy="175.85" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="180.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">A separate operator GUI can connect to and operate</text>
+<text x="580.93" y="190.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">SI-01 through the public API.</text>
+<circle cx="573.93" cy="200.10" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="204.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Connection loss and stale state are visible</text>
+<text x="580.93" y="215.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">instead of being hidden.</text>
+<circle cx="573.93" cy="224.35" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="228.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">SI-02 remains independently buildable from SI-01.</text>
+<text x="570.93" y="252.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DEMO</text>
+<line x1="662.93" y1="249.88" x2="814.89" y2="249.88" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="573.93" cy="262.98" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="267.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Connect SI-02 to a running SI-01 and operate one</text>
+<text x="580.93" y="278.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">TimingNode.</text>
+<circle cx="573.93" cy="287.23" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="291.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Show current status and registration history/live</text>
+<text x="580.93" y="302.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">updates.</text>
+<circle cx="573.93" cy="311.48" r="1.55" fill="#6a8bb0"/>
+<text x="580.93" y="315.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">Disconnect, reconnect and rebuild the current</text>
+<text x="580.93" y="326.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.50" font-weight="normal" fill="#2f3337">view.</text>
+<text x="570.93" y="350.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#4b5b6b">DOCUMENT STATUS</text>
+<line x1="662.93" y1="347.62" x2="814.89" y2="347.62" stroke="#d9dde1" stroke-width="1"/>
+<rect x="570.93" y="356.62" width="53.25" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="597.55" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">30-UC R-85</text>
+<rect x="630.18" y="356.62" width="69.75" height="16.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="665.05" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#244b73">41-02-SSD W-60</text>
+<rect x="705.93" y="356.62" width="69.75" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="740.80" y="368.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">32-03-IDD R-85</text>
+<rect x="570.93" y="376.62" width="57.38" height="16.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="599.61" y="388.02" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="bold" fill="#6a4b00">60-SVP R-75</text>
+<text x="775.89" y="581.28" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.50" font-weight="normal" fill="#777">Page 2/4</text>
+</svg>
