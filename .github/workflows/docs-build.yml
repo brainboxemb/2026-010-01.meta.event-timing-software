@@ -344,6 +344,8 @@ jobs:
                   )
           if 'data-eng-detail' not in explorer or 'eng-explorer-workspace' not in explorer:
               raise SystemExit("Engineering Explorer page lost architecture + selected-object composition")
+          if 'eng-explorer-title' not in explorer:
+              raise SystemExit("Engineering Explorer missing compact workbench heading")
           if 'data-eng-workspace' in explorer:
               raise SystemExit("Engineering Explorer unexpectedly contains comparison workspace")
 
@@ -357,6 +359,8 @@ jobs:
               raise SystemExit("traceability comparison page missing ordered object tree")
           if 'data-eng-tree-search' not in workspace or 'data-eng-tree-type' not in workspace:
               raise SystemExit("traceability comparison page missing tree filters")
+          if 'data-eng-tree-collapse-all' not in workspace:
+              raise SystemExit("traceability comparison page missing Collapse all control")
           if 'data-workspace-root-id="IF05-REQ-007"' not in workspace:
               raise SystemExit("traceability object tree missing IF05-REQ-007")
           if '32-05-ISD-timingdata-interchange' not in workspace:
@@ -542,6 +546,50 @@ jobs:
                   ? "passed"
                   : "failed";
 
+              const browser = root && root.querySelector(".eng-object-browser");
+              const search = root && root.querySelector("[data-eng-tree-search]");
+              const topToggle = root && root.querySelector(
+                '[data-tree-level="0"] > [data-eng-tree-toggle]'
+              );
+              const visibleObject = root && Array.from(
+                root.querySelectorAll("[data-workspace-root-id]")
+              ).find((node) => node.getClientRects().length > 0);
+              if (browser && search && topToggle && visibleObject) {
+                const browserLeft = browser.getBoundingClientRect().left;
+                const searchLeft = search.getBoundingClientRect().left;
+                const topLeft = topToggle.getBoundingClientRect().left;
+                const objectLabel = visibleObject.querySelector(
+                  ".eng-tree-item__id"
+                );
+                const objectLeft = objectLabel
+                  ? objectLabel.getBoundingClientRect().left
+                  : Number.POSITIVE_INFINITY;
+                document.body.dataset.treeEdgeSpacing =
+                  Math.abs(searchLeft - browserLeft) <= 3 &&
+                  Math.abs(topLeft - browserLeft) <= 3
+                    ? "passed"
+                    : "failed";
+                document.body.dataset.treeIndentCompact =
+                  objectLeft - browserLeft <= 24
+                    ? "passed"
+                    : "failed";
+              }
+
+              const collapseAll = root && root.querySelector(
+                "[data-eng-tree-collapse-all]"
+              );
+              if (collapseAll) {
+                collapseAll.click();
+                const expanded = root.querySelectorAll(
+                  "[data-eng-tree-group].is-expanded"
+                ).length;
+                const ariaOpen = Array.from(
+                  root.querySelectorAll("[data-eng-tree-toggle]")
+                ).some((toggle) => toggle.getAttribute("aria-expanded") === "true");
+                document.body.dataset.collapseAllInteraction =
+                  expanded === 0 && !ariaOpen ? "passed" : "failed";
+              }
+
               const splitter = root && root.querySelector(
                 '[data-eng-resizer="tree-root"]'
               );
@@ -595,6 +643,9 @@ jobs:
           checks = {
               "tree-toggle-interaction": "passed",
               "tree-material-isolation": "passed",
+              "tree-edge-spacing": "passed",
+              "tree-indent-compact": "passed",
+              "collapse-all-interaction": "passed",
               "pane-resize-interaction": "passed",
               "pane-resize-persisted": "passed",
           }
@@ -698,7 +749,7 @@ jobs:
             --disable-gpu \
             --disable-dev-shm-usage \
             --virtual-time-budget=2500 \
-            --window-size=1600,1000 \
+            --window-size=1920,1200 \
             --screenshot=bld/engineering-portal/explorer-TimingNode.png \
             "http://127.0.0.1:8765/explorer/?object=TimingNode"
 
