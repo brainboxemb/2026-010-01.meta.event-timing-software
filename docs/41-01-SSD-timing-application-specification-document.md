@@ -14,6 +14,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 
 - `31-SSSD-software-system-specification-document.md` for SI-01 allocation and software-system constraints;
 - `32-03-ISD-application-control-status.md` for IF-03 obligations;
+- `32-04-ISD-web-operator-hmi.md` for IF-04 browser/operator obligations;
 - `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
 - `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
@@ -104,7 +105,7 @@ A running SI-01 process shall expose one authoritative application build/version
 The build/version identity exposed through supported first-executable operator/application interfaces shall represent the same underlying build identity rather than interface-specific copies.
 ```
 
-The public representation and required fields are defined by IF-03.
+The semantic build identity is defined by IF-03. The current v1 wire fields are defined by `33-03-IDD-api-http-websocket.md`.
 
 #### Status
 
@@ -135,7 +136,7 @@ to determine at least:
   while the process can continue serving status.
 ```
 
-The concrete IF-03 contract/schema is defined by `32-03-ISD-application-control-status.md`.
+The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
@@ -153,7 +154,7 @@ model.
 :id: SI01-REQ-023
 :status: R
 
-SI-01 shall publish first-executable status-change information through IF-03 WebSocket/event delivery from the same authoritative status model used for status queries.
+SI-01 shall publish first-executable status-change information through IF-03 live-event delivery from the same authoritative status model used for status queries.
 ```
 
 On connection/reconnection the client shall be able to recover a complete authoritative snapshot according to the IF-03 contract.
@@ -190,7 +191,7 @@ The first-executable IF-03 service shall default to local/loopback-only access. 
 :id: SI01-REQ-033
 :status: R
 
-SI-01 shall implement IF-03 `v1` such that compatible additions can be made without requiring clients to understand every newly added JSON member or event type; breaking interface semantics shall not silently redefine the existing `v1` contract.
+SI-01 shall implement IF-03 so compatible additions can be introduced without silently changing existing operation or value semantics; breaking interface semantics shall require a new major interface version or an explicitly documented compatible migration.
 ```
 
 #### Step-4 first-registration operation
@@ -356,7 +357,7 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary | architecture/component checks + `VC-ST1-001` |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration | configuration/interface verification |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution | contract/component verification |
-| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03 control/status | V1/V2 + Step-4 ST-1 |
+| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03/IF-04 control/status | V1/V2 + Step-4 ST-1 |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 dev auto-reg control | V2 + `VC-ST1-002` |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded LogBook/WebSocket | V2/V3 + `VC-ST1-002` / `VC-ST1-003` |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary | codec/provider tests + persisted-file evidence |
@@ -364,20 +365,17 @@ These areas remain in the use-case/working-specification baseline until a later 
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery | `VC-ST1-002` second-process run |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation | codec/persistence recovery tests |
 
-### AP-1 decisions resolved by this baseline
+### First-executable interface decisions
 
-The following are now fixed for the first-executable contract:
+The following are fixed for the current baseline:
 
-- build/version identity fields are owned by IF-03: `application`, `version`, `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`;
-- minimal application status/lifecycle semantics are defined in IF-03 and the lifecycle interpretation above;
-- IF-03 HTTP resources are `/api/v1/version` and `/api/v1/status`;
-- IF-03 WebSocket endpoint is `/api/v1/events`;
-- WebSocket connect/reconnect starts with a complete status snapshot;
-- first-executable change events carry complete current status rather than a patch/replay protocol;
-- explicit JSON error responses and initial HTTP status mapping are defined in the ISD;
-- authentication/authorisation is explicitly deferred for the first executable while default network binding remains loopback-only;
+- build/version identity and status semantics are owned by the IF-03 ISD;
+- the current HTTP/JSON + WebSocket resource paths, member names, event envelopes and HTTP error mapping are owned by `33-03-IDD-api-http-websocket.md`;
+- connecting/reconnecting IF-03 clients establish a complete current status snapshot before relying on later live changes;
+- first-executable status-change events carry complete current status rather than a patch/replay protocol;
+- authentication/authorisation is not yet defined for production use while default network binding remains loopback-only;
 - verification-case identifiers use `VC-<profile>-<number>` for the first baseline;
-- no separate remote-shell ISD is required by AP-1 because that adapter reuses shared version/status semantics and is not yet a stable software-to-software contract.
+- no separate remote-shell ISD is required yet because that adapter reuses shared application semantics and is not a stable software-to-software contract.
 
 ### Remaining implementation/toolchain choices
 
