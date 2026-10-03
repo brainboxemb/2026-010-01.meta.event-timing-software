@@ -23,7 +23,7 @@
   border-color: var(--md-accent-fg-color);
 }
 
-/* Keep the architecture as the primary desktop context; details are supporting content. */
+/* Keep a wide context pane beside a compact selected-object detail pane. */
 .eng-workspace {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
@@ -40,6 +40,104 @@
 
 .eng-context {
   padding: 0.8rem;
+}
+
+.eng-context-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.eng-context-toolbar button {
+  appearance: none;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  cursor: pointer;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+.eng-context-toolbar button:hover,
+.eng-context-toolbar button:focus,
+.eng-context-toolbar button.is-selected {
+  border-color: var(--md-accent-fg-color);
+}
+
+.eng-source-panel {
+  min-height: 20rem;
+}
+
+.eng-source-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+}
+
+.eng-source-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.72rem;
+}
+
+.eng-source-title strong {
+  overflow-wrap: anywhere;
+}
+
+.eng-source-title span {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.64rem;
+}
+
+.eng-source-header .md-button {
+  padding: 0.4em 0.7em;
+  font-size: 0.68rem;
+}
+
+.eng-source-code {
+  max-height: calc(100vh - 14rem);
+  overflow: auto;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  background: var(--md-code-bg-color);
+  font-family: var(--md-code-font-family);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.eng-source-line {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(max-content, 1fr);
+  min-width: max-content;
+}
+
+.eng-source-line.is-source-line {
+  background: var(--md-default-fg-color--lightest);
+}
+
+.eng-source-line__number {
+  position: sticky;
+  left: 0;
+  padding: 0 0.55rem;
+  border-right: 1px solid var(--md-default-fg-color--lightest);
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color--light);
+  text-align: right;
+  user-select: none;
+}
+
+.eng-source-line.is-source-line .eng-source-line__number {
+  background: var(--md-default-fg-color--lightest);
+}
+
+.eng-source-line__text {
+  padding: 0 0.65rem;
+  white-space: pre;
 }
 
 .eng-detail {
