@@ -108,7 +108,7 @@ Software-item identity is stated by the document and traceability metadata; the 
 | **SI-01** | Timing Point Application | working specification | Local timing/registration runtime, device integration, state, status, persistence and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
 | **SI-02** | Desktop GUI Application | planned / technology open | Desktop client for status and later control through the API | Operator workstation/laptop |
 
-Supporting core modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A browser-based engineering/test client may also consume IF-03 without becoming another software item; it is distinct from the direct SI-01 Web Operator HMI allocated as IF-04.
+Supporting core modules, adapters and engineering/test clients are not automatically separate product software items. The current JavaFX API client is engineering support, not SI-02. A browser-based engineering/test client may also consume IF-03 without becoming another software item; it is distinct from the direct SI-01 Web Interface allocated as IF-04.
 
 Application profiles are deployment/composition templates of **the same SI-01 Timing Point Application**. A profile may select different default topology/capabilities, but it is not a separate software item and does not create different TimingNode/domain semantics. Concrete deployment profile definitions are outside this public system baseline until an explicit public requirement owns them.
 
