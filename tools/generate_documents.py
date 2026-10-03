@@ -19,6 +19,7 @@ CONTEXT_DOCUMENTS = [
 PLANNING_DOCUMENTS = [
     "10-SDP-software-development-plan.md",
     "11-SIP-software-implementation-plan.md",
+    "12-documentation-guide.md",
 ]
 
 EXTERNAL_INPUT_DOCUMENTS = [
@@ -228,7 +229,7 @@ def generate(source_dir: Path, diagram_dir: Path, out_dir: Path) -> None:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
 
-    doc_index.extend(["", "## Planning", ""])
+    doc_index.extend(["", "## Planning / project guidance", ""])
     for name in PLANNING_DOCUMENTS:
         _, title, _ = by_name[name]
         doc_index.append(f"- [{title}](./{name})")
