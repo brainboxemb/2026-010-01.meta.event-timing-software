@@ -264,4 +264,3 @@ TimingData record.
 - source/tag provenance fields;
 - filename/directory policy, retention, rotation and filesystem-specific
   durability primitives;
-- transport/session/reconciliation behaviour outside the TimingData interchange contract.
