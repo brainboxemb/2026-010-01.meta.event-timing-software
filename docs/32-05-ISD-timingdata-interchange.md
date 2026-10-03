@@ -5,14 +5,6 @@ Status: draft / Step 4 D03 TimingData interface
 System interface: **IF-05 — TimingData Interchange**
 
 
-## Document guide
-
-- **Role:** define the semantic contract of **IF-05 — TimingData Interchange**.
-- **Inputs:** SSSD interface allocation and applicable system use cases.
-- **Owns:** TimingData record semantics, identity, ordering and compatibility obligations; not Java implementation or concrete reference encoding.
-- **Downstream:** the IF-05 IDD, software-item specifications/design and conforming TimingData implementations/consumers.
-- **Key terms:** `IF` — system interface; `ISD` — Interface Specification Document; `IDD` — Interface Design Description; `TimingData` — committed interchange record model.
-
 ## Purpose
 
 This Interface Specification Document defines the normative TimingData
@@ -37,7 +29,7 @@ The current slice does not define TimingNode OPEN/CLOSE as TimingData records an
 does not enable registration revocation at runtime. A future design may add
 revoke records without changing the identity/order principles defined here.
 
-## Inputs
+## Relationship to other documents
 
 IF-05 is a system-owned interface allocated by
 `31-SSSD-software-system-specification-document.md`.
