@@ -391,9 +391,43 @@
         }
       }
 
+      function directVisibleTreeChildren(group) {
+        if (!group) return { groups: [], leaves: [] };
+        const items = group.querySelector(
+          ":scope > .eng-tree-group__items"
+        );
+        if (!items) return { groups: [], leaves: [] };
+
+        const groups = Array.from(
+          items.querySelectorAll(":scope > [data-eng-tree-group]")
+        ).filter((child) => !child.hidden);
+        const leaves = Array.from(
+          items.querySelectorAll(
+            ":scope > .eng-tree-leaf > [data-workspace-root-id]"
+          )
+        ).filter((leaf) => !leaf.hidden);
+        return { groups, leaves };
+      }
+
+      function expandLinearBranch(group) {
+        let current = group;
+        while (current) {
+          setGroupExpanded(current, true);
+          const children = directVisibleTreeChildren(current);
+          if (children.leaves.length || children.groups.length !== 1) {
+            break;
+          }
+          current = children.groups[0];
+        }
+      }
+
       function toggleGroup(group) {
         if (!group) return;
-        setGroupExpanded(group, !group.classList.contains("is-expanded"));
+        if (group.classList.contains("is-expanded")) {
+          setGroupExpanded(group, false);
+        } else {
+          expandLinearBranch(group);
+        }
       }
 
       function updateTreeSelection() {
@@ -545,7 +579,7 @@
           const group = toggle.closest("[data-eng-tree-group]");
           if (event.key === "ArrowRight") {
             event.preventDefault();
-            setGroupExpanded(group, true);
+            expandLinearBranch(group);
           } else if (event.key === "ArrowLeft") {
             event.preventDefault();
             setGroupExpanded(group, false);
