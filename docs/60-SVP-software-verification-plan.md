@@ -9,6 +9,14 @@ This Software Verification Plan defines the initial verification strategy for th
 
 The SVP applies across software items unless a software-item-specific verification document later adds more detail.
 
+## Terms and abbreviations
+
+- **SVP** — Software Verification Plan
+- **VTS** — Verification Test Specification
+- **VC** — Verification Case
+- **ST** — System Test profile family
+
+
 ## Relationship to other documents
 
 The intended traceability chain follows the product-authority direction established in
