@@ -19,6 +19,15 @@ The per-step YAML owns only current activity state, dependencies, estimates and 
 card notes. Detailed activity history, CI logs and release mechanics live in issues, pull
 requests, SDE and generated evidence.
 
+## Terms and abbreviations
+
+- **SIP** — Software Implementation Plan
+- **D..** — documentation/design activity
+- **A..** — application activity
+- **V..** — verification activity
+- **T..** — tooling activity
+
+
 ## Relationship to other documents
 
 The SDP defines the project-wide development strategy and document conventions. The SIP
