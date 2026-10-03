@@ -15,7 +15,7 @@ The SI-02 specification consumes:
 - `31-SSSD-software-system-specification-document.md` for SI-02 allocation and software-system constraints;
 - `32-03-ISD-application-control-status.md` for the SI-01/SI-02 API contract;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` where an obligation is allocated directly to SI-02;
-- a future system-owned GUI/HMI ISD when that contract is defined.
+- `33-03-IDD-api-http-websocket.md` for the current IF-03 HTTP/JSON + WebSocket realization.
 
 `30-UC-system-use-cases.md` provides system-level operational traceability. A separate software-item use-case document is optional and should be introduced only if decomposing GUI-specific actor/goal behaviour makes the SSD clearer. Its document range is assigned when such documents are actually introduced.
 
@@ -100,38 +100,25 @@ As system requirements and IDDs mature, the GUI may add:
 
 These operations are handled by the **Timing Point Application** (SI-01). The GUI sends commands and presents state; it does not duplicate timing-domain business rules.
 
-## GUI ISD as system input
+## Operator interface ownership
 
-The graphical user interface should be treated as a **system-level interface** rather than allowing the implementation to invent screens ad hoc.
+The **Desktop GUI Application** (SI-02) owns its desktop screen structure, navigation,
+presentation models and interaction design within this SSD and its later detailed design.
+It is not IF-04.
 
-A system-level GUI ISD can define items such as:
+**IF-04 — Web Operator HMI** is the separate browser/tablet interface exposed directly by
+SI-01.
 
-- screen/navigation structure;
-- information that must be visible;
-- operator actions and control availability;
-- status/state representations;
-- warnings/errors/confirmation behaviour;
-- update/staleness behaviour;
-- terminology and identifiers;
-- interaction flows for open/close/start/RFID recovery and later registration operations.
+## Software-to-software interface
 
-The future SSD for the **Desktop GUI Application** (SI-02) can reference the applicable GUI-ISD clauses as requirements instead of copying the interface definition into the software-item requirements.
+SI-02 communicates with SI-01 through **IF-03 — API**.
 
-## Software-to-software interface ISD
+The semantic contract is defined by
+`32-03-ISD-application-control-status.md`. The current HTTP/JSON + WebSocket realization
+is defined by `33-03-IDD-api-http-websocket.md`.
 
-A separate system-level ISD should define the communication interface between the **Desktop GUI Application** (SI-02) and **Timing Point Application** (SI-01).
-
-Current direction:
-
-- HTTP/JSON for commands, queries and initial snapshots;
-- WebSocket for live status/data events;
-- explicit versioning/compatibility of the interface;
-- connection/reconnection semantics;
-- authentication/authorisation when defined;
-- stale-data behaviour;
-- errors/result semantics.
-
-The same interface is also used by engineering/test tools. A small browser-based test client may consume it later without becoming another software item.
+The same IF-03 interface is also used by engineering/test tools. A browser-based test
+client may consume IF-03 without becoming SI-02 or IF-04.
 
 ## Internal GUI layering
 
