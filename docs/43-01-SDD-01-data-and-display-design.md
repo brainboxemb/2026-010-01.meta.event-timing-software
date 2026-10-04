@@ -123,7 +123,7 @@ belongs to one timing point. The contained state objects stay passive:
 ```text
 TimingNode  <<active object>>
   +-- bounded serial work queue
-  +-- one serial worker (first implementation)
+  +-- one serial worker
   |
   +-- LogBook           passive, committed TimingData history
   +-- NextUpTeams       passive
@@ -138,13 +138,13 @@ TimingNode  <<active object>>
 ```
 
 The Active Object wording describes the behaviour, not a required Java base
-class. SDD-02 uses composition for the first implementation.
+class. SDD-02 uses composition for this execution boundary.
 
 Public/application calls stay ordinary methods. The TimingNode hides the
 asynchronous hand-off used by its Active Object implementation.
 
-For a state-dependent operation such as `setLocation(...)`, `open()`,
-`close()` or a consistency-sensitive status query, the public call does not
+For a state-dependent operation such as `open(locationId)`, `close()` or a
+consistency-sensitive status query, the public call does not
 report success merely because work entered the queue. The TimingNode queues an
 internal work item, executes it later against the then-current ordered state and
 returns the processed result to the caller. A Java implementation may connect
@@ -246,7 +246,7 @@ Not every state type has the same durability semantics.
 record commit. The LogBook is rebuilt from committed TimingData after restart.
 
 `NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` serve a
-different first purpose: preserve accepted state changes/snapshots for
+different purpose: preserve accepted state changes/snapshots for
 post-event analysis. Their stored data lets engineers later answer questions
 such as which teams were next-up or which stage-start times/reference data were
 known when a timing decision was made.
@@ -255,10 +255,10 @@ Those files are not automatically the runtime source after reboot. For example,
 StageStartTimes can be sent again when the node is opened. Keeping its historical
 file is still valuable for later analysis.
 
-All state changes are ordered by the TimingNode worker. The first implementation
-may also perform these small/infrequent store writes on that worker. If target
-measurements show an analysis-store write can delay registration unacceptably,
-the immutable snapshot can later be handed to a bounded persistence executor.
+All state changes are ordered by the TimingNode worker. Small/infrequent
+analysis-store writes may execute on that worker. If measurements show that such
+a write delays registration unacceptably, the immutable snapshot may instead be
+handed to a bounded persistence executor.
 That optimization must not change TimingNode state ordering and must not
 introduce an unbounded hidden queue.
 
@@ -283,15 +283,15 @@ query caller
   -> optional long calculation outside lane
 ```
 
-For LogBook history the first implementation may capture a shallow immutable
-reference view because `TimingData` values are immutable. The exact
-representation and allocation strategy belong to SDD-02 and measurement on the
-target. A reusable internal buffer is acceptable only if callers cannot observe
+For LogBook history, the read strategy may use direct bounded traversal or a
+shallow immutable reference view because `TimingData` values are immutable.
+The exact representation and allocation strategy belong to SDD-02 and
+measurement evidence. A reusable internal buffer is acceptable only if callers cannot observe
 it being mutated/reused after the query returns.
 
 A query that is ordered before a new commit may legitimately see the earlier
 state; a query ordered after that commit sees the new state. A separately
-published immutable status/read snapshot may later serve high-frequency readers,
+published immutable status/read snapshot may serve high-frequency readers,
 but it must have explicit freshness semantics and does not make the underlying
 mutable state globally readable.
 
@@ -324,11 +324,11 @@ Java queue, Future and worker mechanism.
 
 *Figure SDD01-TD05 — The query captures its read view on the TimingNode lane and performs longer calculation outside the lane; it does not read LogBook directly.*
 
-#### Later producers
+#### Additional producer paths
 
 ![Generic TimingNode producer sequence](../../../raw/prod/docs/assets/architecture/timingdata-sequence-generic-producer.svg)
 
-*Figure SDD01-TD06 — Later state-dependent operations use the same TimingNode ownership/ordering boundary; their caller contract must still state whether they wait for a result or are submission-only.*
+*Figure SDD01-TD06 — Additional state-dependent operations use the same TimingNode ownership/ordering boundary; their caller contract must still state whether they wait for a result or are submission-only.*
 
 #### State-dependent OPEN waits for its processed result
 
@@ -358,10 +358,10 @@ Java queue, Future and worker mechanism.
 | query caller/worker | long calculation on returned immutable view | retain a mutable internal buffer or bypass TimingNode ownership |
 | signalling/upstream worker | its own delivery/retry policy | mutate TimingNode state directly or block TimingNode commit |
 
-For the first one-node implementation, one dedicated worker is the simplest
-mechanism. A later multi-node runtime may share executor threads only if each
-TimingNode still processes at most one work item at a time, preserves FIFO order
-and retains the same caller-visible operation semantics.
+One dedicated worker per TimingNode is the current execution design. A multi-node
+runtime may share executor threads only if each TimingNode still processes at
+most one work item at a time, preserves FIFO order and retains the same
+caller-visible operation semantics.
 
 ## TimingData persistence and recovery
 
@@ -371,7 +371,7 @@ semantics and the reference representation in
 
 ### Recovering the next sequence
 
-We do not need a separate sequence-counter file in the first implementation.
+No separate sequence-counter file is required.
 The TimingData file already tells us the last committed sequence:
 
 ```text
@@ -394,7 +394,7 @@ A corrupt **complete** record, duplicate sequence or gap is different. Do not
 silently skip or renumber it. Stop recovery for that TimingNode and report the
 problem so support/operator tooling can see it.
 
-If we later add a cached sequence-counter file for faster startup, it is only a
+If a cached sequence-counter file is introduced for faster startup, it is only a
 cache. The committed TimingData file remains the source used to check/rebuild it.
 
 ### Persistence roles
@@ -407,7 +407,7 @@ TimingData has the strongest rule:
   as a committed live event or returned as a successful commit result;
 - the TimingData file is used to rebuild LogBook after restart.
 
-Other per-node stores have a different first purpose:
+Other per-node stores have a different purpose:
 
 - `NextUpTeamsStore` preserves accepted next-up state/history for analysis;
 - `StageStartTimesStore` preserves accepted start-time snapshots for analysis;
@@ -416,8 +416,8 @@ Other per-node stores have a different first purpose:
 
 Those historical stores do not automatically restore live state after reboot.
 The live protocol may resend the current data, for example when a TimingNode is
-opened. Recovery semantics can be promoted later if an operational requirement
-needs them.
+opened. Those stores do not restore live state unless an operational requirement
+explicitly defines such recovery semantics.
 
 The successful write above is the software commit boundary. The stronger
 guarantee against sudden power loss depends on the concrete filesystem and flush
@@ -690,14 +690,14 @@ void onDisplayV2Connected(DisplaySession session) {
 }
 ```
 
-A later optimisation may send deltas, but reconnect must always be recoverable through a complete current snapshot.
+Delta delivery is an allowed optimisation, but reconnect must always be recoverable through a complete current snapshot.
 
 ### Registration versus ready-team display state
 
 These flows remain separate:
 
 ```text
-RFID / manual / lifecycle / later start / penalty logic
+RFID / manual / lifecycle / start / penalty logic
           |
           v
       TimingNode
