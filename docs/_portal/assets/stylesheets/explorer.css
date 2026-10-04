@@ -525,10 +525,15 @@ body.eng-explorer-page .md-content__inner {
 body.eng-explorer-page .md-typeset details.eng-source-context {
   margin: 0.3rem 0 0.45rem;
   padding: 0;
-  border: 1px solid var(--md-accent-fg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0;
   background: var(--md-code-bg-color);
   box-shadow: none;
+}
+
+body.eng-explorer-page .md-typeset details.eng-source-context:hover,
+body.eng-explorer-page .md-typeset details.eng-source-context:focus-within {
+  border-color: var(--md-accent-fg-color);
 }
 
 body.eng-explorer-page .md-typeset details.eng-source-context > summary {
