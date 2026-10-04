@@ -130,7 +130,7 @@ D04 fixes the boundary used by A01:
 - `AntennaManager` owns multi-antenna lifecycle, one-shot hello/version probing,
   initialize, per-antenna inventory state, shutdown/recovery and optional external
   power-control orchestration;
-- `TagProcessor` owns generic RSSI filtering, duplicate/debounce suppression and bounded
+- `TagProcessor` owns observation-burst aggregation, strongest-RSSI selection, duplicate suppression and bounded
   TimingNode submission;
 - `TagRegistrationMapper` owns TagId -> RegistrationId conversion as an injected policy;
   it is not required to be an in-memory lookup table and may use RaceData only when a
@@ -427,7 +427,7 @@ domain and persistence paths.
 - deterministic synthetic tag observations carrying TagId, RSSI and accepted observation time;
 - `AntennaManager` lifecycle support for probe/hello-version, initialization,
   per-antenna inventory start/stop and normal shutdown, with optional power control;
-- TagProcessor RSSI filtering and duplicate/debounce suppression before registration admission;
+- TagProcessor observation-burst aggregation, strongest-RSSI selection and duplicate suppression before registration admission;
 - an injected TagId-to-RegistrationId mapper with a deterministic public transformation
   fixture; RaceData lookup is used only by concrete profiles that require it;
 - define and implement TimingNode OPEN/CLOSE as committed TimingData in the same
