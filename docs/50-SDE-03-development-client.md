@@ -188,30 +188,37 @@ verification/design context only; they are not the current UI acceptance baselin
 
 ### Target and connection bar
 
-The top of the window represents one configured SI-01 target. Configuration comes
-from one Development Client configuration file rather than unrelated endpoint fields
-inside separate tabs.
+The top of the window represents one active SI-01 target. The Development Client
+configuration file supplies the **startup default** host plus the per-boundary ports and
+other client defaults; selecting another device during development shall not require
+editing that file and restarting the client.
 
-The bar shows the target host plus one compact control/status per external boundary:
+The target bar therefore contains an editable host/IP field plus **Apply target**. Applying
+another host changes the host used by all external SI-01 boundaries without rewriting the
+configuration file. Any stateful Events, Remote Shell or Device Log connection to the
+previous host is disconnected when the target changes; a boundary shall never silently
+remain attached to another device than the one shown in the target field.
+
+The bar shows one compact control/status per external boundary:
 
 | Boundary | Display/interaction |
 | --- | --- |
-| IF-03 HTTP API | configured port plus **READY/UNREACHABLE** state; HTTP is not presented as a persistent socket connection |
+| IF-03 HTTP API | configured port plus clickable **CHECK** action and **CHECKING/READY/UNREACHABLE** state; HTTP is stateless and is not presented as a persistent socket connection |
 | IF-03 event WebSocket | configured port plus explicit connect/disconnect and connection state |
 | Remote Shell | configured port plus explicit connect/disconnect and connection state |
 | SI-01 `LoggingServer` | configured port plus explicit **Device log** connect/disconnect and connection state |
 | Development Client local log | always local to the client; visible as **Client log ACTIVE**, not confused with SI-01 diagnostics |
 
-A port therefore never appears without saying which boundary it belongs to. A green
-state for one boundary does not imply that the other boundaries are connected.
+A port therefore never appears without saying which boundary it belongs to. A READY or
+connected state for one boundary does not imply that the other boundaries are connected.
 
-The target toolbar may provide **Reload config** for iterative engineering use, but the
-configuration file remains the source of the endpoint values. The UI shall not grow a
-second configuration model spread over the tabs.
+The configuration file remains the source of startup defaults and port values. Runtime
+target editing is one explicit host override in the target bar, not a second configuration
+model spread over the tabs.
 
 The configuration baseline needs, at minimum:
 
-- target host/address;
+- startup-default target host/address;
 - IF-03 HTTP port;
 - IF-03 event/WebSocket port when it is independently configured;
 - Remote Shell port;
