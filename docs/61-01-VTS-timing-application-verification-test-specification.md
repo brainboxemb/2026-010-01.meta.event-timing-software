@@ -69,6 +69,11 @@ mapping remains obvious in source trees and Surefire reports; descriptive
 behaviour belongs in the VTS case title and test method name rather than in a
 long generic class name.
 
+Within this document the Markdown case heading contains only the stable VC ID.
+The descriptive case title is authored once in the `{vc}` object immediately
+below that heading; this avoids repeating the same case name in adjacent
+structural levels while retaining useful case navigation.
+
 ## ST-1 — Application behaviour
 
 ST-1 runs the packaged SI-01 application as a separate process and drives it
@@ -76,7 +81,7 @@ through public interfaces. The test driver must not mutate internal product Java
 objects or depend on product implementation classes to obtain the pass/fail
 result.
 
-### VC-ST1-001 — Query and resynchronise first-executable status
+### VC-ST1-001
 
 ```{vc} Query and resynchronise first-executable status
 ---
@@ -132,7 +137,7 @@ after reconnect and shut down through the supported controlled path.
 Adapter/component tests may cover additional event-path details that are not yet
 observable through a supported black-box state-changing operation.
 
-### VC-ST1-002 — Control and observe first committed registration
+### VC-ST1-002
 
 ```{vc} Control and observe first committed registration
 ---
@@ -209,7 +214,7 @@ than being forced into this happy-path black-box case.
 - the second process run rebuilds the committed record while operational state
   starts CLOSED/no-location.
 
-### VC-ST1-003 — Development Client reconnect/resynchronisation integration
+### VC-ST1-003
 
 ```{vc} Development Client reconnect/resynchronisation integration
 ---
