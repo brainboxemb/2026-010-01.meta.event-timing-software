@@ -450,6 +450,35 @@ domain and persistence paths.
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
 | `V06` | Registration revoke/API/Development Client verification |
 
+### D01 — Runtime execution and measurement plan
+
+D01 is the planning/decision gate for Step 5 runtime characterization. It does not
+select Java classes, metrics APIs, worker implementations or optimization mechanisms.
+
+The decision establishes what Step 5 needs to learn before runtime choices are changed:
+
+- characterize one TimingNode on the development host using deterministic simulated input;
+- distinguish input admission, queueing/wait, ordered processing, persistence/commit and
+  externally visible completion well enough to locate a bottleneck;
+- observe bounded-resource behaviour and forward progress under ordinary, sustained and
+  bursty input;
+- capture enough CPU/thread, memory/allocation and garbage-collection evidence to decide
+  whether the simple current design is adequate;
+- keep the JVM's ordinary scheduling behaviour as the comparison baseline and treat thread
+  priority as a possible later tuning hint, never as a correctness mechanism;
+- repeat important conclusions on the selected target later, because development-host
+  scheduling/resource observations are not target evidence;
+- keep multi-TimingNode scheduling outside this step.
+
+D01 deliberately does **not** preselect batching, extra workers, asynchronous persistence,
+object pooling, copied snapshots, caches/indexes or thread-priority changes. Those are
+candidate responses only when repeatable measurements identify the concrete problem they
+would solve.
+
+D01 is complete only when this planning boundary is reviewed and the verification strategy
+can express reproducible workloads/evidence without the Java implementation having to
+invent the measurement objective itself.
+
 ### Result
 
 - Simulated antenna observations reach the normal registration path.
