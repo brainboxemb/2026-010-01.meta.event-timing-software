@@ -932,10 +932,31 @@ A concrete sink may bind source/antenna identity from the subscription/compositi
 when that is needed for diagnostics; D04 does not require source identity to be added to
 the generic TagObservation value merely for logging.
 
-### TagProcessor
+### Tag processing
 
-The node-local processor has two bounded stages: observation-burst aggregation per
-`TagId`, followed by registration-level filtering/mapping/admission.
+The node-local tag-processing path is split by responsibility:
+
+```text
+TagProcessor
+  -> TagObservationFilter
+  -> TagRegistrationMapper
+  -> RegistrationDuplicateFilter
+  -> TimingNode.submit(...)
+
+platform.execution periodic execution
+  -> periodically calls TagProcessor.periodic()
+
+TagProcessingCounters
+  -> owns the low-allocation processing counters
+```
+
+`TagProcessor.onObservation(...)` is the Antenna EventSource callback. It passes the
+decoded value to `TagObservationFilter.add(...)`; the filter itself is not an event
+handler.
+
+`TagProcessor` owns the processing components and defines their processing order. It
+does not own a thread, executor or closed state. Its `periodic()` operation calls the
+periodic housekeeping operations of the processing components it owns.
 
 #### Observation burst aggregation
 
@@ -951,7 +972,6 @@ final class BurstState {
     long lastSeenNanos;
     int maxRssi;
     TimingTimestamp maxRssiObservedAt;
-    int observationCount;
 }
 ```
 
@@ -959,8 +979,7 @@ On each observation:
 
 1. create the state when the TagId has no open burst;
 2. update `lastSeenNanos`;
-3. increment `observationCount`;
-4. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
+3. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
    greater, so equal maxima keep the earlier observation.
 
 A burst closes when either condition becomes true:
@@ -1014,9 +1033,58 @@ The Java realization shall keep burst-expiry work bounded and allocation-conscio
 - keep expiry callbacks short and perform no blocking I/O or TimingData persistence there;
 - keep the number of timer/scheduling objects bounded independently of observation rate.
 
-The exact scheduling mechanism remains a Java implementation choice until A01 qualifies it
-against these constraints. A short processor-local lock may protect burst state. Expiry
-removes an expired state under that lock and performs mapping/admission after releasing it.
+`TagObservationFilter` owns no scheduler and has no closed state. It exposes plain
+`add(...)` and `periodic()` operations. `RegistrationDuplicateFilter` likewise exposes
+a `periodic()` housekeeping operation for removing old duplicate-window entries.
+
+`TagProcessor.periodic()` calls the periodic operations of the processing components it
+owns. A short filter-local lock protects burst state. Expiry removes an expired state
+under that lock and invokes the valid-observation callback after releasing it.
+
+The thread/scheduling mechanism belongs to `platform.execution`, not to
+`runtime.Composition` and not to the filters.
+
+The execution boundary is:
+
+```java
+interface PeriodicExecutor {
+    PeriodicTask scheduleWithFixedDelay(
+        Runnable task,
+        long delayNanos);
+}
+
+interface PeriodicTask extends AutoCloseable {
+    void close();
+}
+```
+
+`TagProcessor` receives a `PeriodicExecutor`. On `start()` it registers
+`this::periodic` using the configured sweep cadence and retains the returned
+`PeriodicTask`. On `stop()` it closes only that task.
+
+This matches the ownership rule already used by TimingNode without forcing the same
+execution shape:
+
+- `TimingNode` owns a `SerialWorker` because all node commands execute on one serial
+  lane;
+- `TagProcessor` keeps `onObservation(...)` on the antenna/provider caller thread and
+  owns only its periodic housekeeping registration.
+
+A `PeriodicExecutor` implementation may use a shared
+`ScheduledExecutorService`; D04/D05 do not require one thread per TagProcessor.
+`runtime.Composition` only constructs and wires the objects. The application lifecycle
+starts/stops the owning components.
+
+The periodic execution mechanism must:
+- execute `TagProcessor.periodic()` at the configured sweep cadence;
+- prevent overlapping invocations for the same processor;
+- keep the number of scheduled objects bounded independently of observation rate;
+- create no task per observation;
+- perform no blocking I/O on the periodic callback.
+
+Shutdown stops antenna inventory, unsubscribes `TagProcessor.onObservation` from the
+antenna EventSource, then calls `TagProcessor.stop()`. The shared PeriodicExecutor is
+closed by the application-level owner only when no other periodic registrations need it.
 
 #### Registration filtering and admission
 
@@ -1047,7 +1115,7 @@ Record duplicate-window state only after `TimingNode.submit(...)` returns
 `ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
 retrying.
 
-An illustrative constructor boundary is:
+The processor has one product constructor:
 
 ```java
 TagProcessor(
@@ -1055,8 +1123,13 @@ TagProcessor(
     TagRegistrationMapper mapper,
     TagProcessingPolicy policy,
     MonotonicClock monotonicClock,
-    ScheduledExecutorService scheduler)
+    TagProcessingCounters counters,
+    PeriodicExecutor periodicExecutor)
 ```
+
+Runtime/engineering composition retains the same `TagProcessingCounters` instance when
+it needs pull-based measurements. Execution ownership is separate and therefore does not create an additional
+TagProcessor constructor.
 
 `TagProcessingPolicy` owns at least:
 
@@ -1066,6 +1139,22 @@ TagProcessor(
 - sweep cadence.
 
 Exact profile values remain configuration rather than hard-coded TagProcessor constants.
+
+#### Tag-processing map sizing
+
+`TagObservationFilter` keeps one map entry per currently open distinct `TagId`.
+`RegistrationDuplicateFilter` keeps one entry per accepted `RegistrationId` whose
+duplicate-window state may still matter.
+
+Do not hard-code an arbitrary initial `HashMap` capacity as a presumed optimization.
+Java's default HashMap is lazy; an explicit capacity is useful only when a deployment
+profile provides a credible expected count or Step-5 measurements show resizing to be
+material.
+
+If an explicit capacity is introduced later, size it from the expected entry count and
+the map load factor so that the expected working set fits without immediate resizing.
+The value and its evidence belong to the implementation/profile documentation, not to a
+generic timing-domain requirement.
 
 ### TagRegistrationMapper
 
