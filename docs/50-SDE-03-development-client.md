@@ -314,6 +314,32 @@ This deliberately differs from a production operator GUI, where preventing obvio
 invalid actions may be desirable. The Development Client must make negative-path and
 boundary testing easy.
 
+### Timing workbench layout
+
+The current Timing workbench separates **operator-oriented interpretation** from the
+immutable technical history:
+
+- the left column contains the selected TimingNode state plus Open/Close and registration
+  input;
+- the right column shows **Registrations** at the top and
+  **LogBook / committed TimingData** below it.
+
+The two right-hand views are deliberately not duplicates. **Registrations** is a
+presentation projection intended to resemble normal timing use: it shows local clock
+time, RegistrationId, a compact **A/M** indicator and logical deletion state. The
+LogBook is the audit/diagnostic view and shows the committed profile records in source
+order with sequence, Type, Code and profile time values.
+
+For the current default/reference profile the LogBook time remains the canonical
+absolute UTC value. The interpreted Registrations view converts it to normal local clock
+time using the explicitly displayed client zone.
+
+A future REV record does not remove the interpreted registration. The existing row is
+marked **DELETED**, while both ADD and REV remain present in the immutable LogBook.
+Until SI-01 exposes a public revoke operation/capability, the Development Client may show
+the Delete action in disabled form rather than pretending that deletion is already
+supported.
+
 ### Registration input
 
 The ordinary structured registration input is optimized for readable engineering use
