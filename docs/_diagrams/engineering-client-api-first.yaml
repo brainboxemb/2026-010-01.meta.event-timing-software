@@ -2,7 +2,7 @@ diagram:
   id: engineering-client-api-first
   title: Figure SDE03-05 — API-first Development Client workbench
   width: 1360
-  height: 820
+  height: 950
   note: Current UI baseline. Client configuration supplies startup defaults; the active target host is editable. SI-01 remains authoritative for domain results.
 
 groups: []
@@ -12,7 +12,7 @@ nodes:
     label: Development Client
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 30, y: 80, w: 1300, h: 765}
+    layout: {x: 30, y: 80, w: 1300, h: 845}
 
   - id: target
     label: Target
@@ -73,122 +73,130 @@ nodes:
 
   - id: api-summary
     label: API / selected TimingNode
-    subtitle: "timing-node-01  |  state CLOSED  |  LocationId 24"
+    subtitle: "timing-node-01  |  state OPEN  |  LocationId 24"
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 55, y: 284, w: 1245, h: 145}
+    layout: {x: 55, y: 284, w: 1245, h: 100}
 
   - id: get-version
     label: Version
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 80, y: 364, w: 95, h: 36}
+    layout: {x: 80, y: 335, w: 95, h: 36}
 
   - id: get-status
     label: Status
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 185, y: 364, w: 95, h: 36}
+    layout: {x: 185, y: 335, w: 95, h: 36}
+
+  - id: input-panel
+    label: TimingNode / input
+    subtitle: "Normal operator input on the left"
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 55, y: 400, w: 390, h: 390}
 
   - id: location
-    label: Location
+    label: LocationId
     subtitle: "24"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 315, y: 342, w: 150, h: 72}
+    layout: {x: 80, y: 445, w: 120, h: 58}
 
   - id: open
     label: Open
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 475, y: 364, w: 105, h: 36}
+    layout: {x: 215, y: 456, w: 90, h: 36}
 
   - id: close
     label: Close
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 590, y: 364, w: 105, h: 36}
+    layout: {x: 315, y: 456, w: 90, h: 36}
 
   - id: last-operation
     label: Last API operation
-    subtitle: "NODE_NOT_OPEN — response retained for inspection"
+    subtitle: "seq 1"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 720, y: 342, w: 550, h: 72}
+    layout: {x: 80, y: 512, w: 325, h: 54}
 
   - id: registration
-    label: Registration test input
-    subtitle: Structured convenience input; SI-01 remains authoritative
+    label: Registration input
+    subtitle: Structured local-time input; SI-01 remains authoritative
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 55, y: 449, w: 1245, h: 135}
+    layout: {x: 75, y: 580, w: 335, h: 190}
 
   - id: prefix
     label: Prefix
     subtitle: "N"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 80, y: 509, w: 110, h: 68}
+    layout: {x: 95, y: 615, w: 80, h: 48}
 
   - id: number
     label: Number
     subtitle: "0001"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 200, y: 509, w: 150, h: 68}
+    layout: {x: 185, y: 615, w: 105, h: 48}
 
   - id: reg-date
     label: Date
-    subtitle: "2026-10-03"
+    subtitle: "2026-10-01"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 380, y: 509, w: 180, h: 68}
+    layout: {x: 95, y: 672, w: 145, h: 48}
 
   - id: reg-time
     label: Time (Europe/Amsterdam)
-    subtitle: "15:33:00"
+    subtitle: "12:00:00"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 570, y: 509, w: 160, h: 68}
+    layout: {x: 250, y: 672, w: 140, h: 48}
 
   - id: now
     label: Now
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 750, y: 530, w: 75, h: 36}
+    layout: {x: 95, y: 728, w: 70, h: 32}
 
   - id: auto-reg
     label: Send auto-reg
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 845, y: 530, w: 145, h: 36}
+    layout: {x: 175, y: 728, w: 125, h: 32}
 
-  - id: raw-request-note
-    label: Wire value
-    subtitle: "N0001 @ canonical UTC after visible zone conversion"
-    kind: wireframe-control
-    notation: wireframe-input
-    layout: {x: 1010, y: 509, w: 260, h: 68}
-
-  - id: history
-    label: LogBook / committed TimingData
-    subtitle: source order; row selection exposes complete public record
+  - id: interpreted
+    label: Registrations
+    subtitle: "Interpreted view — local clock time; deletion stays visible"
     kind: wireframe-surface
     notation: wireframe-table
     items:
-      - "Seq | Type     | Location | Registration | Time"
-      - "17  | OPEN     | 24       | -            | 15:30:00"
-      - "18  | AUTO_REG | 24       | N0001        | 15:33:00"
-      - "19  | CLOSE    | 24       | -            | 15:40:12"
-    layout: {x: 55, y: 604, w: 1245, h: 150}
+      - "Time     | Registration | A/M | State | Action"
+      - "12:00:00 | N0001        | A   |       | Delete (disabled)"
+    layout: {x: 465, y: 400, w: 835, h: 180}
+
+  - id: history
+    label: LogBook / committed TimingData
+    subtitle: "Immutable technical/audit view; source order and canonical profile values"
+    kind: wireframe-surface
+    notation: wireframe-table
+    items:
+      - "Seq | Type     | Code | Location | Registration | Effective"
+      - "1   | AUTO_REG | ADD  | 24       | N0001        | 2026-10-01T10:00:00Z"
+    layout: {x: 465, y: 595, w: 835, h: 195}
 
   - id: raw-response
-    label: Raw response / selected record
-    subtitle: Complete API JSON remains available; structured UI never hides a domain rejection.
+    label: Raw response / selected LogBook record
+    subtitle: Complete API JSON remains available; structured views never hide the committed record.
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 55, y: 774, w: 1245, h: 48}
+    layout: {x: 55, y: 805, w: 1245, h: 48}
 
 edges: []
