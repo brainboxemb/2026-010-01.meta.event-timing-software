@@ -179,7 +179,7 @@ nodes:
     notation: wireframe-table
     items:
       - "Time     | Type | TeamID | Code |"
-      - "12:00:00 | AUTO | -      | AUTO | [trash]"
+      - "12:00:00 | AUTO | -      |      | [trash]"
     layout: {x: 465, y: 400, w: 835, h: 180}
 
   - id: history
