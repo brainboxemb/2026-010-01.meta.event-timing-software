@@ -218,7 +218,7 @@ domain/
     RaceDataStore.java                  persistence port for race/reference analysis history
     TagProcessor.java                   node-local RSSI/dedup/mapping ingress policy
     TagRegistrationMapper.java          TagId -> RegistrationId policy boundary
-    TagFilterPolicy.java                RSSI + duplicate-window configuration
+    TagProcessingPolicy.java            burst/duplicate-window configuration
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -980,14 +980,16 @@ producing another registration inside its longer duplicate window.
 The selected candidate is the strongest observation in the burst and retains that
 observation's original `TimingTimestamp`.
 
-Do not pre-filter low-RSSI observations before burst aggregation. The burst exists to find
-the maximum RSSI across the complete passage. After closure, compare the maximum RSSI with
-the configured minimum threshold; reject the whole burst only when even its strongest
-observation is below that threshold.
+Do not pre-filter observations on RSSI. The burst exists to find the maximum RSSI across
+the complete passage.
 
 The timestamp of the maximum-RSSI observation becomes the automatic-registration
 effective time. This intentionally targets the participant's closest observed approach to
 the antenna rather than the earliest possible read.
+
+D04 defines no minimum-RSSI rejection threshold. RSSI is used for strongest-observation
+selection only. A future rejection/filter rule requires separate requirement/design
+authority.
 
 Timing deadlines use `MonotonicClock`; they do not use `Date`,
 `System.currentTimeMillis()` or the potentially corrected observation timestamp.
@@ -1021,8 +1023,6 @@ When a burst closes:
 ```text
 closed burst
   |
-  +--> max RSSI below configured minimum -----> filtered
-  |
   +--> TagRegistrationMapper(TagId)
   |       |
   |       +--> no RegistrationId -------------> unmapped
@@ -1051,14 +1051,13 @@ An illustrative constructor boundary is:
 TagProcessor(
     TimingNode timingNode,
     TagRegistrationMapper mapper,
-    TagFilterPolicy policy,
+    TagProcessingPolicy policy,
     MonotonicClock monotonicClock,
     ScheduledExecutorService scheduler)
 ```
 
-`TagFilterPolicy` owns at least:
+`TagProcessingPolicy` owns at least:
 
-- minimum accepted RSSI;
 - burst quiet timeout;
 - maximum burst duration;
 - registration duplicate window;
