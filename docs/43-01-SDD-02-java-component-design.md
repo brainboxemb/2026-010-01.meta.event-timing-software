@@ -810,27 +810,33 @@ coordinates startup probe, normal initialize/shutdown and per-antenna inventory 
 Multiple antennas can therefore be initialized together while inventory is enabled or
 disabled independently.
 
-The manager composes one bounded serial control worker for device lifecycle operations:
+The manager serializes its lifecycle operations on top of a shared bounded I/O
+`ExecutorService`:
 
 ```text
-AntennaManager
-  -> bounded control queue
-  -> one logical serial control lane
-       -> optional power on/off
-       -> probe / hello / identity / version
-       -> initialize
-       -> startInventory / stopInventory
-       -> close/recovery
+                    shared bounded I/O ExecutorService
+                    /              |               \
+                   /               |                \
+      AntennaManager A      AntennaManager B      other blocking I/O
+      ordered control       ordered control       capability work
+          queue/lane            queue/lane
+             |                     |
+             v                     v
+       provider A calls      provider B calls
 ```
 
-The lane is capability-owned rather than a global system executor. A blocking provider
-operation has a bounded provider/manager timeout and may delay later antenna-control work,
-but it cannot run on a TimingNode worker or turn a global application executor into an
-implicit device bus. If evidence later justifies sharing physical threads, the logical
-AntennaManager lane remains bounded and ordered.
+The per-manager lane is a logical ordering boundary, not a dedicated Java thread.
+At most one lifecycle operation for one manager executes at a time, while unrelated
+managers/capabilities may make progress on other executor workers.
 
-Startup/runtime callers use result-bearing manager operations when they must know whether a
-probe/initialize/control transition succeeded. TimingNode/device observation processing
+The shared executor itself is bounded and owned by runtime/infrastructure composition.
+Provider operations use explicit timeouts/cancellation policy so a stuck reader does not
+consume executor capacity indefinitely. Submitting more control work than the configured
+bound accepts must produce a visible overload/failure result rather than an unbounded
+queue.
+
+Startup/runtime callers use result-bearing manager operations when they must know whether
+a probe/initialize/control transition succeeded. TimingNode/device observation processing
 does not synchronously wait for manager control work.
 
 External power switching is optional. When deployment hardware exposes it, composition
@@ -964,8 +970,8 @@ Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
 threads easy to separate from JDK, Maven/JGit and third-party library threads in
 a debugger, profiler or thread dump. The owner abbreviations used by the current
-runtime are `prl` (Presentation), `dml` (Domain), `io` (device/network I/O), `inf`
-(Infrastructure) and `run` (Runtime/composition).
+runtime are `prl` (Presentation), `dml` (Domain), `io` (shared device/network I/O executor),
+`inf` (Infrastructure) and `run` (Runtime/composition).
 
 Examples:
 
@@ -976,15 +982,17 @@ tp-prl-remote-shell
 tp-inf-live-log
 tp-inf-live-log-writer
 tp-run-shutdown
-tp-io-antenna-<TimingSystemId>
+tp-io-worker-<index>
 tp-dml-node-<NodeId>
 ```
 
-Name a thread for the functional component that owns the work, not merely the
-low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
-therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
-primitive. The final suffix is the configured NodeId, not a worker/index number.
-Threads owned by the JDK or external libraries keep their own names.
+Dedicated component threads are named for the functional component that owns the work,
+not merely the helper that allocates the Java `Thread`. The TimingNode serial lane is
+therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform primitive.
+
+Shared executor workers are named for the executor/pool role instead, for example
+`tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
+over its lifetime. Threads owned by the JDK or external libraries keep their own names.
 
 ## TimingNode active-object execution and persistence
 
