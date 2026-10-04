@@ -516,13 +516,17 @@ body.eng-explorer-page .md-content__inner {
   margin: 0.28rem 0;
 }
 
-.eng-detail__actions .md-button {
+.eng-detail__actions .md-button,
+.md-typeset details.eng-source-context > summary {
+  min-height: 1.45rem;
   padding: 0.16em 0.3em;
   border-radius: 0;
+  box-sizing: border-box;
   font-size: calc(0.54rem + 1px);
+  line-height: 1.1;
 }
 
-body.eng-explorer-page .md-typeset details.eng-source-context {
+.md-typeset details.eng-source-context {
   margin: 0.3rem 0 0.45rem;
   padding: 0;
   border: 1px solid var(--md-default-fg-color--lightest);
@@ -531,27 +535,24 @@ body.eng-explorer-page .md-typeset details.eng-source-context {
   box-shadow: none;
 }
 
-body.eng-explorer-page .md-typeset details.eng-source-context:hover,
-body.eng-explorer-page .md-typeset details.eng-source-context:focus-within {
+.md-typeset details.eng-source-context:hover,
+.md-typeset details.eng-source-context:focus-within {
   border-color: var(--md-accent-fg-color);
 }
 
-body.eng-explorer-page .md-typeset details.eng-source-context > summary {
-  min-height: 0;
+.md-typeset details.eng-source-context > summary {
   margin: 0;
-  padding: 0.08rem 1.05rem 0.08rem 0.28rem;
+  padding-right: 1.05rem;
   border-radius: 0 !important;
   cursor: pointer;
-  font-size: calc(0.54rem + 1px);
   font-weight: 600;
-  line-height: 1.15;
 }
 
-body.eng-explorer-page .md-typeset details.eng-source-context > summary::before {
+.md-typeset details.eng-source-context > summary::before {
   display: none;
 }
 
-body.eng-explorer-page .md-typeset details.eng-source-context > summary::after {
+.md-typeset details.eng-source-context > summary::after {
   top: 50%;
   right: 0.28rem;
   width: 0.62rem;

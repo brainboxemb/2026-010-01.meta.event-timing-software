@@ -179,6 +179,23 @@ for behavior in (
             f"traceability pane resize behavior missing: {behavior}"
         )
 
+explorer_css = (
+    site / "assets" / "stylesheets" / "explorer.css"
+).read_text(encoding="utf-8")
+if "body.eng-explorer-page .md-typeset details.eng-source-context" in explorer_css:
+    raise SystemExit(
+        "source-context presentation is scoped to Engineering Explorer instead of shared detail panes"
+    )
+if ".md-typeset details.eng-source-context" not in explorer_css:
+    raise SystemExit("shared source-context presentation selector missing")
+if (
+    ".eng-detail__actions .md-button,\n"
+    ".md-typeset details.eng-source-context > summary"
+) not in explorer_css:
+    raise SystemExit(
+        "source-context summary does not share vertical control metrics with detail actions"
+    )
+
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
 for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
     if object_id not in search:
