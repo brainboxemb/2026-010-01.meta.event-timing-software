@@ -28,7 +28,10 @@ groups:
 - id: application-layer
   label: Application layer
   kind: layer-application
-  layout: {x: 30, y: 328, w: 1120, h: 138}
+  # Keep this layer deliberately taller than a single component row. PresentationGateway
+  # sits slightly higher and TimingNodeProxy slightly lower so the node-scoped proxy is
+  # visually distinct from the application entry point without adding another sub-layer.
+  layout: {x: 30, y: 318, w: 1120, h: 160}
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
@@ -137,6 +140,8 @@ nodes:
   notation: component
   layout: {x: 55, y: 220, w: 440, h: 60}
 
+# Application components stay compact to preserve whitespace inside the layer.
+# PresentationGateway is intentionally higher; TimingNodeProxy is intentionally lower.
 - id: application-conductor
   object_id: Conductor
   group: application-layer
@@ -144,7 +149,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 55, y: 373, w: 230, h: 75}
+  layout: {x: 65, y: 367, w: 205, h: 68}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -152,7 +157,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 305, y: 373, w: 240, h: 75}
+  layout: {x: 300, y: 345, w: 220, h: 68}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -160,7 +165,7 @@ nodes:
   subtitle: "node commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 565, y: 373, w: 230, h: 75}
+  layout: {x: 555, y: 389, w: 210, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -168,7 +173,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 815, y: 373, w: 310, h: 75}
+  layout: {x: 825, y: 367, w: 260, h: 68}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -483,7 +488,7 @@ edges:
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 1165, y: 410.5}
+    - {x: 1165, y: 401}
     - {x: 1165, y: 996}
     - {x: 665, y: 996}
 
