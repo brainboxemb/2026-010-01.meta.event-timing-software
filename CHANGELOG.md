@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore the focused SDDs as current-state design books: remove implementation-step chronology, keep execution/persistence/artifact alternatives as present design criteria, and move runtime measurement planning out of SDD-02 to its SIP/SDE/SVP owners.
+
 - Restore use cases, interface documents and software-item specifications as current-state authority by removing roadmap/implementation-log narration while preserving active contract maturity and reserved mappings.
 
 - Audit documentation roles so planning/history stays in planning/evidence records while requirements, interfaces, design and verification books describe the current authoritative state; reopen Step-5 D01 as a reviewable SIP planning gate.
