@@ -474,7 +474,6 @@ edges:
 - from: upstream-message-router
   to: timing-system-aggregate
   from_anchor: {side: bottom, position: 0.65}
-  to_anchor: {side: top, position: 0.875}
 
 - from: upstream-message-router
   to: messaging-io
