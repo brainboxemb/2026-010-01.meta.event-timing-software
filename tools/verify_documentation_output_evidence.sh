@@ -94,7 +94,7 @@ for execution_id, (capability, action) in expected.items():
         # Immutable v0.9.1 multi-page BoardView release.
         "7d13ae32c5ac3ac3fea0192559a034b9778a517d",
         # Temporary obstacle-routing qualification head for tool.eng-docs #90.
-        "7e8f858fda7bb09ea6a2bf96741894be62d7dba8",
+        "9e900d24610aaa311c5f241ef4b8b61f196c3b29",
     }
     if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
         raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
