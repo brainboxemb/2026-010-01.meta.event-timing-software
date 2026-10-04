@@ -344,8 +344,8 @@ HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]
 ```
 
 The client log source shall identify the actual Development Client source context rather
-than use one generic client marker for every line. The Logs tab therefore does not mean
-only "device logging". Client logging and its runtime level control remain available when
+than use one generic client marker for every line. The dedicated Client Log tab therefore remains separate from Device Log. Client logging
+and its runtime level control remain available when
 SI-01 is offline, which is especially important when diagnosing why a connection could
 not be established. A runtime Client Log level change does not rewrite the configured
 startup level; restarting the Development Client restores the configured value.
