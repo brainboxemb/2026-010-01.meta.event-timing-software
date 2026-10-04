@@ -805,9 +805,33 @@ Normal operation uses `initialize()` followed by explicit
 `startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
 provider/device resources.
 
-`AntennaManager` owns the configured set of 1..N antennas. It coordinates startup probe,
-normal initialize/shutdown and per-antenna inventory state. Multiple antennas can
-therefore be initialized together while inventory is enabled or disabled independently.
+`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem. It
+coordinates startup probe, normal initialize/shutdown and per-antenna inventory state.
+Multiple antennas can therefore be initialized together while inventory is enabled or
+disabled independently.
+
+The manager composes one bounded serial control worker for device lifecycle operations:
+
+```text
+AntennaManager
+  -> bounded control queue
+  -> one logical serial control lane
+       -> optional power on/off
+       -> probe / hello / identity / version
+       -> initialize
+       -> startInventory / stopInventory
+       -> close/recovery
+```
+
+The lane is capability-owned rather than a global system executor. A blocking provider
+operation has a bounded provider/manager timeout and may delay later antenna-control work,
+but it cannot run on a TimingNode worker or turn a global application executor into an
+implicit device bus. If evidence later justifies sharing physical threads, the logical
+AntennaManager lane remains bounded and ordered.
+
+Startup/runtime callers use result-bearing manager operations when they must know whether a
+probe/initialize/control transition succeeded. TimingNode/device observation processing
+does not synchronously wait for manager control work.
 
 External power switching is optional. When deployment hardware exposes it, composition
 supplies an `AntennaPowerControl` capability to the manager so the manager can order
@@ -940,8 +964,8 @@ Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
 threads easy to separate from JDK, Maven/JGit and third-party library threads in
 a debugger, profiler or thread dump. The owner abbreviations used by the current
-runtime are `prl` (Presentation), `dml` (Domain), `inf` (Infrastructure) and
-`run` (Runtime/composition).
+runtime are `prl` (Presentation), `dml` (Domain), `io` (device/network I/O), `inf`
+(Infrastructure) and `run` (Runtime/composition).
 
 Examples:
 
@@ -952,6 +976,7 @@ tp-prl-remote-shell
 tp-inf-live-log
 tp-inf-live-log-writer
 tp-run-shutdown
+tp-io-antenna-<TimingSystemId>
 tp-dml-node-<NodeId>
 ```
 
