@@ -62,7 +62,7 @@ nodes:
     group: storage
     layout: {x: 1240, y: 375, w: 300, h: 120}
   - id: events
-    label: "newTimingDataEvent\nEvent<TimingData>"
+    label: "timingDataCommittedEvent\nEvent<TimingData>"
     kind: service
     group: storage
     layout: {x: 1240, y: 555, w: 300, h: 82}
