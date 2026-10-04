@@ -210,6 +210,31 @@ Where practical, the application should embed enough non-secret build identity t
 
 Reproducible-JAR settings such as a controlled Maven build output timestamp should be considered when the first Maven reactor is created.
 
+## Release candidate and failed-release semantics
+
+A normal release tag consumes its semantic version once that tag has been created.
+The version is not reusable merely because later exact-tag qualification or publication
+fails.
+
+For a candidate `vX.Y.Z`:
+
+1. create the normal release tag only for the already verified release commit;
+2. run the release qualification again from that exact immutable tag;
+3. publish the normal GitHub Release only when all required tagged qualification and
+   publication steps succeed;
+4. if tagged qualification/publication fails, remove any incomplete GitHub Release,
+   preserve the same candidate commit as `vX.Y.Z-failed` and remove the normal
+   `vX.Y.Z` tag;
+5. never use a `-failed` tag as a normal release trigger;
+6. never reuse the consumed `X.Y.Z` version; the next release attempt advances to a
+   new version;
+7. record the failed candidate in the consumer CHANGELOG, clearly identifying it as
+   **FAILED DURING RELEASE BUILD** and retaining enough context to explain the failure.
+
+The `-failed` tag is historical release evidence, not a releasable product baseline.
+This policy keeps a tag/version from acquiring two different meanings over time and
+preserves failed qualification as auditable engineering evidence.
+
 ## Test execution responsibility
 
 The toolchain executes tests; the SVP defines what the tests mean.
