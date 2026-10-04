@@ -3,6 +3,11 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
+      D01 planning gate and D04 antenna/input architecture are reviewed; A01 is
+      active to replace/qualify the earlier prototype against the Event-based
+      observation, lifecycle-manager, RSSI/dedup and mapper design.
+  - date: '2026-10-04'
+    change: >-
       D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
       A01/A02 prototypes require requalification and V01 now precedes A03.
   - date: '2026-10-04'
@@ -37,7 +42,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: active
+    state: done
     note: >-
       Define measurement questions, engineering/tooling split, product design
       gates, reproducible evidence flow and roadmap order before accepting
@@ -66,7 +71,7 @@ activities:
   - id: D04
     lane: documentation
     kind: decision
-    state: planned
+    state: done
     depends_on: [D01]
     note: >-
       Review the simulated antenna/input architecture: stable observation
@@ -96,13 +101,13 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: blocked
+    state: active
     depends_on: [D04]
     note: >-
-      Qualify/implement deterministic simulated tag observations through the
-      reviewed antenna/input design and normal TimingNode-owned registration
-      path. Java PR #230 exists as a prototype but is not accepted completion
-      until D04 review.
+      Replace/qualify the Java #230 prototype against D04: Event-based
+      TagObservation(TagId, RSSI, time), AntennaManager lifecycle/probe/inventory,
+      TagProcessor RSSI + duplicate filtering, injected TagRegistrationMapper
+      and the normal TimingNode-owned registration path.
 
   - id: A02
     lane: application
