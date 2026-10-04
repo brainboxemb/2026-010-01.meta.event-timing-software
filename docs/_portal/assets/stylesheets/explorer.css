@@ -526,7 +526,7 @@ body.eng-explorer-page .md-typeset details.eng-source-context {
   margin: 0.3rem 0 0.45rem;
   padding: 0;
   border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0;
+  border-radius: 0 !important;
   background: var(--md-code-bg-color);
   box-shadow: none;
 }
@@ -539,28 +539,24 @@ body.eng-explorer-page .md-typeset details.eng-source-context:focus-within {
 body.eng-explorer-page .md-typeset details.eng-source-context > summary {
   min-height: 0;
   margin: 0;
-  padding: 0.16em 1.35rem;
-  border-radius: 0;
+  padding: 0.08rem 1.05rem 0.08rem 0.28rem;
+  border-radius: 0 !important;
   cursor: pointer;
-  font-size: calc(0.56rem + 1px);
+  font-size: calc(0.54rem + 1px);
   font-weight: 600;
-  line-height: 1.28;
-}
-
-body.eng-explorer-page .md-typeset details.eng-source-context > summary::before,
-body.eng-explorer-page .md-typeset details.eng-source-context > summary::after {
-  top: 50%;
-  width: 0.72rem;
-  height: 0.72rem;
-  margin-top: -0.36rem;
+  line-height: 1.15;
 }
 
 body.eng-explorer-page .md-typeset details.eng-source-context > summary::before {
-  left: 0.32rem;
+  display: none;
 }
 
 body.eng-explorer-page .md-typeset details.eng-source-context > summary::after {
-  right: 0.32rem;
+  top: 50%;
+  right: 0.28rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  margin-top: -0.31rem;
 }
 
 .eng-source-context__meta {
