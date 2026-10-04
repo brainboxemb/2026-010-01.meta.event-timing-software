@@ -97,7 +97,77 @@
       );
     }
 
+    function maturityStatus(object) {
+      const labels = {
+        D: "Draft",
+        R: "Review",
+        A: "Approved",
+        O: "Obsolete",
+      };
+      const code = object && object.status ? String(object.status) : "";
+      if (!labels[code]) return "";
+      return (
+        '<span class="eng-object-status eng-object-status--' +
+        escapeHtml(code) +
+        '" title="Requirement maturity: ' +
+        escapeHtml(labels[code]) +
+        '">' +
+        escapeHtml(code) +
+        " — " +
+        escapeHtml(labels[code]) +
+        "</span>"
+      );
+    }
+
+    function sourceContextPanel(object) {
+      const source = object ? object.source_context : null;
+      if (!source || !Array.isArray(source.lines) || !source.lines.length) {
+        return "";
+      }
+      const rows = source.lines
+        .map((line) => {
+          const selected =
+            Number(line.number) === Number(source.line)
+              ? " is-authoritative-line"
+              : "";
+          return (
+            '<div class="eng-source-context__line' +
+            selected +
+            '">' +
+            '<span class="eng-source-context__number">' +
+            escapeHtml(line.number) +
+            "</span>" +
+            '<code class="eng-source-context__text">' +
+            escapeHtml(line.text) +
+            "</code>" +
+            "</div>"
+          );
+        })
+        .join("");
+      return (
+        '<details class="eng-source-context">' +
+        "<summary>Source definition in pane</summary>" +
+        '<div class="eng-source-context__meta">' +
+        "<code>" +
+        escapeHtml(source.path) +
+        ":" +
+        escapeHtml(source.line) +
+        "</code>" +
+        "</div>" +
+        '<div class="eng-source-context__lines">' +
+        rows +
+        "</div>" +
+        "</details>"
+      );
+    }
+
     function objectPanel(object, roleLabel, mode) {
+      const promoteAction =
+        mode === "compare" && roleLabel === "Compared object"
+          ? '<button class="md-button" type="button" data-eng-promote-object-id="' +
+            escapeHtml(object.id) +
+            '">Make primary</button>'
+          : "";
       return (
         (roleLabel
           ? '<div class="eng-detail__role">' +
@@ -108,6 +178,7 @@
         '<span class="eng-object-type">' +
         escapeHtml(object.type_label) +
         "</span>" +
+        maturityStatus(object) +
         "<h2>" +
         escapeHtml(object.title) +
         "</h2>" +
@@ -125,7 +196,9 @@
         '<a class="md-button" href="' +
         escapeHtml(object.source_url) +
         '">Open source definition</a>' +
+        promoteAction +
         "</div>" +
+        sourceContextPanel(object) +
         relationSection(
           "Outgoing relationships",
           object.outgoing,
@@ -580,6 +653,30 @@
         if (updateHistory) updateUrl();
       }
 
+      function promoteComparedObject(id, updateHistory) {
+        const object = data.objects[id];
+        const previousRoot = data.objects[rootId];
+        if (!object || !previousRoot || id === rootId) return;
+
+        rootId = id;
+        compareId = previousRoot.id;
+        rootDetail.innerHTML = objectPanel(
+          object,
+          "Selected object",
+          "compare"
+        );
+        compareDetail.innerHTML = objectPanel(
+          previousRoot,
+          "Compared object",
+          "compare"
+        );
+        rootDetail.scrollTop = 0;
+        compareDetail.scrollTop = 0;
+        updateTreeSelection();
+        updateCompareSelection();
+        if (updateHistory) updateUrl();
+      }
+
       root.addEventListener("click", (event) => {
         const toggleTarget = event.target.closest("[data-eng-tree-toggle]");
         if (toggleTarget && root.contains(toggleTarget)) {
@@ -590,6 +687,17 @@
         const treeTarget = event.target.closest("[data-workspace-root-id]");
         if (treeTarget && root.contains(treeTarget)) {
           renderRoot(treeTarget.dataset.workspaceRootId, true);
+          return;
+        }
+
+        const promoteTarget = event.target.closest(
+          "[data-eng-promote-object-id]"
+        );
+        if (promoteTarget && root.contains(promoteTarget)) {
+          promoteComparedObject(
+            promoteTarget.dataset.engPromoteObjectId,
+            true
+          );
           return;
         }
 
