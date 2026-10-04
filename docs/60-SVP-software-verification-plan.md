@@ -293,10 +293,9 @@ Typical cases:
 
 This is intended to become the **primary fast system-level regression layer**.
 
-A manual development/test client may consume the same public interface for human
-inspection, but it does not replace automated ST-1 evidence. The current A06 direction
-uses a small JavaFX client for manual version/status inspection while automated tests
-continue to own pass/fail verification.
+The Development Client may consume the same public interface for human inspection, but
+it does not replace automated ST-1 evidence. Automated tests continue to own formal
+pass/fail verification unless a VTS case explicitly requires manual client interaction.
 
 #### ST-1 test specifications
 
