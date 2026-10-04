@@ -221,60 +221,64 @@ verifies: >-
 
 **Purpose**
 
-Verify through the real JavaFX Development Client that an external client can
-resynchronise current status and bounded TimingData history after reconnect/restart,
-buffer later live events during that synchronisation, merge history/live overlap
-by the Node ID + sequence number and only then present the view as LIVE.
+Verify through the real JavaFX Development Client that the accepted API-first client can
+drive and observe the Step-4 public flow without private SI-01 state, and can rebuild
+current status plus bounded TimingData history after reconnect/restart before presenting
+that history as LIVE.
 
-This manual case does not re-prove the server-side lifecycle, registration,
-LogBook persistence or restart recovery already covered by `VC-ST1-002`.
+This manual case does not re-prove the server-side lifecycle, registration, LogBook
+persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Setup**
 
 - packaged SI-01 application started with the dedicated Step-4 demo
   configuration/storage;
 - JavaFX Development Client started independently on Java 17;
-- one deterministic registration `N0001` committed during the first run;
-- public IF-03 plus the supported Remote Shell shutdown path only.
+- public IF-03, Remote Shell and LoggingServer boundaries only;
+- one deterministic registration `N0001` committed during the first run.
 
 **Procedure**
 
-1. Start SI-01 with empty Step-4 demo storage.
-2. Connect the Development Client Timing view.
-3. Verify the client shows a syncing/reconnecting state, keeps mutating controls
-   disabled during synchronisation and becomes LIVE only after the baseline is ready.
-4. Enter Location ID 24 and OPEN the TimingNode, then commit deterministic
-   auto-reg `N0001` at `2026-10-01T12:00:00Z`. Verify OPEN applies LocationId
-   24 as part of that one request.
-5. Verify the client shows sequence 1 in bounded LogBook/history and one matching
-   live commit.
-6. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
-7. Restart SI-01 with the same demo TimingData file and reconnect the Development
-   Client.
-8. Verify the client resynchronises current status to CLOSED with no operational
-   Location ID while sequence 1 / `N0001` remains in history.
-9. Verify recovered history is not presented as a new live commit and that any
-   history/live overlap is deduplicated by Node ID + sequence number.
-10. Verify the client reaches LIVE only after the baseline plus buffered live
-    events have been reconciled.
-11. Shut SI-01 down cleanly.
+1. Start SI-01 with empty Step-4 demo storage and start the Development Client.
+2. Verify the target host/IP is editable, **Apply target** selects the active host and the
+   stateless API **CHECK** reports the IF-03 HTTP boundary as READY.
+3. Verify the main client tabs are **API**, **Events**, **Device Log**, **Terminal** and
+   **Client Log**, with Device Log and Client Log independent.
+4. Connect **Events**. Verify the API history view enters syncing/reconnecting state and
+   becomes LIVE only after the status/capabilities/LogBook baseline is ready.
+5. Enter Location ID 24 and OPEN the TimingNode. Verify OPEN applies LocationId 24 in the
+   same request; no separate Set Location operation is used.
+6. Commit deterministic auto-reg `N0001` at `2026-10-01T12:00:00Z`.
+7. Verify sequence 1 appears in bounded LogBook/history with Type `AUTO_REG` and Code
+   `ADD` shown separately, and inspect the complete selected public record/raw response.
+8. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
+9. Verify Client Log remains usable independently of the SI-01 Device Log connection and
+   that Events, Terminal and Device Log can be connected/disconnected independently.
+10. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
+11. Keep the demo TimingData file, restart SI-01 and reconnect Events.
+12. Verify the client resynchronises to current CLOSED/no-location status, restores
+    sequence 1 / `N0001` from bounded history, does not present recovered history as a
+    new live commit and merges any history/live overlap by stable record key.
+13. Verify the history view reaches LIVE only after baseline plus buffered live events are
+    reconciled, then shut SI-01 down cleanly.
 
 **Expected result**
 
+- the current API-first Development Client reaches all required public Step-4 boundaries;
+- Open carries LocationId and SI-01 remains authoritative for command acceptance;
+- committed TimingData is visible in bounded history and live delivery;
+- Device Log and Client Log remain independent;
 - reconnect/restart is visible as synchronisation rather than immediately LIVE;
-- mutating controls remain disabled while the baseline is incomplete;
 - history is resynchronised before LIVE presentation;
-- buffered live events are applied after the baseline;
 - duplicate history/live observations collapse to one record;
 - recovered historical data is not presented as a new committed event;
 - the running-system flow uses no private SI-01 state.
 
 **Execution**
 
-This is currently a manual verification case. The executable/checklist procedure
-is maintained in the Java repository at `test-client/STEP4-DEMO.md`; run-specific
-PASS/FAIL, revisions and supporting artifacts are retained with Java issue #127
-rather than in this VTS.
+This remains a manual verification case. The executable checklist is maintained in the
+Java repository at `test-client/STEP4-DEMO.md`; run-specific PASS/FAIL, revisions and
+supporting artifacts are retained with Java issue #127 rather than in this VTS.
 
 ## Evidence
 
