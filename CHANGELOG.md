@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Let VTS `{vc}` objects own testcase ID/title structure instead of duplicating each case as a Markdown heading, keeping Sphinx-Needs and traceability views aligned.
+
 - Adopt the shared BrainboxEmb repository-documentation entrypoint model: make the root README concise, add docs/README.md as the authored-document overview, and move documentation/SIP-actual operating guidance into SDE-01.
 
 - Restore SVP/VTS as current verification authority: express runtime characterization as a reusable method and VC-ST1-003 as a stable Development Client case without SIP-step/demo execution history.
