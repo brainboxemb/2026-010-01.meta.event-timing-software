@@ -339,6 +339,29 @@ Failures of mandatory application-wide configuration or infrastructure that prev
 safe construction of the diagnostic runtime are outside this containment rule.
 ```
 
+```{req} Select strongest RFID observation for registration time
+:id: SI01-REQ-050
+:status: D
+:derived_from: UC-003
+
+When one participant tag is observed repeatedly during one RFID passage, SI-01 shall
+treat those observations as one candidate passage and shall select the observation with
+the highest RSSI as the representative observation.
+
+The accepted automatic-registration time shall be the original observation time of that
+selected highest-RSSI observation.
+
+SI-01 shall complete and evaluate the candidate passage after the configured observation
+quiet interval when no further observation for that tag arrives. A configured maximum
+passage duration shall prevent continuously repeated observations from postponing
+evaluation indefinitely.
+
+For equal highest RSSI values, SI-01 shall retain the first observation at that highest
+value.
+
+This requirement does not define a minimum-RSSI rejection threshold.
+```
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
@@ -377,6 +400,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
+| SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 
 ## Software-item architecture
 
