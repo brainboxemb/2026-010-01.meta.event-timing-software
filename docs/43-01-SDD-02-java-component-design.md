@@ -352,7 +352,7 @@ central dispatcher or generic message bus.
 
 The presentation-facing automatic-registration boundary is
 `applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
-because an automatic-registration record can later express more than one semantic
+because an automatic-registration record can express more than one semantic
 action; the current implemented action set contains only `ADD` until REV semantics
 are defined. The Domain command for that implemented action is
 `addAutomaticRegistration(...)`. The short IF-03 engineering resource name
@@ -758,7 +758,7 @@ The shared Presentation-facing application boundary remains small:
 The proxy obtains current node status through the TimingNode query/ownership
 boundary; neither object assembles status by reading node-owned fields directly.
 
-### Runtime thread ownership and naming
+## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
