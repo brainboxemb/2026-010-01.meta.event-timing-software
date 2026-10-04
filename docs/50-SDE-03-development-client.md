@@ -329,12 +329,14 @@ The request value is the exact concatenation presented by the client (for exampl
 `N` + `0001` -> `N0001`). The client does not look up teams/participants or decide
 whether that Registration ID is valid for the running event/profile.
 
-Time entry is also presentation-oriented:
+Time entry is also presentation-oriented and explicitly UTC:
 
 - date is shown separately from clock time;
-- ordinary clock-time entry is readable to whole seconds;
-- **Now** fills the fields from the client clock;
-- the client converts the structured value to the canonical API timestamp when sending.
+- the clock-time field is labelled **Time (UTC)** and is readable to whole seconds;
+- entering `2026-10-01 12:00:00` means exactly `2026-10-01T12:00:00Z`;
+- **Now** fills the current UTC date/time;
+- the development host's local time zone must not silently shift an explicitly entered
+  deterministic test value.
 
 The normal form does not require an engineer to type hundredths/nanoseconds. Where
 deterministic sub-second protocol testing is needed, an advanced/raw value may be
