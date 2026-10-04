@@ -7,6 +7,7 @@ The repository is currently in its planning and research phase.
 ## Unreleased
 
 - Define the Step-5 antenna/input architecture: Event-based TagObservation with RSSI/time, AntennaManager lifecycle/probe/inventory control, TagProcessor RSSI/duplicate filtering, and an injected TagId-to-RegistrationId mapper instead of a mandatory lookup table.
+- Keep local registration independent from presentation, diagnostic logging and backoffice delivery; keep Java thread priority as measured tuning rather than a correctness mechanism.
 
 - Restore SDD-02 narrative coherence: separate runtime thread policy from SerialWorker design, move cross-cutting Pi/runtime resource rules to the SI-01 SSD, and remove remaining implementation-history wording from current design.
 
