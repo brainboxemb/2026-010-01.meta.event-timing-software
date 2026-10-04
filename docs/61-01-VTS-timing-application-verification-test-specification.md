@@ -255,24 +255,29 @@ persistence or restart recovery already covered by `VC-ST1-002`.
    field and that the public record contains the correct canonical UTC equivalent. For
    `Europe/Amsterdam` on this date, `12:00:00` maps to
    `2026-10-01T10:00:00Z`.
-7. Verify sequence 1 appears in bounded LogBook/history with Type `AUTO_REG` and Code
-   `ADD` shown separately, and inspect the complete selected public record/raw response.
-8. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
-9. Verify Client Log remains usable independently of the SI-01 Device Log connection and
+7. Verify the interpreted **Registrations** view shows one row with normal local clock
+   time, RegistrationId `N0001`, compact **A** and no deleted state.
+8. Verify sequence 1 appears separately in the technical LogBook with Type `AUTO_REG`
+   and Code `ADD` shown separately, and inspect the complete selected public
+   record/raw response.
+9. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
+10. Verify Client Log remains usable independently of the SI-01 Device Log connection and
    that Events, Terminal and Device Log can be connected/disconnected independently.
-10. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
-11. Keep the demo TimingData file, restart SI-01 and reconnect Events.
-12. Verify the client resynchronises to current CLOSED/no-location status, restores
-    sequence 1 / `N0001` from bounded history, does not present recovered history as a
-    new live commit and merges any history/live overlap by stable record key.
-13. Verify the history view reaches LIVE only after baseline plus buffered live events are
+11. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
+12. Keep the demo TimingData file, restart SI-01 and reconnect Events.
+13. Verify the client resynchronises to current CLOSED/no-location status, restores
+    sequence 1 / `N0001` in both the interpreted registration view and bounded technical
+    history, does not present recovered history as a new live commit and merges any
+    history/live overlap by stable record key.
+14. Verify the history view reaches LIVE only after baseline plus buffered live events are
     reconciled, then shut SI-01 down cleanly.
 
 **Expected result**
 
 - the current API-first Development Client reaches all required public Step-4 boundaries;
 - Open carries LocationId and SI-01 remains authoritative for command acceptance;
-- committed TimingData is visible in bounded history and live delivery;
+- committed TimingData is visible both as an interpreted registration and as immutable
+  technical LogBook history, plus live delivery;
 - Device Log and Client Log remain independent;
 - reconnect/restart is visible as synchronisation rather than immediately LIVE;
 - history is resynchronised before LIVE presentation;
