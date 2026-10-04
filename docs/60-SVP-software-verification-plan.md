@@ -185,11 +185,11 @@ For the first Pi proof, simple observations are sufficient:
 Add more detailed measurements only when a feature or observed problem justifies them.
 There are no numeric Pi resource budgets at this stage.
 
-## Step-5 engineering runtime characterization
+## Development-host runtime characterization
 
-SIP Step 5 introduces a development-host characterization slice before target
-hardware is involved. It is engineering verification, not a new product
-performance requirement.
+Development-host runtime characterization is engineering verification, not a
+product performance requirement. A SIP step may invoke this method when it needs
+measurement evidence before selecting a runtime optimization.
 
 The characterized composition is deliberately small:
 
@@ -207,9 +207,11 @@ one TimingNode bounded serial lane
         +--> post-commit presentation events
 ```
 
-V01/V02 use deterministic synthetic tag/reference fixtures and growing committed
-history. The workload definition and random/sequence seed, where one is used,
-are retained with the evidence so a later run can reproduce the same input.
+Characterization cases use deterministic synthetic tag/reference fixtures and
+growing committed history. The workload definition and random/sequence seed,
+where one is used, are retained with the evidence so a later run can reproduce
+the same input. The engineering harness/environment is defined by
+`50-SDE-04-runtime-characterization.md`.
 
 Retain enough evidence to compare runs without high-volume event logging:
 
@@ -223,10 +225,11 @@ Retain enough evidence to compare runs without high-volume event logging:
 - GC count/time deltas and heap observations;
 - project-owned thread CPU/state observations where the JVM supports them.
 
-The first baseline keeps default JVM thread priority and the current bounded
-TimingNode queue. V01 characterizes ordinary and bursty input. V02 then asks
-whether sustained ingress or slow downstream delivery prevents required work
-from making forward progress. A stalled/slow IF-03 event client is included
+A baseline keeps ordinary JVM scheduling and the reviewed bounded TimingNode
+execution design unless the characterization question is specifically about
+one of those choices. The first characterization establishes ordinary/bursty
+behaviour; a later fairness/backpressure case asks whether sustained ingress or
+slow downstream delivery prevents required work from making forward progress. A stalled/slow IF-03 event client is included
 where needed to prove that post-commit delivery does not block the TimingNode
 lane indefinitely or create unbounded application-owned delivery state.
 
@@ -236,11 +239,10 @@ persistence are introduced only when the retained evidence identifies the
 specific problem they solve. Re-run the affected scenario after a change and
 compare it with the same baseline.
 
-Step 5 remains a **single-TimingNode** characterization. Multi-TimingNode
-scheduler interaction belongs to the later multi-node integration step.
-Important scheduling/CPU/GC/latency cases are repeated on the selected target in
-the later target-runtime/HIL phase because development-host results do not define
-Raspberry Pi behaviour.
+A single-TimingNode characterization does not establish multi-TimingNode scheduler
+behaviour. When later integration introduces multiple active nodes, that composition
+requires its own evidence. Important scheduling/CPU/GC/latency cases are repeated on
+the selected target because development-host results do not define target behaviour.
 
 No numeric pass/fail performance threshold is invented by this plan. A later
 requirement may establish one if product evidence needs it. Until then the
