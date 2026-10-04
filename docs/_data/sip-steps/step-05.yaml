@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
+      D01 fixed the single-TimingNode runtime measurement baseline; A01 is now
+      the active implementation activity.
+  - date: '2026-10-04'
+    change: >-
       Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
       planning/design activity.
   - date: '2026-10-02'
@@ -21,7 +25,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: active
+    state: done
     note: >-
       Define the first project-owned thread/queue measurement approach, stable
       thread naming and the boundary between JVM scheduling preferences and
@@ -50,7 +54,7 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: planned
+    state: active
     depends_on: [D01]
     note: >-
       Feed deterministic tag observations through the built-in

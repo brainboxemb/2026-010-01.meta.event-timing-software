@@ -185,6 +185,68 @@ For the first Pi proof, simple observations are sufficient:
 Add more detailed measurements only when a feature or observed problem justifies them.
 There are no numeric Pi resource budgets at this stage.
 
+## Step-5 engineering runtime characterization
+
+SIP Step 5 introduces a development-host characterization slice before target
+hardware is involved. It is engineering verification, not a new product
+performance requirement.
+
+The characterized composition is deliberately small:
+
+```text
+deterministic SimulatedAntenna input
+        |
+        v
+tag interpretation / filtering
+        |
+        v
+one TimingNode bounded serial lane
+        |
+        +--> TimingData persistence / LogBook
+        |
+        +--> post-commit presentation events
+```
+
+V01/V02 use deterministic synthetic tag/reference fixtures and growing committed
+history. The workload definition and random/sequence seed, where one is used,
+are retained with the evidence so a later run can reproduce the same input.
+
+Retain enough evidence to compare runs without high-volume event logging:
+
+- source/build revision, JVM, OS and relevant runtime configuration;
+- workload shape, duration/count and preloaded committed-record volume;
+- observation, filter/resolve, queue-admission and commit counts;
+- queue depth/high-water and full/not-running admission counts;
+- queue-wait, serial-processing, persistence/commit and useful end-to-end
+  duration summaries;
+- bounded history/query cost for the exercised query shape;
+- GC count/time deltas and heap observations;
+- project-owned thread CPU/state observations where the JVM supports them.
+
+The first baseline keeps default JVM thread priority and the current bounded
+TimingNode queue. V01 characterizes ordinary and bursty input. V02 then asks
+whether sustained ingress or slow downstream delivery prevents required work
+from making forward progress. A stalled/slow IF-03 event client is included
+where needed to prove that post-commit delivery does not block the TimingNode
+lane indefinitely or create unbounded application-owned delivery state.
+
+Do not preselect a fix. Batching, admission/fairness guards, thread-priority
+changes, object pooling, copied read snapshots, caches/indexes or asynchronous
+persistence are introduced only when the retained evidence identifies the
+specific problem they solve. Re-run the affected scenario after a change and
+compare it with the same baseline.
+
+Step 5 remains a **single-TimingNode** characterization. Multi-TimingNode
+scheduler interaction belongs to the later multi-node integration step.
+Important scheduling/CPU/GC/latency cases are repeated on the selected target in
+the later target-runtime/HIL phase because development-host results do not define
+Raspberry Pi behaviour.
+
+No numeric pass/fail performance threshold is invented by this plan. A later
+requirement may establish one if product evidence needs it. Until then the
+acceptance question is repeatability, bounded resource behaviour, forward
+progress and an evidence-backed implementation choice.
+
 ## Automated system-test profiles
 
 The `ST-*` profiles provide a progressive set of reusable system-test compositions. A test case can exist at one or more profiles depending on the behaviour being verified.
