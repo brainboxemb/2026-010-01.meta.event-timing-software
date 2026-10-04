@@ -3,9 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      D01 established the single-TimingNode development-host runtime measurement
-      and evidence baseline. A01 is now the first active implementation activity;
-      multi-node scheduling stays deferred to its later roadmap step.
+      D01 fixed the single-TimingNode runtime measurement baseline; A01 is now
+      the active implementation activity.
   - date: '2026-10-04'
     change: >-
       Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
