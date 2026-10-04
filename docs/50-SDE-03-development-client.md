@@ -184,7 +184,17 @@ whether SI-01 will accept a domain command.*
 
 This is the current Development Client baseline. It supersedes the earlier Step-4 tab
 ordering and lifecycle-gated controls. The older Step-4 wireframes remain historical
-verification/design context only; they are not the current UI acceptance baseline.
+verification/design context only; they are not the current UI
+
+The API tab shows one prominent **Timing view** synchronisation state above the
+Version/Status controls. The initial state is **NOT SYNCED — connect Events**. Connecting
+the IF-03 Events WebSocket immediately starts the HTTP status/capabilities/LogBook
+baseline sync; incoming live events, including the initial STATUS_SNAPSHOT, are buffered
+and reconciled after that baseline. Only then does the Timing view become **LIVE**.
+
+Open/Close/registration controls remain disabled while the Timing view is NOT SYNCED,
+SYNCING or STALE. **Sync view** is available only while Events is connected; it repeats
+the same baseline/reconciliation sequence and does not modify SI-01 domain state. acceptance baseline.
 
 ### Target and connection bar
 
