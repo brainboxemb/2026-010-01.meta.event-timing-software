@@ -61,7 +61,6 @@ GET  /api/v1/version
 GET  /api/v1/status
 GET  /api/v1/capabilities
 
-PUT  /api/v1/node/{id}/location
 POST /api/v1/node/{id}/open
 POST /api/v1/node/{id}/close
 
@@ -189,34 +188,7 @@ Current response shape:
 
 Unknown capability IDs are compatible additions.
 
-## IF03-OP-005 — Set operational location
-
-HTTP mapping:
-
-```text
-PUT /api/v1/node/{id}/location
-```
-
-Request:
-
-```json
-{
-  "locationId": 24
-}
-```
-
-Successful response:
-
-```json
-{
-  "result": "UPDATED"
-}
-```
-
-A request for an unknown TimingNode returns `NODE_NOT_FOUND`. A location change while
-the node is OPEN is a domain conflict.
-
-## IF03-OP-006 — Open at a location
+## IF03-OP-005 — Open at a location
 
 HTTP mapping:
 
@@ -254,17 +226,12 @@ An idempotent request may return:
 The ISD intentionally leaves the exact result rule for `ALREADY_OPEN` with a different
 requested LocationId open for review. This IDD shall not invent a second rule.
 
-A client shall not implement normal OPEN as:
+There is no separate v1 Set Location resource. The location body of the OPEN
+request is the concrete mapping of the single `open(LocationId)` semantic operation;
+assigning the requested LocationId and changing CLOSED to OPEN are processed as one
+ordered node operation.
 
-```text
-PUT  .../location
-POST .../open
-```
-
-The location body of the OPEN request is the concrete v1 mapping of the single
-`open(LocationId)` semantic operation.
-
-## IF03-OP-007 — Close
+## IF03-OP-006 — Close
 
 HTTP mapping:
 
@@ -279,7 +246,7 @@ Successful result strings are:
 - `CLOSED`;
 - `ALREADY_CLOSED`.
 
-## IF03-OP-008 — Direct accepted-registration simulation
+## IF03-OP-007 — Direct accepted-registration simulation
 
 HTTP mapping:
 
@@ -309,7 +276,12 @@ Successful response:
 The operation is available only when
 `DIRECT_REGISTRATION_SIMULATION` is supported and enabled.
 
-## IF03-OP-009 — LogBook query
+This development operation currently represents the automatic-registration `ADD`
+action. The presentation-facing application boundary receives that action together
+with `registrationId` and `time`. Additional actions such as REV require an explicit
+IF-03/IF-05 contract extension; they are not inferred from this ADD-only request.
+
+## IF03-OP-008 — LogBook query
 
 Metadata:
 
@@ -468,11 +440,10 @@ development-v1 design yet.
 | IF03-OP-002 / IF03-REQ-004 | `GET /api/v1/status` |
 | IF03-OP-003 / IF03-REQ-005/006/015/016 | WebSocket `/api/v1/events` + LogBook recovery |
 | IF03-OP-004 / IF03-REQ-012 | `GET /api/v1/capabilities` |
-| IF03-OP-005 | `PUT /api/v1/node/{id}/location` |
-| IF03-OP-006 / IF03-REQ-011 | `POST /api/v1/node/{id}/open` with `locationId` |
-| IF03-OP-007 | `POST /api/v1/node/{id}/close` |
-| IF03-OP-008 / IF03-REQ-013 | `POST /api/v1/dev/node/{id}/auto-reg` |
-| IF03-OP-009 / IF03-REQ-014 | bounded `/api/v1/node/{id}/logbook` resources |
+| IF03-OP-005 / IF03-REQ-011 | `POST /api/v1/node/{id}/open` with `locationId` |
+| IF03-OP-006 | `POST /api/v1/node/{id}/close` |
+| IF03-OP-007 / IF03-REQ-013 | `POST /api/v1/dev/node/{id}/auto-reg` |
+| IF03-OP-008 / IF03-REQ-014 | bounded `/api/v1/node/{id}/logbook` resources |
 
 ## Open design points
 
