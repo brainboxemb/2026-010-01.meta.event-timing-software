@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Start SIP Step 5 D01 with a single-TimingNode runtime measurement/evidence baseline; keep default JVM scheduling as the baseline, gate batching/pooling/caching/concurrency changes on measurements, and activate simulated-antenna A01 after the decision.
+
 - Add a reviewed API-first Engineering Client UI baseline: config-driven per-boundary connection controls, client + SI-01 logging, low local domain intelligence, clearer registration/time entry and a primary API work surface.
 
 - Assign TimingNode OPEN/CLOSE TimingData explicitly to Step 5 with separate contract, implementation and verification activities while leaving the current IF-05 contract unchanged until Step-5 D02 executes.
