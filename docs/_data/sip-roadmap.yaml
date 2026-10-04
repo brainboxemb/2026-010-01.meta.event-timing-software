@@ -125,7 +125,7 @@ steps:
   "4":
     estimate_project_days: 6
     actual_estimated_project_days: 5.1
-    remaining_estimate_project_days: 0.5
+    completed_date: "2026-10-04"
     workstream: domain
     docs:
       requirements: {level: working, scope: "TimingNode state and domain capabilities"}
