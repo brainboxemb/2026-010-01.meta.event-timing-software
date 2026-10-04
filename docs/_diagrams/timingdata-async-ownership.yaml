@@ -56,7 +56,7 @@ nodes:
     group: query
     layout: {x: 1170, y: 315, w: 180, h: 100}
   - id: outqueue
-    label: "newTimingDataEvent\nEvent<TimingData>"
+    label: "timingDataCommittedEvent\nEvent<TimingData>"
     kind: service
     group: output
     layout: {x: 1435, y: 235, w: 180, h: 82}

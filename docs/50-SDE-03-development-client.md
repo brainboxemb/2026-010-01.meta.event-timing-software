@@ -292,9 +292,9 @@ because cached state suggests SI-01 will reject it. For example, a developer mus
 able to send **Close** while the displayed node is CLOSED and inspect the actual public
 result.
 
-The separate IF-03 Set Location operation remains part of the public protocol and may be
-used by automated or explicit protocol tests, but it is not a prominent control in the
-normal Development Client workbench because normal OPEN already carries LocationId.
+There is no separate IF-03 Set Location operation in the current baseline. Normal
+**Open** carries the requested LocationId; SI-01 applies location assignment and the
+CLOSED-to-OPEN transition as one ordered node operation.
 
 Displayed lifecycle state, LocationId and capability state remain valuable context, but
 they are not local permission rules. SI-01 remains authoritative. Expected domain
@@ -344,8 +344,8 @@ HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]
 ```
 
 The client log source shall identify the actual Development Client source context rather
-than use one generic client marker for every line. The Logs tab therefore does not mean
-only "device logging". Client logging and its runtime level control remain available when
+than use one generic client marker for every line. The dedicated Client Log tab therefore remains separate from Device Log. Client logging
+and its runtime level control remain available when
 SI-01 is offline, which is especially important when diagnosing why a connection could
 not be established. A runtime Client Log level change does not rewrite the configured
 startup level; restarting the Development Client restores the configured value.

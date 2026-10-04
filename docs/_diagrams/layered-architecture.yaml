@@ -144,15 +144,23 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 90, y: 373, w: 260, h: 75}
+  layout: {x: 55, y: 373, w: 230, h: 75}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
   label: "PresentationGateway"
-  subtitle: "presentation commands / queries"
+  subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 390, y: 373, w: 280, h: 75}
+  layout: {x: 305, y: 373, w: 240, h: 75}
+- id: timing-node-proxy
+  object_id: TimingNodeProxy
+  group: application-layer
+  label: "TimingNodeProxy"
+  subtitle: "node commands / queries / events"
+  kind: application
+  notation: component
+  layout: {x: 565, y: 373, w: 230, h: 75}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -160,7 +168,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 710, y: 373, w: 350, h: 75}
+  layout: {x: 815, y: 373, w: 310, h: 75}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -456,6 +464,11 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
 
+- from: presentation-gateway
+  to: timing-node-proxy
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
+
 - from: upstream-message-router
   to: upstream-protocol-domain
   from_anchor: {side: bottom, position: 0.50}
@@ -479,10 +492,10 @@ edges:
   from_anchor: {side: bottom, position: 0.35}
   to_anchor: {side: top, position: 0.35}
 
-- from: presentation-gateway
-  to: domain-layer
+- from: timing-node-proxy
+  to: timing-node-aggregate
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.65}
+  to_anchor: {side: top, position: 0.50}
 
 
 - from: timing-node-aggregate

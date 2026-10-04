@@ -52,7 +52,7 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 
 The current reactor has two reusable artifacts plus one executable application.
 The shared TimingData library artifact is justified by the independent SI-01 and
-Engineering Client consumers. It intentionally remains one artifact containing the
+Development Client consumers. It intentionally remains one artifact containing the
 semantic contracts, default/reference profile, codec and factory/provider; these
 responsibilities are not split into separate API/default JARs:
 
@@ -290,34 +290,74 @@ the architectural boundary, not the owning package/layer. `UpstreamGateway`
 follows the same naming principle on the I/O/upstream boundary, but owns external
 transport/integration rather than presentation-facing application operations.
 
-Status-change detection is owned by the same serial boundary. A state-changing
-command compares authoritative status before and after the domain operation on
-that TimingNode lane. A real difference emits the TimingNode status event before
-the result leaves the ordered command execution. `PresentationGateway` maps that fact
-to `ApplicationStatus`; it does not perform a second before/after query outside
-the ordered boundary.
+Node-scoped presentation access is exposed through `TimingNodeProxy`.
+`PresentationGateway` owns application-wide presentation information such as
+build identity and capabilities; the proxy gives an adapter explicit TimingNode
+context for node status, commands, queries and events. The proxy is an
+Application-layer boundary object, not a second owner of TimingNode state.
 
-The visible component boundary uses typed commands and queries rather than mirroring every `TimingNodeLogic` method:
+Status-change detection remains owned by the TimingNode serial boundary. A
+state-changing command compares authoritative status before and after the domain
+operation on that TimingNode lane. A real difference emits the TimingNode status
+event before the result leaves ordered command execution. `TimingNodeProxy` maps
+that fact to `ApplicationStatus`; it does not perform a second before/after query
+outside the ordered boundary.
+
+The visible Domain component boundary uses typed commands and queries rather than
+mirroring every `TimingNodeLogic` method:
 
 ```java
 TimingNodeTypes.OpenResult opened =
-        node.invoke(TimingNodeCommands.open());
+        node.invoke(TimingNodeCommands.open(locationId));
 
 TimingNodeTypes.CommandAdmission admitted =
         node.submit(
-                TimingNodeCommands.commitAutomaticRegistration(
+                TimingNodeCommands.addAutomaticRegistration(
                         registrationId,
-                        observationTime));
+                        time));
 
 TimingNodeTypes.Status status =
         node.query(TimingNodeQueries.status());
 ```
 
-`invoke(command)` is the result-bearing path: presentation/application callers may wait for the processed domain result. `submit(command)` is the producer path: it returns only immediate bounded-queue admission and deliberately does not wait for the later domain result. RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by persistence, LogBook work or another queued TimingNode operation.
+Presentation adapters use the node-scoped Application boundary:
 
-`query(query)` is the consistency-sensitive read path. Short reads run in the same ordering as commands. The ordering boundary is the required property; a copied LogBook snapshot is not. Query implementations should avoid routine list copies when direct bounded traversal on the node lane is cheaper, and may introduce compact derived/indexed state only when measurement justifies it. Typed command/query objects are local operation descriptions, not another component, central dispatcher or generic message bus.
+```java
+TimingNodeProxy node = presentationGateway.timingNode();
 
-The commit boundary is named `commitAutomaticRegistration(...)`. The fact that the observation already passed source-specific interpretation/filtering is a precondition, not the operation name. The manual counterpart is `commitManualRegistration(...)`; the IF-03 engineering route may keep its separate short `auto-reg` resource name. `ApplicationId`, internal `TimingSystemId` and functional
+node.open(locationId);
+node.applyAutomaticRegistration(
+        AutomaticRegistrationAction.ADD,
+        registrationId,
+        time);
+node.statusChangedEvent().subscribe(statusListener);
+node.timingDataCommittedEvent().subscribe(timingDataListener);
+```
+
+`invoke(command)` is the result-bearing path: presentation/application callers may
+wait for the processed domain result. `submit(command)` is the producer path: it
+returns only immediate bounded-queue admission and deliberately does not wait for
+the later domain result. RFID/TagProcessor-style ingress uses this form so a device
+callback cannot be held up by persistence, LogBook work or another queued TimingNode
+operation.
+
+`query(query)` is the consistency-sensitive read path. Short reads run in the same
+ordering as commands. The ordering boundary is the required property; a copied
+LogBook snapshot is not. Query implementations should avoid routine list copies
+when direct bounded traversal on the node lane is cheaper, and may introduce
+compact derived/indexed state only when measurement justifies it. Typed
+command/query objects are local operation descriptions, not another component,
+central dispatcher or generic message bus.
+
+The presentation-facing automatic-registration boundary is
+`applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
+because an automatic-registration record can later express more than one semantic
+action; the current implemented action set contains only `ADD` until REV semantics
+are defined. The Domain command for that implemented action is
+`addAutomaticRegistration(...)`. The short IF-03 engineering resource name
+`auto-reg` remains a transport concern.
+
+`ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
@@ -705,17 +745,17 @@ test-client/
 `timing-point-core` or `timing-point-app` implementation code. It may,
 however, depend on the separately reusable `event-timing-data` artifact because
 TimingData codec/provider reuse is now a real cross-executable requirement. This
-preserves the external-client boundary while allowing SI-01 and the Engineering
+preserves the external-client boundary while allowing SI-01 and the Development
 Client to exercise the exact same public or proprietary TimingData translator.
 
-The Engineering Client remains engineering support rather than the planned SI-02
-GUI, and its JavaFX choice does not select the SI-02 GUI technology.
+The Development Client remains development/test support rather than the planned
+SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
-The shared Presentation-facing application gateway remains small:
+The shared Presentation-facing application boundary remains small:
 `PresentationGateway.version()` returns build identity and
-`PresentationGateway.status()` obtains the current TimingNode status through the
-TimingNode query/ownership boundary used by the current presentation adapters;
-it does not assemble status by reading node-owned fields directly.
+`PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`.
+The proxy obtains current node status through the TimingNode query/ownership
+boundary; neither object assembles status by reading node-owned fields directly.
 
 ## TimingNode active-object execution and persistence
 
@@ -774,8 +814,8 @@ final class TimingNodeLogic {
     private LocationId locationId;
     private final LogBook logBook;
 
-    OpenResult open() {
-        // domain decision only; no queue/future/timeout mechanics here
+    OpenResult open(LocationId locationId) {
+        // apply requested location + OPEN as one domain operation
     }
 }
 ```
@@ -786,7 +826,7 @@ The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
 
 ```text
-open / close / setLocation / consistency-sensitive query
+open(locationId) / close / consistency-sensitive query
     -> queued internally
     -> execute against current ordered TimingNode state
     -> caller receives processed domain result
@@ -996,7 +1036,7 @@ private void processRegistration(RegistrationInput input) {
 
     timingDataStore.append(data);    // durable before return
     logBook.add(data);               // committed domain state
-    newTimingDataEvent.emit(data);
+    timingDataCommittedEvent.emit(data);
 }
 ```
 
@@ -1124,13 +1164,13 @@ A component owns the mutable `Event<T>` instance and is the only code that emits
 the fact. Consumers receive an `EventSource<T>` subscription-only view, so they
 subscribe directly without gaining permission to publish the event.
 
-For TimingData the component owns:
+For committed TimingData the component owns an explicitly named post-fact event:
 
 ```java
-private final Event<TimingData> newTimingDataEvent = new Event<>();
+private final Event<TimingData> timingDataCommittedEvent = new Event<>();
 
-public EventSource<TimingData> newTimingData() {
-    return newTimingDataEvent;
+public EventSource<TimingData> timingDataCommittedEvent() {
+    return timingDataCommittedEvent;
 }
 ```
 
@@ -1140,18 +1180,16 @@ The commit path is therefore:
 TimingNode serial lane
   -> persist TimingData
   -> update committed LogBook state
-  -> newTimingDataEvent.emit(timingData)
+  -> timingDataCommittedEvent.emit(timingData)
        |
        +--> subscribed listener
        +--> subscribed listener
 ```
 
-The first design has no central dispatcher or string/topic routing; listeners subscribe directly to the exposed event source they need.
-
-The event says that new TimingData is now available. The fact that
-`newTimingDataEvent` is emitted only after successful persistence and LogBook
-update is part of the event contract; it does not need to be encoded in a longer
-event name.
+The first design has no central dispatcher or string/topic routing; listeners
+subscribe directly to the exposed event source they need. The event name states
+the completed fact: a processed registration attempt that does not commit
+TimingData does not emit this event.
 
 Listeners must not become alternate owners of TimingNode mutable state. Slow
 network delivery or retry work must also not block the TimingNode serial lane;
@@ -1214,7 +1252,7 @@ For the initial Pi-oriented runtime:
 
 ## Shared TimingData library and concrete profiles
 
-Both SI-01 and the Engineering Client need common TimingData contracts without
+Both SI-01 and the Development Client need common TimingData contracts without
 depending on the whole SI-01 application core. The shared artifact therefore
 owns the semantic interfaces and value types that every supported TimingData
 profile must implement; it does **not** require one concrete record class for all
@@ -1357,8 +1395,8 @@ does not own TimingNode business rules. It chooses the concrete TimingData
 implementation and its representation while preserving the common semantic
 contracts defined by IF-05.
 
-Both the Java-8 SI-01 runtime and Java-17 Engineering Client can depend on
-`event-timing-data`. The Engineering Client may inspect the common interfaces
+Both the Java-8 SI-01 runtime and Java-17 Development Client can depend on
+`event-timing-data`. The Development Client may inspect the common interfaces
 without depending on SI-01 Domain classes. Profile-specific inspection can be
 added only where a real consumer needs it.
 
@@ -1372,7 +1410,7 @@ profile exists.
 
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
-Java-17 Engineering Client.
+Java-17 Development Client.
 
 ## Derived consumers
 

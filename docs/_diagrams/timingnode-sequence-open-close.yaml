@@ -1,0 +1,25 @@
+diagram:
+  id: timingnode-sequence-open-close
+  type: sequence
+  title: Figure SDD01-TD08 — Concurrent OPEN and CLOSE ordering
+  width: 1360
+  height: 1020
+  description: Two callers submit state-dependent operations close together. The TimingNode serial lane decides both against state in queue order.
+  note: State-dependent validation happens when each operation executes on the TimingNode lane; callers do not decide validity from a pre-queue state read.
+
+participants:
+  - {id: callerA, label: Caller A, kind: client}
+  - {id: callerB, label: Caller B, kind: client}
+  - {id: node, label: TimingNode, kind: model}
+
+messages:
+  - {from: callerA, to: node, label: "open(location-01)", kind: call}
+  - {from: node, to: node, label: "queue OPEN + Future A", kind: async}
+  - {from: callerB, to: node, label: "close()", kind: call}
+  - {from: node, to: node, label: "queue CLOSE + Future B", kind: async}
+  - {from: node, to: node, label: "worker executes OPEN against CLOSED state", kind: call}
+  - {from: node, to: node, label: "location = location-01; state = OPEN", kind: call}
+  - {from: node, to: callerA, label: "OpenResult.OPENED", kind: return}
+  - {from: node, to: node, label: "worker executes CLOSE against OPEN state", kind: call}
+  - {from: node, to: node, label: "state = CLOSED", kind: call}
+  - {from: node, to: callerB, label: "CloseResult.CLOSED", kind: return}

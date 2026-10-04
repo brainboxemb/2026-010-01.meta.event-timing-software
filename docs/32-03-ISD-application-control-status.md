@@ -9,7 +9,7 @@ System interface: **IF-03 — API**
 
 This Interface Specification Document defines the **semantic contract** between the
 **Timing Point Application** (SI-01) and independent software clients such as the
-planned **Desktop GUI Application** (SI-02), the Engineering Client and automated
+planned **Desktop GUI Application** (SI-02), the Development Client and automated
 integration tooling.
 
 IF-03 defines what clients can query, command and observe. It deliberately does not
@@ -42,7 +42,7 @@ not independently redefine IF-03 semantics.
 ## Parties
 
 ```text
-SI-02 Desktop GUI / Engineering Client / test tooling
+SI-02 Desktop GUI / Development Client / test tooling
                          |
                          | IF-03 API
                          v
@@ -145,20 +145,7 @@ knows how to display it.
 
 The current capability set includes direct accepted-registration simulation.
 
-### IF03-OP-005 — Set current operational location
-
-Inputs:
-
-- addressed `TimingNodeId`;
-- requested `LocationId`.
-
-This explicit operation is available for closed-state engineering/configuration work.
-It succeeds only while the TimingNode is `CLOSED`.
-
-It is **not** a prerequisite for the normal OPEN action. An operator-facing OPEN request
-carries its own LocationId through IF03-OP-006.
-
-### IF03-OP-006 — Open registration at a location
+### IF03-OP-005 — Open registration at a location
 
 Inputs:
 
@@ -166,8 +153,8 @@ Inputs:
 - requested `LocationId`.
 
 For a `CLOSED` TimingNode, applying the requested LocationId and changing lifecycle to
-`OPEN` are one application/domain operation. A client shall not need to issue a
-separate location command immediately before OPEN.
+`OPEN` are one application/domain operation. IF-03 has no separate Set Location
+operation in the current baseline.
 
 The operation therefore has one externally observable ordering point relative to other
 state-changing operations on the same TimingNode. Another presentation client cannot
@@ -186,9 +173,9 @@ LocationId.
 
 Some historical control architectures separated location configuration from OPEN because
 timing generation and presentation/control were different device responsibilities. IF-03
-does not preserve that transport decomposition as the normal presentation workflow.
+does not preserve that transport decomposition.
 
-### IF03-OP-007 — Close registration
+### IF03-OP-006 — Close registration
 
 Inputs:
 
@@ -202,15 +189,20 @@ Successful semantic outcomes include:
 A successful state change becomes visible through current status and live status-change
 delivery.
 
-### IF03-OP-008 — Simulate an accepted automatic registration
+### IF03-OP-007 — Simulate an accepted automatic registration
 
 This is an engineering capability, not the normal RFID input interface.
 
 Inputs:
 
 - addressed `TimingNodeId`;
+- automatic-registration action;
 - resolved `RegistrationId`;
-- accepted observation time.
+- accepted `time`.
+
+The current engineering capability supports action `ADD`. Additional actions such as
+REV require their semantics to be defined by the TimingData/IF-05 contract before they
+become supported IF-03 inputs.
 
 SI-01 supplies its own source identity, active LocationId, next source sequence and any
 other TimingNode-owned commit context. The operation uses the same accepted-registration
@@ -218,7 +210,7 @@ path used after normal input interpretation/filtering.
 
 The operation is available only when its advertised capability is enabled.
 
-### IF03-OP-009 — Query committed LogBook
+### IF03-OP-008 — Query committed LogBook
 
 A client can:
 
@@ -235,7 +227,7 @@ Presentation clients may submit commands concurrently. IF-03 therefore requires
 state-changing operations for one TimingNode to have a deterministic application-owned
 order and to expose no partially applied compound operation.
 
-In particular, IF03-OP-006 is one operation: LocationId selection and the
+In particular, IF03-OP-005 is one operation: LocationId selection and the
 CLOSED-to-OPEN transition are not two independently interleavable presentation commands.
 
 This requirement defines externally observable semantics. It does not prescribe a Java
@@ -397,7 +389,7 @@ operation or value semantics.
 :derived_from: UC-001, UC-002, UC-009
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
-LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006/007. IF03-OP-006
+LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005
 shall carry the requested LocationId and represent location selection plus the
 CLOSED-to-OPEN transition as one ordered TimingNode operation.
 ```
@@ -416,9 +408,9 @@ engineering commands are supported and enabled.
 :status: R
 :derived_from: UC-003, UC-009
 
-When its advertised capability is enabled, IF-03 shall provide IF03-OP-008 using a
-resolved RegistrationId and accepted time while leaving TimingNode-owned commit context
-inside SI-01.
+When its advertised capability is enabled, IF-03 shall provide IF03-OP-007 using an
+explicit supported automatic-registration action, resolved RegistrationId and accepted
+time while leaving TimingNode-owned commit context inside SI-01.
 ```
 
 ```{ifreq} Committed LogBook query
@@ -426,7 +418,7 @@ inside SI-01.
 :status: R
 :derived_from: UC-009, UC-011
 
-IF-03 shall provide IF03-OP-009 as a node-addressed bounded LogBook query in committed
+IF-03 shall provide IF03-OP-008 as a node-addressed bounded LogBook query in committed
 source-sequence order using public IF-05 semantics.
 ```
 
