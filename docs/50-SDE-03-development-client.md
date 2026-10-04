@@ -331,11 +331,12 @@ presentation projection intended to resemble normal timing use. Its compact colu
 Time | Type | TeamID | Code | <action>
 ```
 
-**Type** is the registration type (`AUTO` or `MAN`). **Code** describes how the
-effective registration time was obtained (`AUTO` or `MAN`). A manual registration
-with manually entered time therefore deliberately shows `MAN` twice: Type `MAN`,
-Code `MAN`. A manual registration using system-assigned time shows Type `MAN`,
-Code `AUTO`.
+**Type** is the registration type (`AUTO` or `MAN`). **Code** is only needed for
+manual registrations to describe how the effective registration time was obtained
+(`AUTO` or `MAN`). A manual registration with manually entered time therefore
+deliberately shows `MAN` twice: Type `MAN`, Code `MAN`. A manual registration
+using system-assigned time shows Type `MAN`, Code `AUTO`. An automatic registration
+already carries its meaning in Type `AUTO`, so its Code cell is empty.
 
 TeamID is an interpreted reference-data value and is not another name for
 `RegistrationId`. Until the applicable RaceData/reference mapping exists, TeamID may
