@@ -174,12 +174,12 @@ nodes:
 
   - id: interpreted
     label: Registrations
-    subtitle: "Interpreted view — local clock time; deletion stays visible"
+    subtitle: "Interpreted view — Type + TeamID + time-origin Code; trash action has no header"
     kind: wireframe-surface
     notation: wireframe-table
     items:
-      - "Time     | Registration | A/M | State | Action"
-      - "12:00:00 | N0001        | A   |       | Delete (disabled)"
+      - "Time     | Type | TeamID | Code |"
+      - "12:00:00 | AUTO | -      |      | [trash]"
     layout: {x: 465, y: 400, w: 835, h: 180}
 
   - id: history

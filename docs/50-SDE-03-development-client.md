@@ -325,20 +325,35 @@ immutable technical history:
   **LogBook / committed TimingData** below it.
 
 The two right-hand views are deliberately not duplicates. **Registrations** is a
-presentation projection intended to resemble normal timing use: it shows local clock
-time, RegistrationId, a compact **A/M** indicator and logical deletion state. The
-LogBook is the audit/diagnostic view and shows the committed profile records in source
-order with sequence, Type, Code and profile time values.
+presentation projection intended to resemble normal timing use. Its compact columns are:
+
+```text
+Time | Type | TeamID | Code | <action>
+```
+
+**Type** is the registration type (`AUTO` or `MAN`). **Code** is only needed for
+manual registrations to describe how the effective registration time was obtained
+(`AUTO` or `MAN`). A manual registration with manually entered time therefore
+deliberately shows `MAN` twice: Type `MAN`, Code `MAN`. A manual registration
+using system-assigned time shows Type `MAN`, Code `AUTO`. An automatic registration
+already carries its meaning in Type `AUTO`, so its Code cell is empty.
+
+TeamID is an interpreted reference-data value and is not another name for
+`RegistrationId`. Until the applicable RaceData/reference mapping exists, TeamID may
+remain unresolved in the normal view. The technical LogBook retains the actual
+RegistrationId together with committed sequence, record Type, record Code and profile
+time values. ADD/REV remain technical LogBook semantics and are not the interpreted
+Code column.
 
 For the current default/reference profile the LogBook time remains the canonical
 absolute UTC value. The interpreted Registrations view converts it to normal local clock
 time using the explicitly displayed client zone.
 
-A future REV record does not remove the interpreted registration. The existing row is
-marked **DELETED**, while both ADD and REV remain present in the immutable LogBook.
-Until SI-01 exposes a public revoke operation/capability, the Development Client may show
-the Delete action in disabled form rather than pretending that deletion is already
-supported.
+A future REV record does not remove the interpreted registration. The final table column
+has no text heading and contains an icon-only trash action. After REV, that action cell
+shows **DELETED** instead of the trash button, while both ADD and REV remain present in
+the immutable LogBook. Until SI-01 exposes a public revoke operation/capability, the
+trash action remains disabled rather than pretending deletion is already supported.
 
 ### Registration input
 
