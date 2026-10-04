@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
+      D01 reopened for document-role review; A01/A02 implementation exists, but
+      no further Step-5 advancement occurs until the planning gate is reviewed.
+  - date: '2026-10-04'
+    change: >-
       A02 completed runtime instrumentation; A03 measurement-driven strategy is
       now active.
   - date: '2026-10-04'
@@ -33,7 +37,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: done
+    state: active
     note: >-
       Define the first project-owned thread/queue measurement approach, stable
       thread naming and the boundary between JVM scheduling preferences and
@@ -85,7 +89,7 @@ activities:
   - id: A03
     lane: application
     kind: decision
-    state: active
+    state: planned
     depends_on: [A01, A02]
     note: >-
       Use measurements to decide where direct traversal, cached state, reusable
