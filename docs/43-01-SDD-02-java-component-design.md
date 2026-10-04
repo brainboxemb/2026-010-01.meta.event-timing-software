@@ -292,9 +292,11 @@ transport/integration rather than presentation-facing application operations.
 
 Node-scoped presentation access is exposed through `TimingNodeProxy`.
 `PresentationGateway` owns application-wide presentation information such as
-build identity and capabilities; the proxy gives an adapter explicit TimingNode
-context for node status, commands, queries and events. The proxy is an
-Application-layer boundary object, not a second owner of TimingNode state.
+build identity and capabilities; a proxy gives an adapter explicit TimingNode
+context for node status, commands, queries and events. The architectural composition
+contains **one TimingNodeProxy per composed TimingNode (1..N)**. The current Step-4
+implementation has one because the executable still composes one TimingNode. A proxy is
+an Application-layer boundary object, not a second owner of TimingNode state.
 
 Status-change detection remains owned by the TimingNode serial boundary. A
 state-changing command compares authoritative status before and after the domain

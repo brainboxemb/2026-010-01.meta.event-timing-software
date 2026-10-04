@@ -3,8 +3,8 @@ step: 4
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      Closure review: implementation and automated verification are complete;
-      V04 / VC-ST1-003 remains the only Step-4 exit item.
+      Step 4 closed after VC-ST1-003 passed on the reviewed Development Client
+      baseline; all Step-4 activities and exit criteria are complete.
   - date: '2026-10-02'
     change: >-
       Roadmap aligned with the accepted SSD/IF-05 scope without changing product
@@ -117,11 +117,13 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    state: active
+    state: done
     depends_on: [V03, A03]
     note: >-
       61-01-VTS specifies manual case VC-ST1-003. Run the first-registration
       reconnect/rebuild flow through the JavaFX Development Client after green
       VC-ST1-002. Follow test-client/STEP4-DEMO.md and Java issue #127; retain
       build/client identity plus concise pass/fail evidence for controls,
-      history/live merge/dedup, reconnect/rebuild and clean shutdown.
+      history/live merge/dedup, reconnect/rebuild and clean shutdown. PASS was
+      accepted on 2026-10-04 against Java main revision
+      4f87733b6acd8ff2f9b286c87bdaad3badc01468.

@@ -291,7 +291,7 @@ Build the first useful **Timing Point Application** (SI-01) on the development h
 
 ## Step 4 — First registration-system slice
 
-Status: active
+Status: completed
 
 ### Purpose
 
@@ -378,7 +378,7 @@ application boundary.
 
 ## Step 5 — Simulated antenna input and runtime behaviour
 
-Status: planned
+Status: active
 
 ### Purpose
 

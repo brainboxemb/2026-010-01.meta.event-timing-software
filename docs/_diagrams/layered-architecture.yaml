@@ -161,11 +161,11 @@ nodes:
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
-  label: "TimingNodeProxy"
-  subtitle: "node commands / queries / events"
+  label: "TimingNodeProxy (1..N)"
+  subtitle: "one per TimingNode • commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 555, y: 389, w: 210, h: 68}
+  layout: {x: 545, y: 389, w: 230, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -475,13 +475,9 @@ edges:
   to_anchor: {side: left, position: 0.50}
 
 - from: upstream-message-router
-  to: upstream-protocol-domain
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
-  route:
-    - {x: 885, y: 506}
-    - {x: 45, y: 506}
-    - {x: 45, y: 773.5}
+  to: timing-system-aggregate
+  from_anchor: {side: bottom, position: 0.65}
+  to_anchor: {side: top, position: 0.87}
 
 - from: upstream-message-router
   to: messaging-io

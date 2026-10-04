@@ -629,9 +629,12 @@ TimingNode-facing object rather than appearing as context-free methods on the ga
 :id: TimingNodeProxy
 
 `TimingNodeProxy` is the Application-layer boundary object for one addressed
-`TimingNode`. It exposes presentation-facing node status, commands, bounded LogBook
-queries and post-fact events while keeping the Domain `TimingNode` itself behind the
-Application boundary.
+`TimingNode`. The architectural multiplicity is therefore **1..N TimingNodeProxy
+instances per application composition: one proxy per composed TimingNode**. The current
+Step-4 executable still composes one TimingNode and therefore one proxy; multi-node
+composition does not change the boundary shape. Each proxy exposes presentation-facing
+node status, commands, bounded LogBook queries and post-fact events while keeping the
+Domain `TimingNode` itself behind the Application boundary.
 
 The proxy does not own mutable TimingNode state. It maps presentation intent to the
 TimingNode's typed ordered operations and maps node status to presentation-facing
