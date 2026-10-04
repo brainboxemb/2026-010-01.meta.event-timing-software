@@ -276,9 +276,9 @@ Successful response:
 The operation is available only when
 `DIRECT_REGISTRATION_SIMULATION` is supported and enabled.
 
-This development operation currently represents the automatic-registration `ADD`
-action. The presentation-facing application boundary receives that action together
-with `registrationId` and `time`. Additional actions such as REV require an explicit
+This development operation represents the automatic-registration `ADD` action.
+The presentation-facing application boundary receives that action together with
+`registrationId` and `time`. Additional actions such as REV require an explicit
 IF-03/IF-05 contract extension; they are not inferred from this ADD-only request.
 
 ## IF03-OP-008 — LogBook query
@@ -450,5 +450,5 @@ development-v1 design yet.
 - exact `ALREADY_OPEN` behavior when the request carries a different LocationId;
 - production authentication/authorization;
 - browser-origin/CORS policy if browser software later consumes IF-03 directly;
-- whether future high-volume diagnostics use the normal event stream or a separate
+- whether high-volume diagnostics belong on the normal event stream or a separate
   diagnostics subscription.

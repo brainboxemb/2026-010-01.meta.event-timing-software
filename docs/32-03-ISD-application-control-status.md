@@ -171,9 +171,9 @@ while the TimingNode is already `OPEN` remains an explicit interface review poin
 Until that rule is fixed, clients shall not rely on such a request changing the active
 LocationId.
 
-Some historical control architectures separated location configuration from OPEN because
-timing generation and presentation/control were different device responsibilities. IF-03
-does not preserve that transport decomposition.
+IF-03 models LocationId selection and the CLOSED-to-OPEN transition as one semantic
+operation. A device or transport architecture that separates those responsibilities does
+not change this interface contract.
 
 ### IF03-OP-006 — Close registration
 

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore use cases, interface documents and software-item specifications as current-state authority by removing roadmap/implementation-log narration while preserving active contract maturity and reserved mappings.
+
 - Audit documentation roles so planning/history stays in planning/evidence records while requirements, interfaces, design and verification books describe the current authoritative state; reopen Step-5 D01 as a reviewable SIP planning gate.
 
 - Complete Step-5 A02 on Java revision `f205e55d9af907a631f346261bdc04ba3e487a6d` and activate A03 measurement-driven allocation/data-access strategy.
