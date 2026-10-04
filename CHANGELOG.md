@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore SVP/VTS as current verification authority: express runtime characterization as a reusable method and VC-ST1-003 as a stable Development Client case without SIP-step/demo execution history.
+
 - Restore the Development Client SDE to one current API-first UI baseline: fold active synchronization/result/LogBook rules into that baseline and remove superseded Step-4 wireframe and execution-history narration.
 
 - Restore the focused SDDs as current-state design books: remove implementation-step chronology, keep execution/persistence/artifact alternatives as present design criteria, and move runtime measurement planning out of SDD-02 to its SIP/SDE/SVP owners.
