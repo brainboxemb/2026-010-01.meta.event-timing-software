@@ -319,6 +319,8 @@ boundary testing easy.
 The current Timing workbench separates **operator-oriented interpretation** from the
 immutable technical history:
 
+- the workbench uses an explicit approximately 50/50 horizontal split rather than
+  relying on preferred-width hints;
 - the left column contains the selected TimingNode state plus Open/Close and registration
   input;
 - the right column shows **Registrations** at the top and
