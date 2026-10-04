@@ -900,9 +900,10 @@ rather than as nested component boxes.
 :id: Devices
 
 `Devices` groups the software components that represent external device roles in
-SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
-coordination needed when multiple physical antennas form one registration input
-path. `SimulatedAntenna` is the built-in reference/simulation implementation.
+SI-01. A TimingSystem may be configured without RFID antennas. When one or more
+antennas are configured, one `AntennaManager` coordinates that 1..N `Antenna`
+set for the TimingSystem. `SimulatedAntenna` is the built-in
+reference/simulation implementation.
 `Display`, `Keypad` and `Beeper` name software-facing device roles; their
 concrete variants remain subordinate to this package/component boundary.
 ```
@@ -945,9 +946,9 @@ and use the same engineering identity model as top-level diagram nodes.
 ```{arch} AntennaManager
 :id: AntennaManager
 
-`AntennaManager` coordinates the configured 0..N Antenna components that form
-one registration input path, including coordination across multiple physical
-readers where required by the selected implementation.
+`AntennaManager` coordinates 1..N configured Antenna components for one
+TimingSystem. If that TimingSystem has no configured antenna, no AntennaManager
+is required.
 ```
 
 ```{arch} Antenna
