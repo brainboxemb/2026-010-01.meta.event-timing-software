@@ -784,7 +784,7 @@ A `TimingDataProvider` supplies that coherent profile family. Its factory is
 stateless and constructs concrete TimingData values from explicit construction
 values; it does not own TimingNode lifecycle policy, sequence allocation,
 persistence or event publication. The same common provider/API boundary is
-reusable by SI-01 and engineering tools such as the JavaFX Engineering Client;
+reusable by SI-01 and engineering tools such as the JavaFX Development Client;
 normal domain users remain unaware of provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
