@@ -1855,17 +1855,18 @@ power-control capability to the manager; external power switching is not require
 antenna.
 
 Antenna lifecycle/device-control calls are a separate **control plane** from observation
-delivery. One AntennaManager belongs to one TimingSystem and owns a bounded serial control
-lane for its configured antennas. Probe, power, initialize, inventory start/stop and
-shutdown execute on that lane so potentially blocking device I/O does not run on a
-TimingNode lane or on a presentation callback. Application startup may wait for a
+delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
+for its configured antennas. Probe, power, initialize, inventory start/stop and shutdown
+are submitted as bounded control work so potentially blocking device I/O does not run on
+a TimingNode lane or on a presentation callback. Application startup may wait for a
 result-bearing manager operation because readiness depends on that outcome.
 
-There is no global SI-01 executor or generic system work queue that owns all such work.
-Other capabilities retain their own execution/ownership boundaries. An implementation may
-later share physical executor threads behind multiple logical bounded lanes only when that
-preserves capability ownership, ordering and overload behaviour and is justified by
-measurement.
+The Java realization should use a shared bounded I/O `ExecutorService` rather than a
+dedicated thread per AntennaManager or per antenna. Per-manager ordering is a logical
+serialization constraint layered on that executor; it does not imply permanent thread
+ownership. Other device/network capabilities may use the same bounded I/O execution
+facility where their blocking characteristics fit the same policy, while retaining their
+own state/ordering ownership.
 
 Observation delivery does not run on the manager control lane. Concrete providers emit
 `TagObservation` from their device/library callback context through the synchronous local
