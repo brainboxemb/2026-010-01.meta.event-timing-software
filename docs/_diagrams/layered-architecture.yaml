@@ -452,11 +452,6 @@ edges:
   to: presentation-gateway
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.45}
-  # Keep the cross-layer segment in the whitespace corridor between
-  # Presentation and Application until tool.eng-docs #93 is released.
-  route:
-    - {x: 655, y: 310}
-    - {x: 411, y: 310}
 
 - from: remote-api
   to: presentation-gateway
