@@ -438,17 +438,154 @@ domain and persistence paths.
 | `D01` | Runtime execution and measurement plan |
 | `D02` | Define OPEN/CLOSE TimingData semantics and reference mapping |
 | `D03` | Define registration revoke semantics and public contract |
-| `A01` | Simulated antenna and tag-processing path |
-| `A02` | Runtime markers and counters |
-| `A03` | Allocation and data-access strategy |
+| `D04` | Review simulated antenna/input architecture |
+| `D05` | Define internal runtime-observability architecture |
+| `T01` | Runtime-characterization harness and evidence tooling |
+| `A01` | Qualify/implement simulated antenna and tag-processing path |
+| `A02` | Qualify/implement runtime markers and counters |
+| `V01` | Single-node baseline load/burst characterization |
+| `A03` | Measurement-driven allocation/data-access decision |
+| `V02` | Sustained ingress and stalled-downstream fairness/backpressure |
 | `A04` | Commit OPEN/CLOSE through the normal TimingData path |
 | `A05` | Commit registration revoke through the normal TimingData path |
-| `V01` | Single-node load and burst characterization |
-| `V02` | Sustained antenna-ingress fairness |
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
 | `V06` | Registration revoke/API/Development Client verification |
+
+### D01 — Runtime execution and measurement plan
+
+D01 is the planning/decision gate for Step 5 runtime characterization. It defines the
+**measurement work breakdown**: what must be learned, what engineering software is needed,
+which product-design questions must be resolved before instrumentation is accepted, how
+the measurements are executed, and where the resulting activities sit in the roadmap.
+
+It does not itself choose final Java class names or an optimization.
+
+#### Questions the characterization must answer
+
+For one TimingNode on a development host, determine:
+
+- where time is spent from accepted simulated input through bounded admission, queue wait,
+  ordered processing, persistence/commit and relevant post-commit delivery;
+- whether queue/resource use stays bounded and required work keeps making forward progress
+  under ordinary, sustained and bursty input;
+- how growing committed history affects the bounded query shapes exercised in this step;
+- whether allocation/heap/GC or thread scheduling is material enough to justify changing
+  the simple implementation;
+- which findings need to be repeated later on the selected target.
+
+Development-host results are engineering evidence, not product limits or Raspberry Pi
+evidence. Multi-TimingNode scheduling remains outside Step 5.
+
+#### Measurement architecture split
+
+Use three deliberately different boundaries:
+
+```text
+product runtime
+  minimal pull-based internal observability only
+        |
+        v
+runtime-characterization harness
+  deterministic workload + evidence collection
+        |
+        v
+SVP/VTS characterization method/cases
+  repeatability + comparison rules
+
+separately:
+system-test
+  packaged process + supported public interfaces only
+  black-box product verification
+```
+
+Do **not** add IF-03 metrics or simulation controls merely to support engineering
+measurement. The formal `system-test` boundary remains black-box and continues to import
+no product classes.
+
+The dedicated engineering harness may depend on `timing-point-core` and compose the
+reviewed simulated-input path directly. Its environment/tooling is defined in
+`50-SDE-04-runtime-characterization.md`.
+
+#### Product architecture decisions required before accepting A01/A02
+
+D04 reviews the antenna/input design before A01 is accepted. It must decide the stable
+observation boundary needed by both simulation and later real adapters, ownership of tag
+interpretation/filtering/resolution, callback/threading expectations and which pieces are
+test/reference fixtures rather than Domain concepts.
+
+D05 defines the internal runtime-observability design before A02 is accepted. It must keep
+engineering metrics out of TimingData and public interface semantics, decide where queue,
+persistence and JVM observations live, and expose only a narrow pull-based diagnostic view
+needed by the harness.
+
+Java PR #230 (simulated-input classes) and PR #231 (runtime instrumentation) already exist
+on main because implementation advanced before these review gates were made explicit.
+They are therefore **prototypes/input to D04/D05 review**, not authority that those design
+choices are accepted.
+
+#### Engineering software
+
+T01 creates the project-local runtime-characterization harness described by SDE-04:
+
+- optional engineering Maven profile/module, not a product artifact;
+- same pinned Java/Maven baseline as SI-01;
+- deterministic simulated input/reference fixtures;
+- real file-backed persistence for representative baseline runs;
+- workload parameters for steady, burst and growing-history cases;
+- on-demand JDK management observations (`ThreadMXBean`, memory and GC beans) where
+  supported;
+- machine-readable retained run summaries tied to source/build/environment identity.
+
+External profilers/JFR/JMC-style tooling may investigate a specific result but are not
+required baseline software until their tool/version/procedure is separately qualified.
+
+#### Roadmap order
+
+The runtime-characterization path is:
+
+```text
+D01 measurement plan
+  |
+  +--> D04 simulated-input architecture
+  |      -> A01 qualify/implement input path
+  |
+  +--> D05 runtime-observability architecture
+  |      -> A02 qualify/implement instrumentation
+  |
+  +--> T01 characterization harness/evidence tooling
+           |
+           +---------------------+
+                                 v
+                         V01 baseline measurement
+                                 |
+                                 v
+                         A03 evidence-based decision
+                                 |
+                                 v
+                         V02 fairness/backpressure
+```
+
+V01 therefore precedes A03. A03 records whether direct traversal/ordinary allocation and
+the existing execution model remain adequate, or which specific change has evidence behind
+it. If A03 changes the design, rerun the affected V01 workload before treating the decision
+as qualified.
+
+V02 then covers sustained-ingress fairness and slow/stalled downstream delivery. Existing
+Java issue #131 belongs to that backpressure work; it is not implemented ahead of V01/A03
+evidence unless the bounded-resource contract itself already requires a correction.
+
+D02/A04/V05 (OPEN/CLOSE TimingData) and D03/A05/V06 (registration revoke) are parallel
+Step-5 semantic tracks and do not need to wait for every runtime-characterization result,
+but their implementations still require their own preceding contract decisions.
+
+#### D01 exit
+
+D01 is complete when the measurement questions, D04/D05 design gates, SDE-04 engineering
+environment, T01 harness activity, V01 evidence flow and A03-after-V01 dependency are
+reviewed as the Step-5 plan. Completion of Java instrumentation by itself is not D01
+closure.
 
 ### Result
 

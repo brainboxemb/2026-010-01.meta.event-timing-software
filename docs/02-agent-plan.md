@@ -259,7 +259,7 @@ At closure:
 - framework post-merge run `34697920820` is green for Linux/Windows clean bootstrap, Linux canonical reactor build, Windows compatibility reactor build, and Windows execution of the exact Linux-produced application JAR;
 - the implementation repository therefore provides a reproducible clean-checkout consumer proof for both reusable tooling layers and a stable starting point for subsequent SI-01 increments.
 
-AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SIP Step 2 and SIP Step 3 have since closed; SIP Step 4 is now active.
+AP-4 closed only the repository/tooling/framework-skeleton coordination goal. Subsequent SIP Steps 2, 3 and 4 have since closed; the current coordination focus is maintained separately below.
 
 ## Current coordination focus — SIP Step 5
 

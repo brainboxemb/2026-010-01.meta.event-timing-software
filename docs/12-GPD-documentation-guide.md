@@ -117,6 +117,7 @@ Current examples are:
 50-SDE-01-software-development-environment
 50-SDE-02-java-build-test-toolchain
 50-SDE-03-engineering-client
+50-SDE-04-runtime-characterization
 
 60-SVP
 61-01-VTS-timing-application-verification-test-specification
@@ -209,6 +210,37 @@ The families have these normal roles:
 - **VTS** defines stable verification cases and expected results.
 - **SDE** defines the engineering environment and tooling, not product behaviour.
 - **SIP** plans implementation sequence, not product behaviour.
+
+### Current-state authority versus project history
+
+Current-state specification and design books describe the engineering state that is
+authoritative **now**. They are not implementation diaries.
+
+Use these placement rules:
+
+- SDP/SIP/agent planning may describe sequence, milestones, deferred work and closure
+  history because planning is their purpose;
+- UC/SSSD/SSD/ISD/IDD documents describe current externally meaningful behaviour,
+  requirements, interface semantics and concrete representation;
+- SDD documents describe the current detailed design and its rationale;
+- SDE documents describe the current engineering environment/support tooling;
+- SVP/VTS describe current verification strategy and stable cases, not run history;
+- issues, pull requests, CHANGELOG entries and retained/generated evidence preserve
+  implementation chronology and run-specific history.
+
+A current-state book may mention a previous/released state only when that history itself
+is part of the engineering contract, for example compatibility behaviour, an immutable
+released-user matrix or an explicitly obsolete requirement whose identifier/history must
+remain traceable.
+
+Avoid headings and prose such as `first implementation`, `Step-4 implementation`,
+`historical baseline` or `the next step will...` inside current-state books when the
+same information is merely project history. Rewrite the passage as current design/
+semantics, move planning to SIP, or rely on repository history instead of retaining a
+parallel narrative.
+
+Do not create a separate logbook only to rescue obsolete prose from a current-state book.
+Create one only when a distinct reader/use case needs a curated chronological record.
 - **SUM** provides user/release guidance for a software baseline.
 
 ## External and parent-system inputs

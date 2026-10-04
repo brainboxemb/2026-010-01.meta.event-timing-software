@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
+      D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
+      A01/A02 prototypes require requalification and V01 now precedes A03.
+  - date: '2026-10-04'
+    change: >-
       A02 completed runtime instrumentation; A03 measurement-driven strategy is
       now active.
   - date: '2026-10-04'
@@ -33,11 +37,11 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: done
+    state: active
     note: >-
-      Define the first project-owned thread/queue measurement approach, stable
-      thread naming and the boundary between JVM scheduling preferences and
-      later target-specific tuning. Thread priority is not a correctness rule.
+      Define measurement questions, engineering/tooling split, product design
+      gates, reproducible evidence flow and roadmap order before accepting
+      runtime-characterization implementation.
 
   - id: D02
     lane: documentation
@@ -59,38 +63,87 @@ activities:
       repeated time/RegistrationId rules, idempotence/rejection and the rule
       that revoke appends a new committed record instead of rewriting history.
 
+  - id: D04
+    lane: documentation
+    kind: decision
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Review the simulated antenna/input architecture: stable observation
+      boundary, TagProcessor/filter/resolution ownership, callback/threading
+      expectations and separation of product concepts from synthetic fixtures.
+
+  - id: D05
+    lane: documentation
+    kind: decision
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Define an internal pull-based runtime-observability boundary for queue,
+      persistence, commit/event and JVM observations without making engineering
+      metrics part of TimingData, Domain semantics or IF-03.
+
+  - id: T01
+    lane: tooling
+    kind: setup
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Add the engineering-only runtime-characterization Maven profile/module,
+      deterministic workload driver and machine-readable evidence output defined
+      by SDE-04. Keep formal system-test black-box.
+
   - id: A01
     lane: application
     kind: implementation
-    state: done
-    depends_on: [D01]
+    state: blocked
+    depends_on: [D04]
     note: >-
-      Feed deterministic tag observations through the built-in
-      SimulatedAntenna, normal tag interpretation/filtering and the existing
-      accepted-registration path for one TimingNode. Use a small synthetic local
-      reference fixture for TagId-to-RegistrationId resolution; do not add
-      backoffice synchronisation here.
+      Qualify/implement deterministic simulated tag observations through the
+      reviewed antenna/input design and normal TimingNode-owned registration
+      path. Java PR #230 exists as a prototype but is not accepted completion
+      until D04 review.
 
   - id: A02
     lane: application
     kind: implementation
-    state: done
-    depends_on: [D01, A01]
+    state: blocked
+    depends_on: [D05, A01]
     note: >-
-      Add low-allocation monotonic markers and primitive counters for queue
-      admission/depth/high-water, queue wait, processing, persistence and
-      selected thread/GC observations. Avoid per-event metric-object allocation
-      and high-volume logging.
+      Qualify/implement low-allocation runtime observation required by D05.
+      Java PR #231 exists as a prototype but is not accepted completion until
+      the diagnostics boundary is reviewed.
+
+  - id: V01
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [D01, D04, D05, T01, A01, A02]
+    note: >-
+      Run repeatable one-TimingNode steady/burst/growing-history characterization
+      and retain queue, latency, CPU/thread, allocation/GC and query evidence.
+      These are engineering baselines, not product limits.
 
   - id: A03
     lane: application
     kind: decision
-    state: active
-    depends_on: [A01, A02]
+    state: planned
+    depends_on: [V01]
     note: >-
-      Use measurements to decide where direct traversal, cached state, reusable
-      scratch storage or ordinary allocation are appropriate. Do not introduce
-      pooling or copied snapshots by default.
+      Decide from V01 evidence whether ordinary allocation/direct traversal and
+      the current execution model remain adequate or which specific change is
+      justified. Re-run affected V01 workloads after a design change.
+
+  - id: V02
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A03]
+    note: >-
+      Verify sustained/bursty ingress and stalled downstream delivery cannot
+      starve required TimingNode work or create unbounded application-owned
+      delivery state. Introduce fairness/backpressure changes only when required
+      by contract or supported by evidence.
 
   - id: A04
     lane: application
@@ -114,27 +167,6 @@ activities:
       Wire the Development Client trash action to that operation; never delete
       or rewrite the original ADD record.
 
-  - id: V01
-    lane: verification
-    kind: verification
-    state: planned
-    depends_on: [A01, A02, A03]
-    note: >-
-      Exercise one TimingNode with representative synthetic tag/reference data
-      and growing committed-record volumes. Measure forward progress, input to
-      commit latency, queue high-water, CPU/thread behaviour, allocation/GC and
-      history/query cost. These are engineering baselines, not product limits.
-
-  - id: V02
-    lane: verification
-    kind: verification
-    state: planned
-    depends_on: [V01]
-    note: >-
-      Verify that sustained or bursty tag input cannot monopolize the ingress
-      path and starve required TimingNode processing or lower-priority services.
-      Add bounded batching/admission only if the measurements justify it.
-
   - id: V03
     lane: verification
     kind: verification
@@ -142,8 +174,8 @@ activities:
     depends_on: [A01]
     note: >-
       Restart SI-01 after simulated registrations, rebuild committed history and
-      continue through the same SimulatedAntenna path without sequence reuse or
-      a test-only bypass.
+      continue through the same reviewed simulated-input path without sequence
+      reuse or a test-only commit bypass.
 
   - id: V04
     lane: verification
@@ -162,8 +194,8 @@ activities:
     note: >-
       Verify OPEN/CLOSE TimingData in source order with registrations, including
       persisted restart/recovery and sequence continuity. Verify rejected or
-      idempotent lifecycle requests according to the Step-5 D02 semantics and
-      confirm that no unintended lifecycle record is committed.
+      idempotent lifecycle requests according to D02 and confirm no unintended
+      lifecycle record is committed.
 
   - id: V06
     lane: verification
@@ -174,4 +206,4 @@ activities:
       Verify revoke through the public API and Development Client: the original
       ADD remains in the technical LogBook, REV is appended in source order, the
       interpreted row remains visible as DELETED, restart/recovery preserves
-      both records and repeated/invalid revoke follows the D03 semantics.
+      both records and repeated/invalid revoke follows D03 semantics.
