@@ -407,6 +407,8 @@ domain and persistence paths.
 - a small synthetic local reference fixture for TagId-to-RegistrationId resolution;
 - define and implement TimingNode OPEN/CLOSE as committed TimingData in the same
   TimingNode-owned source stream as registrations;
+- promote registration revoke/delete from reserved representation to supported
+  TimingData/API behaviour, appending REV without rewriting the original registration;
 - the same TimingNode commit, TimingData, LogBook and persistence path proven in Step 4;
 - runtime counters/markers needed to understand queue wait, processing and persistence;
 - sustained/bursty input tests and basic allocation/GC observations;
@@ -435,21 +437,26 @@ domain and persistence paths.
 | --- | --- |
 | `D01` | Runtime execution and measurement plan |
 | `D02` | Define OPEN/CLOSE TimingData semantics and reference mapping |
+| `D03` | Define registration revoke semantics and public contract |
 | `A01` | Simulated antenna and tag-processing path |
 | `A02` | Runtime markers and counters |
 | `A03` | Allocation and data-access strategy |
 | `A04` | Commit OPEN/CLOSE through the normal TimingData path |
+| `A05` | Commit registration revoke through the normal TimingData path |
 | `V01` | Single-node load and burst characterization |
 | `V02` | Sustained antenna-ingress fairness |
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
+| `V06` | Registration revoke/API/Development Client verification |
 
 ### Result
 
 - Simulated antenna observations reach the normal registration path.
 - Successful TimingNode OPEN/CLOSE transitions are represented in the normal committed
   TimingData source stream according to the Step-5 IF-05/IDD update.
+- Registration revoke appends REV through the same committed source stream and leaves the
+  original ADD history intact.
 - Sustained input can be measured without bypassing TimingNode ownership.
 - Restart/recovery works with the same simulated input path used by automated tests.
 
@@ -458,6 +465,8 @@ domain and persistence paths.
 - Open one TimingNode and show the committed OPEN TimingData record.
 - Feed repeatable tag observations through `SimulatedAntenna` and show which observations
   become committed registrations.
+- Revoke one registration and show ADD plus REV in the technical LogBook while the
+  interpreted registration remains visible as DELETED.
 - Close the TimingNode and show the CLOSE record in the same source sequence.
 - Inspect the runtime counters, restart SI-01 and continue using the same simulated input
   configuration without sequence reuse.
@@ -470,6 +479,8 @@ domain and persistence paths.
   without a second lifecycle record owner;
 - rejected lifecycle requests do not create unintended TimingData records, and idempotent
   behaviour follows the explicit D02 decision;
+- revoke never rewrites/removes committed ADD records and follows the explicit D03
+  rejection/idempotence rules through API, LogBook, live event and recovery paths;
 - sustained/bursty input has repeatable measurements and does not starve required TimingNode work;
 - recovery preserves lifecycle/registration records and sequence continuity;
 - provider loading is verified with public built-in/synthetic implementations.
@@ -557,6 +568,8 @@ reproducible backoffice test environment.
 ### Scope
 
 - receive and apply synthetic/public RaceData and StageStartTimes;
+- resolve RegistrationId to TeamID for interpreted/operator views where RaceData provides
+  that relation, without changing committed TimingData identity;
 - resolve the reference data needed for local timing calculations;
 - add StageTiming/derived timing behaviour that depends on those references;
 - send committed TimingData/results upstream as required by the promoted contract;
@@ -577,7 +590,8 @@ reproducible backoffice test environment.
 ### Result
 
 - Multiple TimingNodes keep independent state and ordered data streams.
-- Reference data can be received and used for local derived timing.
+- Reference data can be received and used for local derived timing and TeamID
+  interpretation.
 - Local registration continues through a backoffice outage and synchronisation can resume.
 
 ### Demo
