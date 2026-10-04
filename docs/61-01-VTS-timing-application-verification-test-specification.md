@@ -226,17 +226,17 @@ verifies: >-
 
 **Purpose**
 
-Verify through the real JavaFX Development Client that the accepted API-first client can
-drive and observe the Step-4 public flow without private SI-01 state, and can rebuild
-current status plus bounded TimingData history after reconnect/restart before presenting
-that history as LIVE.
+Verify through the real JavaFX Development Client that the current API-first client can
+drive and observe the public TimingNode registration flow without private SI-01 state,
+and can rebuild current status plus bounded TimingData history after reconnect/restart
+before presenting that history as LIVE.
 
 This manual case does not re-prove the server-side lifecycle, registration, LogBook
 persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Setup**
 
-- packaged SI-01 application started with the dedicated Step-4 demo
+- packaged SI-01 application started with deterministic verification
   configuration/storage;
 - JavaFX Development Client started independently on Java 17;
 - public IF-03, Remote Shell and LoggingServer boundaries only;
@@ -244,7 +244,7 @@ persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Procedure**
 
-1. Start SI-01 with empty Step-4 demo storage and start the Development Client.
+1. Start SI-01 with empty verification TimingData storage and start the Development Client.
 2. Verify the target host/IP is editable, **Apply target** selects the active host and the
    stateless API **CHECK** reports the IF-03 HTTP boundary as READY.
 3. Verify the main client tabs are **API**, **Events**, **Device Log**, **Terminal** and
@@ -271,7 +271,7 @@ persistence or restart recovery already covered by `VC-ST1-002`.
 10. Verify Client Log remains usable independently of the SI-01 Device Log connection and
    that Events, Terminal and Device Log can be connected/disconnected independently.
 11. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
-12. Keep the demo TimingData file, restart SI-01 and reconnect Events.
+12. Keep the verification TimingData file, restart SI-01 and reconnect Events.
 13. Verify the client resynchronises to current CLOSED/no-location status, restores
     sequence 1 / `N0001` in both the interpreted registration view and bounded technical
     history, does not present recovered history as a new live commit and merges any
@@ -281,7 +281,7 @@ persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Expected result**
 
-- the current API-first Development Client reaches all required public Step-4 boundaries;
+- the current API-first Development Client reaches the required public SI-01 boundaries;
 - Open carries LocationId and SI-01 remains authoritative for command acceptance;
 - committed TimingData is visible both as an interpreted registration and as immutable
   technical LogBook history, plus live delivery;
@@ -294,9 +294,10 @@ persistence or restart recovery already covered by `VC-ST1-002`.
 
 **Execution**
 
-This remains a manual verification case. The executable checklist is maintained in the
-Java repository at `test-client/STEP4-DEMO.md`; run-specific PASS/FAIL, revisions and
-supporting artifacts are retained with Java issue #127 rather than in this VTS.
+This is a manual verification case. This VTS procedure is the authority for what must be
+exercised and observed. A repository-local convenience checklist may mirror the procedure
+but shall not redefine it. Run-specific PASS/FAIL, revisions and supporting artifacts are
+retained as verification evidence rather than in this VTS.
 
 ## Evidence
 
