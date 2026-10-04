@@ -30,27 +30,16 @@ jobs:
   refresh:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
-      - name: Validate update credential
-        if: ${{ inputs.update_snapshot }}
-        shell: bash
-        env:
-          SNAPSHOT_TOKEN: ${{ secrets.SNAPSHOT_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${SNAPSHOT_TOKEN}" ]]; then
-            echo "::error::Repository secret SNAPSHOT_TOKEN is required when update_snapshot is enabled."
-            echo "::error::The token needs Contents write and Pull requests write permission."
-            exit 1
-          fi
-
       - name: Checkout current main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: main
-          token: ${{ secrets.SNAPSHOT_TOKEN || github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -128,7 +117,7 @@ jobs:
         if: ${{ inputs.update_snapshot && steps.calculate.outputs.changed == 'true' }}
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.SNAPSHOT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           THROUGH_DATE: ${{ steps.snapshot-date.outputs.through_date }}
         run: |
           set -euo pipefail
@@ -156,13 +145,18 @@ jobs:
             echo "This is a planning indication, not time registration."
           } > "${body}"
 
-          pr_url="$(gh pr create \
+          if ! pr_url="$(gh pr create \
             --repo "${GITHUB_REPOSITORY}" \
             --base main \
             --head "${branch}" \
             --draft \
             --title "Planning: refresh SIP actuals through ${THROUGH_DATE}" \
-            --body-file "${body}")"
+            --body-file "${body}" 2>&1)"; then
+            echo "::error::Unable to create the draft PR with GITHUB_TOKEN."
+            echo "::error::Ensure Settings > Actions > General > Workflow permissions allows GitHub Actions to create pull requests."
+            echo "${pr_url}" >&2
+            exit 1
+          fi
 
           {
             echo
