@@ -184,7 +184,17 @@ whether SI-01 will accept a domain command.*
 
 This is the current Development Client baseline. It supersedes the earlier Step-4 tab
 ordering and lifecycle-gated controls. The older Step-4 wireframes remain historical
-verification/design context only; they are not the current UI acceptance baseline.
+verification/design context only; they are not the current UI
+
+The API tab shows one prominent **Timing view** synchronisation state above the
+Version/Status controls. The initial state is **NOT SYNCED — connect Events**. Connecting
+the IF-03 Events WebSocket immediately starts the HTTP status/capabilities/LogBook
+baseline sync; incoming live events, including the initial STATUS_SNAPSHOT, are buffered
+and reconciled after that baseline. Only then does the Timing view become **LIVE**.
+
+Open/Close/registration controls remain disabled while the Timing view is NOT SYNCED,
+SYNCING or STALE. **Sync view** is available only while Events is connected; it repeats
+the same baseline/reconciliation sequence and does not modify SI-01 domain state. acceptance baseline.
 
 ### Target and connection bar
 
@@ -304,6 +314,32 @@ This deliberately differs from a production operator GUI, where preventing obvio
 invalid actions may be desirable. The Development Client must make negative-path and
 boundary testing easy.
 
+### Timing workbench layout
+
+The current Timing workbench separates **operator-oriented interpretation** from the
+immutable technical history:
+
+- the left column contains the selected TimingNode state plus Open/Close and registration
+  input;
+- the right column shows **Registrations** at the top and
+  **LogBook / committed TimingData** below it.
+
+The two right-hand views are deliberately not duplicates. **Registrations** is a
+presentation projection intended to resemble normal timing use: it shows local clock
+time, RegistrationId, a compact **A/M** indicator and logical deletion state. The
+LogBook is the audit/diagnostic view and shows the committed profile records in source
+order with sequence, Type, Code and profile time values.
+
+For the current default/reference profile the LogBook time remains the canonical
+absolute UTC value. The interpreted Registrations view converts it to normal local clock
+time using the explicitly displayed client zone.
+
+A future REV record does not remove the interpreted registration. The existing row is
+marked **DELETED**, while both ADD and REV remain present in the immutable LogBook.
+Until SI-01 exposes a public revoke operation/capability, the Development Client may show
+the Delete action in disabled form rather than pretending that deletion is already
+supported.
+
 ### Registration input
 
 The ordinary structured registration input is optimized for readable engineering use
@@ -323,8 +359,10 @@ Time entry is also presentation-oriented:
 
 - date is shown separately from clock time;
 - ordinary clock-time entry is readable to whole seconds;
-- **Now** fills the fields from the client clock;
-- the client converts the structured value to the canonical API timestamp when sending.
+- the interpreted client time zone is shown explicitly beside the Time field;
+- **Now** fills date/time in that same displayed zone;
+- the client converts the explicit local civil value to the canonical UTC API timestamp
+  when sending, so the conversion is visible rather than implicit.
 
 The normal form does not require an engineer to type hundredths/nanoseconds. Where
 deterministic sub-second protocol testing is needed, an advanced/raw value may be
