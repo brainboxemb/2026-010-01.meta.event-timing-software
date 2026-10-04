@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Complete Step-5 A02 on Java revision `f205e55d9af907a631f346261bdc04ba3e487a6d` and activate A03 measurement-driven allocation/data-access strategy.
+
 - Complete Step-5 A01 on Java revision `3a173235a2a823e6fbbec8397a2e2649841b4a0f` and activate A02 runtime markers/counters.
 
 - Start SIP Step 5 D01 with a single-TimingNode runtime measurement/evidence baseline; keep default JVM scheduling as the baseline, gate batching/pooling/caching/concurrency changes on measurements, and activate simulated-antenna A01 after the decision.
