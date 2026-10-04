@@ -163,14 +163,14 @@ nodes:
     label: Send auto-reg
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 845, y: 476, w: 145, h: 36}
+    layout: {x: 845, y: 530, w: 145, h: 36}
 
   - id: raw-request-note
     label: Wire value
     subtitle: "N0001 @ canonical UTC timestamp"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 1010, y: 455, w: 260, h: 68}
+    layout: {x: 1010, y: 509, w: 260, h: 68}
 
   - id: history
     label: LogBook / committed TimingData
@@ -182,13 +182,13 @@ nodes:
       - "17  | OPEN     | 24       | -            | 15:30:00"
       - "18  | AUTO_REG | 24       | N0001        | 15:33:00"
       - "19  | CLOSE    | 24       | -            | 15:40:12"
-    layout: {x: 55, y: 550, w: 1245, h: 150}
+    layout: {x: 55, y: 604, w: 1245, h: 150}
 
   - id: raw-response
     label: Raw response / selected record
     subtitle: Complete API JSON remains available; structured UI never hides a domain rejection.
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 55, y: 720, w: 1245, h: 48}
+    layout: {x: 55, y: 774, w: 1245, h: 48}
 
 edges: []
