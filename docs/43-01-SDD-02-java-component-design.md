@@ -980,6 +980,15 @@ producing another registration inside its longer duplicate window.
 The selected candidate is the strongest observation in the burst and retains that
 observation's original `TimingTimestamp`.
 
+Do not pre-filter low-RSSI observations before burst aggregation. The burst exists to find
+the maximum RSSI across the complete passage. After closure, compare the maximum RSSI with
+the configured minimum threshold; reject the whole burst only when even its strongest
+observation is below that threshold.
+
+The timestamp of the maximum-RSSI observation becomes the automatic-registration
+effective time. This intentionally targets the participant's closest observed approach to
+the antenna rather than the earliest possible read.
+
 Timing deadlines use `MonotonicClock`; they do not use `Date`,
 `System.currentTimeMillis()` or the potentially corrected observation timestamp.
 
