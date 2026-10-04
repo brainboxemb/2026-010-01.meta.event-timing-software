@@ -294,8 +294,7 @@ Node-scoped presentation access is exposed through `TimingNodeProxy`.
 `PresentationGateway` owns application-wide presentation information such as
 build identity and capabilities; a proxy gives an adapter explicit TimingNode
 context for node status, commands, queries and events. The architectural composition
-contains **one TimingNodeProxy per composed TimingNode (1..N)**. The current Step-4
-implementation has one because the executable still composes one TimingNode. A proxy is
+contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
 an Application-layer boundary object, not a second owner of TimingNode state.
 
 Status-change detection remains owned by the TimingNode serial boundary. A
@@ -699,7 +698,7 @@ Application profiles do not add/remove or redefine their command/status semantic
 Concrete network listener bindings remain deployment configuration, so a listener
 may still be explicitly left unbound/disabled without creating another profile.
 
-A06/A07 are the first slice of the functional **API**:
+The functional **API** currently contains:
 
 ```text
 HttpEndpoint
@@ -844,9 +843,8 @@ a state-dependent command.
 
 The Future used to connect the queued work with a waiting caller is an internal
 Active Object mechanism. It does not appear in the normal TimingNode
-application/domain interface. In Java 8 a plain `Future<R>` is sufficient for
-this first design; `CompletionStage` is not required by the current synchronous
-caller contract.
+application/domain interface. The current synchronous caller contract needs only an internal plain
+`Future<R>`; `CompletionStage` is not required.
 
 Code already running on the TimingNode lane uses direct private/domain methods
 such as `doOpen()` rather than calling the blocking public `open()` method
@@ -886,18 +884,17 @@ must not automatically cancel or interrupt an already accepted state change.
 The caller must treat the final outcome as unknown and re-query/reconcile state
 before assuming that the command did not happen.
 
-The first implementation may expose a small TimingNode-specific exception family
-rather than leaking `TimeoutException`, `ExecutionException` or
-`InterruptedException` from `java.util.concurrent` through the domain API.
+TimingNode uses a small operation/execution exception model rather than leaking
+`TimeoutException`, `ExecutionException` or `InterruptedException` from
+`java.util.concurrent` through the domain API.
 Keep that family small and add distinct exception types only where callers need
 different recovery behaviour. Timeout is a useful distinct case because its
 outcome semantics differ from definite submission rejection.
 
-### First SerialWorker implementation
+### SerialWorker design
 
-The first implementation remains a small composed worker backed by one bounded
-queue and one dedicated thread. Its public result types make the two result
-moments explicit:
+The SerialWorker is a small composed worker backed by one bounded queue and one
+dedicated thread. Its public result types make the two result moments explicit:
 
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
@@ -923,82 +920,6 @@ low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
 therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
 primitive. The final suffix is the configured NodeId, not a worker/index number.
 Threads owned by the JDK or external libraries keep their own names.
-
-### Step-5 runtime characterization baseline
-
-Step 5 measures the first simulated-input runtime on the development host with
-**one TimingNode**. It keeps the existing bounded serial ownership model as the
-baseline. Multi-TimingNode scheduling is deliberately deferred until the later
-multi-node step, and important findings are repeated on target hardware during
-target bring-up.
-
-Measurement must not change Domain time semantics. Use `System.nanoTime()` for
-monotonic elapsed-time markers inside one JVM run. Do not persist or publish
-those values as TimingData, and do not use wall-clock `Instant` /
-`currentTimeMillis()` values to calculate queue or processing durations.
-`TimingTimestamp` remains the Domain/event-time representation.
-
-The first instrumentation points are:
-
-| Point | Minimum observation |
-| --- | --- |
-| antenna observation accepted for processing | observation count and monotonic ingress marker |
-| tag interpretation/filtering | resolved / ignored / rejected counts |
-| TimingNode queue admission | attempted / accepted / full / not-running counts, current depth and high-water |
-| TimingNode work start | queue-wait duration from accepted admission to execution start |
-| TimingNode work completion | serial-lane execution duration |
-| TimingData persistence append | append duration and success/failure count |
-| committed LogBook visibility / post-commit publication | committed count and accepted-observation-to-commit duration where the originating observation is known |
-| bounded LogBook query | query duration and records visited/returned for the characterized query shape |
-
-Instrumentation is engineering state, not a second event model. Prefer primitive
-counters and primitive monotonic markers attached to already-existing execution
-objects/seams. Do not allocate one metrics object per observation/registration
-and do not emit one measurement log record per event. For durations, simple
-count/total/max or fixed-bucket summaries are preferred over retaining every
-sample in production objects; a dedicated test harness may retain samples
-outside the product when needed for analysis.
-
-Development-host characterization may additionally record:
-
-- project-owned thread identity and state from the stable `tp-...` names;
-- per-thread CPU time through `ThreadMXBean` when supported by the active JVM;
-- garbage-collector collection count/time deltas through the standard management beans;
-- heap/memory observations before/after a defined workload;
-- externally collected profiler/allocation evidence when a specific question
-  needs more detail.
-
-Those JVM observations are conditional evidence, not runtime correctness
-dependencies.
-
-The Step-5 scheduler baseline uses the JVM's normal/default thread priority.
-Thread priority is only a scheduler hint and is never used to make ordering,
-capacity or correctness guarantees. A role-specific priority change is considered
-only after repeatable evidence shows a scheduling problem, and any useful change
-must be re-qualified on the selected target because JVM/OS mappings are platform
-dependent.
-
-The same evidence gate applies to other optimizations:
-
-- add batching/fairness guards only when sustained/bursty ingress demonstrably
-  delays required TimingNode or service progress;
-- add object pooling/reuse only when allocation/GC evidence shows a material
-  problem and the simpler allocation model is measurably worse;
-- add copied snapshots, caches or compact indexes only when measured query/lane
-  occupancy or allocation cost justifies them;
-- move persistence off the TimingNode lane only when measured store latency /
-  queue growth justifies the added concurrency while preserving
-  commit-before-LogBook/event ordering;
-- keep outbound presentation/network delivery bounded and ensure a slow client
-  cannot turn a post-commit listener into unbounded application-owned state.
-
-A retained characterization result identifies at least the source revision, JVM
-and OS, workload/configuration, preloaded committed-record count, queue capacity,
-observation/admission/commit counts, queue high-water, relevant duration
-summaries and available GC/thread observations. Repeated runs retain ordinary
-variation rather than selecting only the best result. Step-5 figures are
-engineering baselines, not product performance limits unless a later
-requirement explicitly promotes one.
 
 ```java
 final class SerialWorker implements AutoCloseable {
@@ -1079,7 +1000,7 @@ alternative, especially if several TimingNodes later share a small executor.
 The first dedicated `SerialWorker` is chosen for transparency, not because the
 JDK executor framework is unsuitable.
 
-If the implementation later moves to a shared executor, these invariants remain:
+If the implementation uses a shared executor, these invariants remain:
 
 ```text
 per TimingNode:
@@ -1135,14 +1056,14 @@ Code outside the TimingNode ownership boundary does not read the mutable
 LogBook list directly. A consistency-sensitive query enters the TimingNode lane
 and performs its bounded read in the same ordering as state changes.
 
-The read representation is deliberately not fixed to a copied list. The current
-Step-4 bounded IF-03 range/latest implementation traverses the owned LogBook
-records directly on the TimingNode lane and builds only the final response
-representation; no temporary LogBook `List` copy escapes the owner. Network
+The read representation is deliberately not fixed to a copied list. Bounded
+IF-03 range/latest queries traverse the owned LogBook records on the TimingNode
+lane and build only the final response representation; no temporary LogBook
+`List` copy escapes the owner. Network
 write/send remains outside the TimingNode lane.
 
-For future range/latest/ranking-style access, prefer direct bounded traversal of
-the owned records when that avoids unnecessary allocation and GC pressure. A query may
+For range/latest/ranking-style access, prefer direct bounded traversal of the
+owned records when that avoids unnecessary allocation and GC pressure. A query may
 instead use compact derived/indexed state, reusable scratch storage or a copied
 view when measurements show that approach is cheaper overall.
 
@@ -1168,10 +1089,10 @@ need to be kept:
 | Store | First purpose | Commit role |
 | --- | --- | --- |
 | `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
-| future per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
+| per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
 
 The lower I/O layer exposes storage mechanics rather than domain-specific store
-interfaces. The first implementation uses:
+interfaces. The current Java persistence split is:
 
 ```text
 Domain
@@ -1197,13 +1118,13 @@ Runtime composition creates the file store and supplies it to
 or Application class.
 
 The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
-first implementation may call the small/infrequent analysis-store writes on the
+current design may call the small/infrequent analysis-store writes on the
 same worker. If measurements show that one of those writes delays registrations,
 the worker can hand an immutable snapshot to a bounded storage executor. Do not
 add one thread per state object and do not introduce an unbounded background
 queue.
 
-For the first registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any later asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
+For the registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any later asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
 
 For example, a StageStartTimes update may be:
 
@@ -1264,7 +1185,7 @@ TimingNode serial lane
        +--> subscribed listener
 ```
 
-The first design has no central dispatcher or string/topic routing; listeners
+The design has no central dispatcher or string/topic routing; listeners
 subscribe directly to the exposed event source they need. The event name states
 the completed fact: a processed registration attempt that does not commit
 TimingData does not emit this event.
@@ -1298,7 +1219,7 @@ calls.
 The semantic requirement is one serial execution lane per TimingNode, not
 permanently one operating-system thread per node.
 
-For the first one-node application:
+The current dedicated-thread realization is:
 
 ```text
 1 TimingNode
@@ -1445,7 +1366,7 @@ merely to restate the return type.
 The context contains values only. It does not contain `TimingNode`, `LogBook`,
 stores, services or other mutable collaborators.
 
-The first implementation does not need an abstract TimingData base class.
+The design does not use an abstract TimingData base class.
 Concrete immutable implementations may delegate to `TimingDataFactory.Context`.
 Introduce a private/protected helper only when multiple real implementations show
 enough repeated behaviour to justify it; such a helper remains implementation
@@ -1509,7 +1430,7 @@ Both the Java-8 SI-01 runtime and Java-17 Development Client can depend on
 without depending on SI-01 Domain classes. Profile-specific inspection can be
 added only where a real consumer needs it.
 
-The first implementation keeps the default/reference profile inside the shared
+The current design keeps the default/reference profile inside the shared
 TimingData library while the design is still changing; do not create another
 production Maven artifact solely to mirror the conceptual profile split. A dummy
 event-specific implementation in tests is sufficient to prove that the common
@@ -1537,7 +1458,7 @@ These are consumer possibilities, not modules to create now.
 ## Java 8 extension/provider mechanism
 
 A concrete public/private extension requirement now exists, so provider discovery
-is no longer merely a future possibility. Keep the mechanism narrow and
+is no longer merely a optional capability. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
@@ -1592,9 +1513,9 @@ Expected private/product-specific areas may include:
 
 Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model. The provider mechanism above is the explicit runtime-extension boundary; do not generalise it into arbitrary plugin access from domain/application code.
 
-## Possible future artifacts
+## Artifact extraction criteria
 
-Create future artifacts only when a real boundary requires them. Candidates might eventually include:
+Create additional artifacts only when a real boundary requires them. Candidate extractions include:
 
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
@@ -1602,7 +1523,7 @@ Create future artifacts only when a real boundary requires them. Candidates migh
 - separately versioning `event-timing-data` if binary compatibility/release evidence later requires an independent release cycle;
 - reusable test support.
 
-Splitting later is preferred over speculative libraries, provided package/responsibility boundaries remain clean enough to extract.
+Extraction is preferred over speculative libraries: keep package/responsibility boundaries clean enough that a proven boundary can be split without redesign.
 
 ## Architecture/dependency checks
 
