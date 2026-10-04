@@ -121,28 +121,6 @@ Define the first architecture baseline for the timing software.
 - project/domain knowledge;
 - architecture/document tooling.
 
-### D04 — Antenna input architecture decision
-
-D04 fixes the boundary used by A01:
-
-- an antenna emits immutable `TagObservation(TagId, RSSI, TimingTimestamp)` facts;
-- antenna observations use the existing local `Event<T>/EventSource<T>` primitive;
-- `AntennaManager` owns multi-antenna lifecycle, one-shot hello/version probing,
-  initialize, per-antenna inventory state, shutdown/recovery and optional external
-  power-control orchestration;
-- `TagProcessor` owns observation-burst aggregation, strongest-RSSI selection, duplicate suppression and bounded
-  TimingNode submission;
-- `TagRegistrationMapper` owns TagId -> RegistrationId conversion as an injected policy;
-  it is not required to be an in-memory lookup table and may use RaceData only when a
-  concrete profile needs reference data;
-- duplicate suppression uses monotonic elapsed time while the observation timestamp
-  remains the registration effective time;
-- `SimulatedAntenna` implements the same lifecycle and observation event boundary as a
-  real provider.
-
-The already merged Java A01 prototype must be repaired against this decision before A01
-can be accepted.
-
 ### Result
 
 - First software architecture baseline.
@@ -470,13 +448,35 @@ domain and persistence paths.
 | `A02` | Qualify/implement runtime markers and counters |
 | `V01` | Single-node baseline load/burst characterization |
 | `A03` | Measurement-driven allocation/data-access decision |
-| `V02` | Sustained ingress and stalled-downstream fairness/backpressure |
+| `V02` | Sustained tag-observation load and stalled-downstream fairness/backpressure |
 | `A04` | Commit OPEN/CLOSE through the normal TimingData path |
 | `A05` | Commit registration revoke through the normal TimingData path |
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
 | `V06` | Registration revoke/API/Development Client verification |
+
+### D04 — Antenna input architecture decision
+
+D04 fixes the boundary used by A01:
+
+- an antenna emits immutable `TagObservation(TagId, RSSI, TimingTimestamp)` facts;
+- antenna observations use the existing local `Event<T>/EventSource<T>` primitive;
+- `AntennaManager` owns multi-antenna lifecycle, one-shot hello/version probing,
+  initialize, per-antenna inventory state, shutdown/recovery and optional external
+  power-control orchestration;
+- `TagProcessor` owns observation-burst aggregation, strongest-RSSI selection, duplicate suppression and bounded
+  TimingNode submission;
+- `TagRegistrationMapper` owns TagId -> RegistrationId conversion as an injected policy;
+  it is not required to be an in-memory lookup table and may use RaceData only when a
+  concrete profile needs reference data;
+- duplicate suppression uses monotonic elapsed time while the observation timestamp
+  remains the registration effective time;
+- `SimulatedAntenna` implements the same lifecycle and observation event boundary as a
+  real provider.
+
+The already merged Java A01 prototype must be repaired against this decision before A01
+can be accepted.
 
 ### D01 — Runtime execution and measurement plan
 
