@@ -84,7 +84,7 @@ code    = [ADD]
 The record type already carries the automatic-registration meaning, so `AUTO`
 is not repeated in `code`.
 
-Reserved future revoke mapping:
+Reserved revoke mapping:
 
 ```text
 recType = AUTO_REG
@@ -109,23 +109,23 @@ recType = MAN_REG
 code    = [ADD, MAN]
 ```
 
-Reserved future revoke mappings:
+Reserved revoke mappings:
 
 ```text
 [ADD, AUTO] -> [REV, AUTO]
 [ADD, MAN]  -> [REV, MAN]
 ```
 
-Canonical writer output places the action (`ADD` or future `REV`) first.
+Canonical writer output places the action (`ADD`, or `REV` when the reserved mapping is enabled) first.
 Array order is not semantic to a reader; the valid code combination is.
 Duplicate, contradictory or unknown codes for a known record type are invalid.
 
-A future revoke record repeats the original `regId` and `time`, receives a
-new `seqNr` and `recTime`, and never rewrites the original record.
+A revoke record using the reserved mapping repeats the original `regId` and `time`,
+receives a new `seqNr` and `recTime`, and never rewrites the original record.
 
 ## Development-v1 record matrix
 
-| Record type | Current add code | Required registration data | Reserved future revoke code |
+| Record type | Current add code | Required registration data | Reserved revoke code |
 | --- | --- | --- | --- |
 | `AUTO_REG` | `["ADD"]` | `regId`, `time` | `["REV"]` |
 | `MAN_REG` | `["ADD","AUTO"]` or `["ADD","MAN"]` | `regId`, `time` | `["REV","AUTO"]` or `["REV","MAN"]` |
@@ -166,8 +166,8 @@ Validation rules:
 - every `By record type` member required by the selected `recType` is present and non-null;
 - `Optional` members such as `recTime` may be omitted;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
-- `AUTO_REG` currently accepts exactly `["ADD"]`;
-- `MAN_REG` currently accepts `ADD` plus exactly one of `AUTO` or `MAN`;
+- the development-v1 `AUTO_REG` mapping accepts exactly `["ADD"]` while REV remains reserved;
+- the development-v1 `MAN_REG` mapping accepts `ADD` plus exactly one of `AUTO` or `MAN` while REV remains reserved;
 - readers may accept a valid `code` combination in another array order;
 - canonical writer output always emits action first;
 - `seqNr` remains authoritative source order; no chronological ordering is
@@ -258,7 +258,7 @@ Manual registration using operator-entered time:
 {"v":1,"nodeId":"Test","seqNr":3,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N0003","code":["ADD","MAN"],"recTime":"2026-10-02T10:57:46Z"}
 ```
 
-Reserved future revoke examples:
+Reserved revoke examples:
 
 ```json
 {"v":1,"nodeId":"Test","seqNr":4,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00Z","regId":"N0001","code":["REV"],"recTime":"2026-10-02T11:05:12.123Z"}
