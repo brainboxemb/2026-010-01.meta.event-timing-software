@@ -216,7 +216,7 @@ domain/
     StageStartTimesStore.java           persistence port for start-time analysis history
     RaceData.java                       passive per-node reference state
     RaceDataStore.java                  persistence port for race/reference analysis history
-    TagProcessor.java                   node-local RSSI/dedup/mapping ingress policy
+    TagProcessor.java                   node-local tag filtering/mapping policy
     TagRegistrationMapper.java          TagId -> RegistrationId policy boundary
     TagProcessingPolicy.java            burst/duplicate-window configuration
   logbook/
