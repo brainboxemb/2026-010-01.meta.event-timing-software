@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Audit documentation roles so planning/history stays in planning/evidence records while requirements, interfaces, design and verification books describe the current authoritative state; reopen Step-5 D01 as a reviewable SIP planning gate.
+
 - Complete Step-5 A02 on Java revision `f205e55d9af907a631f346261bdc04ba3e487a6d` and activate A03 measurement-driven allocation/data-access strategy.
 
 - Complete Step-5 A01 on Java revision `3a173235a2a823e6fbbec8397a2e2649841b4a0f` and activate A02 runtime markers/counters.
