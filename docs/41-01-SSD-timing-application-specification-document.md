@@ -355,7 +355,7 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
-```{req} Keep local registration independent from secondary services
+```{req} Keep local registration independent from presentation, diagnostics and backoffice
 :id: SI01-REQ-051
 :status: D
 :derived_from: UC-003, UC-012
