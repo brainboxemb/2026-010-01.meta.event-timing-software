@@ -191,6 +191,12 @@ Rules:
 - offsets such as `+02:00`, implicit local time and timezone names are not
   canonical v1 values.
 
+This absolute UTC syntax is a property of the default/reference development-v1
+representation. It does not require every conforming TimingData profile to
+serialize an absolute timestamp literally. An alternative profile may use a
+local event-time representation when its configured codec owns the reversible
+translation context required by IF-05.
+
 Examples:
 
 ```text

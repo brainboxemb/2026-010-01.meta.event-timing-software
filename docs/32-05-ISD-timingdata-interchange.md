@@ -164,8 +164,31 @@ Registration ID is separate from record identity (Node ID + sequence number).
 For the current registration record types, `time` represents the absolute
 instant assigned to that registration.
 
-The current interface direction is to preserve that instant across conforming
-representations. The exact textual representation belongs to the IDD.
+The common IF-05 semantic value is therefore an absolute instant even when a
+concrete representation does not carry an absolute timestamp literally. A
+profile-specific representation may, for example, expose only local event
+time-of-day such as `12:21:15`. In that case the profile/codec must already own
+the deterministic translation context required to preserve the same instant in
+both directions.
+
+For a representation that omits date and/or offset information, that context
+must define enough information to make translation unambiguous, including where
+applicable:
+
+- the event date or an explicit day-selection/day-rollover rule;
+- the event time zone or fixed UTC offset;
+- deterministic handling of daylight-saving gaps/overlaps or an explicit rule
+  to reject ambiguous/non-existent local civil times.
+
+A time-of-day-only representation cannot reversibly represent arbitrary
+multi-day absolute instants by itself. Such a profile must therefore either be
+scoped to one configured event date, carry some other profile-defined day
+discriminator, or reject values outside its reversible scope. The codec must not
+infer the missing date from the host clock, current day or UI state.
+
+The exact external textual/binary representation belongs to the applicable IDD
+or profile design. Sequence/source-order semantics remain independent of the
+displayed or encoded clock-time representation.
 
 Other TimingData record types may give `time` a different defined meaning, or
 may not use a time value at all. `time` is therefore record-type-dependent,
