@@ -3,10 +3,8 @@ step: 4
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      Step-4 closure review confirms all implementation and automated verification
-      activities are complete. V04 / VC-ST1-003 is the only remaining exit item;
-      current planning and verification text is aligned with the API-first
-      Development Client and open(LocationId) model.
+      Closure review: implementation and automated verification are complete;
+      V04 / VC-ST1-003 remains the only Step-4 exit item.
   - date: '2026-10-02'
     change: >-
       Roadmap aligned with the accepted SSD/IF-05 scope without changing product
