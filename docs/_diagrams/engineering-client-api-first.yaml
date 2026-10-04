@@ -12,7 +12,7 @@ nodes:
     label: Development Client
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 30, y: 80, w: 1300, h: 710}
+    layout: {x: 30, y: 80, w: 1300, h: 765}
 
   - id: target
     label: Target
@@ -64,93 +64,100 @@ nodes:
     notation: wireframe-tabs
     layout: {x: 55, y: 180, w: 1245, h: 44}
 
+  - id: timing-view-state
+    label: "Timing view"
+    subtitle: "LIVE  |  Sync view"
+    kind: wireframe-live
+    notation: wireframe-status
+    layout: {x: 55, y: 232, w: 1245, h: 44}
+
   - id: api-summary
     label: API / selected TimingNode
     subtitle: "timing-node-01  |  state CLOSED  |  LocationId 24"
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 55, y: 230, w: 1245, h: 145}
+    layout: {x: 55, y: 284, w: 1245, h: 145}
 
   - id: get-version
     label: Version
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 80, y: 310, w: 95, h: 36}
+    layout: {x: 80, y: 364, w: 95, h: 36}
 
   - id: get-status
     label: Status
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 185, y: 310, w: 95, h: 36}
+    layout: {x: 185, y: 364, w: 95, h: 36}
 
   - id: location
     label: Location
     subtitle: "24"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 315, y: 288, w: 150, h: 72}
+    layout: {x: 315, y: 342, w: 150, h: 72}
 
   - id: open
     label: Open
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 475, y: 310, w: 105, h: 36}
+    layout: {x: 475, y: 364, w: 105, h: 36}
 
   - id: close
     label: Close
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 590, y: 310, w: 105, h: 36}
+    layout: {x: 590, y: 364, w: 105, h: 36}
 
   - id: last-operation
     label: Last API operation
     subtitle: "NODE_NOT_OPEN — response retained for inspection"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 720, y: 288, w: 550, h: 72}
+    layout: {x: 720, y: 342, w: 550, h: 72}
 
   - id: registration
     label: Registration test input
     subtitle: Structured convenience input; SI-01 remains authoritative
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 55, y: 395, w: 1245, h: 135}
+    layout: {x: 55, y: 449, w: 1245, h: 135}
 
   - id: prefix
     label: Prefix
     subtitle: "N"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 80, y: 455, w: 110, h: 68}
+    layout: {x: 80, y: 509, w: 110, h: 68}
 
   - id: number
     label: Number
     subtitle: "0001"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 200, y: 455, w: 150, h: 68}
+    layout: {x: 200, y: 509, w: 150, h: 68}
 
   - id: reg-date
     label: Date
     subtitle: "2026-10-03"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 380, y: 455, w: 180, h: 68}
+    layout: {x: 380, y: 509, w: 180, h: 68}
 
   - id: reg-time
     label: Time
     subtitle: "15:33:00"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 570, y: 455, w: 160, h: 68}
+    layout: {x: 570, y: 509, w: 160, h: 68}
 
   - id: now
     label: Now
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 750, y: 476, w: 75, h: 36}
+    layout: {x: 750, y: 530, w: 75, h: 36}
 
   - id: auto-reg
     label: Send auto-reg
