@@ -3,14 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      D04 remains active while the registration/threading audit from meta #442 is
-      incorporated into the antenna design. A01 remains blocked until D04 is
-      accepted; the existing Java antenna prototype is not accepted completion.
-  - date: '2026-10-04'
-    change: >-
-      D01 planning gate and D04 antenna/input architecture are reviewed; A01 is
-      active to replace/qualify the earlier prototype against the Event-based
-      observation, lifecycle-manager, RSSI/dedup and mapper design.
+      D04 remains active for antenna/runtime review; A01 stays blocked until D04
+      is accepted.
   - date: '2026-10-04'
     change: >-
       D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
