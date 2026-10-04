@@ -405,7 +405,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
-| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostics and backoffice delivery |
+| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
 
 ## Software-item architecture
 
@@ -1886,8 +1886,7 @@ control behind its antenna implementation, or runtime composition may provide an
 power-control capability to the manager; external power switching is not required of every
 antenna.
 
-Antenna lifecycle/device-control calls are a separate **control plane** from observation
-delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
+Antenna lifecycle/device-control calls are separate from observation delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
 for its configured antennas. Probe, power, initialize, inventory start/stop and shutdown
 are submitted as bounded control work so potentially blocking device I/O does not run on
 a TimingNode lane or on a presentation callback. Application startup may wait for a
@@ -1914,8 +1913,8 @@ observations according to the configured retention policy.
 
 This is deliberately different from TimingData/LogBook persistence. TimingData durability
 is part of the committed-domain-record contract and remains ordered with commit before
-LogBook visibility. A raw observation log is not TimingData, is not authoritative race
-state and does not participate in registration commit success.
+LogBook visibility. A raw observation log is not TimingData, is not used to rebuild LogBook and does not
+participate in registration commit success.
 
 After decoding, generic SI-01 tag processing is distinct from vendor protocol handling.
 Repeated reads of one physical passage are first aggregated as one observation burst.
