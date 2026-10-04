@@ -48,11 +48,12 @@ that identity where practical.
 
 ## <Profile> — <Profile name>
 
-### VC-<profile>-<number> — <Case title>
-
-**Verifies**
-
-<!-- Requirement/interface IDs. -->
+```{vc} <Case title>
+---
+id: VC-<profile>-<number>
+verifies: <requirement/interface IDs>
+---
+```
 
 **Purpose**
 
