@@ -1,6 +1,10 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-04'
+    change: >-
+      Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
+      planning/design activity.
   - date: '2026-10-02'
     change: >-
       Narrowed Step 5 to one-TimingNode simulated antenna input and runtime behaviour.
@@ -17,7 +21,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: planned
+    state: active
     note: >-
       Define the first project-owned thread/queue measurement approach, stable
       thread naming and the boundary between JVM scheduling preferences and
