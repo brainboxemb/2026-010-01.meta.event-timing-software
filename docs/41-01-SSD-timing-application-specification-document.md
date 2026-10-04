@@ -224,9 +224,11 @@ operation before OPEN.
 :derived_from: UC-003, UC-009
 
 SI-01 shall provide one application/domain operation for an already-accepted
-semantic registration. The caller supplies the resolved `RegistrationId` and
-accepted time; SI-01 supplies its own source identity, active `LocationId` and
-next committed sequence before committing the TimingData value.
+semantic registration. The caller supplies the supported registration action, resolved
+`RegistrationId` and accepted `time`; SI-01 supplies its own source identity, active
+`LocationId` and next committed sequence before committing the TimingData value. The
+first implemented automatic-registration action is `ADD`; additional actions require
+defined TimingData semantics before they are supported.
 ```
 
 ```{req} Committed registration observability
