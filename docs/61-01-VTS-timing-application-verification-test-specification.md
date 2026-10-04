@@ -250,7 +250,10 @@ persistence or restart recovery already covered by `VC-ST1-002`.
    status/capabilities/LogBook baseline plus buffered live events are reconciled.
 5. Enter Location ID 24 and OPEN the TimingNode. Verify OPEN applies LocationId 24 in the
    same request; no separate Set Location operation is used.
-6. Commit deterministic auto-reg `N0001` at `2026-10-01T12:00:00Z`.
+6. Enter UTC date `2026-10-01` and **Time (UTC)** `12:00:00`, then commit
+   deterministic auto-reg `N0001`. Verify the public record contains exactly
+   `2026-10-01T12:00:00Z`; the Development Client shall not shift the explicit input
+   using the development host time zone.
 7. Verify sequence 1 appears in bounded LogBook/history with Type `AUTO_REG` and Code
    `ADD` shown separately, and inspect the complete selected public record/raw response.
 8. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
