@@ -924,8 +924,6 @@ TAG-001 -> N-001
 TAG-123 -> N-123
 ```
 
-The former `MapTagRegistrationResolver` prototype is not the design authority and should
-be removed when A01 is repaired.
 
 ### SimulatedAntenna
 
