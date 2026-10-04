@@ -353,6 +353,15 @@ For the current default/reference profile the LogBook time remains the canonical
 absolute UTC value. The interpreted Registrations view converts it to normal local clock
 time using the explicitly displayed client zone.
 
+For an alternative TimingData profile, the technical LogBook/raw view should show
+the representation actually committed by that profile. If that representation contains
+only event-local time-of-day, the Development Client must use the same configured
+provider/codec translation context as SI-01 when it needs the corresponding semantic
+`TimingTimestamp`; the client must not reconstruct a missing event date from its own
+clock, selected UI date or display zone. The interpreted view may then present normal
+event/local clock time while the technical view remains faithful to the external/profile
+representation.
+
 A future REV record does not remove the interpreted registration. The final table column
 has no text heading and contains an icon-only trash action. After REV, that action cell
 shows **DELETED** instead of the trash button, while both ADD and REV remain present in
@@ -380,8 +389,12 @@ Time entry is also presentation-oriented:
 - ordinary clock-time entry is readable to whole seconds;
 - the interpreted client time zone is shown explicitly beside the Time field;
 - **Now** fills date/time in that same displayed zone;
-- the client converts the explicit local civil value to the canonical UTC API timestamp
-  when sending, so the conversion is visible rather than implicit.
+- for the current API/reference path, the client converts the explicit local civil value
+  to the canonical UTC API timestamp when sending, so the conversion is visible rather
+  than implicit;
+- profile-specific import/export conversion, when used for TimingData inspection or
+  interchange, remains owned by the configured `TimingDataCodec` rather than by form
+  widgets or Development Client presentation code.
 
 The normal form does not require an engineer to type hundredths/nanoseconds. Where
 deterministic sub-second protocol testing is needed, an advanced/raw value may be
