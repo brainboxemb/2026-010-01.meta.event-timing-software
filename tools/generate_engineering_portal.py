@@ -99,6 +99,7 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
             "type": item["type"],
             "type_label": item.get("type_name") or item["type"],
             "title": item["title"],
+            "status": item.get("status") or "",
             "content": item.get("content") or "",
             "content_html": markdown.markdown(
                 item.get("content") or "",
