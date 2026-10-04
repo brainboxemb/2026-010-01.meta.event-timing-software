@@ -1394,7 +1394,7 @@ Architecture rules:
 
 The primary latency risk is therefore **producer backpressure**, not whether every TimingNode operation is asynchronous. Device/RFID/TagProcessor ingress must use the submission-only path and return after bounded-queue admission; it does not wait for persistence or a domain result. Presentation/application callers may use a result-bearing command path when they need that result.
 
-Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. The design does not require a copied snapshot as the default read mechanism. Read/query implementations may traverse contained state directly on the ordered lane, use a compact derived/indexed representation, or copy data only when measurement shows that the copy is the better trade-off. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may also occupy the lane initially, but its impact is controlled through bounded queues and observable queue/store latency.
+Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. The design does not require a copied snapshot as the default read mechanism. Read/query implementations may traverse contained state directly on the ordered lane, use a compact derived/indexed representation, or copy data only when measurement shows that the copy is the better trade-off. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
 
 Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
 
@@ -1727,7 +1727,7 @@ Build provenance remains separate from deployment configuration. `BuildIdentity`
 Working rules:
 
 - keep secrets/credentials out of committed configuration and store only secret references there;
-- prefer explicit/manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
+- prefer explicit/manual composition rather than adding a dependency-injection framework without a demonstrated need;
 - keep overlay rules deliberately limited rather than creating general inheritance/includes;
 - use YAML as the current default IF-11 file syntax and keep its SnakeYAML parser/mapping inside application-core infrastructure; the logical IF-11 contract is not coupled to the SnakeYAML API;
 - create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
@@ -1900,11 +1900,37 @@ used by the built-in implementation. IF-11 owns provider selection in deployment
 configuration; the concrete external-JAR packaging/search path remains a detailed
 implementation concern.
 
+### Runtime execution and target-resource architecture
+
+SI-01 is designed for constrained Raspberry Pi-class targets as well as development
+hosts. Runtime resource rules therefore apply across component boundaries rather than
+belonging to one Java helper class:
+
+- keep each TimingNode work queue bounded;
+- prefer explicit bounded queues over hidden or unbounded executor queues;
+- keep contained Domain state passive and single-writer where practical;
+- keep concrete TimingData values immutable after creation;
+- avoid routine LogBook list copies or deep copies when direct bounded traversal is
+  sufficient;
+- introduce reusable scratch storage, compact indexes or incremental derived state only
+  when measurement demonstrates a concrete benefit;
+- keep blocking network/retry work behind capability-specific output boundaries rather
+  than on the TimingNode execution lane;
+- move analysis-store writes off the TimingNode lane only when measurement shows that
+  synchronous writes cause unacceptable delay;
+- measure queue high-water, storage latency, LogBook/query cost, heap/GC behaviour and
+  scheduling/CPU effects before increasing concurrency or adding runtime complexity.
+
+These are software-item architecture constraints, not a prescription for one particular
+Java executor implementation. SDD-02 defines the current Java realization of the
+TimingNode execution lane; the verification/environment documents define how runtime
+characterization evidence is collected.
+
 ### Technology decision register
 
 This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Timing Point Application** (SI-01) architecture.
 
-| Concern | Current direction | Status / next evidence |
+| Concern | Current direction | Current rationale / open point |
 | --- | --- | --- |
 | Java baseline | Java SE 8 is the current SI-01 baseline | architecture baseline; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
@@ -1912,13 +1938,13 @@ This table intentionally lives in the architecture section of this SSD because t
 | Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition and keeps the executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
 | Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
-| Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
-| Logging | SLF4J API in reusable application core; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
-| Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
+| Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |
+| Logging | SLF4J API in reusable application core; default executable provider `slf4j-jdk14` / `java.util.logging` | handlers/retention remain configuration and operational concerns |
+| Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution; YAML/SnakeYAML is the default Java input realization | profile/platform/mode resolution is architecturally defined but not yet fully implemented |
 | Persistence | Domain-owned TimingDataPersistence over generic lower-layer storage; file/database mechanisms do not import Domain/Application types | ordering and visibility in SDD-01; Java storage/persistence split in SDD-02; record contract in IF-05 |
 | API HTTP | JDK `HttpServer` for IF-03 request/response | selected transport; belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | selected transport; Java 8+, pure Java/NIO and existing SLF4J boundary; keep the HTTP transport separate |
-| Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
+| Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared command semantics | development/service interface with one active session and reconnect; SSH/Telnet/authentication are outside the current public design |
 | Upstream messaging | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
 
