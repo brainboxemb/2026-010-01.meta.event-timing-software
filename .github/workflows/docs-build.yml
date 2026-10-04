@@ -76,8 +76,8 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "7d13ae32c5ac3ac3fea0192559a034b9778a517d"
-          grep -F 'ref: v0.9.1' project.yml
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "2d471c310b590a46635b77ea85fde3e3f3ca67a1"
+          grep -F 'ref: 2d471c310b590a46635b77ea85fde3e3f3ca67a1' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
           tools/tool.git-project/moon-project.sh validate --repo "$PWD"
@@ -225,8 +225,8 @@ jobs:
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
             --source-root . \
-            --tool-ref v0.9.1 \
-            --tool-sha 7d13ae32c5ac3ac3fea0192559a034b9778a517d
+            --tool-ref 2d471c310b590a46635b77ea85fde3e3f3ca67a1 \
+            --tool-sha 2d471c310b590a46635b77ea85fde3e3f3ca67a1
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
