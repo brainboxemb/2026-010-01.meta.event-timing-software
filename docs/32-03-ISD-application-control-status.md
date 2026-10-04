@@ -9,7 +9,7 @@ System interface: **IF-03 — API**
 
 This Interface Specification Document defines the **semantic contract** between the
 **Timing Point Application** (SI-01) and independent software clients such as the
-planned **Desktop GUI Application** (SI-02), the Engineering Client and automated
+planned **Desktop GUI Application** (SI-02), the Development Client and automated
 integration tooling.
 
 IF-03 defines what clients can query, command and observe. It deliberately does not
@@ -42,7 +42,7 @@ not independently redefine IF-03 semantics.
 ## Parties
 
 ```text
-SI-02 Desktop GUI / Engineering Client / test tooling
+SI-02 Desktop GUI / Development Client / test tooling
                          |
                          | IF-03 API
                          v
