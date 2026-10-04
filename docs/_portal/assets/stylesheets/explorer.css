@@ -522,17 +522,40 @@ body.eng-explorer-page .md-content__inner {
   font-size: calc(0.54rem + 1px);
 }
 
-.eng-source-context {
+body.eng-explorer-page .md-typeset details.eng-source-context {
   margin: 0.3rem 0 0.45rem;
-  border: 1px solid var(--md-default-fg-color--lightest);
+  padding: 0;
+  border: 1px solid var(--md-accent-fg-color);
+  border-radius: 0;
   background: var(--md-code-bg-color);
+  box-shadow: none;
 }
 
-.eng-source-context summary {
+body.eng-explorer-page .md-typeset details.eng-source-context > summary {
+  min-height: 0;
+  margin: 0;
+  padding: 0.16em 1.35rem;
+  border-radius: 0;
   cursor: pointer;
-  padding: 0.18rem 0.28rem;
   font-size: calc(0.56rem + 1px);
   font-weight: 600;
+  line-height: 1.28;
+}
+
+body.eng-explorer-page .md-typeset details.eng-source-context > summary::before,
+body.eng-explorer-page .md-typeset details.eng-source-context > summary::after {
+  top: 50%;
+  width: 0.72rem;
+  height: 0.72rem;
+  margin-top: -0.36rem;
+}
+
+body.eng-explorer-page .md-typeset details.eng-source-context > summary::before {
+  left: 0.32rem;
+}
+
+body.eng-explorer-page .md-typeset details.eng-source-context > summary::after {
+  right: 0.32rem;
 }
 
 .eng-source-context__meta {
