@@ -302,7 +302,7 @@ Status-change detection remains owned by the TimingNode serial boundary. A
 state-changing command compares authoritative status before and after the domain
 operation on that TimingNode lane. A real difference emits the TimingNode status
 event before the result leaves ordered command execution. `TimingNodeProxy` maps
-that fact to `ApplicationStatus`; it does not perform a second before/after query
+that fact to the node-scoped Application-layer `TimingNodeStatus`; it does not perform a second before/after query
 outside the ordered boundary.
 
 The visible Domain component boundary uses typed commands and queries rather than
@@ -422,7 +422,7 @@ internals directly.
 
 An external interface response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
-`ApplicationStatusSnapshot` or `ApplicationStatusModel`.
+`TimingNodeStatusSnapshot` or `TimingNodeStatusModel`.
 
 ## Contract placement
 

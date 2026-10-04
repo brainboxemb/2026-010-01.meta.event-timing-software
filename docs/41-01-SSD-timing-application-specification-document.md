@@ -637,8 +637,8 @@ node status, commands, bounded LogBook queries and post-fact events while keepin
 Domain `TimingNode` itself behind the Application boundary.
 
 The proxy does not own mutable TimingNode state. It maps presentation intent to the
-TimingNode's typed ordered operations and maps node status to presentation-facing
-`ApplicationStatus`. Normal OPEN is `open(LocationId)`; there is no separate
+TimingNode's typed ordered operations and maps node status to the node-scoped,
+presentation-facing `TimingNodeStatus`. Normal OPEN is `open(LocationId)`; there is no separate
 Set Location presentation operation. Automatic registration uses
 `applyAutomaticRegistration(action, registrationId, time)`; the current implemented
 action is `ADD`, while later actions require their own defined TimingData semantics.
