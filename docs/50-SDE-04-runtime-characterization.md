@@ -98,10 +98,11 @@ summaries read on demand. Avoid per-observation metrics objects, continuous meas
 threads and high-volume measurement logging unless a later measured question explicitly
 requires them.
 
-The implementation merged in Java PR #231 is therefore **input to design review**, not
-the authority for this boundary. In particular, D05 must review whether its public
-`TimingNode.runtimeMetrics()` / `TimingNodeTypes.RuntimeMetrics` placement keeps
-engineering diagnostics out of the domain-facing contract.
+The SI-01 design keeps those measurements outside the public TimingNode Domain contract.
+The harness receives `runtime.measurement.RuntimeMeasurementReader` from its direct
+`timing-point-core` composition and reads `TimingNodeRuntimeSnapshot`,
+`TagProcessingCounters.Snapshot` and `JvmRuntimeSnapshot`. It does not use
+`TimingNode.runtimeMetrics()`, `TimingNodeTypes.RuntimeMetrics` or an IF-03 endpoint.
 
 ## Environments and tools
 
@@ -227,7 +228,6 @@ case.
 
 ## Open engineering questions
 
-- exact package/API shape of the internal product diagnostics boundary (D05);
 - exact Maven module/profile name and evidence publication path (T01);
 - whether a specific workload needs raw sample retention in addition to aggregate summaries;
 - which development-host cases are important enough to repeat during later target bring-up.

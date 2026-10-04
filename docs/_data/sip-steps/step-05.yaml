@@ -3,16 +3,12 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      D04 antenna/runtime design accepted in PR #440; A01 is active for the Java
-      #234 repair.
+      D05 runtime measurement design is complete; A01 remains active because the
+      antenna/tag-processing path is not yet wired into runtime composition.
   - date: '2026-10-04'
     change: >-
       D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
       A01/A02 prototypes require requalification and V01 now precedes A03.
-  - date: '2026-10-04'
-    change: >-
-      A02 completed runtime instrumentation; A03 measurement-driven strategy is
-      now active.
   - date: '2026-10-04'
     change: >-
       D01 fixed the single-TimingNode runtime measurement baseline; A01 is now
@@ -76,12 +72,12 @@ activities:
   - id: D05
     lane: documentation
     kind: decision
-    state: planned
+    state: done
     depends_on: [D01]
     note: >-
-      Define an internal pull-based runtime-observability boundary for queue,
-      persistence, commit/event and JVM observations without making engineering
-      metrics part of TimingData, Domain semantics or IF-03.
+      Define the internal pull-based runtime measurement reader for queue,
+      persistence, commit/event, TagProcessor and JVM snapshots without exposing
+      engineering measurements through TimingData, Domain semantics or IF-03.
 
   - id: T01
     lane: tooling
@@ -110,9 +106,9 @@ activities:
     state: blocked
     depends_on: [D05, A01]
     note: >-
-      Qualify/implement low-allocation runtime observation required by D05.
-      Java PR #231 exists as a prototype but is not accepted completion until
-      the diagnostics boundary is reviewed.
+      Qualify/implement the low-allocation counters and snapshot reader defined
+      by D05. Java PR #231 is prototype input and is not accepted completion
+      until its public Domain measurement API is corrected.
 
   - id: V01
     lane: verification

@@ -1224,6 +1224,140 @@ Raw antenna-observation logging is diagnostic work. It uses its own bounded buff
 does not sit between TagProcessor and `TimingNode.submit(...)`. Losing raw diagnostic
 records does not change whether a TimingData registration is accepted or committed.
 
+## Internal runtime measurements
+
+Runtime measurements are engineering data used to characterize the running Java design.
+They are not TimingData, TimingNode domain state, application status or presentation/API
+data.
+
+The registration path records only small primitive counters and monotonic durations at
+the component where the work happens. Reading measurements is a separate pull operation.
+A read may allocate an immutable snapshot because it is not performed for every
+observation or registration.
+
+Three snapshot groups are used:
+
+```text
+TimingNodeRuntimeSnapshot
+  queue depth / high-water
+  admitted / full / not-running / completed work
+  total + maximum queue wait
+  total + maximum serial execution time
+  TimingData append attempts / failures
+  total + maximum append time
+  committed TimingData count
+  post-commit event deliveries / listener failures
+  total + maximum post-commit event delivery time
+  worker CPU time when the JVM exposes it
+
+TagProcessingCounters.Snapshot
+  received observations
+  closed observation bursts
+  mapped / unmapped bursts
+  registration duplicates
+  TimingNode admitted / full / not-running results
+
+JvmRuntimeSnapshot
+  heap used
+  live thread count
+  GC collection count
+  GC collection time
+```
+
+The exact Java value classes may group fields for readability, but these three meanings
+must remain separate. A JVM/process snapshot is not a TimingNode snapshot, and
+tag-processing counts are not TimingNode queue counts.
+
+### Counter ownership
+
+The component that performs the work owns the hot-path counter update:
+
+- `SerialWorker` owns queue admission, queue depth/high-water, queue wait, execution
+  duration and its worker-thread identity;
+- the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
+  counters;
+- `TagProcessingCounters` owns observation, burst, mapping, duplicate and
+  TimingNode-admission counters for `domain.timing.processing`;
+- JVM/process values are read on demand from the supported JDK management APIs.
+
+Do not copy these counters into a second continuously updated model merely to make them
+easier to display.
+
+### Engineering access boundary
+
+The current one-TimingNode characterization uses one explicit Java reader:
+
+```text
+domain/timing/processing/
+  TagProcessingCounters
+    -> TagProcessingCounters.Snapshot
+
+runtime/measurement/
+  RuntimeMeasurementReader
+  TimingNodeRuntimeSnapshot
+  JvmRuntimeSnapshot
+```
+
+`RuntimeMeasurementReader` is constructed only by engineering-harness composition. It
+reads the component-owned counters and creates/returns the immutable snapshots above. The
+tag-processing snapshot is the existing `TagProcessingCounters.Snapshot`; D05 does not
+add a second wrapper with the same fields.
+
+Its visible read shape is:
+
+```java
+TimingNodeRuntimeSnapshot timingNode();
+TagProcessingCounters.Snapshot tagProcessing();
+JvmRuntimeSnapshot jvm();
+```
+
+The normal public Domain component contract does not expose runtime measurements:
+
+```text
+TimingNode
+  invoke(...)
+  submit(...)
+  query(...)
+  statusChangedEvent()
+  timingDataCommittedEvent()
+
+  X runtimeMetrics()
+```
+
+`TimingNodeTypes` therefore contains Domain/result/status types only; an engineering
+runtime snapshot is not a `TimingNodeTypes` member.
+
+`RuntimeMeasurementReader` is not exposed through `PresentationGateway`, IF-03, the
+local console or the remote shell merely for characterization. T01 obtains it from
+engineering-harness composition that already depends directly on `timing-point-core`.
+
+A02 may realize the reader's internal connection to TimingNode-owned counters with
+package-private readers or composition-retained measurement handles. For tag processing,
+composition may retain the same `TagProcessingCounters` instance that it passes to
+`TagProcessor`. That mechanical
+choice must not add a public measurement method back to `TimingNode`, must not add
+measurement types to `TimingNodeTypes`, and must not make the reader a second owner of
+runtime state.
+
+### Snapshot semantics
+
+A snapshot is diagnostic, not transactional. Each field must be safe to read while the
+application runs, but fields do not have to represent one globally locked instant. The
+measurement path must not pause registration merely to make all counters change
+atomically together.
+
+Counter and duration totals are cumulative for the lifetime of their owning component.
+The harness calculates workload deltas from a before/after pair instead of resetting
+product counters between runs. Current queue depth is a gauge; queue high-water is a
+lifetime maximum for that component instance.
+
+Unsupported JVM measurements use an explicit unavailable value in the engineering
+snapshot. Measurement unavailability or snapshot creation failure must not change
+registration admission or TimingData commit behaviour.
+
+No continuous measurement thread is introduced. Timer/scheduler work used for
+TagProcessor burst expiry is unrelated to runtime measurement.
+
 ## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
