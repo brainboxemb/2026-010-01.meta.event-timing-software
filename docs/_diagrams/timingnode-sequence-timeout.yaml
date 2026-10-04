@@ -8,13 +8,13 @@ diagram:
   note: Timeout reports an unknown outcome to that caller. It is not OpenResult.REJECTED and does not imply rollback.
 
 participants:
-  - {id: client, label: Operator / Engineering Client, kind: client}
-  - {id: api, label: Presentation / PresentationGateway, kind: interface}
+  - {id: client, label: Operator / Development Client, kind: client}
+  - {id: api, label: Application / TimingNodeProxy, kind: interface}
   - {id: node, label: TimingNode, kind: model}
 
 messages:
   - {from: client, to: api, label: OPEN, kind: call}
-  - {from: api, to: node, label: "open()", kind: call}
+  - {from: api, to: node, label: "open(locationId)", kind: call}
   - {from: node, to: node, label: "queue OPEN work + hidden Future", kind: async}
   - {from: node, to: api, label: "TimingNodeTimeoutException", kind: return}
   - {from: api, to: client, label: "timeout — outcome unknown", kind: return}
