@@ -204,7 +204,7 @@ void processRegistration(RegistrationInput input) {
 
     timingDataStore.append(data);     // returns after durable append
     logBook.add(data);                // consumer visibility point
-    newTimingDataEvent.emit(data);
+    timingDataCommittedEvent.emit(data);
 }
 ```
 
@@ -228,7 +228,7 @@ TimingNode worker
   -> TimingDataStore.append(record)
   -> durable
   -> LogBook.add(record)            <-- committed domain state
-  -> newTimingDataEvent.emit(record)
+  -> timingDataCommittedEvent.emit(record)
   -> subscribed listeners are notified
 ```
 
@@ -297,7 +297,7 @@ mutable state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — TimingNode refinement: one serial execution boundary owns mutable state; short reads return immutable views and `newTimingDataEvent` provides post-fact notification without exposing mutable state.*
+*Figure SDD01-TD02 — TimingNode refinement: one serial execution boundary owns mutable state; short reads return immutable views and `timingDataCommittedEvent` provides post-fact notification without exposing mutable state.*
 
 ### Runtime flows
 
