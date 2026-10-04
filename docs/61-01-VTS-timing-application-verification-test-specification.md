@@ -169,25 +169,24 @@ than being forced into this happy-path black-box case.
 **Procedure — run 1**
 
 1. Start SI-01 and verify the TimingNode is `CLOSED` with no current LocationId.
-2. Set synthetic LocationId `24` and verify the node remains `CLOSED`.
-3. Request `OPEN` and verify the same LocationId remains active.
-4. Attempt another location change and verify explicit `NODE_NOT_CLOSED`
-   rejection.
-5. Submit one node-addressed dev auto-reg request with deterministic `id` and
-   observation `time`.
-6. Verify the response returns sequence 1 and that the request did not supply
+2. Request `OPEN` with synthetic LocationId `24` and verify the node becomes
+   `OPEN` with LocationId `24` as one processed operation.
+3. Submit one node-addressed dev auto-reg request with deterministic `id` and
+   `time`.
+4. Verify the response returns sequence 1 and that the request did not supply
    source identity or active location.
-7. Query LogBook metadata and verify one committed record with first/last
+5. Query LogBook metadata and verify one committed record with first/last
    sequence 1.
-8. Fetch a bounded LogBook range and verify the sequence-1 record contains the
-   active LocationId and supplied observation time.
-9. Verify one `TIMING_DATA_COMMITTED` live event represents the same Node ID + sequence number.
-10. Request `CLOSE` and verify `CLOSED`.
-11. Disconnect and reconnect the WebSocket client.
-12. Verify the new session starts with a current `STATUS_SNAPSHOT`, the
+6. Fetch a bounded LogBook range and verify the sequence-1 record contains the
+   active LocationId and supplied time.
+7. Verify one `TIMING_DATA_COMMITTED` live event represents the same Node ID +
+   sequence number.
+8. Request `CLOSE` and verify `CLOSED`.
+9. Disconnect and reconnect the WebSocket client.
+10. Verify the new session starts with a current `STATUS_SNAPSHOT`, the
     committed LogBook record remains queryable and the old record is not emitted
     again as a new `TIMING_DATA_COMMITTED` event.
-13. Shut the first SI-01 process down through the controlled path.
+11. Shut the first SI-01 process down through the controlled path.
 
 **Procedure — run 2 restart recovery**
 
@@ -244,13 +243,13 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 2. Connect the Development Client Timing view.
 3. Verify the client shows a syncing/reconnecting state, keeps mutating controls
    disabled during synchronisation and becomes LIVE only after the baseline is ready.
-4. Set Location ID 24, OPEN the TimingNode and commit deterministic auto-reg
-   `N0001` at `2026-10-01T12:00:00Z`.
+4. Enter Location ID 24 and OPEN the TimingNode, then commit deterministic
+   auto-reg `N0001` at `2026-10-01T12:00:00Z`. Verify OPEN applies LocationId
+   24 as part of that one request.
 5. Verify the client shows sequence 1 in bounded LogBook/history and one matching
    live commit.
-6. CLOSE, change Location ID to 25 and stop SI-01 through the supported Terminal
-   control.
-7. Restart SI-01 with the same demo TimingData file and reconnect the Engineering
+6. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
+7. Restart SI-01 with the same demo TimingData file and reconnect the Development
    Client.
 8. Verify the client resynchronises current status to CLOSED with no operational
    Location ID while sequence 1 / `N0001` remains in history.
