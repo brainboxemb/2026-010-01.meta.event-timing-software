@@ -3,8 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
-      D04 remains active for antenna/runtime review; A01 stays blocked until D04
-      is accepted.
+      D04 antenna/runtime design accepted in PR #440; A01 is active for the Java
+      #234 repair.
   - date: '2026-10-04'
     change: >-
       D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
@@ -66,7 +66,7 @@ activities:
   - id: D04
     lane: documentation
     kind: decision
-    state: active
+    state: done
     depends_on: [D01]
     note: >-
       Review the simulated antenna/input architecture: stable observation
@@ -96,7 +96,7 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: blocked
+    state: active
     depends_on: [D04]
     note: >-
       Replace/qualify the Java #230 prototype against D04: Event-based
