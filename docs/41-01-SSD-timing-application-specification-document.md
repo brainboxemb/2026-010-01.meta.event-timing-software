@@ -1873,6 +1873,18 @@ Observation delivery does not run on the manager control lane. Concrete provider
 event. TagProcessor therefore executes only short thread-safe filtering/mapping/admission
 work on that callback thread and returns after bounded TimingNode submission.
 
+Raw TagObservation retention is optional non-critical diagnostic persistence. When enabled,
+it subscribes to the same observation event but only performs a bounded non-blocking handoff
+from the provider callback. File/storage I/O executes later on the shared bounded I/O
+executor. Queue saturation or diagnostic-store failure must not block or reject the normal
+registration path; it is reported through diagnostics/counters and may drop raw diagnostic
+observations according to the configured retention policy.
+
+This is deliberately different from TimingData/LogBook persistence. TimingData durability
+is part of the committed-domain-record contract and remains ordered with commit before
+LogBook visibility. A raw observation log is not TimingData, is not authoritative race
+state and does not participate in registration commit success.
+
 After decoding, generic SI-01 tag processing is distinct from vendor protocol handling:
 
 ```text
