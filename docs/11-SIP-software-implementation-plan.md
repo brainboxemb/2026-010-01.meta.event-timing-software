@@ -121,6 +121,28 @@ Define the first architecture baseline for the timing software.
 - project/domain knowledge;
 - architecture/document tooling.
 
+### D04 — Antenna input architecture decision
+
+D04 fixes the boundary used by A01:
+
+- an antenna emits immutable `TagObservation(TagId, RSSI, TimingTimestamp)` facts;
+- antenna observations use the existing local `Event<T>/EventSource<T>` primitive;
+- `AntennaManager` owns multi-antenna lifecycle, one-shot hello/version probing,
+  initialize, per-antenna inventory state, shutdown/recovery and optional external
+  power-control orchestration;
+- `TagProcessor` owns generic RSSI filtering, duplicate/debounce suppression and bounded
+  TimingNode submission;
+- `TagRegistrationMapper` owns TagId -> RegistrationId conversion as an injected policy;
+  it is not required to be an in-memory lookup table and may use RaceData only when a
+  concrete profile needs reference data;
+- duplicate suppression uses monotonic elapsed time while the observation timestamp
+  remains the registration effective time;
+- `SimulatedAntenna` implements the same lifecycle and observation event boundary as a
+  real provider.
+
+The already merged Java A01 prototype must be repaired against this decision before A01
+can be accepted.
+
 ### Result
 
 - First software architecture baseline.
@@ -401,10 +423,13 @@ domain and persistence paths.
 
 ### Scope
 
-- built-in `SimulatedAntenna` through the normal Antenna interface;
-- deterministic synthetic tag observations;
-- tag interpretation/filtering needed to reach the accepted-registration operation;
-- a small synthetic local reference fixture for TagId-to-RegistrationId resolution;
+- built-in `SimulatedAntenna` through the normal Antenna lifecycle/observation interface;
+- deterministic synthetic tag observations carrying TagId, RSSI and accepted observation time;
+- `AntennaManager` lifecycle support for probe/hello-version, initialization,
+  per-antenna inventory start/stop and normal shutdown, with optional power control;
+- TagProcessor RSSI filtering and duplicate/debounce suppression before registration admission;
+- an injected TagId-to-RegistrationId mapper with a deterministic public transformation
+  fixture; RaceData lookup is used only by concrete profiles that require it;
 - define and implement TimingNode OPEN/CLOSE as committed TimingData in the same
   TimingNode-owned source stream as registrations;
 - promote registration revoke/delete from reserved representation to supported
@@ -427,7 +452,7 @@ domain and persistence paths.
 ### Needs
 
 - the Step-4 registration boundary;
-- deterministic synthetic tag/reference fixtures;
+- deterministic synthetic tag-observation and registration-mapping fixtures;
 - controllable simulated input;
 - no target hardware and no private provider implementation.
 
