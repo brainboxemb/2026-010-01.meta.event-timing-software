@@ -931,20 +931,95 @@ the generic TagObservation value merely for logging.
 
 ### TagProcessor
 
-The node-local processor performs cheap generic input policy before bounded TimingNode
-submission:
+The node-local processor has two bounded stages: observation-burst aggregation per
+`TagId`, followed by registration-level filtering/mapping/admission.
+
+#### Observation burst aggregation
+
+A high-rate reader can report the same tag many times during one physical passage. Do not
+schedule/cancel a Java `TimerTask` for every observation and do not retain a
+`List<TagObservation>` merely to choose the strongest read.
+
+Keep one small mutable `BurstState` per currently active TagId:
+
+```java
+final class BurstState {
+    long firstSeenNanos;
+    long lastSeenNanos;
+    int maxRssi;
+    TimingTimestamp maxRssiObservedAt;
+    int observationCount;
+}
+```
+
+On each observation:
+
+1. create the state when the TagId has no open burst;
+2. update `lastSeenNanos`;
+3. increment `observationCount`;
+4. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
+   greater, so equal maxima keep the earlier observation.
+
+A burst closes when either condition becomes true:
 
 ```text
-TagObservation
+now - lastSeen >= quietTimeout
+OR
+now - firstSeen >= maxBurstDuration
+```
+
+The quiet-time rule is essential: if no further observation arrives, expiry still closes
+the burst and immediately continues with filtering/mapping/admission. Registration
+therefore does not wait for a later tag callback.
+
+The maximum-duration rule prevents a continuously visible tag from keeping one burst open
+forever. After forced closure, a later observation opens a new burst; the
+registration-level duplicate window prevents an already accepted RegistrationId from
+producing another registration inside its longer duplicate window.
+
+The selected candidate is the strongest observation in the burst and retains that
+observation's original `TimingTimestamp`.
+
+Timing deadlines use `MonotonicClock`; they do not use `Date`,
+`System.currentTimeMillis()` or the potentially corrected observation timestamp.
+
+#### Shared scheduling
+
+Quiet-time expiry must fire when no new observation arrives, but this does not require one
+timer task per observation.
+
+Use a shared runtime `ScheduledExecutorService` for short timer/sweep callbacks. A
+TagProcessor registers one periodic bounded sweep task with that scheduler. The sweep
+examines only currently active burst states and closes states whose quiet/max deadline has
+expired.
+
+The scheduler is shared across processors/capabilities that need short timer callbacks;
+it is **not** the blocking I/O executor. Timer callbacks must remain short so device I/O
+cannot delay burst expiry.
+
+This bounds scheduled-task count by the number of processors rather than the number of
+observations and avoids repeated task allocation/cancellation under high-rate reads.
+
+A short processor-local lock may protect burst state. No blocking I/O, TimingData
+persistence or wait for processed TimingNode results occurs while that lock is held. The
+sweep removes an expired state under the lock and performs mapping/admission after
+releasing it.
+
+#### Registration filtering and admission
+
+When a burst closes:
+
+```text
+closed burst
   |
-  +--> RSSI below configured threshold ------> filtered
+  +--> max RSSI below configured minimum -----> filtered
   |
   +--> TagRegistrationMapper(TagId)
   |       |
-  |       +--> no RegistrationId ------------> unmapped
+  |       +--> no RegistrationId -------------> unmapped
   |
-  +--> RegistrationId already admitted
-  |    inside duplicate window --------------> duplicate
+  +--> RegistrationId accepted inside
+  |    registration duplicate window ---------> duplicate
   |
   +--> TimingNode.submit(addAutomaticRegistration)
           |
@@ -953,13 +1028,13 @@ TagObservation
           +--> NOT_RUNNING
 ```
 
-The duplicate/debounce window uses the monotonic runtime clock, not wall-clock/event time.
-The `TagObservation.observedAt()` value remains the registration event timestamp.
-Duplicate state is keyed by the resolved RegistrationId so two source tags that map to the
-same registration cannot create duplicate admissions through different raw identities.
+The registration duplicate window is separate from the burst window and is keyed by the
+resolved `RegistrationId`. This also suppresses duplicate registration when different
+source tags map to the same RegistrationId.
 
-Record a duplicate-window acceptance only after the TimingNode accepts the command.
-Queue-full/not-running outcomes therefore do not prevent a later observation from retrying.
+Record duplicate-window state only after `TimingNode.submit(...)` returns
+`ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
+retrying.
 
 An illustrative constructor boundary is:
 
@@ -968,11 +1043,19 @@ TagProcessor(
     TimingNode timingNode,
     TagRegistrationMapper mapper,
     TagFilterPolicy policy,
-    MonotonicClock monotonicClock)
+    MonotonicClock monotonicClock,
+    ScheduledExecutorService scheduler)
 ```
 
-`TagFilterPolicy` owns at least the minimum accepted RSSI and duplicate-window duration.
-Exact event/profile values are configuration, not hard-coded TagProcessor constants.
+`TagFilterPolicy` owns at least:
+
+- minimum accepted RSSI;
+- burst quiet timeout;
+- maximum burst duration;
+- registration duplicate window;
+- sweep cadence.
+
+Exact profile values remain configuration rather than hard-coded TagProcessor constants.
 
 ### TagRegistrationMapper
 
