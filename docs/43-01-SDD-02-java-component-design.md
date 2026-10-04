@@ -885,6 +885,50 @@ make its small filter/dedup state thread-safe. It must not rely on
 `Event<T>` serializing concurrent emissions and must not add an unbounded queue merely
 to serialize them.
 
+### Optional raw-observation persistence
+
+Raw tag-observation logging is a separate non-critical consumer of
+`EventSource<TagObservation>`. It does not sit inline between Antenna and TagProcessor.
+
+The Java shape is a bounded asynchronous sink:
+
+```text
+Antenna Event<TagObservation>
+       |
+       +--> TagProcessor ----------------------> TimingNode.submit(...)
+       |
+       +--> RawTagObservationSink
+              |
+              +-- bounded local buffer
+              +-- non-blocking offer on callback thread
+              |
+              v
+        shared bounded I/O ExecutorService
+              |
+              v
+        append/rotate diagnostic observation store
+```
+
+Do not submit one unbounded executor task per observation. The sink owns a bounded buffer
+and schedules/drains work through the shared executor so a burst of raw observations
+cannot fill the executor queue with arbitrary numbers of tiny persistence tasks.
+
+Required behaviour:
+
+- observation callback performs only a bounded/non-blocking buffer offer;
+- stored records preserve the immutable observation values exactly enough for diagnostics;
+- queue-full/drop count is observable;
+- storage/write failures are observable;
+- diagnostic logging failure does not change TagProcessor admission or TimingData commit;
+- shutdown performs a bounded drain according to the configured diagnostic-retention
+  policy and then closes the store;
+- raw observation files are explicitly non-authoritative and may be rotated/retained
+  independently from TimingData.
+
+A concrete sink may bind source/antenna identity from the subscription/composition context
+when that is needed for diagnostics; D04 does not require source identity to be added to
+the generic TagObservation value merely for logging.
+
 ### TagProcessor
 
 The node-local processor performs cheap generic input policy before bounded TimingNode
