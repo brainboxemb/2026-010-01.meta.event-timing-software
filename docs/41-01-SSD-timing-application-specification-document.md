@@ -211,10 +211,11 @@ SI-01 shall implement IF-03 so compatible additions can be introduced without si
 :derived_from: UC-001, UC-002, UC-008, UC-009
 
 SI-01 shall expose the current operational `LocationId` and `OPEN`/`CLOSED`
-state. A LocationId may be assigned or changed explicitly only while CLOSED.
-Every normal OPEN application command shall carry the requested valid LocationId;
-for a CLOSED TimingNode SI-01 shall apply that LocationId and the CLOSED-to-OPEN
+state. Every normal OPEN application command shall carry the requested valid LocationId.
+For a CLOSED TimingNode SI-01 shall apply that LocationId and the CLOSED-to-OPEN
 transition as one ordered operation, then keep the active location fixed while OPEN.
+The normal application-control boundary shall not require a separate Set Location
+operation before OPEN.
 ```
 
 ```{req} Accepted semantic registration operation
@@ -587,6 +588,9 @@ application/
   PresentationGateway
     shared presentation-facing application gateway
 
+  TimingNodeProxy
+    node-scoped presentation-facing application boundary
+
   UpstreamMessageRouter
     upstream-only application/domain target resolution and routing
 ```
@@ -611,10 +615,28 @@ the adjacent side whose traffic the gateway mediates, not the layer that owns it
 This uses the same directional naming principle as `UpstreamGateway`, while the two
 remain separate responsibilities: `PresentationGateway` is transport-independent
 application access and `UpstreamGateway` owns external upstream transport/integration.
-It may serve simple application reads such as
-`version()`. Application-wide operations delegate to
-`Conductor` where lifecycle or cross-node coordination is
-required. When a presentation command or query targets a TimingNode, `PresentationGateway` resolves the owning `TimingSystem` and target `TimingNode`, then calls that node's application/domain operation. The TimingNode owns the crossing of its serial execution boundary; presentation code does not submit directly to its queue or read its mutable state. Operations whose result depends on current TimingNode state return only after that operation has executed on the node's ordered path. `Conductor` is not a mandatory hop for TimingNode-scoped work.
+The gateway exposes application-wide information such as `version()` and capabilities.
+Application-wide operations delegate to `Conductor` where lifecycle or cross-node
+coordination is required. Node-scoped presentation work is exposed through a
+`TimingNodeProxy` so operations such as `open(...)` are explicitly attached to a
+TimingNode-facing object rather than appearing as context-free methods on the gateway.
+`Conductor` is not a mandatory hop for TimingNode-scoped work.
+```
+
+```{arch} TimingNodeProxy
+:id: TimingNodeProxy
+
+`TimingNodeProxy` is the Application-layer boundary object for one addressed
+`TimingNode`. It exposes presentation-facing node status, commands, bounded LogBook
+queries and post-fact events while keeping the Domain `TimingNode` itself behind the
+Application boundary.
+
+The proxy does not own mutable TimingNode state. It maps presentation intent to the
+TimingNode's typed ordered operations and maps node status to presentation-facing
+`ApplicationStatus`. Normal OPEN is `open(LocationId)`; there is no separate
+Set Location presentation operation. Automatic registration uses
+`applyAutomaticRegistration(action, registrationId, time)`; the current implemented
+action is `ADD`, while later actions require their own defined TimingData semantics.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
@@ -1335,7 +1357,7 @@ Working rules:
 
 The event mechanism is deliberately local and simple. The generic `Event<T>`
 mechanism is a small reusable Platform primitive; a producing component owns a concrete
-event such as `newTimingDataEvent : Event<TimingData>` and interested listeners
+event such as `timingDataCommittedEvent : Event<TimingData>` and interested listeners
 subscribe directly to that event. There are no string topics, central event
 dispatcher or global static bus. Emitting an event reports that a fact has
 already occurred; it does not transfer ownership of TimingNode state.
@@ -1378,13 +1400,14 @@ mandatory `TimingNode extends ActiveObject` class hierarchy.
 
 External ingress still keeps its functional routing responsibilities:
 
-- `PresentationGateway` exposes presentation-facing operations, reads, metadata/capabilities and events;
+- `PresentationGateway` exposes application-wide presentation metadata/capabilities and node proxies;
+- `TimingNodeProxy` exposes node-scoped presentation operations, reads and events;
 - configured device/antenna mappings resolve device observations to TimingNodes;
 - `UpstreamMessageRouter` resolves system-level versus TimingNode-targeted
   upstream messages;
 - scheduled work retains its owning target.
 
-There is no central dispatcher through which commands and queries must pass. Components may expose local typed events such as `newTimingDataEvent` for post-fact notification; those events are not the owner or execution path for TimingNode state.
+There is no central dispatcher through which commands and queries must pass. Components may expose local typed events such as `timingDataCommittedEvent` for post-fact notification; those events are not the owner or execution path for TimingNode state.
 
 <a id="fig-si01-04"></a>
 ![SI-01 runtime dispatch process](../../../raw/prod/docs/assets/architecture/runtime-dispatch-process.svg)
