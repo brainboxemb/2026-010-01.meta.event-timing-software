@@ -1389,8 +1389,39 @@ TimingDataProvider
 The factory creates the concrete in-memory TimingData objects. The codec
 encodes/decodes the same profile family.
 The built-in default/reference codec uses Jackson's streaming API only; JSON Lines
-record framing, durable append and incomplete-tail recovery remain store responsibilities. Provider discovery and configuration
-remain bootstrap/infrastructure concerns.
+record framing, durable append and incomplete-tail recovery remain store responsibilities.
+Provider discovery and configuration remain bootstrap/infrastructure concerns.
+
+A `TimingDataCodec` is a **configured translator instance**. Its per-record API
+remains deliberately small:
+
+```java
+byte[] encode(TimingData data)
+TimingData decode(byte[] encodedRecord)
+```
+
+Do not add event date, time zone, deployment configuration or UI context to those
+method calls. A provider that needs translation context receives and validates it
+at provider/codec creation time, and the returned codec captures the resolved
+immutable values it needs.
+
+For example, a profile that serializes registration time as local time-of-day
+may capture an event-date/day-selection rule and a `ZoneId` or fixed
+`ZoneOffset`. If the profile cannot resolve a local time uniquely (for example
+a daylight-saving overlap) or cannot represent the semantic instant within its
+configured day scope, encode/decode fails according to that profile rather than
+guessing from the host clock.
+
+This translation context is distinct from `TimingDataFactory.Context`.
+`TimingDataFactory.Context` contains semantic values of one record; provider
+configuration explains how those values are represented externally.
+
+The current `TimingDataProvider.createCodec()` shape does not force a
+configuration mechanism by itself. When generic provider discovery/configuration
+is implemented, bootstrap must construct or configure the provider before asking
+it for a codec. If implementation evidence later requires a typed provider
+creation/configuration object, that type belongs at the provider/bootstrap
+boundary, not in `TimingDataCodec.encode/decode`.
 
 The provider therefore does more than representation translation, but it still
 does not own TimingNode business rules. It chooses the concrete TimingData
