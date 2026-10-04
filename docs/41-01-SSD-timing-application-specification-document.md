@@ -74,21 +74,21 @@ Identifiers in this review candidate are intended to remain stable. A later capa
 
 ```{req} Start from external configuration
 :id: SI01-REQ-001
-:status: R
+:status: D
 
 SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
 ```
 
 ```{req} Clean process shutdown
 :id: SI01-REQ-002
-:status: R
+:status: D
 
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
 ```
 
 ```{req} Minimal TimingSystem / TimingNode composition
 :id: SI01-REQ-003
-:status: R
+:status: D
 :derived_from: UC-001, UC-014
 
 The first executable shall support configuration of at least
@@ -103,14 +103,14 @@ IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and h
 
 ```{req} Single application build identity
 :id: SI01-REQ-010
-:status: R
+:status: D
 
 A running SI-01 process shall expose one authoritative application build/version identity derived from the produced application artifact/build.
 ```
 
 ```{req} Consistent identity across interfaces
 :id: SI01-REQ-011
-:status: R
+:status: D
 
 The build/version identity exposed through supported first-executable operator/application interfaces shall represent the same underlying build identity rather than interface-specific copies.
 ```
@@ -121,7 +121,7 @@ The semantic build identity is defined by IF-03. The current v1 wire fields are 
 
 ```{req} Authoritative current status snapshot
 :id: SI01-REQ-020
-:status: R
+:status: D
 :derived_from: UC-001, UC-008
 
 SI-01 shall maintain an authoritative current application
@@ -130,7 +130,7 @@ status model that is separate from log output.
 
 ```{req} Minimum first-executable status content
 :id: SI01-REQ-021
-:status: R
+:status: D
 :derived_from: UC-001, UC-008, UC-020
 
 The first-executable status shall expose enough information
@@ -149,7 +149,7 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 
 ```{req} Equivalent status semantics across first interfaces
 :id: SI01-REQ-022
-:status: R
+:status: D
 :derived_from: UC-008
 
 Local console, remote-shell and IF-03
@@ -161,7 +161,7 @@ model.
 
 ```{req} Status-change publication
 :id: SI01-REQ-023
-:status: R
+:status: D
 
 SI-01 shall publish first-executable status-change information through IF-03 live-event delivery from the same authoritative status model used for status queries.
 ```
@@ -172,7 +172,7 @@ On connection/reconnection the client shall be able to recover a complete author
 
 ```{req} Shared application behaviour
 :id: SI01-REQ-030
-:status: R
+:status: D
 
 Transport-specific adapters shall invoke shared SI-01
 application commands/queries rather than implementing
@@ -181,7 +181,7 @@ independent copies of version/status behaviour.
 
 ```{req} Externally testable executable
 :id: SI01-REQ-031
-:status: R
+:status: D
 
 The produced SI-01 application shall support ST-1
 verification as a separate running process through its
@@ -191,14 +191,14 @@ internal application/domain state.
 
 ```{req} Safe default network exposure
 :id: SI01-REQ-032
-:status: R
+:status: D
 
 The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
 ```
 
 ```{req} Compatible first API evolution
 :id: SI01-REQ-033
-:status: R
+:status: D
 
 SI-01 shall implement IF-03 so compatible additions can be introduced without silently changing existing operation or value semantics; breaking interface semantics shall require a new major interface version or an explicitly documented compatible migration.
 ```
@@ -207,7 +207,7 @@ SI-01 shall implement IF-03 so compatible additions can be introduced without si
 
 ```{req} Operational location and lifecycle
 :id: SI01-REQ-040
-:status: R
+:status: D
 :derived_from: UC-001, UC-002, UC-008, UC-009
 
 SI-01 shall expose the current operational `LocationId` and `OPEN`/`CLOSED`
@@ -220,7 +220,7 @@ operation before OPEN.
 
 ```{req} Accepted semantic registration operation
 :id: SI01-REQ-041
-:status: R
+:status: D
 :derived_from: UC-003, UC-009
 
 SI-01 shall provide one application/domain operation for an already-accepted
@@ -233,7 +233,7 @@ defined TimingData semantics before they are supported.
 
 ```{req} Committed registration observability
 :id: SI01-REQ-042
-:status: R
+:status: D
 :derived_from: UC-003, UC-009, UC-011
 
 SI-01 shall make committed registration TimingData observable through current
@@ -243,7 +243,7 @@ as committed state.
 
 ```{req} Capability-gated dev auto-reg
 :id: SI01-REQ-043
-:status: R
+:status: D
 :derived_from: UC-009
 
 The dev auto-reg control shall be usable only when
@@ -255,7 +255,7 @@ LocationId or source identity.
 
 ```{req} Reconnect rebuild before live presentation
 :id: SI01-REQ-044
-:status: R
+:status: D
 :derived_from: UC-009
 
 After IF-03 reconnect, an engineering/operator client shall be able to rebuild
