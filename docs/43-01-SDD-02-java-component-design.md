@@ -830,10 +830,10 @@ At most one lifecycle operation for one manager executes at a time, while unrela
 managers/capabilities may make progress on other executor workers.
 
 The shared executor itself is bounded and owned by runtime/infrastructure composition.
-Provider operations use explicit timeouts/cancellation policy so a stuck reader does not
-consume executor capacity indefinitely. Submitting more control work than the configured
-bound accepts must produce a visible overload/failure result rather than an unbounded
-queue.
+It is not used by TagProcessor or the TimingNode worker. Provider operations use explicit
+timeouts/cancellation policy so a stuck reader does not consume executor capacity
+indefinitely. Submitting more control work than the configured bound accepts must produce
+a visible overload/failure result rather than an unbounded queue.
 
 Startup/runtime callers use result-bearing manager operations when they must know whether
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
@@ -916,6 +916,9 @@ cannot fill the executor queue with arbitrary numbers of tiny persistence tasks.
 Required behaviour:
 
 - observation callback performs only a bounded/non-blocking buffer offer;
+- one sink keeps at most one drain job queued or running; new observations go only into
+  that sink's bounded local buffer;
+- a drain job processes a bounded batch before returning to the shared I/O executor;
 - stored records preserve the immutable observation values exactly enough for diagnostics;
 - queue-full/drop count is observable;
 - storage/write failures are observable;
@@ -1098,6 +1101,40 @@ probed/initialized, inventory can be enabled/disabled and deterministic
 It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
 specific capability is deterministic control of the decoded observations it publishes.
 
+## Registration work and other runtime work
+
+The normal automatic-registration flow is:
+
+```text
+antenna/provider callback
+  -> Event<TagObservation>
+  -> TagProcessor
+  -> TimingNode.submit(...)
+  -> TimingNode worker
+  -> TimingDataPersistence.append(...)
+  -> LogBook.add(...)
+  -> timingDataCommittedEvent.emit(...)
+```
+
+The first four steps must stay short and must not write files, send network data or wait
+for presentation/backoffice work. `TimingNode.submit(...)` performs bounded queue
+admission and returns to TagProcessor without waiting for the TimingData commit.
+
+The TimingNode worker is allowed to wait for the required
+`TimingDataPersistence.append(...)` call because that local durable write is part of the
+TimingData commit. After the record has been written and added to LogBook, short local
+post-commit listeners may run synchronously on the TimingNode worker.
+
+A post-commit listener that needs socket I/O, retry, backoffice delivery or another
+potentially slow operation must hand that work to its own bounded delivery mechanism and
+return. Synchronous `Event<T>` delivery is therefore allowed; Step-5 measurements check
+whether listener execution time materially increases TimingNode queue wait or queue
+high-water.
+
+Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
+does not sit between TagProcessor and `TimingNode.submit(...)`. Losing raw diagnostic
+records does not change whether a TimingData registration is accepted or committed.
+
 ## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
@@ -1127,6 +1164,20 @@ therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform primit
 Shared executor workers are named for the executor/pool role instead, for example
 `tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
 over its lifetime. Threads owned by the JDK or external libraries keep their own names.
+
+### Thread priority
+
+Step 5 starts with normal/default Java thread priority. D04 does not require a
+high-priority TimingNode, antenna or filtering thread.
+
+Measure TimingNode queue wait, execution time, persistence time and queue high-water
+before changing thread priority. If measurements show that a project-owned thread is
+regularly delayed by competing work, a role-specific priority change may be tested on the
+development host and later repeated on the target JVM/OS.
+
+Correct registration behaviour must not depend on Java thread priority. Java priority is
+only a scheduler hint and may behave differently between the development host and the
+Raspberry Pi target.
 
 ## TimingNode active-object execution and persistence
 
@@ -1341,9 +1392,12 @@ control.
 
 A `ThreadPoolExecutor` configured with one thread and an
 `ArrayBlockingQueue` can implement the same semantics. It remains a valid
-alternative, especially if several TimingNodes share a small executor.
-The dedicated `SerialWorker` is chosen for transparency, not because the
-JDK executor framework is unsuitable.
+alternative. A later multi-TimingNode design may also share a small
+domain-worker executor between TimingNodes if it preserves the per-node rules below.
+
+That domain-worker executor is not the shared blocking I/O executor used for antenna
+control and diagnostic file work. The current dedicated `SerialWorker` is chosen for
+transparency, not because the JDK executor framework is unsuitable.
 
 If the implementation uses a shared executor, these invariants remain:
 
