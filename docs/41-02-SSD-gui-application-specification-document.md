@@ -7,9 +7,10 @@ Software item: **SI-02 — Desktop GUI Application**
 
 ## Purpose
 
-This SSD is intentionally architecture-heavy today because SI-02 implementation has not
-started. Software-item requirements will be promoted into this same document as the GUI
-capability approaches implementation; no separate requirements/architecture document pair is planned.
+This combined SSD currently contains a working SI-02 architecture direction and no
+stable promoted SI-02 requirement set. Requirements are added to this same document as
+they mature; a separate SRD/SAD pair is not required unless that split later has a clear
+engineering benefit.
 
 ## Terms and abbreviations
 
@@ -42,7 +43,7 @@ the working specification/architecture direction until that requirement slice is
 
 Software item: **Desktop GUI Application** (SI-02)
 
-This Software Architecture Document describes the initial architecture direction for the planned desktop GUI. The GUI is a separate software item from the **Timing Point Application** (SI-01) and communicates with it through system-defined network interfaces.
+This SSD describes the working architecture direction for the Desktop GUI Application. The GUI is a separate software item from the **Timing Point Application** (SI-01) and communicates with it through system-defined network interfaces.
 
 The GUI provides an operator-facing desktop application for monitoring and controlling the timing application.
 
@@ -62,7 +63,7 @@ Software item 02
 Desktop GUI Application
         |
         | system-defined application-control/status interface
-        | HTTP/JSON + WebSocket are current architecture candidates
+        | current IF-03 HTTP/JSON + WebSocket realization
         v
 Software item 01
 Timing Point Application
@@ -77,12 +78,12 @@ The transport and message contracts ultimately belong in a system-level ISD rath
 ## Relationship to the current JavaFX test client
 
 The current JavaFX test client is an engineering/manual-integration tool for IF-03. It is
-**not** the first implementation of SI-02 and does not select the GUI toolkit, runtime or
-packaging for SI-02.
+**not SI-02** and does not select the GUI toolkit, runtime or packaging for SI-02.
 
-## First increment
+## Minimum capability baseline
 
-The first GUI increment should remain deliberately small and validate the software-item/interface boundary:
+The minimum SI-02 capability baseline is deliberately small and validates the
+software-item/interface boundary:
 
 - configure/select a timing-application endpoint;
 - connect/disconnect;
@@ -93,11 +94,13 @@ The first GUI increment should remain deliberately small and validate the softwa
 - show stale/disconnected state explicitly;
 - reconnect cleanly after temporary network loss.
 
-This is enough to verify that the GUI can operate against a timing application running on a Raspberry Pi before adding operational timing controls.
+This baseline is sufficient to verify that the GUI can operate against a Timing Point
+Application across the supported network boundary without requiring operational timing
+controls to be present in the same capability set.
 
-## Later operator capabilities
+## Additional operator capabilities
 
-As system requirements and IDDs mature, the GUI may add:
+As allocated system requirements and interface contracts mature, SI-02 may include:
 
 - open/close a timing system;
 - RFID power and reinitialisation controls;
@@ -113,7 +116,7 @@ These operations are handled by the **Timing Point Application** (SI-01). The GU
 ## Operator interface ownership
 
 The **Desktop GUI Application** (SI-02) owns its desktop screen structure, navigation,
-presentation models and interaction design within this SSD and its later detailed design.
+presentation models and interaction design within this SSD and any focused detailed design.
 It is not IF-04.
 
 **IF-04 — Web Interface** is the separate browser/tablet interface exposed directly by
