@@ -97,7 +97,7 @@ one internal `TimingSystem` containing at least one
 represented in application status.
 ```
 
-IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour remains outside this first slice.
+IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
 
 #### Build and version identity
 
@@ -630,9 +630,9 @@ TimingNode-facing object rather than appearing as context-free methods on the ga
 
 `TimingNodeProxy` is the Application-layer boundary object for one addressed
 `TimingNode`. The architectural multiplicity is therefore **1..N TimingNodeProxy
-instances per application composition: one proxy per composed TimingNode**. The current
-Step-4 executable still composes one TimingNode and therefore one proxy; multi-node
-composition does not change the boundary shape. Each proxy exposes presentation-facing
+instances per application composition: one proxy per composed TimingNode**. The default
+executable composition currently instantiates one TimingNode and therefore one proxy;
+multi-node composition does not change the boundary shape. Each proxy exposes presentation-facing
 node status, commands, bounded LogBook queries and post-fact events while keeping the
 Domain `TimingNode` itself behind the Application boundary.
 
@@ -640,8 +640,8 @@ The proxy does not own mutable TimingNode state. It maps presentation intent to 
 TimingNode's typed ordered operations and maps node status to the node-scoped,
 presentation-facing `TimingNodeStatus`. Normal OPEN is `open(LocationId)`; there is no separate
 Set Location presentation operation. Automatic registration uses
-`applyAutomaticRegistration(action, registrationId, time)`; the current implemented
-action is `ADD`, while later actions require their own defined TimingData semantics.
+`applyAutomaticRegistration(action, registrationId, time)`; the implemented action set
+contains `ADD`, while any additional action requires its own defined TimingData semantics.
 ```
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
@@ -1337,14 +1337,14 @@ Stable domain facts behind these views are maintained in `03-domain-baseline.md`
 
 ### Command, query and event model
 
-All presentation transports should converge on one shared application model. The first Java implementation proves this with a deliberately small `PresentationGateway.version()` query rather than a generic messaging framework; future request methods should be added only when a real client use case requires them.
+All presentation transports converge on one shared application model. The Java design uses a deliberately small `PresentationGateway.version()` query rather than a generic messaging framework; request methods are added only when a concrete client use case requires them.
 
 ```text
 local console ----------------+
 remote shell -----------------+
 API HTTP/JSON ---------+--> typed command/query boundary --> application runtime
 API WebSocket <---------+<--------------------------------------------+
-future Web interface ----------+
+optional Web interface --------+
 ```
 
 Working rules:
@@ -1743,15 +1743,15 @@ Keep the data roles simple:
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- future NextUpTeams/StageStartTimes/RaceData persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when NextUpTeams, StageStartTimes or RaceData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 For example, StageStartTimes may be sent again when a TimingNode is opened after
 a reboot, while the separately stored historical snapshots remain useful for
 post-event analysis.
 
-The first implementation can use simple local files; an embedded database is not
-required. SDD-01 defines ordering, commit/visibility and the different persistence
+The persistence architecture permits simple local files and does not require an
+embedded database. SDD-01 defines ordering, commit/visibility and the different persistence
 roles. SDD-02 defines the Java worker and store boundaries.
 
 Practical detailed-design work includes a half-written last TimingData record,
@@ -1906,18 +1906,18 @@ This table intentionally lives in the architecture section of this SSD because t
 
 | Concern | Current direction | Status / next evidence |
 | --- | --- | --- |
-| Java baseline | Java SE 8 is the current SI-01 baseline | accepted for current implementation; verify the selected runtime on the Pi target |
+| Java baseline | Java SE 8 is the current SI-01 baseline | architecture baseline; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
 | Build | Maven | accepted |
-| Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition for the first Java worker and keeps executor implementation replaceable |
-| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline selected; refine first consumer API signatures during implementation |
+| Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition and keeps the executor implementation replaceable |
+| Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
 | Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition initially | working direction; add framework only if complexity justifies it |
 | Logging | SLF4J API in reusable application core; initial executable provider `slf4j-jdk14` / `java.util.logging` | architecture baseline selected; refine handlers/retention when runtime needs are known |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution | file syntax/library and first Java type set still open |
 | Persistence | Domain-owned TimingDataPersistence over generic lower-layer storage; file/database mechanisms do not import Domain/Application types | ordering and visibility in SDD-01; Java storage/persistence split in SDD-02; record contract in IF-05 |
-| API HTTP | JDK `HttpServer` for the first IF-03 request/response slice | A06 baseline selected; transport belongs to the API functional interface |
-| API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | A07 baseline selected; Java 8+, pure Java/NIO and existing SLF4J boundary; keep A06 JDK `HttpServer` unchanged |
+| API HTTP | JDK `HttpServer` for IF-03 request/response | selected transport; belongs to the API functional interface |
+| API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | selected transport; Java 8+, pure Java/NIO and existing SLF4J boundary; keep the HTTP transport separate |
 | Remote shell | Java 8 JDK `ServerSocket`, line-oriented TCP, shared A04 command semantics | A05 development/service baseline selected; one active session, reconnect allowed; SSH/Telnet/authentication deferred |
 | Upstream messaging | semantic ports + socket test adapter + RabbitMQ production-shaped adapter | architecture direction established; implementation detail deferred |
 | Test doubles | public controllable stubs through the same supported ports | established direction |
