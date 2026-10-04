@@ -316,7 +316,7 @@ Working direction:
 4. transport acknowledgement/reconciliation advances pending state;
 5. failure remains pending and visible through status.
 
-The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules belong to later requirements/ISD/IDD/detail design.
+The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules remain open and belong to their owning requirements, ISD/IDD and detailed design.
 
 ## Status model
 
@@ -343,7 +343,7 @@ BackofficeStatus
 
 For RabbitMQ, connection status can additionally expose broker/authentication/recovery information. For socket testing, it can expose connected/disconnected peer state.
 
-## Java package and future artifact placement
+## Java package and artifact boundaries
 
 Working package direction inside the reusable application core:
 
@@ -360,14 +360,15 @@ io.github.brainboxemb.eventtiming.comm.rabbitmq
 
 This does **not** require three Maven libraries.
 
-A future `event-timing-comm-rabbitmq` (or similarly named) artifact becomes useful when, for example:
+Extract an `event-timing-comm-rabbitmq` (or similarly named) artifact only when
+one or more of these boundaries become real:
 
 - several applications need RabbitMQ independently;
 - the RabbitMQ client dependency should be optional and excluded from non-RabbitMQ applications;
 - lifecycle/release ownership needs an independent boundary;
 - public/private implementation ownership requires extraction.
 
-Until such evidence exists, clean package boundaries are sufficient and make later extraction straightforward.
+Without such evidence, clean package boundaries are sufficient and keep extraction straightforward.
 
 ## Public/private boundary
 
@@ -440,7 +441,7 @@ These profiles complement unit/component tests and Pi Zero/hardware-in-the-loop 
 
 RabbitMQ is a good candidate for a containerised integration dependency because it is a real external service with meaningful connection and recovery behaviour.
 
-A future implementation/reference application can provide a small Compose environment:
+The integration/reference test environment may provide a small Compose environment:
 
 ```text
 compose.yaml
