@@ -1900,6 +1900,32 @@ used by the built-in implementation. IF-11 owns provider selection in deployment
 configuration; the concrete external-JAR packaging/search path remains a detailed
 implementation concern.
 
+### Runtime execution and target-resource architecture
+
+SI-01 is designed for constrained Raspberry Pi-class targets as well as development
+hosts. Runtime resource rules therefore apply across component boundaries rather than
+belonging to one Java helper class:
+
+- keep each TimingNode work queue bounded;
+- prefer explicit bounded queues over hidden or unbounded executor queues;
+- keep contained Domain state passive and single-writer where practical;
+- keep concrete TimingData values immutable after creation;
+- avoid routine LogBook list copies or deep copies when direct bounded traversal is
+  sufficient;
+- introduce reusable scratch storage, compact indexes or incremental derived state only
+  when measurement demonstrates a concrete benefit;
+- keep blocking network/retry work behind capability-specific output boundaries rather
+  than on the TimingNode execution lane;
+- move analysis-store writes off the TimingNode lane only when measurement shows that
+  synchronous writes cause unacceptable delay;
+- measure queue high-water, storage latency, LogBook/query cost, heap/GC behaviour and
+  scheduling/CPU effects before increasing concurrency or adding runtime complexity.
+
+These are software-item architecture constraints, not a prescription for one particular
+Java executor implementation. SDD-02 defines the current Java realization of the
+TimingNode execution lane; the verification/environment documents define how runtime
+characterization evidence is collected.
+
 ### Technology decision register
 
 This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Timing Point Application** (SI-01) architecture.
