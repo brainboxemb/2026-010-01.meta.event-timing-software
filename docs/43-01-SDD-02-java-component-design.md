@@ -48,7 +48,7 @@ Keep these concepts distinct:
 
 A separate artifact is justified only by a real consumer, reuse, dependency, lifecycle, deployment, ownership, public/private, release or versioning boundary.
 
-## Initial Maven reactor
+## Maven reactor
 
 The current reactor has two reusable artifacts plus one executable application.
 The shared TimingData library artifact is justified by the independent SI-01 and
@@ -192,7 +192,7 @@ fields shared by every TimingData variant. Do not mirror the semantic type tree
 with `AutomaticRegistrationContext`, `ManualRegistrationContext` or nested
 per-variant context types.
 
-For example, the first TimingNode implementation is grouped as:
+The TimingNode implementation is grouped as:
 
 ```text
 application/
@@ -253,7 +253,7 @@ io/
   storage/
     AppendOnlyRecordStore.java             generic opaque-record storage contract
     FileAppendOnlyRecordStore.java         LF framing • file append/recovery
-    # later generic lower-layer storage mechanisms only as real needs appear
+    # generic lower-layer storage mechanisms only as real needs appear
 
 platform/
   execution/
@@ -402,7 +402,7 @@ without redefining field semantics.
 
 `UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
-If the TimingNode capability later grows into several cohesive areas, deeper
+If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
 Do not create those packages before the corresponding code exists.
 
@@ -509,7 +509,7 @@ timing-point-core.jar
 
 timing-point-app.jar
   -> selects exactly one SLF4J provider
-  -> initial provider: slf4j-jdk14
+  -> default provider: slf4j-jdk14
   -> delegates SLF4J records to java.util.logging
   -> starts/stops core-provided Logging
   -> independently starts/stops optional LoggingServer
@@ -520,7 +520,7 @@ Working rules:
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
 - provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
 - the executable application chooses and configures the provider/backend before `runtime.Composition` starts normal application composition;
-- the initial Java-8/Pi-Zero baseline uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
+- the default Java-8 application uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
 - `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
 - `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
@@ -534,7 +534,7 @@ Working rules:
 - `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
 - the optional diagnostic listener is a logging-specific engineering facility. The test client initiates its TCP connection, log delivery is best effort, and network failure must not be allowed to block ordinary log publishers;
 - the live diagnostics protocol is separate from the IF-03 status/event wire model;
-- another executable/private consumer may select another compatible provider later without changing core/domain source;
+- another executable/private consumer may select another compatible provider without changing core/domain source;
 - exactly one provider should be present in a runtime composition;
 - provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
 
@@ -543,7 +543,7 @@ application core to provide the default JUL logging infrastructure and its confi
 
 ## Default executable application
 
-`timing-point-app` is the first executable consumer of the application-core library.
+`timing-point-app` is the executable consumer of the application-core library.
 
 Its executable package is deliberately thin:
 
@@ -611,7 +611,7 @@ timing-point-app.jar
 
 `timing-point-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
 
-The target executable startup/configuration flow is:
+The executable startup/configuration flow is:
 
 ```text
 main()
@@ -638,7 +638,7 @@ main()
 
 The current `runtime.config.YamlLoader` implements only the explicit
 YAML subset already needed by the running application. Profile/platform/mode
-resolution is the next configuration responsibility; the architecture does not
+resolution is part of the configuration architecture but is not yet implemented; the architecture does not
 require a new public Java type for each source before that behaviour is
 implemented.
 
@@ -719,8 +719,8 @@ does not live in the application layer or in global presentation common code.
 
 The local class names deliberately omit the `Api` prefix because the enclosing `presentation.interfaces.api` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
 
-The first WebSocket implementation uses `Java-WebSocket 1.6.0` in the reusable
-application core and keeps the accepted A06 JDK HTTP server unchanged rather than replacing
+The WebSocket transport uses `Java-WebSocket 1.6.0` in the reusable
+application core and keeps the JDK HTTP transport unchanged rather than replacing
 both transports with a larger combined stack.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
@@ -749,7 +749,7 @@ TimingData codec/provider reuse is now a real cross-executable requirement. This
 preserves the external-client boundary while allowing SI-01 and the Development
 Client to exercise the exact same public or proprietary TimingData translator.
 
-The Development Client remains development/test support rather than the planned
+The Development Client remains development/test support rather than the
 SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared Presentation-facing application boundary remains small:
@@ -757,6 +757,33 @@ The shared Presentation-facing application boundary remains small:
 `PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`.
 The proxy obtains current node status through the TimingNode query/ownership
 boundary; neither object assembles status by reading node-owned fields directly.
+
+### Runtime thread ownership and naming
+
+Project-owned SI-01 runtime threads use the diagnostic name form
+`tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
+threads easy to separate from JDK, Maven/JGit and third-party library threads in
+a debugger, profiler or thread dump. The owner abbreviations used by the current
+runtime are `prl` (Presentation), `dml` (Domain), `inf` (Infrastructure) and
+`run` (Runtime/composition).
+
+Examples:
+
+```text
+tp-prl-console
+tp-prl-api-http
+tp-prl-remote-shell
+tp-inf-live-log
+tp-inf-live-log-writer
+tp-run-shutdown
+tp-dml-node-<NodeId>
+```
+
+Name a thread for the functional component that owns the work, not merely the
+low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
+therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
+primitive. The final suffix is the configured NodeId, not a worker/index number.
+Threads owned by the JDK or external libraries keep their own names.
 
 ## TimingNode active-object execution and persistence
 
@@ -894,32 +921,7 @@ outcome semantics differ from definite submission rejection.
 ### SerialWorker design
 
 The SerialWorker is a small composed worker backed by one bounded queue and one
-dedicated thread. Its public result types make the two result moments explicit:
-
-Project-owned SI-01 runtime threads use the diagnostic name form
-`tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
-threads easy to separate from JDK, Maven/JGit and third-party library threads in
-a debugger, profiler or thread dump. The owner abbreviations used by the current
-runtime are `prl` (Presentation), `dml` (Domain), `inf` (Infrastructure) and
-`run` (Runtime/composition).
-
-Examples:
-
-```text
-tp-prl-console
-tp-prl-api-http
-tp-prl-remote-shell
-tp-inf-live-log
-tp-inf-live-log-writer
-tp-run-shutdown
-tp-dml-node-<NodeId>
-```
-
-Name a thread for the functional component that owns the work, not merely the
-low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
-therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
-primitive. The final suffix is the configured NodeId, not a worker/index number.
-Threads owned by the JDK or external libraries keep their own names.
+dedicated thread. Its result types make the two result moments explicit:
 
 ```java
 final class SerialWorker implements AutoCloseable {
@@ -996,8 +998,8 @@ control.
 
 A `ThreadPoolExecutor` configured with one thread and an
 `ArrayBlockingQueue` can implement the same semantics. It remains a valid
-alternative, especially if several TimingNodes later share a small executor.
-The first dedicated `SerialWorker` is chosen for transparency, not because the
+alternative, especially if several TimingNodes share a small executor.
+The dedicated `SerialWorker` is chosen for transparency, not because the
 JDK executor framework is unsuitable.
 
 If the implementation uses a shared executor, these invariants remain:
@@ -1076,7 +1078,7 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-A high-frequency status/read path may later use a worker-published immutable
+A high-frequency status/read path may use a worker-published immutable
 snapshot when measurement justifies it. Such a published snapshot is an
 explicit read model with known freshness semantics, not permission for callers
 to read TimingNode-owned mutable objects directly.
@@ -1086,7 +1088,7 @@ to read TimingNode-owned mutable objects directly.
 Use a separate persistence boundary for each state type whose history/snapshots
 need to be kept:
 
-| Store | First purpose | Commit role |
+| Store | Purpose | Commit role |
 | --- | --- | --- |
 | `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
 | per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
@@ -1124,7 +1126,7 @@ the worker can hand an immutable snapshot to a bounded storage executor. Do not
 add one thread per state object and do not introduce an unbounded background
 queue.
 
-For the registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any later asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
+For the registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
 
 For example, a StageStartTimes update may be:
 
@@ -1230,24 +1232,13 @@ The current dedicated-thread realization is:
   -> store dependencies
 ```
 
-If a later multi-node application shows that one thread per node is too
+If a multi-node composition shows that one thread per node is too
 expensive, multiple SerialWorkers may share a small executor while preserving
 the per-node invariants above.
 
-### Raspberry-Pi implementation rules
-
-For the initial Pi-oriented runtime:
-
-- keep each TimingNode work queue bounded;
-- prefer explicit bounded queues over hidden/unbounded executor queues;
-- keep contained domain state passive and single-writer where practical;
-- keep concrete TimingData values immutable after creation;
-- avoid routine LogBook list copies or deep copies when direct bounded traversal is sufficient;
-- consider reusable scratch storage, compact indexes or incremental derived state only when measurement shows a clear benefit;
-- move blocking network/retry work behind capability-specific output boundaries;
-- add asynchronous analysis-store writing only when measurement justifies it;
-- measure queue high-water, store latency, LogBook copy time, heap/GC behaviour
-  and query latency before increasing concurrency.
+The cross-cutting bounded-resource, single-writer, immutability and
+measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specifies the
+Java realization only where a concrete component boundary requires it.
 
 ## Shared TimingData library and concrete profiles
 
@@ -1257,7 +1248,7 @@ owns the semantic interfaces and value types that every supported TimingData
 profile must implement; it does **not** require one concrete record class for all
 profiles.
 
-The first traced Java semantic model is intentionally small:
+The traced Java semantic model is intentionally small:
 
 ```text
 shared/timing-data
@@ -1416,7 +1407,7 @@ configuration explains how those values are represented externally.
 The current `TimingDataProvider.createCodec()` shape does not force a
 configuration mechanism by itself. When generic provider discovery/configuration
 is implemented, bootstrap must construct or configure the provider before asking
-it for a codec. If implementation evidence later requires a typed provider
+it for a codec. If implementation evidence requires a typed provider
 creation/configuration object, that type belongs at the provider/bootstrap
 boundary, not in `TimingDataCodec.encode/decode`.
 
@@ -1520,7 +1511,7 @@ Create additional artifacts only when a real boundary requires them. Candidate e
 - RabbitMQ/messaging I/O;
 - Linux/Raspberry-Pi platform support;
 - public/private RFID/CAN I/O implementations;
-- separately versioning `event-timing-data` if binary compatibility/release evidence later requires an independent release cycle;
+- separately versioning `event-timing-data` if binary compatibility/release evidence requires an independent release cycle;
 - reusable test support.
 
 Extraction is preferred over speculative libraries: keep package/responsibility boundaries clean enough that a proven boundary can be split without redesign.
@@ -1548,7 +1539,7 @@ Useful automated rules may include:
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
 - exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
-- concrete immutable TimingNode read-view representation and compact LogBook indexing required by the first ranking/query implementation;
+- concrete immutable TimingNode read-view representation and compact LogBook indexing required by the ranking/query implementation;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public core/provider contracts and private implementations;
