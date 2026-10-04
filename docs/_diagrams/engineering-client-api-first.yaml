@@ -147,7 +147,7 @@ nodes:
     layout: {x: 380, y: 509, w: 180, h: 68}
 
   - id: reg-time
-    label: Time
+    label: Time (UTC)
     subtitle: "15:33:00"
     kind: wireframe-control
     notation: wireframe-input
@@ -167,7 +167,7 @@ nodes:
 
   - id: raw-request-note
     label: Wire value
-    subtitle: "N0001 @ canonical UTC timestamp"
+    subtitle: "N0001 @ entered UTC time; no host-zone shift"
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 1010, y: 509, w: 260, h: 68}
