@@ -72,11 +72,11 @@ nodes:
     layout: {x: 55, y: 232, w: 1245, h: 44}
 
   - id: api-summary
-    label: API / selected TimingNode
-    subtitle: "timing-node-01  |  state OPEN  |  LocationId 24"
+    label: API / application identity
+    subtitle: "application  |  version  |  API version"
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 55, y: 284, w: 1245, h: 100}
+    layout: {x: 55, y: 284, w: 615, h: 100}
 
   - id: get-version
     label: Version
@@ -180,7 +180,7 @@ nodes:
     items:
       - "Time     | Type | TeamID | Code |"
       - "12:00:00 | AUTO | -      |      | [trash]"
-    layout: {x: 685, y: 400, w: 615, h: 180}
+    layout: {x: 685, y: 284, w: 615, h: 205}
 
   - id: history
     label: LogBook / committed TimingData
@@ -190,7 +190,7 @@ nodes:
     items:
       - "Seq | Type     | Code | Location | Registration | Effective"
       - "1   | AUTO_REG | ADD  | 24       | N0001        | 2026-10-01T10:00:00Z"
-    layout: {x: 685, y: 595, w: 615, h: 195}
+    layout: {x: 685, y: 505, w: 615, h: 285}
 
   - id: raw-response
     label: Raw response / selected LogBook record
