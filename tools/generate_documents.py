@@ -46,6 +46,7 @@ ENGINEERING_DOCUMENTS = [
     "50-SDE-01-software-development-environment.md",
     "50-SDE-02-java-build-test-toolchain.md",
     "50-SDE-03-development-client.md",
+    "50-SDE-04-runtime-characterization.md",
 ]
 
 ARCHITECTURE_DOCUMENTS = [
