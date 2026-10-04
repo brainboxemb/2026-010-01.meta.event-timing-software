@@ -1885,26 +1885,47 @@ is part of the committed-domain-record contract and remains ordered with commit 
 LogBook visibility. A raw observation log is not TimingData, is not authoritative race
 state and does not participate in registration commit success.
 
-After decoding, generic SI-01 tag processing is distinct from vendor protocol handling:
+After decoding, generic SI-01 tag processing is distinct from vendor protocol handling.
+Repeated reads of one physical passage are first aggregated as one observation burst.
 
 ```text
 Antenna Event<TagObservation>
           |
           v
+   observation burst per TagId
+     - update strongest RSSI/timestamp
+     - close after configured quiet time
+     - force close at configured maximum burst duration
+          |
+          v
       TagProcessor
-        - RSSI filter
-        - duplicate/debounce suppression
+        - minimum-RSSI decision on strongest observation
         - TagId -> RegistrationId mapping
+        - registration duplicate suppression
           |
           v
       TimingNode bounded submission
 ```
 
-RSSI filtering and duplicate-registration suppression are Timing Point Application input
-policy. Their thresholds/windows are configuration/profile decisions and are applied after
-the decoded observation boundary. The processor must remain safe when observations from
-multiple antennas arrive concurrently and must not add an unbounded worker merely to
-serialize callbacks.
+The absence of a new observation is significant: once no observation for that TagId has
+arrived during the configured quiet timeout, the open burst is closed and its selected
+candidate continues immediately to filtering/mapping/admission. Registration therefore
+does not depend on a later tag callback arriving.
+
+A maximum burst duration prevents a continuously visible tag from postponing processing
+indefinitely. When that maximum expires, the current burst is closed even if observations
+continue. A subsequent observation may open a new burst, while the longer
+registration-duplicate window prevents an already accepted RegistrationId from being
+registered again too soon.
+
+Burst aggregation and registration duplicate suppression solve different problems.
+The selected event timestamp is the timestamp of the observation with the highest RSSI in
+the closed burst. For equal maximum RSSI, the first observation at that maximum is kept.
+
+Burst deadlines and the registration duplicate window use monotonic elapsed time.
+Thresholds/windows are configuration/profile decisions. The processor must remain safe
+when observations from multiple antennas arrive concurrently and must not add an unbounded
+worker merely to serialize them.
 
 `TagId -> RegistrationId` uses a narrow configured mapper. The mapper may be a
 deterministic transformation, provider/profile rule or reference-data-backed lookup. For a
