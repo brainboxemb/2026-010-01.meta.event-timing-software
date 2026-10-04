@@ -326,9 +326,13 @@ immutable technical history:
 
 The two right-hand views are deliberately not duplicates. **Registrations** is a
 presentation projection intended to resemble normal timing use: it shows local clock
-time, RegistrationId, a compact **A/M** indicator and logical deletion state. The
-LogBook is the audit/diagnostic view and shows the committed profile records in source
-order with sequence, Type, Code and profile time values.
+time, TeamID, **Code** and logical deletion state. Current registration codes include
+`AUTO` and `MAN`.
+
+TeamID is an interpreted reference-data value and is not another name for
+`RegistrationId`. Until the applicable RaceData/reference mapping exists, TeamID may
+remain unresolved in the normal view. The technical LogBook retains the actual
+RegistrationId together with committed sequence, Type, Code and profile time values.
 
 For the current default/reference profile the LogBook time remains the canonical
 absolute UTC value. The interpreted Registrations view converts it to normal local clock
