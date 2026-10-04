@@ -210,9 +210,9 @@ than being forced into this happy-path black-box case.
 - the second process run rebuilds the committed record while operational state
   starts CLOSED/no-location.
 
-### VC-ST1-003 — Engineering Client reconnect/resynchronisation integration
+### VC-ST1-003 — Development Client reconnect/resynchronisation integration
 
-```{vc} Engineering Client reconnect/resynchronisation integration
+```{vc} Development Client reconnect/resynchronisation integration
 ---
 id: VC-ST1-003
 verifies: >-
@@ -222,7 +222,7 @@ verifies: >-
 
 **Purpose**
 
-Verify through the real JavaFX Engineering Client that an external client can
+Verify through the real JavaFX Development Client that an external client can
 resynchronise current status and bounded TimingData history after reconnect/restart,
 buffer later live events during that synchronisation, merge history/live overlap
 by the Node ID + sequence number and only then present the view as LIVE.
@@ -234,14 +234,14 @@ LogBook persistence or restart recovery already covered by `VC-ST1-002`.
 
 - packaged SI-01 application started with the dedicated Step-4 demo
   configuration/storage;
-- JavaFX Engineering Client started independently on Java 17;
+- JavaFX Development Client started independently on Java 17;
 - one deterministic registration `N0001` committed during the first run;
 - public IF-03 plus the supported Remote Shell shutdown path only.
 
 **Procedure**
 
 1. Start SI-01 with empty Step-4 demo storage.
-2. Connect the Engineering Client Timing view.
+2. Connect the Development Client Timing view.
 3. Verify the client shows a syncing/reconnecting state, keeps mutating controls
    disabled during synchronisation and becomes LIVE only after the baseline is ready.
 4. Set Location ID 24, OPEN the TimingNode and commit deterministic auto-reg
