@@ -119,62 +119,7 @@ jobs:
 
       - name: Build native MyST/Sphinx-Needs traceability
         shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf bld/sphinx-needs
-          mkdir -p \
-            bld/sphinx-needs/source/docs/architecture-assets \
-            bld/sphinx-needs/diagrams
-
-          cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
-          cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
-          cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
-          cp docs/41-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
-          cp docs/32-03-ISD-application-control-status.md bld/sphinx-needs/source/docs/
-          cp docs/32-04-ISD-web-interface.md bld/sphinx-needs/source/docs/
-          cp docs/32-05-ISD-timingdata-interchange.md bld/sphinx-needs/source/docs/
-          cp docs/33-05-IDD-timingdata-interchange.md bld/sphinx-needs/source/docs/
-          cp docs/61-01-VTS-timing-application-verification-test-specification.md bld/sphinx-needs/source/docs/
-          cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
-          cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
-
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          for path in Path("bld/sphinx-needs/source/docs").glob("*.md"):
-              text = path.read_text(encoding="utf-8")
-              text = re.sub(
-                  r"(?:\.\./)+raw/prod/docs/assets/architecture/",
-                  "architecture-assets/",
-                  text,
-              )
-              path.write_text(text, encoding="utf-8")
-          PY
-
-          cat > bld/sphinx-needs/source/index.md <<'EOF'
-          # Migration 013 engineering traceability
-
-          ~~~{toctree}
-          :maxdepth: 2
-
-          docs/30-UC-system-use-cases
-          docs/41-01-SSD-timing-application-specification-document
-          docs/32-03-ISD-application-control-status
-          docs/32-04-ISD-web-interface
-          docs/32-05-ISD-timingdata-interchange
-          docs/33-05-IDD-timingdata-interchange
-          docs/61-01-VTS-timing-application-verification-test-specification
-          ~~~
-          EOF
-
-          sphinx-build -W --keep-going -b needs \
-            bld/sphinx-needs/source \
-            bld/sphinx-needs/needs
-
-          sphinx-build -W --keep-going -b html \
-            bld/sphinx-needs/source \
-            bld/sphinx-needs/html
+        run: bash tools/build_native_traceability.sh
 
       - name: Verify native Sphinx reader layout
         shell: bash
@@ -265,45 +210,7 @@ jobs:
         shell: bash
         env:
           SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          set -euo pipefail
-          staging="$RUNNER_TEMP/software-docs-publication"
-          rm -rf "$staging"
-          mkdir -p "$staging/orchestration" "$staging/evidence/traceability/native" "$staging/evidence/traceability/input" "$staging/evidence/portal"
-          cp -a bld/docs/. "$staging/"
-          cp bld/engineering-graph.json "$staging/evidence/traceability/engineering-graph.json"
-          cp bld/engineering-graph-review.md "$staging/evidence/traceability/review.md"
-          cp bld/sphinx-needs/needs/needs.json "$staging/evidence/traceability/needs.json"
-          cp -a bld/sphinx-needs/html/. "$staging/evidence/traceability/native/"
-          cp docs/_sphinx-needs/conf.py "$staging/evidence/traceability/input/conf.py"
-          cp docs/_sphinx-needs/schemas.json "$staging/evidence/traceability/input/schemas.json"
-          cp docs/_sphinx-needs/requirements.txt "$staging/evidence/traceability/input/requirements.txt"
-          cat > "$staging/evidence/traceability/README.md" <<EOF
-          # Engineering graph review evidence
-
-          This is Migration 013 native MyST/Sphinx-Needs production-canary evidence.
-
-          - source revision: $SOURCE_REVISION
-          - authoritative authoring: selected MyST/Sphinx-Needs objects in the event-timing engineering documents
-          - native Sphinx reader: [native/index.html](native/index.html)
-          - Sphinx-Needs export: [needs.json](needs.json)
-          - normalized human review: [review.md](review.md)
-          - normalized graph: [engineering-graph.json](engineering-graph.json)
-          - consumer-owned Needs configuration: [input/conf.py](input/conf.py) · [input/schemas.json](input/schemas.json)
-
-          Requirements own derived_from, design owns satisfies, and verification owns verifies.
-          Sphinx-Needs generates the inverse/backlink context. Diagram object_id values reference the same engineering objects.
-          EOF
-          cp .moon/invocations/software_docs.assemble/moon.log "$staging/orchestration/moon.log"
-          cp .moon/invocations/software_docs.assemble/materialization.json "$staging/orchestration/materialization.json"
-          cp -a bld/engineering-portal/site "$staging/portal"
-          cp bld/engineering-portal/explorer-TimingNode.png "$staging/evidence/portal/explorer-TimingNode.png"
-          cp bld/engineering-portal/workspace-IF05-REQ-007.png "$staging/evidence/portal/workspace-IF05-REQ-007.png"
-          cp bld/engineering-portal/engineering-client-ui.png "$staging/evidence/portal/engineering-client-ui.png"
-          cp bld/engineering-portal/docs/assets/provenance.json "$staging/evidence/portal/provenance.json"
-          cp docs/_portal/mkdocs.yml "$staging/evidence/portal/mkdocs.yml"
-          cp docs/_portal/requirements.txt "$staging/evidence/portal/requirements.txt"
-          cp docs/_portal/hooks/engineering_workspace.py "$staging/evidence/portal/engineering_workspace.py"
+        run: bash tools/stage_documentation_publication.sh
 
       - name: Upload prepared documentation publication
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
