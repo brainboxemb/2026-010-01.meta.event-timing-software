@@ -71,8 +71,8 @@ if provenance["object_count"] != graph["object_count"]:
 if provenance["relation_count"] != graph["relation_count"]:
     raise SystemExit("portal relation count does not match engineering graph")
 expected_tool_eng_docs = {
-    "ref": "7e8f858fda7bb09ea6a2bf96741894be62d7dba8",
-    "sha": "7e8f858fda7bb09ea6a2bf96741894be62d7dba8",
+    "ref": "9e900d24610aaa311c5f241ef4b8b61f196c3b29",
+    "sha": "9e900d24610aaa311c5f241ef4b8b61f196c3b29",
 }
 if provenance["tool_eng_docs"] != expected_tool_eng_docs:
     raise SystemExit(
