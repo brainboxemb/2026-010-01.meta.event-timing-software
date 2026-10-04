@@ -402,7 +402,7 @@ Current status mapping:
 | `403` | `CAPABILITY_NOT_ENABLED` |
 | `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
-| `409` | domain conflict such as `NODE_NOT_CLOSED` or `NODE_NOT_OPEN` |
+| `409` | domain conflict such as `NODE_NOT_OPEN` |
 | `503` | `BUSY`, `UNAVAILABLE`, `INTERRUPTED`, expected operation failure |
 | `504` | `OUTCOME_UNKNOWN` |
 | `500` | unexpected internal interface failure |
