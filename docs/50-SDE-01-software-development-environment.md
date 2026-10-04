@@ -104,13 +104,20 @@ CHANGELOG.md
 
 ### `README.md`
 
-The human entry point. It should normally contain:
+The root README is the concise GitHub-facing entrypoint. It follows the shared
+BrainboxEmb repository-documentation convention while retaining this project's
+specialized software-engineering document structure.
 
-- repository purpose;
-- relationship to the wider software system;
-- build/run/test entry points or links;
-- important document/navigation links;
-- generated-output links where applicable.
+It should quickly answer:
+
+- what this repository is;
+- why a reader should care and who normally uses it;
+- one representative way to use or inspect it;
+- where to read next.
+
+Prefer links to the owning plan/manual/specification/design/verification document over
+copying those documents into the README. For this repository `docs/README.md` is the
+authored-document overview/navigation authority.
 
 ### `AGENTS.md`
 
@@ -321,6 +328,51 @@ The generated documentation set may contain:
 - source commit/provenance metadata.
 
 Generated documents are for review/publication. Their source Markdown remains authoritative.
+
+### Local documentation workflow
+
+From a clean checkout, initialise the exact committed tooling revisions first:
+
+```bash
+./bootstrap.sh
+```
+
+or on Windows:
+
+```powershell
+.\bootstrap.ps1
+```
+
+`project.yml` owns the managed `tool.eng-docs` revision and
+`tools/tool.git-project` is the committed bootstrap gitlink. For local
+documentation work, install the project-controlled Python dependencies after bootstrap:
+
+```bash
+python -m pip install -r tools/requirements-docs.txt
+python -m pip install ./tools/tool.eng-docs
+```
+
+CI follows the same pinned tool path.
+
+### SIP actual-effort snapshot
+
+The committed SIP actual-effort snapshot is a planning input and is not recalculated
+implicitly during every documentation build.
+
+The normal repository workflow is **Actions → Refresh SIP actuals → Run workflow**.
+For local development/debugging:
+
+```bash
+python tools/calculate_sip_actuals.py --through YYYY-MM-DD
+python tools/calculate_sip_actuals.py --through YYYY-MM-DD --update
+```
+
+The calculation is a planning indication derived from merged-PR commits, not time
+registration. Original estimate, actual indication and remaining estimate remain separate
+planning signals.
+
+The GitHub update flow uses repository secret `SNAPSHOT_TOKEN`; update creation requires
+Contents and Pull requests write permission.
 
 ## AI-assisted development environment
 
