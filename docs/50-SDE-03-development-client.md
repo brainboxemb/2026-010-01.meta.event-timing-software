@@ -227,7 +227,7 @@ decisions; this SDE does not turn them into an SI-01 public interface.
 The reviewed tab order is:
 
 ```text
-API | Events | Logs | Terminal
+API | Events | Device Log | Terminal | Client Log
 ```
 
 **API** is the first tab and primary work surface. It combines the useful parts of the
@@ -248,21 +248,20 @@ an engineering tool.
 
 **Events** remains a raw/live IF-03 event inspection surface.
 
-**Logs** has at least two explicit source tabs, in this order:
-
-- **Device Log** — records received from the connected SI-01 `LoggingServer`;
-- **Client Log** — the Development Client's own runtime log.
-
-Each source has its own **current level** and **set level** controls. Device Log changes
-the temporary SI-01 runtime level through `LoggingServer`; Client Log changes only the
-Development Client's local runtime threshold. The two level states are independent.
-
-The sources remain distinguishable in the UI and in exported/copied text. Connecting
-SI-01 logging shall not be required to see, retain or change the level of the client's
-own log.
+**Device Log** is a top-level tab. It shows records received from the connected
+SI-01 `LoggingServer` and has its own **current level** and **set level** controls for the
+temporary SI-01 runtime level.
 
 **Terminal** remains the Remote Shell client. Its connection is controlled from the
 target bar; opening the Terminal tab is not itself a connection side effect.
+
+**Client Log** is the final top-level tab. It shows the Development Client's own runtime
+log and has independent **current level** and **set level** controls for the local runtime
+threshold.
+
+Device Log and Client Log remain independent and distinguishable in the UI and in
+exported/copied text. Connecting SI-01 logging shall not be required to see, retain or
+change the level of the client's own log.
 
 A future Upstream/DebugConnector work surface may add another tab when that public
 engineering capability exists; the API-first layout shall not pre-create domain
