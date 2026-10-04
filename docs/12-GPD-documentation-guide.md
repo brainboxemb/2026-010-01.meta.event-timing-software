@@ -117,6 +117,7 @@ Current examples are:
 50-SDE-01-software-development-environment
 50-SDE-02-java-build-test-toolchain
 50-SDE-03-engineering-client
+50-SDE-04-runtime-characterization
 
 60-SVP
 61-01-VTS-timing-application-verification-test-specification
