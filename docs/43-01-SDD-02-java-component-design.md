@@ -745,17 +745,17 @@ test-client/
 `timing-point-core` or `timing-point-app` implementation code. It may,
 however, depend on the separately reusable `event-timing-data` artifact because
 TimingData codec/provider reuse is now a real cross-executable requirement. This
-preserves the external-client boundary while allowing SI-01 and the Engineering
+preserves the external-client boundary while allowing SI-01 and the Development
 Client to exercise the exact same public or proprietary TimingData translator.
 
-The Engineering Client remains engineering support rather than the planned SI-02
-GUI, and its JavaFX choice does not select the SI-02 GUI technology.
+The Development Client remains development/test support rather than the planned
+SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
-The shared Presentation-facing application gateway remains small:
+The shared Presentation-facing application boundary remains small:
 `PresentationGateway.version()` returns build identity and
-`PresentationGateway.status()` obtains the current TimingNode status through the
-TimingNode query/ownership boundary used by the current presentation adapters;
-it does not assemble status by reading node-owned fields directly.
+`PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`.
+The proxy obtains current node status through the TimingNode query/ownership
+boundary; neither object assembles status by reading node-owned fields directly.
 
 ## TimingNode active-object execution and persistence
 
@@ -814,8 +814,8 @@ final class TimingNodeLogic {
     private LocationId locationId;
     private final LogBook logBook;
 
-    OpenResult open() {
-        // domain decision only; no queue/future/timeout mechanics here
+    OpenResult open(LocationId locationId) {
+        // apply requested location + OPEN as one domain operation
     }
 }
 ```
@@ -1036,7 +1036,7 @@ private void processRegistration(RegistrationInput input) {
 
     timingDataStore.append(data);    // durable before return
     logBook.add(data);               // committed domain state
-    newTimingDataEvent.emit(data);
+    timingDataCommittedEvent.emit(data);
 }
 ```
 
