@@ -1854,6 +1854,24 @@ control behind its antenna implementation, or runtime composition may provide an
 power-control capability to the manager; external power switching is not required of every
 antenna.
 
+Antenna lifecycle/device-control calls are a separate **control plane** from observation
+delivery. One AntennaManager belongs to one TimingSystem and owns a bounded serial control
+lane for its configured antennas. Probe, power, initialize, inventory start/stop and
+shutdown execute on that lane so potentially blocking device I/O does not run on a
+TimingNode lane or on a presentation callback. Application startup may wait for a
+result-bearing manager operation because readiness depends on that outcome.
+
+There is no global SI-01 executor or generic system work queue that owns all such work.
+Other capabilities retain their own execution/ownership boundaries. An implementation may
+later share physical executor threads behind multiple logical bounded lanes only when that
+preserves capability ownership, ordering and overload behaviour and is justified by
+measurement.
+
+Observation delivery does not run on the manager control lane. Concrete providers emit
+`TagObservation` from their device/library callback context through the synchronous local
+event. TagProcessor therefore executes only short thread-safe filtering/mapping/admission
+work on that callback thread and returns after bounded TimingNode submission.
+
 After decoding, generic SI-01 tag processing is distinct from vendor protocol handling:
 
 ```text
