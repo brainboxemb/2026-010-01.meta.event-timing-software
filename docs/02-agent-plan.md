@@ -261,24 +261,34 @@ At closure:
 
 AP-4 closed only the repository/tooling/framework-skeleton coordination goal. SIP Step 2 and SIP Step 3 have since closed; SIP Step 4 is now active.
 
-## Current coordination focus — SIP Step 4
+## Current coordination focus — SIP Step 5
 
-The current implementation-planning focus is **SIP Step 4 — First registration-system
-slice**.
+The current implementation-planning focus is **SIP Step 5 — Simulated antenna
+input and runtime behaviour**.
 
-Step 4 deliberately stops at the accepted-registration boundary. It proves TimingNode
-lifecycle/identity, durable TimingData commit/history and public API/Engineering Client
-operation without yet adding antenna observations, tag filtering, backoffice reference
-data or multi-node field behaviour.
+Step 4 is closed on the accepted first durable registration slice. Step 5 moves
+the input boundary outward to the built-in `SimulatedAntenna` for one TimingNode,
+adds the minimal synthetic TagId-to-RegistrationId reference fixture needed to
+exercise that path, and characterizes queueing/allocation/runtime behaviour before
+target hardware or multi-node integration is introduced.
 
-The next planned increment, Step 5, moves the input boundary outward to the built-in
-`SimulatedAntenna` for one TimingNode and adds repeatable runtime/load/recovery
-characterisation. Multi-node operation, backoffice reference data and StageTiming belong
-to the later backoffice integration step rather than being pulled into Step 5.
+D01 defines the development-host measurement/evidence baseline. A01 is the first
+active implementation activity after that decision: implement the simulated
+antenna/tag-processing path without bypassing the existing TimingNode-owned
+commit, LogBook and persistence boundary.
+
+OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
+(D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
+semantics before their implementation activities start. Runtime optimization
+choices remain evidence-driven; thread priorities, batching, pooling, copied
+snapshots/caches and extra asynchronous workers are not baseline assumptions.
+
+Multi-node operation, backoffice reference data and StageTiming remain later
+roadmap work and must not be pulled into Step 5.
 
 Keep the SIP as the implementation-sequence plan. Detailed current execution/evidence
-belongs in the active PRs, verification evidence and per-step activity data rather than in
-the broad roadmap.
+belongs in active issues/PRs, verification evidence and per-step activity data rather
+than in this broad coordination plan.
 
 ## Ongoing supporting activity — source collection
 
