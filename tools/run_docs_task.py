@@ -149,6 +149,8 @@ def validate_assembly(root: Path) -> dict:
         root / "documents/architecture-book.md",
         root / "documents/50-SDE-01-software-development-environment.md",
         root / "documents/50-SDE-02-java-build-test-toolchain.md",
+        root / "documents/50-SDE-03-development-client.md",
+        root / "documents/50-SDE-04-runtime-characterization.md",
         root / "documents/32-03-ISD-application-control-status.md",
         root / "documents/32-05-ISD-timingdata-interchange.md",
         root / "documents/33-05-IDD-timingdata-interchange.md",
