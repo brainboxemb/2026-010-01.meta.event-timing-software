@@ -272,10 +272,11 @@ adds the minimal synthetic TagId-to-RegistrationId reference fixture needed to
 exercise that path, and characterizes queueing/allocation/runtime behaviour before
 target hardware or multi-node integration is introduced.
 
-D01 defines the development-host measurement/evidence baseline. A01 is the first
-active implementation activity after that decision: implement the simulated
-antenna/tag-processing path without bypassing the existing TimingNode-owned
-commit, LogBook and persistence boundary.
+D01 defines the development-host measurement/evidence baseline. A01 has now
+completed the simulated antenna/tag-processing path without bypassing the
+existing TimingNode-owned commit, LogBook and persistence boundary. A02 is the
+active implementation activity: add only the low-allocation runtime
+markers/counters needed by that baseline before A03 interprets the measurements.
 
 OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
 (D03/A05/V06) are parallel Step-5 contract tracks but must mature their public

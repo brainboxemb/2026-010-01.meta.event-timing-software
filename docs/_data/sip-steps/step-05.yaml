@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-04'
     change: >-
+      A01 completed the simulated antenna/tag path; A02 runtime instrumentation
+      is now active.
+  - date: '2026-10-04'
+    change: >-
       D01 fixed the single-TimingNode runtime measurement baseline; A01 is now
       the active implementation activity.
   - date: '2026-10-04'
@@ -54,7 +58,7 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: active
+    state: done
     depends_on: [D01]
     note: >-
       Feed deterministic tag observations through the built-in
@@ -66,7 +70,7 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: planned
+    state: active
     depends_on: [D01, A01]
     note: >-
       Add low-allocation monotonic markers and primitive counters for queue

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Complete Step-5 A01 on Java revision `3a173235a2a823e6fbbec8397a2e2649841b4a0f` and activate A02 runtime markers/counters.
+
 - Start SIP Step 5 D01 with a single-TimingNode runtime measurement/evidence baseline; keep default JVM scheduling as the baseline, gate batching/pooling/caching/concurrency changes on measurements, and activate simulated-antenna A01 after the decision.
 
 - Add a reviewed API-first Engineering Client UI baseline: config-driven per-boundary connection controls, client + SI-01 logging, low local domain intelligence, clearer registration/time entry and a primary API work surface.
