@@ -1267,7 +1267,7 @@ TimingNodeRuntimeSnapshot
 TagProcessingCounters.Snapshot
   received observations
   closed observation bursts
-  mapped / unmapped bursts
+  mapped / unmapped observations
   registration duplicates
   TimingNode admitted / full / not-running results
 
