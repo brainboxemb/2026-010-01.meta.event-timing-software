@@ -1812,11 +1812,79 @@ Public protocol semantics and TimingData compatibility remain owned by Domain.
 
 #### RFID
 
-RFID integration is an adapter boundary. Raw callbacks/protocol data do not directly mutate application state. The adapter is responsible for protocol/device interaction and turns accepted observations/health changes into typed application-facing messages.
+RFID integration is an adapter boundary. Raw vendor callbacks/protocol frames do not
+directly mutate application state. A concrete antenna provider owns protocol/device
+interaction and emits decoded observations through the common antenna capability.
 
-Decoding must preserve the source/provider semantics required by the public input contract while proprietary encoding details stay behind the provider boundary. Source-specific mapping or policy must not be guessed by a generic adapter.
+The stable decoded observation contains at least:
 
-Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
+```text
+TagObservation
+  TagId
+  RSSI
+  TimingTimestamp
+```
+
+The timestamp is attached at the earliest accepted point at which SI-01 can identify the
+observation as a decoded tag observation. When a provider exposes a trustworthy source
+timestamp that can be mapped to the SI-01 time model, the adapter may use it; otherwise the
+adapter uses the owning TimingSystem TimeSource at the observation boundary. Timestamp
+assignment is not delayed until registration commit.
+
+An antenna publishes observations through the normal local typed event mechanism. The
+antenna owns `Event<TagObservation>`; consumers receive only the
+`EventSource<TagObservation>` view. Delivery is synchronous on the provider/device
+callback thread, so downstream processing must remain short and must not wait for
+TimingData persistence.
+
+Antenna operation has a lifecycle around observation delivery. An
+`AntennaManager` owns one or more configured antenna instances and coordinates:
+
+- optional power switching where the deployment provides it;
+- open/startup and initialization;
+- a one-shot startup probe that can power/open the antenna, perform a
+  hello/identity/version check and close it again without starting normal inventory;
+- inventory start/stop per antenna so multiple configured antennas can be controlled
+  independently;
+- normal shutdown and recovery/reinitialization.
+
+Concrete vendor commands, framing, crypto/proprietary codecs and retry sequences remain
+inside the provider/private implementation. A provider may hide device-specific power
+control behind its antenna implementation, or runtime composition may provide an optional
+power-control capability to the manager; external power switching is not required of every
+antenna.
+
+After decoding, generic SI-01 tag processing is distinct from vendor protocol handling:
+
+```text
+Antenna Event<TagObservation>
+          |
+          v
+      TagProcessor
+        - RSSI filter
+        - duplicate/debounce suppression
+        - TagId -> RegistrationId mapping
+          |
+          v
+      TimingNode bounded submission
+```
+
+RSSI filtering and duplicate-registration suppression are Timing Point Application input
+policy. Their thresholds/windows are configuration/profile decisions and are applied after
+the decoded observation boundary. The processor must remain safe when observations from
+multiple antennas arrive concurrently and must not add an unbounded worker merely to
+serialize callbacks.
+
+`TagId -> RegistrationId` uses a narrow configured mapper. The mapper may be a
+deterministic transformation, provider/profile rule or reference-data-backed lookup. For a
+public deterministic example, `TAG-001 -> N-001` is a transformation rule, not a
+requirement for an in-memory lookup table. RaceData may back a concrete mapper where an
+event contract requires it; it is not a mandatory generic RFID step.
+
+Source/provider-specific decoding and mapping policy must not be guessed by a generic
+adapter. Built-in `SimulatedAntenna` uses the same lifecycle, observation event and
+TagProcessor path as a real provider and does not call TimingNode/TimingData through a
+test-only bypass.
 
 #### CAN, keypad, beeper and displays
 
