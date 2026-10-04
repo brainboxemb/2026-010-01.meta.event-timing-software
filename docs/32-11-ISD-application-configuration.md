@@ -214,6 +214,24 @@ select another external representation/translator, but it still realises the
 same IF-05 `TimingDataRecord` semantics; provider selection does not select a
 different public record model.
 
+Provider selection and provider-specific translation configuration are resolved
+during bootstrap, before the codec is used by persistence or inspection code.
+A provider whose external representation omits information carried by the common
+semantic model must receive enough validated configuration to make the
+translation reversible. For a local event-time-only representation this may
+include an event date/day-selection rule plus an event time zone or fixed
+offset. Those values are translation configuration, not TimingNode/domain state.
+
+The configured codec is then a normal immutable translator instance. Runtime
+callers pass only `TimingData` or encoded record bytes to `encode`/`decode`;
+they do not pass deployment configuration, UI state or the current host date on
+every record operation.
+
+The common IF-11 contract does not prescribe one generic bag of provider
+configuration keys. A concrete provider owns validation of the configuration it
+requires, while bootstrap owns obtaining that configuration, selecting the
+provider and failing before composition when the combination is invalid.
+
 Public examples use generic/reference provider IDs; private provider names and
 protocol values remain outside this repository.
 
