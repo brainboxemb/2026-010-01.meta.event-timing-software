@@ -1899,7 +1899,7 @@ Antenna Event<TagObservation>
           |
           v
       TagProcessor
-        - minimum-RSSI decision on strongest observation
+        - choose strongest observation/timestamp
         - TagId -> RegistrationId mapping
         - registration duplicate suppression
           |
@@ -1919,9 +1919,8 @@ registration-duplicate window prevents an already accepted RegistrationId from b
 registered again too soon.
 
 Burst aggregation and registration duplicate suppression solve different problems.
-RSSI filtering is deliberately evaluated **after** the burst closes: low-strength reads
-still participate in the burst because the purpose is to find the strongest observation
-of the passage, not to register as quickly as possible.
+Low-strength reads remain part of the burst because the purpose is to find the strongest
+observation of the passage, not to register as quickly as possible.
 
 The selected event timestamp is the timestamp of the observation with the highest RSSI in
 the closed burst. That strongest observation is used as the best available approximation
@@ -1929,11 +1928,12 @@ of the participant being closest to the antenna, giving a more uniform registrat
 than the first/last read of a variable RF read zone. For equal maximum RSSI, the first
 observation at that maximum is kept.
 
-The minimum-RSSI policy is then evaluated against that maximum RSSI. A burst whose
-strongest observation is still below the configured threshold is rejected.
+D04 does **not** define a minimum-RSSI rejection threshold. If later evidence shows that
+signal-strength rejection is needed, that is a separate requirement/design decision and
+must not be inferred from the presence of RSSI in TagObservation.
 
 Burst deadlines and the registration duplicate window use monotonic elapsed time.
-Thresholds/windows are configuration/profile decisions. The processor must remain safe
+Their durations are configuration/profile decisions. The processor must remain safe
 when observations from multiple antennas arrive concurrently and must not add an unbounded
 worker merely to serialize them.
 
