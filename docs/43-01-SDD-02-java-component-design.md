@@ -924,6 +924,82 @@ therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
 primitive. The final suffix is the configured NodeId, not a worker/index number.
 Threads owned by the JDK or external libraries keep their own names.
 
+### Step-5 runtime characterization baseline
+
+Step 5 measures the first simulated-input runtime on the development host with
+**one TimingNode**. It keeps the existing bounded serial ownership model as the
+baseline. Multi-TimingNode scheduling is deliberately deferred until the later
+multi-node step, and important findings are repeated on target hardware during
+target bring-up.
+
+Measurement must not change Domain time semantics. Use `System.nanoTime()` for
+monotonic elapsed-time markers inside one JVM run. Do not persist or publish
+those values as TimingData, and do not use wall-clock `Instant` /
+`currentTimeMillis()` values to calculate queue or processing durations.
+`TimingTimestamp` remains the Domain/event-time representation.
+
+The first instrumentation points are:
+
+| Point | Minimum observation |
+| --- | --- |
+| antenna observation accepted for processing | observation count and monotonic ingress marker |
+| tag interpretation/filtering | resolved / ignored / rejected counts |
+| TimingNode queue admission | attempted / accepted / full / not-running counts, current depth and high-water |
+| TimingNode work start | queue-wait duration from accepted admission to execution start |
+| TimingNode work completion | serial-lane execution duration |
+| TimingData persistence append | append duration and success/failure count |
+| committed LogBook visibility / post-commit publication | committed count and accepted-observation-to-commit duration where the originating observation is known |
+| bounded LogBook query | query duration and records visited/returned for the characterized query shape |
+
+Instrumentation is engineering state, not a second event model. Prefer primitive
+counters and primitive monotonic markers attached to already-existing execution
+objects/seams. Do not allocate one metrics object per observation/registration
+and do not emit one measurement log record per event. For durations, simple
+count/total/max or fixed-bucket summaries are preferred over retaining every
+sample in production objects; a dedicated test harness may retain samples
+outside the product when needed for analysis.
+
+Development-host characterization may additionally record:
+
+- project-owned thread identity and state from the stable `tp-...` names;
+- per-thread CPU time through `ThreadMXBean` when supported by the active JVM;
+- garbage-collector collection count/time deltas through the standard management beans;
+- heap/memory observations before/after a defined workload;
+- externally collected profiler/allocation evidence when a specific question
+  needs more detail.
+
+Those JVM observations are conditional evidence, not runtime correctness
+dependencies.
+
+The Step-5 scheduler baseline uses the JVM's normal/default thread priority.
+Thread priority is only a scheduler hint and is never used to make ordering,
+capacity or correctness guarantees. A role-specific priority change is considered
+only after repeatable evidence shows a scheduling problem, and any useful change
+must be re-qualified on the selected target because JVM/OS mappings are platform
+dependent.
+
+The same evidence gate applies to other optimizations:
+
+- add batching/fairness guards only when sustained/bursty ingress demonstrably
+  delays required TimingNode or service progress;
+- add object pooling/reuse only when allocation/GC evidence shows a material
+  problem and the simpler allocation model is measurably worse;
+- add copied snapshots, caches or compact indexes only when measured query/lane
+  occupancy or allocation cost justifies them;
+- move persistence off the TimingNode lane only when measured store latency /
+  queue growth justifies the added concurrency while preserving
+  commit-before-LogBook/event ordering;
+- keep outbound presentation/network delivery bounded and ensure a slow client
+  cannot turn a post-commit listener into unbounded application-owned state.
+
+A retained characterization result identifies at least the source revision, JVM
+and OS, workload/configuration, preloaded committed-record count, queue capacity,
+observation/admission/commit counts, queue high-water, relevant duration
+summaries and available GC/thread observations. Repeated runs retain ordinary
+variation rather than selecting only the best result. Step-5 figures are
+engineering baselines, not product performance limits unless a later
+requirement explicitly promotes one.
+
 ```java
 final class SerialWorker implements AutoCloseable {
     enum AdmissionResult {
