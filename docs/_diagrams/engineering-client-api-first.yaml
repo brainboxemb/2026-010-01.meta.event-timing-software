@@ -3,7 +3,7 @@ diagram:
   title: Figure SDE03-05 — API-first Development Client workbench
   width: 1360
   height: 820
-  note: Current UI baseline. One client configuration defines the target; SI-01 remains authoritative for domain results.
+  note: Current UI baseline. Client configuration supplies startup defaults; the active target host is editable. SI-01 remains authoritative for domain results.
 
 groups: []
 
@@ -16,13 +16,13 @@ nodes:
 
   - id: target
     label: Target
-    subtitle: "127.0.0.1  |  client config file"
+    subtitle: "127.0.0.1  |  editable host/IP"
     kind: wireframe-control
     notation: wireframe-input
     layout: {x: 55, y: 118, w: 265, h: 54}
 
   - id: api-connection
-    label: "API :8081\nREADY"
+    label: "API :8081\nCHECK"
     kind: wireframe-live
     notation: wireframe-button
     layout: {x: 335, y: 121, w: 145, h: 48}
@@ -45,8 +45,8 @@ nodes:
     notation: wireframe-button
     layout: {x: 835, y: 121, w: 175, h: 48}
 
-  - id: reload-config
-    label: Reload config
+  - id: apply-target
+    label: Apply target
     kind: wireframe-action
     notation: wireframe-button
     layout: {x: 1020, y: 121, w: 135, h: 48}
