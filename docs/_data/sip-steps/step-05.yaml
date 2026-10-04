@@ -33,6 +33,16 @@ activities:
       transition time, captured LocationId, record-type presence rules and the
       rule that rejected lifecycle commands do not create committed TimingData.
 
+  - id: D03
+    lane: documentation
+    kind: decision
+    state: planned
+    note: >-
+      Promote registration revoke from reserved reference-format mapping to an
+      explicit TimingData/API semantic. Define matching-record identity,
+      repeated time/RegistrationId rules, idempotence/rejection and the rule
+      that revoke appends a new committed record instead of rewriting history.
+
   - id: A01
     lane: application
     kind: implementation
@@ -76,6 +86,17 @@ activities:
       TimingNode-owned sequence, LogBook and persistence path as other committed
       TimingData. Do not add a second lifecycle record owner or a UI/test-only
       persistence bypass.
+
+  - id: A05
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D03]
+    note: >-
+      Add the public node-scoped revoke operation and commit REV through the same
+      TimingNode-owned sequence, LogBook, persistence and committed-event path.
+      Wire the Development Client trash action to that operation; never delete
+      or rewrite the original ADD record.
 
   - id: V01
     lane: verification
@@ -127,3 +148,14 @@ activities:
       persisted restart/recovery and sequence continuity. Verify rejected or
       idempotent lifecycle requests according to the Step-5 D02 semantics and
       confirm that no unintended lifecycle record is committed.
+
+  - id: V06
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A05]
+    note: >-
+      Verify revoke through the public API and Development Client: the original
+      ADD remains in the technical LogBook, REV is appended in source order, the
+      interpreted row remains visible as DELETED, restart/recovery preserves
+      both records and repeated/invalid revoke follows the D03 semantics.
