@@ -310,14 +310,14 @@ application boundary.
 
 ### Scope
 
-- set or change the operational `LocationId` while the TimingNode is closed;
-- open and close the TimingNode with explicit lifecycle rules;
+- open a closed TimingNode with the requested `LocationId` as one ordered operation;
+- close the TimingNode with explicit lifecycle rules;
 - submit an already-accepted registration through an engineering input;
 - let the TimingNode assign its own identity, location, sequence and recorded time;
 - create immutable TimingData through the shared TimingData contract;
 - append committed TimingData to local storage and rebuild the LogBook after restart;
 - expose control, bounded history and live updates through IF-03;
-- exercise the same public behaviour through the Engineering Client;
+- exercise the same public behaviour through the Development Client;
 - verify the running application as a separate process.
 
 ### Not in this step
@@ -335,33 +335,33 @@ application boundary.
 - the Step-3 application/API foundation;
 - a deterministic engineering registration input;
 - the reference TimingData codec/store;
-- the Engineering Client as test tooling.
+- the Development Client as test tooling.
 
 ### Activities
 
 | ID | Activity |
 | --- | --- |
-| `D01` | Engineering Client architecture + UI baseline |
+| `D01` | Development Client architecture + UI baseline |
 | `D02` | Review first-registration operational use cases |
 | `D02W` | Translate private compatibility behaviour |
 | `D03` | Establish first TimingData + public control contracts |
 | `V01` | Define deterministic first-slice examples |
 | `A01` | TimingNode location and lifecycle |
 | `A02` | Direct registration + TimingData |
-| `A03` | Engineering Client first-slice control |
+| `A03` | Development Client first-slice control |
 | `V02` | First-slice domain verification |
 | `V03` | Automated first-registration black-box verification |
-| `V04` | Engineering Client running-system demo |
+| `V04` | Development Client running-system demo |
 
 ### Result
 
 - One TimingNode owns a durable, ordered registration stream.
-- The same registration behaviour is available through the public API and Engineering Client.
+- The same registration behaviour is available through the public API and Development Client.
 - Restart rebuilds local registration history without inventing new records.
 
 ### Demo
 
-- Configure a location, open the TimingNode and submit one accepted registration.
+- Open the TimingNode with a LocationId and submit one accepted registration.
 - Observe the committed record in history and as a live update.
 - Close, restart and confirm that the committed history is recovered.
 
@@ -372,7 +372,7 @@ application boundary.
 - storage/recovery rebuilds the LogBook correctly;
 - IF-03 exposes the required control, history and live update behaviour;
 - a separate-process black-box test succeeds through IF-03;
-- the Engineering Client can repeat the same flow without using private application state.
+- the Development Client can repeat the same flow without using private application state.
 
 ---
 
