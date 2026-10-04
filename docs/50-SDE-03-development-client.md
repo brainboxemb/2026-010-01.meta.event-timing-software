@@ -321,10 +321,12 @@ immutable technical history:
 
 - the workbench uses an explicit approximately 50/50 horizontal split rather than
   relying on preferred-width hints;
-- the left column contains the selected TimingNode state plus Open/Close and registration
-  input;
-- the right column shows **Registrations** at the top and
-  **LogBook / committed TimingData** below it.
+- both columns are explicitly top-aligned;
+- the left column starts with **API / application identity**, followed by the selected
+  TimingNode state, Open/Close controls and registration input;
+- the right column starts at that same vertical position with **Registrations** and shows
+  **LogBook / committed TimingData** below it;
+- there is no separate full-width identity panel above the two-column workbench.
 
 The two right-hand views are deliberately not duplicates. **Registrations** is a
 presentation projection intended to resemble normal timing use. Its compact columns are:
