@@ -994,27 +994,26 @@ authority.
 Timing deadlines use `MonotonicClock`; they do not use `Date`,
 `System.currentTimeMillis()` or the potentially corrected observation timestamp.
 
-#### Shared scheduling
+#### Burst expiry scheduling constraints
 
-Quiet-time expiry must fire when no new observation arrives, but this does not require one
-timer task per observation.
+Quiet-time expiry must fire when no new observation arrives. The implementation therefore
+needs an expiry mechanism that can wake independently from the next antenna callback.
 
-Use a shared runtime `ScheduledExecutorService` for short timer/sweep callbacks. A
-TagProcessor registers one periodic bounded sweep task with that scheduler. The sweep
-examines only currently active burst states and closes states whose quiet/max deadline has
-expired.
+D04 does **not** select a generic shared scheduler for TagProcessor filtering. In particular,
+the shared bounded I/O executor used for blocking antenna control and optional diagnostic
+observation persistence is not the TagProcessor timing mechanism.
 
-The scheduler is shared across processors/capabilities that need short timer callbacks;
-it is **not** the blocking I/O executor. Timer callbacks must remain short so device I/O
-cannot delay burst expiry.
+The Java realization shall keep burst-expiry work bounded and allocation-conscious:
 
-This bounds scheduled-task count by the number of processors rather than the number of
-observations and avoids repeated task allocation/cancellation under high-rate reads.
+- do not create/cancel one timer task per observation;
+- do not add an unbounded worker or queue merely to serialize filtering;
+- use monotonic elapsed time for quiet/max-burst deadlines;
+- keep expiry callbacks short and perform no blocking I/O or TimingData persistence there;
+- keep the number of timer/scheduling objects bounded independently of observation rate.
 
-A short processor-local lock may protect burst state. No blocking I/O, TimingData
-persistence or wait for processed TimingNode results occurs while that lock is held. The
-sweep removes an expired state under the lock and performs mapping/admission after
-releasing it.
+The exact scheduling mechanism remains a Java implementation choice until A01 qualifies it
+against these constraints. A short processor-local lock may protect burst state. Expiry
+removes an expired state under that lock and performs mapping/admission after releasing it.
 
 #### Registration filtering and admission
 
