@@ -1394,7 +1394,7 @@ Architecture rules:
 
 The primary latency risk is therefore **producer backpressure**, not whether every TimingNode operation is asynchronous. Device/RFID/TagProcessor ingress must use the submission-only path and return after bounded-queue admission; it does not wait for persistence or a domain result. Presentation/application callers may use a result-bearing command path when they need that result.
 
-Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. The design does not require a copied snapshot as the default read mechanism. Read/query implementations may traverse contained state directly on the ordered lane, use a compact derived/indexed representation, or copy data only when measurement shows that the copy is the better trade-off. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may also occupy the lane initially, but its impact is controlled through bounded queues and observable queue/store latency.
+Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. The design does not require a copied snapshot as the default read mechanism. Read/query implementations may traverse contained state directly on the ordered lane, use a compact derived/indexed representation, or copy data only when measurement shows that the copy is the better trade-off. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
 
 Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
 
@@ -1727,7 +1727,7 @@ Build provenance remains separate from deployment configuration. `BuildIdentity`
 Working rules:
 
 - keep secrets/credentials out of committed configuration and store only secret references there;
-- prefer explicit/manual composition initially rather than adding a dependency-injection framework without a demonstrated need;
+- prefer explicit/manual composition rather than adding a dependency-injection framework without a demonstrated need;
 - keep overlay rules deliberately limited rather than creating general inheritance/includes;
 - use YAML as the current default IF-11 file syntax and keep its SnakeYAML parser/mapping inside application-core infrastructure; the logical IF-11 contract is not coupled to the SnakeYAML API;
 - create Java configuration types only as real executable slices need them rather than mirroring the entire conceptual tree in advance.
@@ -1930,7 +1930,7 @@ characterization evidence is collected.
 
 This table intentionally lives in the architecture section of this SSD because these choices shape the whole **Timing Point Application** (SI-01) architecture.
 
-| Concern | Current direction | Status / next evidence |
+| Concern | Current direction | Current rationale / open point |
 | --- | --- | --- |
 | Java baseline | Java SE 8 is the current SI-01 baseline | architecture baseline; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
