@@ -5,10 +5,6 @@ planning_changes:
     change: >-
       Step 4 closed after VC-ST1-003 passed on the reviewed Development Client
       baseline; all Step-4 activities and exit criteria are complete.
-  - date: '2026-10-04'
-    change: >-
-      Closure review: implementation and automated verification are complete;
-      V04 / VC-ST1-003 remains the only Step-4 exit item.
   - date: '2026-10-02'
     change: >-
       Roadmap aligned with the accepted SSD/IF-05 scope without changing product
