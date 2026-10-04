@@ -339,28 +339,21 @@ Failures of mandatory application-wide configuration or infrastructure that prev
 safe construction of the diagnostic runtime are outside this containment rule.
 ```
 
-```{req} Select strongest RFID observation for registration time
+```{req} Use maximum-RSSI tag observation for registration
 :id: SI01-REQ-050
 :status: D
 :derived_from: UC-003
 
-When one participant tag is observed repeatedly during one RFID passage, SI-01 shall
-treat those observations as one candidate passage and shall select the observation with
-the highest RSSI as the representative observation.
-
-The accepted automatic-registration time shall be the original observation time of that
-selected highest-RSSI observation.
-
-SI-01 shall complete and evaluate the candidate passage after the configured observation
-quiet interval when no further observation for that tag arrives. A configured maximum
-passage duration shall prevent continuously repeated observations from postponing
-evaluation indefinitely.
-
-For equal highest RSSI values, SI-01 shall retain the first observation at that highest
-value.
-
-This requirement does not define a minimum-RSSI rejection threshold.
+SI-01 shall use the tag observation with the maximum RSSI as the registration observation
+and shall finalize that selection after a configured timeout without a new observation.
 ```
+
+For this requirement, the registration time is the original timestamp of the selected
+observation. The timeout closes the observation group; it does not replace the selected
+maximum-RSSI observation with the last observation. A maximum group duration, equal-RSSI
+tie handling and implementation scheduling belong to the detailed design.
+
+This requirement does not introduce a minimum-RSSI rejection threshold.
 
 ### Lifecycle interpretation
 
