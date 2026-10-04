@@ -265,14 +265,6 @@ for the location that is currently open.
 7. The committed registration becomes available in registration history/current state and as a live update where supported.
 8. Outbound synchronisation may consume the committed registration independently when that capability is implemented.
 
-**Step-4 engineering path:** for the first slice, an engineering capability may
-inject the already-accepted semantic registration at step 3. This bypasses the
-antenna/tag/filtering stages but uses the **same registration operation** from
-that point onward. The engineering caller does not provide the final TimingData,
-source sequence, configured source identity or active location.
-
-A later antenna-simulation slice enters at step 1 so the tag interpretation and
-filtering behaviour can be tested as well.
 
 **Alternative/failure flows:**
 
@@ -382,8 +374,8 @@ API.
 lifecycle transition, unsupported command, lost connection with unknown command
 outcome, or stale cached state must all remain explicit to the operator.
 
-The planned SI-02 GUI is not built in Step 4; the existing Engineering Client
-may inspect these same public state semantics without claiming to implement SI-02.
+The Development Client may inspect the same public state semantics as engineering
+tooling, but it is not SI-02 and does not own SI-02 operator-interface requirements.
 
 ```
 
@@ -647,44 +639,6 @@ Concrete production encodings, private mapping tables and deployment-specific
 categories are outside this public use case.
 
 ```
-
-## Step-4 operational review: first registration slice
-
-This review deliberately narrows Step 4 to the smallest useful vertical slice.
-It identifies behaviour that needs a public representation before D03 designs
-the interfaces. It is not a new set of API paths and does not expose any private
-compatibility-source protocol.
-
-| Use case | First-slice inspection/control need | Explicitly later |
-| --- | --- | --- |
-| UC-001 / UC-002 | Connect to a known registration system, inspect its identity/location/open state, request OPEN with the selected valid LocationId as one operation, keep that location fixed while open, and close explicitly. | Full device-readiness/open policy, durable lifecycle records and multi-node operation. |
-| UC-003 | Inject one already-accepted semantic registration after the filtering boundary; TimingNode supplies its own identity, active location and next sequence; inspect committed registration history/TimingData. | Simulated antenna, source decoding, observation accumulation/filtering, provider-specific input behaviour and persistence/recovery. |
-| UC-009 | Exercise the above through IF-03/Engineering Client; distinguish command submission from resulting state; rebuild state/history after reconnect and then continue with live updates. | SI-02, browser test client and broader engineering controls. |
-| UC-011 | Define the first committed registration TimingData identity and outbound semantic representation. | RabbitMQ, durable outbox/ack/replay and inbound upstream/reference-data simulation. |
-
-For this slice the behavioural identity rules are:
-
-- every TimingNode already has a configured, non-empty `TimingNodeId`; there is no runtime "unset TimingNodeId" state;
-- a `LocationId` may be unassigned while `CLOSED`; the normal OPEN operation carries the valid operational LocationId that becomes active when OPEN succeeds;
-- changing location while `OPEN` is rejected;
-- committed TimingData captures the active location at acceptance time, so later reconfiguration cannot change historical records;
-- the exact public types, allowed formats/values and null/unassigned representation are defined once in the TimingData/ISD contract rather than duplicated here.
-
-The first protocol review (D03) must resolve:
-
-- the compact public `TimingNodeId` representation and validation;
-- the positive operational `LocationId` representation and how "unassigned while CLOSED" is represented without treating a non-location sentinel as a valid location;
-- the first registration TimingData shape, including source sequence and accepted observation time;
-- the IF-03 commands/results for location, open/close and direct accepted-registration simulation;
-- current snapshot/history versus live-update semantics, including reconnect/rebuild;
-- the minimal outbound semantic registration representation for later upstream transport.
-
-`StageStartTimes`, `RaceData`, `NextUpTeams`, keypad/display behaviour,
-simulated antenna/filtering, inbound DebugConnector messages and multi-node
-isolation are intentionally outside this first slice.
-
-The accepted first-executable IF-03 version/status/WebSocket semantics remain
-the Step-3 baseline. D03 extends them only as required by this smaller slice.
 
 ## Cross-cutting alternative/failure scenarios
 
