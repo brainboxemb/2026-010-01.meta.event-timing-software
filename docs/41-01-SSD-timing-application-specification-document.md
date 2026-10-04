@@ -1919,8 +1919,18 @@ registration-duplicate window prevents an already accepted RegistrationId from b
 registered again too soon.
 
 Burst aggregation and registration duplicate suppression solve different problems.
+RSSI filtering is deliberately evaluated **after** the burst closes: low-strength reads
+still participate in the burst because the purpose is to find the strongest observation
+of the passage, not to register as quickly as possible.
+
 The selected event timestamp is the timestamp of the observation with the highest RSSI in
-the closed burst. For equal maximum RSSI, the first observation at that maximum is kept.
+the closed burst. That strongest observation is used as the best available approximation
+of the participant being closest to the antenna, giving a more uniform registration point
+than the first/last read of a variable RF read zone. For equal maximum RSSI, the first
+observation at that maximum is kept.
+
+The minimum-RSSI policy is then evaluated against that maximum RSSI. A burst whose
+strongest observation is still below the configured threshold is rejected.
 
 Burst deadlines and the registration duplicate window use monotonic elapsed time.
 Thresholds/windows are configuration/profile decisions. The processor must remain safe
