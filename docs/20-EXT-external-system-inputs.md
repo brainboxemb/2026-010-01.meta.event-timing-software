@@ -30,7 +30,7 @@ Where an external input can be published safely, link/reference its exact contro
 
 | Local reference | External owner / scope | External document or contract | Revision / baseline | Applies to | Notes |
 | --- | --- | --- | --- | --- | --- |
-| LEGACY-WEB | Private legacy-system input | Private legacy web/interface design baseline | Controlled private baseline | Legacy client/interface compatibility review before Step-4 public-contract decisions | Private compatibility input only. Keep source identity, content and protocol detail outside the public repository. Record only abstract behavioural conclusions that are safe and necessary for the new-system design. It is not automatically normative for the new software system. |
+| LEGACY-WEB | Private legacy-system input | Private legacy web/interface design baseline | Controlled private baseline | Legacy client/interface compatibility review | Private compatibility input only. Keep source identity, content and protocol detail outside the public repository. Record only abstract behavioural conclusions that are safe and necessary for the new-system design. It is not automatically normative for the new software system. |
 
 ## Terms and abbreviations
 
