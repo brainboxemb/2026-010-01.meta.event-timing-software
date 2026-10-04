@@ -52,7 +52,7 @@ A separate artifact is justified only by a real consumer, reuse, dependency, lif
 
 The current reactor has two reusable artifacts plus one executable application.
 The shared TimingData library artifact is justified by the independent SI-01 and
-Engineering Client consumers. It intentionally remains one artifact containing the
+Development Client consumers. It intentionally remains one artifact containing the
 semantic contracts, default/reference profile, codec and factory/provider; these
 responsibilities are not split into separate API/default JARs:
 
@@ -1252,7 +1252,7 @@ For the initial Pi-oriented runtime:
 
 ## Shared TimingData library and concrete profiles
 
-Both SI-01 and the Engineering Client need common TimingData contracts without
+Both SI-01 and the Development Client need common TimingData contracts without
 depending on the whole SI-01 application core. The shared artifact therefore
 owns the semantic interfaces and value types that every supported TimingData
 profile must implement; it does **not** require one concrete record class for all
@@ -1395,8 +1395,8 @@ does not own TimingNode business rules. It chooses the concrete TimingData
 implementation and its representation while preserving the common semantic
 contracts defined by IF-05.
 
-Both the Java-8 SI-01 runtime and Java-17 Engineering Client can depend on
-`event-timing-data`. The Engineering Client may inspect the common interfaces
+Both the Java-8 SI-01 runtime and Java-17 Development Client can depend on
+`event-timing-data`. The Development Client may inspect the common interfaces
 without depending on SI-01 Domain classes. Profile-specific inspection can be
 added only where a real consumer needs it.
 
@@ -1410,7 +1410,7 @@ profile exists.
 
 This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
-Java-17 Engineering Client.
+Java-17 Development Client.
 
 ## Derived consumers
 
