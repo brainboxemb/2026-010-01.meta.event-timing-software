@@ -1,6 +1,12 @@
 step: 4
 
 planning_changes:
+  - date: '2026-10-04'
+    change: >-
+      Step-4 closure review confirms all implementation and automated verification
+      activities are complete. V04 / VC-ST1-003 is the only remaining exit item;
+      current planning and verification text is aligned with the API-first
+      Development Client and open(LocationId) model.
   - date: '2026-10-02'
     change: >-
       Roadmap aligned with the accepted SSD/IF-05 scope without changing product
@@ -8,7 +14,7 @@ planning_changes:
       robustness evidence.
   - date: '2026-10-02'
     change: >-
-      A03 and V03 completed; V04 Engineering Client running-system demo is active.
+      A03 and V03 completed; V04 Development Client running-system demo is active.
   - date: '2026-10-01'
     change: >-
       Step-4 verification ordered as A03 -> black-box VC-ST1-002 -> client demo.
@@ -39,7 +45,7 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      First-slice use cases fixed location/lifecycle, accepted registration and observability.
+      First-slice use cases fixed OPEN-owned LocationId/lifecycle, accepted registration and observability.
 
   - id: D02W
     lane: documentation
@@ -71,7 +77,7 @@ activities:
     state: done
     depends_on: [V01]
     note: >-
-      Location and OPEN/CLOSED invariants implemented behind serialized ownership.
+      OPEN-owned LocationId and OPEN/CLOSED invariants implemented behind serialized ownership.
 
   - id: A02
     lane: application
@@ -87,7 +93,7 @@ activities:
     state: done
     depends_on: [D01, A02]
     note: >-
-      IF-03/client location, open/close, capability-gated auto-reg, bounded
+      IF-03/client open(LocationId), close, capability-gated auto-reg, bounded
       LogBook history and live updates are implemented. Reconnect rebuild buffers
       later live events, merges them after the HTTP baseline and only then goes LIVE.
 
@@ -117,7 +123,7 @@ activities:
     depends_on: [V03, A03]
     note: >-
       61-01-VTS specifies manual case VC-ST1-003. Run the first-registration
-      reconnect/rebuild flow through the JavaFX Engineering Client after green
+      reconnect/rebuild flow through the JavaFX Development Client after green
       VC-ST1-002. Follow test-client/STEP4-DEMO.md and Java issue #127; retain
       build/client identity plus concise pass/fail evidence for controls,
       history/live merge/dedup, reconnect/rebuild and clean shutdown.
