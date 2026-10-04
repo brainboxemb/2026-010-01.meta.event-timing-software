@@ -389,7 +389,7 @@ operation or value semantics.
 :derived_from: UC-001, UC-002, UC-009
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
-LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006/007. IF03-OP-006
+LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005
 shall carry the requested LocationId and represent location selection plus the
 CLOSED-to-OPEN transition as one ordered TimingNode operation.
 ```
@@ -408,9 +408,9 @@ engineering commands are supported and enabled.
 :status: R
 :derived_from: UC-003, UC-009
 
-When its advertised capability is enabled, IF-03 shall provide IF03-OP-008 using a
-resolved RegistrationId and accepted time while leaving TimingNode-owned commit context
-inside SI-01.
+When its advertised capability is enabled, IF-03 shall provide IF03-OP-007 using an
+explicit supported automatic-registration action, resolved RegistrationId and accepted
+time while leaving TimingNode-owned commit context inside SI-01.
 ```
 
 ```{ifreq} Committed LogBook query
@@ -418,7 +418,7 @@ inside SI-01.
 :status: R
 :derived_from: UC-009, UC-011
 
-IF-03 shall provide IF03-OP-009 as a node-addressed bounded LogBook query in committed
+IF-03 shall provide IF03-OP-008 as a node-addressed bounded LogBook query in committed
 source-sequence order using public IF-05 semantics.
 ```
 
