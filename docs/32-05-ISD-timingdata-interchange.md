@@ -1,6 +1,6 @@
 # TimingData Interchange Interface Specification (ISD)
 
-Status: draft / Step 4 D03 TimingData interface
+Status: draft
 
 System interface: **IF-05 — TimingData Interchange**
 
@@ -25,9 +25,9 @@ defined in `33-05-IDD-timingdata-interchange.md`.
 IF-05 does not define Java classes, provider/factory APIs, worker threads,
 storage classes or UI behaviour. Those are software-item design concerns.
 
-The current slice does not define TimingNode OPEN/CLOSE as TimingData records and
-does not enable registration revocation at runtime. A future design may add
-revoke records without changing the identity/order principles defined here.
+IF-05 does not yet define TimingNode OPEN/CLOSE record types. It does define
+append-only registration revocation semantics, while revoke disambiguation and
+the concrete default/reference mapping remain draft interface/design decisions.
 
 ## Terms and abbreviations
 
@@ -86,8 +86,8 @@ Every TimingData record has a small common envelope:
 
 `By record type` does not mean optional when that record type is selected. For
 example, Registration ID and time are required for a registration
-record, but are not fields of a future OPEN/CLOSE or other unrelated record
-type.
+record, but are not fields of an OPEN/CLOSE lifecycle record or another unrelated
+record type.
 
 A committed record captures its Location ID. Later TimingNode reconfiguration
 does not change that historical value.
@@ -96,8 +96,8 @@ Within a TimingSystem, the combination of Node ID and sequence number identifies
 one committed TimingData record. Sequence numbers are local to one Node ID
 stream; they are not one application-wide counter.
 
-The default/reference development-v1 design maps the currently supported record
-types to JSON in `33-05-IDD-timingdata-interchange.md`.
+The default/reference development-v1 design maps the record types defined by that
+reference profile to JSON in `33-05-IDD-timingdata-interchange.md`.
 
 ## Record identity and sequence
 
@@ -121,7 +121,7 @@ How software allocates and durably commits the next sequence is outside IF-05.
 
 ## Registration semantics
 
-IF-05 currently defines registration semantics for:
+IF-05 defines registration semantics for:
 
 - **automatic registration** — a registration originating from the automatic
   observation path;
