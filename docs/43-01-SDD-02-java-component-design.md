@@ -216,6 +216,9 @@ domain/
     StageStartTimesStore.java           persistence port for start-time analysis history
     RaceData.java                       passive per-node reference state
     RaceDataStore.java                  persistence port for race/reference analysis history
+    TagProcessor.java                   node-local RSSI/dedup/mapping ingress policy
+    TagRegistrationMapper.java          TagId -> RegistrationId policy boundary
+    TagFilterPolicy.java                RSSI + duplicate-window configuration
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -228,8 +231,13 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      stable antenna contract
+      Antenna.java                      stable device/lifecycle + observation contract
+      AntennaManager.java               lifecycle owner for 1..N configured antennas
       AntennaProvider.java              typed extension provider contract
+      AntennaPowerControl.java          optional external power-switch capability
+      AntennaInfo.java                  hello/identity/version probe result
+      TagId.java                        opaque decoded source identity
+      TagObservation.java               TagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
@@ -758,6 +766,176 @@ The shared Presentation-facing application boundary remains small:
 The proxy obtains current node status through the TimingNode query/ownership
 boundary; neither object assembles status by reading node-owned fields directly.
 
+## Antenna input and tag-processing implementation
+
+The Java antenna boundary separates device lifecycle from decoded observation processing.
+
+### Antenna and manager
+
+`Antenna` represents one configured logical antenna capability. It owns its decoded
+observation event and the provider-specific device/session mechanics needed for probing,
+initialization and inventory control.
+
+Illustrative shape:
+
+```java
+interface Antenna extends AutoCloseable {
+    AntennaInfo probe();
+
+    void initialize();
+
+    void startInventory();
+
+    void stopInventory();
+
+    boolean inventoryRunning();
+
+    EventSource<TagObservation> observations();
+}
+```
+
+The exact checked/runtime exception family remains capability-specific; the important
+contract is that probe and normal inventory are different lifecycle operations.
+
+`probe()` is a one-shot health/compatibility operation. It opens/starts the provider as
+needed, performs the provider's hello/identity/version exchange and returns the decoded
+`AntennaInfo`. The provider is not left inventorying after a probe.
+
+Normal operation uses `initialize()` followed by explicit
+`startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
+provider/device resources.
+
+`AntennaManager` owns the configured set of 1..N antennas. It coordinates startup probe,
+normal initialize/shutdown and per-antenna inventory state. Multiple antennas can
+therefore be initialized together while inventory is enabled or disabled independently.
+
+External power switching is optional. When deployment hardware exposes it, composition
+supplies an `AntennaPowerControl` capability to the manager so the manager can order
+power-on before probe/initialize and power-off after close. An antenna provider that owns
+its power mechanism internally may omit that external capability; the generic
+`Antenna` contract does not pretend every reader has a separately switchable supply.
+
+### TagObservation and local event delivery
+
+`TagObservation` is an immutable decoded input fact:
+
+```java
+final class TagObservation {
+    TagId tagId();
+    int rssi();
+    TimingTimestamp observedAt();
+}
+```
+
+`TagId` is opaque at this boundary. Vendor protocol bytes, framing and proprietary
+encoding do not escape the provider. RSSI is the decoded/normalized signal-strength value
+used by the configured SI-01 filter policy.
+
+The timestamp is attached at the earliest accepted decoded-observation point. It becomes
+the automatic registration effective time if the observation passes filtering/mapping and
+is admitted. TagProcessor does not replace it with a later processing/commit timestamp.
+
+Each antenna owns:
+
+```java
+private final Event<TagObservation> observationEvent = new Event<>();
+
+public EventSource<TagObservation> observations() {
+    return observationEvent;
+}
+```
+
+The provider emits synchronously on its callback/device thread. This deliberately reuses
+the project-wide `Event<T>/EventSource<T>` primitive instead of introducing an
+Antenna-specific listener registry. Runtime composition subscribes the relevant
+TagProcessor to the configured antenna event sources.
+
+Because multiple antenna providers may call their events concurrently, TagProcessor must
+make its small filter/dedup state thread-safe. It must not rely on
+`Event<T>` serializing concurrent emissions and must not add an unbounded queue merely
+to serialize them.
+
+### TagProcessor
+
+The node-local processor performs cheap generic input policy before bounded TimingNode
+submission:
+
+```text
+TagObservation
+  |
+  +--> RSSI below configured threshold ------> filtered
+  |
+  +--> TagRegistrationMapper(TagId)
+  |       |
+  |       +--> no RegistrationId ------------> unmapped
+  |
+  +--> RegistrationId already admitted
+  |    inside duplicate window --------------> duplicate
+  |
+  +--> TimingNode.submit(addAutomaticRegistration)
+          |
+          +--> ACCEPTED
+          +--> FULL
+          +--> NOT_RUNNING
+```
+
+The duplicate/debounce window uses the monotonic runtime clock, not wall-clock/event time.
+The `TagObservation.observedAt()` value remains the registration event timestamp.
+Duplicate state is keyed by the resolved RegistrationId so two source tags that map to the
+same registration cannot create duplicate admissions through different raw identities.
+
+Record a duplicate-window acceptance only after the TimingNode accepts the command.
+Queue-full/not-running outcomes therefore do not prevent a later observation from retrying.
+
+An illustrative constructor boundary is:
+
+```java
+TagProcessor(
+    TimingNode timingNode,
+    TagRegistrationMapper mapper,
+    TagFilterPolicy policy,
+    MonotonicClock monotonicClock)
+```
+
+`TagFilterPolicy` owns at least the minimum accepted RSSI and duplicate-window duration.
+Exact event/profile values are configuration, not hard-coded TagProcessor constants.
+
+### TagRegistrationMapper
+
+The mapper is a function/policy boundary, not a required in-memory map:
+
+```java
+interface TagRegistrationMapper {
+    RegistrationId map(TagId tagId);
+}
+```
+
+Returning no RegistrationId means the decoded tag is not mappable by the active policy.
+A concrete mapper may:
+
+- perform a deterministic transformation;
+- apply provider/profile-specific conversion;
+- query locally available RaceData/reference data when that event actually requires it.
+
+The public deterministic reference mapper uses the documented transformation:
+
+```text
+TAG-001 -> N-001
+TAG-123 -> N-123
+```
+
+The former `MapTagRegistrationResolver` prototype is not the design authority and should
+be removed when A01 is repaired.
+
+### SimulatedAntenna
+
+`SimulatedAntenna` implements the same lifecycle and observation contract. It can be
+probed/initialized, inventory can be enabled/disabled and deterministic
+`TagObservation` values can be emitted only while inventory is active.
+
+It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
+specific capability is deterministic control of the decoded observations it publishes.
+
 ## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
@@ -1143,8 +1321,9 @@ for analysis.
 
 ### Simple typed events
 
-Post-fact notifications use a small local `Event<T>` abstraction rather than a
-central event bus. The reusable mechanism lives under `platform.events` because it
+Local typed facts/notifications use a small `Event<T>` abstraction rather than a
+central event bus. Examples include decoded antenna observations and post-commit
+TimingData/status notifications. The reusable mechanism lives under `platform.events` because it
 is a small JDK-only reusable primitive rather than domain semantics, external I/O
 or concrete infrastructure.
 
