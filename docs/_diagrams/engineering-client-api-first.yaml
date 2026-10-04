@@ -58,7 +58,7 @@ nodes:
     layout: {x: 1165, y: 121, w: 135, h: 48}
 
   - id: tabs
-    label: "API | Events | Logs | Terminal"
+    label: "API | Events | Device Log | Terminal | Client Log"
     subtitle: API
     kind: wireframe-surface
     notation: wireframe-tabs
