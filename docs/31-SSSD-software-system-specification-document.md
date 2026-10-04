@@ -88,6 +88,9 @@ pre-migration architecture/use-case model; it does not invent a new capability s
 and architecture now share one document.
 
 - The **Timing Point Application** (SI-01) keeps local timing/registration state.
+- Local registration shall continue without a connected GUI, engineering client or
+  backoffice session when the RFID input, TimingNode and local TimingData store needed
+  for that registration are operational.
 - The planned **Desktop GUI Application** (SI-02) is a separate software item and uses
   a system-owned interface rather than SI-01 internals.
 - Local timing/device operation shall not depend on a connected GUI or engineering/test client.
@@ -102,6 +105,8 @@ and architecture now share one document.
 The software-system architecture is driven by these system-level concerns:
 
 - the **Timing Point Application** (SI-01) keeps the local timing/registration state and runs the timing/device functions;
+- local registration is the primary runtime function; presentation, diagnostics and
+  backoffice delivery are not required for a local TimingData commit;
 - the planned **Desktop GUI Application** (SI-02) is a separate software item and communicates with the Timing Point Application through the API;
 - local timing/device operation must not depend on a connected GUI or engineering/test client;
 - external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;

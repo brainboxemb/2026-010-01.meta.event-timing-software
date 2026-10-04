@@ -339,6 +339,33 @@ Failures of mandatory application-wide configuration or infrastructure that prev
 safe construction of the diagnostic runtime are outside this containment rule.
 ```
 
+```{req} Use maximum-RSSI tag observation for registration
+:id: SI01-REQ-050
+:status: D
+:derived_from: UC-003
+
+SI-01 shall use the tag observation with the maximum RSSI as the registration observation
+and shall finalize that selection after a configured timeout without a new observation.
+```
+
+For this requirement, the registration time is the original timestamp of the selected
+observation. The timeout closes the observation group; it does not replace the selected
+maximum-RSSI observation with the last observation. A maximum group duration, equal-RSSI
+tie handling and implementation scheduling belong to the detailed design.
+
+This requirement does not introduce a minimum-RSSI rejection threshold.
+
+```{req} Keep local registration independent from presentation, diagnostic logging and backoffice delivery
+:id: SI01-REQ-051
+:status: D
+:derived_from: UC-003, UC-012
+
+SI-01 shall not require presentation clients, diagnostic logging or backoffice
+delivery for a local RFID registration to be accepted and committed. Failure or
+unavailability of those functions shall not by itself stop an operational TimingNode
+from accepting and committing local registrations.
+```
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
@@ -377,6 +404,8 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
+| SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
+| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
 
 ## Software-item architecture
 
@@ -390,6 +419,9 @@ The **Timing Point Application** (SI-01) architecture is driven by these concern
 - support 1..N internal TimingSystems, each with 1..N logical TimingNodes, without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
+- keep the local registration work from antenna observation through TagProcessor,
+  TimingNode queue admission, the required TimingData write and LogBook commit
+  independent from presentation, diagnostic logging and backoffice delivery;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
 - remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
@@ -868,9 +900,10 @@ rather than as nested component boxes.
 :id: Devices
 
 `Devices` groups the software components that represent external device roles in
-SI-01. `AntennaManager` owns the configured 0..N `Antenna` components and the
-coordination needed when multiple physical antennas form one registration input
-path. `SimulatedAntenna` is the built-in reference/simulation implementation.
+SI-01. A TimingSystem may be configured without RFID antennas. When one or more
+antennas are configured, one `AntennaManager` coordinates that 1..N `Antenna`
+set for the TimingSystem. `SimulatedAntenna` is the built-in
+reference/simulation implementation.
 `Display`, `Keypad` and `Beeper` name software-facing device roles; their
 concrete variants remain subordinate to this package/component boundary.
 ```
@@ -913,9 +946,9 @@ and use the same engineering identity model as top-level diagram nodes.
 ```{arch} AntennaManager
 :id: AntennaManager
 
-`AntennaManager` coordinates the configured 0..N Antenna components that form
-one registration input path, including coordination across multiple physical
-readers where required by the selected implementation.
+`AntennaManager` coordinates 1..N configured Antenna components for one
+TimingSystem. If that TimingSystem has no configured antenna, no AntennaManager
+is required.
 ```
 
 ```{arch} Antenna
@@ -1812,11 +1845,140 @@ Public protocol semantics and TimingData compatibility remain owned by Domain.
 
 #### RFID
 
-RFID integration is an adapter boundary. Raw callbacks/protocol data do not directly mutate application state. The adapter is responsible for protocol/device interaction and turns accepted observations/health changes into typed application-facing messages.
+RFID integration is an adapter boundary. Raw vendor callbacks/protocol frames do not
+directly mutate application state. A concrete antenna provider owns protocol/device
+interaction and emits decoded observations through the common antenna capability.
 
-Decoding must preserve the source/provider semantics required by the public input contract while proprietary encoding details stay behind the provider boundary. Source-specific mapping or policy must not be guessed by a generic adapter.
+The stable decoded observation contains at least:
 
-Power/startup/recovery lifecycle and filtering semantics are architectural concerns where they affect application behaviour; exact protocol commands, crypto/proprietary codecs and retry sequences remain implementation/private detail.
+```text
+TagObservation
+  TagId
+  RSSI
+  TimingTimestamp
+```
+
+The timestamp is attached at the earliest accepted point at which SI-01 can identify the
+observation as a decoded tag observation. When a provider exposes a trustworthy source
+timestamp that can be mapped to the SI-01 time model, the adapter may use it; otherwise the
+adapter uses the owning TimingSystem TimeSource at the observation boundary. Timestamp
+assignment is not delayed until registration commit.
+
+An antenna publishes observations through the normal local typed event mechanism. The
+antenna owns `Event<TagObservation>`; consumers receive only the
+`EventSource<TagObservation>` view. Delivery is synchronous on the provider/device
+callback thread, so downstream processing must remain short and must not wait for
+TimingData persistence.
+
+Antenna operation has a lifecycle around observation delivery. An
+`AntennaManager` owns one or more configured antenna instances and coordinates:
+
+- optional power switching where the deployment provides it;
+- open/startup and initialization;
+- a one-shot startup probe that can power/open the antenna, perform a
+  hello/identity/version check and close it again without starting normal inventory;
+- inventory start/stop per antenna so multiple configured antennas can be controlled
+  independently;
+- normal shutdown and recovery/reinitialization.
+
+Concrete vendor commands, framing, crypto/proprietary codecs and retry sequences remain
+inside the provider/private implementation. A provider may hide device-specific power
+control behind its antenna implementation, or runtime composition may provide an optional
+power-control capability to the manager; external power switching is not required of every
+antenna.
+
+Antenna lifecycle/device-control calls are separate from observation delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
+for its configured antennas. Probe, power, initialize, inventory start/stop and shutdown
+are submitted as bounded control work so potentially blocking device I/O does not run on
+a TimingNode lane or on a presentation callback. Application startup may wait for a
+result-bearing manager operation because readiness depends on that outcome.
+
+The Java realization should use a shared bounded I/O `ExecutorService` rather than a
+dedicated thread per AntennaManager or per antenna. Per-manager ordering is a logical
+serialization constraint layered on that executor; it does not imply permanent thread
+ownership. Other device/network capabilities may use the same bounded I/O execution
+facility where their blocking characteristics fit the same policy, while retaining their
+own state/ordering ownership.
+
+Observation delivery does not run on the manager control lane. Concrete providers emit
+`TagObservation` from their device/library callback context through the synchronous local
+event. TagProcessor therefore executes only short thread-safe filtering/mapping/admission
+work on that callback thread and returns after bounded TimingNode submission.
+
+Raw TagObservation retention is optional non-critical diagnostic persistence. When enabled,
+it subscribes to the same observation event but only performs a bounded non-blocking handoff
+from the provider callback. File/storage I/O executes later on the shared bounded I/O
+executor. Queue saturation or diagnostic-store failure must not block or reject the normal
+registration path; it is reported through diagnostics/counters and may drop raw diagnostic
+observations according to the configured retention policy.
+
+This is deliberately different from TimingData/LogBook persistence. TimingData durability
+is part of the committed-domain-record contract and remains ordered with commit before
+LogBook visibility. A raw observation log is not TimingData, is not used to rebuild LogBook and does not
+participate in registration commit success.
+
+After decoding, generic SI-01 tag processing is distinct from vendor protocol handling.
+Repeated reads of one physical passage are first aggregated as one observation burst.
+
+```text
+Antenna Event<TagObservation>
+          |
+          v
+   observation burst per TagId
+     - update strongest RSSI/timestamp
+     - close after configured quiet time
+     - force close at configured maximum burst duration
+          |
+          v
+      TagProcessor
+        - choose strongest observation/timestamp
+        - TagId -> RegistrationId mapping
+        - registration duplicate suppression
+          |
+          v
+      TimingNode bounded submission
+```
+
+The absence of a new observation is significant: once no observation for that TagId has
+arrived during the configured quiet timeout, the open burst is closed and its selected
+candidate continues immediately to filtering/mapping/admission. Registration therefore
+does not depend on a later tag callback arriving.
+
+A maximum burst duration prevents a continuously visible tag from postponing processing
+indefinitely. When that maximum expires, the current burst is closed even if observations
+continue. A subsequent observation may open a new burst, while the longer
+registration-duplicate window prevents an already accepted RegistrationId from being
+registered again too soon.
+
+Burst aggregation and registration duplicate suppression solve different problems.
+Low-strength reads remain part of the burst because the purpose is to find the strongest
+observation of the passage, not to register as quickly as possible.
+
+The selected event timestamp is the timestamp of the observation with the highest RSSI in
+the closed burst. That strongest observation is used as the best available approximation
+of the participant being closest to the antenna, giving a more uniform registration point
+than the first/last read of a variable RF read zone. For equal maximum RSSI, the first
+observation at that maximum is kept.
+
+D04 does **not** define a minimum-RSSI rejection threshold. If later evidence shows that
+signal-strength rejection is needed, that is a separate requirement/design decision and
+must not be inferred from the presence of RSSI in TagObservation.
+
+Burst deadlines and the registration duplicate window use monotonic elapsed time.
+Their durations are configuration/profile decisions. The processor must remain safe
+when observations from multiple antennas arrive concurrently and must not add an unbounded
+worker merely to serialize them.
+
+`TagId -> RegistrationId` uses a narrow configured mapper. The mapper may be a
+deterministic transformation, provider/profile rule or reference-data-backed lookup. For a
+public deterministic example, `TAG-001 -> N-001` is a transformation rule, not a
+requirement for an in-memory lookup table. RaceData may back a concrete mapper where an
+event contract requires it; it is not a mandatory generic RFID step.
+
+Source/provider-specific decoding and mapping policy must not be guessed by a generic
+adapter. Built-in `SimulatedAntenna` uses the same lifecycle, observation event and
+TagProcessor path as a real provider and does not call TimingNode/TimingData through a
+test-only bypass.
 
 #### CAN, keypad, beeper and displays
 

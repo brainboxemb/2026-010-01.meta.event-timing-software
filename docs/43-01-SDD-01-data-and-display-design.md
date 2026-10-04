@@ -95,23 +95,36 @@ All participant registrations are committed with one shared `RegistrationId`
 representation defined by IF-05. The concrete RegistrationId domain and meaning
 may be event/profile-specific.
 
-`TagId` and `TeamId` are resolved to that canonical value before the
-definitive TimingData record is created:
+The automatic and manual source paths share the canonical RegistrationId boundary but do
+not require the same resolver:
 
 ```text
-TagId  -----> RaceData/reference resolution ----\
-                                                  +--> RegistrationId
-TeamId -----> RaceData/reference resolution ----/
+TagObservation
+  TagId + RSSI + time
+        |
+        v
+   TagProcessor
+        |
+        v
+TagRegistrationMapper -------------------------\
+                                                +--> RegistrationId
+TeamId -> team/reference resolution -----------/
 ```
 
 `TagId` belongs to the RFID/tag input path. `TeamId` belongs to the
 team/reference-data/manual path. Only the resolved `RegistrationId` is passed
-to the TimingData factory. The resolution may use current `RaceData` when
-reference data is required.
-Concrete source encoding, categories, ranges, allowed RegistrationId values and
-mapping tables remain outside this public SDD. A provider may translate an
-external representation; the active event/reference profile supplies the concrete
-identity semantics while IF-05 keeps the shared boundary representation stable.
+to the TimingData factory.
+
+The tag mapper is an injected policy boundary. It may perform a deterministic
+transformation, provider/profile-specific conversion or a RaceData/reference-data lookup.
+A lookup table is not the generic design. For the deterministic reference path, a rule
+such as `TAG-001 -> N-001` is sufficient.
+
+Concrete source encoding, RSSI representation, categories, ranges, allowed
+RegistrationId values and production mapping rules remain outside this public SDD. A
+provider translates external protocol data to the stable decoded observation; the active
+event/reference profile supplies the concrete identity semantics while IF-05 keeps the
+shared RegistrationId representation stable.
 
 ## TimingNode serial execution and timing-data commit
 

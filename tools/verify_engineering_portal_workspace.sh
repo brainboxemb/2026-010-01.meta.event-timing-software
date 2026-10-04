@@ -57,7 +57,7 @@ grep -q 'aria-expanded="true"' bld/engineering-portal/browser-workspace-IF05-REQ
 grep -q 'data-eng-tree-search' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-tree-type' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-tree-count' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'Requirement (23)' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Requirement (25)' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
@@ -491,7 +491,7 @@ grep -q 'aria-label="Open AntennaManager"' bld/engineering-portal/site/explorer/
   > bld/engineering-portal/browser-explorer-AntennaManager.html
 
 grep -q '<code>AntennaManager</code>' bld/engineering-portal/browser-explorer-AntennaManager.html
-grep -q 'coordinates the configured 0..N Antenna components' bld/engineering-portal/browser-explorer-AntennaManager.html
+grep -q 'coordinates 1..N configured Antenna components for one' bld/engineering-portal/browser-explorer-AntennaManager.html
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer-AntennaManager.html
 
 "$chrome" \

@@ -216,6 +216,9 @@ domain/
     StageStartTimesStore.java           persistence port for start-time analysis history
     RaceData.java                       passive per-node reference state
     RaceDataStore.java                  persistence port for race/reference analysis history
+    TagProcessor.java                   node-local tag filtering/mapping policy
+    TagRegistrationMapper.java          TagId -> RegistrationId policy boundary
+    TagProcessingPolicy.java            burst/duplicate-window configuration
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -228,8 +231,13 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      stable antenna contract
+      Antenna.java                      stable device/lifecycle + observation contract
+      AntennaManager.java               lifecycle owner for 1..N configured antennas
       AntennaProvider.java              typed extension provider contract
+      AntennaPowerControl.java          optional external power-switch capability
+      AntennaInfo.java                  hello/identity/version probe result
+      TagId.java                        opaque decoded source identity
+      TagObservation.java               TagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
@@ -758,14 +766,383 @@ The shared Presentation-facing application boundary remains small:
 The proxy obtains current node status through the TimingNode query/ownership
 boundary; neither object assembles status by reading node-owned fields directly.
 
+## Antenna input and tag-processing implementation
+
+The Java antenna boundary separates device lifecycle from decoded observation processing.
+
+### Antenna and manager
+
+`Antenna` represents one configured logical antenna capability. It owns its decoded
+observation event and the provider-specific device/session mechanics needed for probing,
+initialization and inventory control.
+
+Illustrative shape:
+
+```java
+interface Antenna extends AutoCloseable {
+    AntennaInfo probe();
+
+    void initialize();
+
+    void startInventory();
+
+    void stopInventory();
+
+    boolean inventoryRunning();
+
+    EventSource<TagObservation> observations();
+}
+```
+
+The exact checked/runtime exception family remains capability-specific; the important
+contract is that probe and normal inventory are different lifecycle operations.
+
+`probe()` is a one-shot health/compatibility operation. It opens/starts the provider as
+needed, performs the provider's hello/identity/version exchange and returns the decoded
+`AntennaInfo`. The provider is not left inventorying after a probe.
+
+Normal operation uses `initialize()` followed by explicit
+`startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
+provider/device resources.
+
+`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem. It
+coordinates startup probe, normal initialize/shutdown and per-antenna inventory state.
+Multiple antennas can therefore be initialized together while inventory is enabled or
+disabled independently.
+
+The manager serializes its lifecycle operations on top of a shared bounded I/O
+`ExecutorService`:
+
+```text
+                    shared bounded I/O ExecutorService
+                    /              |               \
+                   /               |                \
+      AntennaManager A      AntennaManager B      other blocking I/O
+      ordered control       ordered control       capability work
+          queue/lane            queue/lane
+             |                     |
+             v                     v
+       provider A calls      provider B calls
+```
+
+The per-manager lane is a logical ordering boundary, not a dedicated Java thread.
+At most one lifecycle operation for one manager executes at a time, while unrelated
+managers/capabilities may make progress on other executor workers.
+
+The shared executor itself is bounded and owned by runtime/infrastructure composition.
+It is not used by TagProcessor or the TimingNode worker. Provider operations use explicit
+timeouts/cancellation policy so a stuck reader does not consume executor capacity
+indefinitely. Submitting more control work than the configured bound accepts must produce
+a visible overload/failure result rather than an unbounded queue.
+
+Startup/runtime callers use result-bearing manager operations when they must know whether
+a probe/initialize/control transition succeeded. TimingNode/device observation processing
+does not synchronously wait for manager control work.
+
+External power switching is optional. When deployment hardware exposes it, composition
+supplies an `AntennaPowerControl` capability to the manager so the manager can order
+power-on before probe/initialize and power-off after close. An antenna provider that owns
+its power mechanism internally may omit that external capability; the generic
+`Antenna` contract does not pretend every reader has a separately switchable supply.
+
+### TagObservation and local event delivery
+
+`TagObservation` is an immutable decoded input fact:
+
+```java
+final class TagObservation {
+    TagId tagId();
+    int rssi();
+    TimingTimestamp observedAt();
+}
+```
+
+`TagId` is opaque at this boundary. Vendor protocol bytes, framing and proprietary
+encoding do not escape the provider. RSSI is the decoded/normalized signal-strength value
+used by the configured SI-01 filter policy.
+
+The timestamp is attached at the earliest accepted decoded-observation point. It becomes
+the automatic registration effective time if the observation passes filtering/mapping and
+is admitted. TagProcessor does not replace it with a later processing/commit timestamp.
+
+Each antenna owns:
+
+```java
+private final Event<TagObservation> observationEvent = new Event<>();
+
+public EventSource<TagObservation> observations() {
+    return observationEvent;
+}
+```
+
+The provider emits synchronously on its callback/device thread. This deliberately reuses
+the project-wide `Event<T>/EventSource<T>` primitive instead of introducing an
+Antenna-specific listener registry. Runtime composition subscribes the relevant
+TagProcessor to the configured antenna event sources.
+
+Because multiple antenna providers may call their events concurrently, TagProcessor must
+make its small filter/dedup state thread-safe. It must not rely on
+`Event<T>` serializing concurrent emissions and must not add an unbounded queue merely
+to serialize them.
+
+### Optional raw-observation persistence
+
+Raw tag-observation logging is a separate non-critical consumer of
+`EventSource<TagObservation>`. It does not sit inline between Antenna and TagProcessor.
+
+The Java shape is a bounded asynchronous sink:
+
+```text
+Antenna Event<TagObservation>
+       |
+       +--> TagProcessor ----------------------> TimingNode.submit(...)
+       |
+       +--> RawTagObservationSink
+              |
+              +-- bounded local buffer
+              +-- non-blocking offer on callback thread
+              |
+              v
+        shared bounded I/O ExecutorService
+              |
+              v
+        append/rotate diagnostic observation store
+```
+
+Do not submit one unbounded executor task per observation. The sink owns a bounded buffer
+and schedules/drains work through the shared executor so a burst of raw observations
+cannot fill the executor queue with arbitrary numbers of tiny persistence tasks.
+
+Required behaviour:
+
+- observation callback performs only a bounded/non-blocking buffer offer;
+- one sink keeps at most one drain job queued or running; new observations go only into
+  that sink's bounded local buffer;
+- a drain job processes a bounded batch before returning to the shared I/O executor;
+- stored records preserve the immutable observation values exactly enough for diagnostics;
+- queue-full/drop count is observable;
+- storage/write failures are observable;
+- diagnostic logging failure does not change TagProcessor admission or TimingData commit;
+- shutdown performs a bounded drain according to the configured diagnostic-retention
+  policy and then closes the store;
+- raw observation files are explicitly non-authoritative and may be rotated/retained
+  independently from TimingData.
+
+A concrete sink may bind source/antenna identity from the subscription/composition context
+when that is needed for diagnostics; D04 does not require source identity to be added to
+the generic TagObservation value merely for logging.
+
+### TagProcessor
+
+The node-local processor has two bounded stages: observation-burst aggregation per
+`TagId`, followed by registration-level filtering/mapping/admission.
+
+#### Observation burst aggregation
+
+A high-rate reader can report the same tag many times during one physical passage. Do not
+schedule/cancel a Java `TimerTask` for every observation and do not retain a
+`List<TagObservation>` merely to choose the strongest read.
+
+Keep one small mutable `BurstState` per currently active TagId:
+
+```java
+final class BurstState {
+    long firstSeenNanos;
+    long lastSeenNanos;
+    int maxRssi;
+    TimingTimestamp maxRssiObservedAt;
+    int observationCount;
+}
+```
+
+On each observation:
+
+1. create the state when the TagId has no open burst;
+2. update `lastSeenNanos`;
+3. increment `observationCount`;
+4. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
+   greater, so equal maxima keep the earlier observation.
+
+A burst closes when either condition becomes true:
+
+```text
+now - lastSeen >= quietTimeout
+OR
+now - firstSeen >= maxBurstDuration
+```
+
+The quiet-time rule is essential: if no further observation arrives, expiry still closes
+the burst and immediately continues with filtering/mapping/admission. Registration
+therefore does not wait for a later tag callback.
+
+The maximum-duration rule prevents a continuously visible tag from keeping one burst open
+forever. After forced closure, a later observation opens a new burst; the
+registration-level duplicate window prevents an already accepted RegistrationId from
+producing another registration inside its longer duplicate window.
+
+The selected candidate is the strongest observation in the burst and retains that
+observation's original `TimingTimestamp`.
+
+Do not pre-filter observations on RSSI. The burst exists to find the maximum RSSI across
+the complete passage.
+
+The timestamp of the maximum-RSSI observation becomes the automatic-registration
+effective time. This intentionally targets the participant's closest observed approach to
+the antenna rather than the earliest possible read.
+
+D04 defines no minimum-RSSI rejection threshold. RSSI is used for strongest-observation
+selection only. A future rejection/filter rule requires separate requirement/design
+authority.
+
+Timing deadlines use `MonotonicClock`; they do not use `Date`,
+`System.currentTimeMillis()` or the potentially corrected observation timestamp.
+
+#### Burst expiry scheduling constraints
+
+Quiet-time expiry must fire when no new observation arrives. The implementation therefore
+needs an expiry mechanism that can wake independently from the next antenna callback.
+
+D04 does **not** select a generic shared scheduler for TagProcessor filtering. In particular,
+the shared bounded I/O executor used for blocking antenna control and optional diagnostic
+observation persistence is not the TagProcessor timing mechanism.
+
+The Java realization shall keep burst-expiry work bounded and allocation-conscious:
+
+- do not create/cancel one timer task per observation;
+- do not add an unbounded worker or queue merely to serialize filtering;
+- use monotonic elapsed time for quiet/max-burst deadlines;
+- keep expiry callbacks short and perform no blocking I/O or TimingData persistence there;
+- keep the number of timer/scheduling objects bounded independently of observation rate.
+
+The exact scheduling mechanism remains a Java implementation choice until A01 qualifies it
+against these constraints. A short processor-local lock may protect burst state. Expiry
+removes an expired state under that lock and performs mapping/admission after releasing it.
+
+#### Registration filtering and admission
+
+When a burst closes:
+
+```text
+closed burst
+  |
+  +--> TagRegistrationMapper(TagId)
+  |       |
+  |       +--> no RegistrationId -------------> unmapped
+  |
+  +--> RegistrationId accepted inside
+  |    registration duplicate window ---------> duplicate
+  |
+  +--> TimingNode.submit(addAutomaticRegistration)
+          |
+          +--> ACCEPTED
+          +--> FULL
+          +--> NOT_RUNNING
+```
+
+The registration duplicate window is separate from the burst window and is keyed by the
+resolved `RegistrationId`. This also suppresses duplicate registration when different
+source tags map to the same RegistrationId.
+
+Record duplicate-window state only after `TimingNode.submit(...)` returns
+`ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
+retrying.
+
+An illustrative constructor boundary is:
+
+```java
+TagProcessor(
+    TimingNode timingNode,
+    TagRegistrationMapper mapper,
+    TagProcessingPolicy policy,
+    MonotonicClock monotonicClock,
+    ScheduledExecutorService scheduler)
+```
+
+`TagProcessingPolicy` owns at least:
+
+- burst quiet timeout;
+- maximum burst duration;
+- registration duplicate window;
+- sweep cadence.
+
+Exact profile values remain configuration rather than hard-coded TagProcessor constants.
+
+### TagRegistrationMapper
+
+The mapper is a function/policy boundary, not a required in-memory map:
+
+```java
+interface TagRegistrationMapper {
+    RegistrationId map(TagId tagId);
+}
+```
+
+Returning no RegistrationId means the decoded tag is not mappable by the active policy.
+A concrete mapper may:
+
+- perform a deterministic transformation;
+- apply provider/profile-specific conversion;
+- query locally available RaceData/reference data when that event actually requires it.
+
+The public deterministic reference mapper uses the documented transformation:
+
+```text
+TAG-001 -> N-001
+TAG-123 -> N-123
+```
+
+
+### SimulatedAntenna
+
+`SimulatedAntenna` implements the same lifecycle and observation contract. It can be
+probed/initialized, inventory can be enabled/disabled and deterministic
+`TagObservation` values can be emitted only while inventory is active.
+
+It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
+specific capability is deterministic control of the decoded observations it publishes.
+
+## Registration work and other runtime work
+
+The normal automatic-registration flow is:
+
+```text
+antenna/provider callback
+  -> Event<TagObservation>
+  -> TagProcessor
+  -> TimingNode.submit(...)
+  -> TimingNode worker
+  -> TimingDataPersistence.append(...)
+  -> LogBook.add(...)
+  -> timingDataCommittedEvent.emit(...)
+```
+
+The first four steps must stay short and must not write files, send network data or wait
+for presentation/backoffice work. `TimingNode.submit(...)` performs bounded queue
+admission and returns to TagProcessor without waiting for the TimingData commit.
+
+The TimingNode worker is allowed to wait for the required
+`TimingDataPersistence.append(...)` call because that local durable write is part of the
+TimingData commit. After the record has been written and added to LogBook, short local
+post-commit listeners may run synchronously on the TimingNode worker.
+
+A post-commit listener that needs socket I/O, retry, backoffice delivery or another
+potentially slow operation must hand that work to its own bounded delivery mechanism and
+return. Synchronous `Event<T>` delivery is therefore allowed; Step-5 measurements check
+whether listener execution time materially increases TimingNode queue wait or queue
+high-water.
+
+Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
+does not sit between TagProcessor and `TimingNode.submit(...)`. Losing raw diagnostic
+records does not change whether a TimingData registration is accepted or committed.
+
 ## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
 threads easy to separate from JDK, Maven/JGit and third-party library threads in
 a debugger, profiler or thread dump. The owner abbreviations used by the current
-runtime are `prl` (Presentation), `dml` (Domain), `inf` (Infrastructure) and
-`run` (Runtime/composition).
+runtime are `prl` (Presentation), `dml` (Domain), `io` (shared device/network I/O executor),
+`inf` (Infrastructure) and `run` (Runtime/composition).
 
 Examples:
 
@@ -776,14 +1153,31 @@ tp-prl-remote-shell
 tp-inf-live-log
 tp-inf-live-log-writer
 tp-run-shutdown
+tp-io-worker-<index>
 tp-dml-node-<NodeId>
 ```
 
-Name a thread for the functional component that owns the work, not merely the
-low-level helper that allocates the Java `Thread`. The TimingNode serial lane is
-therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform
-primitive. The final suffix is the configured NodeId, not a worker/index number.
-Threads owned by the JDK or external libraries keep their own names.
+Dedicated component threads are named for the functional component that owns the work,
+not merely the helper that allocates the Java `Thread`. The TimingNode serial lane is
+therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform primitive.
+
+Shared executor workers are named for the executor/pool role instead, for example
+`tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
+over its lifetime. Threads owned by the JDK or external libraries keep their own names.
+
+### Thread priority
+
+Step 5 starts with normal/default Java thread priority. D04 does not require a
+high-priority TimingNode, antenna or filtering thread.
+
+Measure TimingNode queue wait, execution time, persistence time and queue high-water
+before changing thread priority. If measurements show that a project-owned thread is
+regularly delayed by competing work, a role-specific priority change may be tested on the
+development host and later repeated on the target JVM/OS.
+
+Correct registration behaviour must not depend on Java thread priority. Java priority is
+only a scheduler hint and may behave differently between the development host and the
+Raspberry Pi target.
 
 ## TimingNode active-object execution and persistence
 
@@ -998,9 +1392,12 @@ control.
 
 A `ThreadPoolExecutor` configured with one thread and an
 `ArrayBlockingQueue` can implement the same semantics. It remains a valid
-alternative, especially if several TimingNodes share a small executor.
-The dedicated `SerialWorker` is chosen for transparency, not because the
-JDK executor framework is unsuitable.
+alternative. A later multi-TimingNode design may also share a small
+domain-worker executor between TimingNodes if it preserves the per-node rules below.
+
+That domain-worker executor is not the shared blocking I/O executor used for antenna
+control and diagnostic file work. The current dedicated `SerialWorker` is chosen for
+transparency, not because the JDK executor framework is unsuitable.
 
 If the implementation uses a shared executor, these invariants remain:
 
@@ -1143,8 +1540,9 @@ for analysis.
 
 ### Simple typed events
 
-Post-fact notifications use a small local `Event<T>` abstraction rather than a
-central event bus. The reusable mechanism lives under `platform.events` because it
+Local typed facts/notifications use a small `Event<T>` abstraction rather than a
+central event bus. Examples include decoded antenna observations and post-commit
+TimingData/status notifications. The reusable mechanism lives under `platform.events` because it
 is a small JDK-only reusable primitive rather than domain semantics, external I/O
 or concrete infrastructure.
 
