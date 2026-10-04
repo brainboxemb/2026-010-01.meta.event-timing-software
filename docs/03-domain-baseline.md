@@ -326,18 +326,33 @@ Three IDs have different meanings:
 - `RegistrationId` is the canonical registration identity stored in committed
   TimingData.
 
-The source IDs are resolved before TimingData construction:
+Source identities are resolved before TimingData construction, but the two
+input paths do not require the same resolver implementation:
 
 ```text
-TagId  -----> RaceData/reference resolution ----+
-                                                 +--> RegistrationId --> TimingData
-TeamId -----> RaceData/reference resolution ----+
+TagObservation
+  TagId + RSSI + observed time
+          |
+          v
+     TagProcessor
+  RSSI / duplicate policy
+          |
+          v
+TagRegistrationMapper -------------------------+
+                                                +--> RegistrationId --> TimingData
+TeamId -> team/reference resolution -----------+
 ```
 
-An automatic registration therefore starts from `TagId`; a manual registration
-starts from `TeamId`. The configured/reference data resolves either path to the
-same canonical `RegistrationId` concept before the definitive TimingData value
-is created.
+An automatic registration therefore starts from a decoded `TagObservation`.
+The TagProcessor applies SI-01 input policy and a configured
+`TagRegistrationMapper` resolves the `TagId` to the canonical
+`RegistrationId`. The concrete mapping may be a deterministic transformation,
+provider/profile rule or a reference-data-backed lookup.
+
+A manual registration starts from `TeamId` and may use RaceData/reference data
+to resolve the same canonical `RegistrationId` concept.
+
+RaceData is therefore not a mandatory hop in every automatic-registration path.
 
 `RegistrationId` is not the TimingData record key. Record identity/order remains
 `(TimingNodeId, SequenceNumber)`.
@@ -365,31 +380,49 @@ The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, inject
 
 `RegistrationId` is the canonical registration identity stored on committed
 TimingData. It is deliberately separate from the concrete source/reference IDs
-used to reach that registration:
+used to reach that registration.
+
+For RFID input, `TagId` is part of a decoded `TagObservation` together with
+RSSI and the accepted observation timestamp. The TagProcessor applies the
+configured filtering/duplicate policy and delegates identity conversion to a
+`TagRegistrationMapper`.
+
+The mapping contract is intentionally narrow:
 
 ```text
-TagId  -----> RaceData/reference resolution ----+
-                                                 +--> RegistrationId
-TeamId -----> RaceData/reference resolution ----+
+TagId -> RegistrationId
 ```
 
-`TagId` and `TeamId` remain source/reference-domain identities. Their concrete
-formats, categories, ranges and mappings are outside the public baseline.
-Resolution occurs before TimingData construction and may use locally available
-`RaceData`.
+Concrete formats and mapping rules are event/profile/provider specific. A
+reference profile may use a deterministic transformation such as:
+
+```text
+TAG-001 -> N-001
+TAG-123 -> N-123
+```
+
+A deployment may instead back the mapper with RaceData or another reference
+dataset when its actual contract requires that. The generic automatic-registration
+architecture does not require a lookup table.
+
+`TeamId` remains the manual/reference-data source identity and may use RaceData
+to resolve the same canonical `RegistrationId`.
 
 `RegistrationId` also remains separate from the TimingData record key
 `(TimingNodeId, SequenceNumber)`.
 
 ## Race data
 
-`RaceData` is the locally available participant/reference data used by one
+`RaceData` is locally available participant/reference data used by one
 `TimingNode`.
 
-It may contain the data needed to resolve source identities to canonical
-`RegistrationId` values. Obtaining or synchronising that data from an
-external system is an integration/application responsibility rather than
-behaviour owned by `RaceData`.
+It may contain data used by manual TeamId resolution or by a concrete
+`TagRegistrationMapper` when an event/profile actually requires reference-data
+lookup. It is not part of the mandatory generic antenna-to-registration path.
+
+Obtaining or synchronising RaceData from an external system is an
+integration/application responsibility rather than behaviour owned by
+`RaceData`.
 
 Concrete source formats, production mappings and private compatibility rules are
 outside this public baseline. Stage start-time data remains a separate concern
