@@ -256,10 +256,11 @@ persistence or restart recovery already covered by `VC-ST1-002`.
    `Europe/Amsterdam` on this date, `12:00:00` maps to
    `2026-10-01T10:00:00Z`.
 7. Verify the interpreted **Registrations** view shows one row with normal local clock
-   time, RegistrationId `N0001`, compact **A** and no deleted state.
-8. Verify sequence 1 appears separately in the technical LogBook with Type `AUTO_REG`
-   and Code `ADD` shown separately, and inspect the complete selected public
-   record/raw response.
+   time, TeamID unresolved (`-`) while no reference-data mapping is available, Code
+   `AUTO` and no deleted state.
+8. Verify sequence 1 appears separately in the technical LogBook with RegistrationId
+   `N0001`, Type `AUTO_REG` and Code `ADD` shown separately, and inspect the
+   complete selected public record/raw response.
 9. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
 10. Verify Client Log remains usable independently of the SI-01 Device Log connection and
    that Events, Terminal and Device Log can be connected/disconnected independently.
