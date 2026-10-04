@@ -334,13 +334,13 @@ Java queue, Future and worker mechanism.
 
 ![TimingNode OPEN sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open.svg)
 
-*Figure SDD01-TD07 — `open()` returns only after the queued operation has executed against current TimingNode state; the internal Future is not exposed to the caller.*
+*Figure SDD01-TD07 — `open(locationId)` returns only after the queued operation has executed against current TimingNode state; the internal Future is not exposed to the caller.*
 
-#### Concurrent OPEN and SET_LOCATION are ordered by the TimingNode
+#### Concurrent OPEN and CLOSE are ordered by the TimingNode
 
-![TimingNode OPEN / SET_LOCATION ordering sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open-set-location.svg)
+![TimingNode OPEN / CLOSE ordering sequence](../../../raw/prod/docs/assets/architecture/timingnode-sequence-open-close.svg)
 
-*Figure SDD01-TD08 — State-dependent validation happens when each operation reaches the serial lane, so SET_LOCATION cannot rely on an earlier external read of CLOSED state.*
+*Figure SDD01-TD08 — State-dependent validation happens when each operation reaches the serial lane; callers do not decide validity from a pre-queue state read.*
 
 #### Timeout means outcome unknown, not rollback
 
