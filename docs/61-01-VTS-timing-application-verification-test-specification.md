@@ -244,8 +244,10 @@ persistence or restart recovery already covered by `VC-ST1-002`.
    stateless API **CHECK** reports the IF-03 HTTP boundary as READY.
 3. Verify the main client tabs are **API**, **Events**, **Device Log**, **Terminal** and
    **Client Log**, with Device Log and Client Log independent.
-4. Connect **Events**. Verify the API history view enters syncing/reconnecting state and
-   becomes LIVE only after the status/capabilities/LogBook baseline is ready.
+4. Verify the prominent **Timing view** state above Version/Status initially shows
+   **NOT SYNCED — connect Events**. Connect **Events** and verify it changes to
+   **SYNCING**, keeps mutating controls disabled and becomes **LIVE** only after the
+   status/capabilities/LogBook baseline plus buffered live events are reconciled.
 5. Enter Location ID 24 and OPEN the TimingNode. Verify OPEN applies LocationId 24 in the
    same request; no separate Set Location operation is used.
 6. Commit deterministic auto-reg `N0001` at `2026-10-01T12:00:00Z`.
