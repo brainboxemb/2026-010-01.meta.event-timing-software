@@ -274,9 +274,11 @@ target hardware or multi-node integration is introduced.
 
 D01 defines the development-host measurement/evidence baseline. A01 has now
 completed the simulated antenna/tag-processing path without bypassing the
-existing TimingNode-owned commit, LogBook and persistence boundary. A02 is the
-active implementation activity: add only the low-allocation runtime
-markers/counters needed by that baseline before A03 interprets the measurements.
+existing TimingNode-owned commit, LogBook and persistence boundary. A02 has
+completed the low-allocation runtime markers/counters defined by D01. A03 is now
+the active decision activity: use measurements to decide whether any allocation,
+data-access or scratch-state change is justified; retain the simple baseline when
+evidence does not justify extra machinery.
 
 OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
 (D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
