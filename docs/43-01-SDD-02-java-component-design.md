@@ -217,7 +217,7 @@ domain/
     RaceData.java                       passive per-node reference state
     RaceDataStore.java                  persistence port for race/reference analysis history
     TagProcessor.java                   node-local tag filtering/mapping policy
-    TagRegistrationMapper.java          TagId -> RegistrationId policy boundary
+    TagRegistrationMapper.java          DecryptedTagId -> RegistrationId policy boundary
     TagProcessingPolicy.java            burst/duplicate-window configuration
   logbook/
     LogBook.java                        passive committed TimingData history
@@ -236,8 +236,8 @@ io/
       AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
       AntennaInfo.java                  hello/identity/version probe result
-      TagId.java                        opaque decoded source identity
-      TagObservation.java               TagId + RSSI + TimingTimestamp fact
+      DecryptedTagId.java               provider-decoded/decrypted source identity
+      TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
@@ -851,19 +851,20 @@ its power mechanism internally may omit that external capability; the generic
 
 ```java
 final class TagObservation {
-    TagId tagId();
+    DecryptedTagId tagId();
     int rssi();
     TimingTimestamp observedAt();
 }
 ```
 
-`TagId` is opaque at this boundary. Vendor protocol bytes, framing and proprietary
-encoding do not escape the provider. RSSI is the decoded/normalized signal-strength value
+`DecryptedTagId` is the provider-decoded/decrypted tag identity exposed to TagProcessor.
+Vendor protocol bytes, framing, encryption and decryption mechanics do not escape the
+antenna/provider boundary. RSSI is the decoded/normalized signal-strength value
 used by the configured SI-01 filter policy.
 
 The timestamp is attached at the earliest accepted decoded-observation point. It becomes
-the automatic registration effective time if the observation passes filtering/mapping and
-is admitted. TagProcessor does not replace it with a later processing/commit timestamp.
+the automatic registration effective time if the decrypted tag maps successfully, the
+resulting RegistrationId passage passes filtering and the command is admitted. TagProcessor does not replace it with a later processing/commit timestamp.
 
 Each antenna owns:
 
@@ -938,8 +939,8 @@ The node-local tag-processing path is split by responsibility:
 
 ```text
 TagProcessor
-  -> TagObservationFilter
   -> TagRegistrationMapper
+  -> TagObservationFilter
   -> RegistrationDuplicateFilter
   -> TimingNode.submit(...)
 
@@ -950,9 +951,12 @@ TagProcessingCounters
   -> owns the low-allocation processing counters
 ```
 
-`TagProcessor.onObservation(...)` is the Antenna EventSource callback. It passes the
-decoded value to `TagObservationFilter.add(...)`; the filter itself is not an event
-handler.
+`TagProcessor.onObservation(...)` is the Antenna EventSource callback. The antenna has
+already decoded/decrypted the provider data into a `DecryptedTagId`. TagProcessor maps that
+identity to `RegistrationId` before passage filtering. An unmapped decrypted tag is rejected
+before it can open a passage. A mapped observation is passed to
+`TagObservationFilter.add(registrationId, observation)`; the filter itself is not an event
+handler and has no tag-decryption or mapping responsibility.
 
 `TagProcessor` owns the processing components and defines their processing order. It
 does not own a thread, executor or closed state. Its `periodic()` operation calls the
@@ -960,11 +964,16 @@ periodic housekeeping operations of the processing components it owns.
 
 #### Observation burst aggregation
 
-A high-rate reader can report the same tag many times during one physical passage. Do not
-schedule/cancel a Java `TimerTask` for every observation and do not retain a
-`List<TagObservation>` merely to choose the strongest read.
+A high-rate reader can report the same participant many times during one physical passage,
+and one participant may have multiple decrypted tags that map to the same
+`RegistrationId`. Passage aggregation therefore happens on the resolved
+`RegistrationId`, not on the source tag identity.
 
-Keep one small mutable `BurstState` per currently active TagId:
+Do not schedule/cancel a Java `TimerTask` for every observation and do not retain a
+`List<TagObservation>` merely to choose the strongest read. Keep only the state needed
+to determine passage expiry and the strongest observation.
+
+Keep one small mutable `BurstState` per currently active `RegistrationId`:
 
 ```java
 final class BurstState {
@@ -977,7 +986,7 @@ final class BurstState {
 
 On each observation:
 
-1. create the state when the TagId has no open burst;
+1. create the state when the `RegistrationId` has no open burst;
 2. update `lastSeenNanos`;
 3. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
    greater, so equal maxima keep the earlier observation.
@@ -991,7 +1000,7 @@ now - firstSeen >= maxBurstDuration
 ```
 
 The quiet-time rule is essential: if no further observation arrives, expiry still closes
-the burst and immediately continues with filtering/mapping/admission. Registration
+the burst and immediately continues with duplicate filtering/admission. Registration
 therefore does not wait for a later tag callback.
 
 The maximum-duration rule prevents a continuously visible tag from keeping one burst open
@@ -1088,28 +1097,33 @@ closed by the application-level owner only when no other periodic registrations 
 
 #### Registration filtering and admission
 
-When a burst closes:
+Mapping precedes passage aggregation:
 
 ```text
-closed burst
+TagObservation(DecryptedTagId, RSSI, observedAt)
   |
-  +--> TagRegistrationMapper(TagId)
-  |       |
-  |       +--> no RegistrationId -------------> unmapped
-  |
-  +--> RegistrationId accepted inside
-  |    registration duplicate window ---------> duplicate
-  |
-  +--> TimingNode.submit(addAutomaticRegistration)
+  +--> TagRegistrationMapper
           |
-          +--> ACCEPTED
-          +--> FULL
-          +--> NOT_RUNNING
+          +--> no RegistrationId ----------------------> unmapped
+          |
+          +--> TagObservationFilter
+                  keyed by RegistrationId
+                  strongest RSSI / selected observedAt
+                  |
+                  +--> RegistrationDuplicateFilter ----> duplicate
+                  |
+                  +--> TimingNode.submit(addAutomaticRegistration)
+                          |
+                          +--> ACCEPTED
+                          +--> FULL
+                          +--> NOT_RUNNING
 ```
 
-The registration duplicate window is separate from the burst window and is keyed by the
-resolved `RegistrationId`. This also suppresses duplicate registration when different
-source tags map to the same RegistrationId.
+The passage filter and the longer registration duplicate window are both keyed by
+`RegistrationId`, but they solve different problems. Passage filtering combines repeated
+reads, including reads from different decrypted tags for the same registration, into one
+strongest-RSSI passage. The duplicate window suppresses a later completed passage only
+after the earlier one was admitted successfully.
 
 Record duplicate-window state only after `TimingNode.submit(...)` returns
 `ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
@@ -1142,7 +1156,7 @@ Exact profile values remain configuration rather than hard-coded TagProcessor co
 
 #### Tag-processing map sizing
 
-`TagObservationFilter` keeps one map entry per currently open distinct `TagId`.
+`TagObservationFilter` keeps one map entry per currently open distinct `RegistrationId`.
 `RegistrationDuplicateFilter` keeps one entry per accepted `RegistrationId` whose
 duplicate-window state may still matter.
 
@@ -1162,7 +1176,7 @@ The mapper is a function/policy boundary, not a required in-memory map:
 
 ```java
 interface TagRegistrationMapper {
-    RegistrationId map(TagId tagId);
+    RegistrationId map(DecryptedTagId tagId);
 }
 ```
 
@@ -1935,14 +1949,14 @@ returns a different concrete implementation.
 ### Stateless TimingData factory
 
 `TimingDataFactory` is a stateless construction service. It does not validate
-TimingNode lifecycle policy, allocate sequence numbers, resolve `TagId` or
+TimingNode lifecycle policy, allocate sequence numbers, resolve `DecryptedTagId` or
 `TeamId`, commit data, own a LogBook or publish events. Those responsibilities
 stay with the TimingNode and its contained domain components.
 
 Source/reference resolution happens before factory construction:
 
 ```text
-TagId  -----> RaceData ----\
+DecryptedTagId  -----> RaceData ----\
                          +--> RegistrationId
 TeamId -----> RaceData ----/
 ```

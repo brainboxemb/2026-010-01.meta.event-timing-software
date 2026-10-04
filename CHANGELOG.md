@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct D04 passage identity: antennas expose `DecryptedTagId`, TagProcessor maps it to `RegistrationId` before passage aggregation, and multiple tags for one registration share the same strongest-RSSI burst without retaining the full observation list.
+
 - Define the internal runtime measurement boundary for Step 5: component-owned primitive counters, pull-based TimingNode/TagProcessingCounters/JVM snapshots through `RuntimeMeasurementReader`, and no engineering metrics on the public TimingNode/IF-03 contract.
 
 - Clarify D04 tag-processing execution ownership: TagProcessor owns passive filters and a periodic task handle, while `platform.execution.PeriodicExecutor` provides the scheduling mechanism and `runtime.Composition` remains construction/wiring only.
