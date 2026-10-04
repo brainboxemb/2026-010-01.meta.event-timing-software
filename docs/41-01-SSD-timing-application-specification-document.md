@@ -355,6 +355,17 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
+```{req} Keep local registration independent from secondary services
+:id: SI01-REQ-051
+:status: D
+:derived_from: UC-003, UC-012
+
+SI-01 shall not require presentation clients, diagnostic logging or backoffice
+delivery for a local RFID registration to be accepted and committed. Failure or
+unavailability of those functions shall not by itself stop an operational TimingNode
+from accepting and committing local registrations.
+```
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
@@ -394,6 +405,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
+| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostics and backoffice delivery |
 
 ## Software-item architecture
 
@@ -407,6 +419,9 @@ The **Timing Point Application** (SI-01) architecture is driven by these concern
 - support 1..N internal TimingSystems, each with 1..N logical TimingNodes, without state leakage;
 - preserve deterministic ordering of state-changing work;
 - isolate external I/O concurrency from application/domain state mutation;
+- keep the local registration work from antenna observation through TagProcessor,
+  TimingNode queue admission, the required TimingData write and LogBook commit
+  independent from presentation, diagnostic logging and backoffice delivery;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
 - remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
