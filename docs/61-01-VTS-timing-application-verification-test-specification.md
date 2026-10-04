@@ -257,7 +257,7 @@ persistence or restart recovery already covered by `VC-ST1-002`.
    `2026-10-01T10:00:00Z`.
 7. Verify the interpreted **Registrations** view shows one row with normal local clock
    time, Type `AUTO`, TeamID unresolved (`-`) while no reference-data mapping is
-   available, Code `AUTO`, and an icon-only disabled trash action with no text column
+   available, an empty Code cell, and an icon-only disabled trash action with no text column
    heading.
 8. Verify sequence 1 appears separately in the technical LogBook with RegistrationId
    `N0001`, Type `AUTO_REG` and Code `ADD` shown separately, and inspect the
