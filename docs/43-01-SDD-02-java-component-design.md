@@ -684,13 +684,18 @@ validated Config
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
-  -> component activate (TimingNode, TagProcessor, AntennaManager)
+  -> component activate (TimingNode, TagProcessor, AntennaManager, Conductor)
   -> Presentation endpoint start
 ```
 
 `application.Conductor` owns application-wide coordination between already constructed
 components. Runtime creates and wires the Conductor but does not reimplement that
-coordination in component constructors or anonymous hidden wiring callbacks.
+coordination in component constructors or anonymous hidden wiring callbacks. Conductor
+owns one logical `SerialExecutor` application lane on a Runtime-owned application worker.
+Because local `Event<T>` delivery is synchronous, event callbacks into Conductor perform
+only bounded admission to that lane; cross-component behaviour never runs on the emitting
+TimingNode thread. `Conductor.activate()` queues a current-status reconcile on the same
+lane so startup/recovery and later status events use one behaviour path.
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
 is an explicit `start()` action. Application objects use `activate()/deactivate()` instead
 of thread terminology. `ActivationManager` records component activation order and
