@@ -186,7 +186,7 @@ for section_label in (
     "Normal operation",
     "System, backoffice and recovery",
     "Status",
-    "First registration operation",
+    "Registration operation",
 ):
     if section_label not in workspace:
         raise SystemExit(
