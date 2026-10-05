@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct D04 TagProcessor execution ownership: make TagProcessor an active object with a bounded observation input queue separate from its single execution lane, with scheduled housekeeping on that same lane, using a narrow JDK-backed execution capability and one fixed-delay housekeeping registration while timed state exists; custom lower-level execution and any role-specific thread priorities require Step-5 performance evidence.
+
 - Correct D04 passage identity: antennas expose `DecryptedTagId`, TagProcessor maps it to `RegistrationId` before passage aggregation, and multiple tags for one registration share the same strongest-RSSI burst without retaining the full observation list.
 
 - Define the internal runtime measurement boundary for Step 5: component-owned primitive counters, pull-based TimingNode/TagProcessingCounters/JVM snapshots through `RuntimeMeasurementReader`, and no engineering metrics on the public TimingNode/IF-03 contract.

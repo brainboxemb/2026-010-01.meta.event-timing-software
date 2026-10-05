@@ -277,9 +277,14 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-`SerialWorker` is a small reusable execution primitive under `platform.execution`,
-composed into TimingNode rather than used as a Domain superclass. It has no
-TimingNode or persistence semantics of its own.
+`SerialWorker` remains the current small reusable execution primitive used by TimingNode. Do
+not extend its hand-written thread/queue loop into a project-owned scheduler merely because
+TagProcessor also needs delayed work. TagProcessor's serial scheduled execution is a
+Platform capability whose default Java implementation should delegate scheduling and thread
+coordination to the JDK executor framework. Project code may wrap that JDK executor to expose
+bounded ingress, explicit admission outcomes, lifecycle and engineering counters, but it
+should not reimplement queue waiting, deadline ordering, cancellation or wake-up mechanics
+without measurement evidence.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
 
@@ -944,23 +949,29 @@ TagProcessor
   -> RegistrationDuplicateFilter
   -> TimingNode.submit(...)
 
-platform.execution periodic execution
-  -> periodically calls TagProcessor.periodic()
+TagProcessor SerialWorker
+  -> bounded observation work
+  -> scheduled housekeeping work on the same serial lane
 
 TagProcessingCounters
   -> owns the low-allocation processing counters
 ```
 
 `TagProcessor.onObservation(...)` is the Antenna EventSource callback. The antenna has
-already decoded/decrypted the provider data into a `DecryptedTagId`. TagProcessor maps that
-identity to `RegistrationId` before passage filtering. An unmapped decrypted tag is rejected
-before it can open a passage. A mapped observation is passed to
-`TagObservationFilter.add(registrationId, observation)`; the filter itself is not an event
-handler and has no tag-decryption or mapping responsibility.
+already decoded/decrypted the provider data into a `DecryptedTagId`. The callback only
+attempts bounded admission of the immutable observation to TagProcessor's serial execution
+lane and then returns. It does not map, filter or submit TimingNode work on the
+antenna/provider callback thread.
 
-`TagProcessor` owns the processing components and defines their processing order. It
-does not own a thread, executor or closed state. Its `periodic()` operation calls the
-periodic housekeeping operations of the processing components it owns.
+TagProcessor is an active object. It owns the serial execution lane used for all processing
+of admitted observations and for its scheduled housekeeping. On that lane it maps
+`DecryptedTagId` to `RegistrationId`, rejects unmapped observations, updates passage
+state, applies duplicate filtering and performs the non-blocking `TimingNode.submit(...)`
+handoff.
+
+Because all TagProcessor-owned mutable processing state is touched only on this one lane,
+`TagObservationFilter` and `RegistrationDuplicateFilter` remain passive state objects and
+do not need their own thread, scheduler, lifecycle or locking.
 
 #### Observation burst aggregation
 
@@ -1025,75 +1036,101 @@ authority.
 Timing deadlines use `MonotonicClock`; they do not use `Date`,
 `System.currentTimeMillis()` or the potentially corrected observation timestamp.
 
-#### Burst expiry scheduling constraints
+#### Burst expiry and scheduled serial work
 
-Quiet-time expiry must fire when no new observation arrives. The implementation therefore
-needs an expiry mechanism that can wake independently from the next antenna callback.
+Quiet-time expiry must still happen when no new observation arrives. The same serial lane
+that processes admitted observations therefore also supports delayed/scheduled work.
 
-D04 does **not** select a generic shared scheduler for TagProcessor filtering. In particular,
-the shared bounded I/O executor used for blocking antenna control and optional diagnostic
-observation persistence is not the TagProcessor timing mechanism.
+The execution model is:
 
-The Java realization shall keep burst-expiry work bounded and allocation-conscious:
+```text
+antenna/provider callback
+  -> TagProcessor.onObservation(observation)
+       -> bounded inputQueue.offer(observation)
+       -> return
 
-- do not create/cancel one timer task per observation;
-- do not add an unbounded worker or queue merely to serialize filtering;
-- use monotonic elapsed time for quiet/max-burst deadlines;
-- keep expiry callbacks short and perform no blocking I/O or TimingData persistence there;
-- keep the number of timer/scheduling objects bounded independently of observation rate.
-
-`TagObservationFilter` owns no scheduler and has no closed state. It exposes plain
-`add(...)` and `periodic()` operations. `RegistrationDuplicateFilter` likewise exposes
-a `periodic()` housekeeping operation for removing old duplicate-window entries.
-
-`TagProcessor.periodic()` calls the periodic operations of the processing components it
-owns. A short filter-local lock protects burst state. Expiry removes an expired state
-under that lock and invokes the valid-observation callback after releasing it.
-
-The thread/scheduling mechanism belongs to `platform.execution`, not to
-`runtime.Composition` and not to the filters.
-
-The execution boundary is:
-
-```java
-interface PeriodicExecutor {
-    PeriodicTask scheduleWithFixedDelay(
-        Runnable task,
-        long delayNanos);
-}
-
-interface PeriodicTask extends AutoCloseable {
-    void close();
-}
+TagProcessor execution lane
+  -> drain/process queued observations
+       -> map
+       -> passage update
+       -> duplicate/admission processing
+  -> scheduled housekeeping
+       -> passage expiry
+       -> duplicate cleanup
 ```
 
-`TagProcessor` receives a `PeriodicExecutor`. On `start()` it registers
-`this::periodic` using the configured sweep cadence and retains the returned
-`PeriodicTask`. On `stop()` it closes only that task.
+Scheduled housekeeping is not executed on a second worker thread and is not implemented by
+calling the passive filters directly from a shared scheduler. A due sweep executes on the
+same TagProcessor serial lane as observation work.
 
-This matches the ownership rule already used by TimingNode without forcing the same
-execution shape:
+TagProcessor separates ingress buffering from execution:
 
-- `TimingNode` owns a `SerialWorker` because all node commands execute on one serial
-  lane;
-- `TagProcessor` keeps `onObservation(...)` on the antenna/provider caller thread and
-  owns only its periodic housekeeping registration.
+- one bounded input queue stores accepted `TagObservation` values;
+- one single-thread execution lane drains/processes that queue;
+- scheduled housekeeping executes on that same lane.
 
-A `PeriodicExecutor` implementation may use a shared
-`ScheduledExecutorService`; D04/D05 do not require one thread per TagProcessor.
-`runtime.Composition` only constructs and wires the objects. The application lifecycle
-starts/stops the owning components.
+The input queue is not the executor's work queue. The antenna callback only performs
+`inputQueue.offer(observation)` and returns. This keeps provider/event delivery independent
+from mapping/filtering execution and avoids creating one executor task object per observation.
 
-The periodic execution mechanism must:
-- execute `TagProcessor.periodic()` at the configured sweep cadence;
-- prevent overlapping invocations for the same processor;
-- keep the number of scheduled objects bounded independently of observation rate;
-- create no task per observation;
-- perform no blocking I/O on the periodic callback.
+The baseline Java execution mechanism may use a single-thread
+`ScheduledThreadPoolExecutor` (or equivalent JDK executor composition). Its job is to provide
+the one serial execution lane and delayed housekeeping. The exact wake-up/coalescing strategy
+used to start queue draining is an implementation detail, but it must avoid periodic polling
+latency when observations arrive and must avoid one scheduled/executor task per observation.
 
-Shutdown stops antenna inventory, unsubscribes `TagProcessor.onObservation` from the
-antenna EventSource, then calls `TagProcessor.stop()`. The shared PeriodicExecutor is
-closed by the application-level owner only when no other periodic registrations need it.
+The JDK executor's own scheduling/thread coordination remains the default implementation.
+Do not replace it with a custom ring buffer, timer heap, wait/notify loop or other lower-level
+scheduler unless Step-5 runtime characterization shows a material CPU, allocation, latency or
+memory cost that the JDK implementation cannot meet.
+
+For the Java-8 baseline, configure the single-thread `ScheduledThreadPoolExecutor` so
+cancelled housekeeping tasks are removed promptly from its delayed queue
+(`setRemoveOnCancelPolicy(true)`). The periodic housekeeping runnable must contain/report
+its own ordinary runtime failures rather than letting them escape unintentionally: the JDK
+suppresses all later executions of a fixed-delay task after an uncaught exception.
+
+The bounded input queue provides the explicit overload boundary. A full queue drops/rejects
+that incoming observation according to the defined FULL policy; it does not consume executor
+work-queue capacity. Scheduled housekeeping is therefore independent from observation-queue
+capacity. Sustained observation ingress must still not indefinitely starve due housekeeping.
+
+TagProcessor keeps at most one periodic housekeeping registration. When time-based
+processing state changes from empty to non-empty, it starts one
+`scheduleWithFixedDelay(...)` task at the configured sweep cadence. The same periodic task
+is then reused by the JDK scheduler while timed state remains.
+
+After each sweep, when no open passage or duplicate-window state remains, TagProcessor
+cancels that periodic task. A later transition from empty to non-empty starts one new
+periodic registration.
+
+This avoids both extremes:
+- there is no timer/scheduled task per observation;
+- there is no permanently running housekeeping task while TagProcessor has no timed state;
+- each individual sweep is not resubmitted as a fresh one-shot scheduled task.
+
+The timed state includes open passage state and any duplicate-window state that still needs
+housekeeping. Passive components may expose a small state query such as `isEmpty()` /
+`hasPendingState()`; they do not schedule themselves.
+
+The execution capability uses monotonic elapsed time for scheduled deadlines. Observation
+timestamps are not used for execution scheduling. The JDK executor implementation remains
+subject to V01 measurement; custom lower-level execution is an optimization option, not the
+baseline design.
+
+The previous separate `PeriodicExecutor` / `PeriodicTask` TagProcessor mechanism is not
+part of this design. `runtime.Composition` constructs and wires the worker and processor;
+TagProcessor owns the worker lifecycle.
+
+`TagProcessor.start()` starts its serial worker. Shutdown first stops antenna inventory and
+unsubscribes `TagProcessor.onObservation`, then stops TagProcessor so no new ingress is
+accepted. Accepted observation work follows the worker drain policy; future scheduled sweeps
+are cancelled. Shutdown does not force-close a passage that has not reached its normal
+quiet/max-duration condition.
+
+The bounded observation ingress introduces an explicit overload outcome. FULL or
+NOT_RUNNING admission must be observable through engineering counters/worker state and must
+not block the antenna/provider callback.
 
 #### Registration filtering and admission
 
@@ -1129,7 +1166,8 @@ Record duplicate-window state only after `TimingNode.submit(...)` returns
 `ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
 retrying.
 
-The processor has one product constructor:
+The processor owns its bounded observation input queue and receives one serial scheduled
+execution capability for processing and housekeeping:
 
 ```java
 TagProcessor(
@@ -1138,12 +1176,17 @@ TagProcessor(
     TagProcessingPolicy policy,
     MonotonicClock monotonicClock,
     TagProcessingCounters counters,
-    PeriodicExecutor periodicExecutor)
+    SerialScheduledExecutor executor)
 ```
 
+`SerialScheduledExecutor` is a narrow project execution contract, not a requirement for a
+hand-written worker implementation. Its default implementation is JDK-backed. The contract
+exists to keep component code independent from JDK rejection/cancellation details and to
+expose the application's bounded-admission and measurement semantics consistently.
+
 Runtime/engineering composition retains the same `TagProcessingCounters` instance when
-it needs pull-based measurements. Execution ownership is separate and therefore does not create an additional
-TagProcessor constructor.
+it needs pull-based measurements. TagProcessor owns the supplied execution capability
+lifecycle; supplying it does not make `runtime.Composition` the execution model.
 
 `TagProcessingPolicy` owns at least:
 
@@ -1402,19 +1445,38 @@ Shared executor workers are named for the executor/pool role instead, for exampl
 `tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
 over its lifetime. Threads owned by the JDK or external libraries keep their own names.
 
-### Thread priority
+### Thread priority and execution roles
 
-Step 5 starts with normal/default Java thread priority. D04 does not require a
-high-priority TimingNode, antenna or filtering thread.
+The execution design keeps latency-sensitive work on separate owned lanes so thread
+priority can be tuned by role without changing Domain/component logic:
 
-Measure TimingNode queue wait, execution time, persistence time and queue high-water
-before changing thread priority. If measurements show that a project-owned thread is
-regularly delayed by competing work, a role-specific priority change may be tested on the
-development host and later repeated on the target JVM/OS.
+```text
+TagProcessor execution lane
+  -> highest registration-ingress latency class candidate
 
-Correct registration behaviour must not depend on Java thread priority. Java priority is
-only a scheduler hint and may behave differently between the development host and the
-Raspberry Pi target.
+TimingNode serial lane
+  -> medium registration/command latency class candidate
+
+shared background/application execution
+  -> lower-priority candidate for non-critical periodic/data-processing work
+```
+
+The third category is an execution resource for active background/application work; it is
+not a reason to turn passive Domain objects into threaded objects. Blocking device/I/O work
+also remains on its separate bounded I/O executor.
+
+Step 5 still starts with normal/default Java thread priority for all three roles. D04 defines
+the separation and makes role-specific priority possible, but does not yet assign numeric
+Java priority values.
+
+V01 measures queue wait, execution latency, CPU/thread behaviour and starvation/fairness.
+If evidence shows useful separation under load, role-specific priorities may then be tested,
+for example TagProcessor above TimingNode and background work below it. The exact values must
+be qualified on both the development host and the Raspberry Pi target.
+
+Correct registration behaviour, ordering and overload handling must never depend on Java
+thread priority. Java priority is only a scheduler hint and may behave differently between
+JVM/OS combinations.
 
 ## TimingNode active-object execution and persistence
 
