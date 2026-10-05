@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rebalance Figure SI01-01 Application-layer layout: increase layer height, place ConfigurationControl left of Conductor, separate PresentationGateway/TimingNodeProxy vertically, center UpstreamMessageRouter, and remove redundant cross-layer configuration arrows.
+
 - Define the IF-03 HTTP/WebSocket realization for querying current configuration, atomically setting/clearing TimingNode TagProcessor runtime overrides through Application ConfigurationControl, and publishing post-fact CONFIGURATION_CHANGED events.
 
 - Correct configuration ownership: reusable typed configuration mechanics belong to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, and query/update use-cases belong to Application; synchronize Figure SI01-01 accordingly.
