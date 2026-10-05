@@ -306,7 +306,7 @@ window.addEventListener("load", () => {
           usefulChoices.includes("Build and version identity") &&
           usefulChoices.includes("Status") &&
           usefulChoices.includes("Application boundary and testability") &&
-          usefulChoices.includes("First registration operation")
+          usefulChoices.includes("Registration operation")
             ? "passed"
             : "failed";
         collapseAll.click();
