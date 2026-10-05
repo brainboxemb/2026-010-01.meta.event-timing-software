@@ -8,7 +8,7 @@ diagram:
 
 # Authored layout grid for this figure.
 # - Main architecture stack: x=30, width=1120.
-# - Right technical column: x=1180, width=230; 30 px gutter from the main stack.
+# - Right technical column: x=1170, width=250; 20 px gutter from the main stack.
 # - Principal layers use a 30 px vertical gap.
 # - Flat-layer content starts 25 px from the left edge (x=55).
 # - Normal sibling component gap is 20 px.
@@ -92,12 +92,12 @@ groups:
   label: Runtime
   kind: layer-crosscutting
   # Runtime now also owns the concrete running configuration tree.
-  layout: {x: 1180, y: 85, w: 230, h: 325}
+  layout: {x: 1170, y: 85, w: 250, h: 325}
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1180, y: 430, w: 230, h: 1016}
+  layout: {x: 1170, y: 430, w: 250, h: 1016}
 nodes:
 - id: local-console
   object_id: Console
@@ -406,7 +406,7 @@ nodes:
   subtitle: "running application • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 125, w: 170, h: 75}
+  layout: {x: 1185, y: 125, w: 220, h: 75}
 - id: runtime-composition
   object_id: Composition
   group: runtime-layer
@@ -414,7 +414,7 @@ nodes:
   subtitle: "object graph • startup wiring"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 215, w: 170, h: 75}
+  layout: {x: 1185, y: 215, w: 220, h: 75}
 - id: application-configuration-runtime
   object_id: ApplicationConfiguration
   group: runtime-layer
@@ -422,7 +422,7 @@ nodes:
   subtitle: "concrete running configuration tree"
   kind: crosscutting
   notation: component
-  layout: {x: 1195, y: 305, w: 200, h: 85}
+  layout: {x: 1185, y: 305, w: 220, h: 85}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -430,7 +430,7 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 470, w: 170, h: 85}
+  layout: {x: 1185, y: 470, w: 220, h: 85}
 - id: logging-infra
   object_id: Logging
   group: crosscutting-layer
@@ -438,20 +438,20 @@ nodes:
   subtitle: "levels • console • retained file"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 575, w: 170, h: 85}
+  layout: {x: 1185, y: 575, w: 220, h: 85}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1210, y: 680, w: 170, h: 80}
+  layout: {x: 1185, y: 680, w: 220, h: 80}
 - id: configuration-infra
   object_id: Configuration
   group: crosscutting-layer
   label: "Configuration<T>"
-  subtitle: "read-only • dynamic • change events"
+  subtitle: "values • overrides • events"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 780, w: 170, h: 85}
+  layout: {x: 1185, y: 780, w: 220, h: 85}
 edges:
 - from: logging-server
   to: logging-infra
