@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify that executor measurement state lives in dedicated `SerialExecutorMetrics` and `SerialScheduledExecutorMetrics` classes, keeping execution primitives focused on queue/scheduling lifecycle.
+
 - Refine the Java execution model so TimingNodes and TagProcessors keep per-node serial lanes while sharing one physical worker per functional role; define 20 registrations/s as the current aggregate SI-01 stress workload rather than a per-node target.
 
 - Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
