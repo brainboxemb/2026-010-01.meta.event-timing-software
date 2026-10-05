@@ -170,7 +170,7 @@ jobs:
             --repository brainboxemb/2026-010-01.meta.event-timing-software \
             --publication-branch "$publication_branch" \
             --source-root . \
-            --tool-ref v0.9.3 \
+            --tool-ref v0.9.4 \
             --tool-sha 787b5cc0378f9dedaaee1d0dab49707c21c92804
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
