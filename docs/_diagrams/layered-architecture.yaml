@@ -168,7 +168,6 @@ nodes:
   notation: component
   layout: {x: 465, y: 389, w: 200, h: 68}
 - id: configuration-control
-  object_id: ConfigurationControl
   group: application-layer
   label: "ConfigurationControl"
   subtitle: "query / runtime override use-cases"
@@ -417,7 +416,6 @@ nodes:
   notation: component
   layout: {x: 1210, y: 215, w: 170, h: 75}
 - id: application-configuration-runtime
-  object_id: ApplicationConfiguration
   group: runtime-layer
   label: "ApplicationConfiguration"
   subtitle: "concrete running configuration tree"
@@ -446,7 +444,6 @@ nodes:
   kind: crosscutting
   layout: {x: 1210, y: 680, w: 170, h: 80}
 - id: configuration-infra
-  object_id: Configuration
   group: crosscutting-layer
   label: "Configuration<T>"
   subtitle: "read-only • dynamic • change events"
