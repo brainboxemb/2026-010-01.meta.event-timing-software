@@ -76,7 +76,7 @@ def parse_options(lines: list[str], start: int) -> tuple[dict, int]:
         match = COLON_OPTION_RE.match(lines[index])
         if not match:
             break
-        options[match.group(1)] = match.group(2)
+        options[match.group(1)] = match.group(2).strip()
         index += 1
 
     return options, index
