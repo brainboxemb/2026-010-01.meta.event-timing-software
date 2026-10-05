@@ -60,6 +60,10 @@ ApplicationConfig
 │       ├── timingDataProvider
 │       ├── upstreamProtocolProvider
 │       └── timingNodes
+│           └── <timingNode>
+│               ├── timingNodeId
+│               ├── locationId
+│               └── tagProcessing
 ├── io
 │   ├── devices
 │   │   └── antennaManager
@@ -67,7 +71,6 @@ ApplicationConfig
 │   ├── deviceNetworks
 │   │   ├── can
 │   │   └── network
-│   ├── registrationRouting
 │   ├── messaging
 │   │   └── upstream
 │   │       └── connectors
@@ -143,6 +146,12 @@ timingSystems
       timing-node-01
         timingNodeId
         locationId
+        tagProcessing
+          quietTimeoutMillis
+          maxBurstDurationMillis
+          duplicateWindowMillis
+          sweepCadenceMillis
+          observationQueueCapacity
 ```
 
 Rules:
@@ -154,6 +163,55 @@ Rules:
 - each configured `LocationId` must satisfy any compatibility constraint of the selected built-in application profile;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
 - the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
+
+### TimingNode tag-processing policy
+
+`tagProcessing` belongs to one configured TimingNode because it controls that
+TimingNode's TagProcessor semantics and bounded observation ingress. It is not
+antenna/I/O routing configuration.
+
+The reusable implementation owns usable compiled defaults. A deployment therefore
+does not need to repeat these values merely to start:
+
+```yaml
+tagProcessing:
+  quietTimeoutMillis: 250
+  maxBurstDurationMillis: 1000
+  duplicateWindowMillis: 15000
+  sweepCadenceMillis: 50
+  observationQueueCapacity: 256
+```
+
+The values above are the public first-executable defaults. A selected application
+profile/platform/mode or explicit deployment configuration may override them where
+that source deliberately specializes the policy.
+
+Validation rules are:
+
+- `quietTimeoutMillis`, `maxBurstDurationMillis` and `sweepCadenceMillis`
+  must be positive;
+- `duplicateWindowMillis` may be zero but must not be negative;
+- `observationQueueCapacity` must be positive.
+
+IF-11 owns the **effective startup configuration** only. After startup, IF-03 may
+apply a temporary runtime override to fields explicitly marked runtime-adjustable.
+Such an override changes current process state; it does not rewrite IF-11 deployment
+configuration. Restart resolves the startup value again from compiled defaults plus
+the configured override sources.
+
+The current runtime-mutability baseline is:
+
+| Field | Live override | Reason |
+| --- | --- | --- |
+| `quietTimeoutMillis` | yes | policy evaluation can change on the TagProcessor lane |
+| `maxBurstDurationMillis` | yes | policy evaluation can change on the TagProcessor lane |
+| `duplicateWindowMillis` | yes | duplicate-window evaluation can change on the TagProcessor lane |
+| `sweepCadenceMillis` | yes | housekeeping registration can be replaced on the TagProcessor lane |
+| `observationQueueCapacity` | no | it sizes the owned bounded queue and currently requires restart/recomposition |
+
+A runtime API query may expose both the effective startup value and the currently
+active value. Secrets remain excluded/redacted according to their own interface
+rules.
 
 ### I/O
 
@@ -434,11 +492,13 @@ This baseline does not require a general `SecretProvider` hierarchy.
 
 ## Configuration sources and precedence
 
-The application resolves configuration **from defaults toward explicit deployment
-intent**. Explicit deployment values win over built-in default values, but they
-do not override built-in profile compatibility constraints.
+The application resolves configuration **from compiled defaults toward explicit
+deployment intent**. Explicit deployment values win over lower-precedence defaults,
+but they do not override built-in profile compatibility constraints.
 
 ```text
+compiled component defaults
+        ↓
 selected built-in application profile defaults
         ↓
 selected platform defaults
@@ -449,11 +509,15 @@ explicit deployment application.yml overrides
         ↓
 secret resolution
         ↓
-effective ApplicationConfig
+effective startup ApplicationConfig
 ```
 
-This is deliberately not arbitrary inheritance. The three default sources answer
-orthogonal questions:
+Runtime overrides are deliberately not another IF-11 source. They are temporary
+process state applied after startup through the application-control interface.
+
+This is deliberately not arbitrary inheritance. The compiled component defaults provide a complete usable baseline for settings
+that do not require deployment-specific identity or topology. The three selected
+default sources then answer orthogonal questions:
 
 - **application profile** — what Timing Point topology/capabilities are normally
   composed for the selected deployment family;
