@@ -245,8 +245,10 @@ io/
   devices/
     antenna/
       Antenna.java                      stable device/lifecycle + observation contract
-      AntennaManager.java               lifecycle owner for 1..N configured antennas
-      AntennaInstallation.java          antenna + optional power + multiplex policy binding
+      AntennaManager.java               execution/lifecycle boundary for 1..N antennas
+      AntennaManagerLogic.java          package-private antenna/power/multiplex state logic
+      AntennaManagerTypes.java          manager lifecycle/status/failure value types
+      AntennaInstallation.java          antenna + optional external-power installation binding
       AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
@@ -1039,30 +1041,35 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
-The manager serializes its lifecycle operations on top of a shared bounded I/O
-`ExecutorService`:
+The manager serializes its lifecycle operations through the project-wide
+`SerialExecutor` primitive on top of the shared bounded I/O `ExecutorService`:
 
 ```text
                     shared bounded I/O ExecutorService
                     /              |               \
                    /               |                \
-      AntennaManager A      AntennaManager B      other blocking I/O
-      ordered control       ordered control       capability work
-          queue/lane            queue/lane
+      SerialExecutor A      SerialExecutor B      other blocking I/O
+      manager A lane         manager B lane         capability work
+             |                     |
+             v                     v
+      AntennaManager A      AntennaManager B
              |                     |
              v                     v
        provider A calls      provider B calls
 ```
 
-The per-manager lane is a logical ordering boundary, not a dedicated Java thread.
-At most one lifecycle operation for one manager executes at a time, while unrelated
-managers/capabilities may make progress on other executor workers.
+The per-manager `SerialExecutor` is a logical ordering boundary, not a dedicated Java
+thread. AntennaManager does not implement another private queue/drain executor. Runtime
+constructs the lane on the shared I/O worker; the manager owns its lane lifecycle while
+Runtime owns the physical worker lifecycle. At most one lifecycle operation for one
+manager executes at a time, while unrelated managers/capabilities may make progress on
+other I/O workers.
 
-The shared executor itself is bounded and owned by runtime/infrastructure composition.
-It is not used by TagProcessor or the TimingNode worker. Provider operations use explicit
+The shared executor itself is bounded and owned by runtime composition. It is not used by
+TagProcessor or the TimingNode worker. Result-bearing provider operations retain explicit
 timeouts/cancellation policy so a stuck reader does not consume executor capacity
-indefinitely. Submitting more control work than the configured bound accepts must produce
-a visible overload/failure result rather than an unbounded queue.
+indefinitely. Lane admission failure remains visible rather than falling back to an
+unbounded queue.
 
 Startup/runtime callers use result-bearing manager operations when they must know whether
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
@@ -1081,12 +1088,20 @@ configuration therefore binds an optional power-control capability and a power
 stabilization interval to the antenna. Provider-owned power remains possible by omitting
 the external capability.
 
-When two or more antennas share RF/device constraints that forbid simultaneous inventory,
-configuration assigns them to one inventory mutual-exclusion group. AntennaManager owns
-the multiplex policy for that group: at most one healthy member inventories at a time,
-the active member rotates at the configured interval, and a failed member is skipped
-without stopping healthy members. The public/reference two-antenna baseline uses a
-500 ms interval.
+One AntennaManager supports zero or one inventory mutual-exclusion group. The manager may
+still own 1..N antennas; antennas outside the optional group operate independently. When
+the group is present it contains 2..N configured antennas that share RF/device constraints
+forbidding simultaneous inventory. AntennaManager owns the multiplex policy for that one
+group: at most one healthy member inventories at a time, the active member rotates at the
+configured interval, and a failed member is skipped without stopping healthy members. The
+public/reference baseline is the known two-antenna installation with a 500 ms interval.
+
+The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
+owns lifecycle/status/failure value types, while package-private `AntennaManagerLogic`
+owns mutable per-antenna state, power transitions and the single-group rotation rules.
+This split is justified by the manager's current size; it is not a generic command/query
+framework. Public manager operations remain start/close, synchronous or non-blocking
+operational transition, and status queries.
 
 The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
