@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Document the realized Application `ConfigurationControl` boundary, IF-03 runtime configuration query/update/change-event flow, and the shared LocalConsole/RemoteShell terminal command baseline for open, close, automatic registration and TagProcessing configuration control.
+
 - Include the IF-03 HTTP/WebSocket IDD and Web Interface ISD in the generated documentation publication, architecture book and combined software document set; make documentation CI fail when either generated document is missing.
 
 - Separate serial-lane measurements into `SerialExecutorMetrics` / `SerialScheduledExecutorMetrics` and make both lane primitives depend only on externally owned physical workers; Runtime owns production worker construction/shutdown and lane snapshots no longer attribute shared worker CPU time.

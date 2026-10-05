@@ -798,12 +798,19 @@ Runtime owns `ApplicationConfiguration` and its concrete branches such as
 currently composed process. It is not a generic key/value map and it is not the
 external IF-11/YAML DTO.
 
-Application owns `ConfigurationControl` (name may remain compact as implementation
-settles): the use-case boundary for querying current configuration and requesting
-runtime changes. Presentation/API code calls that Application control boundary; it
-does not receive `DynamicConfiguration<T>` or mutate the Runtime tree directly.
-Application control also translates runtime-tree changes into application-wide
-configuration-change events for presentation/status publication.
+Application owns `ConfigurationControl`: the use-case boundary for querying current
+configuration and requesting runtime changes. Runtime composition supplies the
+node-scoped `DynamicConfiguration<TagProcessingPolicy>` views when constructing this
+control; Presentation never receives those Infrastructure objects or the concrete
+`ApplicationConfiguration` tree directly.
+
+`ConfigurationControl` returns Presentation-safe startup/current policy projections,
+runtime-mutability metadata and semantic `APPLIED`, `NO_CHANGE`, `INVALID` or
+`RESTART_REQUIRED` update outcomes. Partial TagProcessing SET requests are serialized
+by this control and are built from the current effective policy, so omitted fields retain
+the value from the preceding accepted update rather than reverting to startup defaults.
+An applied change emits one post-fact application `Change` event; no-change, invalid
+and restart-required requests do not emit that event.
 
 Normal components receive only the narrow Infrastructure read-only view they need.
 For TagProcessor that value is immutable `TagProcessingPolicy`. A runtime update
@@ -858,9 +865,30 @@ presentation/
       TerminalSession
 ```
 
-Console and remote shell are separate presentation interfaces. They share only the
-line-oriented command-session behaviour in `presentation.common.terminal`; both call
-the same `PresentationGateway` and shutdown callback.
+Console and remote shell are separate presentation interfaces. They share the
+line-oriented command parsing and text presentation in
+`presentation.common.terminal.TerminalSession`; both call the same
+`PresentationGateway` application boundary and shutdown callback. The current shared
+terminal command baseline is:
+
+```text
+help
+version
+status
+open <locationId>
+close
+auto-reg <registrationId> <time>
+config
+config tag-processing set <field=value>...
+config tag-processing clear
+quit
+exit
+```
+
+These are Presentation commands, not a second Domain/Application semantic contract.
+`open`, `close` and `auto-reg` delegate to `TimingNodeProxy`; configuration
+commands delegate to `ConfigurationControl`. LocalConsole and RemoteShell therefore
+cannot drift into separate implementations of node or configuration behaviour.
 
 Console, Remote Shell and API are baseline Timing Point Application capabilities.
 Application profiles do not add/remove or redefine their command/status semantics.
@@ -871,15 +899,21 @@ The functional **API** currently contains:
 
 ```text
 HttpEndpoint
-  +-- GET /api/v1/version
-  +-- GET /api/v1/status
-            \
-             +--> PresentationGateway.version() / status()
-            /
+  +-- GET  /api/v1/version
+  +-- GET  /api/v1/status
+  +-- GET  /api/v1/configuration
+  +-- POST /api/v1/node/{nodeId}/configuration/tag-processing
+                    |
+                    +--> PresentationGateway
+                           +--> TimingNodeProxy
+                           +--> ConfigurationControl
+
 WebSocketEndpoint
   +-- WS /api/v1/events
   +-- STATUS_SNAPSHOT on connect/reconnect
   +-- STATUS_CHANGED only for real status changes
+  +-- TIMING_DATA_COMMITTED after committed TimingData
+  +-- CONFIGURATION_CHANGED only after an applied runtime configuration change
 ```
 
 `MessageWriter` owns the IF-03 wire/JSON representation shared by the Remote
@@ -922,10 +956,13 @@ The Development Client remains development/test support rather than the
 SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared Presentation-facing application boundary remains small:
-`PresentationGateway.version()` returns build identity and
-`PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`.
-The proxy obtains current node status through the TimingNode query/ownership
-boundary; neither object assembles status by reading node-owned fields directly.
+`PresentationGateway.version()` returns build identity,
+`PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`, and
+`PresentationGateway.configuration()` returns the application-owned
+`ConfigurationControl`. The proxy obtains current node status through the TimingNode
+query/ownership boundary; the configuration control operates on Runtime-supplied typed
+configuration views. Presentation adapters therefore do not read node-owned fields or
+the concrete Runtime configuration tree directly.
 
 ## Antenna input and tag-processing implementation
 
