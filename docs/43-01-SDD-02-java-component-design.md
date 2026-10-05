@@ -265,7 +265,8 @@ io/
 
 platform/
   execution/
-    SerialWorker.java                     bounded one-at-a-time execution primitive
+    SerialExecutor.java                    bounded JDK-backed serial execution
+    SerialScheduledExecutor.java           JDK-backed serial execution + scheduling
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -277,16 +278,21 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-`SerialWorker` remains the current small reusable execution primitive used by TimingNode. Do
-not extend its hand-written thread/queue loop into a project-owned scheduler merely because
-TagProcessor also needs delayed work. TagProcessor's serial scheduled execution is a
-Platform capability whose default Java implementation should delegate scheduling and thread
-coordination to the JDK executor framework. Project code may wrap that JDK executor to expose
-bounded ingress, explicit admission outcomes, lifecycle and engineering counters, but it
-should not reimplement queue waiting, deadline ordering, cancellation or wake-up mechanics
-without measurement evidence.
+`SerialExecutor` is the project execution primitive used by TimingNode. Its Java
+implementation is backed by a one-thread `ThreadPoolExecutor` with a bounded
+`ArrayBlockingQueue`; project code owns the admission/lifecycle/measurement semantics, while
+the JDK owns thread coordination and queue waiting.
 
-`TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialWorker`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
+`SerialScheduledExecutor` is the corresponding serial scheduling capability used by
+TagProcessor. Its Java implementation is backed by a one-thread
+`ScheduledThreadPoolExecutor`. It owns no observation queue: TagProcessor owns that bounded
+input queue separately.
+
+These project types exist to make execution ownership and application semantics explicit.
+They are not justification for reimplementing JDK executor internals. A lower-level custom
+worker/scheduler requires Step-5 measurement evidence.
+
+`TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialExecutor`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
 
 A production `TimingNode` is always constructed as a complete capability. `TimingDataPersistence`, `TimingDataFactory` and `TimeSource` are required constructor dependencies; there is no lifecycle-only or partially configured production node. The only non-public construction seam exists for deterministic TimingNode execution-boundary tests and is documented as test-only in code.
 
@@ -949,9 +955,11 @@ TagProcessor
   -> RegistrationDuplicateFilter
   -> TimingNode.submit(...)
 
-TagProcessor SerialWorker
-  -> bounded observation work
-  -> scheduled housekeeping work on the same serial lane
+TagProcessor
+  -> bounded TagObservation input queue
+  -> SerialScheduledExecutor
+       -> queue-drain work
+       -> scheduled housekeeping on the same serial lane
 
 TagProcessingCounters
   -> owns the low-allocation processing counters
@@ -1329,7 +1337,7 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialWorker` owns queue admission, queue depth/high-water, queue wait, execution
+- `SerialExecutor` owns queue admission, queue depth/high-water, queue wait, execution
   duration and its worker-thread identity;
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
@@ -1439,7 +1447,7 @@ tp-dml-node-<NodeId>
 
 Dedicated component threads are named for the functional component that owns the work,
 not merely the helper that allocates the Java `Thread`. The TimingNode serial lane is
-therefore `tp-dml-node-<NodeId>` even though `SerialWorker` is a Platform primitive.
+therefore `tp-dml-node-<NodeId>` even though `SerialExecutor` is a Platform primitive.
 
 Shared executor workers are named for the executor/pool role instead, for example
 `tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
@@ -1515,7 +1523,7 @@ separately:
 ```java
 final class TimingNode {
     private final TimingNodeLogic logic;
-    private final SerialWorker serialWorker;
+    private final SerialExecutor serialWorker;
 
     <R> R invoke(TimingNodeCommand<R> command) {
         // admit + wait for the processed result
@@ -1611,13 +1619,27 @@ Keep that family small and add distinct exception types only where callers need
 different recovery behaviour. Timeout is a useful distinct case because its
 outcome semantics differ from definite submission rejection.
 
-### SerialWorker design
+### SerialExecutor design
 
-The SerialWorker is a small composed worker backed by one bounded queue and one
-dedicated thread. Its result types make the two result moments explicit:
+`SerialExecutor` preserves the existing TimingNode execution semantics while delegating the
+low-level worker implementation to the JDK.
+
+The baseline implementation uses:
+
+```text
+ThreadPoolExecutor
+  corePoolSize = 1
+  maximumPoolSize = 1
+  workQueue = bounded ArrayBlockingQueue
+```
+
+Do **not** use `Executors.newSingleThreadExecutor()`: its normal work queue is unbounded and
+hides overload behaviour.
+
+The project API keeps the two result moments explicit:
 
 ```java
-final class SerialWorker implements AutoCloseable {
+final class SerialExecutor implements AutoCloseable {
     enum AdmissionResult {
         ACCEPTED,
         FULL,
@@ -1630,84 +1652,82 @@ final class SerialWorker implements AutoCloseable {
     }
 
     <R> SubmitResult<R> submit(Callable<R> work) {
-        // Non-blocking queue admission.
+        // Non-blocking bounded admission.
         // futureResult() exists only when admission() == ACCEPTED.
     }
 
     AdmissionResult offer(Runnable work) {
-        // Submission-only producer path: queue admission is the only result.
+        // Submission-only producer path.
     }
 }
 ```
 
 Usage rules:
 
-- `AdmissionResult` answers only whether the bounded serial lane accepted the
-  work item;
-- `SubmitResult.futureResult()` is the Java `Future<R>` for the later
-  processed result and is available only for accepted work;
-- a successful `ACCEPTED` admission must never be interpreted as a successful
-  domain operation;
-- `offer(Runnable)` is reserved for producer paths that intentionally need no
-  synchronous processed result;
-- result-bearing TimingNode operations normally convert FULL/NOT_RUNNING into
-  their small operation/execution failure model, then wait on the Future with
-  the configured guard timeout.
+- `AdmissionResult` answers only whether the bounded serial lane accepted the work item;
+- `SubmitResult.futureResult()` represents the later processed result and is available only
+  for accepted work;
+- `ACCEPTED` is never interpreted as successful domain processing;
+- `offer(Runnable)` is for producer paths that intentionally do not wait for a result;
+- TimingNode `invoke(...)` and consistency-sensitive `query(...)` use the result-bearing
+  path;
+- TimingNode `submit(...)` uses the admission-only path.
 
-The TimingNode wrapper exposes the same distinction semantically:
+The JDK executor rejection path is translated into the project `FULL / NOT_RUNNING`
+semantics; `RejectedExecutionException` does not leak into normal TimingNode callers.
 
-- `invoke(command)` uses the result-bearing `SerialWorker.submit(Callable)` path;
-- `submit(command)` uses the admission-only `SerialWorker.offer(Runnable)` path;
-- ordinary submission-only command failures occur after the producer has returned and therefore must be reported through diagnostics/status rather than silently disappearing;
-- `query(query)` is result-bearing and normally uses the same ordered lane for consistency-sensitive reads.
-
-The concrete internal queue/task implementation and shutdown-loop details may
-change. The required behaviour is:
+The required behaviour remains:
 
 - queue capacity is visible and bounded;
 - FIFO order is preserved for one TimingNode;
-- at most one work item for that TimingNode executes at a time;
-- state-dependent validation happens in that ordered execution context;
-- result-bearing work has an internal Future that is completed by execution;
-- submission-only ingress can observe definite queue admission without waiting
-  for later domain processing;
-- one ordinary work-item failure must not silently kill the worker;
-- an unexpected failure is reported and completes a waiting operation as a
-  technical failure; the worker may continue only when TimingNode state is known
-  to remain consistent;
-- shutdown stops new admission first and lets already accepted work drain within
+- at most one work item executes at a time;
+- state-dependent validation happens on that ordered lane;
+- result-bearing work has an internal Future;
+- submission-only ingress observes definite queue admission without waiting;
+- one ordinary work-item failure does not terminate the executor lane;
+- unexpected fatal failure is observable;
+- shutdown stops new admission first and drains already accepted immediate work according to
   the controlled shutdown policy.
 
-The worker starts only after the TimingNode has completed construction/recovery
-and before the node is exposed for normal operation. During controlled shutdown,
-new work is rejected before the worker drains accepted work and stops. An
-operation waiting for a result may therefore complete normally during draining;
-an operation that cannot be admitted because shutdown has started fails
-immediately as unavailable.
+The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
+primitive and contains no TimingNode/domain/persistence logic.
 
-Do **not** use `Executors.newSingleThreadExecutor()` for this boundary: its
-normal work queue is unbounded and hides the overload behaviour we need to
-control.
+### SerialScheduledExecutor design
 
-A `ThreadPoolExecutor` configured with one thread and an
-`ArrayBlockingQueue` can implement the same semantics. It remains a valid
-alternative. A later multi-TimingNode design may also share a small
-domain-worker executor between TimingNodes if it preserves the per-node rules below.
+`SerialScheduledExecutor` is a separate Platform primitive for active objects that need one
+serial lane plus delayed/periodic work. It is not a subclass of `SerialExecutor`.
 
-That domain-worker executor is not the shared blocking I/O executor used for antenna
-control and diagnostic file work. The current dedicated `SerialWorker` is chosen for
-transparency, not because the JDK executor framework is unsuitable.
+The baseline implementation uses one `ScheduledThreadPoolExecutor` worker. It provides:
 
-If the implementation uses a shared executor, these invariants remain:
+- immediate execution on one serial lane;
+- fixed-delay scheduling on that same lane;
+- cancellation of scheduled work;
+- lifecycle/diagnostic state needed by its owner.
+
+For Java 8 the implementation enables `setRemoveOnCancelPolicy(true)` so cancelled periodic
+work is removed promptly from the delayed queue.
+
+TagProcessor owns its `ArrayBlockingQueue<TagObservation>` separately. Only coalesced queue
+drain work and housekeeping are submitted to `SerialScheduledExecutor`; there is no
+executor task per observation.
+
+The execution types intentionally differ because their workloads differ:
 
 ```text
-per TimingNode:
-  FIFO order
-  at most one work item executing
-  bounded queued work
-  visible overload
-  Future result corresponds to execution on that ordered lane
+TimingNode
+  -> SerialExecutor
+       bounded command work queue
+       result-bearing and admission-only commands
+
+TagProcessor
+  -> bounded TagObservation input queue
+  -> SerialScheduledExecutor
+       coalesced queue draining
+       scheduled housekeeping
 ```
+
+Both are JDK-backed baselines. A custom lower-level queue, worker loop or scheduler is an
+optimization option only after V01 demonstrates material overhead.
 
 ### TimingData commit
 
@@ -1918,20 +1938,21 @@ calls.
 The semantic requirement is one serial execution lane per TimingNode, not
 permanently one operating-system thread per node.
 
-The current dedicated-thread realization is:
+The current realization is:
 
 ```text
 1 TimingNode
-  -> 1 SerialWorker
-       -> 1 bounded queue
-       -> 1 dedicated worker thread
+  -> 1 SerialExecutor
+       -> ThreadPoolExecutor(1 thread)
+       -> bounded ArrayBlockingQueue
   -> passive state objects
   -> store dependencies
 ```
 
-If a multi-node composition shows that one thread per node is too
-expensive, multiple SerialWorkers may share a small executor while preserving
-the per-node invariants above.
+The semantic requirement remains one serial lane per TimingNode, not one particular executor
+implementation forever. If later multi-node evidence shows that one JDK worker per node is
+too expensive, a shared execution implementation may be evaluated only if it preserves the
+same per-node ordering, bounded-admission and result semantics.
 
 The cross-cutting bounded-resource, single-writer, immutability and
 measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specifies the
