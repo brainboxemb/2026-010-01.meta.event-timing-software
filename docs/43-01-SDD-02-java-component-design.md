@@ -631,7 +631,6 @@ The application core owns the reusable SI-01 runtime and supporting infrastructu
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
     Application.java
-    ApplicationBootstrap.java
     Composition.java
     Lifecycle.java
     RuntimeExecutors.java
@@ -666,9 +665,10 @@ Runtime is not another business/domain layer; it is where the executable object 
 assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
-A construction helper may reduce repetitive object creation, but it must not hide
-cross-component application behaviour or start physical application workers. The visible
-composition order is:
+`runtime.Composition` is the single concrete composition root; a second bootstrap/builder
+layer must not hide the object graph. Small private helpers may format repetitive local
+construction, but cross-component relationships and lifecycle order remain visible in
+`Composition`. The visible composition order is:
 
 ```text
 validated Config
@@ -710,7 +710,7 @@ immutable event value and does not need an `AntennaId` field merely for routing 
 the configured source identity is already known at the subscription point.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
-It selects simulated installations/mappings through the same `ApplicationBootstrap`; it
+It selects simulated installations/mappings through the same `Composition` root; it
 does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
 The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. Application owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
