@@ -625,6 +625,9 @@ application/
   TimingNodeProxy
     node-scoped presentation-facing application boundary
 
+  ConfigurationControl
+    configuration query/update use-cases
+
   UpstreamMessageRouter
     upstream-only application/domain target resolution and routing
 ```
@@ -633,6 +636,15 @@ application/
 :id: Conductor  
 
 `Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes.
+:::
+
+:::{arch} Configuration control  
+:id: ConfigurationControl  
+
+`ConfigurationControl` is the Application-layer use-case boundary for reading
+running configuration and requesting validated runtime overrides. Presentation
+interfaces call this boundary rather than mutating the Runtime configuration tree
+or generic configuration values directly.
 :::
 
 :::{arch} PresentationGateway  
@@ -1117,8 +1129,26 @@ behaviour belongs to SDD-02.
 
 The right-hand side of the layered view separates two technical responsibilities:
 
-- **Runtime** — the running `Application`, concrete `Composition` and lifecycle coordination;
-- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, configuration mapping and extension discovery.
+- **Runtime** — the running `Application`, concrete `Composition`, lifecycle coordination and the concrete running configuration tree;
+- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration mechanics, configuration mapping and extension discovery.
+
+:::{arch} Application configuration  
+:id: ApplicationConfiguration  
+
+`ApplicationConfiguration` is the concrete Runtime configuration tree for the
+currently composed SI-01 process. It contains typed branches such as per-TimingNode
+configuration and references Infrastructure configuration values, but it does not
+own external YAML parsing or presentation-facing control use-cases.
+:::
+
+:::{arch} Typed configuration values  
+:id: Configuration  
+
+`Configuration<T>` represents the reusable Infrastructure responsibility for
+typed startup/current values, validated runtime override state and post-change
+notification. These mechanics contain no knowledge of TimingNode, TagProcessor,
+IF-11 paths or IF-03 routes.
+:::
 
 #### Cross-cutting concerns
 

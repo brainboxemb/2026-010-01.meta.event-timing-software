@@ -133,8 +133,8 @@ The current semantic event set includes:
 - committed TimingData;
 - configuration changed.
 
-A configuration-change event is emitted only after the authoritative
-`ApplicationConfiguration` accepted a new current value. It identifies the
+A configuration-change event is emitted only after the authoritative Runtime
+`ApplicationConfiguration` tree accepted a new current value through the Application control boundary. It identifies the
 affected configuration target and current value without exposing secret material.
 
 A status-change event is emitted only after an actual authoritative status change.

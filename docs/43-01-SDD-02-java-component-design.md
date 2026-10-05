@@ -126,7 +126,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     messaging/
     storage/
   infra/
-    config/
+    configuration/
     logging/
     loggingserver/
   runtime/
@@ -198,12 +198,19 @@ The TimingNode implementation is grouped as:
 application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
+  ConfigurationControl.java        configuration query/update use-cases
+
+infra/
   configuration/
-    ApplicationConfiguration.java  authoritative running configuration root
     ReadOnlyConfiguration.java     startup/current value + change observation
-    DynamicConfiguration.java      validated runtime override/clear control
+    DynamicConfiguration.java      validated runtime override/clear primitive
     ConfigurationChange.java       immutable typed change notification
     ConfigurationUpdateResult.java APPLIED/NO_CHANGE/INVALID/RESTART_REQUIRED
+
+runtime/
+  configuration/
+    ApplicationConfiguration.java  concrete running configuration tree
+    TimingNodeConfiguration.java   node-local runtime configuration branch
 
 domain/
   system/
@@ -612,7 +619,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
 
 The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly.
 
-The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. The Application layer owns `ApplicationConfiguration` as the authoritative typed configuration root after composition. Runtime owns how startup sources are resolved; Application owns how the running process exposes current values, runtime overrides and configuration-change semantics. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
+The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. Application owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
 
 The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
@@ -621,19 +628,24 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
-
-  io.github.brainboxemb.eventtiming.timingpoint.application/
     configuration/
-      ApplicationConfiguration.java
       ReadOnlyConfiguration.java
       DynamicConfiguration.java
       ConfigurationChange.java
       ConfigurationUpdateResult.java
+      DefaultDynamicConfiguration.java
+      FixedConfiguration.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.application/
+    ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     Application.java
     Composition.java
     Lifecycle.java
+    configuration/
+      ApplicationConfiguration.java
+      TimingNodeConfiguration.java
     config/
       Config.java
       Presentation.java
@@ -660,10 +672,10 @@ main()
        -> explicit IF-11 YAML deployment overrides
        -> secret resolution
        -> validated effective startup runtime Config
-  -> core application configuration resolution
+  -> core runtime configuration-tree resolution
        -> compiled component defaults
        -> apply resolved IF-11 startup overrides
-       -> create authoritative ApplicationConfiguration
+       -> create runtime ApplicationConfiguration tree
   -> Logging
        -> configure JUL level + console/file handlers
   -> optional LoggingServer
@@ -692,12 +704,21 @@ The application core uses one explicit runtime composition boundary. There is no
 
 ### Running configuration model
 
-`ApplicationConfiguration` is the single typed access point for configuration of
-the running application. It owns per-TimingNode configuration views and may later
-own other application-level sections as real runtime-adjustable behaviour appears.
-It is not a string-keyed property bag.
+The configuration design has three deliberately separate ownership levels:
 
-The common value contracts are intentionally small:
+```text
+Infrastructure
+  typed configuration-value mechanics
+
+Runtime
+  concrete ApplicationConfiguration tree for this executable
+
+Application
+  query/update use-cases over that tree
+```
+
+Infrastructure provides the reusable value contracts. They contain no knowledge of
+TimingNode, TagProcessor, YAML paths or API routes:
 
 ```java
 interface ReadOnlyConfiguration<T> {
@@ -718,23 +739,29 @@ typed `ConfigurationChange<T>`. Validation happens before replacement. `NO_CHANG
 does not emit a change. `INVALID` and `RESTART_REQUIRED` leave the current value
 unchanged.
 
-The read-only interface is the normal dependency passed to components. Writable
-`DynamicConfiguration<T>` access is retained by application-control code rather
-than distributed to every consumer. This preserves one authoritative change point
-while still allowing components to observe their relevant configuration.
+Runtime owns `ApplicationConfiguration` and its concrete branches such as
+`TimingNodeConfiguration`. This is the authoritative configuration tree of the
+currently composed process. It is not a generic key/value map and it is not the
+external IF-11/YAML DTO.
 
-For TagProcessor the typed value is the immutable `TagProcessingPolicy`. The
-application configuration exposes that policy for the addressed TimingNode. A
-runtime update that changes `observationQueueCapacity` is rejected atomically as
+Application owns `ConfigurationControl` (name may remain compact as implementation
+settles): the use-case boundary for querying current configuration and requesting
+runtime changes. Presentation/API code calls that Application control boundary; it
+does not receive `DynamicConfiguration<T>` or mutate the Runtime tree directly.
+Application control also translates runtime-tree changes into application-wide
+configuration-change events for presentation/status publication.
+
+Normal components receive only the narrow Infrastructure read-only view they need.
+For TagProcessor that value is immutable `TagProcessingPolicy`. A runtime update
+that changes `observationQueueCapacity` is rejected atomically as
 `RESTART_REQUIRED`; the dynamic duration/cadence subset is not partially applied.
 TagProcessor reads `currentValue()` when making policy decisions. Its change
 subscription is used only for mechanics that need explicit re-registration, such
 as replacing the fixed-delay housekeeping cadence.
 
-`ApplicationConfiguration` also provides an application-wide change stream or
-equivalent aggregation for presentation/status/API publication. That aggregation
-contains typed identity/path metadata; it does not turn configuration into a
-stringly typed mutable map.
+Runtime composition creates the concrete configuration tree from compiled component
+defaults plus resolved IF-11 startup overrides. Clearing a runtime override restores
+the resolved startup value; restart reconstructs the tree from those startup sources.
 
 The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. `runtime.config.YamlLoader` maps external YAML into `runtime.config.Config`; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
 
