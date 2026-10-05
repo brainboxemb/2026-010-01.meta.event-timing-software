@@ -29,7 +29,7 @@ required = (
     '**SI01-REQ-003 — Configured TimingNode availability**',
     '— — —',
     '- **Type:** Requirement',
-    '- **Status:** Draft',
+    '- **Status:** Review',
     '- **Derived from:**',
     '- **Satisfied by:**',
     '- **Verified by:**',
