@@ -166,7 +166,7 @@ SI-01 shall publish corresponding status-change information through IF-03
 live-event delivery.
 :::
 
-On connection/reconnection the client shall be able to recover a complete authoritative snapshot according to the IF-03 contract.
+On connection/reconnection the client shall be able to recover a complete current snapshot according to the IF-03 contract.
 
 #### Application boundary and testability
 
@@ -205,7 +205,7 @@ values. A change that breaks existing IF-03 semantics shall use a new major
 interface version or a separately specified migration contract.
 :::
 
-#### First registration operation
+#### Registration operation
 
 :::{req} Operational location and lifecycle  
 :id: SI01-REQ-040  
@@ -336,7 +336,7 @@ For the affected TimingNode, SI-01 shall:
 - expose the contained failure through the current application status snapshot.
 
 Failures of mandatory application-wide configuration or infrastructure that prevent
-safe construction of the diagnostic runtime are outside this containment rule.
+construction of the diagnostic runtime are outside this containment rule.
 :::
 
 :::{req} Use maximum-RSSI tag observation for registration  
