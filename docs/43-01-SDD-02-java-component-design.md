@@ -1173,11 +1173,12 @@ configured interval, and a failed member is skipped without stopping healthy mem
 public/reference baseline is the known two-antenna installation with a 500 ms interval.
 
 The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
-owns lifecycle/status/failure value types, while package-private `AntennaManagerLogic`
-owns mutable per-antenna state, power transitions and the single-group rotation rules.
-This split is justified by the manager's current size; it is not a generic command/query
-framework. Public manager operations remain start/close, synchronous or non-blocking
-operational transition, and status queries.
+owns lifecycle/status/failure value types. `AntennaControlLane` owns admission and
+timeout handling, `AntennaSwitchController` coordinates the configured set and optional
+multiplex group, and `ManagedAntenna` owns one physical antenna's power/probe/initialize/
+inventory sequence. This split is justified by concrete responsibilities; it is not a
+generic command/query framework. Public manager operations remain activate/deactivate,
+inventory-enable control and status queries.
 
 The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
@@ -1210,7 +1211,7 @@ Each antenna owns:
 ```java
 private final Event<TagObservation> observationEvent = new Event<>();
 
-public EventSource<TagObservation> observations() {
+public EventSource<TagObservation> tagObservedEvent() {
     return observationEvent;
 }
 ```
