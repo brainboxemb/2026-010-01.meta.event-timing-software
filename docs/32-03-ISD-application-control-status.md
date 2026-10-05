@@ -130,7 +130,12 @@ The current semantic event set includes:
 
 - current status snapshot;
 - status changed;
-- committed TimingData.
+- committed TimingData;
+- configuration changed.
+
+A configuration-change event is emitted only after the authoritative
+`ApplicationConfiguration` accepted a new current value. It identifies the
+affected configuration target and current value without exposing secret material.
 
 A status-change event is emitted only after an actual authoritative status change.
 Committed TimingData is exposed as a live event only after the record is committed and is
@@ -502,6 +507,17 @@ IF-03 shall provide IF03-OP-010 for explicitly runtime-adjustable configuration
 fields. A runtime override shall change process state without rewriting IF-11
 deployment configuration, shall be removable without restart, and shall reject
 startup-only fields with an explicit restart-required/not-runtime-mutable outcome.
+:::
+
+:::{ifreq} Runtime configuration change notification  
+:id: IF03-REQ-020  
+:status: D  
+:derived_from: UC-009, SI01-REQ-001  
+
+IF03-OP-003 shall expose a configuration-change event after the authoritative
+running application configuration changes. The event shall identify the affected
+configuration target and current active value while respecting configuration
+redaction/secret rules.
 :::
 
 :::{ifreq} Degraded TimingNode status  
