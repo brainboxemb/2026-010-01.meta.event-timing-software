@@ -1,0 +1,50 @@
+name: Temporary update eng-docs pin
+
+on:
+  push:
+    branches:
+      - docs/issue-477-application-layer-layout
+    paths:
+      - '.github/workflows/update-eng-docs-pin.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch with submodules
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Update released eng-docs pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_sha="787b5cc0378f9dedaaee1d0dab49707c21c92804"
+          old_sha="6b87c723d8687f7751dfb3e67da2013a5781f75a"
+
+          git -C tools/tool.eng-docs fetch --tags origin
+          git -C tools/tool.eng-docs checkout "$target_sha"
+
+          python - <<'PY'
+          from pathlib import Path
+          path = Path(".github/workflows/docs-build.yml")
+          text = path.read_text(encoding="utf-8")
+          old = "6b87c723d8687f7751dfb3e67da2013a5781f75a"
+          new = "787b5cc0378f9dedaaee1d0dab49707c21c92804"
+          if old not in text:
+              raise SystemExit("expected tool.eng-docs pin not found")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+
+          git rm .github/workflows/update-eng-docs-pin.yml
+          git add tools/tool.eng-docs .github/workflows/docs-build.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Use tool.eng-docs v0.9.4 polygon anchors"
+          git push origin HEAD:docs/issue-477-application-layer-layout
