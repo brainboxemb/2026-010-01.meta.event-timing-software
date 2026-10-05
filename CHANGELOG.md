@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct configuration ownership: reusable typed configuration mechanics belong to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, and query/update use-cases belong to Application; synchronize Figure SI01-01 accordingly.
+
 - Correct configuration ownership: generic typed configuration mechanics move to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, Application owns only configuration query/update use-cases, and Figure SI01-01 is synchronized with that split.
 
 - Define the central typed `ApplicationConfiguration` model: compiled defaults plus IF-11 startup overrides, read-only/dynamic configuration views with typed change notifications, TimingNode-local TagProcessor policy ownership, and IF-03 runtime query/override/change-event semantics.
