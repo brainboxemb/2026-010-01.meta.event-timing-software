@@ -695,7 +695,7 @@ to the manager's subscription-only event source, conceptually:
 
 ```java
 antennaManager.tagObservedEvent(antennaId)
-        .subscribe(timingNode.tagProcessor()::onObservation);
+        .subscribe(timingNode.tagProcessor()::onTagObserved);
 
 timingNode.statusChangedEvent()
         .subscribe(conductor::onTimingNodeStatusChanged);
@@ -1260,7 +1260,7 @@ TagProcessingMetrics
   -> owns the low-allocation processing counters
 ```
 
-`TagProcessor.onObservation(...)` is the Antenna EventSource callback. The antenna has
+`TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. The antenna has
 already decoded/decrypted the provider data into a `DecryptedTagId`. The callback only
 attempts bounded admission of the immutable observation to TagProcessor's serial execution
 lane and then returns. It does not map, filter or offer TimingNode work on the
