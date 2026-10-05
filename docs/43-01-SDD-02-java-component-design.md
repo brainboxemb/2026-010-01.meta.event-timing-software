@@ -126,7 +126,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     messaging/
     storage/
   infra/
-    config/
+    configuration/
     logging/
     loggingserver/
   runtime/
