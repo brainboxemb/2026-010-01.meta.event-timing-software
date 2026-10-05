@@ -98,7 +98,7 @@ groups:
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1180, y: 430, w: 230, h: 966}
+  layout: {x: 1180, y: 430, w: 230, h: 1016}
 nodes:
 - id: local-console
   object_id: Console
@@ -502,14 +502,6 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
 
-- from: configuration-control
-  to: application-configuration-runtime
-  dashed: true
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
-  route:
-    - {x: 1165, y: 424}
-    - {x: 1165, y: 347.5}
 
 
 - from: upstream-message-router
