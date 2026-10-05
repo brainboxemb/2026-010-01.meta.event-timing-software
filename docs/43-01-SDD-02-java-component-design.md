@@ -592,7 +592,7 @@ Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
 - provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
-- the executable application chooses and configures the provider/backend before `runtime.Composition` starts normal application composition;
+- the executable application chooses and configures the provider/backend before `runtime.TimingApplication.create(...)` starts normal application composition;
 - the default Java-8 application uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
 - `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
@@ -668,7 +668,7 @@ The executable composition must remain readable as one linear construct-wire-sta
 returned `TimingApplication` owns the lifecycle of that already composed graph. A second
 bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
 construction, but cross-component relationships and lifecycle order remain visible in
-`Composition`. The visible composition order is:
+`TimingApplication.create(...)`. The visible composition order is:
 
 ```text
 validated Config
@@ -683,7 +683,7 @@ validated Config
 
 `application.Conductor` owns application-wide coordination between already constructed
 components. Runtime creates and wires the Conductor but does not reimplement that
-coordination in `Application`, constructors or anonymous lifecycle callbacks.
+coordination in component constructors or anonymous hidden wiring callbacks.
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
 is an explicit lifecycle action. Shutdown unwinds started resources in reverse ownership
 order.
@@ -735,8 +735,7 @@ timing-point-core.jar
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
-    Application.java
-    Composition.java
+    TimingApplication.java
     Lifecycle.java
     configuration/
       ApplicationConfiguration.java
@@ -798,7 +797,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplication.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplication` owns start/stop lifecycle.
 
 ### Running configuration model
 
@@ -879,7 +878,7 @@ The resolver responsibility must remain data/composition oriented:
 - platform defaults may select environment-specific values;
 - operating-mode defaults may replace real providers with simulated providers;
 - explicit IF-11 deployment values have highest non-secret precedence;
-- `runtime.Composition` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
+- `runtime.TimingApplication.create(...)` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
 
 SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
@@ -1441,11 +1440,11 @@ subject to V01 measurement; custom lower-level execution is an optimization opti
 baseline design.
 
 The previous separate `PeriodicExecutor` / `PeriodicTask` TagProcessor mechanism is not
-part of this design. `runtime.Composition` constructs and wires the worker and processor;
+part of this design. `runtime.TimingApplication.create(...)` constructs and wires the worker and processor;
 TagProcessor owns the worker lifecycle.
 
-`TagProcessor.start()` starts its serial worker. Shutdown first stops antenna inventory and
-unsubscribes `TagProcessor.onObservation`, then stops TagProcessor so no new ingress is
+`TagProcessor.start()` starts its serial execution lane. Shutdown first stops antenna inventory and
+unsubscribes `TagProcessor.onTagObserved`, then stops TagProcessor so no new ingress is
 accepted. Accepted observation work follows the worker drain policy; future scheduled sweeps
 are cancelled. Shutdown does not force-close a passage that has not reached its normal
 quiet/max-duration condition.
@@ -1510,7 +1509,7 @@ expose the application's bounded-admission and measurement semantics consistentl
 
 Runtime/engineering composition retains the same `TagProcessingMetrics` instance when
 it needs pull-based measurements. TagProcessor owns the supplied execution capability
-lifecycle; supplying it does not make `runtime.Composition` the execution model.
+lifecycle; supplying it does not make `runtime.TimingApplication.create(...)` the execution model.
 
 `TagProcessingPolicy` owns at least:
 
@@ -2599,7 +2598,7 @@ is no longer merely a optional capability. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
-runtime.Composition
+runtime.TimingApplication.create(...)
   -> infra extension discovery support
        -> discover built-in providers
        -> discover external provider JARs
@@ -2611,7 +2610,7 @@ runtime.Composition
        DisplayProtocolProvider
   -> validate configured provider IDs
   -> create normal typed implementations
-  -> compose runtime.Application
+  -> return runtime.TimingApplication
 ```
 
 For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
