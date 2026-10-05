@@ -218,7 +218,7 @@ domain/
     RaceDataStore.java                  persistence port for race/reference analysis history
     TagProcessor.java                   node-local tag filtering/mapping policy
     TagRegistrationMapper.java          DecryptedTagId -> RegistrationId policy boundary
-    TagProcessingPolicy.java            burst/duplicate-window configuration
+    TagProcessingPolicy.java            compiled defaults + active tag-processing policy
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -892,10 +892,11 @@ the project-wide `Event<T>/EventSource<T>` primitive instead of introducing an
 Antenna-specific listener registry. Runtime composition subscribes the relevant
 TagProcessor to the configured antenna event sources.
 
-Because multiple antenna providers may call their events concurrently, TagProcessor must
-make its small filter/dedup state thread-safe. It must not rely on
-`Event<T>` serializing concurrent emissions and must not add an unbounded queue merely
-to serialize them.
+Multiple antenna providers may call their events concurrently. TagProcessor handles that
+concurrency only at its bounded observation-input queue: each provider callback performs
+non-blocking ingress and returns. Mapping, passage filtering, duplicate filtering,
+housekeeping and runtime policy replacement execute on TagProcessor's one serial scheduled
+lane. Passive filter state therefore remains single-lane and requires no additional locks.
 
 ### Optional raw-observation persistence
 
@@ -1216,8 +1217,32 @@ lifecycle; supplying it does not make `runtime.Composition` the execution model.
 - sweep cadence;
 - bounded observation input-queue capacity.
 
-Exact profile values remain configuration/profile input rather than hard-coded TagProcessor
-constants. Queue capacity is a resource bound, not a TimingNode/domain value.
+The reusable `TagProcessingPolicy` owns usable compiled defaults so TagProcessor can be
+composed without mandatory deployment repetition. The current first-executable defaults are:
+
+- quiet timeout: 250 ms;
+- maximum burst duration: 1000 ms;
+- duplicate window: 15000 ms;
+- sweep cadence: 50 ms;
+- observation input-queue capacity: 256.
+
+Runtime composition resolves an immutable startup policy from those compiled defaults plus
+optional profile/platform/mode and explicit IF-11 overrides. Queue capacity is a resource
+bound owned by TagProcessor, not a TimingNode/domain identity value.
+
+IF-03 may replace runtime-adjustable policy fields while the application is running.
+Policy replacement is itself serialized onto the TagProcessor lane so no filter/housekeeping
+operation observes a partially updated policy. Quiet timeout, maximum burst duration,
+duplicate window and sweep cadence are runtime-adjustable. Existing first-seen/accepted
+timestamps remain unchanged; later expiry/duplicate decisions use the newly active policy.
+Changing sweep cadence replaces the housekeeping registration on the same lane.
+
+`observationQueueCapacity` is startup-only in the current baseline because it sizes the
+owned `ArrayBlockingQueue<TagObservation>`. A live override request for that field is
+rejected as restart-required rather than replacing the queue underneath concurrent ingress.
+
+Runtime overrides are process state. Clearing an override restores the resolved startup
+value; restart reconstructs the startup policy from compiled defaults plus IF-11 sources.
 
 #### Tag-processing map sizing
 
