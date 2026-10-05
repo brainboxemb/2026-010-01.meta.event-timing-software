@@ -297,96 +297,96 @@ application-level authentication or authorisation for IF-03.
 ## IF-03 requirements
 
 :::{ifreq} Shared application semantics  
-:id: IF03-REQ-001
-:status: R
-:derived_from: UC-001, UC-002, UC-008, UC-009
+:id: IF03-REQ-001  
+:status: R  
+:derived_from: UC-001, UC-002, UC-008, UC-009  
 
 IF-03 operations and events shall use the shared SI-01 application/domain semantics
 rather than implement independent business or lifecycle state in an interface adapter.
 :::
 
 :::{ifreq} Remote-host operation  
-:id: IF03-REQ-002
-:status: R
-:derived_from: UC-008, UC-009
+:id: IF03-REQ-002  
+:status: R  
+:derived_from: UC-008, UC-009  
 
 IF-03 shall support operation across a normal IP network boundary when non-loopback
 access is explicitly configured.
 :::
 
 :::{ifreq} Version query  
-:id: IF03-REQ-003
-:status: R
-:derived_from: UC-001, UC-009
+:id: IF03-REQ-003  
+:status: R  
+:derived_from: UC-001, UC-009  
 
 IF-03 shall provide IF03-OP-001.
 :::
 
 :::{ifreq} Status query  
-:id: IF03-REQ-004
-:status: R
-:derived_from: UC-001, UC-008, UC-009
+:id: IF03-REQ-004  
+:status: R  
+:derived_from: UC-001, UC-008, UC-009  
 
 IF-03 shall provide IF03-OP-002.
 :::
 
 :::{ifreq} Live status and committed-data delivery  
-:id: IF03-REQ-005
-:status: R
-:derived_from: UC-008, UC-009
+:id: IF03-REQ-005  
+:status: R  
+:derived_from: UC-008, UC-009  
 
 IF-03 shall provide IF03-OP-003.
 :::
 
 :::{ifreq} Reconnect to current state  
-:id: IF03-REQ-006
-:status: R
-:derived_from: UC-001, UC-009
+:id: IF03-REQ-006  
+:status: R  
+:derived_from: UC-001, UC-009  
 
 A connecting or reconnecting client shall be able to establish complete current status
 before relying on later live changes.
 :::
 
 :::{ifreq} Machine-readable API realization  
-:id: IF03-REQ-007
-:status: R
-:derived_from: UC-008, UC-009
+:id: IF03-REQ-007  
+:status: R  
+:derived_from: UC-008, UC-009  
 
 The IF-03 realization shall provide a machine-readable representation suitable for SI-02,
 engineering clients and automated test tooling.
 :::
 
 :::{ifreq} Explicit failure outcome  
-:id: IF03-REQ-008
-:status: R
-:derived_from: UC-002, UC-008, UC-009
+:id: IF03-REQ-008  
+:status: R  
+:derived_from: UC-002, UC-008, UC-009  
 
 Unsupported, invalid or rejected IF-03 operations shall expose an explicit failure outcome
 rather than silently reporting success.
 :::
 
 :::{ifreq} Safe default listen scope  
-:id: IF03-REQ-009
-:status: R
-:derived_from: UC-008, UC-009
+:id: IF03-REQ-009  
+:status: R  
+:derived_from: UC-008, UC-009  
 
 Without explicit remote-access configuration, the network realization of IF-03 shall be
 local/loopback only.
 :::
 
 :::{ifreq} Compatible extension  
-:id: IF03-REQ-010
-:status: R
-:derived_from: UC-008, UC-009
+:id: IF03-REQ-010  
+:status: R  
+:derived_from: UC-008, UC-009  
 
 Compatible additions within one IF-03 major version shall not silently redefine existing
 operation or value semantics.
 :::
 
 :::{ifreq} TimingNode location and lifecycle control  
-:id: IF03-REQ-011
-:status: R
-:derived_from: UC-001, UC-002, UC-009
+:id: IF03-REQ-011  
+:status: R  
+:derived_from: UC-001, UC-002, UC-009  
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
 LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005
@@ -395,18 +395,18 @@ CLOSED-to-OPEN transition as one ordered TimingNode operation.
 :::
 
 :::{ifreq} Engineering capability discovery  
-:id: IF03-REQ-012
-:status: R
-:derived_from: UC-009
+:id: IF03-REQ-012  
+:status: R  
+:derived_from: UC-009  
 
 IF-03 shall provide IF03-OP-004 so engineering clients can determine whether optional
 engineering commands are supported and enabled.
 :::
 
 :::{ifreq} Direct accepted-registration simulation  
-:id: IF03-REQ-013
-:status: R
-:derived_from: UC-003, UC-009
+:id: IF03-REQ-013  
+:status: R  
+:derived_from: UC-003, UC-009  
 
 When its advertised capability is enabled, IF-03 shall provide IF03-OP-007 using an
 explicit supported automatic-registration action, resolved RegistrationId and accepted
@@ -414,27 +414,27 @@ time while leaving TimingNode-owned commit context inside SI-01.
 :::
 
 :::{ifreq} Committed LogBook query  
-:id: IF03-REQ-014
-:status: R
-:derived_from: UC-009, UC-011
+:id: IF03-REQ-014  
+:status: R  
+:derived_from: UC-009, UC-011  
 
 IF-03 shall provide IF03-OP-008 as a node-addressed bounded LogBook query in committed
 source-sequence order using public IF-05 semantics.
 :::
 
 :::{ifreq} Live committed TimingData delivery  
-:id: IF03-REQ-015
-:status: R
-:derived_from: UC-009, UC-011
+:id: IF03-REQ-015  
+:status: R  
+:derived_from: UC-009, UC-011  
 
 IF03-OP-003 shall expose a committed TimingData event only after the corresponding record
 is committed and visible in the TimingNode LogBook.
 :::
 
 :::{ifreq} Rebuild committed history before live presentation  
-:id: IF03-REQ-016
-:status: R
-:derived_from: UC-009, UC-011
+:id: IF03-REQ-016  
+:status: R  
+:derived_from: UC-009, UC-011  
 
 A reconnecting client shall be able to combine current status, bounded committed LogBook
 history and later live events using stable TimingData record identity before declaring its
@@ -443,9 +443,9 @@ view live.
 
 
 :::{ifreq} Degraded TimingNode status  
-:id: IF03-REQ-017
-:status: D
-:derived_from: UC-020
+:id: IF03-REQ-017  
+:status: D  
+:derived_from: UC-020  
 
 IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall represent a
 contained TimingNode startup failure using node state `ERROR` and a machine-readable
