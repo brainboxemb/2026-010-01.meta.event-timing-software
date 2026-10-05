@@ -28,9 +28,8 @@ groups:
 - id: application-layer
   label: Application layer
   kind: layer-application
-  # Keep this layer deliberately taller than a single component row. PresentationGateway
-  # sits slightly higher and TimingNodeProxy slightly lower so the node-scoped proxy is
-  # visually distinct from the application entry point without adding another sub-layer.
+  # Extra height keeps the application entry/proxy vertical pair separate from
+  # the centered coordination/control/router row.
   layout: {x: 30, y: 318, w: 1120, h: 210}
 - id: domain-layer
   label: Domain layer
@@ -500,7 +499,9 @@ edges:
   to: configuration-control
   dashed: true
   from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: right, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+  route:
+    - {x: 150, y: 379}
 
 
 
@@ -545,4 +546,4 @@ edges:
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: top, position: 0.32}
   route:
-    - {x: 421.6, y: 709.5}
+    - {x: 421.6, y: 759.5}
