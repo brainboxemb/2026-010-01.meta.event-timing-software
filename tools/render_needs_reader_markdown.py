@@ -11,7 +11,7 @@ import re
 import yaml
 
 
-OPEN_RE = re.compile(r"^\x60\x60\x60\{([A-Za-z0-9_-]+)\}\s*(.*)$")
+OPEN_RE = re.compile(r"^(?P<fence>```|:::)\{(?P<directive>[A-Za-z0-9_-]+)\}\s*(?P<title>.*)$")
 COLON_OPTION_RE = re.compile(r"^:([A-Za-z0-9_-]+):\s*(.*)$")
 
 STATUS_LABELS = {
@@ -164,20 +164,21 @@ def transform_text(text: str, needs: dict[str, dict]) -> str:
 
     while index < len(lines):
         match = OPEN_RE.match(lines[index])
-        if not match or match.group(1) not in TYPE_LABELS:
+        if not match or match.group("directive") not in TYPE_LABELS:
             output.append(lines[index])
             index += 1
             continue
 
-        directive = match.group(1)
-        title = match.group(2).strip()
+        fence = match.group("fence")
+        directive = match.group("directive")
+        title = match.group("title").strip()
         options, body_start = parse_options(lines, index + 1)
 
         if body_start < len(lines) and lines[body_start] == "":
             body_start += 1
 
         end = body_start
-        while end < len(lines) and lines[end] != "```":
+        while end < len(lines) and lines[end] != fence:
             end += 1
         if end >= len(lines):
             raise ReaderRenderError(

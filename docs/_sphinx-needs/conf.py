@@ -10,6 +10,9 @@ extensions = [
 master_doc = "index"
 source_suffix = {".md": "markdown"}
 
+# Keep MyST directives readable in ordinary Markdown source review (for example GitHub).
+myst_enable_extensions = ["colon_fence"]
+
 needs_id_required = True
 needs_id_regex = r"^[A-Za-z][A-Za-z0-9_-]*$"
 needs_build_json = True

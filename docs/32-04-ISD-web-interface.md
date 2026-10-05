@@ -181,7 +181,7 @@ encoding belong to the IF-04 design/configuration layer rather than this ISD.
 
 ## IF-04 requirements
 
-```{ifreq} Per-TimingNode Web binding
+:::{ifreq} Per-TimingNode Web binding
 :id: IF04-REQ-001
 :status: D
 :derived_from: UC-001, UC-002
@@ -189,44 +189,44 @@ encoding belong to the IF-04 design/configuration layer rather than this ISD.
 IF-04 shall support one configured Web binding per TimingNode. The binding shall
 identify the TimingNode to which IF-04 operations apply without making the Web
 endpoint part of TimingNode domain identity.
-```
+:::
 
-```{ifreq} Current TimingNode state
+:::{ifreq} Current TimingNode state
 :id: IF04-REQ-002
 :status: D
 :derived_from: UC-001, UC-002
 
 IF-04 shall expose the bound TimingNode identity, current operational LocationId
 when assigned, OPEN/CLOSED lifecycle state and relevant explicit problem state.
-```
+:::
 
-```{ifreq} Open with LocationId
+:::{ifreq} Open with LocationId
 :id: IF04-REQ-003
 :status: D
 :derived_from: UC-002
 
 IF-04 OPEN shall carry the requested LocationId and shall represent LocationId
 selection plus the CLOSED-to-OPEN transition as one ordered TimingNode operation.
-```
+:::
 
-```{ifreq} Close operation
+:::{ifreq} Close operation
 :id: IF04-REQ-004
 :status: D
 :derived_from: UC-002
 
 IF-04 shall provide an explicit CLOSE operation for the bound TimingNode.
-```
+:::
 
-```{ifreq} Shared TimingNode semantics
+:::{ifreq} Shared TimingNode semantics
 :id: IF04-REQ-005
 :status: D
 :derived_from: UC-002
 
 IF-04 shall use SI-01 TimingNode application/domain semantics rather than own a
 separate lifecycle or LocationId state model.
-```
+:::
 
-```{ifreq} Explicit failure outcome
+:::{ifreq} Explicit failure outcome
 :id: IF04-REQ-006
 :status: D
 :derived_from: UC-001, UC-002
@@ -234,9 +234,9 @@ separate lifecycle or LocationId state model.
 Invalid, rejected, unavailable and outcome-unknown operations shall be
 distinguishable from successful operations. A concrete compatibility mapping may
 reduce the available failure detail.
-```
+:::
 
-```{ifreq} Compatible Web realizations
+:::{ifreq} Compatible Web realizations
 :id: IF04-REQ-007
 :status: D
 :derived_from: UC-001, UC-002
@@ -244,7 +244,7 @@ reduce the available failure detail.
 IF-04 shall allow concrete Web realizations to map endpoint names, field names
 and representation types while preserving the semantic operations, values,
 results and ordering defined by this ISD.
-```
+:::
 
 
 ## Open points

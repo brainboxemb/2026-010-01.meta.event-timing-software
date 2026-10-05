@@ -15,6 +15,11 @@ forbidden = (
     "```{ifreq}",
     "```{arch}",
     "```{vc}",
+    ":::{uc}",
+    ":::{req}",
+    ":::{ifreq}",
+    ":::{arch}",
+    ":::{vc}",
 )
 for token in forbidden:
     if token in text:
