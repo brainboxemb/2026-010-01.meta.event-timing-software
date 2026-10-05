@@ -158,7 +158,9 @@ A concrete characterization case defines at least:
 - deterministic seed or exact ordered input set;
 - observation count/rate or burst shape;
 - known/unknown tag mix;
-- initial TimingNode state and LocationId;
+- configured TimingNode count;
+- aggregate registration rate and its per-node distribution;
+- initial TimingNode state and LocationId for each active node;
 - preloaded committed-record count;
 - TimingNode queue capacity;
 - persistence mode;
@@ -166,6 +168,13 @@ A concrete characterization case defines at least:
 - measured interval/repetition count.
 
 Do not encode product limits into these fixture values. They are engineering workloads.
+
+The current reference stress workload uses **20 registrations per second aggregate across
+the complete SI-01 application**. That is a characterization input, not 20/s per
+TimingNode and not yet a product limit. Multi-node runs keep the same aggregate rate and
+vary its distribution (for example one node at 20/s, or two nodes at 10/s each) so worker
+fairness, queue growth and persistence delay can be compared without silently multiplying
+the required Raspberry Pi capacity.
 
 Use multiple measured repetitions for a comparison and retain ordinary variation; do not
 keep only the best run. Candidate changes use the same workload definition as their
