@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1426
+  height: 1476
   description: Working responsibility view of the Timing Point Application core and executable composition.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -31,11 +31,11 @@ groups:
   # Keep this layer deliberately taller than a single component row. PresentationGateway
   # sits slightly higher and TimingNodeProxy slightly lower so the node-scoped proxy is
   # visually distinct from the application entry point without adding another sub-layer.
-  layout: {x: 30, y: 318, w: 1120, h: 160}
+  layout: {x: 30, y: 318, w: 1120, h: 210}
 - id: domain-layer
   label: Domain layer
   kind: layer-domain
-  layout: {x: 30, y: 496, w: 1120, h: 485}
+  layout: {x: 30, y: 546, w: 1120, h: 485}
   # Domain keeps a compact, regular gap below the aggregate and TimingData.
   # The right shoulder remains slightly shallower so the Domain/I/O relation is
   # visible without making Devices look embedded in Domain.
@@ -56,7 +56,7 @@ groups:
   properties_width: 220
   kind: model
   notation: component
-  layout: {x: 55, y: 536, w: 1080, h: 330}
+  layout: {x: 55, y: 586, w: 1080, h: 330}
 - id: timing-node-aggregate
   object_id: TimingNode
   label: "TimingNode (1..N)"
@@ -67,11 +67,11 @@ groups:
   properties_width: 240
   kind: model
   notation: component
-  layout: {x: 550, y: 556, w: 560, h: 300}
+  layout: {x: 550, y: 606, w: 560, h: 300}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
-  layout: {x: 30, y: 928, w: 1120, h: 258}
+  layout: {x: 30, y: 978, w: 1120, h: 258}
   label_offset: {x: 0, y: 78}
   # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
   # same x breakpoints and diagonal rise gives a constant visible gap.
@@ -88,7 +88,7 @@ groups:
   label: Platform abstractions / execution environment
   kind: layer-platform
   # 42 px header/row offset + 120 px tallest component + 18 px bottom padding.
-  layout: {x: 30, y: 1216, w: 1120, h: 180}
+  layout: {x: 30, y: 1266, w: 1120, h: 180}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -141,8 +141,8 @@ nodes:
   notation: component
   layout: {x: 55, y: 220, w: 440, h: 60}
 
-# Application components stay compact to preserve whitespace inside the layer.
-# PresentationGateway is intentionally higher; TimingNodeProxy is intentionally lower.
+# Application uses two vertical levels around the centered coordination/router row.
+# ConfigurationControl is left-most; PresentationGateway is high and TimingNodeProxy low.
 - id: application-conductor
   object_id: Conductor
   group: application-layer
@@ -150,7 +150,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 55, y: 367, w: 180, h: 68}
+  layout: {x: 260, y: 390, w: 180, h: 68}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -158,7 +158,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 250, y: 345, w: 200, h: 68}
+  layout: {x: 470, y: 345, w: 200, h: 68}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -166,7 +166,7 @@ nodes:
   subtitle: "commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 465, y: 389, w: 200, h: 68}
+  layout: {x: 470, y: 445, w: 200, h: 68}
 - id: configuration-control
   object_id: ConfigurationControl
   group: application-layer
@@ -174,7 +174,7 @@ nodes:
   subtitle: "query / runtime override use-cases"
   kind: application
   notation: component
-  layout: {x: 680, y: 345, w: 190, h: 68}
+  layout: {x: 55, y: 390, w: 190, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -182,7 +182,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 885, y: 367, w: 230, h: 68}
+  layout: {x: 885, y: 390, w: 230, h: 68}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -191,7 +191,7 @@ nodes:
   subtitle: "system-level upstream"
   kind: service
   notation: component
-  layout: {x: 75, y: 617, w: 220, h: 55}
+  layout: {x: 75, y: 667, w: 220, h: 55}
 
 - id: system-status-domain
   object_id: SystemStatus
@@ -200,7 +200,7 @@ nodes:
   subtitle: "complete system overview"
   kind: service
   notation: component
-  layout: {x: 315, y: 617, w: 220, h: 55}
+  layout: {x: 315, y: 667, w: 220, h: 55}
 
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
@@ -209,7 +209,7 @@ nodes:
   subtitle: "node-level upstream"
   kind: service
   notation: component
-  layout: {x: 850, y: 607, w: 240, h: 55}
+  layout: {x: 850, y: 657, w: 240, h: 55}
 
 - id: tag-processor
   object_id: TagProcessor
@@ -218,7 +218,7 @@ nodes:
   subtitle: "RFID/tag processing"
   kind: service
   notation: component
-  layout: {x: 570, y: 672, w: 240, h: 50}
+  layout: {x: 570, y: 722, w: 240, h: 50}
 - id: stage-start-times
   object_id: StageStartTimes
   group: timing-node-aggregate
@@ -226,7 +226,7 @@ nodes:
   subtitle: "start-time reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 672, w: 240, h: 50}
+  layout: {x: 850, y: 722, w: 240, h: 50}
 - id: next-up-teams
   object_id: NextUpTeams
   group: timing-node-aggregate
@@ -234,7 +234,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 570, y: 732, w: 240, h: 50}
+  layout: {x: 570, y: 782, w: 240, h: 50}
 - id: race-data
   object_id: RaceData
   group: timing-node-aggregate
@@ -242,7 +242,7 @@ nodes:
   subtitle: "participant/team/tag reference"
   kind: service
   notation: component
-  layout: {x: 850, y: 732, w: 240, h: 50}
+  layout: {x: 850, y: 782, w: 240, h: 50}
 - id: stage-timing
   object_id: StageTiming
   group: timing-node-aggregate
@@ -250,7 +250,7 @@ nodes:
   subtitle: "running times + ranking"
   kind: service
   notation: component
-  layout: {x: 570, y: 792, w: 240, h: 50}
+  layout: {x: 570, y: 842, w: 240, h: 50}
 
 - id: logbook-domain
   object_id: LogBook
@@ -259,7 +259,7 @@ nodes:
   subtitle: "0..N TimingDataRecord"
   kind: service
   notation: component
-  layout: {x: 850, y: 792, w: 240, h: 50}
+  layout: {x: 850, y: 842, w: 240, h: 50}
 
 - id: timing-data-domain
   object_id: TimingData
@@ -268,7 +268,7 @@ nodes:
   subtitle: "LocationId • RegistrationId • record + codec"
   kind: service
   notation: component
-  layout: {x: 300, y: 906, w: 380, h: 60}
+  layout: {x: 300, y: 956, w: 380, h: 60}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
@@ -277,7 +277,7 @@ nodes:
   subtitle: "TimingData • sync • ping / pong"
   kind: service
   notation: component
-  layout: {x: 75, y: 682, w: 220, h: 55}
+  layout: {x: 75, y: 732, w: 220, h: 55}
 
 - id: time-source-domain
   object_id: TimeSource
@@ -286,7 +286,7 @@ nodes:
   subtitle: "absolute time • controllable offset"
   kind: service
   notation: component
-  layout: {x: 75, y: 747, w: 220, h: 55}
+  layout: {x: 75, y: 797, w: 220, h: 55}
 
 - id: storage-io
   object_id: Storage
@@ -300,7 +300,7 @@ nodes:
   notation: packaging-component
   # Keep this compact: only implemented storage is shown here. Future DB/state
   # stores belong here when they become real adapters.
-  layout: {x: 55, y: 1048, w: 200, h: 95}
+  layout: {x: 55, y: 1098, w: 200, h: 95}
 - id: devices-io
   object_id: Devices
   group: io-layer
@@ -334,7 +334,7 @@ nodes:
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
-  layout: {x: 910, y: 950, w: 220, h: 210}
+  layout: {x: 910, y: 1000, w: 220, h: 210}
 - id: device-network-io
   object_id: DeviceNetworks
   group: io-layer
@@ -346,7 +346,7 @@ nodes:
       object_id: NetworkDeviceService
   kind: integration
   notation: packaging-component
-  layout: {x: 275, y: 1048, w: 240, h: 95}
+  layout: {x: 275, y: 1098, w: 240, h: 95}
 - id: messaging-io
   object_id: Messaging
   group: io-layer
@@ -364,7 +364,7 @@ nodes:
               object_id: DebugConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1048, w: 260, h: 120}
+  layout: {x: 535, y: 1098, w: 260, h: 120}
 
 - id: platform-execution
   object_id: PlatformExecution
@@ -376,7 +376,7 @@ nodes:
   kind: platform
   notation: packaging-component
   # Two concrete execution primitives are now part of the accepted design.
-  layout: {x: 55, y: 1258, w: 260, h: 95}
+  layout: {x: 55, y: 1308, w: 260, h: 95}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
@@ -385,7 +385,7 @@ nodes:
     - "Event<T>"
   kind: platform
   notation: packaging-component
-  layout: {x: 335, y: 1258, w: 180, h: 80}
+  layout: {x: 335, y: 1308, w: 180, h: 80}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer
@@ -398,7 +398,7 @@ nodes:
   kind: platform
   notation: packaging-component
   # Reuse Messaging column/width; four displayed items use the same 120 px density.
-  layout: {x: 535, y: 1258, w: 260, h: 120}
+  layout: {x: 535, y: 1308, w: 260, h: 120}
 
 - id: timing-application-runtime
   object_id: Application
@@ -489,37 +489,27 @@ edges:
 - from: presentation-gateway
   to: application-conductor
   from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: right, position: 0.50}
+  to_anchor: {side: top, position: 0.65}
 
 - from: presentation-gateway
   to: timing-node-proxy
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
 
 - from: presentation-gateway
   to: configuration-control
   dashed: true
-  from_anchor: {side: top, position: 0.70}
-  to_anchor: {side: top, position: 0.35}
-  route:
-    - {x: 390, y: 330}
-    - {x: 746, y: 330}
+  from_anchor: {side: left, position: 0.50}
+  to_anchor: {side: right, position: 0.50}
 
 - from: configuration-control
   to: application-configuration-runtime
   dashed: true
-  from_anchor: {side: top, position: 0.70}
+  from_anchor: {side: right, position: 0.50}
   to_anchor: {side: left, position: 0.50}
   route:
-    - {x: 813, y: 325}
-    - {x: 1165, y: 325}
+    - {x: 1165, y: 424}
     - {x: 1165, y: 347.5}
-
-- from: application-configuration-runtime
-  to: configuration-infra
-  dashed: true
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
 
 
 - from: upstream-message-router
@@ -531,9 +521,9 @@ edges:
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 1165, y: 401}
-    - {x: 1165, y: 996}
-    - {x: 665, y: 996}
+    - {x: 1165, y: 424}
+    - {x: 1165, y: 1046}
+    - {x: 665, y: 1046}
 
 - from: application-conductor
   to: domain-layer
@@ -553,8 +543,8 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.68}
   route:
-    - {x: 830, y: 886}
-    - {x: 558.4, y: 886}
+    - {x: 830, y: 936}
+    - {x: 558.4, y: 936}
 
 - from: upstream-protocol-domain
   to: timing-data-domain
