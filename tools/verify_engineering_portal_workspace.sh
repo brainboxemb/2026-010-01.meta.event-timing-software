@@ -63,7 +63,7 @@ grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-
 grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'First registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="tree-root"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="root-compare"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'role="separator"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
@@ -280,12 +280,12 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const firstExecutable = groupByLabel(
-          "First-executable requirements",
+        const applicationRequirements = groupByLabel(
+          "SI-01 application requirements",
           requirements || root
         );
-        const usefulChoices = firstExecutable
-          ? directChildren(firstExecutable).groups
+        const usefulChoices = applicationRequirements
+          ? directChildren(applicationRequirements).groups
               .map((group) => {
                 const label = group.querySelector(
                   ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
@@ -300,13 +300,13 @@ window.addEventListener("load", () => {
           architecture &&
           requirements &&
           requirements.classList.contains("is-expanded") &&
-          firstExecutable &&
-          firstExecutable.classList.contains("is-expanded") &&
+          applicationRequirements &&
+          applicationRequirements.classList.contains("is-expanded") &&
           usefulChoices.includes("Process lifecycle and configuration") &&
           usefulChoices.includes("Build and version identity") &&
           usefulChoices.includes("Status") &&
           usefulChoices.includes("Application boundary and testability") &&
-          usefulChoices.includes("First registration operation")
+          usefulChoices.includes("Registration operation")
             ? "passed"
             : "failed";
         collapseAll.click();
