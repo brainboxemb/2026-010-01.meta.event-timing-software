@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rewrite the SI-01 requirement review candidates to remove roadmap/implementation-phase wording, make status and interface behaviour directly understandable, and keep unresolved maturity questions in Draft rather than treating Review as approval.
+
 - Update `tool.eng-docs` to v0.9.4 so explicit anchors on shaped layers terminate on the visible polygon boundary in generated SVG and draw.io output.
 
 - Rebalance Figure SI01-01 Application-layer layout: increase layer height, place ConfigurationControl left of Conductor, separate PresentationGateway/TimingNodeProxy vertically, center UpstreamMessageRouter, and remove redundant cross-layer configuration arrows.
