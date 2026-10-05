@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine the Java execution model so TimingNodes and TagProcessors keep per-node serial lanes while sharing one physical worker per functional role; define 20 registrations/s as the current aggregate SI-01 stress workload rather than a per-node target.
+
 - Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
 
 - Update `tool.eng-docs` to v0.9.4 so explicit anchors on shaped layers terminate on the visible polygon boundary in generated SVG and draw.io output.
