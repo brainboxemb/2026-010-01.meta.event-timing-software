@@ -503,7 +503,24 @@ edges:
   route:
     - {x: 150, y: 379}
 
+# ConfigurationControl is an application use-case boundary. Keep these arrows
+# intentionally high-level: configuration may affect Domain and I/O, without
+# implying direct coupling to a specific implementation component.
+- from: configuration-control
+  to: domain-layer
+  dashed: true
+  from_anchor: {side: bottom, position: 0.35}
+  to_anchor: {side: top, position: 0.12}
 
+- from: configuration-control
+  to: io-layer
+  dashed: true
+  from_anchor: {side: bottom, position: 0.70}
+  to_anchor: {side: left, position: 0.35}
+  route:
+    - {x: 265, y: 520}
+    - {x: 20, y: 520}
+    - {x: 20, y: 1068}
 
 - from: upstream-message-router
   to: timing-system-aggregate
