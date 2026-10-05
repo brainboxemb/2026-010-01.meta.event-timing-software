@@ -152,6 +152,8 @@ def validate_assembly(root: Path) -> dict:
         root / "documents/50-SDE-03-development-client.md",
         root / "documents/50-SDE-04-runtime-characterization.md",
         root / "documents/32-03-ISD-application-control-status.md",
+        root / "documents/33-03-IDD-api-http-websocket.md",
+        root / "documents/32-04-ISD-web-interface.md",
         root / "documents/32-05-ISD-timingdata-interchange.md",
         root / "documents/33-05-IDD-timingdata-interchange.md",
         root / "documents/32-11-ISD-application-configuration.md",
