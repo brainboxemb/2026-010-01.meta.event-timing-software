@@ -45,7 +45,7 @@ ssd = (root / "41-01-SSD-timing-application-specification-document.md").read_tex
 start = ssd.index('<a id="SI01-REQ-003"></a>')
 end = ssd.index('<a id="SI01-REQ-010"></a>', start)
 block = ssd[start:end]
-body_text = "SI-01 shall support configuration of at least one"
+body_text = "SI-01 shall support configuration of one or more"
 order = (
     block.index("**SI01-REQ-003 — Configured TimingNode availability**"),
     block.index(body_text),
