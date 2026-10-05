@@ -492,25 +492,29 @@ The primary logical view is a responsibility/layer view. It describes semantic o
 :::{arch} Composition  
 :id: Composition  
 
-`Composition` is the Runtime component that owns construction of the concrete
-running SI-01 object graph from validated effective configuration. It selects
-and constructs the required Presentation, I/O, Platform and Infrastructure
-objects together with the reusable application/domain objects. Those objects
-retain their own layer ownership; Runtime only knows how this executable is
-assembled.
+`Composition` is the Runtime responsibility that owns construction of the
+concrete running SI-01 object graph from validated effective configuration. It
+is a responsibility, not a requirement for a separate Java `Composition`
+object. The Java realization keeps this flow visible in
+`TimingApplication.create(...)`. It selects and constructs the required
+Presentation, I/O, Platform and Infrastructure objects together with the
+reusable application/domain objects. Those objects retain their own layer
+ownership; Runtime only knows how this executable is assembled.
 :::
 
 :::{arch} Application  
 :id: Application  
 
-`Application` is the top-level reusable Runtime object for one running SI-01
-composition. It owns the application lifecycle and references the currently
-composed application/domain runtime state. It is deliberately shown in a
-separate **Runtime** block rather than inside the Application layer: Runtime is
-the running container/assembly context, not application/business behaviour.
+`Application` is the architecture role for the top-level reusable Runtime
+object of one running SI-01 composition. The current Java realization names
+that object `TimingApplication`. It owns activation/deactivation and references
+the currently composed application/domain runtime state. It is deliberately
+shown in a separate **Runtime** block rather than inside the Application layer:
+Runtime is the running container/assembly context, not application/business
+behaviour.
 :::
 
-`Composition` is the one visible executable composition root. From validated configuration it performs startup in a deliberately simple order:
+The executable has one visible composition flow. From validated configuration it proceeds in a deliberately simple order:
 
 ```text
 resolve effective configuration
@@ -518,12 +522,12 @@ resolve effective configuration
   -> construct Runtime resources
   -> construct Domain, I/O and Application objects
   -> wire cross-component relationships
-  -> start Runtime execution resources
-  -> start application/domain/I/O components
-  -> start Presentation endpoints
+  -> Runtime execution resources start
+  -> application/domain/I/O components activate
+  -> Presentation endpoints start
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component startup. Shutdown follows the same ownership in reverse order. Normal application/domain interactions do not route through `Composition` after startup. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component activation. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
