@@ -912,10 +912,41 @@ Normal operation uses `initialize()` followed by explicit
 `startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
 provider/device resources.
 
-`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem. It
-coordinates startup probe, normal initialize/shutdown and per-antenna inventory state.
-Multiple antennas can therefore be initialized together while inventory is enabled or
-disabled independently.
+`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem and
+the installation-level lifecycle around them. It coordinates independent startup health
+checks, normal initialize/shutdown, optional injected power control, per-antenna health
+and per-antenna inventory state. One provider failure is contained to that antenna; the
+manager does not roll back independently healthy antennas merely because another antenna
+fails.
+
+At application startup the manager performs a non-inventory sanity sequence for every
+configured antenna:
+
+```text
+optional power ON
+        |
+        v
+configured stabilization delay
+        |
+        v
+one-shot probe / identity-health check
+        |
+        v
+optional power OFF
+```
+
+Failure of one sequence records that antenna as unavailable/error and the manager continues
+with the remaining configured antennas.
+
+Normal antenna operation is driven by the lifecycle of the TimingNodes mapped to each
+antenna. When at least one assigned TimingNode is OPEN, a healthy antenna is powered when
+required, allowed to stabilize, initialized and made available for inventory. When no
+assigned TimingNode remains OPEN, inventory is stopped and externally controlled power is
+removed. An antenna mapped to several TimingNodes therefore remains active until the last
+mapped TimingNode closes.
+
+The manager tracks per-antenna state separately from its aggregate health. Aggregate
+health may be degraded while healthy antennas remain operational.
 
 The manager serializes its lifecycle operations on top of a shared bounded I/O
 `ExecutorService`:
@@ -951,6 +982,25 @@ supplies an `AntennaPowerControl` capability to the manager so the manager can o
 power-on before probe/initialize and power-off after close. An antenna provider that owns
 its power mechanism internally may omit that external capability; the generic
 `Antenna` contract does not pretend every reader has a separately switchable supply.
+
+`AntennaPowerControl` is deliberately separate from `Antenna`. A physical reader may be
+powered through a relay board, GPIO-controlled supply or another installation component
+that is unrelated to the reader's vendor protocol. The per-antenna installation
+configuration therefore binds an optional power-control capability and a power
+stabilization interval to the antenna. Provider-owned power remains possible by omitting
+the external capability.
+
+When two or more antennas share RF/device constraints that forbid simultaneous inventory,
+configuration assigns them to one inventory mutual-exclusion group. AntennaManager owns
+the multiplex policy for that group: at most one healthy member inventories at a time,
+the active member rotates at the configured interval, and a failed member is skipped
+without stopping healthy members. The public/reference two-antenna baseline uses a
+500 ms interval.
+
+The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
+includes explicit powered/unpowered state when paired with simulated power control,
+initialization/inventory preconditions and controllable probe/initialize/start failures so
+startup containment and degraded/multiplex behaviour can be verified without hardware.
 
 ### TagObservation and local event delivery
 
