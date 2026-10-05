@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Bind each Engineering Explorer source-definition pane to the selected engineering object ID and render the exact authored MyST Need block instead of an arbitrary surrounding line window.
+
 - Keep colon-fenced Need option metadata (`:id:`, `:status:`, relations and similar options) on separate GitHub-rendered source lines with CommonMark hard breaks.
 
 - Keep MyST colon-fence Need openers as GitHub hard-break lines so the following `:id:` option renders visibly on its own source-review line without changing Sphinx-Needs semantics.
