@@ -14,6 +14,8 @@ test -f bld/docs/documents/50-SDE-01-software-development-environment.md
 test -f bld/docs/documents/50-SDE-02-java-build-test-toolchain.md
 test -f bld/docs/documents/41-01-SSD-timing-application-specification-document.md
 test -f bld/docs/documents/32-03-ISD-application-control-status.md
+test -f bld/docs/documents/33-03-IDD-api-http-websocket.md
+test -f bld/docs/documents/32-04-ISD-web-interface.md
 test -f bld/docs/documents/32-05-ISD-timingdata-interchange.md
 test -f bld/docs/documents/33-05-IDD-timingdata-interchange.md
 test -f bld/docs/documents/32-11-ISD-application-configuration.md
