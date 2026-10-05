@@ -181,7 +181,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 885, y: 390, w: 230, h: 68}
+  layout: {x: 885, y: 425, w: 230, h: 68}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -488,7 +488,9 @@ edges:
 - from: presentation-gateway
   to: application-conductor
   from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: top, position: 0.65}
+  to_anchor: {side: top, position: 0.50}
+  route:
+    - {x: 365, y: 379}
 
 - from: presentation-gateway
   to: timing-node-proxy
@@ -510,6 +512,8 @@ edges:
   dashed: true
   from_anchor: {side: bottom, position: 0.35}
   to_anchor: {side: top, position: 0.12}
+  route:
+    - {x: 121.5, y: 515}
 
 - from: configuration-control
   to: io-layer
@@ -517,27 +521,27 @@ edges:
   from_anchor: {side: bottom, position: 0.70}
   to_anchor: {side: top, position: 0.11}
   route:
-    - {x: 188, y: 520}
-    - {x: 20, y: 520}
+    - {x: 188, y: 515}
+    - {x: 20, y: 515}
     - {x: 20, y: 950}
     - {x: 153, y: 950}
 
 - from: upstream-message-router
   to: timing-system-aggregate
-  from_anchor: {side: bottom, position: 0.65}
+  from_anchor: {side: bottom, position: 0.50}
 
 - from: upstream-message-router
   to: messaging-io
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 1165, y: 424}
+    - {x: 1165, y: 459}
     - {x: 1165, y: 1046}
     - {x: 665, y: 1046}
 
 - from: application-conductor
   to: domain-layer
-  from_anchor: {side: bottom, position: 0.35}
+  from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.35}
 
 - from: timing-node-proxy
