@@ -80,7 +80,7 @@ through public interfaces. The test driver must not mutate internal product Java
 objects or depend on product implementation classes to obtain the pass/fail
 result.
 
-:::{vc} Query and resynchronise first-executable status
+:::{vc} Query and resynchronise first-executable status  
 ---
 id: VC-ST1-001
 verifies: >-
@@ -134,7 +134,7 @@ after reconnect and shut down through the supported controlled path.
 Adapter/component tests may cover additional event-path details that are not yet
 observable through a supported black-box state-changing operation.
 
-:::{vc} Control and observe first committed registration
+:::{vc} Control and observe first committed registration  
 ---
 id: VC-ST1-002
 verifies: >-
@@ -209,7 +209,7 @@ than being forced into this happy-path black-box case.
 - the second process run rebuilds the committed record while operational state
   starts CLOSED/no-location.
 
-:::{vc} Development Client reconnect/resynchronisation integration
+:::{vc} Development Client reconnect/resynchronisation integration  
 ---
 id: VC-ST1-003
 verifies: >-
