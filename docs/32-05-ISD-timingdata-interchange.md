@@ -224,7 +224,7 @@ Concrete JSON member names, JSON Lines framing, code arrays, optional metadata
 and representation-version conventions belong to the IDD and are not IF-05
 requirements by themselves.
 
-:::{ifreq} Common TimingData envelope
+:::{ifreq} Common TimingData envelope  
 :id: IF05-REQ-001
 :status: D
 
@@ -233,7 +233,7 @@ and record type. Values required in addition to this common envelope shall be
 defined by the record type.
 :::
 
-:::{ifreq} Record identity within a TimingSystem
+:::{ifreq} Record identity within a TimingSystem  
 :id: IF05-REQ-002
 :status: D
 
@@ -242,7 +242,7 @@ sequence numbers. Within a TimingSystem, Node ID together with sequence number
 shall uniquely identify a committed TimingData record.
 :::
 
-:::{ifreq} Sequence progression
+:::{ifreq} Sequence progression  
 :id: IF05-REQ-003
 :status: D
 
@@ -251,7 +251,7 @@ by one for each subsequent committed TimingData record. Sequence number 0 shall
 not identify a committed record.
 :::
 
-:::{ifreq} Automatic and manual registration
+:::{ifreq} Automatic and manual registration  
 :id: IF05-REQ-004
 :status: D
 
@@ -259,7 +259,7 @@ IF-05 registration records shall distinguish automatic registration from manual
 registration.
 :::
 
-:::{ifreq} Registration record values
+:::{ifreq} Registration record values  
 :id: IF05-REQ-005
 :status: D
 
@@ -267,7 +267,7 @@ An added or revoked registration record shall identify the Registration ID and
 time of the registration to which it refers.
 :::
 
-:::{ifreq} Registration add and revoke
+:::{ifreq} Registration add and revoke  
 :id: IF05-REQ-006
 :status: D
 
@@ -277,7 +277,7 @@ shall refer to the registration being withdrawn using its Registration ID and
 time; it shall not modify the original committed record.
 :::
 
-:::{ifreq} Committed record immutability
+:::{ifreq} Committed record immutability  
 :id: IF05-REQ-007
 :status: D
 
