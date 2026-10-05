@@ -76,7 +76,7 @@ jobs:
           set -euo pipefail
           ./bootstrap.sh
           test "$(git -C tools/tool.git-project rev-parse HEAD)" = "6806a2c8b15df2122c4cc3355d2df9bd11ba2fc8"
-          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "6b87c723d8687f7751dfb3e67da2013a5781f75a"
+          test "$(git -C tools/tool.eng-docs rev-parse HEAD)" = "787b5cc0378f9dedaaee1d0dab49707c21c92804"
           grep -F 'ref: v0.9.3' project.yml
           test -f tools/tool.git-project/schemas/execution-evidence.schema.json
           tools/tool.git-project/git-project.sh validate --repo "$PWD"
@@ -171,7 +171,7 @@ jobs:
             --publication-branch "$publication_branch" \
             --source-root . \
             --tool-ref v0.9.3 \
-            --tool-sha 6b87c723d8687f7751dfb3e67da2013a5781f75a
+            --tool-sha 787b5cc0378f9dedaaee1d0dab49707c21c92804
 
           mkdocs build --strict --config-file docs/_portal/mkdocs.yml
 
