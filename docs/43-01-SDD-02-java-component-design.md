@@ -244,11 +244,12 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      stable device/lifecycle + observation contract
+      Antenna.java                      stable device/lifecycle + tag-observed event contract
+      AntennaId.java                    configured software identity of one antenna
       AntennaManager.java               execution/lifecycle boundary for 1..N antennas
       AntennaManagerLogic.java          package-private antenna/power/multiplex state logic
       AntennaManagerTypes.java          manager lifecycle/status/failure value types
-      AntennaInstallation.java          antenna + optional external-power installation binding
+      AntennaInstallation.java          AntennaId + package-local antenna/power installation binding
       AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
@@ -686,6 +687,27 @@ coordination in `Application`, constructors or anonymous lifecycle callbacks.
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
 is an explicit lifecycle action. Shutdown unwinds started resources in reverse ownership
 order.
+
+Cross-component event wiring is visible at the composition point. The antenna manager owns
+the concrete `Antenna` instances; it does not expose those device objects for callers to
+walk. Composition addresses a configured source by `AntennaId` and subscribes the target
+to the manager's subscription-only event source, conceptually:
+
+```java
+antennaManager.tagObservedEvent(antennaId)
+        .subscribe(timingNode.tagProcessor()::onObservation);
+
+timingNode.statusChangedEvent()
+        .subscribe(conductor::onTimingNodeStatusChanged);
+```
+
+For semantic local events, accessor names describe the fact that happened and end in
+`Event`, matching existing names such as `statusChangedEvent()` and
+`timingDataCommittedEvent()`. The antenna APIs therefore use
+`tagObservedEvent()` / `tagObservedEvent(AntennaId)`; a plural collection-like name such
+as `observations()` is not used for an `EventSource`. `TagObservation` remains the
+immutable event value and does not need an `AntennaId` field merely for routing because
+the configured source identity is already known at the subscription point.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
 It selects simulated installations/mappings through the same `ApplicationBootstrap`; it
