@@ -504,18 +504,16 @@ edges:
   route:
     - {x: 165, y: 379}
 
-# ConfigurationControl is an application use-case boundary. Keep these arrows
-# intentionally high-level: configuration may affect Domain and I/O, without
-# implying direct coupling to a specific implementation component.
+# ConfigurationControl is an application use-case boundary. These principal
+# control relationships stay solid but intentionally terminate at layer boundaries,
+# avoiding false coupling to a specific Domain or I/O implementation component.
 - from: configuration-control
   to: domain-layer
-  dashed: true
   from_anchor: {side: bottom, position: 0.70}
   to_anchor: {side: top, position: 0.16}
 
 - from: configuration-control
   to: io-layer
-  dashed: true
   from_anchor: {side: bottom, position: 0.30}
   to_anchor: {side: top, position: 0.13}
   route:
