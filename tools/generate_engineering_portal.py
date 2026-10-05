@@ -14,6 +14,9 @@ import shutil
 import xml.etree.ElementTree as ET
 
 SOURCE_RE = re.compile(r"^(?P<path>.+):(?P<line>[0-9]+)$")
+NEED_OPEN_RE = re.compile(
+    r"^(?P<fence>:::|```)\{(?P<directive>[A-Za-z0-9_-]+)\}(?:\s+.*)?$"
+)
 SVG_NS = "http://www.w3.org/2000/svg"
 XLINK_NS = "http://www.w3.org/1999/xlink"
 ET.register_namespace("", SVG_NS)
@@ -52,7 +55,54 @@ def source_url(repository: str, revision: str, source: str) -> str:
     return f"https://github.com/{repository}/blob/{revision}/{source}"
 
 
-def source_context(source_root: Path, source: str) -> dict | None:
+def _need_definition_bounds(
+    lines: list[str],
+    object_id: str,
+    preferred_line: int,
+) -> tuple[int, int] | None:
+    """Return 0-based [start, end] bounds for one authored MyST Need."""
+
+    id_forms = {f":id: {object_id}", f"id: {object_id}"}
+    candidates = [
+        index
+        for index, text in enumerate(lines)
+        if text.strip() in id_forms
+    ]
+    if not candidates:
+        return None
+
+    preferred_index = preferred_line - 1
+    candidates.sort(key=lambda index: abs(index - preferred_index))
+
+    for id_index in candidates:
+        opener = None
+        fence = None
+        lower = max(-1, id_index - 40)
+        for index in range(id_index - 1, lower, -1):
+            text = lines[index].rstrip()
+            match = NEED_OPEN_RE.match(text)
+            if match:
+                opener = index
+                fence = match.group("fence")
+                break
+            if text.strip() in {":::", "```"}:
+                break
+
+        if opener is None or fence is None:
+            continue
+
+        for end in range(id_index + 1, len(lines)):
+            if lines[end].strip() == fence:
+                return opener, end
+
+    return None
+
+
+def source_context(
+    source_root: Path,
+    source: str,
+    object_id: str,
+) -> dict | None:
     match = SOURCE_RE.match(source)
     if not match:
         return None
@@ -72,13 +122,34 @@ def source_context(source_root: Path, source: str) -> dict | None:
             f"engineering source line is outside file: {relative}:{line}"
         )
 
-    start = max(1, line - 14)
-    end = min(len(lines), line + 26)
+    bounds = _need_definition_bounds(lines, object_id, line)
+    if bounds is not None:
+        start_index, end_index = bounds
+        start = start_index + 1
+        end = end_index + 1
+        return {
+            "path": relative.as_posix(),
+            "line": start,
+            "start": start,
+            "end": end,
+            "object_id": object_id,
+            "definition": True,
+            "lines": [
+                {"number": number, "text": lines[number - 1]}
+                for number in range(start, end + 1)
+            ],
+        }
+
+    # Guarded fallback for source forms that are not authored MyST Needs.
+    start = max(1, line - 6)
+    end = min(len(lines), line + 12)
     return {
         "path": relative.as_posix(),
         "line": line,
         "start": start,
         "end": end,
+        "object_id": None,
+        "definition": False,
         "lines": [
             {"number": number, "text": lines[number - 1]}
             for number in range(start, end + 1)
@@ -94,6 +165,11 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
         object_id = item["id"]
         if object_id in objects:
             raise PortalError(f"duplicate engineering object: {object_id}")
+        context = source_context(source_root, item["source"], object_id)
+        resolved_source = item["source"]
+        if context and context.get("definition"):
+            resolved_source = f"{context['path']}:{context['line']}"
+
         objects[object_id] = {
             "id": object_id,
             "type": item["type"],
@@ -106,8 +182,8 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
                 extensions=["fenced_code", "tables"],
             ),
             "source": item["source"],
-            "source_url": source_url(repository, revision, item["source"]),
-            "source_context": source_context(source_root, item["source"]),
+            "source_url": source_url(repository, revision, resolved_source),
+            "source_context": context,
             "diagram_refs": item.get("diagram_refs") or [],
             "outgoing": [],
             "incoming": [],
