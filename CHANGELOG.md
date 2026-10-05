@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Constrain AntennaManager multiplexing to one optional 2..N-member inventory group, keep other antennas independently operable, and specify reuse of the shared `SerialExecutor` primitive plus separate manager types/logic instead of a second private control-queue implementation.
+
 - Document the realized Application `ConfigurationControl` boundary, IF-03 runtime configuration query/update/change-event flow, and the shared LocalConsole/RemoteShell terminal command baseline for open, close, automatic registration and TagProcessing configuration control.
 
 - Include the IF-03 HTTP/WebSocket IDD and Web Interface ISD in the generated documentation publication, architecture book and combined software document set; make documentation CI fail when either generated document is missing.
