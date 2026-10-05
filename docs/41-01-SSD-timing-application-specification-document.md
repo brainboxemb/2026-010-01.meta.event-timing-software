@@ -904,6 +904,7 @@ io/
     AntennaManager
       Antenna (0..N)
         SimulatedAntenna
+    AntennaPowerControl (0..N)
     Display
       Rev1CanDisplay
       Rev2WifiDisplay
@@ -950,8 +951,10 @@ rather than as nested component boxes.
 `Devices` groups the software components that represent external device roles in
 SI-01. A TimingSystem may be configured without RFID antennas. When one or more
 antennas are configured, one `AntennaManager` coordinates that 1..N `Antenna`
-set for the TimingSystem. `SimulatedAntenna` is the built-in
-reference/simulation implementation.
+set for the TimingSystem. Optional `AntennaPowerControl` capabilities represent
+installation-owned external power channels used by AntennaManager; they are peers of
+the antenna/provider role rather than hidden vendor-driver behaviour.
+`SimulatedAntenna` is the built-in reference/simulation implementation.
 `Display`, `Keypad` and `Beeper` name software-facing device roles; their
 concrete variants remain subordinate to this package/component boundary.
 :::
@@ -1005,6 +1008,16 @@ is required.
 `Antenna` is the software-facing RFID antenna/reader role consumed by
 AntennaManager. Concrete vendor or simulated implementations remain behind this
 role.
+:::
+
+:::{arch} AntennaPowerControl  
+:id: AntennaPowerControl  
+
+`AntennaPowerControl` is the optional software-facing I/O capability for an
+installation-owned external antenna power channel. AntennaManager uses it to order
+power-on, stabilization and power-off around probe and normal operation. It remains
+separate from `Antenna` because the physical power switch may be a relay, GPIO or
+other installation device unrelated to the antenna vendor protocol.
 :::
 
 :::{arch} SimulatedAntenna  
