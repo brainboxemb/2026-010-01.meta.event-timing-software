@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct configuration ownership: generic typed configuration mechanics move to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, Application owns only configuration query/update use-cases, and Figure SI01-01 is synchronized with that split.
+
 - Define the central typed `ApplicationConfiguration` model: compiled defaults plus IF-11 startup overrides, read-only/dynamic configuration views with typed change notifications, TimingNode-local TagProcessor policy ownership, and IF-03 runtime query/override/change-event semantics.
 
 - Synchronize Step-5 A01 planning with the completed D04-aligned antenna runtime lifecycle/composition implementation.
