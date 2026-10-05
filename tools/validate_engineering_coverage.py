@@ -12,7 +12,8 @@ import sys
 import yaml
 
 NEED_BLOCK_RE = re.compile(
-    r"^```\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n(?P<body>.*?)(?=^\```\s*$)",
+    r"^(?P<fence>```|:::)\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n"
+    r"(?P<body>.*?)(?=^(?P=fence)\s*$)",
     re.MULTILINE | re.DOTALL,
 )
 NEED_ID_RE = re.compile(r"^(?::id:|id:)\s*(?P<id>[A-Za-z][A-Za-z0-9_-]*)\s*$", re.MULTILINE)
