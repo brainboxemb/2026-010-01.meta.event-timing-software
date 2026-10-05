@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Keep MyST colon-fence Need openers as GitHub hard-break lines so the following `:id:` option renders visibly on its own source-review line without changing Sphinx-Needs semantics.
+
 - Make Engineering Explorer architecture/detail panes user-resizable with persisted proportions, and keep inline Source definition disclosure square, compact and icon-free.
 
 - Use MyST colon fences for engineering Needs so UC/requirement/interface/verification source remains readable and wraps normally during direct GitHub Markdown review, while retaining the same Sphinx-Needs semantics and generated traceability.
