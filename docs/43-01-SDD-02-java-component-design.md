@@ -280,8 +280,10 @@ io/
 
 platform/
   execution/
-    SerialExecutor.java                    bounded JDK-backed serial execution
-    SerialScheduledExecutor.java           JDK-backed serial execution + scheduling
+    SerialExecutor.java                    bounded serial lane + lifecycle
+    SerialExecutorMetrics.java             lane-local queue/execution measurements
+    SerialScheduledExecutor.java           serial lane + fixed-delay scheduling
+    SerialScheduledExecutorMetrics.java    scheduled-lane measurements
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -1582,19 +1584,21 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutor.Metrics` owns lane-local queue admission, queue depth/high-water,
+- `SerialExecutorMetrics` owns lane-local queue admission, queue depth/high-water,
   queue wait and execution duration; callers read those values through an immutable
-  `SerialExecutor.Metrics.Snapshot`. A shared lane does not claim the CPU time of the
-  physical worker as if it belonged to one TimingNode;
+  `SerialExecutorMetrics.Snapshot`. `SerialExecutor` records the execution facts but
+  does not embed the diagnostics model in the executor class. A shared lane does not claim
+  the CPU time of the physical worker as if it belonged to one TimingNode;
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
   TimingNode-admission counters for `domain.timing.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
-- `SerialScheduledExecutor.Metrics` owns lane-local measurements such as accepted
+- `SerialScheduledExecutorMetrics` owns lane-local measurements such as accepted
   immediate work, scheduled registrations/cancellations, executed work, runtime failures
-  and queue depth. It does not mirror TagProcessor's observation-input queue and does not
-  attribute a shared worker's CPU time to one processor lane;
+  and queue depth. `SerialScheduledExecutor` records those facts but remains focused on
+  execution/lifecycle. The metrics class does not mirror TagProcessor's observation-input
+  queue and does not attribute a shared worker's CPU time to one processor lane;
 - physical role-worker identity/CPU time and JVM/process values are read on demand from the
   supported JDK management APIs.
 
@@ -1977,10 +1981,13 @@ The required behaviour remains:
 The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
 primitive and contains no TimingNode/domain/persistence logic.
 
-Execution measurements are grouped under `SerialExecutor.Metrics`. Hot-path updates remain
+Execution measurements are owned by the separate `SerialExecutorMetrics` class in the same
+Platform execution package. `SerialExecutor` only records lifecycle/admission/execution facts
+into that object and exposes it through `metrics()`. Hot-path updates remain
 primitive/low-allocation; an explicit `metrics().snapshot()` call creates the immutable
-engineering view. The metrics object is part of the execution primitive rather than a second
-runtime model.
+engineering view. Keeping the metrics implementation in a separate source file prevents the
+executor's queue/lifecycle logic from being obscured by diagnostic state while still keeping
+the metrics component-owned rather than introducing a second runtime model.
 
 ### SerialScheduledExecutor design
 
@@ -2009,7 +2016,8 @@ TagProcessor owns its `ArrayBlockingQueue<TagObservation>` separately. Only coal
 drain work, policy-control work and housekeeping enter its scheduled serial lane; there is no
 executor task per observation.
 
-`SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`:
+`SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`, with
+measurement state in the separate `SerialScheduledExecutorMetrics` class.
 `metrics().snapshot()` returns an immutable lane snapshot. These executor metrics describe
 only work accepted and executed by the scheduled lane; observation ingress/drop metrics stay
 owned by `TagProcessingMetrics`.
