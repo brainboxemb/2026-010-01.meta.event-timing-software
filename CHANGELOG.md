@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify SI-01 executable composition as an explicit construct-wire-start sequence and assign cross-component application coordination to `Conductor`.
+
 - Constrain AntennaManager multiplexing to one optional 2..N-member inventory group, keep other antennas independently operable, and specify reuse of the shared `SerialExecutor` primitive plus separate manager types/logic instead of a second private control-queue implementation.
 
 - Document the realized Application `ConfigurationControl` boundary, IF-03 runtime configuration query/update/change-event flow, and the shared LocalConsole/RemoteShell terminal command baseline for open, close, automatic registration and TagProcessing configuration control.
