@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Move registration duplicate suppression ahead of passage aggregation after tag-to-registration mapping; use `TimingNode.offer(...)` as the bounded fire-and-forget handoff and start the duplicate window only after immediate `ACCEPTED` admission.
+
 - Align runtime metric ownership: rename `TagProcessingCounters` to `TagProcessingMetrics`, group executor measurements under nested `SerialExecutor.Metrics` / `SerialScheduledExecutor.Metrics` snapshots, and keep hot-path updates component-owned and low-allocation.
 
 - Align D04/D05 with the queued TagProcessor implementation: make observation input-queue capacity part of TagProcessingPolicy and measure ingress FULL/not-running separately from TimingNode admission outcomes.
