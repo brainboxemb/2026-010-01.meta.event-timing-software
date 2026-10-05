@@ -66,7 +66,7 @@ Requirements in this slice use:
 SI01-REQ-<number>
 ```
 
-Identifiers in this review candidate are intended to remain stable. A later capability should add requirements without renumbering these merely for document neatness.
+Requirement identifiers in this document remain stable. Add new requirements under new identifiers; do not renumber existing requirements solely for document neatness.
 
 ### SI-01 application requirements
 
@@ -268,7 +268,7 @@ delivery shall be identifiable by Node ID together with sequence number.
 :status: D  
 :derived_from: UC-011, IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007  
 
-SI-01 shall support the current reference TimingData representation defined by
+SI-01 shall support the reference TimingData representation defined by
 `33-05-IDD-timingdata-interchange.md` for local persistence and engineering
 interchange. For every supported record type, encoding and decoding shall
 preserve the applicable IF-05 semantic values.
@@ -308,7 +308,7 @@ operational Location ID or OPEN state.
 :status: D  
 :derived_from: UC-013  
 
-When recovering the current reference representation, SI-01 shall not treat an
+When recovering the reference TimingData representation, SI-01 shall not treat an
 incomplete trailing record as committed. A malformed complete record,
 unsupported representation version, Node ID mismatch, duplicate sequence,
 sequence gap or sequence regression shall produce an explicit recovery failure
@@ -368,7 +368,7 @@ from accepting and committing local registrations.
 
 ### Lifecycle interpretation
 
-The first registration baseline uses the following TimingNode lifecycle semantics:
+The registration requirements use the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
 - a TimingNode that cannot safely complete contained startup recovery is represented
