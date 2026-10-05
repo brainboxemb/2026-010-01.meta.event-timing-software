@@ -149,7 +149,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 275, y: 425, w: 180, h: 68}
+  layout: {x: 295, y: 425, w: 230, h: 68}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -157,7 +157,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 560, y: 345, w: 200, h: 68}
+  layout: {x: 545, y: 345, w: 220, h: 68}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -165,7 +165,7 @@ nodes:
   subtitle: "commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 560, y: 445, w: 200, h: 68}
+  layout: {x: 545, y: 445, w: 220, h: 68}
 - id: configuration-control
   object_id: ConfigurationControl
   group: application-layer
@@ -173,7 +173,7 @@ nodes:
   subtitle: "query / runtime override use-cases"
   kind: application
   notation: component
-  layout: {x: 55, y: 425, w: 190, h: 68}
+  layout: {x: 55, y: 425, w: 220, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -181,7 +181,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 885, y: 425, w: 230, h: 68}
+  layout: {x: 870, y: 425, w: 260, h: 68}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -475,7 +475,7 @@ edges:
 - from: web-interface
   to: presentation-gateway
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.45}
+  to_anchor: {side: top, position: 0.50}
 
 - from: remote-api
   to: presentation-gateway
@@ -490,7 +490,7 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 365, y: 379}
+    - {x: 410, y: 379}
 
 - from: presentation-gateway
   to: timing-node-proxy
@@ -502,7 +502,7 @@ edges:
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 150, y: 379}
+    - {x: 165, y: 379}
 
 # ConfigurationControl is an application use-case boundary. Keep these arrows
 # intentionally high-level: configuration may affect Domain and I/O, without
@@ -510,25 +510,24 @@ edges:
 - from: configuration-control
   to: domain-layer
   dashed: true
-  from_anchor: {side: bottom, position: 0.35}
-  to_anchor: {side: top, position: 0.12}
-  route:
-    - {x: 121.5, y: 515}
+  from_anchor: {side: bottom, position: 0.70}
+  to_anchor: {side: top, position: 0.16}
 
 - from: configuration-control
   to: io-layer
   dashed: true
-  from_anchor: {side: bottom, position: 0.70}
-  to_anchor: {side: top, position: 0.11}
+  from_anchor: {side: bottom, position: 0.30}
+  to_anchor: {side: top, position: 0.13}
   route:
-    - {x: 188, y: 515}
+    - {x: 121, y: 515}
     - {x: 20, y: 515}
     - {x: 20, y: 950}
-    - {x: 153, y: 950}
+    - {x: 176, y: 950}
 
 - from: upstream-message-router
   to: timing-system-aggregate
   from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.875}
 
 - from: upstream-message-router
   to: messaging-io
@@ -542,7 +541,7 @@ edges:
 - from: application-conductor
   to: domain-layer
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.35}
+  to_anchor: {side: top, position: 0.3392857143}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
