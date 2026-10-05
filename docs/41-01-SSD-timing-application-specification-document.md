@@ -72,21 +72,21 @@ Identifiers in this review candidate are intended to remain stable. A later capa
 
 #### Process lifecycle and configuration
 
-:::{req} Start from external configuration
+:::{req} Start from external configuration  
 :id: SI01-REQ-001
 :status: R
 
 SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
 :::
 
-:::{req} Clean process shutdown
+:::{req} Clean process shutdown  
 :id: SI01-REQ-002
 :status: R
 
 SI-01 shall support a controlled shutdown path that terminates the first-executable runtime without requiring forced process termination during normal operation/testing.
 :::
 
-:::{req} Minimal TimingSystem / TimingNode composition
+:::{req} Minimal TimingSystem / TimingNode composition  
 :id: SI01-REQ-003
 :status: R
 :derived_from: UC-001, UC-014
@@ -101,14 +101,14 @@ IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and h
 
 #### Build and version identity
 
-:::{req} Single application build identity
+:::{req} Single application build identity  
 :id: SI01-REQ-010
 :status: R
 
 A running SI-01 process shall expose one authoritative application build/version identity derived from the produced application artifact/build.
 :::
 
-:::{req} Consistent identity across interfaces
+:::{req} Consistent identity across interfaces  
 :id: SI01-REQ-011
 :status: R
 
@@ -119,7 +119,7 @@ The semantic build identity is defined by IF-03. The current v1 wire fields are 
 
 #### Status
 
-:::{req} Authoritative current status snapshot
+:::{req} Authoritative current status snapshot  
 :id: SI01-REQ-020
 :status: R
 :derived_from: UC-001, UC-008
@@ -128,7 +128,7 @@ SI-01 shall maintain an authoritative current application
 status model that is separate from log output.
 :::
 
-:::{req} Minimum first-executable status content
+:::{req} Minimum first-executable status content  
 :id: SI01-REQ-021
 :status: R
 :derived_from: UC-001, UC-008, UC-020
@@ -147,7 +147,7 @@ to determine at least:
 
 The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
 
-:::{req} Equivalent status semantics across first interfaces
+:::{req} Equivalent status semantics across first interfaces  
 :id: SI01-REQ-022
 :status: R
 :derived_from: UC-008
@@ -159,7 +159,7 @@ adapter shall not maintain a separate authoritative status
 model.
 :::
 
-:::{req} Status-change publication
+:::{req} Status-change publication  
 :id: SI01-REQ-023
 :status: R
 
@@ -170,7 +170,7 @@ On connection/reconnection the client shall be able to recover a complete author
 
 #### Application boundary and testability
 
-:::{req} Shared application behaviour
+:::{req} Shared application behaviour  
 :id: SI01-REQ-030
 :status: R
 
@@ -179,7 +179,7 @@ application commands/queries rather than implementing
 independent copies of version/status behaviour.
 :::
 
-:::{req} Externally testable executable
+:::{req} Externally testable executable  
 :id: SI01-REQ-031
 :status: R
 
@@ -189,14 +189,14 @@ public application interface without direct test mutation of
 internal application/domain state.
 :::
 
-:::{req} Safe default network exposure
+:::{req} Safe default network exposure  
 :id: SI01-REQ-032
 :status: R
 
 The first-executable IF-03 service shall default to local/loopback-only access. Non-loopback listening shall require explicit configuration until a later security/interface baseline defines production exposure and authentication policy.
 :::
 
-:::{req} Compatible first API evolution
+:::{req} Compatible first API evolution  
 :id: SI01-REQ-033
 :status: R
 
@@ -205,7 +205,7 @@ SI-01 shall implement IF-03 so compatible additions can be introduced without si
 
 #### First registration operation
 
-:::{req} Operational location and lifecycle
+:::{req} Operational location and lifecycle  
 :id: SI01-REQ-040
 :status: R
 :derived_from: UC-001, UC-002, UC-008, UC-009
@@ -218,7 +218,7 @@ The normal application-control boundary shall not require a separate Set Locatio
 operation before OPEN.
 :::
 
-:::{req} Accepted semantic registration operation
+:::{req} Accepted semantic registration operation  
 :id: SI01-REQ-041
 :status: R
 :derived_from: UC-003, UC-009
@@ -231,7 +231,7 @@ first implemented automatic-registration action is `ADD`; additional actions req
 defined TimingData semantics before they are supported.
 :::
 
-:::{req} Committed registration observability
+:::{req} Committed registration observability  
 :id: SI01-REQ-042
 :status: R
 :derived_from: UC-003, UC-009, UC-011
@@ -241,7 +241,7 @@ history and live post-commit notification without exposing uncommitted records
 as committed state.
 :::
 
-:::{req} Capability-gated dev auto-reg
+:::{req} Capability-gated dev auto-reg  
 :id: SI01-REQ-043
 :status: R
 :derived_from: UC-009
@@ -253,7 +253,7 @@ and shall not let the client supply final TimingData, source sequence, active
 LocationId or source identity.
 :::
 
-:::{req} Reconnect rebuild before live presentation
+:::{req} Reconnect rebuild before live presentation  
 :id: SI01-REQ-044
 :status: R
 :derived_from: UC-009
@@ -264,7 +264,7 @@ updates as a live view. Duplicate TimingData observed through history plus live
 delivery shall be identifiable by Node ID together with sequence number.
 :::
 
-:::{req} Reference TimingData representation support
+:::{req} Reference TimingData representation support  
 :id: SI01-REQ-045
 :status: D
 :derived_from: UC-011, IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
@@ -275,7 +275,7 @@ interchange. For every supported record type, encoding and decoding shall
 preserve the applicable IF-05 semantic values.
 :::
 
-:::{req} Write TimingData before commit completion
+:::{req} Write TimingData before commit completion  
 :id: SI01-REQ-046
 :status: D
 :derived_from: UC-003, UC-012
@@ -289,7 +289,7 @@ If the write fails or remains incomplete, the commit shall fail and the record
 shall not be treated as committed.
 :::
 
-:::{req} Restore committed TimingData after restart
+:::{req} Restore committed TimingData after restart  
 :id: SI01-REQ-047
 :status: D
 :derived_from: UC-013, IF05-REQ-002, IF05-REQ-003, IF05-REQ-007
@@ -304,7 +304,7 @@ Recovery of committed TimingData shall not by itself restore the previous
 operational Location ID or OPEN state.
 :::
 
-:::{req} Reject invalid TimingData recovery input
+:::{req} Reject invalid TimingData recovery input  
 :id: SI01-REQ-048
 :status: D
 :derived_from: UC-013
@@ -316,7 +316,7 @@ sequence gap or sequence regression shall produce an explicit recovery failure
 for that TimingNode rather than being silently skipped or renumbered.
 :::
 
-:::{req} Contain TimingNode recovery failure
+:::{req} Contain TimingNode recovery failure  
 :id: SI01-REQ-049
 :status: D
 :derived_from: UC-020
@@ -339,7 +339,7 @@ Failures of mandatory application-wide configuration or infrastructure that prev
 safe construction of the diagnostic runtime are outside this containment rule.
 :::
 
-:::{req} Use maximum-RSSI tag observation for registration
+:::{req} Use maximum-RSSI tag observation for registration  
 :id: SI01-REQ-050
 :status: D
 :derived_from: UC-003
@@ -355,7 +355,7 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
-:::{req} Keep local registration independent from presentation, diagnostic logging and backoffice delivery
+:::{req} Keep local registration independent from presentation, diagnostic logging and backoffice delivery  
 :id: SI01-REQ-051
 :status: D
 :derived_from: UC-003, UC-012
@@ -453,7 +453,7 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-:::{arch} Composition
+:::{arch} Composition  
 :id: Composition
 
 `Composition` is the Runtime component that owns construction of the concrete
@@ -464,7 +464,7 @@ retain their own layer ownership; Runtime only knows how this executable is
 assembled.
 :::
 
-:::{arch} Application
+:::{arch} Application  
 :id: Application
 
 `Application` is the top-level reusable Runtime object for one running SI-01
@@ -546,7 +546,7 @@ presentation/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
-:::{arch} API
+:::{arch} API  
 ---
 id: Api
 satisfies: >-
@@ -563,7 +563,7 @@ and diagnostic operations grow inside the same functional
 interface.
 :::
 
-:::{arch} Web
+:::{arch} Web  
 :id: Web
 
 **Web** is the browser-facing presentation interface of SI-01. Each configured
@@ -576,7 +576,7 @@ collapsed into the API merely because both can use HTTP/WebSocket
 technology.
 :::
 
-:::{arch} Console
+:::{arch} Console  
 :id: Console
 
 `Console` is the local text presentation interface. It delegates common
@@ -585,7 +585,7 @@ application behaviour through the shared `PresentationGateway`; it does not own
 application/domain state.
 :::
 
-:::{arch} RemoteShell
+:::{arch} RemoteShell  
 :id: RemoteShell
 
 `RemoteShell` is the remote text presentation interface. It shares terminal
@@ -593,7 +593,7 @@ session behaviour with Console through `SharedTerminalHandler` while remaining
 a separate external interface and transport concern.
 :::
 
-:::{arch} SharedTerminalHandler
+:::{arch} SharedTerminalHandler  
 :id: SharedTerminalHandler
 
 `SharedTerminalHandler` owns command parsing and terminal-session behaviour that
@@ -629,13 +629,13 @@ application/
     upstream-only application/domain target resolution and routing
 ```
 
-:::{arch} Conductor
+:::{arch} Conductor  
 :id: Conductor
 
 `Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes.
 :::
 
-:::{arch} PresentationGateway
+:::{arch} PresentationGateway  
 ---
 id: PresentationGateway
 satisfies: >-
@@ -657,7 +657,7 @@ TimingNode-facing object rather than appearing as context-free methods on the ga
 `Conductor` is not a mandatory hop for TimingNode-scoped work.
 :::
 
-:::{arch} TimingNodeProxy
+:::{arch} TimingNodeProxy  
 :id: TimingNodeProxy
 
 `TimingNodeProxy` is the Application-layer boundary object for one addressed
@@ -679,7 +679,7 @@ contains `ADD`, while any additional action requires its own defined TimingData 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce messages merely to preserve a layer diagram.
 
-:::{arch} UpstreamMessageRouter
+:::{arch} UpstreamMessageRouter  
 :id: UpstreamMessageRouter
 
 `UpstreamMessageRouter` owns target resolution for messages exchanged with the
@@ -752,7 +752,7 @@ Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
 The two roles share the same semantic concept but have distinct engineering
 identities in Figure SI01-01 so interactive selection remains unambiguous.
 
-:::{arch} TimingSystem UpstreamMessagePort
+:::{arch} TimingSystem UpstreamMessagePort  
 :id: SystemUpstreamMessagePort
 
 The TimingSystem-level `UpstreamMessagePort` receives and emits system-level
@@ -761,7 +761,7 @@ target one TimingNode. It does not own transport connections, connector
 lifecycle or cross-aggregate target resolution.
 :::
 
-:::{arch} TimingNode UpstreamMessagePort
+:::{arch} TimingNode UpstreamMessagePort  
 :id: TimingNodeUpstreamMessagePort
 
 The TimingNode-level `UpstreamMessagePort` receives and emits node-scoped
@@ -770,7 +770,7 @@ and target `TimingNodeId`. It does not own transport connections or
 cross-aggregate target resolution.
 :::
 
-:::{arch} TagProcessor
+:::{arch} TagProcessor  
 :id: TagProcessor
 
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
@@ -780,26 +780,26 @@ TimingNode's bounded serial execution boundary and is completed by that node's
 worker.
 :::
 
-:::{arch} StageStartTimes
+:::{arch} StageStartTimes  
 :id: StageStartTimes
 
 `StageStartTimes` owns the stage-start reference values used by one TimingNode.
 :::
 
-:::{arch} NextUpTeams
+:::{arch} NextUpTeams  
 :id: NextUpTeams
 
 `NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
 :::
 
-:::{arch} RaceData
+:::{arch} RaceData  
 :id: RaceData
 
 `RaceData` owns participant, team and tag reference data needed by one
 TimingNode's timing behaviour.
 :::
 
-:::{arch} StageTiming
+:::{arch} StageTiming  
 :id: StageTiming
 
 `StageTiming` derives running-time and ranking results from the TimingNode's
@@ -890,13 +890,13 @@ package-like ownership/decomposition semantics are meaningful. For compactness,
 Figure SI01-01 shows their contained software components as an indented hierarchy
 rather than as nested component boxes.
 
-:::{arch} Storage
+:::{arch} Storage  
 :id: Storage
 
 `Storage` owns generic lower-layer persistence mechanisms plus backup/restore mechanics. Storage contracts are independent of higher Application/Domain types. TimingData-specific encoding, identity/sequence validation and commit semantics remain above Storage; Runtime composition connects that semantic persistence component to the selected generic file/database mechanism.
 :::
 
-:::{arch} Devices
+:::{arch} Devices  
 :id: Devices
 
 `Devices` groups the software components that represent external device roles in
@@ -908,7 +908,7 @@ reference/simulation implementation.
 concrete variants remain subordinate to this package/component boundary.
 :::
 
-:::{arch} DeviceNetworks
+:::{arch} DeviceNetworks  
 :id: DeviceNetworks
 
 `DeviceNetworks` owns communication/network responsibilities used to reach
@@ -922,7 +922,7 @@ components. The boundary is not Wi-Fi specific and does not own smart-display
 rendering/domain behaviour.
 :::
 
-:::{arch} Messaging
+:::{arch} Messaging  
 :id: Messaging
 
 `Messaging` owns the external upstream transport/session package. When upstream
@@ -943,7 +943,7 @@ components as structured rows rather than expanding each component into a
 separate box. The following rows are nevertheless stable architecture objects
 and use the same engineering identity model as top-level diagram nodes.
 
-:::{arch} AntennaManager
+:::{arch} AntennaManager  
 :id: AntennaManager
 
 `AntennaManager` coordinates 1..N configured Antenna components for one
@@ -951,7 +951,7 @@ TimingSystem. If that TimingSystem has no configured antenna, no AntennaManager
 is required.
 :::
 
-:::{arch} Antenna
+:::{arch} Antenna  
 :id: Antenna
 
 `Antenna` is the software-facing RFID antenna/reader role consumed by
@@ -959,14 +959,14 @@ AntennaManager. Concrete vendor or simulated implementations remain behind this
 role.
 :::
 
-:::{arch} SimulatedAntenna
+:::{arch} SimulatedAntenna  
 :id: SimulatedAntenna
 
 `SimulatedAntenna` is the built-in controllable Antenna implementation used for
 development, simulation and hardware-independent verification.
 :::
 
-:::{arch} VendorAntenna
+:::{arch} VendorAntenna  
 :id: VendorAntenna
 
 `VendorAntenna` is the generic architecture role for an extension-provided
@@ -976,7 +976,7 @@ AntennaProvider extension path; an actual vendor integration may receive a more
 specific implementation name when selected.
 :::
 
-:::{arch} Display
+:::{arch} Display  
 :id: Display
 
 `Display` is the software-facing output-device role for presenting timing
@@ -984,49 +984,49 @@ information without coupling Domain/Application behaviour to one physical
 display generation or transport.
 :::
 
-:::{arch} Rev1CanDisplay
+:::{arch} Rev1CanDisplay  
 :id: Rev1CanDisplay
 
 `Rev1CanDisplay` is the CAN-connected revision-1 implementation of the Display
 role.
 :::
 
-:::{arch} Rev2WifiDisplay
+:::{arch} Rev2WifiDisplay  
 :id: Rev2WifiDisplay
 
 `Rev2WifiDisplay` is the network-attached revision-2 implementation of the
 Display role.
 :::
 
-:::{arch} Keypad
+:::{arch} Keypad  
 :id: Keypad
 
 `Keypad` is the software-facing operator-input device role used for keypad
 events without making the timing domain depend on a concrete bus implementation.
 :::
 
-:::{arch} Rev1CanKeypad
+:::{arch} Rev1CanKeypad  
 :id: Rev1CanKeypad
 
 `Rev1CanKeypad` is the CAN-connected revision-1 implementation of the Keypad
 role.
 :::
 
-:::{arch} Beeper
+:::{arch} Beeper  
 :id: Beeper
 
 `Beeper` is the transport-neutral audible-feedback device role. A concrete
 connection/implementation is selected only when required by deployment design.
 :::
 
-:::{arch} CanNetworkController
+:::{arch} CanNetworkController  
 :id: CanNetworkController
 
 `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning, online state
 and CAN-device communication for the DeviceNetworks package.
 :::
 
-:::{arch} NetworkDeviceService
+:::{arch} NetworkDeviceService  
 :id: NetworkDeviceService
 
 `NetworkDeviceService` owns the bidirectional boundary for
@@ -1034,14 +1034,14 @@ network-attached/smart devices, including data sent outward and device-originate
 messages/events received inward.
 :::
 
-:::{arch} UpstreamGateway
+:::{arch} UpstreamGateway  
 :id: UpstreamGateway
 
 `UpstreamGateway` is the Messaging-owned external upstream transport/session
 boundary. It owns connector coordination but not UpstreamProtocol semantics.
 :::
 
-:::{arch} Connector
+:::{arch} Connector  
 :id: Connector
 
 `Connector` is the transport/session role used 1..N times by UpstreamGateway.
@@ -1049,14 +1049,14 @@ Concrete connectors own transport resources, delivery/session mechanics and
 transport-specific addressing.
 :::
 
-:::{arch} RabbitMqConnector
+:::{arch} RabbitMqConnector  
 :id: RabbitMqConnector
 
 `RabbitMqConnector` is the RabbitMQ implementation of the Connector role for
 production-shaped upstream messaging.
 :::
 
-:::{arch} DebugConnector
+:::{arch} DebugConnector  
 :id: DebugConnector
 
 `DebugConnector` is the development/debug implementation of the Connector role.
@@ -1089,7 +1089,7 @@ TimingNode, TimingData, presentation or external I/O semantics.
 
 The layered view groups Platform into three small technical responsibilities:
 
-:::{arch} PlatformExecution
+:::{arch} PlatformExecution  
 :id: PlatformExecution
 
 `PlatformExecution` owns reusable execution primitives such as bounded serial
@@ -1097,7 +1097,7 @@ execution and the low-level executor/thread abstractions behind them. It does no
 own TimingNode state or domain policy.
 :::
 
-:::{arch} PlatformEvents
+:::{arch} PlatformEvents  
 :id: PlatformEvents
 
 `PlatformEvents` supplies the small typed local-event mechanism used for
@@ -1105,7 +1105,7 @@ post-fact notifications. Event instances remain owned by the component that
 publishes them; Platform does not provide a central event bus.
 :::
 
-:::{arch} PlatformEnvironment
+:::{arch} PlatformEnvironment  
 :id: PlatformEnvironment
 
 `PlatformEnvironment` groups low-level clock/time, filesystem/path,
@@ -1126,7 +1126,7 @@ Cross-cutting technical concerns include logging, diagnostics, metrics and
 build/version identity. In Java, `infra` is reserved for concrete cross-cutting
 support such as `BuildIdentity`; it is not the I/O layer.
 
-:::{arch} Logging
+:::{arch} Logging  
 :id: Logging
 
 `Logging` is reusable runtime logging infrastructure owned by the core artifact. Reusable
@@ -1136,7 +1136,7 @@ Logging owns backend/sink lifecycle and the current global logging level; it doe
 application or domain state.
 :::
 
-:::{arch} LoggingServer
+:::{arch} LoggingServer  
 :id: LoggingServer
 
 `LoggingServer` is the optional external engineering interface for live log records and
@@ -1149,7 +1149,7 @@ interface and live delivery remains best effort.
 
 ### Principal runtime abstractions
 
-:::{arch} TimingSystem
+:::{arch} TimingSystem  
 :id: TimingSystem
 
 A `TimingSystem` is an internal parent domain aggregate.
@@ -1162,7 +1162,7 @@ simulation contexts. Each TimingSystem owns a complete
 assumed to be part of the upstream wire contract.
 :::
 
-:::{arch} SystemStatus
+:::{arch} SystemStatus  
 :id: SystemStatus
 
 `SystemStatus` is a dedicated Domain component contained by one
@@ -1173,7 +1173,7 @@ objects remain outside Domain and contribute status through typed semantic
 inputs.
 :::
 
-:::{arch} TimingNode
+:::{arch} TimingNode  
 :id: TimingNode
 :satisfies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021
 
@@ -1186,7 +1186,7 @@ TimingData contracts remain centred on `TimingNodeId`.
 :::
 
 
-:::{arch} LogBook
+:::{arch} LogBook  
 :id: LogBook
 
 A `LogBook` is passive state contained by one TimingNode.
@@ -1195,7 +1195,7 @@ The current design does not introduce a second
 logbook-specific timing-record representation.
 :::
 
-:::{arch} TimingData
+:::{arch} TimingData  
 :id: TimingData
 
 `TimingData` is the shared Domain capability that realises
@@ -1206,7 +1206,7 @@ compatibility remain defined by IF-05; Storage, Web and upstream
 protocol code consume that contract without redefining it.
 :::
 
-:::{arch} UpstreamProtocol
+:::{arch} UpstreamProtocol  
 :id: UpstreamProtocol
 
 Each TimingSystem owns one `UpstreamProtocol` context. It uses
@@ -1216,7 +1216,7 @@ those concerns do not leak into individual TimingNodes.
 :::
 
 
-:::{arch} TimeSource
+:::{arch} TimeSource  
 :id: TimeSource
 
 `TimeSource` is owned by one `TimingSystem` and provides the absolute current
