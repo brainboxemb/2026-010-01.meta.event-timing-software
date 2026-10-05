@@ -103,7 +103,7 @@ reading order or implementation sequence.
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
 | UC-020 | Diagnose degraded TimingNode startup | Operator / platform | Keep the application diagnosable when one TimingNode cannot restore its local state. |
 
-:::{uc} Diagnose degraded TimingNode startup
+:::{uc} Diagnose degraded TimingNode startup  
 :id: UC-020
 
 **Goal:** keep SI-01 reachable and diagnosable when one configured TimingNode cannot
@@ -160,7 +160,7 @@ problem through normal status interfaces.
 
 ### Normal operation
 
-:::{uc} Connect to a registration system
+:::{uc} Connect to a registration system  
 :id: UC-001
 
 **Goal:** allow an operator application to connect to a known registration
@@ -197,7 +197,7 @@ system and see its current location and open/closed state.
 
 :::
 
-:::{uc} Configure, open and close a registration point
+:::{uc} Configure, open and close a registration point  
 :id: UC-002
 
 **Goal:** let an operator prepare a registration point for one location, open it
@@ -241,7 +241,7 @@ the resulting `OPEN` or `CLOSED` state explicitly.
 
 :::
 
-:::{uc} Register a participant through RFID
+:::{uc} Register a participant through RFID  
 :id: UC-003
 
 **Goal:** turn an accepted participant observation into one traceable registration
@@ -280,7 +280,7 @@ time of acceptance.
 
 :::
 
-:::{uc} Recover or reinitialise RFID equipment
+:::{uc} Recover or reinitialise RFID equipment  
 :id: UC-004
 
 **Goal:** allow explicit operator/system recovery of an RFID device while keeping timing-system state and committed registrations intact.
@@ -298,7 +298,7 @@ time of acceptance.
 
 :::
 
-:::{uc} Manage ready teams through keypad/operator input
+:::{uc} Manage ready teams through keypad/operator input  
 :id: UC-005
 
 **Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
@@ -317,7 +317,7 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 :::
 
-:::{uc} Drive a passive CAN display from current system state
+:::{uc} Drive a passive CAN display from current system state  
 :id: UC-006
 
 **Goal:** ensure the passive DisplayRev1Can shows the current ready-team/display model.
@@ -334,7 +334,7 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 :::
 
-:::{uc} Provide data to a smart network display
+:::{uc} Provide data to a smart network display  
 :id: UC-007
 
 **Goal:** expose current timing/status/reference data so a smart display can render and synchronise itself without SI-01 owning its presentation logic.
@@ -353,7 +353,7 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 
 :::
 
-:::{uc} Operate SI-01 through a desktop GUI
+:::{uc} Operate SI-01 through a desktop GUI  
 :id: UC-008
 
 **Goal:** operate/observe a timing application through the
@@ -381,7 +381,7 @@ tooling, but it is not SI-02 and does not own SI-02 operator-interface requireme
 
 ### System, backoffice and recovery
 
-:::{uc} Synchronise reference data from backoffice
+:::{uc} Synchronise reference data from backoffice  
 :id: UC-010
 
 **Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
@@ -403,7 +403,7 @@ be presented as proof that the target's reference state changed.
 
 :::
 
-:::{uc} Synchronise TimingNodeId-scoped data to backoffice
+:::{uc} Synchronise TimingNodeId-scoped data to backoffice  
 :id: UC-011
 
 **Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
@@ -428,7 +428,7 @@ increments.
 
 :::
 
-:::{uc} Continue local operation during backoffice outage
+:::{uc} Continue local operation during backoffice outage  
 :id: UC-012
 
 **Goal:** preserve required local timing functionality and traceability while external connectivity is unavailable.
@@ -445,7 +445,7 @@ increments.
 
 :::
 
-:::{uc} Restart and restore local state
+:::{uc} Restart and restore local state  
 :id: UC-013
 
 **Goal:** recover a coherent timing application after restart/power interruption.
@@ -463,7 +463,7 @@ increments.
 
 :::
 
-:::{uc} Run multiple TimingNodes in one process
+:::{uc} Run multiple TimingNodes in one process  
 :id: UC-014
 
 **Goal:** host multiple independently addressed TimingNodes
@@ -491,7 +491,7 @@ specified mapping rule, not accidental cross-instance sharing.
 
 ### Engineering, simulation and verification
 
-:::{uc} Exercise the registration system through the Engineering Client
+:::{uc} Exercise the registration system through the Engineering Client  
 :id: UC-009
 
 **Goal:** provide one engineering application for inspecting and exercising the
@@ -533,7 +533,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::
 
-:::{uc} Simulate a complete field toward backoffice
+:::{uc} Simulate a complete field toward backoffice  
 :id: UC-015
 
 **Goal:** exercise realistic multi-TimingNode/multi-source behaviour from one test application.
@@ -550,7 +550,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::
 
-:::{uc} Replace real devices with controllable stubs
+:::{uc} Replace real devices with controllable stubs  
 :id: UC-016
 
 **Goal:** make hardware-dependent application behaviour testable without duplicating business logic.
@@ -566,7 +566,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::
 
-:::{uc} Use an alternative backoffice transport for loop testing
+:::{uc} Use an alternative backoffice transport for loop testing  
 :id: UC-017
 
 **Goal:** test real process/network communication and `TimingNodeId`-scoped stream routing without RabbitMQ.
@@ -586,7 +586,7 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 
 :::
 
-:::{uc} Verify production-shaped messaging through RabbitMQ
+:::{uc} Verify production-shaped messaging through RabbitMQ  
 :id: UC-018
 
 **Goal:** verify broker/client lifecycle and source-specific messaging using a real disposable broker.
@@ -606,7 +606,7 @@ Production names, source IDs, schemas and credentials remain outside the public 
 
 :::
 
-:::{uc} Handle provider-specific input classification
+:::{uc} Handle provider-specific input classification  
 :id: UC-019
 
 **Goal:** preserve a provider-declared semantic input classification when the
