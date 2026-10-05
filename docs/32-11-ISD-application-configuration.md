@@ -254,7 +254,7 @@ io
       displayProtocolProvider: reference
 ```
 
-`AntennaManager` is the configured owner of the antenna set and may define 0..N antennas. `AntennaId` is distinct from
+`AntennaManager` is an optional configured I/O capability. When present it owns 1..N antennas. `AntennaId` is distinct from
 `TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
