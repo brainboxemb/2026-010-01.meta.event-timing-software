@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the IF-03 HTTP/WebSocket realization for querying current configuration, atomically setting/clearing TimingNode TagProcessor runtime overrides through Application ConfigurationControl, and publishing post-fact CONFIGURATION_CHANGED events.
+
 - Correct configuration ownership: reusable typed configuration mechanics belong to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, and query/update use-cases belong to Application; synchronize Figure SI01-01 accordingly.
 
 - Correct configuration ownership: generic typed configuration mechanics move to Infrastructure, the concrete ApplicationConfiguration tree belongs to Runtime, Application owns only configuration query/update use-cases, and Figure SI01-01 is synchronized with that split.
