@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make Engineering Explorer architecture/detail panes user-resizable with persisted proportions, and keep inline Source definition disclosure square, compact and icon-free.
+
 - Use MyST colon fences for engineering Needs so UC/requirement/interface/verification source remains readable and wraps normally during direct GitHub Markdown review, while retaining the same Sphinx-Needs semantics and generated traceability.
 
 - Synchronize Figure SI01-01 with the accepted Java execution design by replacing the stale SerialWorker with SerialExecutor and SerialScheduledExecutor while retaining higher-level Application responsibilities.

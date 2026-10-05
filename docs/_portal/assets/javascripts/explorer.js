@@ -221,7 +221,133 @@
       const root = document.querySelector("[data-eng-explorer]");
       if (!root) return;
       const detail = root.querySelector("[data-eng-detail]");
+      const resizer = root.querySelector("[data-eng-explorer-resizer]");
+      const storageKey = "engineering-explorer-pane-shares-v1";
+      const defaultShares = [0.75, 0.25];
+      let paneShares = defaultShares.slice();
       const initialUrl = new URL(window.location.href);
+
+      function normalizeShares(shares) {
+        if (!Array.isArray(shares) || shares.length !== 2) return null;
+        const values = shares.map(Number);
+        if (values.some((value) => !Number.isFinite(value) || value <= 0)) {
+          return null;
+        }
+        const total = values[0] + values[1];
+        if (!Number.isFinite(total) || total <= 0) return null;
+        return values.map((value) => value / total);
+      }
+
+      function applyShares(shares, persist) {
+        const normalized = normalizeShares(shares);
+        if (!normalized) return;
+        paneShares = normalized;
+
+        if (window.matchMedia("(max-width: 900px)").matches) {
+          root.style.removeProperty("grid-template-columns");
+          return;
+        }
+
+        const available = Math.max(1, root.clientWidth - 4);
+        const left = Math.round(paneShares[0] * available);
+        const right = Math.max(0, available - left);
+        root.style.gridTemplateColumns =
+          left + "px 4px " + right + "px";
+
+        if (resizer) {
+          resizer.setAttribute(
+            "aria-valuenow",
+            String(Math.round(paneShares[0] * 100))
+          );
+        }
+        if (persist) {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(paneShares));
+          } catch (error) {
+            // Resizing remains usable when storage is unavailable.
+          }
+        }
+      }
+
+      function restoreShares() {
+        try {
+          const saved = normalizeShares(
+            JSON.parse(localStorage.getItem(storageKey))
+          );
+          if (saved) paneShares = saved;
+        } catch (error) {
+          // Keep the authored default ratio.
+        }
+        applyShares(paneShares, false);
+      }
+
+      function resize(deltaPixels, startShares) {
+        const available = Math.max(1, root.clientWidth - 4);
+        const widths = startShares.map((share) => share * available);
+        const pairTotal = widths[0] + widths[1];
+        const minimumLeft = 260;
+        const minimumRight = 240;
+
+        widths[0] = Math.min(
+          pairTotal - minimumRight,
+          Math.max(minimumLeft, widths[0] + deltaPixels)
+        );
+        widths[1] = pairTotal - widths[0];
+        applyShares(widths.map((width) => width / available), false);
+      }
+
+      function initializeResizer() {
+        if (!resizer) return;
+        resizer.setAttribute("aria-valuemin", "10");
+        resizer.setAttribute("aria-valuemax", "90");
+        restoreShares();
+
+        resizer.addEventListener("pointerdown", (event) => {
+          if (window.matchMedia("(max-width: 900px)").matches) return;
+          event.preventDefault();
+          const startX = event.clientX;
+          const startShares = paneShares.slice();
+          resizer.classList.add("is-dragging");
+          if (resizer.setPointerCapture) {
+            resizer.setPointerCapture(event.pointerId);
+          }
+
+          const move = (moveEvent) => {
+            resize(moveEvent.clientX - startX, startShares);
+          };
+          const finish = () => {
+            resizer.classList.remove("is-dragging");
+            applyShares(paneShares, true);
+            resizer.removeEventListener("pointermove", move);
+            resizer.removeEventListener("pointerup", finish);
+            resizer.removeEventListener("pointercancel", finish);
+          };
+
+          resizer.addEventListener("pointermove", move);
+          resizer.addEventListener("pointerup", finish);
+          resizer.addEventListener("pointercancel", finish);
+        });
+
+        resizer.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+            return;
+          }
+          event.preventDefault();
+          resize(
+            (event.key === "ArrowLeft" ? -1 : 1) * 24,
+            paneShares.slice()
+          );
+          applyShares(paneShares, true);
+        });
+
+        resizer.addEventListener("dblclick", () => {
+          applyShares(defaultShares, true);
+        });
+
+        window.addEventListener("resize", () => {
+          applyShares(paneShares, false);
+        });
+      }
 
       function selectedId(node) {
         return node.dataset.objectId || node.dataset.engineeringId || "";
@@ -271,6 +397,7 @@
       if (requested && data.objects[requested]) {
         render(requested, false);
       }
+      initializeResizer();
     }
 
     function initializeWorkspace() {
