@@ -366,6 +366,39 @@ unavailability of those functions shall not by itself stop an operational Timing
 from accepting and committing local registrations.
 :::
 
+:::{req} Contain antenna startup and runtime failure  
+:id: SI01-REQ-052  
+:status: D  
+:derived_from: UC-003  
+
+At application startup SI-01 shall attempt a health probe for every configured
+antenna. Failure of one configured antenna shall not by itself prevent health
+probing or later operation of other independently healthy configured antennas.
+The failed antenna shall remain represented as unavailable or in error.
+:::
+
+:::{req} Couple antenna operation to assigned TimingNode lifecycle  
+:id: SI01-REQ-053  
+:status: D  
+:derived_from: UC-001, UC-003  
+
+A healthy configured antenna shall provide inventory while at least one TimingNode
+assigned to that antenna is OPEN. When no assigned TimingNode is OPEN, SI-01 shall
+stop inventory for that antenna and release or power down the antenna according to
+its configured installation lifecycle.
+:::
+
+:::{req} Multiplex mutually exclusive antenna inventory  
+:id: SI01-REQ-054  
+:status: D  
+:derived_from: UC-003  
+
+For antennas configured in the same inventory mutual-exclusion group, SI-01 shall
+keep at most one healthy group member inventorying at a time and shall rotate
+inventory between available group members using the configured inventory interval.
+Failure of one group member shall not stop remaining healthy group members.
+:::
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
@@ -406,6 +439,9 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 | SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
+| SI01-REQ-052 | UC-003 | per-antenna startup/runtime failure containment + observable antenna health |
+| SI01-REQ-053 | UC-001/003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
+| SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
 
 ## Software-item architecture
 
