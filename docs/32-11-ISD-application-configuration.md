@@ -658,7 +658,7 @@ main()
   -> discover built-in and configured external extension providers
   -> validate effective configuration, profile constraints and provider references
   -> configure executable runtime logging
-  -> runtime Composition constructs and wires TimingApplication and selected implementations
+  -> runtime TimingApplication.create(...) constructs and wires the application and selected implementations
   -> recover configured TimingData storage into the TimingNode LogBook
   -> start application lifecycle
 ```
