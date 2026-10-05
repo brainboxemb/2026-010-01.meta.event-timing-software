@@ -293,23 +293,27 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-`SerialExecutor` is the project execution primitive used by TimingNode. Its Java
-implementation is backed by a one-thread `ThreadPoolExecutor` with a bounded
-`ArrayBlockingQueue`; project code owns the admission/lifecycle/measurement semantics, while
-the JDK owns thread coordination and queue waiting.
+`SerialExecutor` is the project execution primitive used by TimingNode. Each
+TimingNode owns one bounded FIFO lane with its own `ArrayBlockingQueue`, admission state and
+lane-local metrics. **The lane is not the physical worker.** Production Runtime supplies one
+shared single-worker `ThreadPoolExecutor` for the TimingNode role and all TimingNode lanes
+schedule short drain tokens onto that shared worker. A standalone one-worker constructor
+remains useful for focused tests and isolated uses.
 
 `SerialScheduledExecutor` is the corresponding serial scheduling capability used by
-TagProcessor. Its Java implementation is backed by a one-thread
-`ScheduledThreadPoolExecutor`. It owns no observation queue: TagProcessor owns that bounded
-input queue separately.
+TagProcessor. Each TagProcessor keeps its own bounded observation queue and logical serial
+scheduled lane, while production Runtime supplies one shared single-worker
+`ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled housekeeping and
+coalesced immediate work are serialized per TagProcessor without allocating a physical
+worker per processor.
 
-**Runtime composition constructs these executors centrally and injects them into the
-component that uses them.** TimingNode and TagProcessor do not choose production thread
-names, queue capacities or create hidden production execution resources. Runtime gives
-one `SerialExecutor` and one `SerialScheduledExecutor` to each composed TimingNode.
-TimingNode then owns the lifecycle of those node-local lanes together with its child
-TagProcessor. Shared blocking-I/O executors remain Runtime-owned and are never used as the
-TimingNode or TagProcessor serial lane.
+**Runtime composition constructs the physical role workers centrally and injects logical
+lanes backed by those workers.** TimingNode and TagProcessor do not choose production thread
+names or create hidden production threads. Runtime gives one logical `SerialExecutor` and
+one logical `SerialScheduledExecutor` to each composed TimingNode, but all nodes share the
+corresponding role worker. TimingNode owns the lifecycle of its node-local lanes together
+with its child TagProcessor. Shared blocking-I/O executors remain Runtime-owned and separate
+from both Domain role workers.
 
 The central construction point deliberately leaves Java thread priority at the JVM
 default. Correctness and forward progress do not depend on priority. A role-specific
@@ -1665,11 +1669,11 @@ TagProcessor burst expiry is unrelated to runtime measurement.
 ## Runtime thread ownership and naming
 
 Project-owned SI-01 runtime threads use the diagnostic name form
-`tp-<owner>-<role>[-<identity>]`. The prefix makes Timing Point Application
-threads easy to separate from JDK, Maven/JGit and third-party library threads in
-a debugger, profiler or thread dump. The owner abbreviations used by the current
-runtime are `prl` (Presentation), `dml` (Domain), `io` (shared device/network I/O executor),
-`inf` (Infrastructure) and `run` (Runtime/composition).
+`tp-<owner>-<role>[-<qualifier>]`. The prefix makes Timing Point Application threads easy
+to separate from JDK, Maven/JGit and third-party library threads in a debugger, profiler or
+thread dump. The owner abbreviations used by the current runtime are `prl` (Presentation),
+`dml` (Domain), `io` (shared device/network I/O executor), `inf` (Infrastructure) and
+`run` (Runtime/composition).
 
 Examples:
 
@@ -1680,28 +1684,30 @@ tp-prl-remote-shell
 tp-inf-live-log
 tp-inf-live-log-writer
 tp-run-shutdown
-tp-io-worker-<index>
-tp-dml-node-<NodeId>
+tp-io-shared-<index>
+tp-dml-node-worker
+tp-dml-tagproc-worker
 ```
 
-Dedicated component threads are named for the functional component that owns the work,
-not merely the helper that allocates the Java `Thread`. The TimingNode serial lane is
-therefore `tp-dml-node-<NodeId>` even though `SerialExecutor` is a Platform primitive.
+Physical worker names describe the shared executor role, not one logical object that happens
+to submit work. A `TimingNodeId` therefore does **not** appear in the TimingNode or
+TagProcessor worker-thread name: one worker services the lanes for multiple nodes over its
+lifetime. Node identity remains available in lane/component diagnostics and metrics.
 
-Shared executor workers are named for the executor/pool role instead, for example
-`tp-io-worker-<index>`; a worker may execute control work for different I/O capabilities
-over its lifetime. Threads owned by the JDK or external libraries keep their own names.
+Threads owned by the JDK or external libraries keep their own names.
 
 ### Thread priority and execution roles
 
-The execution design keeps latency-sensitive work on separate owned lanes so thread
-priority can be tuned by role without changing Domain/component logic:
+The execution design keeps latency-sensitive work on separate **role workers**, while
+each configured node retains its own logical serial lane:
 
 ```text
-TagProcessor execution lane
+shared TagProcessor role worker
+  -> serial TagProcessor lane per TimingNode
   -> highest registration-ingress latency class candidate
 
-TimingNode serial lane
+shared TimingNode role worker
+  -> bounded serial TimingNode lane per TimingNode
   -> medium registration/command latency class candidate
 
 shared background/application execution
@@ -1712,11 +1718,17 @@ The third category is an execution resource for active background/application wo
 not a reason to turn passive Domain objects into threaded objects. Blocking device/I/O work
 also remains on its separate bounded I/O executor.
 
-Step 5 still starts with normal/default Java thread priority for all three roles. D04 defines
-the separation and makes role-specific priority possible, but does not yet assign numeric
-Java priority values.
+Step 5 still starts with normal/default Java thread priority for all roles. D04 defines
+functional separation and makes later role-specific tuning possible, but does not assign
+numeric Java priority values.
 
-V01 measures queue wait, execution latency, CPU/thread behaviour and starvation/fairness.
+V01 measures queue wait, execution latency, CPU/thread behaviour and fairness. The current
+reference stress workload is **20 registrations per second for the whole SI-01 application**.
+That target is aggregate across all configured TimingNodes: adding a second node does not
+turn it into 40 registrations/s. Multi-node characterization should vary the distribution
+of that same total load (for example 20/0 and 10/10) to expose unfair scheduling or queue
+growth without silently multiplying the hardware requirement.
+
 If evidence shows useful separation under load, role-specific priorities may then be tested,
 for example TagProcessor above TimingNode and background work below it. The exact values must
 be qualified on both the development host and the Raspberry Pi target.
@@ -1735,7 +1747,8 @@ The architectural rule is simple:
 ```text
 TimingNode
   +-- one bounded serial execution boundary
-  +-- one worker active at a time
+  +-- at most one work item active on that lane
+  +-- physical TimingNode worker shared with other node lanes
   |
   +-- passive LogBook
   +-- passive NextUpTeams
@@ -1762,7 +1775,7 @@ separately:
 ```java
 final class TimingNode {
     private final TimingNodeLogic logic;
-    private final SerialExecutor serialWorker;
+    private final SerialExecutor serialLane;
 
     <R> R invoke(TimingNodeCommand<R> command) {
         // admit + wait for the processed result
@@ -1860,20 +1873,40 @@ outcome semantics differ from definite submission rejection.
 
 ### SerialExecutor design
 
-`SerialExecutor` preserves the existing TimingNode execution semantics while delegating the
-low-level worker implementation to the JDK.
+`SerialExecutor` preserves TimingNode execution semantics while separating the logical
+bounded lane from the physical worker.
 
-The baseline implementation uses:
+The production baseline is:
 
 ```text
-ThreadPoolExecutor
-  corePoolSize = 1
-  maximumPoolSize = 1
-  workQueue = bounded ArrayBlockingQueue
+Runtime TimingNode role executor
+  ThreadPoolExecutor
+    corePoolSize = 1
+    maximumPoolSize = 1
+    physical thread = tp-dml-node-worker
+
+TimingNode TN-01 SerialExecutor lane
+  bounded ArrayBlockingQueue
+  at most one drain token scheduled
+
+TimingNode TN-02 SerialExecutor lane
+  bounded ArrayBlockingQueue
+  at most one drain token scheduled
 ```
 
-Do **not** use `Executors.newSingleThreadExecutor()`: its normal work queue is unbounded and
-hides overload behaviour.
+Only one lane item is processed per drain token. If another node already has a drain token
+waiting on the shared role executor, it gets an opportunity to run before a busy lane
+resubmits its next item. This provides fairness at task boundaries without pretending that a
+single-core Raspberry Pi gains CPU capacity from one Java worker per TimingNode.
+
+The role executor queue does not buffer registration workload directly. At most one drain
+token per active lane is scheduled there; workload/backpressure remains in each bounded
+lane-local `ArrayBlockingQueue`. A standalone one-worker constructor is retained for focused
+tests, but production composition uses the shared role executor.
+
+Do **not** replace the lane-local bounded queue with
+`Executors.newSingleThreadExecutor()` or another unbounded workload queue; that would hide
+overload behaviour.
 
 The project API keeps the two result moments explicit:
 
@@ -1917,16 +1950,19 @@ semantics; `RejectedExecutionException` does not leak into normal TimingNode cal
 
 The required behaviour remains:
 
-- queue capacity is visible and bounded;
+- queue capacity is visible and bounded per TimingNode lane;
 - FIFO order is preserved for one TimingNode;
-- at most one work item executes at a time;
-- state-dependent validation happens on that ordered lane;
+- at most one work item from one lane executes at a time;
+- different node lanes share the role worker and make progress at task boundaries;
+- state-dependent validation happens on the ordered node-local lane;
 - result-bearing work has an internal Future;
 - offer-only ingress observes definite queue admission without waiting;
-- one ordinary work-item failure does not terminate the executor lane;
-- unexpected fatal failure is observable;
-- shutdown stops new admission first and drains already accepted immediate work according to
-  the controlled shutdown policy.
+- one ordinary work-item failure does not terminate the lane;
+- an unexpected fatal lane failure is observable and does not shut down sibling lanes or the
+  shared role worker;
+- closing one lane stops new admission and drains its accepted work without closing the
+  shared role executor;
+- Runtime shuts down the shared role executor only after component lanes have stopped.
 
 The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
 primitive and contains no TimingNode/domain/persistence logic.
@@ -1941,18 +1977,26 @@ runtime model.
 `SerialScheduledExecutor` is a separate Platform primitive for active objects that need one
 serial lane plus delayed/periodic work. It is not a subclass of `SerialExecutor`.
 
-The baseline implementation uses one `ScheduledThreadPoolExecutor` worker. It provides:
+Production Runtime owns one shared single-worker `ScheduledThreadPoolExecutor` for the
+TagProcessor role. Each TagProcessor gets a logical `SerialScheduledExecutor` lane backed by
+that worker. The lane provides:
 
-- immediate execution on one serial lane;
-- fixed-delay scheduling on that same lane;
+- immediate serial execution for coalesced processing/control work;
+- fixed-delay housekeeping serialized with that immediate work;
 - cancellation of scheduled work;
-- lifecycle/diagnostic state needed by its owner.
+- lane-local lifecycle/diagnostic state.
 
-For Java 8 the implementation enables `setRemoveOnCancelPolicy(true)` so cancelled periodic
-work is removed promptly from the delayed queue.
+A periodic trigger does not execute TagProcessor state concurrently with immediate work: it
+enters the same logical serial lane, and the next fixed-delay trigger is registered after
+that lane execution completes. Closing or faulting one lane never shuts down the shared
+TagProcessor role executor.
+
+For Java 8 the shared scheduled worker enables `setRemoveOnCancelPolicy(true)` so cancelled
+periodic triggers are removed promptly from the delayed queue. A standalone one-worker
+constructor remains available for focused tests.
 
 TagProcessor owns its `ArrayBlockingQueue<TagObservation>` separately. Only coalesced queue
-drain work and housekeeping are submitted to `SerialScheduledExecutor`; there is no
+drain work, policy-control work and housekeeping enter its scheduled serial lane; there is no
 executor task per observation.
 
 `SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`:
@@ -1975,8 +2019,10 @@ TagProcessor
        scheduled housekeeping
 ```
 
-Both are JDK-backed baselines. A custom lower-level queue, worker loop or scheduler is an
-optimization option only after V01 demonstrates material overhead.
+Both are JDK-backed baselines. The small lane-drain adapter exists only to preserve
+per-node bounded ordering on shared JDK role workers; it does not replace JDK thread
+coordination or scheduling. More complex worker-pool behaviour remains an optimization
+option only after V01 demonstrates a need.
 
 ### TimingData commit
 
@@ -2091,7 +2137,18 @@ the worker can hand an immutable snapshot to a bounded storage executor. Do not
 add one thread per state object and do not introduce an unbounded background
 queue.
 
-For the registration path, synchronous persistence on the node lane is an accepted design trade-off because producer callbacks do not wait for that work: they return after command admission. The remaining risk is queue growth and increased command latency when storage stalls. Measure store latency, queue high-water and registration burst behaviour before moving durability work off-lane; any asynchronous persistence design must preserve the commit-before-LogBook/event ordering contract.
+For the registration path, synchronous persistence on the node lane remains the baseline:
+producer callbacks return after command admission, while the shared TimingNode role worker
+performs the durable append before LogBook/event visibility. Because that physical worker is
+shared, a long `FileChannel.force(true)` can temporarily delay other TimingNode lanes as
+well. That is an explicit trade-off for the resource-constrained baseline, not an assumption
+that nodes execute in parallel.
+
+Characterize store latency, per-lane queue high-water and fairness under the aggregate
+20 registrations/s application workload before moving durability work off the shared node
+worker. If the reference Raspberry Pi cannot meet the workload because durable storage
+stalls the role worker, the next design step is a bounded durability mechanism that preserves
+commit-before-LogBook/event ordering; it is not to multiply the stress target per node.
 
 For example, a StageStartTimes update may be:
 
