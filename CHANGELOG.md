@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Synchronize Step-5 A01 planning with the completed D04-aligned antenna runtime lifecycle/composition implementation.
+
 - Bind each Engineering Explorer source-definition pane to the selected engineering object ID and render the exact authored MyST Need block instead of an arbitrary surrounding line window.
 
 - Keep colon-fenced Need option metadata (`:id:`, `:status:`, relations and similar options) on separate GitHub-rendered source lines with CommonMark hard breaks.

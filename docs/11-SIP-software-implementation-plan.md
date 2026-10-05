@@ -475,8 +475,12 @@ D04 fixes the boundary used by A01:
 - `SimulatedAntenna` implements the same lifecycle and observation event boundary as a
   real provider.
 
-The already merged Java A01 prototype must be repaired against this decision before A01
-can be accepted.
+The Java A01 implementation is now aligned with this decision. It includes the
+AntennaManager lifecycle/control boundary, application-owned subscription and
+TagProcessor lifecycle, bounded shared-I/O control, and the normal
+SimulatedAntenna -> TagProcessor -> TimingNode admission/TimingData commit path.
+The remaining IF-11 registration-routing/deployment configuration is a separate
+configuration-completion track and does not reopen the D04 runtime decision.
 
 ### D01 — Runtime execution and measurement plan
 
