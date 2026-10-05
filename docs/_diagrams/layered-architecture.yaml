@@ -515,12 +515,11 @@ edges:
 - from: configuration-control
   to: io-layer
   from_anchor: {side: bottom, position: 0.30}
-  to_anchor: {side: top, position: 0.13}
+  to_anchor: {side: left, position: 0.50}
   route:
     - {x: 121, y: 515}
     - {x: 20, y: 515}
-    - {x: 20, y: 950}
-    - {x: 176, y: 950}
+    - {x: 20, y: 1107}
 
 - from: upstream-message-router
   to: timing-system-aggregate
