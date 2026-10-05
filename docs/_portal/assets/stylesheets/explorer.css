@@ -70,9 +70,14 @@ body.eng-explorer-page .md-content__inner {
 /* Engineering Explorer: restore the original wide architecture + detail composition. */
 .eng-explorer-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
-  gap: 0.25rem;
+  grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);
+  gap: 0;
   align-items: start;
+}
+
+.eng-explorer-workspace > .eng-pane-resizer {
+  align-self: stretch;
+  height: auto;
 }
 
 .eng-context,
@@ -516,20 +521,17 @@ body.eng-explorer-page .md-content__inner {
   margin: 0.28rem 0;
 }
 
-.eng-detail__actions .md-button,
-.md-typeset details.eng-source-context > summary {
-  min-height: 1.45rem;
+.eng-detail__actions .md-button {
   padding: 0.16em 0.3em;
   border-radius: 0;
-  box-sizing: border-box;
   font-size: calc(0.54rem + 1px);
-  line-height: 1.1;
+  line-height: 1.6;
 }
 
 .md-typeset details.eng-source-context {
   margin: 0.3rem 0 0.45rem;
   padding: 0;
-  border: 1px solid var(--md-default-fg-color--lightest);
+  border: 0.1rem solid var(--md-default-fg-color--lightest);
   border-radius: 0 !important;
   background: var(--md-code-bg-color);
   box-shadow: none;
@@ -542,10 +544,12 @@ body.eng-explorer-page .md-content__inner {
 
 .md-typeset details.eng-source-context > summary {
   margin: 0;
-  padding-right: 1.05rem;
+  padding: 0.16em 0.3em;
   border-radius: 0 !important;
   cursor: pointer;
+  font-size: calc(0.54rem + 1px);
   font-weight: 600;
+  line-height: 1.6;
 }
 
 .md-typeset details.eng-source-context > summary::before {
@@ -553,11 +557,7 @@ body.eng-explorer-page .md-content__inner {
 }
 
 .md-typeset details.eng-source-context > summary::after {
-  top: 50%;
-  right: 0.28rem;
-  width: 0.62rem;
-  height: 0.62rem;
-  margin-top: -0.31rem;
+  display: none;
 }
 
 .eng-source-context__meta {
