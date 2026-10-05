@@ -164,7 +164,7 @@ def transform_text(text: str, needs: dict[str, dict]) -> str:
 
     while index < len(lines):
         match = OPEN_RE.match(lines[index])
-        if not match or match.group(1) not in TYPE_LABELS:
+        if not match or match.group("directive") not in TYPE_LABELS:
             output.append(lines[index])
             index += 1
             continue
