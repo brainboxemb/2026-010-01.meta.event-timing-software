@@ -280,8 +280,10 @@ io/
 
 platform/
   execution/
-    SerialExecutor.java                    bounded JDK-backed serial execution
-    SerialScheduledExecutor.java           JDK-backed serial execution + scheduling
+    SerialExecutor.java                    bounded serial lane + lifecycle
+    SerialExecutorMetrics.java             lane-local queue/execution measurements
+    SerialScheduledExecutor.java           serial lane + fixed-delay scheduling
+    SerialScheduledExecutorMetrics.java    scheduled-lane measurements
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -297,8 +299,10 @@ completely unaware of TimingData, TimingNode and Domain types.
 TimingNode owns one bounded FIFO lane with its own `ArrayBlockingQueue`, admission state and
 lane-local metrics. **The lane is not the physical worker.** Production Runtime supplies one
 shared single-worker `ThreadPoolExecutor` for the TimingNode role and all TimingNode lanes
-schedule short drain tokens onto that shared worker. A standalone one-worker constructor
-remains useful for focused tests and isolated uses.
+schedule short drain tokens onto that shared worker. `SerialExecutor` receives that worker
+as an external `Executor` dependency; it never creates, configures or shuts down the
+physical worker. Tests that need asynchronous execution create and own their test worker
+separately, while deterministic package-local seams may use direct execution.
 
 `SerialScheduledExecutor` is the corresponding serial scheduling capability used by
 TagProcessor. Each TagProcessor keeps its own bounded observation queue and logical serial
@@ -307,13 +311,15 @@ scheduled lane, while production Runtime supplies one shared single-worker
 coalesced immediate work are serialized per TagProcessor without allocating a physical
 worker per processor.
 
-**Runtime composition constructs the physical role workers centrally and injects logical
-lanes backed by those workers.** TimingNode and TagProcessor do not choose production thread
-names or create hidden production threads. Runtime gives one logical `SerialExecutor` and
-one logical `SerialScheduledExecutor` to each composed TimingNode, but all nodes share the
-corresponding role worker. TimingNode owns the lifecycle of its node-local lanes together
-with its child TagProcessor. Shared blocking-I/O executors remain Runtime-owned and separate
-from both Domain role workers.
+**Runtime composition constructs and owns the physical role workers centrally, then creates
+logical lanes over those workers.** TimingNode and TagProcessor do not choose production
+thread names or create hidden production threads. Runtime gives one logical
+`SerialExecutor` and one logical `SerialScheduledExecutor` to each composed TimingNode,
+but all nodes share the corresponding role worker. TimingNode owns the lifecycle of its
+node-local logical lanes together with its child TagProcessor; closing a lane never shuts
+down the supplied physical worker. Runtime retains physical-worker shutdown ownership.
+Shared blocking-I/O executors remain Runtime-owned and separate from both Domain role
+workers.
 
 The central construction point deliberately leaves Java thread priority at the JVM
 default. Correctness and forward progress do not depend on priority. A role-specific
@@ -1582,19 +1588,23 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutor.Metrics` owns lane-local queue admission, queue depth/high-water,
+- `SerialExecutorMetrics` owns lane-local queue admission, queue depth/high-water,
   queue wait and execution duration; callers read those values through an immutable
-  `SerialExecutor.Metrics.Snapshot`. A shared lane does not claim the CPU time of the
-  physical worker as if it belonged to one TimingNode;
+  `SerialExecutorMetrics.Snapshot`. `SerialExecutor` records the execution facts but
+  does not embed the diagnostics model in the executor class. Because every physical worker
+  is externally owned, lane snapshots do not claim its CPU time; the existing lane CPU-time
+  field reports unavailable (`-1`);
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
   TimingNode-admission counters for `domain.timing.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
-- `SerialScheduledExecutor.Metrics` owns lane-local measurements such as accepted
+- `SerialScheduledExecutorMetrics` owns lane-local measurements such as accepted
   immediate work, scheduled registrations/cancellations, executed work, runtime failures
-  and queue depth. It does not mirror TagProcessor's observation-input queue and does not
-  attribute a shared worker's CPU time to one processor lane;
+  and queue depth. `SerialScheduledExecutor` records those facts but remains focused on
+  execution/lifecycle. The metrics class does not mirror TagProcessor's observation-input
+  queue and does not attribute the externally owned worker's CPU time to one processor
+  lane; its lane CPU-time field likewise reports unavailable (`-1`);
 - physical role-worker identity/CPU time and JVM/process values are read on demand from the
   supported JDK management APIs.
 
@@ -1911,8 +1921,9 @@ single-core Raspberry Pi gains CPU capacity from one Java worker per TimingNode.
 
 The role executor queue does not buffer registration workload directly. At most one drain
 token per active lane is scheduled there; workload/backpressure remains in each bounded
-lane-local `ArrayBlockingQueue`. A standalone one-worker constructor is retained for focused
-tests, but production composition uses the shared role executor.
+lane-local `ArrayBlockingQueue`. The lane always runs on an externally supplied
+`Executor`; production supplies the shared role executor and tests own any worker they
+create.
 
 Do **not** replace the lane-local bounded queue with
 `Executors.newSingleThreadExecutor()` or another unbounded workload queue; that would hide
@@ -1971,16 +1982,20 @@ The required behaviour remains:
 - an unexpected fatal lane failure is observable and does not shut down sibling lanes or the
   shared role worker;
 - closing one lane stops new admission and drains its accepted work without closing the
-  shared role executor;
+  externally owned role executor;
+- a fatal lane failure likewise never shuts down that executor;
 - Runtime shuts down the shared role executor only after component lanes have stopped.
 
 The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
 primitive and contains no TimingNode/domain/persistence logic.
 
-Execution measurements are grouped under `SerialExecutor.Metrics`. Hot-path updates remain
+Execution measurements are owned by the separate `SerialExecutorMetrics` class in the same
+Platform execution package. `SerialExecutor` only records lifecycle/admission/execution facts
+into that object and exposes it through `metrics()`. Hot-path updates remain
 primitive/low-allocation; an explicit `metrics().snapshot()` call creates the immutable
-engineering view. The metrics object is part of the execution primitive rather than a second
-runtime model.
+engineering view. Keeping the metrics implementation in a separate source file prevents the
+executor's queue/lifecycle logic from being obscured by diagnostic state while still keeping
+the metrics component-owned rather than introducing a second runtime model.
 
 ### SerialScheduledExecutor design
 
@@ -2002,14 +2017,16 @@ that lane execution completes. Closing or faulting one lane never shuts down the
 TagProcessor role executor.
 
 For Java 8 the shared scheduled worker enables `setRemoveOnCancelPolicy(true)` so cancelled
-periodic triggers are removed promptly from the delayed queue. A standalone one-worker
-constructor remains available for focused tests.
+periodic triggers are removed promptly from the delayed queue. `SerialScheduledExecutor`
+always receives an externally owned `ScheduledExecutorService`; tests that need a real
+scheduler create and shut down that scheduler outside the lane.
 
 TagProcessor owns its `ArrayBlockingQueue<TagObservation>` separately. Only coalesced queue
 drain work, policy-control work and housekeeping enter its scheduled serial lane; there is no
 executor task per observation.
 
-`SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`:
+`SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`, with
+measurement state in the separate `SerialScheduledExecutorMetrics` class.
 `metrics().snapshot()` returns an immutable lane snapshot. These executor metrics describe
 only work accepted and executed by the scheduled lane; observation ingress/drop metrics stay
 owned by `TagProcessingMetrics`.
@@ -2029,10 +2046,11 @@ TagProcessor
        scheduled housekeeping
 ```
 
-Both are JDK-backed baselines. The small lane-drain adapter exists only to preserve
-per-node bounded ordering on shared JDK role workers; it does not replace JDK thread
-coordination or scheduling. More complex worker-pool behaviour remains an optimization
-option only after V01 demonstrates a need.
+Both are JDK-backed baselines. `SerialScheduledExecutor` reuses a `SerialExecutor`
+internally as its logical serialization lane; this does not add another physical worker.
+The small lane-drain adapter exists only to preserve per-node bounded ordering on shared JDK
+role workers; it does not replace JDK thread coordination or scheduling. More complex
+worker-pool behaviour remains an optimization option only after V01 demonstrates a need.
 
 ### TimingData commit
 
