@@ -630,9 +630,8 @@ The application core owns the reusable SI-01 runtime and supporting infrastructu
 ```text
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
-    Application.java
-    Composition.java
     Lifecycle.java
+    TimingApplication.java
     RuntimeExecutors.java
     simulator/
       SimulationRuntime.java
@@ -658,15 +657,16 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` owns knowledge of the concrete running application: `Application`, the
-process-level `Composition`, execution-resource construction and the effective
-composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
+`runtime/` owns knowledge of the concrete running application through
+`TimingApplication`, execution-resource construction and the effective composition
+configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
 Runtime is not another business/domain layer; it is where the executable object graph is
 assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
-`runtime.Composition` is the single concrete composition root; a second bootstrap/builder
-layer must not hide the object graph. Small private helpers may format repetitive local
+`runtime.TimingApplication.create(...)` is the single concrete composition root and the
+returned `TimingApplication` owns the lifecycle of that already composed graph. A second
+bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
 construction, but cross-component relationships and lifecycle order remain visible in
 `Composition`. The visible composition order is:
 
@@ -710,10 +710,11 @@ immutable event value and does not need an `AntennaId` field merely for routing 
 the configured source identity is already known at the subscription point.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
-It selects simulated installations/mappings through the same `Composition` root; it
+It selects simulated installations/mappings through the same `TimingApplication.create(...)`
+path; it
 does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
-The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. Application owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
+The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. the Application layer owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
 
 The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
@@ -775,13 +776,14 @@ main()
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> core runtime.Composition
+  -> core runtime.TimingApplication.create(...)
        -> create PlatformEnvironment
        -> construct runtime resources and reusable application/domain/I/O objects
        -> construct and wire application.Conductor
+       -> return composed TimingApplication
+  -> TimingApplication.start()
        -> explicitly start execution resources and components
-       -> start presentation endpoints and shutdown handling
-  -> runtime.Application
+  -> executable starts presentation endpoints and shutdown handling
 ```
 
 The current `runtime.config.YamlLoader` implements only the explicit
