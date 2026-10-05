@@ -67,7 +67,8 @@ ApplicationConfig
 ├── io
 │   ├── devices
 │   │   └── antennaManager
-│   │       └── antennas
+│   │       ├── antennas
+│   │       └── inventoryGroup (optional)
 │   ├── deviceNetworks
 │   │   ├── can
 │   │   └── network
@@ -224,15 +225,11 @@ Representative device configuration direction:
 io
   devices
     antennaManager
-      inventoryGroups
-        timing-rf
-          intervalMillis: 500
       antennas
         ANT1
           provider: simulated
           type: rfid
           timingNodes: [timing-node-01, timing-node-02]
-          inventoryGroup: timing-rf
           power
             controlRef: antenna-power-1
             stabilizationMillis: 1000
@@ -240,10 +237,12 @@ io
           provider: simulated
           type: rfid
           timingNodes: [timing-node-02]
-          inventoryGroup: timing-rf
           power
             controlRef: antenna-power-2
             stabilizationMillis: 1000
+      inventoryGroup
+        members: [ANT1, ANT2]
+        intervalMillis: 500
 
   deviceNetworks
     can
@@ -263,17 +262,24 @@ Antenna installation fields have these semantics:
 
 - `timingNodes` maps an antenna to one or more TimingNodes whose OPEN/CLOSED state
   drives whether that antenna is required for normal inventory;
-- `inventoryGroup` optionally assigns the antenna to a mutual-exclusion group;
-- `inventoryGroups.<id>.intervalMillis` is the rotation interval for healthy
-  members of that group; the public/reference two-antenna baseline is 500 ms;
 - `power.controlRef` optionally references an installation-owned external power
   capability rather than reader/vendor protocol;
 - `power.stabilizationMillis` defines how long SI-01 waits after external power-on
   before probing or initializing that antenna.
 
+One AntennaManager may define **zero or one** `inventoryGroup`. When present:
+
+- `members` identifies 2..N configured antennas that cannot inventory concurrently;
+- `intervalMillis` is the rotation interval between healthy members;
+- the public/reference two-antenna baseline is 500 ms;
+- antennas not listed in the group may inventory independently.
+
+Omitting `inventoryGroup` means no mutual-exclusion multiplexing is required. The
+configuration contract deliberately does not define several independently named groups
+until a concrete deployment requirement needs that capability.
+
 Omitting `power` means the antenna/provider is responsible for any internal power
-mechanism or is continuously powered. Omitting `inventoryGroup` allows that antenna
-to inventory concurrently with antennas that are not otherwise constrained.
+mechanism or is continuously powered.
 
 Startup health probing is per antenna. An invalid/unavailable antenna does not make
 other independently valid antennas unusable merely because they share one
