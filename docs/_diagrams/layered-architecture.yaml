@@ -362,11 +362,12 @@ nodes:
   group: platform-layer
   label: "Execution"
   items:
-    - "SerialWorker"
+    - "SerialExecutor"
+    - "SerialScheduledExecutor"
   kind: platform
   notation: packaging-component
-  # Reuse Storage column/width; one displayed item needs only a compact box.
-  layout: {x: 55, y: 1258, w: 200, h: 80}
+  # Two concrete execution primitives are now part of the accepted design.
+  layout: {x: 55, y: 1258, w: 260, h: 95}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
@@ -375,8 +376,7 @@ nodes:
     - "Event<T>"
   kind: platform
   notation: packaging-component
-  # Reuse DeviceNetworks column/width.
-  layout: {x: 275, y: 1258, w: 240, h: 80}
+  layout: {x: 335, y: 1258, w: 180, h: 80}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer

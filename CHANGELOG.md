@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Synchronize Figure SI01-01 with the accepted Java execution design by replacing the stale SerialWorker with SerialExecutor and SerialScheduledExecutor while retaining higher-level Application responsibilities.
+
 - Move registration duplicate suppression ahead of passage aggregation after tag-to-registration mapping; use `TimingNode.offer(...)` as the bounded fire-and-forget handoff and start the duplicate window only after immediate `ACCEPTED` admission.
 
 - Align runtime metric ownership: rename `TagProcessingCounters` to `TagProcessingMetrics`, group executor measurements under nested `SerialExecutor.Metrics` / `SerialScheduledExecutor.Metrics` snapshots, and keep hot-path updates component-owned and low-allocation.
