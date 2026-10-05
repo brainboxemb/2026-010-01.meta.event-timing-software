@@ -510,7 +510,20 @@ separate **Runtime** block rather than inside the Application layer: Runtime is
 the running container/assembly context, not application/business behaviour.
 :::
 
-`Composition` constructs and starts `Application` from validated configuration and owns the startup/cleanup wiring for the selected concrete endpoints. Normal application/domain interactions do not route through `Composition` after startup. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates and coordinates them.
+`Composition` is the one visible executable composition root. From validated configuration it performs startup in a deliberately simple order:
+
+```text
+resolve effective configuration
+  -> create PlatformEnvironment
+  -> construct Runtime resources
+  -> construct Domain, I/O and Application objects
+  -> wire cross-component relationships
+  -> start Runtime execution resources
+  -> start application/domain/I/O components
+  -> start Presentation endpoints
+```
+
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component startup. Shutdown follows the same ownership in reverse order. Normal application/domain interactions do not route through `Composition` after startup. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -671,7 +684,7 @@ application/
 :::{arch} Conductor  
 :id: Conductor  
 
-`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes.
+`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes. It owns cross-component application coordination that does not belong to one Domain or I/O component. For example, when TimingNode lifecycle determines whether assigned antennas should inventory, Runtime composition wires that relationship through Conductor rather than placing the callback in a Runtime container or device class.
 :::
 
 :::{arch} Configuration control  
