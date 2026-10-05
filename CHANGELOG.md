@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Include the IF-03 HTTP/WebSocket IDD and Web Interface ISD in the generated documentation publication, architecture book and combined software document set; make documentation CI fail when either generated document is missing.
+
 - Separate serial-lane measurements into `SerialExecutorMetrics` / `SerialScheduledExecutorMetrics` and make both lane primitives depend only on externally owned physical workers; Runtime owns production worker construction/shutdown and lane snapshots no longer attribute shared worker CPU time.
 
 - Refine the Java execution model so TimingNodes and TagProcessors keep per-node serial lanes while sharing one physical worker per functional role; define 20 registrations/s as the current aggregate SI-01 stress workload rather than a per-node target.
