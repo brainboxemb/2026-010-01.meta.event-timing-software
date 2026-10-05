@@ -458,6 +458,15 @@ hide:
     <div class="eng-object-picker">{chips}</div>
   </section>
 
+  <div
+    class="eng-pane-resizer"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Resize architecture and object detail panes"
+    tabindex="0"
+    data-eng-explorer-resizer
+  ></div>
+
   <aside class="eng-detail eng-explorer-detail" data-eng-detail aria-live="polite">
     Select an engineering object.
   </aside>
