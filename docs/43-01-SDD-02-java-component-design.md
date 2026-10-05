@@ -246,8 +246,10 @@ io/
     antenna/
       Antenna.java                      stable device/lifecycle + observation contract
       AntennaManager.java               lifecycle owner for 1..N configured antennas
+      AntennaInstallation.java          antenna + optional power + multiplex policy binding
       AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
+      SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
       DecryptedTagId.java               provider-decoded/decrypted source identity
       TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
@@ -301,13 +303,38 @@ TagProcessor. Its Java implementation is backed by a one-thread
 `ScheduledThreadPoolExecutor`. It owns no observation queue: TagProcessor owns that bounded
 input queue separately.
 
+**Runtime composition constructs these executors centrally and injects them into the
+component that uses them.** TimingNode and TagProcessor do not choose production thread
+names, queue capacities or create hidden production execution resources. Runtime gives
+one `SerialExecutor` and one `SerialScheduledExecutor` to each composed TimingNode.
+TimingNode then owns the lifecycle of those node-local lanes together with its child
+TagProcessor. Shared blocking-I/O executors remain Runtime-owned and are never used as the
+TimingNode or TagProcessor serial lane.
+
+The central construction point deliberately leaves Java thread priority at the JVM
+default. Correctness and forward progress do not depend on priority. A role-specific
+priority change remains a measurement-driven tuning option and must be requalified on the
+target JVM/OS.
+
 These project types exist to make execution ownership and application semantics explicit.
 They are not justification for reimplementing JDK executor internals. A lower-level custom
 worker/scheduler requires Step-5 measurement evidence.
 
-`TimingNode` remains the visible Domain component boundary used by higher layers. It owns serialized access through `SerialExecutor`, operation admission/timeout mapping and post-commit event publication. Package-private `TimingNodeLogic` contains the mutable node state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the TimingNode component, not a second architecture component.
+`TimingNode` remains the visible Domain component boundary used by higher layers. It owns
+serialized access through the injected `SerialExecutor`, operation admission/timeout
+mapping and post-commit event publication. It also creates and owns its node-local
+`TagProcessor` child from injected mapping/configuration and the Runtime-supplied
+`SerialScheduledExecutor`. Package-private `TimingNodeLogic` contains the mutable node
+state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and
+TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the
+TimingNode component, not a second architecture component.
 
-A production `TimingNode` is always constructed as a complete capability. `TimingDataPersistence`, `TimingDataFactory` and `TimeSource` are required constructor dependencies; there is no lifecycle-only or partially configured production node. The only non-public construction seam exists for deterministic TimingNode execution-boundary tests and is documented as test-only in code.
+A production `TimingNode` is always constructed as a complete capability.
+`TimingDataPersistence`, `TimingDataFactory`, `TimeSource`, tag-processing
+configuration/mapping and both execution lanes are constructor dependencies; there is no
+lifecycle-only or partially configured production node. The only non-public construction
+seam exists for deterministic TimingNode execution-boundary tests and is documented as
+test-only in code.
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
@@ -591,8 +618,12 @@ The application core owns the reusable SI-01 runtime and supporting infrastructu
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
     Application.java
+    ApplicationBootstrap.java
     Composition.java
     Lifecycle.java
+    RuntimeExecutors.java
+    simulator/
+      SimulationRuntime.java
     config/
       Config.java
       Presentation.java
@@ -615,9 +646,22 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` owns knowledge of the concrete running application: `Application`, `Composition`, `Lifecycle` and the effective composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is where the executable object graph is assembled and its lifecycle is coordinated.
+`runtime/` owns knowledge of the concrete running application: `Application`, process-level
+`Composition`, construction-only `ApplicationBootstrap`, central execution-resource
+construction and the effective composition configuration. Figure SI01-01 shows this
+explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is
+where the executable object graph is assembled and its lifecycle is coordinated.
 
-The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly.
+`ApplicationBootstrap` is deliberately a builder/construction helper, not a second
+runtime or an application-layer component. It creates storage adapters and
+`RuntimeExecutors`, constructs the complete TimingNode aggregate, optionally constructs
+I/O managers, and then returns one `Application`. After build, normal calls do not route
+through the bootstrap. `Composition` remains responsible for process-level presentation
+endpoints/shutdown-hook wiring and delegates object-graph construction to the bootstrap.
+
+`runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
+It selects simulated installations/mappings through the same `ApplicationBootstrap`; it
+does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
 The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. Application owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
 
@@ -912,10 +956,41 @@ Normal operation uses `initialize()` followed by explicit
 `startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
 provider/device resources.
 
-`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem. It
-coordinates startup probe, normal initialize/shutdown and per-antenna inventory state.
-Multiple antennas can therefore be initialized together while inventory is enabled or
-disabled independently.
+`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem and
+the installation-level lifecycle around them. It coordinates independent startup health
+checks, normal initialize/shutdown, optional injected power control, per-antenna health
+and per-antenna inventory state. One provider failure is contained to that antenna; the
+manager does not roll back independently healthy antennas merely because another antenna
+fails.
+
+At application startup the manager performs a non-inventory sanity sequence for every
+configured antenna:
+
+```text
+optional power ON
+        |
+        v
+configured stabilization delay
+        |
+        v
+one-shot probe / identity-health check
+        |
+        v
+optional power OFF
+```
+
+Failure of one sequence records that antenna as unavailable/error and the manager continues
+with the remaining configured antennas.
+
+Normal antenna operation is driven by the lifecycle of the TimingNodes mapped to each
+antenna. When at least one assigned TimingNode is OPEN, a healthy antenna is powered when
+required, allowed to stabilize, initialized and made available for inventory. When no
+assigned TimingNode remains OPEN, inventory is stopped and externally controlled power is
+removed. An antenna mapped to several TimingNodes therefore remains active until the last
+mapped TimingNode closes.
+
+The manager tracks per-antenna state separately from its aggregate health. Aggregate
+health may be degraded while healthy antennas remain operational.
 
 The manager serializes its lifecycle operations on top of a shared bounded I/O
 `ExecutorService`:
@@ -951,6 +1026,25 @@ supplies an `AntennaPowerControl` capability to the manager so the manager can o
 power-on before probe/initialize and power-off after close. An antenna provider that owns
 its power mechanism internally may omit that external capability; the generic
 `Antenna` contract does not pretend every reader has a separately switchable supply.
+
+`AntennaPowerControl` is deliberately separate from `Antenna`. A physical reader may be
+powered through a relay board, GPIO-controlled supply or another installation component
+that is unrelated to the reader's vendor protocol. The per-antenna installation
+configuration therefore binds an optional power-control capability and a power
+stabilization interval to the antenna. Provider-owned power remains possible by omitting
+the external capability.
+
+When two or more antennas share RF/device constraints that forbid simultaneous inventory,
+configuration assigns them to one inventory mutual-exclusion group. AntennaManager owns
+the multiplex policy for that group: at most one healthy member inventories at a time,
+the active member rotates at the configured interval, and a failed member is skipped
+without stopping healthy members. The public/reference two-antenna baseline uses a
+500 ms interval.
+
+The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
+includes explicit powered/unpowered state when paired with simulated power control,
+initialization/inventory preconditions and controllable probe/initialize/start failures so
+startup containment and degraded/multiplex behaviour can be verified without hardware.
 
 ### TagObservation and local event delivery
 
@@ -992,7 +1086,9 @@ Multiple antenna providers may call their events concurrently. TagProcessor hand
 concurrency only at its bounded observation-input queue: each provider callback performs
 non-blocking ingress and returns. Mapping, passage filtering, duplicate filtering,
 housekeeping and runtime policy replacement execute on TagProcessor's one serial scheduled
-lane. Passive filter state therefore remains single-lane and requires no additional locks.
+lane. Runtime constructs that `SerialScheduledExecutor` centrally; TimingNode creates and
+owns the TagProcessor child that uses it. Passive filter state therefore remains
+single-lane and requires no additional locks.
 
 ### Optional raw-observation persistence
 

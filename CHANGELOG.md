@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
+
 - Update `tool.eng-docs` to v0.9.4 so explicit anchors on shaped layers terminate on the visible polygon boundary in generated SVG and draw.io output.
 
 - Rebalance Figure SI01-01 Application-layer layout: increase layer height, place ConfigurationControl left of Conductor, separate PresentationGateway/TimingNodeProxy vertically, center UpstreamMessageRouter, and remove redundant cross-layer configuration arrows.
