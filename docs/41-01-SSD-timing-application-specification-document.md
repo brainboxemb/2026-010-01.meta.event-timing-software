@@ -317,13 +317,12 @@ for that TimingNode rather than being silently skipped or renumbered.
 
 :::{req} Contain TimingNode recovery failure  
 :id: SI01-REQ-049  
-:status: D  
+:status: R  
 :derived_from: UC-020  
 
-After application-level configuration has been accepted, a failure while restoring
-or validating recoverable state for one configured TimingNode shall not by itself
-prevent independently healthy TimingNodes or diagnostic interfaces from starting
-and remaining available.
+A failure while restoring or validating recoverable state for one configured
+TimingNode shall not by itself prevent independently healthy TimingNodes or
+diagnostic interfaces from starting and remaining available.
 
 For the affected TimingNode, SI-01 shall:
 
@@ -334,9 +333,6 @@ For the affected TimingNode, SI-01 shall:
   interfaces;
 - keep independently healthy TimingNodes available in a multi-node composition; and
 - expose the contained failure through the current application status snapshot.
-
-Failures of mandatory application-wide configuration or infrastructure that prevent
-construction of the diagnostic runtime are outside this containment rule.
 :::
 
 :::{req} Use maximum-RSSI tag observation for registration  
