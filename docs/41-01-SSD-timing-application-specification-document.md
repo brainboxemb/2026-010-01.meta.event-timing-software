@@ -1451,7 +1451,7 @@ and protocol boundary.
 
 `ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `TimingNodeId`.
 
-Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. Candidates include backing executors, logging infrastructure, HTTP server infrastructure, shared connector infrastructure, configuration loading and network monitoring.
+Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. The Java baseline shares physical execution workers by functional role while each TimingNode keeps its own bounded serial command lane and node-local TagProcessor state. Logging infrastructure, HTTP server infrastructure, connector infrastructure, configuration loading and network monitoring may likewise be shared where their semantics remain isolated.
 
 Stable domain facts behind these views are maintained in `03-domain-baseline.md`; this SSD owns their software-architecture composition and execution implications.
 
@@ -2230,7 +2230,7 @@ Testability is an architecture property. Application/domain code should where pr
 - receive absolute time through an injectable abstraction;
 - receive duration/timeout measurements through a controllable monotonic abstraction where needed;
 - include tests that step the wall clock forwards/backwards and cross representative DST/local-time transitions;
-- exercise per-TimingNode ordering/non-overlap, independent-node progress and bounded-ingress overload behaviour deterministically;
+- exercise per-TimingNode ordering/non-overlap, fair progress between node-local lanes on shared role workers, and bounded-ingress overload behaviour deterministically;
 - depend on semantic ports rather than concrete device/network libraries;
 - keep protocol parsing in adapters;
 - use deterministic handlers that can run synchronously in unit tests;
