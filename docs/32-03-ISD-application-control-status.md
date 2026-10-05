@@ -130,7 +130,12 @@ The current semantic event set includes:
 
 - current status snapshot;
 - status changed;
-- committed TimingData.
+- committed TimingData;
+- configuration changed.
+
+A configuration-change event is emitted only after the authoritative
+`ApplicationConfiguration` accepted a new current value. It identifies the
+affected configuration target and current value without exposing secret material.
 
 A status-change event is emitted only after an actual authoritative status change.
 Committed TimingData is exposed as a live event only after the record is committed and is
@@ -220,6 +225,47 @@ A client can:
 
 Returned records use public IF-05 TimingData semantics and remain in committed
 source-sequence order. Queued or uncommitted work is not LogBook content.
+
+### IF03-OP-009 — Get current application configuration
+
+Returns a non-secret view of the effective startup configuration together with
+current active values where runtime overrides are supported.
+
+For a runtime-adjustable field the representation distinguishes at least:
+
+- effective startup/configured value;
+- current active value;
+- whether a runtime override is currently active;
+- whether the field is runtime-adjustable.
+
+The current baseline includes TimingNode-local TagProcessor policy. Secret values
+are not returned merely because a configuration reference exists.
+
+### IF03-OP-010 — Apply or clear a runtime configuration override
+
+Inputs:
+
+- configuration target;
+- action `SET` or `CLEAR`;
+- replacement value for `SET`.
+
+A successful `SET` changes the active process value without rewriting IF-11
+deployment configuration. `CLEAR` restores the effective startup/configured value.
+
+The current TagProcessor baseline permits live override of:
+
+- quiet timeout;
+- maximum burst duration;
+- duplicate window;
+- sweep cadence.
+
+Observation input-queue capacity is queryable but is not live-resizable in the
+current implementation baseline. Attempting to override a startup-only field has
+an explicit `RESTART_REQUIRED`/not-runtime-mutable outcome rather than silently
+accepting a partial change.
+
+Invalid values, unknown targets and unsupported runtime mutation expose explicit
+failure outcomes.
 
 ## Operation ordering and concurrency
 
@@ -441,6 +487,38 @@ history and later live events using stable TimingData record identity before dec
 view live.
 :::
 
+
+:::{ifreq} Runtime configuration query  
+:id: IF03-REQ-018  
+:status: D  
+:derived_from: UC-009, SI01-REQ-001  
+
+IF-03 shall provide IF03-OP-009 so an engineering/API client can distinguish the
+effective startup/configured value from the current active value for supported
+configuration fields without exposing secret values.
+:::
+
+:::{ifreq} Runtime configuration override  
+:id: IF03-REQ-019  
+:status: D  
+:derived_from: UC-009, SI01-REQ-001  
+
+IF-03 shall provide IF03-OP-010 for explicitly runtime-adjustable configuration
+fields. A runtime override shall change process state without rewriting IF-11
+deployment configuration, shall be removable without restart, and shall reject
+startup-only fields with an explicit restart-required/not-runtime-mutable outcome.
+:::
+
+:::{ifreq} Runtime configuration change notification  
+:id: IF03-REQ-020  
+:status: D  
+:derived_from: UC-009, SI01-REQ-001  
+
+IF03-OP-003 shall expose a configuration-change event after the authoritative
+running application configuration changes. The event shall identify the affected
+configuration target and current active value while respecting configuration
+redaction/secret rules.
+:::
 
 :::{ifreq} Degraded TimingNode status  
 :id: IF03-REQ-017  
