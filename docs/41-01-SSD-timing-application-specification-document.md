@@ -81,7 +81,7 @@ SI-01 shall start using externally supplied configuration rather than requiring 
 
 :::{req} Clean process shutdown  
 :id: SI01-REQ-002  
-:status: D  
+:status: R  
 
 SI-01 shall provide a controlled shutdown operation that can terminate the running
 application without requiring operating-system-level forced process termination.
@@ -89,12 +89,11 @@ application without requiring operating-system-level forced process termination.
 
 :::{req} Configured TimingNode availability  
 :id: SI01-REQ-003  
-:status: D  
+:status: R  
 :derived_from: UC-001, UC-014  
 
-SI-01 shall support configuration of at least one `TimingNode` with a stable
-`TimingNodeId`, and each configured TimingNode shall be represented in current
-application status.
+SI-01 shall support configuration of one or more `TimingNode` instances, each
+identified by a stable `TimingNodeId`.
 :::
 
 IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
@@ -103,7 +102,7 @@ IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and h
 
 :::{req} Single application build identity  
 :id: SI01-REQ-010  
-:status: D  
+:status: R  
 
 A running SI-01 process shall expose one build/version identity that identifies
 the application artifact being executed.
@@ -111,7 +110,7 @@ the application artifact being executed.
 
 :::{req} Consistent identity across interfaces  
 :id: SI01-REQ-011  
-:status: D  
+:status: R  
 
 Every supported SI-01 interface that exposes build/version identity shall report
 the same build identity for the same running process.
@@ -123,7 +122,7 @@ The semantic build identity is defined by IF-03. The current v1 wire fields are 
 
 :::{req} Current application status snapshot  
 :id: SI01-REQ-020  
-:status: D  
+:status: R  
 :derived_from: UC-001, UC-008  
 
 SI-01 shall provide a queryable current application status snapshot independently
@@ -132,7 +131,7 @@ of diagnostic log output.
 
 :::{req} Application status content  
 :id: SI01-REQ-021  
-:status: D  
+:status: R  
 :derived_from: UC-001, UC-008, UC-020  
 
 The current application status snapshot shall contain at least:
@@ -149,17 +148,17 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 
 :::{req} Equivalent status semantics across interfaces  
 :id: SI01-REQ-022  
-:status: D  
+:status: R  
 :derived_from: UC-008  
 
-When more than one supported SI-01 interface exposes application status, those
-interfaces shall report semantically equivalent values for the same running
-application state. Transport-specific representation may differ.
+For each application-status value exposed by more than one supported SI-01
+interface, those interfaces shall report the same semantic value for the same
+running application state. Transport-specific encoding may differ.
 :::
 
 :::{req} Status-change publication  
 :id: SI01-REQ-023  
-:status: D  
+:status: R  
 
 When a value represented in the current application status snapshot changes,
 SI-01 shall publish corresponding status-change information through IF-03
@@ -172,10 +171,11 @@ On connection/reconnection the client shall be able to recover a complete curren
 
 :::{req} Equivalent command/query semantics across transports  
 :id: SI01-REQ-030  
-:status: D  
+:status: R  
 
-When the same SI-01 command or query is exposed through more than one transport,
-equivalent requests shall have the same application-level semantics.
+For an SI-01 command or query exposed through more than one transport, the
+transport used shall not change its defined preconditions, effects, result
+semantics or failure semantics.
 :::
 
 :::{req} Externally testable executable  
@@ -189,7 +189,7 @@ of internal application or domain state.
 
 :::{req} Safe default network exposure  
 :id: SI01-REQ-032  
-:status: D  
+:status: R  
 
 Each IF-03 listener shall bind only to loopback interfaces by default. Binding
 an IF-03 listener to a non-loopback interface shall require explicit
@@ -221,14 +221,14 @@ TimingNode's LocationId and OPEN/CLOSED state.
 
 :::{req} Accepted registration commit semantics  
 :id: SI01-REQ-041  
-:status: D  
+:status: R  
 :derived_from: UC-003, UC-009  
 
 For an already-accepted registration, SI-01 shall commit TimingData using the
 supplied supported registration action, resolved `RegistrationId` and accepted
 `time`, together with the TimingNode's source identity, active `LocationId` and
-next committed sequence. Automatic registration currently supports `ADD`; other
-actions remain unsupported until their TimingData semantics are defined.
+next committed sequence. For automatic registration SI-01 shall support `ADD`
+and shall reject actions whose TimingData semantics are not defined.
 :::
 
 :::{req} Committed registration observability  
@@ -265,7 +265,7 @@ delivery shall be identifiable by Node ID together with sequence number.
 
 :::{req} Reference TimingData representation support  
 :id: SI01-REQ-045  
-:status: D  
+:status: R  
 :derived_from: UC-011, IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007  
 
 SI-01 shall support the reference TimingData representation defined by
@@ -276,7 +276,7 @@ preserve the applicable IF-05 semantic values.
 
 :::{req} Write TimingData before commit completion  
 :id: SI01-REQ-046  
-:status: D  
+:status: R  
 :derived_from: UC-003, UC-012  
 
 SI-01 shall successfully write one complete TimingData record to the configured
@@ -290,7 +290,7 @@ shall not be treated as committed.
 
 :::{req} Restore committed TimingData after restart  
 :id: SI01-REQ-047  
-:status: D  
+:status: R  
 :derived_from: UC-013, IF05-REQ-002, IF05-REQ-003, IF05-REQ-007  
 
 On startup, SI-01 shall rebuild each configured TimingNode's committed TimingData
@@ -305,7 +305,7 @@ operational Location ID or OPEN state.
 
 :::{req} Reject invalid TimingData recovery input  
 :id: SI01-REQ-048  
-:status: D  
+:status: R  
 :derived_from: UC-013  
 
 When recovering the reference TimingData representation, SI-01 shall not treat an
@@ -341,7 +341,7 @@ construction of the diagnostic runtime are outside this containment rule.
 
 :::{req} Use maximum-RSSI tag observation for registration  
 :id: SI01-REQ-050  
-:status: D  
+:status: R  
 :derived_from: UC-003  
 
 SI-01 shall use the tag observation with the maximum RSSI as the registration observation
@@ -357,7 +357,7 @@ This requirement does not introduce a minimum-RSSI rejection threshold.
 
 :::{req} Keep local registration independent from external services  
 :id: SI01-REQ-051  
-:status: D  
+:status: R  
 :derived_from: UC-003, UC-012  
 
 SI-01 shall not require presentation clients, diagnostic logging or backoffice
