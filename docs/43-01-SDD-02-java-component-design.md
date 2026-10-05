@@ -1550,7 +1550,6 @@ TimingNodeRuntimeSnapshot
   committed TimingData count
   post-commit event deliveries / listener failures
   total + maximum post-commit event delivery time
-  worker CPU time when the JVM exposes it
 
 TagProcessingMetrics.Snapshot
   received observations
@@ -1565,6 +1564,7 @@ JvmRuntimeSnapshot
   live thread count
   GC collection count
   GC collection time
+  shared role-worker CPU time when the JVM exposes it
 ```
 
 The exact Java value classes may group fields for readability, but these three meanings
@@ -1575,18 +1575,21 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutor.Metrics` owns queue admission, queue depth/high-water, queue wait,
-  execution duration and its worker-thread identity; callers read those values through an
-  immutable `SerialExecutor.Metrics.Snapshot`;
+- `SerialExecutor.Metrics` owns lane-local queue admission, queue depth/high-water,
+  queue wait and execution duration; callers read those values through an immutable
+  `SerialExecutor.Metrics.Snapshot`. A shared lane does not claim the CPU time of the
+  physical worker as if it belonged to one TimingNode;
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
   TimingNode-admission counters for `domain.timing.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
-- `SerialScheduledExecutor.Metrics` owns only execution-lane measurements such as accepted
-  immediate work, scheduled registrations/cancellations, executed work, runtime failures,
-  queue depth and worker CPU time. It does not mirror TagProcessor's observation-input queue;
-- JVM/process values are read on demand from the supported JDK management APIs.
+- `SerialScheduledExecutor.Metrics` owns lane-local measurements such as accepted
+  immediate work, scheduled registrations/cancellations, executed work, runtime failures
+  and queue depth. It does not mirror TagProcessor's observation-input queue and does not
+  attribute a shared worker's CPU time to one processor lane;
+- physical role-worker identity/CPU time and JVM/process values are read on demand from the
+  supported JDK management APIs.
 
 Do not copy these counters into a second continuously updated model merely to make them
 easier to display.
