@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Rewrite SI-01 requirement wording to remove roadmap/implementation-phase terminology and make observable status/interface behaviour clearer, while preserving current maturity states and keeping newer requirements in Draft.
+
 - Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
 
 - Update `tool.eng-docs` to v0.9.4 so explicit anchors on shaped layers terminate on the visible polygon boundary in generated SVG and draw.io output.
