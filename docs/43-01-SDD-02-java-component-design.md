@@ -658,18 +658,34 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` owns knowledge of the concrete running application: `Application`, process-level
-`Composition`, construction-only `ApplicationBootstrap`, central execution-resource
-construction and the effective composition configuration. Figure SI01-01 shows this
-explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is
-where the executable object graph is assembled and its lifecycle is coordinated.
+`runtime/` owns knowledge of the concrete running application: `Application`, the
+process-level `Composition`, execution-resource construction and the effective
+composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
+Runtime is not another business/domain layer; it is where the executable object graph is
+assembled.
 
-`ApplicationBootstrap` is deliberately a builder/construction helper, not a second
-runtime or an application-layer component. It creates storage adapters and
-`RuntimeExecutors`, constructs the complete TimingNode aggregate, optionally constructs
-I/O managers, and then returns one `Application`. After build, normal calls do not route
-through the bootstrap. `Composition` remains responsible for process-level presentation
-endpoints/shutdown-hook wiring and delegates object-graph construction to the bootstrap.
+The executable composition must remain readable as one linear construct-wire-start flow.
+A construction helper may reduce repetitive object creation, but it must not hide
+cross-component application behaviour or start physical application workers. The visible
+composition order is:
+
+```text
+validated Config
+  -> PlatformEnvironment
+  -> RuntimeExecutors/resources
+  -> Domain + I/O + Application objects
+  -> explicit Conductor/event wiring
+  -> RuntimeExecutors.start()
+  -> component start
+  -> Presentation endpoint start
+```
+
+`application.Conductor` owns application-wide coordination between already constructed
+components. Runtime creates and wires the Conductor but does not reimplement that
+coordination in `Application`, constructors or anonymous lifecycle callbacks.
+`RuntimeExecutors` construction allocates executor objects only; physical worker startup
+is an explicit lifecycle action. Shutdown unwinds started resources in reverse ownership
+order.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
 It selects simulated installations/mappings through the same `ApplicationBootstrap`; it
@@ -738,9 +754,11 @@ main()
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
   -> core runtime.Composition
-       -> select/construct concrete presentation/I/O/platform/infra objects
-       -> create reusable application/domain/runtime objects
-       -> install/start presentation and shutdown handling
+       -> create PlatformEnvironment
+       -> construct runtime resources and reusable application/domain/I/O objects
+       -> construct and wire application.Conductor
+       -> explicitly start execution resources and components
+       -> start presentation endpoints and shutdown handling
   -> runtime.Application
 ```
 
