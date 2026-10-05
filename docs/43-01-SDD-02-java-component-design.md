@@ -684,8 +684,11 @@ validated Config
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
-  -> component activate (TimingNode, TagProcessor, AntennaManager, Conductor)
-  -> Presentation endpoint start
+  -> component activate
+       TimingNode / TagProcessor
+       AntennaManager
+       Conductor
+       PresentationRuntime
 ```
 
 `application.Conductor` owns application-wide coordination between already constructed
@@ -730,7 +733,7 @@ does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
 The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. the Application layer owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
 
-The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
+The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. Main selects the config file, supplies process console streams and installs the JVM shutdown hook, but does not construct or order concrete Presentation adapters. Runtime composition owns `PresentationRuntime`, which creates the configured HTTP/WebSocket/remote-shell/local-console adapters and participates in normal activate/deactivate ordering. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
 ```text
 timing-point-core.jar
@@ -752,6 +755,8 @@ timing-point-core.jar
     TimingApplication.java
     ActivationManager.java
     RuntimeExecutors.java
+    PresentationRuntime.java
+    ShutdownSignal.java
     configuration/
       ApplicationConfiguration.java
       TimingNodeConfiguration.java
@@ -794,11 +799,13 @@ main()
        -> create PlatformEnvironment
        -> construct runtime resources and reusable application/domain/I/O objects
        -> construct and wire application.Conductor
+       -> construct configured PresentationRuntime adapters
        -> return composed TimingApplication
   -> TimingApplication.activate()
        -> RuntimeExecutors.start()
        -> activate components in explicit order
-  -> executable starts presentation endpoints and shutdown handling
+       -> activate PresentationRuntime last
+  -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
 
 The current `runtime.config.YamlLoader` implements only the explicit
@@ -1135,6 +1142,8 @@ sequence: optional power-on, stabilization, probe/initialize, inventory start/st
 power-off and close.
 
 Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
+The Step-5 baseline uses one physical shared I/O worker. Additional I/O worker parallelism
+is not assumed up front; V01 runtime characterization must justify increasing that count.
 Result-bearing provider operations retain explicit timeouts/cancellation policy so a
 stuck reader is visible as a control failure.
 
