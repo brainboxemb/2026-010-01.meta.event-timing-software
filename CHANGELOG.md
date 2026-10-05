@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align D04/D05 with the queued TagProcessor implementation: make observation input-queue capacity part of TagProcessingPolicy and measure ingress FULL/not-running separately from TimingNode admission outcomes.
+
 - Align execution primitives with the JDK-backed design: rename TimingNode `SerialWorker` to `SerialExecutor` backed by a one-thread bounded `ThreadPoolExecutor`, and define separate `SerialScheduledExecutor` for TagProcessor queue draining and housekeeping.
 
 - Correct D04 TagProcessor execution ownership: make TagProcessor an active object with a bounded observation input queue separate from its single execution lane, with scheduled housekeeping on that same lane, using a narrow JDK-backed execution capability and one fixed-delay housekeeping registration while timed state exists; custom lower-level execution and any role-specific thread priorities require Step-5 performance evidence.

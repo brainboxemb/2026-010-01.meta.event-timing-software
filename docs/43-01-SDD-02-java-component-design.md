@@ -1201,9 +1201,11 @@ lifecycle; supplying it does not make `runtime.Composition` the execution model.
 - burst quiet timeout;
 - maximum burst duration;
 - registration duplicate window;
-- sweep cadence.
+- sweep cadence;
+- bounded observation input-queue capacity.
 
-Exact profile values remain configuration rather than hard-coded TagProcessor constants.
+Exact profile values remain configuration/profile input rather than hard-coded TagProcessor
+constants. Queue capacity is a resource bound, not a TimingNode/domain value.
 
 #### Tag-processing map sizing
 
@@ -1317,6 +1319,7 @@ TimingNodeRuntimeSnapshot
 
 TagProcessingCounters.Snapshot
   received observations
+  observation-input queue full / processor-not-running ingress
   closed observation bursts
   mapped / unmapped observations
   registration duplicates
