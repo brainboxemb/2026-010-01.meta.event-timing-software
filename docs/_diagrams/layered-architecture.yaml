@@ -92,12 +92,13 @@ groups:
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
-  layout: {x: 1180, y: 85, w: 230, h: 225}
+  # Runtime now also owns the concrete running configuration tree.
+  layout: {x: 1180, y: 85, w: 230, h: 325}
 - id: crosscutting-layer
   label: Infrastructure / cross-cutting
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1180, y: 330, w: 230, h: 1066}
+  layout: {x: 1180, y: 430, w: 230, h: 966}
 nodes:
 - id: local-console
   object_id: Console
@@ -149,7 +150,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 55, y: 367, w: 225, h: 68}
+  layout: {x: 55, y: 367, w: 180, h: 68}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -157,7 +158,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 310, y: 345, w: 225, h: 68}
+  layout: {x: 250, y: 345, w: 200, h: 68}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -165,7 +166,14 @@ nodes:
   subtitle: "commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 570, y: 389, w: 225, h: 68}
+  layout: {x: 465, y: 389, w: 200, h: 68}
+- id: configuration-control
+  group: application-layer
+  label: "ConfigurationControl"
+  subtitle: "query / runtime override use-cases"
+  kind: application
+  notation: component
+  layout: {x: 680, y: 345, w: 190, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -173,7 +181,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 825, y: 367, w: 270, h: 68}
+  layout: {x: 885, y: 367, w: 230, h: 68}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -407,6 +415,13 @@ nodes:
   kind: crosscutting
   notation: component
   layout: {x: 1210, y: 215, w: 170, h: 75}
+- id: application-configuration-runtime
+  group: runtime-layer
+  label: "ApplicationConfiguration"
+  subtitle: "concrete running configuration tree"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1195, y: 305, w: 200, h: 85}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -414,7 +429,7 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 370, w: 170, h: 85}
+  layout: {x: 1210, y: 470, w: 170, h: 85}
 - id: logging-infra
   object_id: Logging
   group: crosscutting-layer
@@ -422,12 +437,19 @@ nodes:
   subtitle: "levels • console • retained file"
   kind: crosscutting
   notation: component
-  layout: {x: 1210, y: 475, w: 170, h: 85}
+  layout: {x: 1210, y: 575, w: 170, h: 85}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1210, y: 580, w: 170, h: 80}
+  layout: {x: 1210, y: 680, w: 170, h: 80}
+- id: configuration-infra
+  group: crosscutting-layer
+  label: "Configuration<T>"
+  subtitle: "read-only • dynamic • change events"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1210, y: 780, w: 170, h: 85}
 edges:
 - from: logging-server
   to: logging-infra
@@ -459,7 +481,7 @@ edges:
   to_anchor: {side: top, position: 0.75}
   route:
     - {x: 965, y: 290}
-    - {x: 600, y: 290}
+    - {x: 400, y: 290}
 
 - from: presentation-gateway
   to: application-conductor
@@ -470,6 +492,32 @@ edges:
   to: timing-node-proxy
   from_anchor: {side: right, position: 0.50}
   to_anchor: {side: left, position: 0.50}
+
+- from: presentation-gateway
+  to: configuration-control
+  dashed: true
+  from_anchor: {side: top, position: 0.70}
+  to_anchor: {side: top, position: 0.35}
+  route:
+    - {x: 390, y: 330}
+    - {x: 746, y: 330}
+
+- from: configuration-control
+  to: application-configuration-runtime
+  dashed: true
+  from_anchor: {side: top, position: 0.70}
+  to_anchor: {side: left, position: 0.50}
+  route:
+    - {x: 813, y: 325}
+    - {x: 1165, y: 325}
+    - {x: 1165, y: 347.5}
+
+- from: application-configuration-runtime
+  to: configuration-infra
+  dashed: true
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+
 
 - from: upstream-message-router
   to: timing-system-aggregate
