@@ -520,14 +520,14 @@ The executable has one visible composition flow. From validated configuration it
 resolve effective configuration
   -> create PlatformEnvironment
   -> construct Runtime resources
-  -> construct Domain, I/O and Application objects
+  -> construct Domain, I/O, Application and Presentation objects
   -> wire cross-component relationships
   -> Runtime execution resources start
-  -> application/domain/I/O components activate
-  -> Presentation endpoints start
+  -> components activate in explicit order
+       Domain / I/O / Application / Presentation
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component activation. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component activation. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
