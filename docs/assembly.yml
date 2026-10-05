@@ -20,6 +20,8 @@ documents:
   - {id: runtime-characterization, source: docs/50-SDE-04-runtime-characterization.md}
   - {id: software-system-specification, source: docs/31-SSSD-software-system-specification-document.md}
   - {id: application-control-status, source: docs/32-03-ISD-application-control-status.md}
+  - {id: application-control-api-design, source: docs/33-03-IDD-api-http-websocket.md}
+  - {id: web-interface, source: docs/32-04-ISD-web-interface.md}
   - {id: timingdata-interchange, source: docs/32-05-ISD-timingdata-interchange.md}
   - {id: timingdata-interchange-design, source: docs/33-05-IDD-timingdata-interchange.md}
   - {id: application-configuration, source: docs/32-11-ISD-application-configuration.md}
@@ -52,6 +54,8 @@ indexes:
           - {document: system-use-cases}
           - {document: software-system-specification}
           - {document: application-control-status}
+          - {document: application-control-api-design}
+          - {document: web-interface}
           - {document: timingdata-interchange}
           - {document: timingdata-interchange-design}
           - {document: application-configuration}
@@ -101,6 +105,8 @@ books:
     documents:
       - software-system-specification
       - application-control-status
+      - application-control-api-design
+      - web-interface
       - timingdata-interchange
       - timingdata-interchange-design
       - application-configuration
@@ -120,6 +126,8 @@ books:
       - system-use-cases
       - software-system-specification
       - application-control-status
+      - application-control-api-design
+      - web-interface
       - timingdata-interchange
       - timingdata-interchange-design
       - application-configuration
