@@ -100,6 +100,8 @@ for execution_id, (capability, action) in expected.items():
         "d90e6caa07fc109febcd213d3ad212a6a42bc5a4",
         # Immutable v0.9.3 whitespace-corridor routing release.
         "6b87c723d8687f7751dfb3e67da2013a5781f75a",
+        # Immutable v0.9.4 polygon-aware explicit-anchor release.
+        "787b5cc0378f9dedaaee1d0dab49707c21c92804",
     }
     if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
         raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")
