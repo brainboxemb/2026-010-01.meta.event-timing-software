@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Rewrite SI-01 requirement wording to remove roadmap/implementation-phase terminology and make observable status/interface behaviour clearer, while preserving current maturity states and keeping newer requirements in Draft.
+- Rewrite SI-01 requirement wording to remove roadmap/implementation-phase terminology and make observable status/interface behaviour clearer, while preserving current maturity states and keeping SI01-REQ-045..054 in Draft.
 
 - Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
 
