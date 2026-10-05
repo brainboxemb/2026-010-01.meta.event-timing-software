@@ -224,15 +224,26 @@ Representative device configuration direction:
 io
   devices
     antennaManager
+      inventoryGroups
+        timing-rf
+          intervalMillis: 500
       antennas
         ANT1
           provider: simulated
           type: rfid
           timingNodes: [timing-node-01, timing-node-02]
+          inventoryGroup: timing-rf
+          power
+            controlRef: antenna-power-1
+            stabilizationMillis: 1000
         ANT2
           provider: simulated
           type: rfid
           timingNodes: [timing-node-02]
+          inventoryGroup: timing-rf
+          power
+            controlRef: antenna-power-2
+            stabilizationMillis: 1000
 
   deviceNetworks
     can
@@ -247,6 +258,26 @@ io
 `AntennaManager` is the configured owner of the antenna set and may define 0..N antennas. `AntennaId` is distinct from
 `TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
+
+Antenna installation fields have these semantics:
+
+- `timingNodes` maps an antenna to one or more TimingNodes whose OPEN/CLOSED state
+  drives whether that antenna is required for normal inventory;
+- `inventoryGroup` optionally assigns the antenna to a mutual-exclusion group;
+- `inventoryGroups.<id>.intervalMillis` is the rotation interval for healthy
+  members of that group; the public/reference two-antenna baseline is 500 ms;
+- `power.controlRef` optionally references an installation-owned external power
+  capability rather than reader/vendor protocol;
+- `power.stabilizationMillis` defines how long SI-01 waits after external power-on
+  before probing or initializing that antenna.
+
+Omitting `power` means the antenna/provider is responsible for any internal power
+mechanism or is continuously powered. Omitting `inventoryGroup` allows that antenna
+to inventory concurrently with antennas that are not otherwise constrained.
+
+Startup health probing is per antenna. An invalid/unavailable antenna does not make
+other independently valid antennas unusable merely because they share one
+AntennaManager.
 
 The `deviceNetworks.can` section configures the CAN network boundary. Exact
 bus/driver/discovery fields belong to the concrete device-network design.
