@@ -140,8 +140,8 @@ nodes:
   notation: component
   layout: {x: 55, y: 220, w: 440, h: 60}
 
-# Application uses two vertical levels around the centered coordination/router row.
-# ConfigurationControl is left-most; PresentationGateway is high and TimingNodeProxy low.
+# Application keeps entry/proxy on the right-hand vertical axis. ConfigurationControl
+# and Conductor sit lower on the left, leaving clear routing space above them.
 - id: application-conductor
   object_id: Conductor
   group: application-layer
@@ -149,7 +149,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 260, y: 390, w: 180, h: 68}
+  layout: {x: 275, y: 425, w: 180, h: 68}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -157,7 +157,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 470, y: 345, w: 200, h: 68}
+  layout: {x: 560, y: 345, w: 200, h: 68}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -165,7 +165,7 @@ nodes:
   subtitle: "commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 470, y: 445, w: 200, h: 68}
+  layout: {x: 560, y: 445, w: 200, h: 68}
 - id: configuration-control
   object_id: ConfigurationControl
   group: application-layer
@@ -173,7 +173,7 @@ nodes:
   subtitle: "query / runtime override use-cases"
   kind: application
   notation: component
-  layout: {x: 55, y: 390, w: 190, h: 68}
+  layout: {x: 55, y: 425, w: 190, h: 68}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -483,7 +483,7 @@ edges:
   to_anchor: {side: top, position: 0.75}
   route:
     - {x: 965, y: 290}
-    - {x: 400, y: 290}
+    - {x: 710, y: 290}
 
 - from: presentation-gateway
   to: application-conductor
@@ -497,7 +497,6 @@ edges:
 
 - from: presentation-gateway
   to: configuration-control
-  dashed: true
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
@@ -516,11 +515,12 @@ edges:
   to: io-layer
   dashed: true
   from_anchor: {side: bottom, position: 0.70}
-  to_anchor: {side: left, position: 0.35}
+  to_anchor: {side: top, position: 0.11}
   route:
-    - {x: 265, y: 520}
+    - {x: 188, y: 520}
     - {x: 20, y: 520}
-    - {x: 20, y: 1068}
+    - {x: 20, y: 950}
+    - {x: 153, y: 950}
 
 - from: upstream-message-router
   to: timing-system-aggregate
