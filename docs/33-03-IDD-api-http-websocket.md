@@ -60,6 +60,7 @@ explicitly configured.
 GET  /api/v1/version
 GET  /api/v1/status
 GET  /api/v1/capabilities
+GET  /api/v1/configuration
 
 POST /api/v1/node/{id}/open
 POST /api/v1/node/{id}/close
@@ -69,6 +70,7 @@ GET  /api/v1/node/{id}/logbook?from=...&limit=...
 GET  /api/v1/node/{id}/logbook?last=...
 
 POST /api/v1/dev/node/{id}/auto-reg
+POST /api/v1/node/{id}/configuration/tag-processing
 
 WS   /api/v1/events
 ```
@@ -329,6 +331,138 @@ Record-bearing response:
 Each record in `records` uses the public IF-05 reference representation defined by
 `33-05-IDD-timingdata-interchange.md`.
 
+## IF03-OP-009 — Current application configuration
+
+HTTP mapping:
+
+```text
+GET /api/v1/configuration
+```
+
+The response is a non-secret view produced through the Application-layer
+`ConfigurationControl` boundary. Presentation does not receive or mutate the
+Runtime `ApplicationConfiguration` tree directly.
+
+Development-v1 response shape:
+
+```json
+{
+  "timingNodes": [
+    {
+      "id": "TN-01",
+      "tagProcessing": {
+        "startup": {
+          "quietTimeoutMillis": 250,
+          "maxBurstDurationMillis": 1000,
+          "duplicateWindowMillis": 15000,
+          "sweepCadenceMillis": 50,
+          "observationQueueCapacity": 256
+        },
+        "current": {
+          "quietTimeoutMillis": 250,
+          "maxBurstDurationMillis": 1000,
+          "duplicateWindowMillis": 15000,
+          "sweepCadenceMillis": 50,
+          "observationQueueCapacity": 256
+        },
+        "overridden": false,
+        "runtimeMutable": {
+          "quietTimeoutMillis": true,
+          "maxBurstDurationMillis": true,
+          "duplicateWindowMillis": true,
+          "sweepCadenceMillis": true,
+          "observationQueueCapacity": false
+        }
+      }
+    }
+  ]
+}
+```
+
+`startup` is the effective startup value after compiled defaults and IF-11
+startup overrides have been resolved. `current` is the value currently used by
+the running process. When no runtime override is active the two values are equal.
+
+The field-level `runtimeMutable` map is descriptive API metadata. It does not
+grant mutation permission by itself; normal IF-03 listener/security rules still
+apply.
+
+## IF03-OP-010 — Runtime TagProcessor configuration override
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/configuration/tag-processing
+```
+
+The path `{id}` identifies the TimingNode whose Runtime configuration branch is
+targeted. The HTTP adapter maps the request to Application
+`ConfigurationControl`; it does not call TagProcessor or the Runtime tree
+directly.
+
+Set/replace request:
+
+```json
+{
+  "action": "SET",
+  "value": {
+    "quietTimeoutMillis": 300,
+    "sweepCadenceMillis": 75
+  }
+}
+```
+
+The `value` object is a **partial** TagProcessingPolicy representation. Omitted
+members retain their current value when the server constructs one complete typed
+candidate policy. The candidate is then validated/applied atomically. There is no
+partial success: if one supplied value makes the complete candidate invalid or
+restart-only, none of the supplied changes become active.
+
+Clear request:
+
+```json
+{
+  "action": "CLEAR"
+}
+```
+
+`CLEAR` removes the complete runtime override for this TagProcessing policy and
+restores its effective startup value. It does not rewrite IF-11 deployment
+configuration.
+
+The semantic response envelope is:
+
+```json
+{
+  "result": "APPLIED",
+  "tagProcessing": {
+    "startup": {},
+    "current": {},
+    "overridden": true,
+    "runtimeMutable": {}
+  }
+}
+```
+
+Stable result strings and HTTP mapping are:
+
+| Result | HTTP | Meaning |
+| --- | ---: | --- |
+| `APPLIED` | `200` | authoritative current value changed |
+| `NO_CHANGE` | `200` | request is valid but current value is unchanged |
+| `INVALID` | `400` | candidate TagProcessingPolicy is invalid |
+| `RESTART_REQUIRED` | `409` | candidate changes a startup-only field |
+
+For `INVALID` and `RESTART_REQUIRED`, the returned `tagProcessing.current`
+remains the authoritative pre-request value. This semantic result envelope is used
+for a syntactically valid configuration-update request. Malformed JSON, unknown
+members, unknown nodes and unsupported actions continue to use the common error
+envelope.
+
+Development-v1 live mutation supports the four timing/cadence fields. A changed
+`observationQueueCapacity` yields `RESTART_REQUIRED` because it sizes the
+already-composed bounded observation queue.
+
 ## IF03-OP-003 — Live events
 
 WebSocket path:
@@ -355,12 +489,32 @@ Current event type strings:
 STATUS_SNAPSHOT
 STATUS_CHANGED
 TIMING_DATA_COMMITTED
+CONFIGURATION_CHANGED
 ```
 
 For `STATUS_SNAPSHOT` and `STATUS_CHANGED`, `payload` is the complete current status
 shape from `GET /api/v1/status`.
 
 For `TIMING_DATA_COMMITTED`, `payload` is one committed public IF-05 TimingData record.
+
+For `CONFIGURATION_CHANGED`, `payload` identifies the changed runtime
+configuration branch and contains its resulting current view:
+
+```json
+{
+  "nodeId": "TN-01",
+  "section": "tagProcessing",
+  "configuration": {
+    "startup": {},
+    "current": {},
+    "overridden": true,
+    "runtimeMutable": {}
+  }
+}
+```
+
+The event is post-fact and is emitted only for an `APPLIED` configuration
+change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 
 After connection SI-01 sends `STATUS_SNAPSHOT` before the client relies on subsequent
 change events.
@@ -373,11 +527,12 @@ The current client-side sequence is:
 2. receive `STATUS_SNAPSHOT`;
 3. start buffering later live events during baseline recovery;
 4. replace cached status from the snapshot;
-5. query `GET /api/v1/node/{id}/logbook` for metadata;
-6. fetch required bounded LogBook ranges;
-7. merge buffered `STATUS_CHANGED` events in delivery order;
-8. deduplicate buffered `TIMING_DATA_COMMITTED` records by stable TimingData record key;
-9. mark the presentation view live.
+5. query `GET /api/v1/configuration` for the current configuration baseline;
+6. query `GET /api/v1/node/{id}/logbook` for metadata;
+7. fetch required bounded LogBook ranges;
+8. merge buffered `STATUS_CHANGED` and `CONFIGURATION_CHANGED` events in delivery order;
+9. deduplicate buffered `TIMING_DATA_COMMITTED` records by stable TimingData record key;
+10. mark the presentation view live.
 
 No durable WebSocket replay is required across disconnected sessions.
 
@@ -402,7 +557,7 @@ Current status mapping:
 | `403` | `CAPABILITY_NOT_ENABLED` |
 | `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
-| `409` | domain conflict such as `NODE_NOT_OPEN` |
+| `409` | domain conflict such as `NODE_NOT_OPEN`, or semantic `RESTART_REQUIRED` for a valid configuration update |
 | `503` | `BUSY`, `UNAVAILABLE`, `INTERRUPTED`, expected operation failure |
 | `504` | `OUTCOME_UNKNOWN` |
 | `500` | unexpected internal interface failure |
@@ -419,6 +574,9 @@ Current v1 request parsing rules include:
 - node IDs are path-addressed;
 - LocationId is a positive integer according to the shared LocationId contract;
 - request bodies are bounded by the implementation;
+- configuration SET bodies accept only the documented TagProcessingPolicy members;
+- configuration CLEAR bodies do not accept a `value` object;
+- durations are represented as integral milliseconds and queue capacity as a positive integer;
 - methods other than the mapping defined above return an explicit failure.
 
 ## Listener and exposure design
@@ -444,6 +602,9 @@ development-v1 design yet.
 | IF03-OP-006 | `POST /api/v1/node/{id}/close` |
 | IF03-OP-007 / IF03-REQ-013 | `POST /api/v1/dev/node/{id}/auto-reg` |
 | IF03-OP-008 / IF03-REQ-014 | bounded `/api/v1/node/{id}/logbook` resources |
+| IF03-OP-009 / IF03-REQ-018 | `GET /api/v1/configuration` |
+| IF03-OP-010 / IF03-REQ-019 | `POST /api/v1/node/{id}/configuration/tag-processing` |
+| IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
 
 ## Open design points
 
