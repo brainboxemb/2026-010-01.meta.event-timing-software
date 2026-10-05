@@ -198,6 +198,12 @@ The TimingNode implementation is grouped as:
 application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
+  configuration/
+    ApplicationConfiguration.java  authoritative running configuration root
+    ReadOnlyConfiguration.java     startup/current value + change observation
+    DynamicConfiguration.java      validated runtime override/clear control
+    ConfigurationChange.java       immutable typed change notification
+    ConfigurationUpdateResult.java APPLIED/NO_CHANGE/INVALID/RESTART_REQUIRED
 
 domain/
   system/
@@ -451,7 +457,8 @@ presentation
   functional client interfaces / transport mapping / wire messages
 
 application
-  commands, queries and application-level ports
+  commands, queries, application-level ports and authoritative running
+  configuration semantics
 
 domain
   domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
@@ -603,7 +610,9 @@ io.github.brainboxemb.eventtiming/timingpoint/
 
 `runtime/` owns knowledge of the concrete running application: `Application`, `Composition`, `Lifecycle` and the effective composition configuration. Figure SI01-01 shows this explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is where the executable object graph is assembled and its lifecycle is coordinated.
 
-The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
+The package namespace carries the context, so runtime class names stay short. There is no second bootstrap component and no `Application.Builder`: `Composition` constructs the current application graph directly.
+
+The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. The Application layer owns `ApplicationConfiguration` as the authoritative typed configuration root after composition. Runtime owns how startup sources are resolved; Application owns how the running process exposes current values, runtime overrides and configuration-change semantics. Presentation, I/O, Platform and Infrastructure objects keep their own architectural ownership even when runtime composition creates or starts them.
 
 The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
@@ -612,6 +621,14 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.application/
+    configuration/
+      ApplicationConfiguration.java
+      ReadOnlyConfiguration.java
+      DynamicConfiguration.java
+      ConfigurationChange.java
+      ConfigurationUpdateResult.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     Application.java
@@ -642,7 +659,11 @@ main()
        -> selected operating-mode defaults
        -> explicit IF-11 YAML deployment overrides
        -> secret resolution
-       -> validated effective runtime Config
+       -> validated effective startup runtime Config
+  -> core application configuration resolution
+       -> compiled component defaults
+       -> apply resolved IF-11 startup overrides
+       -> create authoritative ApplicationConfiguration
   -> Logging
        -> configure JUL level + console/file handlers
   -> optional LoggingServer
@@ -656,7 +677,9 @@ main()
 ```
 
 The current `runtime.config.YamlLoader` implements only the explicit
-YAML subset already needed by the running application. Profile/platform/mode
+YAML subset already needed by the running application. `runtime.config.Config`
+is a startup/composition input and is not the authoritative mutable configuration
+object of the running process. Profile/platform/mode
 resolution is part of the configuration architecture but is not yet implemented; the architecture does not
 require a new public Java type for each source before that behaviour is
 implemented.
@@ -666,6 +689,52 @@ implemented.
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
 The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
+
+### Running configuration model
+
+`ApplicationConfiguration` is the single typed access point for configuration of
+the running application. It owns per-TimingNode configuration views and may later
+own other application-level sections as real runtime-adjustable behaviour appears.
+It is not a string-keyed property bag.
+
+The common value contracts are intentionally small:
+
+```java
+interface ReadOnlyConfiguration<T> {
+    T startupValue();
+    T currentValue();
+    boolean overridden();
+    EventSource<ConfigurationChange<T>> changes();
+}
+
+interface DynamicConfiguration<T> extends ReadOnlyConfiguration<T> {
+    ConfigurationUpdateResult override(T value);
+    ConfigurationUpdateResult clearOverride();
+}
+```
+
+A successful update replaces one immutable typed value atomically and emits one
+typed `ConfigurationChange<T>`. Validation happens before replacement. `NO_CHANGE`
+does not emit a change. `INVALID` and `RESTART_REQUIRED` leave the current value
+unchanged.
+
+The read-only interface is the normal dependency passed to components. Writable
+`DynamicConfiguration<T>` access is retained by application-control code rather
+than distributed to every consumer. This preserves one authoritative change point
+while still allowing components to observe their relevant configuration.
+
+For TagProcessor the typed value is the immutable `TagProcessingPolicy`. The
+application configuration exposes that policy for the addressed TimingNode. A
+runtime update that changes `observationQueueCapacity` is rejected atomically as
+`RESTART_REQUIRED`; the dynamic duration/cadence subset is not partially applied.
+TagProcessor reads `currentValue()` when making policy decisions. Its change
+subscription is used only for mechanics that need explicit re-registration, such
+as replacing the fixed-delay housekeeping cadence.
+
+`ApplicationConfiguration` also provides an application-wide change stream or
+equivalent aggregation for presentation/status/API publication. That aggregation
+contains typed identity/path metadata; it does not turn configuration into a
+stringly typed mutable map.
 
 The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. `runtime.config.YamlLoader` maps external YAML into `runtime.config.Config`; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
 
