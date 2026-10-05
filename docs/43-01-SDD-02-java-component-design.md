@@ -244,19 +244,21 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      stable device/lifecycle + tag-observed event contract
+      Antenna.java                      device/provider lifecycle + tag-observed event contract
       AntennaId.java                    configured software identity of one antenna
-      AntennaManager.java               execution/lifecycle boundary for 1..N antennas
-      AntennaManagerLogic.java          package-private antenna/power/multiplex state logic
-      AntennaManagerTypes.java          manager lifecycle/status/failure value types
-      AntennaInstallation.java          AntennaId + package-local antenna/power installation binding
-      AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
       DecryptedTagId.java               provider-decoded/decrypted source identity
       TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
+      manager/
+        AntennaManager.java             public activation/inventory/status boundary
+        AntennaControlLane.java         serial admission + timeout adapter
+        AntennaSwitchController.java    set + multiplex switching coordination
+        ManagedAntenna.java             one-antenna power/probe/init/inventory state
+        AntennaManagerTypes.java        manager/status/failure value types
+        AntennaInstallation.java        AntennaId + package-local device/power binding
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
       Rev1CanDisplay.java               passive CAN display support when implemented
@@ -290,7 +292,12 @@ platform/
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
-  environment/                            low-level environment adapters only when real types justify them
+  environment/
+    PlatformEnvironment.java              injected wall-clock + monotonic-clock boundary
+    MonotonicClock.java                   elapsed-time source
+    SystemMonotonicClock.java             JVM monotonic implementation
+  metrics/
+    RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
 ```
 
 The names above record ownership/direction, not a requirement to create empty
@@ -677,7 +684,7 @@ validated Config
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
-  -> component start
+  -> component activate (TimingNode, TagProcessor, AntennaManager)
   -> Presentation endpoint start
 ```
 
@@ -685,8 +692,10 @@ validated Config
 components. Runtime creates and wires the Conductor but does not reimplement that
 coordination in component constructors or anonymous hidden wiring callbacks.
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
-is an explicit lifecycle action. Shutdown unwinds started resources in reverse ownership
-order.
+is an explicit `start()` action. Application objects use `activate()/deactivate()` instead
+of thread terminology. `ActivationManager` records component activation order and
+deactivates successful components in reverse order. Runtime execution resources are
+closed only after application components are inactive.
 
 Cross-component event wiring is visible at the composition point. The antenna manager owns
 the concrete `Antenna` instances; it does not expose those device objects for callers to
@@ -736,7 +745,8 @@ timing-point-core.jar
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplication.java
-    Lifecycle.java
+    ActivationManager.java
+    RuntimeExecutors.java
     configuration/
       ApplicationConfiguration.java
       TimingNodeConfiguration.java
@@ -780,8 +790,9 @@ main()
        -> construct runtime resources and reusable application/domain/I/O objects
        -> construct and wire application.Conductor
        -> return composed TimingApplication
-  -> TimingApplication.start()
-       -> explicitly start execution resources and components
+  -> TimingApplication.activate()
+       -> RuntimeExecutors.start()
+       -> activate components in explicit order
   -> executable starts presentation endpoints and shutdown handling
 ```
 
@@ -797,7 +808,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplication.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplication` owns start/stop lifecycle.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplication.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplication` owns activate/deactivate lifecycle.
 
 ### Running configuration model
 
@@ -1031,7 +1042,7 @@ interface Antenna extends AutoCloseable {
 
     boolean inventoryRunning();
 
-    EventSource<TagObservation> observations();
+    EventSource<TagObservation> tagObservedEvent();
 }
 ```
 
@@ -1053,7 +1064,7 @@ and per-antenna inventory state. One provider failure is contained to that anten
 manager does not roll back independently healthy antennas merely because another antenna
 fails.
 
-At application startup the manager performs a non-inventory sanity sequence for every
+When AntennaManager activates it performs a non-inventory sanity sequence for every
 configured antenna:
 
 ```text
@@ -1072,9 +1083,10 @@ optional power OFF
 Failure of one sequence records that antenna as unavailable/error and the manager continues
 with the remaining configured antennas.
 
-Normal antenna operation is driven by the lifecycle of the TimingNodes mapped to each
-antenna. When at least one assigned TimingNode is OPEN, a healthy antenna is powered when
-required, allowed to stabilize, initialized and made available for inventory. When no
+Inventory permission is driven by the lifecycle of the TimingNodes mapped to each
+antenna. When at least one assigned TimingNode is OPEN, the Conductor calls
+`requestInventoryEnabled(true)`. The manager then powers a healthy antenna when required,
+allows it to stabilize, initializes it and starts inventory. When no
 assigned TimingNode remains OPEN, inventory is stopped and externally controlled power is
 removed. An antenna mapped to several TimingNodes therefore remains active until the last
 mapped TimingNode closes.
@@ -1082,35 +1094,44 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
-The manager serializes its lifecycle operations through the project-wide
-`SerialExecutor` primitive on top of the shared bounded I/O `ExecutorService`:
+The manager uses one project `SerialScheduledExecutor` control lane on the Runtime-owned
+shared scheduled I/O worker:
 
 ```text
-                    shared bounded I/O ExecutorService
-                    /              |               \
-                   /               |                \
-      SerialExecutor A      SerialExecutor B      other blocking I/O
-      manager A lane         manager B lane         capability work
-             |                     |
-             v                     v
-      AntennaManager A      AntennaManager B
-             |                     |
-             v                     v
-       provider A calls      provider B calls
+          Runtime-owned shared scheduled I/O worker
+                         |
+                         v
+               SerialScheduledExecutor
+                 AntennaManager lane
+                         |
+          +--------------+---------------+
+          |              |               |
+    immediate       result-bearing   delayed rotation
+      control           control          callback
+          \              |               /
+           +-------------+--------------+
+                         |
+                  AntennaManager
+                         |
+              AntennaSwitchController
+                         |
+                   ManagedAntenna(s)
 ```
 
-The per-manager `SerialExecutor` is a logical ordering boundary, not a dedicated Java
-thread. AntennaManager does not implement another private queue/drain executor. Runtime
-constructs the lane on the shared I/O worker; the manager owns its lane lifecycle while
-Runtime owns the physical worker lifecycle. At most one lifecycle operation for one
-manager executes at a time, while unrelated managers/capabilities may make progress on
-other I/O workers.
+`AntennaManager` never receives a JDK `ScheduledExecutorService`. Immediate manager
+control, result-bearing control and multiplex-rotation callbacks all enter the same serial
+lane. There is therefore no second timer callback that re-enqueues work into a different
+control executor.
 
-The shared executor itself is bounded and owned by runtime composition. It is not used by
-TagProcessor or the TimingNode worker. Result-bearing provider operations retain explicit
-timeouts/cancellation policy so a stuck reader does not consume executor capacity
-indefinitely. Lane admission failure remains visible rather than falling back to an
-unbounded queue.
+`AntennaControlLane` is a small adapter for admission, timeout and cancellation handling.
+It creates no thread. `AntennaSwitchController` coordinates the configured set and the
+optional mutual-exclusion group. `ManagedAntenna` contains the physical one-device
+sequence: optional power-on, stabilization, probe/initialize, inventory start/stop,
+power-off and close.
+
+Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
+Result-bearing provider operations retain explicit timeouts/cancellation policy so a
+stuck reader is visible as a control failure.
 
 Startup/runtime callers use result-bearing manager operations when they must know whether
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
