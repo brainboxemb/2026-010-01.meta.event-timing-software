@@ -280,12 +280,12 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const firstExecutable = groupByLabel(
-          "First-executable requirements",
+        const applicationRequirements = groupByLabel(
+          "SI-01 application requirements",
           requirements || root
         );
-        const usefulChoices = firstExecutable
-          ? directChildren(firstExecutable).groups
+        const usefulChoices = applicationRequirements
+          ? directChildren(applicationRequirements).groups
               .map((group) => {
                 const label = group.querySelector(
                   ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
@@ -300,8 +300,8 @@ window.addEventListener("load", () => {
           architecture &&
           requirements &&
           requirements.classList.contains("is-expanded") &&
-          firstExecutable &&
-          firstExecutable.classList.contains("is-expanded") &&
+          applicationRequirements &&
+          applicationRequirements.classList.contains("is-expanded") &&
           usefulChoices.includes("Process lifecycle and configuration") &&
           usefulChoices.includes("Build and version identity") &&
           usefulChoices.includes("Status") &&
