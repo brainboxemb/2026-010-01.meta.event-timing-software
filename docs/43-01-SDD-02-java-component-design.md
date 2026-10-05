@@ -331,7 +331,7 @@ TimingNodeTypes.OpenResult opened =
         node.invoke(TimingNodeCommands.open(locationId));
 
 TimingNodeTypes.CommandAdmission admitted =
-        node.submit(
+        node.offer(
                 TimingNodeCommands.addAutomaticRegistration(
                         registrationId,
                         time));
@@ -355,7 +355,7 @@ node.timingDataCommittedEvent().subscribe(timingDataListener);
 ```
 
 `invoke(command)` is the result-bearing path: presentation/application callers may
-wait for the processed domain result. `submit(command)` is the producer path: it
+wait for the processed domain result. `offer(command)` is the producer path: it
 returns only immediate bounded-queue admission and deliberately does not wait for
 the later domain result. RFID/TagProcessor-style ingress uses this form so a device
 callback cannot be held up by persistence, LogBook work or another queued TimingNode
@@ -907,7 +907,7 @@ The Java shape is a bounded asynchronous sink:
 ```text
 Antenna Event<TagObservation>
        |
-       +--> TagProcessor ----------------------> TimingNode.submit(...)
+       +--> TagProcessor ----------------------> TimingNode.offer(...)
        |
        +--> RawTagObservationSink
               |
@@ -951,9 +951,9 @@ The node-local tag-processing path is split by responsibility:
 ```text
 TagProcessor
   -> TagRegistrationMapper
-  -> TagObservationFilter
   -> RegistrationDuplicateFilter
-  -> TimingNode.submit(...)
+  -> TagObservationFilter
+  -> TimingNode.offer(...)
 
 TagProcessor
   -> bounded TagObservation input queue
@@ -968,18 +968,28 @@ TagProcessingMetrics
 `TagProcessor.onObservation(...)` is the Antenna EventSource callback. The antenna has
 already decoded/decrypted the provider data into a `DecryptedTagId`. The callback only
 attempts bounded admission of the immutable observation to TagProcessor's serial execution
-lane and then returns. It does not map, filter or submit TimingNode work on the
+lane and then returns. It does not map, filter or offer TimingNode work on the
 antenna/provider callback thread.
 
 TagProcessor is an active object. It owns the serial execution lane used for all processing
 of admitted observations and for its scheduled housekeeping. On that lane it maps
-`DecryptedTagId` to `RegistrationId`, rejects unmapped observations, updates passage
-state, applies duplicate filtering and performs the non-blocking `TimingNode.submit(...)`
-handoff.
+`DecryptedTagId` to `RegistrationId`, rejects unmapped observations, suppresses a
+RegistrationId while it remains inside the duplicate window of a previously accepted
+TimingNode offer, updates passage state only for registrations that still need passage
+processing, and performs the non-blocking `TimingNode.offer(...)` handoff to the
+lower-priority TimingNode lane.
+
+Duplicate suppression is registration-based rather than raw-tag-based, so mapping remains
+before the duplicate check. A RegistrationId enters the duplicate window only after
+`TimingNode.offer(...)` returns `ACCEPTED`; `FULL` and `NOT_RUNNING` do not suppress
+later observations. This avoids maintaining burst/RSSI/housekeeping state that cannot
+produce usable work while preserving retry opportunity after rejected TimingNode admission.
 
 Because all TagProcessor-owned mutable processing state is touched only on this one lane,
 `TagObservationFilter` and `RegistrationDuplicateFilter` remain passive state objects and
-do not need their own thread, scheduler, lifecycle or locking.
+do not need their own thread, scheduler, lifecycle or locking. The duplicate filter exposes
+the two distinct moments explicitly: check whether a RegistrationId is currently suppressed,
+and record it only after an accepted TimingNode offer.
 
 #### Observation burst aggregation
 
@@ -1151,28 +1161,30 @@ TagObservation(DecryptedTagId, RSSI, observedAt)
           |
           +--> no RegistrationId ----------------------> unmapped
           |
+          +--> RegistrationDuplicateFilter ------------> duplicate
+          |
           +--> TagObservationFilter
                   keyed by RegistrationId
                   strongest RSSI / selected observedAt
                   |
-                  +--> RegistrationDuplicateFilter ----> duplicate
-                  |
-                  +--> TimingNode.submit(addAutomaticRegistration)
+                  +--> TimingNode.offer(addAutomaticRegistration)
                           |
-                          +--> ACCEPTED
-                          +--> FULL
-                          +--> NOT_RUNNING
+                          +--> ACCEPTED -> record duplicate window
+                          +--> FULL     -> do not suppress retry
+                          +--> NOT_RUNNING -> do not suppress retry
 ```
 
 The passage filter and the longer registration duplicate window are both keyed by
-`RegistrationId`, but they solve different problems. Passage filtering combines repeated
-reads, including reads from different decrypted tags for the same registration, into one
-strongest-RSSI passage. The duplicate window suppresses a later completed passage only
-after the earlier one was admitted successfully.
+`RegistrationId`, but they solve different problems. The duplicate window is checked
+first, after tag-to-registration mapping: a recently admitted RegistrationId bypasses
+passage aggregation entirely. For registrations that are still eligible, passage filtering
+combines repeated reads, including reads from different decrypted tags for the same
+registration, into one strongest-RSSI passage.
 
-Record duplicate-window state only after `TimingNode.submit(...)` returns
-`ACCEPTED`. Queue-full/not-running outcomes therefore do not prevent a later burst from
-retrying.
+`TimingNode.offer(...)` is a bounded fire-and-forget handoff. It only reports immediate
+admission to the lower-priority TimingNode queue; it never waits for TimingNode processing.
+Record duplicate-window state only when that offer returns `ACCEPTED`. `FULL` and
+`NOT_RUNNING` therefore do not prevent a later observation from retrying.
 
 The processor owns its bounded observation input queue and receives one serial scheduled
 execution capability for processing and housekeeping:
@@ -1265,7 +1277,7 @@ The normal automatic-registration flow is:
 antenna/provider callback
   -> Event<TagObservation>
   -> TagProcessor
-  -> TimingNode.submit(...)
+  -> TimingNode.offer(...)
   -> TimingNode worker
   -> TimingDataPersistence.append(...)
   -> LogBook.add(...)
@@ -1273,8 +1285,10 @@ antenna/provider callback
 ```
 
 The first four steps must stay short and must not write files, send network data or wait
-for presentation/backoffice work. `TimingNode.submit(...)` performs bounded queue
-admission and returns to TagProcessor without waiting for the TimingData commit.
+for presentation/backoffice work. `TimingNode.offer(...)` is the fire-and-forget boundary:
+it performs only bounded queue admission and returns to TagProcessor without executing or
+waiting for the TimingNode command. The lower-priority TimingNode lane processes accepted
+work independently afterwards.
 
 The TimingNode worker is allowed to wait for the required
 `TimingDataPersistence.append(...)` call because that local durable write is part of the
@@ -1288,7 +1302,7 @@ whether listener execution time materially increases TimingNode queue wait or qu
 high-water.
 
 Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
-does not sit between TagProcessor and `TimingNode.submit(...)`. Losing raw diagnostic
+does not sit between TagProcessor and `TimingNode.offer(...)`. Losing raw diagnostic
 records does not change whether a TimingData registration is accepted or committed.
 
 ## Internal runtime measurements
@@ -1389,7 +1403,7 @@ The normal public Domain component contract does not expose runtime measurements
 ```text
 TimingNode
   invoke(...)
-  submit(...)
+  offer(...)
   query(...)
   statusChangedEvent()
   timingDataCommittedEvent()
@@ -1537,8 +1551,8 @@ final class TimingNode {
         // admit + wait for the processed result
     }
 
-    CommandAdmission submit(TimingNodeCommand<?> command) {
-        // admit only; producer returns immediately
+    CommandAdmission offer(TimingNodeCommand<?> command) {
+        // bounded admission only; producer returns immediately
     }
 
     <R> R query(TimingNodeQuery<R> query) {
@@ -1568,7 +1582,7 @@ open(locationId) / close / consistency-sensitive query
     -> execute against current ordered TimingNode state
     -> caller receives processed domain result
 
-device/callback ingress that is explicitly submission-only
+device/callback ingress that is explicitly offer-only
     -> bounded queue admission result
     -> callback may continue immediately
     -> later processing has no synchronous caller waiting for its domain result
@@ -1665,7 +1679,7 @@ final class SerialExecutor implements AutoCloseable {
     }
 
     AdmissionResult offer(Runnable work) {
-        // Submission-only producer path.
+        // Admission-only fire-and-forget producer path.
     }
 }
 ```
@@ -1679,7 +1693,7 @@ Usage rules:
 - `offer(Runnable)` is for producer paths that intentionally do not wait for a result;
 - TimingNode `invoke(...)` and consistency-sensitive `query(...)` use the result-bearing
   path;
-- TimingNode `submit(...)` uses the admission-only path.
+- TimingNode `offer(...)` uses the admission-only path.
 
 The JDK executor rejection path is translated into the project `FULL / NOT_RUNNING`
 semantics; `RejectedExecutionException` does not leak into normal TimingNode callers.
@@ -1691,7 +1705,7 @@ The required behaviour remains:
 - at most one work item executes at a time;
 - state-dependent validation happens on that ordered lane;
 - result-bearing work has an internal Future;
-- submission-only ingress observes definite queue admission without waiting;
+- offer-only ingress observes definite queue admission without waiting;
 - one ordinary work-item failure does not terminate the executor lane;
 - unexpected fatal failure is observable;
 - shutdown stops new admission first and drains already accepted immediate work according to
