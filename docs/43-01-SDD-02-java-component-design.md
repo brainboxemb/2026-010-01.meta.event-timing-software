@@ -961,7 +961,7 @@ TagProcessor
        -> queue-drain work
        -> scheduled housekeeping on the same serial lane
 
-TagProcessingCounters
+TagProcessingMetrics
   -> owns the low-allocation processing counters
 ```
 
@@ -1183,7 +1183,7 @@ TagProcessor(
     TagRegistrationMapper mapper,
     TagProcessingPolicy policy,
     MonotonicClock monotonicClock,
-    TagProcessingCounters counters,
+    TagProcessingMetrics counters,
     SerialScheduledExecutor executor)
 ```
 
@@ -1192,7 +1192,7 @@ hand-written worker implementation. Its default implementation is JDK-backed. Th
 exists to keep component code independent from JDK rejection/cancellation details and to
 expose the application's bounded-admission and measurement semantics consistently.
 
-Runtime/engineering composition retains the same `TagProcessingCounters` instance when
+Runtime/engineering composition retains the same `TagProcessingMetrics` instance when
 it needs pull-based measurements. TagProcessor owns the supplied execution capability
 lifecycle; supplying it does not make `runtime.Composition` the execution model.
 
@@ -1317,7 +1317,7 @@ TimingNodeRuntimeSnapshot
   total + maximum post-commit event delivery time
   worker CPU time when the JVM exposes it
 
-TagProcessingCounters.Snapshot
+TagProcessingMetrics.Snapshot
   received observations
   observation-input queue full / processor-not-running ingress
   closed observation bursts
@@ -1340,12 +1340,17 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutor` owns queue admission, queue depth/high-water, queue wait, execution
-  duration and its worker-thread identity;
+- `SerialExecutor.Metrics` owns queue admission, queue depth/high-water, queue wait,
+  execution duration and its worker-thread identity; callers read those values through an
+  immutable `SerialExecutor.Metrics.Snapshot`;
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
-- `TagProcessingCounters` owns observation, burst, mapping, duplicate and
-  TimingNode-admission counters for `domain.timing.processing`;
+- `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
+  TimingNode-admission counters for `domain.timing.processing` and exposes them through an
+  immutable `TagProcessingMetrics.Snapshot`;
+- `SerialScheduledExecutor.Metrics` owns only execution-lane measurements such as accepted
+  immediate work, scheduled registrations/cancellations, executed work, runtime failures,
+  queue depth and worker CPU time. It does not mirror TagProcessor's observation-input queue;
 - JVM/process values are read on demand from the supported JDK management APIs.
 
 Do not copy these counters into a second continuously updated model merely to make them
@@ -1357,8 +1362,8 @@ The current one-TimingNode characterization uses one explicit Java reader:
 
 ```text
 domain/timing/processing/
-  TagProcessingCounters
-    -> TagProcessingCounters.Snapshot
+  TagProcessingMetrics
+    -> TagProcessingMetrics.Snapshot
 
 runtime/measurement/
   RuntimeMeasurementReader
@@ -1368,14 +1373,14 @@ runtime/measurement/
 
 `RuntimeMeasurementReader` is constructed only by engineering-harness composition. It
 reads the component-owned counters and creates/returns the immutable snapshots above. The
-tag-processing snapshot is the existing `TagProcessingCounters.Snapshot`; D05 does not
+tag-processing snapshot is the existing `TagProcessingMetrics.Snapshot`; D05 does not
 add a second wrapper with the same fields.
 
 Its visible read shape is:
 
 ```java
 TimingNodeRuntimeSnapshot timingNode();
-TagProcessingCounters.Snapshot tagProcessing();
+TagProcessingMetrics.Snapshot tagProcessing();
 JvmRuntimeSnapshot jvm();
 ```
 
@@ -1401,7 +1406,7 @@ engineering-harness composition that already depends directly on `timing-point-c
 
 A02 may realize the reader's internal connection to TimingNode-owned counters with
 package-private readers or composition-retained measurement handles. For tag processing,
-composition may retain the same `TagProcessingCounters` instance that it passes to
+composition may retain the same `TagProcessingMetrics` instance that it passes to
 `TagProcessor`. That mechanical
 choice must not add a public measurement method back to `TimingNode`, must not add
 measurement types to `TimingNodeTypes`, and must not make the reader a second owner of
@@ -1695,6 +1700,11 @@ The required behaviour remains:
 The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
 primitive and contains no TimingNode/domain/persistence logic.
 
+Execution measurements are grouped under `SerialExecutor.Metrics`. Hot-path updates remain
+primitive/low-allocation; an explicit `metrics().snapshot()` call creates the immutable
+engineering view. The metrics object is part of the execution primitive rather than a second
+runtime model.
+
 ### SerialScheduledExecutor design
 
 `SerialScheduledExecutor` is a separate Platform primitive for active objects that need one
@@ -1713,6 +1723,11 @@ work is removed promptly from the delayed queue.
 TagProcessor owns its `ArrayBlockingQueue<TagObservation>` separately. Only coalesced queue
 drain work and housekeeping are submitted to `SerialScheduledExecutor`; there is no
 executor task per observation.
+
+`SerialScheduledExecutor` follows the same observability shape as `SerialExecutor`:
+`metrics().snapshot()` returns an immutable lane snapshot. These executor metrics describe
+only work accepted and executed by the scheduled lane; observation ingress/drop metrics stay
+owned by `TagProcessingMetrics`.
 
 The execution types intentionally differ because their workloads differ:
 
