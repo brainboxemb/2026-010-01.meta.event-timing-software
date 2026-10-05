@@ -317,6 +317,9 @@ nodes:
               object_id: VendorAntenna
     - label: "AntennaPowerControl (0..N)"
       object_id: AntennaPowerControl
+      items:
+        - label: SimulatedAntennaPowerControl
+          object_id: SimulatedAntennaPowerControl
     - label: Display
       object_id: Display
       items:
@@ -335,7 +338,7 @@ nodes:
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
-  layout: {x: 910, y: 1000, w: 220, h: 225}
+  layout: {x: 910, y: 1000, w: 220, h: 235}
 - id: device-network-io
   object_id: DeviceNetworks
   group: io-layer
