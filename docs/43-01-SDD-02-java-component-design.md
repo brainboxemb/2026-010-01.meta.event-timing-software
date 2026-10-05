@@ -1274,55 +1274,62 @@ TagProcessor execution lane
        -> duplicate cleanup
 ```
 
-Scheduled housekeeping is not executed on a second worker thread and is not implemented by
-calling the passive filters directly from a shared scheduler. A due sweep executes on the
-same TagProcessor serial lane as observation work.
+Scheduled housekeeping is not executed on a second TagProcessor-specific worker thread.
+A due sweep enters the same **logical TagProcessor serial lane** as observation-drain and
+policy-change work. Production Runtime provides one shared scheduled role worker for all
+TagProcessor lanes.
 
 TagProcessor separates ingress buffering from execution:
 
-- one bounded input queue stores accepted `TagObservation` values;
-- one single-thread execution lane drains/processes that queue;
-- scheduled housekeeping executes on that same lane.
+- one bounded input queue per TagProcessor stores accepted `TagObservation` values;
+- one logical serial lane per TagProcessor drains/processes that queue;
+- all TagProcessor lanes share the Runtime-owned physical scheduled worker;
+- scheduled housekeeping enters the same node-local lane as observation work.
 
-The input queue is not the executor's work queue. The antenna callback only performs
-`inputQueue.offer(observation)` and returns. This keeps provider/event delivery independent
-from mapping/filtering execution and avoids creating one executor task object per observation.
+The input queue is not the shared role executor's work queue. The antenna callback only
+performs `inputQueue.offer(observation)` and returns. This keeps provider/event delivery
+independent from mapping/filtering execution and avoids creating one executor task object per
+observation.
 
-The baseline Java execution mechanism may use a single-thread
-`ScheduledThreadPoolExecutor` (or equivalent JDK executor composition). Its job is to provide
-the one serial execution lane and delayed housekeeping. The exact wake-up/coalescing strategy
-used to start queue draining is an implementation detail, but it must avoid periodic polling
-latency when observations arrive and must avoid one scheduled/executor task per observation.
+Drain work is coalesced. One drain invocation processes the queue depth captured when that
+drain begins; observations arriving during that batch cause a later drain token rather than
+extending the current invocation indefinitely. The queue bound therefore limits one batch,
+and task-boundary resubmission gives already-waiting sibling TagProcessor lanes and
+housekeeping work an opportunity to run on the shared worker.
 
-The JDK executor's own scheduling/thread coordination remains the default implementation.
-Do not replace it with a custom ring buffer, timer heap, wait/notify loop or other lower-level
-scheduler unless Step-5 runtime characterization shows a material CPU, allocation, latency or
-memory cost that the JDK implementation cannot meet.
+The baseline Java execution mechanism uses one Runtime-owned single-thread
+`ScheduledThreadPoolExecutor` for the TagProcessor role plus lane-local serial admission.
+The exact wake-up/coalescing strategy is Platform execution detail, but it must avoid
+periodic polling latency when observations arrive and must avoid one scheduled/executor task
+per observation.
 
-For the Java-8 baseline, configure the single-thread `ScheduledThreadPoolExecutor` so
-cancelled housekeeping tasks are removed promptly from its delayed queue
-(`setRemoveOnCancelPolicy(true)`). The periodic housekeeping runnable must contain/report
-its own ordinary runtime failures rather than letting them escape unintentionally: the JDK
-suppresses all later executions of a fixed-delay task after an uncaught exception.
+The JDK executor's scheduling/thread coordination remains the default implementation. Do not
+replace it with a custom timer heap, wait/notify loop or per-processor worker thread unless
+Step-5 runtime characterization shows a material CPU, allocation, latency or memory reason.
 
-The bounded input queue provides the explicit overload boundary. A full queue drops/rejects
-that incoming observation according to the defined FULL policy; it does not consume executor
-work-queue capacity. Scheduled housekeeping is therefore independent from observation-queue
-capacity. Sustained observation ingress must still not indefinitely starve due housekeeping.
+For the Java-8 baseline, the shared `ScheduledThreadPoolExecutor` uses
+`setRemoveOnCancelPolicy(true)` so cancelled housekeeping triggers are removed promptly.
+The logical fixed-delay registration is implemented so its next trigger is scheduled only
+after the previous housekeeping execution has completed on that TagProcessor lane. Ordinary
+runtime failures are contained/reported and do not silently disable unrelated processor
+lanes.
 
-TagProcessor keeps at most one periodic housekeeping registration. When time-based
-processing state changes from empty to non-empty, it starts one
-`scheduleWithFixedDelay(...)` task at the configured sweep cadence. The same periodic task
-is then reused by the JDK scheduler while timed state remains.
+The bounded TagProcessor input queue provides the explicit observation-overload boundary. A
+full queue drops/rejects that incoming observation according to the defined FULL policy; it
+does not consume role-worker queue capacity. Sustained observation ingress must still not
+indefinitely starve due housekeeping or sibling processor lanes.
 
-After each sweep, when no open passage or duplicate-window state remains, TagProcessor
-cancels that periodic task. A later transition from empty to non-empty starts one new
-periodic registration.
+TagProcessor keeps at most one logical housekeeping registration. When time-based processing
+state changes from empty to non-empty, it registers fixed-delay housekeeping at the
+configured sweep cadence. When no open passage or duplicate-window state remains,
+TagProcessor cancels that registration. A later transition from empty to non-empty starts one
+new logical registration.
 
 This avoids both extremes:
 - there is no timer/scheduled task per observation;
-- there is no permanently running housekeeping task while TagProcessor has no timed state;
-- each individual sweep is not resubmitted as a fresh one-shot scheduled task.
+- there is no permanently running housekeeping registration while TagProcessor has no timed
+  state;
+- there is no dedicated Java worker thread per TagProcessor.
 
 The timed state includes open passage state and any duplicate-window state that still needs
 housekeeping. Passive components may expose a small state query such as `isEmpty()` /
