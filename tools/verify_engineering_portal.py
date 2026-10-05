@@ -122,6 +122,12 @@ if 'eng-explorer-title' not in explorer:
     raise SystemExit("Engineering Explorer missing compact workbench heading")
 if 'data-eng-workspace' in explorer:
     raise SystemExit("Engineering Explorer unexpectedly contains comparison workspace")
+if explorer.count('data-eng-explorer-resizer') != 1:
+    raise SystemExit("Engineering Explorer missing architecture/detail pane resizer")
+if 'aria-label="Resize architecture and object detail panes"' not in explorer:
+    raise SystemExit("Engineering Explorer resizer missing accessible label")
+if 'role="separator"' not in explorer:
+    raise SystemExit("Engineering Explorer resizer missing separator semantics")
 if '<a href="../">Home</a>' not in explorer:
     raise SystemExit("Engineering Explorer missing neutral Home navigation")
 
@@ -179,6 +185,16 @@ for behavior in (
             f"traceability pane resize behavior missing: {behavior}"
         )
 
+for behavior in (
+    "engineering-explorer-pane-shares-v1",
+    "data-eng-explorer-resizer",
+    "defaultShares = [0.75, 0.25]",
+):
+    if behavior not in explorer_js:
+        raise SystemExit(
+            f"Engineering Explorer pane resize behavior missing: {behavior}"
+        )
+
 explorer_css = (
     site / "assets" / "stylesheets" / "explorer.css"
 ).read_text(encoding="utf-8")
@@ -188,13 +204,12 @@ if "body.eng-explorer-page .md-typeset details.eng-source-context" in explorer_c
     )
 if ".md-typeset details.eng-source-context" not in explorer_css:
     raise SystemExit("shared source-context presentation selector missing")
-if (
-    ".eng-detail__actions .md-button,\n"
-    ".md-typeset details.eng-source-context > summary"
-) not in explorer_css:
-    raise SystemExit(
-        "source-context summary does not share vertical control metrics with detail actions"
-    )
+if ".md-typeset details.eng-source-context > summary::after {\n  display: none;" not in explorer_css:
+    raise SystemExit("source-context summary still renders the disclosure icon")
+if "border-radius: 0 !important;" not in explorer_css:
+    raise SystemExit("source-context disclosure lost square presentation")
+if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explorer_css:
+    raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
 for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
