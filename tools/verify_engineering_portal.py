@@ -95,14 +95,49 @@ portal_view = json.loads(
 if portal_view.get("default_object") is not None:
     raise SystemExit("portal view still has an implicit default object")
 
-source_context = portal_view["objects"]["IF05-REQ-007"].get("source_context")
-if not source_context:
-    raise SystemExit("portal view missing IF05-REQ-007 authored source context")
+for object_id, item in portal_view["objects"].items():
+    source_context = item.get("source_context")
+    if not source_context:
+        raise SystemExit(
+            f"portal view missing authored source context for {object_id}"
+        )
+    if source_context.get("definition") is not True:
+        raise SystemExit(
+            f"portal source context did not resolve exact Need definition for {object_id}"
+        )
+    if source_context.get("object_id") != object_id:
+        raise SystemExit(
+            f"portal source context identity mismatch for {object_id}: "
+            f"{source_context.get('object_id')!r}"
+        )
+
+    option_ids = []
+    for line in source_context["lines"]:
+        text = line["text"].strip()
+        if text.startswith(":id: "):
+            option_ids.append(text[len(":id: "):].strip())
+        elif text.startswith("id: "):
+            option_ids.append(text[len("id: "):].strip())
+
+    if option_ids != [object_id]:
+        raise SystemExit(
+            f"portal source definition for {object_id} contains wrong Need ids: "
+            f"{option_ids!r}"
+        )
+
+source_context = portal_view["objects"]["IF05-REQ-007"]["source_context"]
 if source_context.get("path") != "docs/32-05-ISD-timingdata-interchange.md":
     raise SystemExit("IF05-REQ-007 source context path mismatch")
 source_lines = "\n".join(line["text"] for line in source_context["lines"])
 if "Committed record immutability" not in source_lines:
     raise SystemExit("IF05-REQ-007 source context lost authored requirement heading")
+
+uc020_context = portal_view["objects"]["UC-020"]["source_context"]
+uc020_lines = "\n".join(line["text"] for line in uc020_context["lines"])
+if ":id: UC-020" not in uc020_lines:
+    raise SystemExit("UC-020 source definition lost its own id")
+if ":id: UC-007" in uc020_lines:
+    raise SystemExit("UC-020 source definition incorrectly contains UC-007")
 
 object_page = (
     site / "objects" / "IF05-REQ-007" / "index.html"
