@@ -241,7 +241,7 @@ history and live post-commit notification without exposing uncommitted records
 as committed state.
 :::
 
-:::{req} Capability-gated dev auto-reg  
+:::{req} Gate development auto-registration by capability  
 :id: SI01-REQ-043  
 :status: R  
 :derived_from: UC-009  
@@ -321,10 +321,11 @@ for that TimingNode rather than being silently skipped or renumbered.
 :derived_from: UC-020  
 
 After application-level configuration has been accepted, a failure while restoring
-or validating recoverable state for one configured TimingNode shall be contained to
-that TimingNode where continued application operation remains safe.
+or validating recoverable state for one configured TimingNode shall not by itself
+prevent independently healthy TimingNodes or diagnostic interfaces from starting
+and remaining available.
 
-SI-01 shall:
+For the affected TimingNode, SI-01 shall:
 
 - place the affected TimingNode in `ERROR` instead of presenting it as `CLOSED`
   or `OPEN`;
@@ -354,7 +355,7 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
-:::{req} Keep local registration independent from presentation, diagnostic logging and backoffice delivery  
+:::{req} Keep local registration independent from external services  
 :id: SI01-REQ-051  
 :status: D  
 :derived_from: UC-003, UC-012  
