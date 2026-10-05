@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align runtime metric ownership: rename `TagProcessingCounters` to `TagProcessingMetrics`, group executor measurements under nested `SerialExecutor.Metrics` / `SerialScheduledExecutor.Metrics` snapshots, and keep hot-path updates component-owned and low-allocation.
+
 - Align D04/D05 with the queued TagProcessor implementation: make observation input-queue capacity part of TagProcessingPolicy and measure ingress FULL/not-running separately from TimingNode admission outcomes.
 
 - Align execution primitives with the JDK-backed design: rename TimingNode `SerialWorker` to `SerialExecutor` backed by a one-thread bounded `ThreadPoolExecutor`, and define separate `SerialScheduledExecutor` for TagProcessor queue draining and housekeeping.
