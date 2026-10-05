@@ -246,8 +246,10 @@ io/
     antenna/
       Antenna.java                      stable device/lifecycle + observation contract
       AntennaManager.java               lifecycle owner for 1..N configured antennas
+      AntennaInstallation.java          antenna + optional power + multiplex policy binding
       AntennaProvider.java              typed extension provider contract
       AntennaPowerControl.java          optional external power-switch capability
+      SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
       DecryptedTagId.java               provider-decoded/decrypted source identity
       TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
