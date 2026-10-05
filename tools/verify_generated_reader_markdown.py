@@ -26,7 +26,7 @@ for token in forbidden:
         raise SystemExit(f"generated reader Markdown still contains {token}")
 
 required = (
-    '**SI01-REQ-003 — Minimal TimingSystem / TimingNode composition**',
+    '**SI01-REQ-003 — Configured TimingNode availability**',
     '— — —',
     '- **Type:** Requirement',
     '- **Status:** Review',
@@ -43,11 +43,11 @@ ssd = (root / "41-01-SSD-timing-application-specification-document.md").read_tex
     encoding="utf-8"
 )
 start = ssd.index('<a id="SI01-REQ-003"></a>')
-end = ssd.index('<a id="SI01-REQ-020"></a>', start)
+end = ssd.index('<a id="SI01-REQ-010"></a>', start)
 block = ssd[start:end]
-body_text = "The first executable shall support configuration of at least"
+body_text = "SI-01 shall support configuration of one or more"
 order = (
-    block.index("**SI01-REQ-003 — Minimal TimingSystem / TimingNode composition**"),
+    block.index("**SI01-REQ-003 — Configured TimingNode availability**"),
     block.index(body_text),
     block.index("— — —"),
     block.index("- **Type:** Requirement"),
@@ -93,7 +93,8 @@ si01_ids = (
     "SI01-REQ-030", "SI01-REQ-031", "SI01-REQ-032", "SI01-REQ-033",
     "SI01-REQ-040", "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043",
     "SI01-REQ-044", "SI01-REQ-045", "SI01-REQ-046", "SI01-REQ-047",
-    "SI01-REQ-048",
+    "SI01-REQ-048", "SI01-REQ-049", "SI01-REQ-050", "SI01-REQ-051",
+    "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054",
 )
 for object_id in si01_ids:
     if f'<a id="{object_id}"></a>' not in ssd:
