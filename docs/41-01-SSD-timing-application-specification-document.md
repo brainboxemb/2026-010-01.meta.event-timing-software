@@ -1020,6 +1020,14 @@ separate from `Antenna` because the physical power switch may be a relay, GPIO o
 other installation device unrelated to the antenna vendor protocol.
 :::
 
+:::{arch} SimulatedAntennaPowerControl  
+:id: SimulatedAntennaPowerControl  
+
+`SimulatedAntennaPowerControl` is the deterministic built-in implementation used
+with `SimulatedAntenna` to verify powered/unpowered state, stabilization sequencing
+and power-cycle behaviour without physical relay or reader hardware.
+:::
+
 :::{arch} SimulatedAntenna  
 :id: SimulatedAntenna  
 
