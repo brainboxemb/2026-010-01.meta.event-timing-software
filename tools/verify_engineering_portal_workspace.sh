@@ -63,7 +63,7 @@ grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-
 grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'First registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="tree-root"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="root-compare"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'role="separator"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
