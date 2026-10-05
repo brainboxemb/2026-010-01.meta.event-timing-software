@@ -11,7 +11,7 @@ import re
 import yaml
 
 
-OPEN_RE = re.compile(r"^(?P<fence>```|:::)\\{(?P<directive>[A-Za-z0-9_-]+)\\}\\s*(?P<title>.*)$")
+OPEN_RE = re.compile(r"^(?P<fence>```|:::)\{(?P<directive>[A-Za-z0-9_-]+)\}\s*(?P<title>.*)$")
 COLON_OPTION_RE = re.compile(r"^:([A-Za-z0-9_-]+):\s*(.*)$")
 
 STATUS_LABELS = {
