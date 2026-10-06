@@ -189,11 +189,16 @@ Those are different actions and may be requested by different owners.
 
 **Rule**
 
-A callback from local `Event<T>` may validate the event and hand work to a bounded
-serial lane. It should then return.
+A callback from local `Event<T>` must stay short. When the event arrives from outside
+the component's own serial lane, the callback may validate the event, hand work to that
+lane and then return.
 
-Do not perform blocking I/O, waits, retries or cross-component control directly on the
-producer thread.
+When the event is guaranteed to be emitted on the consumer's own serial lane, do **not**
+mechanically re-admit it to that same lane. A short handler may update owned state and
+admit the next task directly.
+
+Do not perform blocking I/O, waits, retries or cross-component control directly in the
+synchronous callback.
 
 **Why**
 
@@ -270,6 +275,21 @@ This invents another event-registration mechanism next to `EventSource.subscribe
 
 Also avoid doing downstream device control directly in the synchronous source-event
 callback.
+
+For an event emitted by a task already running on the same owner lane, prefer:
+
+```java
+selfTestCompletedEvent.subscribe(this::onSelfTestCompleted);
+
+private void onSelfTestCompleted(SelfTestResult result) {
+    selfTestPassed = result.passed();
+    startInventoryTaskIfNeeded();
+}
+```
+
+when both operations are short and `startInventoryTaskIfNeeded()` only admits later work.
+Do not add `taskRunner.execute(...)` merely to bounce the callback through the same lane
+again.
 
 ---
 
