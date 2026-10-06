@@ -1,6 +1,13 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-06'
+    change: >-
+      A01 requalification is complete on Java main with EventData-based
+      TagId-to-RegistrationId resolution and the normal AntennaManager ->
+      TagProcessor -> TimingNode -> persistence/LogBook path. V04 is now active;
+      Java #287 implements the typed provider discovery needed for its external
+      provider verification.
   - date: '2026-10-04'
     change: >-
       D05 runtime measurement design is complete; A01 remains active because the
@@ -92,13 +99,15 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: active
+    state: done
     depends_on: [D04]
     note: >-
-      Replace/qualify the Java #230 prototype against D04: Event-based
-      TagObservation(TagId, RSSI, time), AntennaManager lifecycle/probe/inventory,
-      TagProcessor RSSI + duplicate filtering, injected TagRegistrationMapper
-      and the normal TimingNode-owned registration path.
+      Qualified on Java main: Event-based TagObservation(TagId, RSSI, time),
+      AntennaManager lifecycle/probe/inventory, EventData-based
+      TagId-to-RegistrationId resolution, registration-keyed RSSI/duplicate
+      filtering and the normal TimingNode-owned registration/persistence/LogBook
+      path. EventData is a shared provider artifact and the top-level runtime no
+      longer accepts a loose TagRegistrationMapper.
 
   - id: A02
     lane: application
@@ -180,7 +189,7 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    state: planned
+    state: active
     depends_on: [A01]
     note: >-
       Verify built-in provider selection plus one synthetic external provider
