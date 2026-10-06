@@ -940,6 +940,11 @@ physical worker
   = Runtime-owned thread/executor resource that executes work from one or more lanes
 ```
 
+Execution identity belongs to the component that owns the logical lane. Physical
+worker, Java executor and operating-system thread names are Runtime/implementation
+details and do not become the architectural identity of TimingNode, TagProcessor,
+Conductor or an I/O component.
+
 A Timing Point Application may contain multiple TimingNodes without allocating
 one physical worker per node. Each TimingNode keeps an independent bounded
 serial lane so its mutable state remains ordered and isolated, while all
@@ -1335,11 +1340,13 @@ publishes them; Platform does not provide a central event bus.
 :::{arch} PlatformEnvironment  
 :id: PlatformEnvironment  
 
-`PlatformEnvironment` is the small process/platform time boundary composed by
+`PlatformEnvironment` is the small process/platform boundary composed by
 Runtime. It provides the absolute wall-clock `Clock` used when externally
-meaningful timestamps are attached and the `MonotonicClock` used for elapsed
-time, timeouts, filtering windows and metrics. It is deliberately not a general
-service locator for filesystem, networking or other OS facilities.
+meaningful timestamps are attached, the `MonotonicClock` used for elapsed
+time, timeouts, filtering windows and metrics, and a normalized operating-system
+family used only for explicit platform-dependent composition defaults. It is
+deliberately not a general service locator for filesystem, networking or other
+OS facilities.
 :::
 
 #### Runtime and infrastructure
