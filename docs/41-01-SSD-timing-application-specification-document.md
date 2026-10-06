@@ -553,11 +553,12 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
-Shared Domain contract:
+Shared Domain contracts:
+  +-- EventData
   +-- TimingData
 ```
 
@@ -1472,7 +1473,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
