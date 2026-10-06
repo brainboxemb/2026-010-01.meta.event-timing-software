@@ -1093,6 +1093,50 @@ Also avoid calling a terminal provider `shutdown()` from ordinary component
 
 ---
 
+### DR-20 — Synchronize the whole state transition
+
+**Rule**
+
+When correctness depends on a lifecycle/state precondition and the following state change,
+protect the **check and the transition together**.
+
+Do not synchronize only the check and then modify the guarded state outside that
+synchronization boundary.
+
+**Why**
+
+This is racy:
+
+```java
+synchronized (this) {
+    checkState(state == State.NEW || state == State.INACTIVE, "...");
+}
+
+taskRunner.start();
+state = State.ACTIVE;
+```
+
+Another thread can change lifecycle state after the check but before `state = ACTIVE`.
+
+Prefer one atomic lifecycle operation:
+
+```java
+public synchronized void activate() {
+    checkState(state == State.NEW || state == State.INACTIVE,
+            "AntennaManager cannot activate from %s", state);
+
+    taskRunner.start();
+    state = State.ACTIVE;
+}
+```
+
+If the protected operation would block for a long time, introduce an explicit transitional
+state such as `ACTIVATING`/`DEACTIVATING` and release the monitor only after that
+transition has been recorded. Do not create a check-then-act race merely to keep the
+critical section short.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1114,7 +1158,8 @@ For Java component changes, a reviewer can use this short check:
 15. **Async readability** — Are event and lane boundaries named instead of hidden in nested lambdas?
 16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
 17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
-18. **Tests** — Is the risky behaviour tested, not only the happy path?
+18. **State synchronization** — Are lifecycle checks and their state transitions protected by the same synchronization boundary?
+19. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
