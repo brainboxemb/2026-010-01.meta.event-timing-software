@@ -44,11 +44,11 @@ A few words occur repeatedly in the Java design:
 Example:
 
 ```text
-TimingNode is OPEN
+TimingNode state is OPEN
         |
         v
-Conductor decides:
-inventory required = true
+Conductor calls:
+requestEnableInventory()
         |
         v
 AntennaManager decides how:
