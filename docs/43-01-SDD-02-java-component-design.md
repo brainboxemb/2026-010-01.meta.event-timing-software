@@ -287,10 +287,11 @@ io/
         AntennaSet.java                 composition-time antenna set + multiplex configuration
         ManagedAntenna.java             direct one-antenna operations + runtime status
         AntennaManagerTypes.java        manager/status value types
-        AntennaTasks.java               reusable task set owned by AntennaManager
-        SelfTestTask.java               complete startup self-test round
-        InventoryTask.java              enable/disable/multiplex inventory state machine
-        AntennaShutdownTask.java        cooperative device shutdown
+        task/
+          SelfTestTask.java             complete startup self-test round
+          InventoryTask.java            enable/disable/multiplex inventory state machine
+          AntennaShutdownTask.java      cooperative device shutdown
+          AntennaTaskResult.java        task completion success/failure value
     power/
       PowerDevice.java                  external power-device contract
       SimulatedPowerDevice.java         deterministic simulated power device
@@ -1399,10 +1400,9 @@ owns lifecycle + inventory intent
       |               +--> Antenna
       |               +--> optional PowerDevice
       |
-      +--> AntennaTasks
-              +--> reusable SelfTestTask
-              +--> reusable InventoryTask
-              +--> reusable AntennaShutdownTask
+      +--> reusable SelfTestTask
+      +--> reusable InventoryTask
+      +--> reusable AntennaShutdownTask
 ```
 
 `Conductor` owns cross-component application decisions. It requests inventory enabled
@@ -1411,10 +1411,10 @@ power-on, initialize, power-cycle or reader switching.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of
 one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
-one explicit manager control state machine. It does not contain the physical multi-step
-sequences; those live in the reusable task classes beside the manager. The task classes
-work directly on manager-owned `ManagedAntenna` objects; there is no second task-facing
-antenna interface.
+one explicit manager control state machine. It owns the three reusable task objects
+directly. The physical multi-step sequences live in those task classes under `manager/task`.
+The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
+second task-facing antenna interface.
 
 The manager uses a small `Setting<Boolean>` for inventory intent:
 
@@ -1651,8 +1651,8 @@ Antenna-specific code must not rebuild these mechanics with ad-hoc
 `CompletableFuture.thenCompose(...)` chains.
 
 For antenna control, one task turn corresponds to at most one direct physical device
-action. `AntennaTasks` owns one reusable self-test task, one reusable inventory task and
-one reusable shutdown task for the manager.
+action. `AntennaManager` owns one reusable self-test task, one reusable inventory task and
+one reusable shutdown task directly.
 
 Representative state machines are:
 
@@ -1744,7 +1744,7 @@ round-robin rotation.
 
 There is deliberately no separate switching controller. `AntennaSwitchTask` owns the
 small amount of switch-local state: phase, current/next selection and interval wait. It is
-one reusable state-machine object owned by the manager's `AntennaTasks` set and reset
+one reusable state-machine object owned directly by `AntennaManager` and reset
 before a new switching run.
 
 The task does not own startup self-test, power preparation, antenna initialization,
