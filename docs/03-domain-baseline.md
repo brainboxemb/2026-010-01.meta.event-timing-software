@@ -35,11 +35,12 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
-Shared Domain contract:
+Shared Domain contracts:
+  +-- EventData
   +-- TimingData
 ```
 
@@ -142,7 +143,7 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -481,6 +482,14 @@ This view explains processing decisions without becoming authoritative timing
 state. TimingData/LogBook remains authoritative for committed registrations.
 
 ## Event reference data
+
+`EventData` is a shared Domain contract parallel to `TimingData`. SI-01 and engineering tools consume the same common EventData API while an event-specific provider supplies the concrete profile.
+
+A RegistrationId may have 1..N TagIds in the EventData profile. Event-specific Java implementations may be loaded at runtime through the typed provider/extension mechanism, analogous to TimingData providers.
+
+`RaceData` remains TimingNode-local runtime/upstream data and may supplement or override profile relationships where live event state requires that.
+
+
 
 EventData is the preferred owner for participant/team/tag relationships that are
 specific to the active event. The existing `RaceData` working concept should
