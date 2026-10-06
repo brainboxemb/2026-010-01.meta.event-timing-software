@@ -225,8 +225,14 @@ application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
+  Conductor.java                   application lifecycle + cross-component rules
+  ComponentLifecycleManager.java   ordered activation/rollback helper
+  property/
+    TimingNodeLifecycleProperty.java
 
 infra/
+  property/
+    TrackedProperty.java            generic tracked-value scheduling/change detection
   configuration/
     ReadOnlyConfiguration.java     startup/current value + change observation
     DynamicConfiguration.java      validated runtime override/clear primitive
@@ -746,7 +752,7 @@ validated Config
             -> AntennaManager.activate()
        -> startup application actions
             -> AntennaManager.checkHealth()
-       -> reconcile current application state
+       -> initialize tracked application properties
   -> PresentationRuntime.activate()
 ```
 
@@ -763,14 +769,52 @@ checks, reconcile application state, discover components or contain device-speci
 policy. Conductor owns those decisions.
 
 Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
-application worker. Because local `Event<T>` delivery is synchronous, event callbacks
-into Conductor perform only bounded admission/change signalling to that lane;
-cross-component behaviour never runs on the emitting TimingNode thread. Status changes
-raised while component startup is still running are coalesced as pending reconciliation.
-Conductor first finishes the ordered component activation and required startup actions,
-then reads the current authoritative state and reconciles it. Startup and later status
-changes therefore converge through the same current-state reconciliation behaviour
-without replaying stale startup snapshots.
+application worker. Application-level values that drive cross-component behaviour are
+represented explicitly as application properties backed by the generic
+`infra.property.TrackedProperty<T>` mechanism rather than as Conductor-specific
+reconcile flags.
+
+`infra.property.TrackedProperty<T>` owns only the reusable mechanism: a readable name,
+an authoritative value reader, the shared Application lane, current-value tracking,
+change detection and coalesced refresh scheduling. It has no knowledge of TimingNode,
+AntennaManager or Conductor.
+
+Concrete application properties live under `application.property`. They bind the generic
+mechanism to one application concept and expose a domain-meaningful change signal. A source
+event is only a **change signal**: it never becomes the stored value directly. The tracked
+property schedules its own refresh on the Application lane, reads the current authoritative
+value and invokes application behaviour only when the effective value changed.
+
+The first concrete property is `TimingNode.lifecycle`:
+
+```text
+TimingNode.statusChangedEvent
+        |
+        | change signal only
+        v
+application.property.TimingNodeLifecycleProperty
+        |
+        | read TimingNodeQueries.status().lifecycle()
+        | compare with tracked current value
+        v
+lifecycle changed
+        |
+        v
+Conductor application rule
+        |
+        +--> AntennaManager inventory required = (lifecycle == OPEN)
+```
+
+Because local `Event<T>` delivery is synchronous, the event callback performs only
+bounded property signalling; cross-component behaviour never runs on the emitting
+TimingNode thread. During startup Conductor first activates components and performs
+required health work, then performs an explicit initial property refresh before startup is
+reported complete. The same property logic handles later changes without replaying stale
+event snapshots.
+
+`TrackedProperty<T>` is deliberately not a general reactive framework, rule engine
+or dependency graph. New properties are added only for concrete application-level values
+that need tracked current state and change-driven behaviour.
 
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
 is an explicit `start()` action owned by Runtime. Runtime also owns the outer
@@ -788,7 +832,7 @@ antennaManager.tagObservedEvent(antennaId)
         .subscribe(timingNode.tagProcessor()::onTagObserved);
 
 timingNode.statusChangedEvent()
-        .subscribe(conductor::onTimingNodeStatusChanged);
+        .subscribe(conductor.timingNodeLifecycleProperty().changeSignal());
 ```
 
 For semantic local events, accessor names describe the fact that happened and end in
@@ -825,6 +869,8 @@ timing-point-core.jar
     ConfigurationControl.java
     Conductor.java
     ComponentLifecycleManager.java
+    property/
+      TimingNodeLifecycleProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java

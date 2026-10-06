@@ -99,6 +99,23 @@ The same rule applies to recovery. Conductor may keep
 `inventory required = true`; AntennaManager owns any device recovery needed to restore
 that state.
 
+The same ownership rule also guides package placement. A reusable technical mechanism
+that knows nothing about SI-01 application concepts belongs under `infra`; the concrete
+binding that gives that mechanism application meaning belongs under `application`.
+
+Example:
+
+```text
+infra.property.TrackedProperty<T>
+        generic scheduling + change detection
+
+application.property.TimingNodeLifecycleProperty
+        binds TrackedProperty to TimingNode lifecycle semantics
+```
+
+Avoid placing the generic scheduler/change-detection implementation in Conductor or in the
+application package merely because the first consumer happens to be application code.
+
 ---
 
 ### DR-02 — Construction should not secretly start behaviour
