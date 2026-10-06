@@ -399,9 +399,10 @@ nodes:
   items:
     - "Clock — absolute time"
     - "MonotonicClock — elapsed time"
+    - "OperatingSystem — platform defaults"
   kind: platform
   notation: packaging-component
-  layout: {x: 555, y: 1332, w: 300, h: 95}
+  layout: {x: 555, y: 1332, w: 300, h: 115}
 
 - id: timing-application-runtime
   object_id: TimingApplicationRuntime
