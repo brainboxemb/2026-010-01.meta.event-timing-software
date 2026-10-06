@@ -351,7 +351,7 @@ for reimplementing JDK executor internals.
 The Java design introduces `domain.eventdata.EventData` beside the TimingData
 capability. `EventData` owns the semantic TagId-to-RegistrationId relationship;
 the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
-`TagRegistrationMapper`.
+tag-to-registration mapper dependency.
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses `domain.eventdata.TagId`.
@@ -1178,8 +1178,8 @@ control, result-bearing control and multiplex-rotation callbacks all enter the s
 lane. There is therefore no second timer callback that re-enqueues work into a different
 control executor.
 
-`AntennaControlLane` is a small adapter for admission, timeout, cancellation and delayed
-continuation handling. It creates no thread. `AntennaSwitchController` coordinates the
+`ScheduledTaskRunner` provides the reusable admission, timeout, cancellation and delayed
+continuation mechanics over the manager's existing serial scheduled lane. It creates no thread. `AntennaSwitchController` coordinates the
 configured set and the optional mutual-exclusion group. `ManagedAntenna` owns the
 physical one-device state/provider steps but does not sleep for stabilization; it exposes
 the required delay between begin and complete steps so the control lane can schedule the
@@ -1229,8 +1229,7 @@ configured interval, and a failed member is skipped without stopping healthy mem
 public/reference baseline is the known two-antenna installation with a 500 ms interval.
 
 The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
-owns lifecycle/status/failure value types. `AntennaControlLane` owns admission and
-timeout handling, `AntennaSwitchController` coordinates the configured set and optional
+owns lifecycle/status/failure value types. `ScheduledTaskRunner` supplies reusable admission/timeout task handling, `AntennaSwitchController` coordinates the configured set and optional
 multiplex group, and `ManagedAntenna` owns one physical antenna's power/probe/initialize/
 inventory sequence. This split is justified by concrete responsibilities; it is not a
 generic command/query framework. Public manager operations remain activate/deactivate,
@@ -1473,8 +1472,8 @@ TagProcessor(
     SerialScheduledExecutor executor)
 ```
 
-`TimingApplicationRuntime.create(...)` does not expose a TagRegistrationMapper
-parameter. Normal and simulated compositions construct/use EventData and then use
+`TimingApplicationRuntime.create(...)` does not expose a separate tag-to-registration
+mapper parameter. Normal and simulated compositions construct/use EventData and then use
 the same TagProcessor path.
 
 `TagProcessingPolicy` continues to own quiet timeout, maximum passage duration,
