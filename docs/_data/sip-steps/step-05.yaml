@@ -3,11 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-06'
     change: >-
-      A01 requalification is complete on Java main with EventData-based
-      TagId-to-RegistrationId resolution and the normal AntennaManager ->
-      TagProcessor -> TimingNode -> persistence/LogBook path. V04 is now active;
-      Java #287 implements the typed provider discovery needed for its external
-      provider verification.
+      A01 requalification completed with EventData and the normal registration
+      path; V04 is active and Java #287 supplies typed provider discovery.
   - date: '2026-10-04'
     change: >-
       D05 runtime measurement design is complete; A01 remains active because the
