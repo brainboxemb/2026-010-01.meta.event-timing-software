@@ -746,7 +746,7 @@ validated Config
             -> AntennaManager.activate()
        -> startup application actions
             -> AntennaManager.checkHealth()
-       -> reconcile current application state
+       -> initialize tracked ApplicationProperty values
   -> PresentationRuntime.activate()
 ```
 
@@ -763,14 +763,48 @@ checks, reconcile application state, discover components or contain device-speci
 policy. Conductor owns those decisions.
 
 Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
-application worker. Because local `Event<T>` delivery is synchronous, event callbacks
-into Conductor perform only bounded admission/change signalling to that lane;
-cross-component behaviour never runs on the emitting TimingNode thread. Status changes
-raised while component startup is still running are coalesced as pending reconciliation.
-Conductor first finishes the ordered component activation and required startup actions,
-then reads the current authoritative state and reconciles it. Startup and later status
-changes therefore converge through the same current-state reconciliation behaviour
-without replaying stale startup snapshots.
+application worker. Application-level values that drive cross-component behaviour are
+represented explicitly as tracked `ApplicationProperty<T>` instances rather than as
+Conductor-specific reconcile flags.
+
+An `ApplicationProperty<T>` has a readable name, an authoritative value reader, the
+shared Application lane and one or more application change handlers. A source event is
+only a **change signal**: it never becomes the stored value directly. The property
+schedules its own refresh on the Application lane, reads the current authoritative value,
+compares it with the last tracked value and invokes behaviour only when the effective value
+changed. Repeated signals while one refresh is pending/running are coalesced into at most
+one follow-up refresh.
+
+The first concrete property is `TimingNode.lifecycle`:
+
+```text
+TimingNode.statusChangedEvent
+        |
+        | change signal only
+        v
+ApplicationProperty<TimingNode.Lifecycle>
+        |
+        | read TimingNodeQueries.status().lifecycle()
+        | compare with tracked current value
+        v
+lifecycle changed
+        |
+        v
+Conductor application rule
+        |
+        +--> AntennaManager inventory required = (lifecycle == OPEN)
+```
+
+Because local `Event<T>` delivery is synchronous, the event callback performs only
+bounded property signalling; cross-component behaviour never runs on the emitting
+TimingNode thread. During startup Conductor first activates components and performs
+required health work, then performs an explicit initial property refresh before startup is
+reported complete. The same property logic handles later changes without replaying stale
+event snapshots.
+
+`ApplicationProperty<T>` is deliberately not a general reactive framework, rule engine
+or dependency graph. New properties are added only for concrete application-level values
+that need tracked current state and change-driven behaviour.
 
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
 is an explicit `start()` action owned by Runtime. Runtime also owns the outer
@@ -788,7 +822,7 @@ antennaManager.tagObservedEvent(antennaId)
         .subscribe(timingNode.tagProcessor()::onTagObserved);
 
 timingNode.statusChangedEvent()
-        .subscribe(conductor::onTimingNodeStatusChanged);
+        .subscribe(conductor.timingNodeLifecycleProperty().changeSignal());
 ```
 
 For semantic local events, accessor names describe the fact that happened and end in
@@ -825,6 +859,7 @@ timing-point-core.jar
     ConfigurationControl.java
     Conductor.java
     ComponentLifecycleManager.java
+    ApplicationProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
