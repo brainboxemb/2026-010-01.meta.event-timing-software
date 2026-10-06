@@ -439,29 +439,27 @@ For antennas:
 AntennaManager
     owns:
       lifecycle/status boundary
-      startup self-test admission
-      inventory intent admission
-
-InventoryController
-    owns:
-      requested/applied inventory reconciliation
-      enable/disable task admission
-      switch-task lifetime
+      requested/applied inventory setting
+      task admission/cancellation
 
 task/
     owns:
       cooperative multi-step device sequences
+      task-local state such as antenna index, phase and switch position
 
-AntennaSwitchController
+ManagedAntenna
     owns:
-      current/next multiplex member only
+      direct one-antenna device actions + runtime state
 ```
+
+There is deliberately no second inventory or switching controller. Switching is one
+cooperative state machine (`AntennaSwitchTask`) owned by the manager's reusable task set.
 
 **Avoid**
 
-Putting startup self-test, power sequencing, initialization, recovery or a generic
-`CompletableFuture` sequence engine inside `AntennaSwitchController` or back into
-`AntennaManager`.
+Adding an `InventoryController` or `AntennaSwitchController` merely to move parts of the
+same manager decision into another object. Also avoid putting device sequencing back into
+`AntennaManager`; the manager chooses and admits a task, while the task owns its steps.
 
 If several components genuinely need the same low-level scheduling primitive, that
 primitive may live in Platform. Component policy stays with the component.
@@ -775,7 +773,7 @@ final class InventoryDisableTask implements CooperativeTask {
 }
 ```
 
-with one `InventoryDisableTask` owned by the antenna manager/runtime controller.
+with one `InventoryDisableTask` owned by the manager's reusable `AntennaTasks` set.
 
 **Avoid**
 
