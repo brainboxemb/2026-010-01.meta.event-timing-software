@@ -1039,6 +1039,60 @@ continuation so the structure remains visible.
 
 ---
 
+### DR-19 — Deactivation is not destruction
+
+**Rule**
+
+A software component that exposes `activate()` and `deactivate()` is normally reusable:
+
+```text
+NEW -> ACTIVE -> INACTIVE -> ACTIVE -> INACTIVE ...
+```
+
+`NEW` means only that the component has never been activated. It must not be used as a
+synonym for "activation is allowed".
+
+Use a separate terminal lifecycle operation such as `close()`, `shutdown()` or
+`dispose()` only when the object really cannot be activated again afterwards.
+
+**Why**
+
+Component lifecycle and execution-resource lifecycle are different concerns. Treating every
+deactivation as object destruction makes composition brittle and forces callers to rebuild
+objects merely to restart behaviour.
+
+**Example**
+
+Prefer:
+
+```java
+checkState(
+        state == State.NEW || state == State.INACTIVE,
+        "AntennaManager cannot activate from %s",
+        state);
+```
+
+or an equivalent compact check that fits within the 120-character line limit.
+
+The same principle applies to serial lanes: stopping a logical lane must not automatically
+destroy the externally owned physical worker, and a cleanly stopped lane may be started
+again. A failed lane remains a separate terminal/faulted case unless recovery is explicitly
+designed.
+
+**Avoid**
+
+```java
+checkState(state == State.NEW, "...");
+```
+
+for an ordinary reusable component merely because its first implementation happened to be
+activated only once by Runtime.
+
+Also avoid calling a terminal provider `shutdown()` from ordinary component
+`deactivate()` if that would make later activation impossible.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1059,7 +1113,8 @@ For Java component changes, a reviewer can use this short check:
 14. **Contract checks** — Are programming-contract failures expressed compactly without hiding normal control flow?
 15. **Async readability** — Are event and lane boundaries named instead of hidden in nested lambdas?
 16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
-17. **Tests** — Is the risky behaviour tested, not only the happy path?
+17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
+18. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
