@@ -103,6 +103,53 @@ reading order or implementation sequence.
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
 | UC-020 | Diagnose degraded TimingNode startup | Operator / platform | Keep the application diagnosable when one TimingNode cannot restore its local state. |
 
+:::{uc} Recover or reinitialise RFID equipment  
+:id: UC-004  
+
+**Goal:** restore an RFID antenna/device after startup self-test, initialization,
+inventory or protocol failure without restarting the complete SI-01 process or losing
+committed timing state.
+
+**Primary actor:** operator / system.
+
+**Preconditions:**
+
+- SI-01 is running and the configured antenna remains part of the active composition;
+- the antenna may have failed an earlier startup self-test or runtime operation;
+- committed TimingData is independent from the antenna control lifecycle.
+
+**Main flow:**
+
+1. SI-01 attempts the configured startup self-test and exposes its result as diagnostic
+   antenna status.
+2. Later, inventory is required because normal system control requests it, or an operator
+   explicitly requests a new recovery/inventory attempt through a supported control
+   interface.
+3. SI-01 starts a new antenna preparation/inventory attempt even when an earlier self-test
+   or runtime attempt failed.
+4. The antenna is powered/prepared/initialized as required by its configuration and
+   provider.
+5. If preparation succeeds, inventory starts and current antenna status reflects the
+   recovered operational state.
+6. Existing committed TimingData and unrelated healthy antennas remain unaffected.
+
+**Alternative / failure flows:**
+
+- if the new preparation/inventory attempt fails, SI-01 records/exposes that failure and
+  stops or powers down the affected antenna as needed for a safe retry;
+- a failed attempt does not permanently disable the antenna: a later explicit request is
+  a new recovery attempt;
+- repeated failures of one antenna do not prevent independent healthy antennas from
+  operating;
+- application-wide configuration errors or a deliberately disabled capability may reject
+  the request because there is no valid antenna operation to retry.
+
+**Observable result:** antenna failure is recoverable operational state, not a permanent
+lifecycle terminal state. The operator/system can request another attempt without process
+restart, while diagnostics retain the latest failure/recovery information.
+
+:::
+
 :::{uc} Diagnose degraded TimingNode startup  
 :id: UC-020  
 
