@@ -25,8 +25,6 @@ TimingApplication
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
-        +-- TimeSource             absolute time / controllable test offset
-        |
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
@@ -37,7 +35,7 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- RaceData
+              +-- EventData
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -134,8 +132,6 @@ TimingApplication
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
-        +-- TimeSource             absolute time / controllable test offset
-        |
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
@@ -146,7 +142,7 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- RaceData
+              +-- EventData
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -157,7 +153,7 @@ Shared Domain contract:
 The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates.
 
 Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
-`UpstreamMessagePort`, `TimeSource` and heartbeat/ping semantics. `SystemStatus` is the
+`UpstreamMessagePort`, `UpstreamProtocol` context and heartbeat/ping semantics. `SystemStatus` is the
 complete current operational overview of that TimingSystem, not a single health
 flag. It may include its TimingNode states, antenna/device availability, whether
 a display is connected, keypad/beeper availability, device-network health,
@@ -166,11 +162,11 @@ implementations report semantic status into this overview without becoming part
 of the Domain model. Those semantics remain isolated per simulated/hosted system
 rather than being application-global.
 
-`TimeSource` is also per TimingSystem. In production it can delegate to the
-platform wall clock. In simulation/test it may be controlled independently,
-including a programmable offset or stepped time, so several TimingSystems hosted
-in one process can intentionally observe different absolute times. Duration and
-timeout semantics remain separate and use a monotonic source where appropriate.
+`PlatformEnvironment` is composed by Runtime and supplies the absolute wall
+clock plus a monotonic elapsed-time source. Domain state consumes semantic
+timestamps/durations without owning another per-TimingSystem clock object.
+Simulation can provide a controlled PlatformEnvironment when deterministic time
+behaviour is required.
 
 Each TimingNode contains one passive `LogBook`. The LogBook keeps the node's
 committed timing history as 0..N immutable `TimingData` values. The same
@@ -185,7 +181,7 @@ consume the common API without becoming alternative owners of IF-05 semantics.
 
 A TimingNode is the active serialization boundary for its mutable per-node
 state. Its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and
-`RaceData` objects remain passive state holders. Concrete queue/thread choices
+`EventData` objects remain passive state holders. Concrete queue/thread choices
 belong to detailed design.
 
 `UpstreamProtocol` is a Domain protocol owned in the context of one
