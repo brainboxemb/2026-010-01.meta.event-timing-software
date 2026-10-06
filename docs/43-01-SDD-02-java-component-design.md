@@ -358,6 +358,11 @@ create, configure or shut down the physical worker themselves. Closing a logical
 therefore never shuts down a shared worker. Runtime retains physical-worker lifecycle
 ownership.
 
+Logical execution identity belongs to the component/lane (`TimingNode`,
+`TagProcessor`, `Conductor` or `AntennaManager`). Physical executor/thread identity
+belongs to the Runtime-owned worker role. Multiple lanes sharing one backing worker remain
+separate ordering/admission boundaries.
+
 The current Java baseline uses one physical worker for each of these Runtime roles:
 
 ```text
@@ -581,7 +586,7 @@ application
   configuration semantics
 
 domain
-  domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
+  domain model, semantic ports, TimingData representation/codec and UpstreamProtocol semantics
 
 io
   hardware, messaging and storage adapters
