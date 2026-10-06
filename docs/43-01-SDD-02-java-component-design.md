@@ -1339,19 +1339,19 @@ The Java antenna boundary separates device lifecycle from decoded observation pr
 
 ### Antenna and manager
 
-`Antenna` represents one configured logical antenna capability. It owns the decoded
-observation event and the provider-specific device/session mechanics needed for probing,
-initialization and inventory control.
+`Antenna` represents one configured logical antenna/device capability. It owns the
+decoded observation event and provider-specific device/session mechanics needed for
+startup self-test, initialization and inventory control.
 
 The application-facing and device-facing lifecycle words are kept distinct. TimingNode
 uses `OPEN` / `CLOSED`; antenna/provider cleanup uses `shutdown()` rather than
-`close()` so a device cleanup operation is not confused with TimingNode state.
+`close()` so device cleanup is not confused with TimingNode state.
 
 Illustrative provider shape:
 
 ```java
 interface Antenna {
-    AntennaInfo probe();
+    AntennaInfo selfTest();
 
     void initialize();
 
@@ -1367,53 +1367,70 @@ interface Antenna {
 }
 ```
 
-`probe()` is a one-shot health/compatibility action. It opens/starts the provider as
-needed, performs the provider-specific hello/identity/version exchange and returns the
-decoded `AntennaInfo`. Probe is not an on/off operating mode and it does not leave
-inventory running.
-
+`selfTest()` is the startup device check and has PASS/FAIL semantics at manager level.
+It may return decoded identity/version information for diagnostics, but SI-01 does not
+model a parallel antenna-health state machine merely to represent startup progress.
 `initialize()` prepares the provider for normal use. `startInventory()` and
-`stopInventory()` control RFID observation delivery. `shutdown()` releases provider
-resources and is valid even when normal initialization never completed successfully.
+`stopInventory()` control observation delivery. `shutdown()` releases provider
+resources and remains valid when initialization did not complete successfully.
 
 #### Coordination ownership
 
 Application intent and device mechanics are separate responsibilities:
 
 ```text
-TimingNode state / application startup
-                 |
-                 v
-             Conductor
-       decides what is required
-                 |
-                 v
-          AntennaManager
-   reconciles desired -> actual state
-        /                       \
-       v                         v
-ManagedAntenna(s)       AntennaSwitchController
-power/probe/init/       multiplex-group rotation
-inventory/recovery      only
-       |
-       v
-    Antenna
- provider/device operations
+TimingNode state
+      |
+      v
+  Conductor
+decides inventory intent
+      |
+      v
+AntennaManager
+reconciles requested -> applied setting
+      |
+      +--> SelfTestTask
+      +--> inventory task(s)
+      |
+      +--> ManagedAntenna(s)
+      |       |
+      |       +--> Antenna
+      |       +--> optional PowerDevice
+      |
+      +--> AntennaSwitchController
+              inventory hand-off only
 ```
 
-`Conductor` owns cross-component application decisions. It decides when startup health
-checking is required and whether antenna inventory must be enabled or disabled because of
-TimingNode state. It does not issue device-mechanism commands such as power-on,
-initialize, power-cycle or provider retry.
+`Conductor` owns cross-component application decisions. It requests inventory enabled
+or disabled from TimingNode state. It does not issue device-mechanism commands such as
+power-on, initialize, power-cycle or reader switching.
 
-`AntennaManager` owns the configured 1..N antennas for one TimingSystem and the
-installation-level lifecycle needed to realise those decisions. It owns optional external
-power control, power-stabilization waits, health checks, initialization, inventory
-start/stop, failure state and recovery/reinitialization.
+`AntennaManager` owns the configured 1..N antenna control capability for one
+TimingSystem. It owns the requested inventory setting and starts the operation task needed
+to reconcile requested state with physically applied state.
 
-Activating `AntennaManager` only makes its logical control capability operational.
-Activation itself does not perform a hidden hardware probe. Startup health checking is an
-explicit application action coordinated by `Conductor`.
+The manager uses a small `Setting<Boolean>` for inventory intent:
+
+```text
+requestedValue
+appliedValue
+changePending = requestedValue != appliedValue
+```
+
+`Setting` owns no executor, lifecycle, retry policy or device action. The manager calls
+`markApplied(value)` only after that physical transition has completed successfully. A
+newer request may therefore arrive while an older transition is executing; once the older
+transition completes, `changePending` still exposes whether another transition is needed.
+
+Device objects and configuration remain separate concepts. `Antenna` and
+`PowerDevice` are device objects. Stabilization duration, inventory-group membership and
+switch interval are configuration/composition data. Runtime/composition binds those inputs
+when constructing manager-owned runtime state; a public "installation" value must not
+become a mixed device-plus-configuration abstraction merely for constructor convenience.
+
+Activating `AntennaManager` starts the startup self-test asynchronously. Activation does
+not wait for antenna power stabilization or provider I/O, so Presentation startup can
+continue while the manager is busy/not-ready.
 
 #### Temporary Windows development default
 
@@ -1427,12 +1444,13 @@ and no explicit antenna composition available yet
         |
         v
 ANT1 -> built-in SimulatedAntenna
+        + optional SimulatedPowerDevice
         |
         v
 normal AntennaManager
         |
         v
-Conductor lifecycle + health + inventory intent
+asynchronous self-test + inventory intent
 ```
 
 This fallback is a development/platform default, not a silent physical-reader substitute.
@@ -1447,56 +1465,48 @@ Explicit IF-11 antenna configuration takes precedence as soon as that mapper/com
 path is implemented. The fallback does not redefine the IF-11 antenna schema or provider
 selection rules.
 
-#### Startup health check
+#### Startup self-test
 
-SI01-REQ-052 requires SI-01 to attempt a startup health probe for each configured antenna.
-The application coordination flow is:
+Startup uses one explicit asynchronous self-test task:
 
 ```text
-Runtime starts shared workers
+AntennaManager.activate()
         |
         v
-Conductor activates application components
+SelfTestTask
+
+for each configured antenna:
+    optional power ON
         |
-        +--> AntennaManager.activate()
-        |       control lane ready; no hardware action yet
+        +-- AFTER(stabilization)
+        v
+    Antenna.selfTest()
         |
-        +--> AntennaManager.checkHealth()
-                    |
-                    +--> for each configured antenna
-                           |
-                           +--> optional external power ON
-                           +--> stabilization delay
-                           +--> Antenna.probe()
-                           +--> record health / compatibility result
-                           +--> optional power OFF
-                                when inventory is not required
+        +-- AGAIN
+        v
+    optional power OFF
+
+all PASS -> manager ready
+any FAIL -> manager remains active but not ready
 ```
 
-Failure of one health-check sequence leaves that antenna represented as unavailable/error
-and does not stop checks or later operation of independently healthy antennas.
+The task is a cooperative state machine and runs one logical step per turn. Deliberate
+stabilization waits release the shared physical I/O worker. A failed antenna records its
+failure; startup result is PASS only when every required configured antenna passes.
 
-Health and operational state are separate concepts. A successful probe followed by power
-off must not be represented ambiguously as if the antenna were both operationally ready
-and physically active.
+Startup self-test result and normal operating state remain separate. The antenna operation
+state is limited to the lifecycle needed for normal control:
 
-The Java status model keeps four dimensions distinct:
+```text
+INACTIVE -> PREPARING -> READY -> INVENTORY
+                              |
+                              +--> stop -> READY
 
-| Scope | Value | Meaning |
-| --- | --- | --- |
-| AntennaManager lifecycle | `NEW / ACTIVE / DEACTIVATING / INACTIVE / FAILED` | whether the software component/control lane can perform its role |
-| antenna-set health | `UNKNOWN / HEALTHY / DEGRADED / FAILED` | aggregate availability of the configured antenna set |
-| one antenna health | `UNKNOWN / CHECKING / HEALTHY / FAILED` | result/current progress of device health checking |
-| one antenna operation | `INACTIVE / PREPARING / READY / INVENTORY / SHUTDOWN` | current device preparation/inventory lifecycle |
+shutdown -> SHUTDOWN
+```
 
-For example, after a successful startup probe with external power removed, the antenna is
-`HEALTHY + INACTIVE`. `READY` is reserved for an antenna that has been initialized and
-kept prepared so inventory can start without repeating preparation.
-
-Failure of one configured antenna therefore changes antenna-set health to `DEGRADED`
-while AntennaManager itself remains `ACTIVE`, provided the manager/control lane can
-still perform its role. `AntennaManager.State.FAILED` is reserved for failure of that
-software/control capability rather than being another spelling of degraded device health.
+After a successful self-test with external power removed, the antenna is therefore
+self-test PASS + `INACTIVE`, not artificially `READY`.
 
 #### TimingNode-driven inventory actions
 
