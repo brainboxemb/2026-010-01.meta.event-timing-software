@@ -1395,18 +1395,17 @@ decides inventory intent
       |
       v
 AntennaManager
-reconciles requested -> applied setting
-      |
-      +--> SelfTestTask
-      +--> inventory task(s)
+owns lifecycle + inventory intent
       |
       +--> ManagedAntenna(s)
       |       |
+      |       +--> reusable SelfTestTask
       |       +--> Antenna
       |       +--> optional PowerDevice
+      |       +--> selfTestCompletedEvent
       |
-      +--> reusable task set
-              including AntennaSwitchTask
+      +--> reusable InventoryTask
+      +--> reusable AntennaShutdownTask
 ```
 
 `Conductor` owns cross-component application decisions. It requests inventory enabled
@@ -1438,9 +1437,12 @@ switch interval are configuration/composition data. Runtime/composition binds th
 when constructing manager-owned runtime state; a public "installation" value must not
 become a mixed device-plus-configuration abstraction merely for constructor convenience.
 
-Activating `AntennaManager` starts the startup self-test asynchronously. Activation does
-not wait for antenna power stabilization or provider I/O, so Presentation startup can
-continue while the manager is busy/not-ready.
+Activating `AntennaManager` starts each managed antenna self-test asynchronously.
+The manager does not own the self-test steps and does not wait for provider I/O.
+Each `ManagedAntenna` runs its reusable self-test task on the shared serial task runner
+and emits `selfTestCompletedEvent` when its operation is complete. The manager admits
+that completion fact back onto its own serial lane. Presentation startup can therefore
+continue while one or more antenna self-tests are still in progress.
 
 #### Temporary Windows development default
 
@@ -1477,32 +1479,46 @@ selection rules.
 
 #### Startup self-test
 
-Startup uses one explicit asynchronous self-test task:
+Startup self-test is event-driven at the manager boundary:
 
 ```text
 AntennaManager.activate()
         |
-        v
-SelfTestTask
+        +--> ANT1.startSelfTest()
+        +--> ANT2.startSelfTest()
+              ...
+              |
+              v
 
-for each configured antenna:
-    optional power ON
-        |
-        +-- AFTER(stabilization)
-        v
-    Antenna.selfTest()
-        |
-        +-- AGAIN
-        v
-    optional power OFF
+ManagedAntenna
+  SelfTestTask:
+    POWER_ON
+       |
+       +-- AFTER(stabilization)
+       v
+    provider selfTest
+       |
+       +-- AGAIN
+       v
+    POWER_OFF
+       |
+       v
+    selfTestCompletedEvent(result)
+              |
+              v
+AntennaManager serial lane
 
 all PASS -> manager ready
 any FAIL -> manager remains active but not ready
 ```
 
-The task is a cooperative state machine and runs one logical step per turn. Deliberate
-stabilization waits release the shared physical I/O worker. A failed antenna records its
-failure; startup result is PASS only when every required configured antenna passes.
+The configured stabilization interval is an actual physical wait and therefore uses
+`AFTER(delay)`. Completion of the self-test itself is not inferred from a delay:
+the managed antenna owns that operation and publishes the completion/result event.
+The current public/reference provider call may still be synchronous internally and simply
+runs on the antenna task turn. A future real provider may use callbacks, protocol events,
+bounded polling or its own cooperative task internally without changing the manager
+contract.
 
 Startup self-test result and normal operating state remain separate. The antenna operation
 state is limited to the lifecycle needed for normal control:
@@ -1607,8 +1623,9 @@ policy.
 #### Execution and delayed device work
 
 AntennaManager owns one project `SerialScheduledExecutor` logical control lane on the
-Runtime-owned scheduled I/O-role worker. Multi-step manager operations are represented as
-cooperative tasks executed by `ScheduledTaskRunner`.
+Runtime-owned scheduled I/O-role worker. The same `ScheduledTaskRunner` executes the
+manager-owned reusable inventory/shutdown tasks and the managed-antenna self-test tasks.
+This does not add physical threads.
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1621,17 +1638,16 @@ cooperative tasks executed by `ScheduledTaskRunner`.
                ScheduledTaskRunner
                   /             \
                  v               v
-          SelfTestTask     inventory task(s)
-                 \               /
-                  v             v
-               ManagedAntenna(s)
-                    |       |
-                    v       v
-                Antenna   PowerDevice
-
-after preparation of a multiplex group:
-        AntennaSwitchTask
-        owns WAIT / STOP_CURRENT / START_NEXT state
+       ManagedAntenna        AntennaManager
+         SelfTestTask         InventoryTask
+             |                    |
+             v                    v
+      Antenna / PowerDevice   ManagedAntenna(s)
+             |
+             v
+  selfTestCompletedEvent
+             |
+             +----> manager serial-lane admission
 ```
 
 Each cooperative task executes one logical step per turn and returns `AGAIN`,
@@ -1641,26 +1657,32 @@ Antenna-specific code must not rebuild these mechanics with ad-hoc
 `CompletableFuture.thenCompose(...)` chains.
 
 For antenna control, one task turn corresponds to at most one direct physical device
-action. `ManagedAntenna` keeps runtime state/status and exposes direct operations; it does
-not contain multi-step workflows. Representative state machines are:
+action. `ManagedAntenna` owns one reusable `SelfTestTask`; `AntennaManager` owns one
+reusable `InventoryTask` for enable, disable and multiplex switching plus one reusable
+shutdown task.
+
+Representative state machines are:
 
 ```text
-SelfTestTask
-  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> AGAIN -> POWER_OFF
+ManagedAntenna SelfTestTask
+  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> POWER_OFF -> event
 
-InventoryEnableTask
-  POWER_ON -> AFTER(stabilization) -> INITIALIZE -> AGAIN -> START_INVENTORY
+InventoryTask
+  requested OFF:
+    STOP_INVENTORY -> POWER_OFF -> applied=false
 
-InventoryDisableTask
-  STOP_INVENTORY -> AGAIN -> POWER_OFF
+  requested ON:
+    POWER_ON -> AFTER(stabilization) -> INITIALIZE -> START_INVENTORY
+    -> applied=true
 
-AntennaSwitchTask
-  WAIT(interval) -> STOP_CURRENT -> AGAIN -> START_NEXT -> AGAIN -> WAIT(interval)
+  multiplex while requested ON:
+    WAIT(interval) -> STOP_CURRENT -> START_NEXT -> WAIT(interval)
 ```
 
-This split makes yield points explicit and keeps switching simple: initialization is
-finished before the switch task starts, and the switch task only transfers active inventory
-between already-prepared antennas.
+The inventory task re-reads the requested `Setting<Boolean>` on each turn. A changed
+request therefore changes the next direction of the same long-lived state machine rather
+than causing a second inventory controller or a new enable/disable task object to be
+constructed.
 
 A synchronous provider method such as `selfTest()`, `initialize()`,
 `startInventory()` or `stopInventory()` still occupies the worker for the duration of
