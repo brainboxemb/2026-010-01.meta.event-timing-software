@@ -1643,6 +1643,28 @@ uses a timer registration and does not occupy the physical worker while waiting.
 Antenna-specific code must not rebuild these mechanics with ad-hoc
 `CompletableFuture.thenCompose(...)` chains.
 
+For antenna control, one task turn corresponds to at most one direct physical device
+action. `ManagedAntenna` keeps runtime state/status and exposes direct operations; it does
+not contain multi-step workflows. Representative state machines are:
+
+```text
+SelfTestTask
+  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> AGAIN -> POWER_OFF
+
+InventoryEnableTask
+  POWER_ON -> AFTER(stabilization) -> INITIALIZE -> AGAIN -> START_INVENTORY
+
+InventoryDisableTask
+  STOP_INVENTORY -> AGAIN -> POWER_OFF
+
+AntennaSwitchTask
+  WAIT(interval) -> STOP_CURRENT -> AGAIN -> START_NEXT -> AGAIN -> WAIT(interval)
+```
+
+This split makes yield points explicit and keeps switching simple: initialization is
+finished before the switch task starts, and the switch task only transfers active inventory
+between already-prepared antennas.
+
 A synchronous provider method such as `selfTest()`, `initialize()`,
 `startInventory()` or `stopInventory()` still occupies the worker for the duration of
 that call. Cooperative scheduling cannot make a blocking provider API non-blocking. A real
