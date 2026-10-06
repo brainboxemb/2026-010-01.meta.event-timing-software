@@ -1270,6 +1270,38 @@ Activating `AntennaManager` only makes its logical control capability operationa
 Activation itself does not perform a hidden hardware probe. Startup health checking is an
 explicit application action coordinated by `Conductor`.
 
+#### Temporary Windows development default
+
+Until the normal runtime mapper composes the full IF-11 antenna configuration, the Windows
+development platform uses one explicit fallback so AntennaManager is exercised by the
+normal executable:
+
+```text
+PlatformEnvironment = WINDOWS
+and no explicit antenna composition available yet
+        |
+        v
+ANT1 -> built-in SimulatedAntenna
+        |
+        v
+normal AntennaManager
+        |
+        v
+Conductor lifecycle + health + inventory intent
+```
+
+This fallback is a development/platform default, not a silent physical-reader substitute.
+Startup logging must state clearly that the Windows default selected a simulated antenna
+and that no physical RFID reader is in use. On non-Windows platforms, no antenna
+configuration continues to mean no AntennaManager.
+
+Operating-system identity is exposed once through `PlatformEnvironment`; Runtime and
+Application code must not scatter direct `System.getProperty("os.name")` checks.
+
+Explicit IF-11 antenna configuration takes precedence as soon as that mapper/composition
+path is implemented. The fallback does not redefine the IF-11 antenna schema or provider
+selection rules.
+
 #### Startup health check
 
 SI01-REQ-052 requires SI-01 to attempt a startup health probe for each configured antenna.
