@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify the SI-01 execution baseline: one antenna I/O-role worker handles probe, initialize, start/stop inventory and multiplex switching; shared Platform task-handling mechanics cover bounded result waiting, cancellation and delayed continuations only where needed; extend V01 to characterize thread count, effective JVM stack sizing and native/thread stack memory on Raspberry Pi Zero and Raspberry Pi 3 Model B; align the concrete composition-root name with `TimingApplicationRuntime`.
+
 - Clarify SI-01 executable composition as an explicit construct-wire-start sequence and assign cross-component application coordination to `Conductor`.
 
 - Constrain AntennaManager multiplexing to one optional 2..N-member inventory group, keep other antennas independently operable, and specify reuse of the shared `SerialExecutor` primitive plus separate manager types/logic instead of a second private control-queue implementation.
