@@ -489,29 +489,30 @@ These scenarios are used to check the logical, process, development and deployme
 
 The primary logical view is a responsibility/layer view. It describes semantic ownership and dependency direction; it does **not** prescribe one Maven artifact per layer.
 
-:::{arch} Composition  
-:id: Composition  
+:::{arch} TimingApplicationRuntime  
+:id: TimingApplicationRuntime  
 
-`Composition` is the Runtime responsibility that owns construction of the
-concrete running SI-01 object graph from validated effective configuration. It
-is a responsibility, not a requirement for a separate Java `Composition`
-object. The Java realization keeps this flow visible in
-`TimingApplicationRuntime.create(...)`. It selects and constructs the required
-Presentation, I/O, Platform and Infrastructure objects together with the
-reusable application/domain objects. Those objects retain their own layer
-ownership; Runtime only knows how this executable is assembled.
+`TimingApplicationRuntime` is the top-level Runtime composition and lifecycle
+owner for one running SI-01 process. It constructs and owns the concrete object
+graph from validated effective configuration, including the Domain, I/O,
+Application, Platform and Presentation runtime parts. Composition is behaviour
+of this runtime object, not a separate architectural component.
 :::
 
-:::{arch} Application  
-:id: Application  
+:::{arch} PresentationRuntime  
+:id: PresentationRuntime  
 
-`Application` is the architecture role for the top-level reusable Runtime
-object of one running SI-01 composition. The current Java realization names
-that object `TimingApplicationRuntime`. It owns activation/deactivation and references
-the currently composed application/domain runtime state. It is deliberately
-shown in a separate **Runtime** block rather than inside the Application layer:
-Runtime is the running container/assembly context, not application/business
-behaviour.
+`PresentationRuntime` is the Runtime-owned child that contains the concrete
+presentation adapters and their lifecycle. It activates after the core
+Domain/I/O/Application graph is ready and deactivates before those dependencies
+are torn down.
+:::
+
+:::{arch} RuntimeExecutors  
+:id: RuntimeExecutors  
+
+`RuntimeExecutors` owns the physical execution resources used by the logical
+component lanes. It owns worker lifecycle but not Domain/Application semantics.
 :::
 
 The executable has one visible composition flow. From validated configuration it proceeds in a deliberately simple order:
@@ -542,8 +543,6 @@ Application
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
-        +-- TimeSource             absolute time / controllable test offset
-        |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
               +-- LocationId
@@ -554,7 +553,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- RaceData
+              +-- EventData
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -776,7 +775,6 @@ TimingSystem (1..N per Application)
     TimingData transfer
     synchronisation / reconciliation
     ping / pong and other protocol messages
-  TimeSource                   absolute time / controllable test offset
   1..N TimingNode
     TimingNodeId              functional protocol/data identity
     LocationId
@@ -787,7 +785,7 @@ TimingSystem (1..N per Application)
     LogBook
       0..N TimingData
     NextUpTeams
-    RaceData
+    EventData
     StageTiming
     uses / produces TimingData
 
@@ -797,7 +795,7 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One `Application` hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context, one `TimeSource` and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
@@ -807,7 +805,7 @@ A TimingNode is also the **active serialization and ownership boundary** for mut
 state. State-dependent commands and consistency-sensitive reads enter one bounded serial
 execution path and are processed in order. Code outside that boundary does not directly
 read or mutate the node's lifecycle/location state or the mutable contents of its contained
-`LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData` objects. Those objects remain
+`LogBook`, `NextUpTeams`, `StageStartTimes` and `EventData` objects. Those objects remain
 passive and do not receive their own workers. A short operation on the node lane may publish
 an immutable snapshot/read view for longer work outside the lane. The LogBook keeps 0..N
 committed immutable `TimingData` values and does not own a second worker or second timing-record
@@ -1296,7 +1294,7 @@ network / OS primitives
 ```
 
 A domain or I/O component may compose a Platform primitive such as
-`SerialWorker` or `Event<T>`; the primitive itself remains unaware of
+`SerialExecutor`, `SerialScheduledExecutor`, `ScheduledTaskRunner` or `Event<T>`; the primitive itself remains unaware of
 TimingNode, TimingData, presentation or external I/O semantics.
 
 The layered view groups Platform into three small technical responsibilities:
@@ -1304,15 +1302,17 @@ The layered view groups Platform into three small technical responsibilities:
 :::{arch} PlatformExecution  
 :id: PlatformExecution  
 
-`PlatformExecution` owns reusable execution primitives such as bounded serial
-execution and the low-level executor/thread abstractions behind them. It does not
-own TimingNode state or domain policy.
+`PlatformExecution` owns the reusable bounded serial execution primitives
+`SerialExecutor` and `SerialScheduledExecutor`. It also provides the optional
+`ScheduledTaskRunner` helper for bounded result waiting, cancellation
+propagation and delayed continuations on an existing scheduled serial lane.
+These mechanisms own no TimingNode state or domain policy.
 :::
 
 :::{arch} PlatformEvents  
 :id: PlatformEvents  
 
-`PlatformEvents` supplies the small typed local-event mechanism used for
+`PlatformEvents` supplies the small typed `Event<T>` / `EventSource<T>` local-event mechanism used for
 post-fact notifications. Event instances remain owned by the component that
 publishes them; Platform does not provide a central event bus.
 :::
@@ -1320,16 +1320,18 @@ publishes them; Platform does not provide a central event bus.
 :::{arch} PlatformEnvironment  
 :id: PlatformEnvironment  
 
-`PlatformEnvironment` groups low-level clock/time, filesystem/path,
-process/runtime and network/OS abstractions. Concrete class and threading
-behaviour belongs to SDD-02.
+`PlatformEnvironment` is the small process/platform time boundary composed by
+Runtime. It provides the absolute wall-clock `Clock` used when externally
+meaningful timestamps are attached and the `MonotonicClock` used for elapsed
+time, timeouts, filtering windows and metrics. It is deliberately not a general
+service locator for filesystem, networking or other OS facilities.
 :::
 
 #### Runtime and infrastructure
 
 The right-hand side of the layered view separates two technical responsibilities:
 
-- **Runtime** — the running `Application`, concrete `Composition`, lifecycle coordination and the concrete running configuration tree;
+- **Runtime** — `TimingApplicationRuntime` as the top-level composition/lifecycle owner, its child `PresentationRuntime`, Runtime-owned physical execution resources and the concrete running configuration tree;
 - **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration mechanics, configuration mapping and extension discovery.
 
 :::{arch} Application configuration  
@@ -1375,7 +1377,7 @@ logging-specific TCP boundary is separate from the IF-03 API/status/event
 interface and live delivery remains best effort.
 :::
 
-`Composition` belongs to Runtime because it contains concrete knowledge of the running application graph. Infrastructure remains supporting/cross-cutting: the default YAML loader maps deployment input to effective runtime configuration, logging and diagnostics provide technical services, and extension discovery supplies selected implementations. The executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
+`TimingApplicationRuntime` owns concrete knowledge of the running application graph. Infrastructure remains supporting/cross-cutting: the default YAML loader maps deployment input to effective runtime configuration, logging and diagnostics provide technical services, and extension discovery supplies selected implementations. The executable supplies the configuration path rather than owning the parser. `LoggingServer` depends on the narrow `Logging` surface for level control/common formatting; `Logging` does not depend on or own `LoggingServer`.
 
 ### Principal runtime abstractions
 
@@ -1446,16 +1448,6 @@ those concerns do not leak into individual TimingNodes.
 :::
 
 
-:::{arch} TimeSource  
-:id: TimeSource  
-
-`TimeSource` is owned by one `TimingSystem` and provides the absolute current
-time used by that system's timing semantics. Production composition can delegate
-to the platform wall clock; simulation/test composition can use a controlled
-source with an independently programmable offset or stepped time. Multiple
-TimingSystems in one process therefore do not have to share the same simulated
-wall-clock view.
-:::
 
 The architecture deliberately uses **separate views** for software/domain decomposition, hardware/deployment topology and configuration/identity mapping. These views must not be collapsed into one ownership tree.
 
@@ -1472,8 +1464,6 @@ Application
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
-        +-- TimeSource             absolute time / controllable test offset
-        |
         +-- 1..N TimingNode
               +-- TimingNodeId   functional upstream/timing-data identity
               +-- LocationId
@@ -1484,7 +1474,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- RaceData
+              +-- EventData
               +-- StageTiming
               +-- uses / produces TimingData
 
