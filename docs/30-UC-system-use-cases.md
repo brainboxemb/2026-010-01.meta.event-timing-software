@@ -103,53 +103,6 @@ reading order or implementation sequence.
 | UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
 | UC-020 | Diagnose degraded TimingNode startup | Operator / platform | Keep the application diagnosable when one TimingNode cannot restore its local state. |
 
-:::{uc} Recover or reinitialise RFID equipment  
-:id: UC-004  
-
-**Goal:** restore an RFID antenna/device after startup self-test, initialization,
-inventory or protocol failure without restarting the complete SI-01 process or losing
-committed timing state.
-
-**Primary actor:** operator / system.
-
-**Preconditions:**
-
-- SI-01 is running and the configured antenna remains part of the active composition;
-- the antenna may have failed an earlier startup self-test or runtime operation;
-- committed TimingData is independent from the antenna control lifecycle.
-
-**Main flow:**
-
-1. SI-01 attempts the configured startup self-test and exposes its result as diagnostic
-   antenna status.
-2. Later, inventory is required because normal system control requests it, or an operator
-   explicitly requests a new recovery/inventory attempt through a supported control
-   interface.
-3. SI-01 starts a new antenna preparation/inventory attempt even when an earlier self-test
-   or runtime attempt failed.
-4. The antenna is powered/prepared/initialized as required by its configuration and
-   provider.
-5. If preparation succeeds, inventory starts and current antenna status reflects the
-   recovered operational state.
-6. Existing committed TimingData and other configured antennas remain unaffected.
-
-**Alternative / failure flows:**
-
-- if the new preparation/inventory attempt fails, SI-01 records/exposes that failure and
-  stops or powers down the affected antenna as needed for a safe retry;
-- a failed attempt does not permanently disable the antenna: a later explicit request is
-  a new recovery attempt;
-- repeated failures of one antenna do not prevent independent configured antennas from
-  being operated or retried;
-- application-wide configuration errors or a deliberately disabled capability may reject
-  the request because there is no valid antenna operation to retry.
-
-**Observable result:** antenna failure is recoverable operational state, not a permanent
-lifecycle terminal state. The operator/system can request another attempt without process
-restart, while diagnostics retain the latest failure/recovery information.
-
-:::
-
 :::{uc} Diagnose degraded TimingNode startup  
 :id: UC-020  
 
@@ -330,18 +283,41 @@ time of acceptance.
 :::{uc} Recover or reinitialise RFID equipment  
 :id: UC-004  
 
-**Goal:** allow explicit operator/system recovery of an RFID device while keeping timing-system state and committed registrations intact.
+**Goal:** start a new RFID antenna operation after startup self-test, initialization,
+inventory or protocol failure without restarting SI-01 or changing committed timing data.
 
-**Primary actor:** operator, supported by health/recovery logic.
+**Primary actor:** operator / system.
+
+**Preconditions:**
+
+- SI-01 is running and the configured antenna is still part of the active composition;
+- the antenna may have failed an earlier self-test or runtime operation;
+- committed TimingData is independent from antenna control state.
 
 **Main flow:**
 
-1. SI-01 detects/reports an RFID startup, heartbeat or protocol problem.
-2. The operator sees the exact affected asset/antenna state.
-3. The operator requests reinitialisation, reconnect, reset or power-cycle according to supported recovery policy.
-4. The adapter performs the hardware/protocol recovery operation.
-5. Device state returns through `INITIALISING` to `READY`, or remains in an explicit error state.
-6. Existing committed registration/source sequence state is not reset or rewritten by device recovery.
+1. SI-01 reports the result of the startup self-test and later antenna operations.
+2. A later inventory demand occurs because a mapped TimingNode becomes OPEN or an
+   operator/API explicitly requests another inventory/start attempt.
+3. SI-01 starts a new preparation and inventory attempt even if an earlier self-test or
+   inventory attempt failed.
+4. SI-01 powers, initializes and starts the antenna as required by its configuration and
+   provider.
+5. If the attempt succeeds, inventory runs normally.
+6. Existing committed TimingData and other configured antennas remain unchanged.
+
+**Alternative / failure flows:**
+
+- if the new attempt fails, SI-01 records that failed attempt and leaves the antenna in a
+  state from which a later explicit request can try again;
+- SI-01 does not automatically loop retries solely because an attempt failed;
+- repeated failures of one antenna do not prevent independent configured antennas from
+  being operated or retried;
+- invalid configuration or a deliberately disabled capability may reject the request
+  because there is no valid antenna operation to perform.
+
+**Observable result:** a failed antenna operation does not permanently disable the
+antenna. A later inventory demand can start another attempt without restarting SI-01.
 
 :::
 
