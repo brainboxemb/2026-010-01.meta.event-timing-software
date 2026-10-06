@@ -1114,6 +1114,17 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
+The Java platform execution package also provides `ScheduledTaskRunner` as a small
+helper over an existing `SerialScheduledExecutor`. It centralizes bounded result waiting,
+timeout/cancellation propagation, asynchronous completion and delayed begin/complete
+continuations. It creates no executor, scheduler or worker.
+
+`ScheduledTaskRunner` is used only where that task-handling pattern is needed.
+AntennaManager uses it for provider/control operations. TimingNode and Conductor continue
+to use their serial execution primitives directly; TagProcessor continues to use
+`SerialScheduledExecutor` directly. Do not wrap every component merely for naming
+symmetry.
+
 The manager uses one project `SerialScheduledExecutor` control lane on one Runtime-owned
 scheduled I/O-role worker. The same worker services probe, initialize, power-control,
 start/stop inventory and multiplex switching; there is no separate initialize or switching
