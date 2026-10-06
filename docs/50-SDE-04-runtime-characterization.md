@@ -88,7 +88,13 @@ placement is owned by the SI-01 design, but the engineering requirement is:
   lane;
 - measure the cost of the bounded LogBook/history query shape under characterization;
 - capture process/JVM heap, live-thread and GC observations on demand;
-- obtain project-owned thread CPU time where the selected JVM exposes it.
+- obtain project-owned thread CPU time where the selected JVM exposes it;
+- record the configured/default JVM thread-stack size and total live thread count;
+- observe thread/native-memory reserved versus committed memory where the target
+  JVM/OS exposes reliable data for it;
+- characterize whether an explicit lower `-Xss` is useful and safe on the target
+  Raspberry Pi deployments rather than inheriting a workstation-oriented default
+  without evidence.
 
 These observations are diagnostic engineering state. They are not TimingData, domain
 state, public IF-03 semantics or a second logging/event stream.
@@ -144,6 +150,28 @@ baseline:
 - `ThreadMXBean` where per-thread CPU time is supported/enabled;
 - `MemoryMXBean`;
 - `GarbageCollectorMXBean`.
+
+Thread-stack characterization is target-sensitive. A run records the JVM's effective
+stack configuration (for example the default/effective `-Xss` or equivalent VM flag)
+together with live thread count. Where the selected HotSpot build exposes Native Memory
+Tracking or an equivalent reliable mechanism, retain reserved and committed thread-stack
+memory as engineering evidence. When that facility is unavailable on the target JVM,
+retain the exact alternative OS/JVM observation method used instead of inventing a
+portable per-thread byte count.
+
+Java stack-trace depth may be sampled to understand representative call depth, but it is
+not interpreted as exact stack bytes because Java/native/JIT frame sizes are not fixed.
+
+The first target comparison covers at least:
+
+- the simple one-antenna Raspberry Pi Zero deployment;
+- the Raspberry Pi 3 Model B deployment with the known two-antenna 500 ms multiplex
+  configuration.
+
+An explicit lower `-Xss` value is a candidate deployment tuning only after the same
+representative workloads complete safely on the target, including persistence, event
+publication, presentation and antenna lifecycle activity. Stack-size tuning must not be
+used to compensate for accidental thread proliferation.
 
 External profilers, JFR/JMC-style tooling or OS-specific samplers may be used to investigate
 a specific finding, but they are not baseline evidence until their exact tool/version and
@@ -228,6 +256,8 @@ Retain one machine-readable summary per run with at least:
 - queue-wait, execution, persistence and relevant event-delivery summaries;
 - history/query cost where exercised;
 - heap/GC/thread observations that were available;
+- effective thread-stack configuration, live thread count and, where supported,
+  reserved/committed thread-stack or native-memory observations;
 - run start/end and outcome;
 - tool/harness revision.
 
