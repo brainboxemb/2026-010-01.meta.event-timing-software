@@ -91,13 +91,15 @@ groups:
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
-  # Runtime now also owns the concrete running configuration tree.
-  layout: {x: 1170, y: 85, w: 250, h: 325}
+  # Concrete runtime owners only; composition is behaviour of TimingApplicationRuntime,
+  # not a separate pseudo-component.
+  layout: {x: 1170, y: 85, w: 250, h: 415}
 - id: crosscutting-layer
-  label: Infrastructure / cross-cutting
+  label: "Infrastructure /
+cross-cutting"
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1170, y: 430, w: 250, h: 1016}
+  layout: {x: 1170, y: 520, w: 250, h: 926}
 nodes:
 - id: local-console
   object_id: Console
@@ -234,11 +236,11 @@ nodes:
   kind: service
   notation: component
   layout: {x: 570, y: 782, w: 240, h: 50}
-- id: race-data
-  object_id: RaceData
+- id: event-data
+  object_id: EventData
   group: timing-node-aggregate
-  label: "RaceData"
-  subtitle: "participant/team/tag reference"
+  label: "EventData"
+  subtitle: "TagId / RegistrationId reference"
   kind: service
   notation: component
   layout: {x: 850, y: 782, w: 240, h: 50}
@@ -277,15 +279,6 @@ nodes:
   kind: service
   notation: component
   layout: {x: 75, y: 732, w: 220, h: 55}
-
-- id: time-source-domain
-  object_id: TimeSource
-  group: timing-system-aggregate
-  label: "TimeSource"
-  subtitle: "absolute time • controllable offset"
-  kind: service
-  notation: component
-  layout: {x: 75, y: 797, w: 220, h: 55}
 
 - id: storage-io
   object_id: Storage
@@ -377,57 +370,63 @@ nodes:
   items:
     - "SerialExecutor"
     - "SerialScheduledExecutor"
+    - "ScheduledTaskRunner"
   kind: platform
   notation: packaging-component
-  # Two concrete execution primitives are now part of the accepted design.
-  layout: {x: 55, y: 1308, w: 260, h: 95}
+  layout: {x: 55, y: 1308, w: 280, h: 115}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
   label: "Events"
   items:
     - "Event<T>"
+    - "EventSource<T>"
   kind: platform
   notation: packaging-component
-  layout: {x: 335, y: 1308, w: 180, h: 80}
+  layout: {x: 355, y: 1308, w: 180, h: 95}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer
-  label: "Environment"
+  label: "PlatformEnvironment"
   items:
-    - "clock / time"
-    - "filesystem / paths"
-    - "process / runtime"
-    - "network / OS"
+    - "Clock — absolute time"
+    - "MonotonicClock — elapsed time"
   kind: platform
   notation: packaging-component
-  # Reuse Messaging column/width; four displayed items use the same 120 px density.
-  layout: {x: 535, y: 1308, w: 260, h: 120}
+  layout: {x: 555, y: 1308, w: 300, h: 95}
 
 - id: timing-application-runtime
-  object_id: Application
+  object_id: TimingApplicationRuntime
   group: runtime-layer
-  label: "Application"
-  subtitle: "running application • lifecycle"
+  label: "TimingApplicationRuntime"
+  subtitle: "composition root • lifecycle"
   kind: crosscutting
   notation: component
   layout: {x: 1185, y: 125, w: 220, h: 75}
-- id: runtime-composition
-  object_id: Composition
+- id: presentation-runtime
+  object_id: PresentationRuntime
   group: runtime-layer
-  label: "Composition"
-  subtitle: "object graph • startup wiring"
+  label: "PresentationRuntime"
+  subtitle: "presentation adapters • lifecycle"
   kind: crosscutting
   notation: component
   layout: {x: 1185, y: 215, w: 220, h: 75}
+- id: runtime-executors
+  object_id: RuntimeExecutors
+  group: runtime-layer
+  label: "RuntimeExecutors"
+  subtitle: "physical role workers"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1185, y: 305, w: 220, h: 75}
 - id: application-configuration-runtime
   object_id: ApplicationConfiguration
   group: runtime-layer
   label: "ApplicationConfiguration"
-  subtitle: "concrete running configuration tree"
+  subtitle: "effective running configuration"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 305, w: 220, h: 85}
+  layout: {x: 1185, y: 395, w: 220, h: 85}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -435,7 +434,7 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 470, w: 220, h: 85}
+  layout: {x: 1185, y: 560, w: 220, h: 85}
 - id: logging-infra
   object_id: Logging
   group: crosscutting-layer
@@ -443,12 +442,12 @@ nodes:
   subtitle: "levels • console • retained file"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 575, w: 220, h: 85}
+  layout: {x: 1185, y: 665, w: 220, h: 85}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1185, y: 680, w: 220, h: 80}
+  layout: {x: 1185, y: 770, w: 220, h: 80}
 - id: configuration-infra
   object_id: Configuration
   group: crosscutting-layer
@@ -456,7 +455,7 @@ nodes:
   subtitle: "values • overrides • events"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 780, w: 220, h: 85}
+  layout: {x: 1185, y: 870, w: 220, h: 85}
 edges:
 - from: logging-server
   to: logging-infra
