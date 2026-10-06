@@ -973,6 +973,36 @@ characterization must demonstrate a concrete contention, latency or throughput
 problem before a role receives more physical workers. Any such change must
 preserve the component-local serial-lane semantics above.
 
+Runtime worker items are deliberately bounded. A worker item must not occupy a
+physical worker merely to wait for time to pass. Delays such as antenna power
+stabilization are represented as scheduled continuation work on the owning
+logical lane:
+
+```text
+power on
+  -> return worker
+  -> scheduled continuation after stabilization delay
+  -> probe / initialize
+```
+
+External I/O may require bounded waiting for one device/protocol operation, but a
+shared worker must not be monopolized by an unbounded wait, polling loop or sleep.
+A provider that needs long-lived blocking behaviour must expose that behaviour
+through an execution design that does not stall unrelated work on the shared
+role worker.
+
+TimingNode is a different kind of execution boundary: one admitted Domain item is
+normally processed to its semantic completion before the next item on that
+TimingNode lane. That may include short in-process state work, LogBook/persistence
+commit and publication of the resulting immutable event. TimingNode work must not,
+however, sleep for elapsed time or wait on external hardware/network activity.
+
+The one-worker I/O baseline is therefore not justified by an assumption that
+device calls are free or instantaneous. It is justified by the intended quality
+of worker items: short/bounded provider operations plus scheduled continuations
+for elapsed-time waits. Additional I/O workers remain a V01 evidence-based
+decision if independent I/O lanes later contend on genuinely blocking operations.
+
 Thread priorities are not part of correctness. The baseline uses normal/default
 JVM priority for all Runtime-owned workers; priority tuning requires measurement
 evidence and target-platform requalification.
