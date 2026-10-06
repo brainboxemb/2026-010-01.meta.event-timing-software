@@ -1151,6 +1151,11 @@ Startup/runtime callers use result-bearing manager operations when they must kno
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
 does not synchronously wait for manager control work.
 
+Concrete `Antenna` construction is passive. Creating and wiring a provider object must
+not start inventory or hidden background device activity. Hardware interaction starts only
+through the explicit probe/initialize/inventory lifecycle owned by AntennaManager. This
+keeps Runtime composition side-effect free with respect to device activation.
+
 External power switching is optional. When deployment hardware exposes it, composition
 supplies an `AntennaPowerControl` capability to the manager so the manager can order
 power-on before probe/initialize and power-off after close. An antenna provider that owns
