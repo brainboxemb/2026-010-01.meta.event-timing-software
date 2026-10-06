@@ -227,6 +227,8 @@ application/
   ConfigurationControl.java        configuration query/update use-cases
 
 infra/
+  property/
+    TrackedProperty.java
   configuration/
     ReadOnlyConfiguration.java     startup/current value + change observation
     DynamicConfiguration.java      validated runtime override/clear primitive
@@ -764,16 +766,20 @@ policy. Conductor owns those decisions.
 
 Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
 application worker. Application-level values that drive cross-component behaviour are
-represented explicitly as tracked `ApplicationProperty<T>` instances rather than as
-Conductor-specific reconcile flags.
+represented explicitly as application properties backed by the generic
+`infra.property.TrackedProperty<T>` mechanism rather than as Conductor-specific
+reconcile flags.
 
-An `ApplicationProperty<T>` has a readable name, an authoritative value reader, the
-shared Application lane and one or more application change handlers. A source event is
-only a **change signal**: it never becomes the stored value directly. The property
-schedules its own refresh on the Application lane, reads the current authoritative value,
-compares it with the last tracked value and invokes behaviour only when the effective value
-changed. Repeated signals while one refresh is pending/running are coalesced into at most
-one follow-up refresh.
+`infra.property.TrackedProperty<T>` owns only the reusable mechanism: a readable name,
+an authoritative value reader, the shared Application lane, current-value tracking,
+change detection and coalesced refresh scheduling. It has no knowledge of TimingNode,
+AntennaManager or Conductor.
+
+Concrete application properties live under `application.property`. They bind the generic
+mechanism to one application concept and expose a domain-meaningful change signal. A source
+event is only a **change signal**: it never becomes the stored value directly. The tracked
+property schedules its own refresh on the Application lane, reads the current authoritative
+value and invokes application behaviour only when the effective value changed.
 
 The first concrete property is `TimingNode.lifecycle`:
 
@@ -782,7 +788,7 @@ TimingNode.statusChangedEvent
         |
         | change signal only
         v
-ApplicationProperty<TimingNode.Lifecycle>
+application.property.TimingNodeLifecycleProperty
         |
         | read TimingNodeQueries.status().lifecycle()
         | compare with tracked current value
@@ -802,7 +808,7 @@ required health work, then performs an explicit initial property refresh before 
 reported complete. The same property logic handles later changes without replaying stale
 event snapshots.
 
-`ApplicationProperty<T>` is deliberately not a general reactive framework, rule engine
+`TrackedProperty<T>` is deliberately not a general reactive framework, rule engine
 or dependency graph. New properties are added only for concrete application-level values
 that need tracked current state and change-driven behaviour.
 
@@ -859,7 +865,8 @@ timing-point-core.jar
     ConfigurationControl.java
     Conductor.java
     ComponentLifecycleManager.java
-    ApplicationProperty.java
+    property/
+      TimingNodeLifecycleProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
