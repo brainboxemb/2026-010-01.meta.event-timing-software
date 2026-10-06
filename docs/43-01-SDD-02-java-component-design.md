@@ -1219,8 +1219,25 @@ and does not stop checks or later operation of independently healthy antennas.
 
 Health and operational state are separate concepts. A successful probe followed by power
 off must not be represented ambiguously as if the antenna were both operationally ready
-and physically active. Status should therefore distinguish health/availability from the
-current operational state such as powered/preparing/inventorying.
+and physically active.
+
+The Java status model keeps four dimensions distinct:
+
+| Scope | Value | Meaning |
+| --- | --- | --- |
+| AntennaManager lifecycle | `NEW / ACTIVE / DEACTIVATING / INACTIVE / FAILED` | whether the software component/control lane can perform its role |
+| antenna-set health | `UNKNOWN / HEALTHY / DEGRADED / FAILED` | aggregate availability of the configured antenna set |
+| one antenna health | `UNKNOWN / CHECKING / HEALTHY / FAILED` | result/current progress of device health checking |
+| one antenna operation | `INACTIVE / PREPARING / READY / INVENTORY / SHUTDOWN` | current device preparation/inventory lifecycle |
+
+For example, after a successful startup probe with external power removed, the antenna is
+`HEALTHY + INACTIVE`. `READY` is reserved for an antenna that has been initialized and
+kept prepared so inventory can start without repeating preparation.
+
+Failure of one configured antenna therefore changes antenna-set health to `DEGRADED`
+while AntennaManager itself remains `ACTIVE`, provided the manager/control lane can
+still perform its role. `AntennaManager.State.FAILED` is reserved for failure of that
+software/control capability rather than being another spelling of degraded device health.
 
 #### TimingNode-driven inventory intent
 
@@ -1377,6 +1394,11 @@ every configured interval:
 
 At most one healthy group member inventories at a time. A failed member is skipped without
 stopping healthy members.
+
+The switch is fail-safe when stopping the currently active member fails. Because that
+reader may still be inventorying, the controller must **not** start another group member.
+The failed stop is recorded on the current antenna and normal recovery/diagnostics handle
+the fault; mutual exclusion takes priority over continuing round-robin rotation.
 
 `AntennaSwitchController` owns only this round-robin selection/switching responsibility.
 It does not own:
