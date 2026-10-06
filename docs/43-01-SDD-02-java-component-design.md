@@ -25,6 +25,10 @@ This SDD refines the SI-01 SSD and SDD-01 into concrete Java structure. Applicab
 ISDs/IDDs remain the external contract; this document selects Java mechanisms that
 realise those decisions. The Java implementation and component tests are downstream.
 
+`44-01-GPD-java-design-rules.md` collects recurring non-normative Java implementation
+and review checks derived from this design. It supports code review but does not override
+this SDD or introduce product behaviour.
+
 The SSD says what the architecture must do. SDD-01 describes the LogBook/data
 flow. IDDs such as IF-05 define external/file contracts. This document picks the
 Java mechanisms that implement those decisions.
