@@ -731,7 +731,7 @@ The executable composition must remain readable as one linear construct-wire-sta
 returned `TimingApplicationRuntime` owns the lifecycle of that already composed graph. A second
 bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
 construction, but cross-component relationships and lifecycle order remain visible in
-`TimingApplicationRuntime.create(...)`. The visible composition order is:
+`TimingApplicationRuntime.create(...)`. The visible composition and startup ownership is:
 
 ```text
 validated Config
@@ -740,26 +740,43 @@ validated Config
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
-  -> component activate
-       TimingNode / TagProcessor
-       AntennaManager
-       Conductor
-       PresentationRuntime
+  -> Conductor.activate()
+       -> ComponentLifecycleManager.activateAll()
+            -> TimingNode.activate()
+            -> AntennaManager.activate()
+       -> startup application actions
+            -> AntennaManager.checkHealth()
+       -> reconcile current application state
+  -> PresentationRuntime.activate()
 ```
 
 `application.Conductor` owns application-wide coordination between already constructed
-components. Runtime creates and wires the Conductor but does not reimplement that
-coordination in component constructors or anonymous hidden wiring callbacks. Conductor
-owns one logical `SerialExecutor` application lane on a Runtime-owned application worker.
-Because local `Event<T>` delivery is synchronous, event callbacks into Conductor perform
-only bounded admission to that lane; cross-component behaviour never runs on the emitting
-TimingNode thread. `Conductor.activate()` queues a current-status reconcile on the same
-lane so startup/recovery and later status events use one behaviour path.
+components, including the ordered startup and shutdown of the application components it
+coordinates. Runtime creates and wires the Conductor but does not reimplement application
+startup policy in the composition root.
+
+Conductor uses a small `application.ComponentLifecycleManager` helper for the mechanical
+part of component lifecycle: registration, ordered `activate()`, rollback of components
+that already activated when a later activation fails, and reverse-order
+`deactivate()`. The helper does **not** decide when startup happens, perform health
+checks, reconcile application state, discover components or contain device-specific
+policy. Conductor owns those decisions.
+
+Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
+application worker. Because local `Event<T>` delivery is synchronous, event callbacks
+into Conductor perform only bounded admission/change signalling to that lane;
+cross-component behaviour never runs on the emitting TimingNode thread. Status changes
+raised while component startup is still running are coalesced as pending reconciliation.
+Conductor first finishes the ordered component activation and required startup actions,
+then reads the current authoritative state and reconciles it. Startup and later status
+changes therefore converge through the same current-state reconciliation behaviour
+without replaying stale startup snapshots.
+
 `RuntimeExecutors` construction allocates executor objects only; physical worker startup
-is an explicit `start()` action. Application objects use `activate()/deactivate()` instead
-of thread terminology. `ActivationManager` records component activation order and
-deactivates successful components in reverse order. Runtime execution resources are
-closed only after application components are inactive.
+is an explicit `start()` action owned by Runtime. Runtime also owns the outer
+`PresentationRuntime` lifecycle and activates Presentation only after Conductor has made
+the application core ready. Runtime execution resources are closed only after Conductor
+has deactivated its application components and Presentation is inactive.
 
 Cross-component event wiring is visible at the composition point. The antenna manager owns
 the concrete `Antenna` instances; it does not expose those device objects for callers to
@@ -806,10 +823,11 @@ timing-point-core.jar
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ConfigurationControl.java
+    Conductor.java
+    ComponentLifecycleManager.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
-    ActivationManager.java
     RuntimeExecutors.java
     PresentationRuntime.java
     ShutdownSignal.java
@@ -859,8 +877,10 @@ main()
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
-       -> activate components in explicit order
-       -> activate PresentationRuntime last
+       -> Conductor.activate()
+            -> ComponentLifecycleManager activates application components
+            -> Conductor performs startup health/reconcile work
+       -> PresentationRuntime.activate()
   -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
 
@@ -876,7 +896,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplicationRuntime` owns activate/deactivate lifecycle.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; `application.Conductor` owns lifecycle coordination of the application components inside that graph.
 
 ### Running configuration model
 
@@ -1174,11 +1194,13 @@ SI01-REQ-052 requires SI-01 to attempt a startup health probe for each configure
 The application coordination flow is:
 
 ```text
-Runtime activates AntennaManager
+Runtime starts shared workers
         |
-        |  control lane ready; no hardware action yet
         v
-Conductor activates / startup reconcile
+Conductor activates application components
+        |
+        +--> AntennaManager.activate()
+        |       control lane ready; no hardware action yet
         |
         +--> AntennaManager.checkHealth()
                     |
