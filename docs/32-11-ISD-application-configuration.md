@@ -161,7 +161,7 @@ Rules:
 
 - `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
-- `TimingNodeId` identifies the logical TimingNode and remains application-wide unique in the current configuration baseline;
+- `TimingNodeId` identifies the logical TimingNode, is exactly one character `A`..`Z` or `1`..`9`, and remains application-wide unique;
 - `LocationId` identifies the configured physical/event location and is not derived from `TimingNodeId`;
 - each configured `LocationId` must satisfy any compatibility constraint of the selected built-in application profile;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
@@ -228,22 +228,22 @@ io
   devices
     antennaManager
       antennas
-        ANT1
+        1
           provider: simulated
           type: rfid
-          timingNodes: [timing-node-01, timing-node-02]
+          timingNodes: [A, B]
           power
             controlRef: antenna-power-1
             stabilizationMillis: 1000
-        ANT2
+        2
           provider: simulated
           type: rfid
-          timingNodes: [timing-node-02]
+          timingNodes: [B]
           power
             controlRef: antenna-power-2
             stabilizationMillis: 1000
       inventoryGroup
-        members: [ANT1, ANT2]
+        members: [1, 2]
         intervalMillis: 500
 
   deviceNetworks
@@ -256,8 +256,9 @@ io
       displayProtocolProvider: reference
 ```
 
-`AntennaManager` is an optional configured I/O capability. When present it owns 1..N antennas. `AntennaId` is distinct from
-`TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes; this
+`AntennaManager` is an optional configured I/O capability. When present it owns 1..N antennas.
+`AntennaId` is exactly one digit `1`..`9` and is distinct from `TimingNodeId`.
+One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
 Antenna installation fields have these semantics:
@@ -421,7 +422,7 @@ presentation
   web
     endpoints (1 per TimingNode)
       web-timing-node-01
-        timingNodeId: timing-node-01
+        timingNodeId: A
         bindAddress
         port
       ...
