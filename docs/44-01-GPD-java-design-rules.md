@@ -248,6 +248,10 @@ Event wiring is completed during Runtime composition before activation. `subscri
 is therefore a composition-time operation; runtime operation is emit-only and the baseline
 `EventSource<T>` exposes no `unsubscribe(...)`.
 
+A component's `activate()`, `deactivate()`, `start()` or `close()` changes component
+or transport behaviour, not the application event graph. Do not hide subscribe/unsubscribe
+wiring inside those lifecycle methods.
+
 The `Event<T>` implementation may optimize the common 0/1-subscriber case internally.
 That optimization remains invisible to callers: zero listeners need no listener container,
 one listener may be stored directly, and only two or more listeners require an immutable
