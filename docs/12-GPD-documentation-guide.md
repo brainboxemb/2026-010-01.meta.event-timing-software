@@ -79,6 +79,7 @@ not by itself define dependency order.
 41      software-item requirements / combined specification
 42      software-item architecture
 43      software-item detailed design
+44      software-item supportive design / implementation guidance
 50–59  development environment / engineering
 60–69  verification and validation
 70–79  user / operational documentation
@@ -113,6 +114,7 @@ Current examples are:
 43-01-SDD-01-data-and-display-design
 43-01-SDD-02-java-component-design
 43-01-SDD-03-backoffice-transport-design
+44-01-GPD-java-design-rules
 
 50-SDE-01-software-development-environment
 50-SDE-02-java-build-test-toolchain
@@ -141,6 +143,8 @@ Numbering rules:
 - family `42` contains a separate SAD only when architecture is split from the SRD;
 - family `43` contains focused SDDs; a final sequence distinguishes multiple SDDs
   for the same software item;
+- family `44` contains software-item-scoped supportive design/implementation guidance
+  that is intentionally non-normative, using the software-item ID such as `44-01-GPD`;
 - repeatable generic families without a natural scope identifier put a sequence after
   the type, for example `50-SDE-01`;
 - singular generic documents do not receive a synthetic sequence only for symmetry;
@@ -195,7 +199,7 @@ allocation is already explicit.
 
 The families have these normal roles:
 
-- **GPD** records general project/support guidance when no more specific established document type fits. It is not part of the product-definition chain.
+- **GPD** records project/support guidance when no more specific established document type fits. It is not part of the product-definition chain. A software-item-scoped GPD in family `44` may derive reusable implementation/review guidance from architecture and detailed design, but does not override those authorities.
 - **SSSD** owns software-system requirements, software-item allocation, system-owned
   interface allocation and cross-item architecture.
 - **ISD** owns the semantic contract of one system-owned interface.
