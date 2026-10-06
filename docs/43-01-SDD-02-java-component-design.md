@@ -180,6 +180,10 @@ The common EventData API is intentionally independent of SI-01 runtime classes
 and JavaFX so both the Timing Point Application and engineering tools can consume
 the same event-profile semantics. Event-specific provider JARs may supply
 alternative EventData profiles through the normal typed extension mechanism.
+Runtime discovery treats `EventDataProvider` as a typed provider family parallel
+to `TimingDataProvider`; neither provider API depends on the other. `RaceData`
+remains a separate TimingNode-local mutable/runtime data source and is not part
+of the shared EventData artifact.
 
 The shared TimingData artifact has its own package root:
 

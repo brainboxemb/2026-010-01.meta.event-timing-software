@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align EventData as a shared runtime-loadable provider/profile capability parallel to TimingData while keeping RaceData TimingNode-local; improve Figure SI01-01 EventData/TimingData routing and I/O/Platform spacing.
+
 - Define shared `EventData` beside `TimingData` for runtime-loaded event profiles and multi-tag registration resolution; keep `RaceData` as TimingNode-local runtime/upstream data; preserve RegistrationId-keyed TagProcessor passage filtering while exposing per-TagId diagnostic attribution for engineering tools; place EventData parallel to TimingData in Figure SI01-01.
 
 - Align Figure SI01-01 and architecture text with the current runtime/platform model: show `TimingApplicationRuntime`, `PresentationRuntime`, `RuntimeExecutors`, `ScheduledTaskRunner`, `PlatformEnvironment` clocks and `EventData`; remove stale Runtime `Application`/`Composition`, per-TimingSystem `TimeSource`, `RaceData` mapping ownership and `SerialWorker` references.
