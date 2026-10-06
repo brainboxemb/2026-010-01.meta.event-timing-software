@@ -1,6 +1,11 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-06'
+    change: >-
+      Requalified A01 against the accepted Java runtime path and completed V04
+      typed provider verification through Java PR #302, including built-in
+      reference selection and a synthetic external provider JAR.
   - date: '2026-10-04'
     change: >-
       D05 runtime measurement design is complete; A01 remains active because the
@@ -92,13 +97,16 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: active
+    state: done
     depends_on: [D04]
     note: >-
-      Replace/qualify the Java #230 prototype against D04: Event-based
-      TagObservation(TagId, RSSI, time), AntennaManager lifecycle/probe/inventory,
-      TagProcessor RSSI + duplicate filtering, injected TagRegistrationMapper
-      and the normal TimingNode-owned registration path.
+      Requalified the simulated-input path on Java main: Event-based
+      TagObservation(TagId, RSSI, time), AntennaManager lifecycle/health/inventory,
+      EventData TagId -> RegistrationId resolution, registration-keyed duplicate
+      and passage filtering, and the normal TimingNode-owned
+      TimingData/persistence/LogBook path. Normal Windows development startup now
+      also exercises AntennaManager through the clearly logged simulated-antenna
+      platform default.
 
   - id: A02
     lane: application
@@ -180,11 +188,13 @@ activities:
   - id: V04
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A01]
     note: >-
-      Verify built-in provider selection plus one synthetic external provider
-      through the same typed startup mechanism intended for later real adapters.
+      Verified built-in EventDataProvider/TimingDataProvider selection using the
+      stable reference IDs plus one synthetic external provider JAR loaded through
+      URLClassLoader + ServiceLoader via the same typed ExtensionRegistry startup
+      mechanism. Java issue #287 / PR #302 is green and merged.
 
   - id: V05
     lane: verification
