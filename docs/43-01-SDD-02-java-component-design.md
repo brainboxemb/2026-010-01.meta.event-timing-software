@@ -283,16 +283,14 @@ io/
         Antenna.java                    device/provider lifecycle + observation contract
         SimulatedAntenna.java           built-in reference/simulation implementation
       manager/
-        AntennaManager.java             lifecycle/status + setting reconciliation + task admission
-        ManagedAntennaSet.java          configured set lookup/status/group configuration
-        ManagedAntenna.java             one-antenna direct device operations + runtime state
+        AntennaManager.java             lifecycle/status + inventory intent
+        AntennaSet.java                 composition-time antenna set + multiplex configuration
+        ManagedAntenna.java             direct one-antenna operations + runtime status
         AntennaManagerTypes.java        manager/status value types
         task/
-          AntennaTasks.java             reusable task set + narrow task execution port
-          SelfTestTask.java             startup self-test state machine
-          InventoryEnableTask.java      prepare/start inventory state machine
-          InventoryDisableTask.java     stop/power-off state machine
-          AntennaSwitchTask.java        interval/yield switching state machine
+          AntennaTasks.java             reusable task set owned by AntennaManager
+          SelfTestTask.java             complete startup self-test round
+          InventoryTask.java            enable/disable/multiplex inventory state machine
           AntennaShutdownTask.java      cooperative device shutdown
     power/
       PowerDevice.java                  external power-device contract
@@ -1397,15 +1395,15 @@ decides inventory intent
 AntennaManager
 owns lifecycle + inventory intent
       |
-      +--> ManagedAntenna(s)
-      |       |
-      |       +--> reusable SelfTestTask
-      |       +--> Antenna
-      |       +--> optional PowerDevice
-      |       +--> selfTestCompletedEvent
+      +--> AntennaSet
+      |       +--> ManagedAntenna(s)
+      |               +--> Antenna
+      |               +--> optional PowerDevice
       |
-      +--> reusable InventoryTask
-      +--> reusable AntennaShutdownTask
+      +--> AntennaTasks
+              +--> reusable SelfTestTask
+              +--> reusable InventoryTask
+              +--> reusable AntennaShutdownTask
 ```
 
 `Conductor` owns cross-component application decisions. It requests inventory enabled
@@ -1432,17 +1430,16 @@ newer request may therefore arrive while an older transition is executing; once 
 transition completes, `changePending` still exposes whether another transition is needed.
 
 Device objects and configuration remain separate concepts. `Antenna` and
-`PowerDevice` are device objects. Stabilization duration, inventory-group membership and
-switch interval are configuration/composition data. Runtime/composition binds those inputs
-when constructing manager-owned runtime state; a public "installation" value must not
-become a mixed device-plus-configuration abstraction merely for constructor convenience.
+`PowerDevice` are device objects. `AntennaSet` is the composition-time collection that
+binds those device objects to stable `AntennaId` values and stores the optional external
+power stabilization value. Multiplex membership and switch interval are configured once at
+set level. There is deliberately no per-antenna `AntennaInstallation` value.
 
-Activating `AntennaManager` starts each managed antenna self-test asynchronously.
-The manager does not own the self-test steps and does not wait for provider I/O.
-Each `ManagedAntenna` runs its reusable self-test task on the shared serial task runner
-and emits `selfTestCompletedEvent` when its operation is complete. The manager admits
-that completion fact back onto its own serial lane. Presentation startup can therefore
-continue while one or more antenna self-tests are still in progress.
+Activating `AntennaManager` starts one reusable `SelfTestTask` for the complete antenna
+set. The manager does not contain the per-antenna self-test sequence and does not wait for
+provider I/O. The task performs one physical action per turn, releases the shared worker
+during real stabilization waits and publishes one completion event when the complete round
+finishes. Presentation startup can therefore continue while self-test is in progress.
 
 #### Temporary Windows development default
 
@@ -1479,19 +1476,15 @@ selection rules.
 
 #### Startup self-test
 
-Startup self-test is event-driven at the manager boundary:
+Startup self-test is one manager-owned cooperative task:
 
 ```text
 AntennaManager.activate()
         |
-        +--> ANT1.startSelfTest()
-        +--> ANT2.startSelfTest()
-              ...
-              |
-              v
+        v
+SelfTestTask
 
-ManagedAntenna
-  SelfTestTask:
+for each ManagedAntenna:
     POWER_ON
        |
        +-- AFTER(stabilization)
@@ -1503,22 +1496,26 @@ ManagedAntenna
     POWER_OFF
        |
        v
-    selfTestCompletedEvent(result)
-              |
-              v
-AntennaManager serial lane
+next antenna
+
+round complete
+       |
+       v
+selfTestCompletedEvent(result)
+       |
+       v
+AntennaManager
 
 all PASS -> manager ready
 any FAIL -> manager remains active but not ready
 ```
 
 The configured stabilization interval is an actual physical wait and therefore uses
-`AFTER(delay)`. Completion of the self-test itself is not inferred from a delay:
-the managed antenna owns that operation and publishes the completion/result event.
-The current public/reference provider call may still be synchronous internally and simply
-runs on the antenna task turn. A future real provider may use callbacks, protocol events,
-bounded polling or its own cooperative task internally without changing the manager
-contract.
+`AFTER(delay)`. The task owns the round and its execution handle. `AntennaManager`
+subscribes once to the task completion event; it does not keep the task Future or duplicate
+the per-antenna progress state. The current provider call may still be synchronous within
+one task turn. A future provider may use callbacks, bounded polling or its own internal
+execution without changing the manager contract.
 
 Startup self-test result and normal operating state remain separate. The antenna operation
 state is limited to the lifecycle needed for normal control:
@@ -1528,7 +1525,7 @@ INACTIVE -> PREPARING -> READY -> INVENTORY
                               |
                               +--> stop -> READY
 
-shutdown -> SHUTDOWN
+shutdown -> INACTIVE
 ```
 
 After a successful self-test with external power removed, the antenna is therefore
@@ -1623,9 +1620,8 @@ policy.
 #### Execution and delayed device work
 
 AntennaManager owns one project `SerialScheduledExecutor` logical control lane on the
-Runtime-owned scheduled I/O-role worker. The same `ScheduledTaskRunner` executes the
-manager-owned reusable inventory/shutdown tasks and the managed-antenna self-test tasks.
-This does not add physical threads.
+Runtime-owned scheduled I/O-role worker. One `ScheduledTaskRunner` executes all three
+manager-owned reusable tasks. This does not add physical threads.
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1636,18 +1632,15 @@ This does not add physical threads.
                          |
                          v
                ScheduledTaskRunner
-                  /             \
-                 v               v
-       ManagedAntenna        AntennaManager
-         SelfTestTask         InventoryTask
-             |                    |
-             v                    v
-      Antenna / PowerDevice   ManagedAntenna(s)
-             |
-             v
-  selfTestCompletedEvent
-             |
-             +----> manager serial-lane admission
+                  /       |       \
+                 v        v        v
+          SelfTestTask InventoryTask ShutdownTask
+                 \        |        /
+                  \       v       /
+                   -> ManagedAntenna(s)
+                         |
+                         +--> Antenna
+                         +--> optional PowerDevice
 ```
 
 Each cooperative task executes one logical step per turn and returns `AGAIN`,
@@ -1657,15 +1650,14 @@ Antenna-specific code must not rebuild these mechanics with ad-hoc
 `CompletableFuture.thenCompose(...)` chains.
 
 For antenna control, one task turn corresponds to at most one direct physical device
-action. `ManagedAntenna` owns one reusable `SelfTestTask`; `AntennaManager` owns one
-reusable `InventoryTask` for enable, disable and multiplex switching plus one reusable
-shutdown task.
+action. `AntennaTasks` owns one reusable self-test task, one reusable inventory task and
+one reusable shutdown task for the manager.
 
 Representative state machines are:
 
 ```text
-ManagedAntenna SelfTestTask
-  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> POWER_OFF -> event
+SelfTestTask
+  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> POWER_OFF -> next antenna -> event
 
 InventoryTask
   requested OFF:
