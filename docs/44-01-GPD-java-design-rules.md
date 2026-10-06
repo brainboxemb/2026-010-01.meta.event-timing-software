@@ -4,345 +4,597 @@ Status: working project guidance
 
 ## Purpose
 
-This General Purpose Document defines the shared Java design and implementation review
-rules for **SI-01 — Timing Point Application**.
+This document contains practical Java design rules for
+**SI-01 — Timing Point Application**.
 
-The rules exist to keep equivalent component behaviour consistent across the codebase.
-They are especially intended for code review when implementation details such as event
-callbacks, queue admission, lifecycle, failure handling, logging and asynchronous work
-would otherwise be decided differently in each class.
+The purpose is simple: when we add or review Java code, equivalent problems should be
+solved in the same way. The rules mainly cover component responsibility, lifecycle,
+events, queues, asynchronous work, logging, comments and tests.
 
-This is supportive engineering guidance. It does not create product requirements or
-override the SI-01 SSD, applicable interface documents or focused SDDs.
+This document is **not** a product specification. Requirements and the 43-01-SDD design
+documents remain authoritative for product behaviour and detailed design.
 
-## Terms and abbreviations
+## Who should read this
 
-- **GPD** — General Purpose Document
-- **SI-01** — Timing Point Application
-- **SDD** — Software Design Description
-- **desired state** — application intent that a component is responsible for realizing
-- **actual state** — currently observed component/device state
-- **reconcile** — compare desired/current authoritative state and perform only the work
-  needed to bring the owned state into agreement
+This document is written **first for a human developer or reviewer**.
 
-## Relationship to other documents
+A coding agent may also use it as a checklist, but the text must remain understandable
+without knowing hidden project history. If a rule cannot be explained clearly to a human
+reviewer, the rule is not written well enough.
 
-The SI-01 SSD and applicable ISDs define required behaviour and architecture. The
-43-01-SDD documents define focused detailed design. This GPD turns recurring
-implementation lessons from those documents into one reusable Java review checklist.
+Each rule therefore uses the same structure:
 
-When a rule here conflicts with an approved requirement or focused design decision, the
-requirement/design is authoritative and this GPD must be corrected. A code change must not
-use this GPD to invent product policy that has not been specified or designed.
+- **Rule** — what we normally do;
+- **Why** — why the rule exists;
+- **Example** — how it applies in this application;
+- **Avoid** — a typical implementation that should trigger review.
 
-The Java implementation repository should use these rules during implementation and pull
-request review.
+## Useful terms
 
-## Design rules
+A few words occur repeatedly in the Java design:
 
-### DR-01 — Preserve semantic ownership
-
-A component decides only policy that belongs to its responsibility.
-
-Application coordination expresses **what is required**. A lower component that owns a
-mechanism decides **how to realize that requirement**. Do not let callers micromanage
-internal device/protocol steps merely because those steps are visible in the
-implementation.
-
-If a new retry, fallback, timeout, recovery or selection policy materially changes
-behaviour, identify the requirement/design authority before implementing it.
-
-### DR-02 — Keep construction passive
-
-Constructors validate and capture dependencies/configuration. They must not start worker
-threads, connect to external systems, power devices, start inventory, perform probes or
-register hidden cross-component behaviour unless an explicit design decision requires
-construction-time activity.
-
-Runtime side effects start through explicit lifecycle or control operations.
-
-### DR-03 — Give lifecycle operations one clear meaning
-
-Lifecycle verbs must describe one level of lifecycle.
-
-Examples:
-
-- component `activate()/deactivate()` controls whether the software component accepts and
-  performs its role;
-- TimingNode `OPEN/CLOSED` describes domain operational state;
-- device/provider initialization, inventory and shutdown are separate device operations.
-
-Do not make `activate()` silently perform unrelated application actions merely because
-startup currently needs those actions. Avoid ambiguous pairs such as `close()` when
-there was no matching semantic `open()` at that level.
-
-### DR-04 — Keep synchronous event callbacks bounded
-
-Local `Event<T>` delivery is synchronous. A callback running on the producer thread may
-validate the immutable event value and perform one bounded/non-blocking admission action.
-
-It must not perform cross-component control, blocking I/O, waits, retries or substantial
-mapping/processing on the producer thread.
-
-### DR-05 — Treat admission as one atomic decision
-
-Do not check executor/lane state immediately before calling `offer()`, `execute()` or an
-equivalent admission operation. That creates a check-then-act race and duplicates the
-admission API.
-
-Use the admission operation as the authority and handle its returned result explicitly.
+- **owner** — the component that is responsible for a piece of behaviour or state;
+- **desired state** — what the application currently wants to be true;
+- **actual state** — what is currently true in the component or device;
+- **reconcile** — read the current authoritative state and do the work needed to make the
+  owned state match what is required;
+- **serial lane** — a `SerialExecutor` or `SerialScheduledExecutor` ordering boundary.
+  A lane is not automatically its own Java thread.
 
 Example:
 
-```java
-AdmissionResult result = lane.offer(this::reconcile);
+```text
+TimingNode is OPEN
+        |
+        v
+Conductor decides:
+inventory required = true
+        |
+        v
+AntennaManager decides how:
+power -> initialize -> inventory
+```
 
-switch (result) {
-    case ACCEPTED:
-        return;
-    case FULL:
-        // record overload according to component policy
-        return;
-    case NOT_RUNNING:
-        // record lifecycle/failure context according to component policy
-        return;
-    default:
-        throw new IllegalStateException("unsupported admission result " + result);
+The Conductor owns the application decision. The AntennaManager owns the device sequence.
+
+## Design rules
+
+### DR-01 — Put a decision with the component that owns it
+
+**Rule**
+
+A component should decide only the behaviour it owns.
+
+A caller says **what it needs**. The component that owns the mechanism decides
+**how to achieve it**.
+
+**Why**
+
+Otherwise high-level classes slowly acquire knowledge about power switching, retries,
+device protocols, persistence details and other implementation mechanics. That makes both
+classes harder to change.
+
+**Example**
+
+Good:
+
+```java
+antennaManager.requestInventoryEnabled(true);
+```
+
+The Conductor says that inventory is required. AntennaManager may then power the antenna,
+wait for stabilization, initialize it and start inventory.
+
+**Avoid**
+
+```java
+antennaManager.powerOn();
+antennaManager.initialize();
+antennaManager.startInventory();
+```
+
+from Conductor. This makes Conductor responsible for AntennaManager internals.
+
+The same rule applies to recovery. Conductor may keep
+`inventory required = true`; AntennaManager owns any device recovery needed to restore
+that state.
+
+---
+
+### DR-02 — Construction should not secretly start behaviour
+
+**Rule**
+
+A constructor creates and validates an object. Runtime behaviour starts through an
+explicit operation such as `activate()`, `checkHealth()` or
+`requestInventoryEnabled(...)`.
+
+**Why**
+
+Object composition remains predictable. Creating an object should not unexpectedly start a
+thread, connect to hardware, power a device or publish events.
+
+**Example**
+
+Good:
+
+```java
+AntennaManager manager = new AntennaManager(...);
+manager.activate();
+manager.checkHealth();
+```
+
+**Avoid**
+
+A constructor that immediately probes all antennas or starts inventory.
+
+If construction has an unavoidable side effect, that must be an explicit design decision,
+not a convenience hidden in the constructor.
+
+---
+
+### DR-03 — One lifecycle word should mean one thing
+
+**Rule**
+
+Keep different lifecycle levels separate.
+
+For SI-01 we use, for example:
+
+```text
+software component      activate / deactivate
+TimingNode              OPEN / CLOSED
+antenna provider         initialize / startInventory / stopInventory / shutdown
+```
+
+**Why**
+
+Using the same word for unrelated states makes call order and failure handling difficult
+to understand.
+
+**Example**
+
+`Antenna.shutdown()` is clearer than `Antenna.close()` when there is no corresponding
+`Antenna.open()`.
+
+**Avoid**
+
+Making `AntennaManager.activate()` mean both:
+
+1. start the software component; and
+2. probe all physical antennas.
+
+Those are different actions and may be requested by different owners.
+
+---
+
+### DR-04 — A synchronous event callback must be short
+
+**Rule**
+
+A callback from local `Event<T>` may validate the event and hand work to a bounded
+serial lane. It should then return.
+
+Do not perform blocking I/O, waits, retries or cross-component control directly on the
+producer thread.
+
+**Why**
+
+Local event delivery is synchronous. Heavy work in a listener delays the component that
+published the event and can accidentally propagate downstream problems back into it.
+
+**Example**
+
+Good:
+
+```java
+public void onTimingNodeStatusChanged(Status status) {
+    requestReconcile();
 }
 ```
 
-### DR-06 — Do not leak downstream operational failures through event producers
+The callback only signals that something changed.
 
-A synchronous event producer must not unexpectedly fail because a downstream listener's
-queue is full, component is stopping, diagnostic sink failed or another coordinated
-component rejected work.
+**Avoid**
 
-The listener owns its admission/failure policy. Record the failure locally and expose it
-through the appropriate status/metrics/logging path.
-
-Programming-contract violations such as a null argument may still fail immediately where
-that is the intended API contract.
-
-### DR-07 — Never make loss invisible
-
-`FULL`, `NOT_RUNNING`, cancellation, timeout and failed asynchronous completion are not
-"nothing happened" results.
-
-When they can affect operation they must become observable through at least one appropriate
-mechanism:
-
-- current component/status state;
-- a counter/metric;
-- a log record with causal context.
-
-Do not silently return unless the event is explicitly documented as safely ignorable and
-another authoritative reconciliation path guarantees correctness.
-
-### DR-08 — Reconcile current state when history is not the requirement
-
-When a consumer needs the **latest authoritative state**, an event should normally mean
-"state changed; reconcile" rather than "execute this historical snapshot as a command".
-
-Prefer:
-
-```text
-change event
-   -> request one reconcile
-   -> read authoritative current state on owner lane
-   -> derive desired state
-   -> apply only necessary transition
+```java
+public void onTimingNodeStatusChanged(Status status) {
+    antennaManager.setInventoryEnabled(
+            status.lifecycle() == Lifecycle.OPEN);
+}
 ```
 
-over queueing every transient state snapshot.
+Here TimingNode event delivery would execute AntennaManager control directly.
 
-Coalesce duplicate reconcile requests when bursts can otherwise create redundant work.
-Coalescing must not lose a change that occurs while reconciliation is running; use a
-small pending/dirty mechanism where necessary rather than a generic framework.
+---
 
-### DR-09 — Keep commands, facts and state-change signals distinct
+### DR-05 — Let the admission operation decide whether work was accepted
 
-An immutable event value is a fact that occurred. A command expresses an action/request.
-A current-state query returns authoritative state.
+**Rule**
 
-Do not turn a state-change notification into a command merely because the event contains
-a convenient snapshot. Do not add command semantics to diagnostic/logging events.
+Call `offer()`, `execute()` or `submit()` once and handle its result.
 
-### DR-10 — Keep execution ownership visible
+Do not first inspect executor state and then perform admission.
 
-A component may own a logical serial lane without owning the physical worker behind it.
-Classes that receive an externally owned executor/lane must not shut down shared physical
-workers.
+**Why**
 
-Do not create another executor, scheduler or thread merely to avoid understanding the
-existing ownership boundary. Add physical parallelism only when design/measurement
-justifies it.
+This pattern is both redundant and race-prone:
 
-### DR-11 — Keep asynchronous sequencing with the lifecycle owner
+```java
+if (executor.state() == RUNNING) {
+    executor.offer(work);
+}
+```
 
-Multi-step asynchronous work belongs with the component that owns the lifecycle being
-implemented. Small reusable execution primitives may supply admission, delayed
-continuations, bounded waiting and cancellation mechanics.
+The executor can change state between the two calls. The admission operation already knows
+whether it can accept the work.
 
-Do not move lifecycle policy into a helper such as a switcher only because that helper can
-call all the required methods. Do not create a component-local generic
-`CompletableFuture` sequencing framework when the sequence is small and specific.
+**Example**
 
-### DR-12 — Separate status, metrics and logging
+Good:
 
-These three mechanisms answer different operational questions:
+```java
+AdmissionResult result = executor.offer(work);
+
+switch (result) {
+    case ACCEPTED:
+        break;
+    case FULL:
+        LOG.warn("...");
+        break;
+    case NOT_RUNNING:
+        LOG.debug("...");
+        break;
+    default:
+        throw new IllegalStateException(
+                "Unsupported admission result " + result);
+}
+```
+
+**Avoid**
+
+A separate `state()` check immediately before `offer()`.
+
+Also do not silently ignore `FULL` or a meaningful `NOT_RUNNING`. See DR-09 for
+observability.
+
+---
+
+### DR-06 — Use current state when only the latest state matters
+
+**Rule**
+
+When a component only needs to know **what is true now**, treat a state-change event as
+"something changed" and read the current authoritative state during reconciliation.
+
+Do not automatically treat the event snapshot as a command that must later be replayed.
+
+**Why**
+
+A queue may contain old snapshots by the time they execute.
+
+For example:
+
+```text
+OPEN -> CLOSED -> OPEN
+```
+
+If antenna behaviour only depends on the current TimingNode state, replaying all three
+snapshots creates unnecessary work and can briefly apply stale intent.
+
+**Example**
+
+Good:
+
+```text
+statusChangedEvent
+        |
+        v
+request one reconcile
+        |
+        v
+TimingNode.query(status)
+        |
+        v
+derive current inventory requirement
+```
+
+If many events arrive while one reconcile is already pending, they may be coalesced into
+one later reconcile, provided a change cannot be lost.
+
+**Avoid**
+
+Queueing every `Status` object and later executing each one as if it were a command.
+
+Not every event should be coalesced. TimingData records, registrations and other history
+that must be preserved are different: there the individual event itself matters.
+
+---
+
+### DR-07 — A downstream operational failure should stay downstream
+
+**Rule**
+
+A queue-full condition, stopped consumer or recoverable device failure should be handled by
+the component that owns that condition. Do not throw it back through an unrelated
+synchronous event producer.
+
+**Why**
+
+Otherwise a Conductor queue problem can become a TimingNode command failure simply because
+the TimingNode happened to publish an event.
+
+**Example**
+
+For a Conductor callback:
+
+```text
+offer(reconcile) -> FULL
+        |
+        +--> record diagnostic/metric
+        +--> keep failure inside Conductor
+        +--> do not throw into TimingNode event delivery
+```
+
+**Avoid**
+
+```java
+if (admission == FULL) {
+    throw new IllegalStateException(...);
+}
+```
+
+inside a synchronous event listener.
+
+Programming errors such as a required argument being `null` may still fail immediately.
+This rule is about operational failures, not hiding programming mistakes.
+
+---
+
+### DR-08 — Keep asynchronous lifecycle work with its owner
+
+**Rule**
+
+The class that owns a lifecycle should also own the sequence of asynchronous steps needed
+for that lifecycle.
+
+Helpers should remain narrow.
+
+**Why**
+
+Otherwise a helper grows into a second manager and ownership becomes unclear.
+
+**Example**
+
+For antennas:
+
+```text
+AntennaManager
+    owns:
+      health check
+      power preparation
+      initialize
+      inventory enable/disable
+      failure/recovery
+
+AntennaSwitchController
+    owns:
+      current multiplex member
+      stop current
+      start next available
+```
+
+**Avoid**
+
+Putting probing, status aggregation, power sequencing, recovery and a generic
+`CompletableFuture` sequence engine inside `AntennaSwitchController`.
+
+If several components genuinely need the same low-level scheduling primitive, that
+primitive may live in Platform. Component policy stays with the component.
+
+---
+
+### DR-09 — Status, metrics and logging have different jobs
+
+**Rule**
+
+Use the three mechanisms for different questions:
 
 ```text
 status   -> What is true now?
-metrics  -> How often / how much / how full?
+metrics  -> How often or how much?
 logging  -> What happened, in what order, and why?
 ```
 
-Do not use only metrics when chronological diagnosis is required. Do not use logs as the
-only source of current authoritative state. Do not add high-cardinality historical detail
-to status objects merely to avoid proper logging.
+**Why**
 
-### DR-13 — Log state transitions and abnormal control decisions
+One mechanism cannot replace the others.
 
-Logging must make meaningful control behaviour reconstructable after a run.
+A queue-full counter tells us that overload occurred, but not which control decision was
+being attempted at that moment. A log tells the story, but should not be used as the
+authoritative current status.
 
-Normally log:
+**Example**
 
-- component activation/deactivation failure;
-- meaningful desired-state changes when they trigger control work;
-- operational state transitions and degraded/recovered transitions;
-- queue/admission rejection that can affect behaviour;
-- timeout/cancellation/provider failure with the owning component context;
-- recovery start, retry outcome and terminal failure when recovery exists;
-- configuration changes that alter runtime control behaviour.
+A useful diagnostic sequence could be:
 
-Do **not** log every high-rate observation, queue acceptance or periodic successful
-rotation at INFO merely for traceability. Use DEBUG/TRACE-like detail only when the
-project logging stack supports it and the volume is appropriate; use metrics for rates and
-counts.
+```text
+INFO  TimingNode TN-01 status changed CLOSED -> OPEN
+INFO  Conductor TN-01 sets antenna inventory required=true
+INFO  Antenna ANT1 inventory started
+WARN  Antenna ANT1 provider failed
+INFO  Antenna ANT1 recovery started
+INFO  Antenna ANT1 inventory restored
+```
 
-Typical level intent:
+For a high-rate path such as tag observations, do **not** write an INFO log for every
+observation. Use counters/metrics and log only meaningful transitions or failures.
 
-| Level | SI-01 intent |
+Typical intent:
+
+| Level | Use |
 | --- | --- |
-| DEBUG | detailed accepted control/reconcile decisions useful during diagnosis |
-| INFO | meaningful lifecycle/desired-state/operational transitions |
-| WARN | degraded operation, rejected work, recoverable timeout/failure, skipped work |
-| ERROR | component cannot fulfil its role or an unrecoverable control failure escaped normal containment |
+| DEBUG | detailed control/reconcile information useful during diagnosis |
+| INFO | meaningful lifecycle and operational transitions |
+| WARN | degraded operation, rejected work, recoverable failure |
+| ERROR | component can no longer fulfil its role |
 
-### DR-14 — Put useful identity and cause in diagnostic records
+A useful log line normally includes the relevant stable identity, such as
+`TimingNodeId` or `AntennaId`, and the cause/reason when something failed.
 
-A diagnostic record should carry enough context to answer which component/object and why,
-without requiring the reader to correlate unrelated lines by guesswork.
+---
 
-Where applicable include stable identifiers such as TimingNodeId/AntennaId, the requested
-or desired state, the previous/current state, admission/failure reason and exception.
+### DR-10 — Comments should explain things the code cannot say clearly
 
-Avoid dumping complete mutable objects or sensitive/provider-private payloads into logs.
+**Rule**
 
-### DR-15 — Keep failure and recovery boundaries local
+Write comments and Javadoc for **ownership, lifecycle, threading, invariants and reasons**.
+Do not use comments merely to translate Java syntax into English.
 
-The component that owns a recoverable mechanism owns its recovery state. Higher layers
-retain application intent and should not repeatedly replay low-level repair commands.
+Public component boundaries should normally explain:
 
-A failure that is intentionally contained must still update visible health and diagnostic
-state. Automatic retry/backoff/limit policy requires explicit design authority; do not
-smuggle it into a catch block.
+1. what the component is responsible for;
+2. what it is deliberately not responsible for;
+3. important lifecycle/call-order rules;
+4. important threading or serial-lane assumptions.
 
-### DR-16 — Test the non-happy path that the design depends on
+**Why**
 
-When a component relies on bounded admission, lifecycle ordering, reconciliation,
-cancellation or contained failure, add focused tests for those semantics.
+A reviewer should not have to reverse-engineer a 300-line class before understanding why
+it exists or which thread is allowed to call it.
 
-At minimum, as applicable, cover:
+**Good comment**
 
-- not-running admission;
-- full/rejected admission;
-- activation/deactivation ordering;
-- stale/coalesced state-change handling;
-- timeout/cancellation;
-- contained downstream/provider failure;
-- desired-state change while asynchronous work is pending.
+```java
+/*
+ * Only one member of the multiplex group may inventory at a time.
+ * The AntennaManager serial lane is the single writer of activeIndex,
+ * so this helper needs no internal locking.
+ */
+private int activeIndex = -1;
+```
 
-A happy-path unit test is not evidence for overload or lifecycle semantics.
+This explains an invariant and why locking is absent.
 
-### DR-17 — Document non-obvious intent, ownership and constraints
+**Poor comment**
 
-Code should be understandable from its public/component boundary before a reviewer must
-reverse-engineer the implementation.
+```java
+// Increment the index.
+activeIndex++;
+```
 
-Use Javadoc or nearby comments when they explain information that is not obvious from the
-Java syntax, especially:
+The code already says that.
 
-- what a component owns and what it deliberately does **not** own;
-- lifecycle meaning and valid call order;
-- thread/lane ownership and whether a method is expected to run on a specific lane;
-- asynchronous sequencing, cancellation and stale-work guards;
-- invariants such as single-writer, at-most-one-active-member or bounded-queue behaviour;
-- why a seemingly simpler implementation would violate a requirement/design decision;
-- externally important side effects or failure-containment behaviour.
+Another warning sign is a very large comment needed to explain why one class performs many
+unrelated jobs. In that case simplify or split the code first.
 
-Public component boundaries and reusable abstractions need enough Javadoc to answer:
-**what is this for, who owns it, how is it used, and what are the important lifecycle or
-threading constraints?**
+Comments are maintained code. When ownership or behaviour changes, update or remove the
+old comment in the same pull request.
 
-Comments should explain **intent, contract or rationale**, not narrate obvious syntax.
-Avoid comments such as "increment index", "set flag" or "loop over antennas" when the code
-already says exactly that.
+---
 
-A complex method is not made acceptable merely by adding many comments. If a comment is
-needed to explain several unrelated responsibilities, first check whether the code should
-be simplified or split.
+### DR-11 — Use clear English and established project words
 
-Comments and Javadoc are part of the maintained design surface. When behaviour or
-ownership changes, update or remove stale comments in the same change. A misleading
-comment is worse than no comment.
+**Rule**
 
-### DR-18 — Use one implementation language and stable terminology
+Java source uses English for:
 
-Java source uses **English** for:
-
-- identifiers and type/member names;
+- class/method/field names;
 - comments and Javadoc;
-- log messages;
-- exception messages;
-- test names and test diagnostics.
+- logs and exception messages;
+- test names and test failure messages.
 
-Use terminology already established by the SSD/SDD/interface documents and domain model.
-Do not introduce a new synonym simply because it sounds convenient in one class.
+Use the terminology already established in the design instead of inventing a synonym in
+each class.
 
-Examples of terminology that should stay distinct include:
+**Why**
 
-- `activate/deactivate` for software-component lifecycle;
-- `OPEN/CLOSED` for TimingNode operational lifecycle;
-- `initialize`, `inventory` and `shutdown` for antenna/provider operations;
-- `desired state`, `actual state` and `reconcile` where that model is used;
-- `TimingNode`, `AntennaManager`, `TagProcessor` and other established component names.
+Consistent terms make code searchable and prevent two names from appearing to describe two
+different concepts.
 
-Prefer specific names that reveal role and meaning over vague names such as `data`,
-`handler`, `manager`, `process`, `doWork` or `obj` when a more precise domain or
-technical term is available. Generic names remain acceptable when the abstraction itself
-is genuinely generic and the surrounding type makes the role unambiguous.
+**Example**
 
-Log and exception messages should be concise, grammatical English and include operational
-context rather than implementation trivia. Avoid unexplained abbreviations, casual wording
-and multiple spellings for the same concept.
+Keep these distinctions:
 
-## Review check
+```text
+activate / deactivate       software component lifecycle
+OPEN / CLOSED               TimingNode state
+initialize                  prepare antenna provider
+startInventory              start tag inventory
+shutdown                    release antenna/provider resources
+reconcile                   bring owned state in line with current intent
+```
 
-For Java changes touching component behaviour, review the following before merge:
+Prefer:
 
-1. **Owner** — Is policy located with the component/layer that owns its meaning?
-2. **Authority** — Is any new retry/fallback/recovery behaviour supported by design?
-3. **Lifecycle** — Are side effects explicit and are lifecycle verbs unambiguous?
-4. **Thread boundary** — Can an event callback block or execute downstream behaviour?
-5. **Admission** — Is there one atomic admission decision with all outcomes handled?
-6. **Failure direction** — Can a downstream failure leak back into an unrelated producer?
-7. **Freshness** — Does the consumer need every event, or only authoritative current state?
-8. **Observability** — Can status, metrics and logs together explain a failure afterwards?
-9. **Logging volume** — Are meaningful transitions logged without flooding high-rate paths?
-10. **Comments/Javadoc** — Are non-obvious ownership, lifecycle, threading and rationale documented without narrating obvious syntax?
-11. **Language** — Does the code use clear English and the established project/domain terminology consistently?
-12. **Verification** — Is the important overload/lifecycle/failure behaviour tested?
+```java
+requestInventoryEnabled(...)
+inventoryRequired
+currentInventoryIndex
+```
 
-A review may cite the stable rule identifier, for example `DR-06`, rather than restating
-the entire rationale in each pull request.
+over vague names such as:
+
+```java
+handle(...)
+process(...)
+doWork(...)
+flag
+data
+obj
+```
+
+when the more precise meaning is known.
+
+Logs and exceptions should also be normal, concise English. They should describe the
+operational problem, not expose arbitrary implementation trivia.
+
+---
+
+### DR-12 — Test the design assumption, not only the happy path
+
+**Rule**
+
+If correctness depends on queue bounds, lifecycle ordering, cancellation, coalescing or
+failure containment, write a focused test for that exact behaviour.
+
+**Why**
+
+A normal successful test says nothing about what happens when the queue is full or a
+provider fails during a delayed transition.
+
+**Examples**
+
+For Conductor:
+
+- many status events while one reconcile is pending should not fill the queue;
+- a stale `Status` snapshot must not override the current TimingNode state;
+- Conductor queue overload must not throw back into TimingNode.
+
+For AntennaManager:
+
+- one probe failure must not disable another healthy antenna;
+- a disable request arriving during power stabilization must prevent stale inventory start;
+- only one multiplex-group member may inventory at a time.
+
+A test should make the design rule visible. Avoid tests that merely duplicate the
+implementation line by line.
+
+## Pull-request review check
+
+For Java component changes, a reviewer can use this short check:
+
+1. **Responsibility** — Is the decision made by the component that owns it?
+2. **Lifecycle** — Are side effects explicit and are lifecycle words clear?
+3. **Event callback** — Does a synchronous callback return quickly?
+4. **Queue admission** — Is admission handled once, without a state-check race?
+5. **Current state** — Are stale snapshots being replayed when only current state matters?
+6. **Failure direction** — Can a downstream operational problem leak into its producer?
+7. **Async ownership** — Does lifecycle sequencing remain with its real owner?
+8. **Observability** — Can status, metrics and logs explain what happened afterwards?
+9. **Comments** — Are the non-obvious ownership/threading/reasoning points documented?
+10. **Language** — Are names and messages clear English using established terminology?
+11. **Tests** — Is the risky behaviour tested, not only the happy path?
+
+A review can cite a rule such as `DR-05`, but the rule text and example should remain
+clear enough that the identifier is not required to understand the review comment.
