@@ -875,7 +875,11 @@ the owning TimingNode execution boundary.
 configured EventData profile defines stable event-specific source/reference
 semantics, including the 1..N relationship between `RegistrationId` and
 `TagId`. SI-01 and engineering tools consume the common contract while an
-event-specific provider library supplies the concrete profile.
+event-specific typed provider/profile library supplies the concrete profile.
+That provider may be discovered and loaded at Runtime through the same typed
+extension architecture used for TimingData providers, without coupling the
+EventData and TimingData provider families to each other. `RaceData` remains
+separate TimingNode-local runtime/upstream race state.
 :::
 
 :::{arch} StageTiming  
