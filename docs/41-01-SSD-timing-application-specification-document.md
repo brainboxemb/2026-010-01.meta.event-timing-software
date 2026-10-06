@@ -553,11 +553,12 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
-Shared Domain contract:
+Shared Domain contracts:
+  +-- EventData
   +-- TimingData
 ```
 
@@ -805,7 +806,7 @@ A TimingNode is also the **active serialization and ownership boundary** for mut
 state. State-dependent commands and consistency-sensitive reads enter one bounded serial
 execution path and are processed in order. Code outside that boundary does not directly
 read or mutate the node's lifecycle/location state or the mutable contents of its contained
-`LogBook`, `NextUpTeams`, `StageStartTimes` and `EventData` objects. Those objects remain
+`LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData` objects. Those objects remain
 passive and do not receive their own workers. A short operation on the node lane may publish
 an immutable snapshot/read view for longer work outside the lane. The LogBook keeps 0..N
 committed immutable `TimingData` values and does not own a second worker or second timing-record
@@ -858,12 +859,23 @@ worker.
 `NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
 :::
 
-:::{arch} EventData  
-:id: EventData  
+:::{arch} RaceData
+:id: RaceData
 
-`EventData` owns event-specific participant/team/tag reference relationships
-needed by TimingNode processing, including 1..N TagIds for one RegistrationId
-and TagId-to-RegistrationId resolution.
+`RaceData` is passive TimingNode-local runtime race data. It may be updated
+from upstream during an event and may contain live/temporary information such
+as reserve-tag mappings. It remains ordered with other TimingNode state through
+the owning TimingNode execution boundary.
+:::
+
+:::{arch} EventData
+:id: EventData
+
+`EventData` is a shared Domain capability parallel to `TimingData`. A
+configured EventData profile defines stable event-specific source/reference
+semantics, including the 1..N relationship between `RegistrationId` and
+`TagId`. SI-01 and engineering tools consume the common contract while an
+event-specific provider library supplies the concrete profile.
 :::
 
 :::{arch} StageTiming  
@@ -1472,7 +1484,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 

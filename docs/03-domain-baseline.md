@@ -35,11 +35,12 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
-Shared Domain contract:
+Shared Domain contracts:
+  +-- EventData
   +-- TimingData
 ```
 
@@ -142,7 +143,7 @@ TimingApplication
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- EventData
+              +-- RaceData
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -482,10 +483,18 @@ state. TimingData/LogBook remains authoritative for committed registrations.
 
 ## Event reference data
 
-EventData is the preferred owner for participant/team/tag relationships that are
-specific to the active event. The existing `RaceData` working concept should
-not grow into a second overlapping owner of the same mappings; migration of
-remaining RaceData responsibilities is detailed design work.
+`EventData` is a shared Domain contract parallel to `TimingData`. SI-01 and engineering tools consume the same common EventData API while an event-specific provider supplies the concrete profile.
+
+A RegistrationId may have 1..N TagIds in the EventData profile. Event-specific Java implementations may be loaded at runtime through the typed provider/extension mechanism, analogous to TimingData providers.
+
+`RaceData` remains TimingNode-local runtime/upstream data and may supplement or override profile relationships where live event state requires that.
+
+
+
+EventData owns the stable event-profile relationship. RaceData may contain
+live TimingNode-local additions or overrides received from upstream, such as a
+reserve TagId assignment. Resolution therefore has an explicit precedence rule:
+live RaceData override where present, otherwise the selected EventData profile.
 
 Stage-start-time semantics remain separately owned by `StageStartTimes` unless
 a later design deliberately folds them into EventData.

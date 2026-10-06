@@ -163,6 +163,24 @@ Use these rules:
 - reserve `runtime` for concrete application composition, the running application container and lifecycle;
 - use `io` for external hardware, messaging and storage adapters.
 
+The shared EventData artifact has its own package root:
+
+```text
+shared/event-data/
+  io.github.brainboxemb.eventtiming.eventdata/
+    EventData.java
+    TagId.java
+    EventDataProvider.java
+    defaultprofile/
+      DefaultEventData.java
+      DefaultEventDataProvider.java
+```
+
+The common EventData API is intentionally independent of SI-01 runtime classes
+and JavaFX so both the Timing Point Application and engineering tools can consume
+the same event-profile semantics. Event-specific provider JARs may supply
+alternative EventData profiles through the normal typed extension mechanism.
+
 The shared TimingData artifact has its own package root:
 
 ```text
@@ -218,10 +236,6 @@ domain/
     TimingSystemId.java                 internal composition/simulation identity
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
-    TimeSource.java                     per-system absolute time / test control
-  eventdata/
-    EventData.java                    event-specific TagId/RegistrationId relationships
-    TagId.java                        semantic decoded RFID source identity
   timing/
     TimingNode.java
     TimingNodeId.java
@@ -348,13 +362,13 @@ for reimplementing JDK executor internals.
 
 ### EventData and TagProcessor realization
 
-The Java design introduces `domain.eventdata.EventData` beside the TimingData
-capability. `EventData` owns the semantic TagId-to-RegistrationId relationship;
+The Java design consumes the shared `event-data` capability beside the shared
+TimingData capability. `EventData` owns the stable event-profile TagId-to-RegistrationId relationship;
 the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
 tag-to-registration mapper dependency.
 
 The provider/antenna implementation may decode or decrypt proprietary source
-bytes, but after that boundary generic code uses `domain.eventdata.TagId`.
+bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
 `TagObservation` therefore carries TagId, RSSI and TimingTimestamp.
 
 TagProcessor resolves each observation through EventData and keeps its
@@ -370,18 +384,24 @@ The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
 registration, every TagId resolving to that RegistrationId is suppressed by the
 same duplicate window.
 
+RaceData remains a separate TimingNode-local runtime source. It may receive
+upstream updates such as reserve-tag mappings during the event. Resolution code
+may therefore combine the selected EventData profile with RaceData overrides,
+but EventData remains the owner of stable event-profile semantics and RaceData
+remains the owner of live per-node state.
+
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
 mapping and post-commit event publication. It also creates and owns its node-local
-`TagProcessor` child from injected mapping/configuration and the Runtime-supplied
+`TagProcessor` child from injected EventData/configuration and the Runtime-supplied
 `SerialScheduledExecutor`. Package-private `TimingNodeLogic` contains the mutable node
 state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and
 TimingData commit behaviour. `TimingNodeLogic` is an implementation detail of the
 TimingNode component, not a second architecture component.
 
 A production `TimingNode` is always constructed as a complete capability.
-`TimingDataPersistence`, `TimingDataFactory`, `TimeSource`, tag-processing
-configuration/mapping and both execution lanes are constructor dependencies; there is no
+`TimingDataPersistence`, `TimingDataFactory`, the injected absolute-time supplier,
+EventData/tag-processing configuration and both execution lanes are constructor dependencies; there is no
 lifecycle-only or partially configured production node. The only non-public construction
 seam exists for deterministic TimingNode execution-boundary tests and is documented as
 test-only in code.
@@ -472,12 +492,10 @@ are defined. The Domain command for that implemented action is
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
 
-Each `TimingSystem` owns one Domain `TimeSource`. The production implementation
-may delegate to a Platform wall-clock abstraction; tests/simulations may provide
-a controllable implementation with a per-system offset or stepped time. The
-Domain contract returns project-owned absolute `TimingTimestamp` values rather
-than exposing a platform clock API directly. Monotonic duration/time-out sources
-remain separate Platform/runtime concerns.
+Absolute and monotonic time come from the composed `PlatformEnvironment`.
+Production uses the system wall clock plus the JVM monotonic source; tests and
+simulation may inject controlled equivalents. TimingSystem does not own a
+separate time-source component.
 
 The I/O package structure is logical; executable composition is per
 `TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
@@ -2356,13 +2374,12 @@ TimingNode lifecycle policy, allocate sequence numbers, resolve `TagId` or
 `TeamId`, commit data, own a LogBook or publish events. Those responsibilities
 stay with the TimingNode and its contained domain components.
 
-Source/reference resolution happens through EventData before TimingData factory
-construction:
+Source/reference resolution happens before TimingData factory construction. Stable event-profile relationships come from EventData while live per-node overrides may come from RaceData:
 
 ```text
-TagId  ------> EventData ----\
-                            +--> RegistrationId
-TeamId -----> EventData ----/
+TagId  ------> EventData --------\
+                 + RaceData ------+--> RegistrationId
+TeamId ---------------------------/
 ```
 
 The factory receives the already selected common construction values in one
@@ -2497,6 +2514,7 @@ runtime.TimingApplicationRuntime.create(...)
        -> discover built-in providers
        -> discover external provider JARs
   -> ExtensionRegistry
+       EventDataProvider
        TimingDataProvider
        UpstreamProtocolProvider
        AntennaProvider
@@ -2518,8 +2536,9 @@ application and I/O runtime code must not depend on `URLClassLoader`,
 `ServiceLoader` or a generic `Plugin` interface.
 
 `SimulatedAntenna` and its provider are built into the public baseline and are
-always available. External antenna JARs add alternative `AntennaProvider`
-implementations. The same typed pattern is available for concrete TimingData,
+always available. The public baseline also supplies a reference EventData profile.
+External JARs may add alternative `AntennaProvider` and `EventDataProvider`
+implementations. The same typed pattern is available for concrete EventData, TimingData,
 UpstreamProtocol, CAN-protocol and display-protocol implementations where a
 public/private or vendor boundary requires it.
 

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define shared `EventData` beside `TimingData` for runtime-loaded event profiles and multi-tag registration resolution; keep `RaceData` as TimingNode-local runtime/upstream data; preserve RegistrationId-keyed TagProcessor passage filtering while exposing per-TagId diagnostic attribution for engineering tools; place EventData parallel to TimingData in Figure SI01-01.
+
 - Align Figure SI01-01 and architecture text with the current runtime/platform model: show `TimingApplicationRuntime`, `PresentationRuntime`, `RuntimeExecutors`, `ScheduledTaskRunner`, `PlatformEnvironment` clocks and `EventData`; remove stale Runtime `Application`/`Composition`, per-TimingSystem `TimeSource`, `RaceData` mapping ownership and `SerialWorker` references.
 
 - Define `EventData` beside `TimingData` as the owner of event-specific TagId/RegistrationId relationships; make TagProcessor passages and duplicate suppression RegistrationId-based while retaining per-TagId diagnostic attribution for engineering observability; remove the loose TagRegistrationMapper from the intended top-level runtime composition API.

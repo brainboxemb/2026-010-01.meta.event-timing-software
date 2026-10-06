@@ -235,11 +235,11 @@ nodes:
   kind: service
   notation: component
   layout: {x: 570, y: 782, w: 240, h: 50}
-- id: event-data
-  object_id: EventData
+- id: race-data
+  object_id: RaceData
   group: timing-node-aggregate
-  label: "EventData"
-  subtitle: "TagId / RegistrationId reference"
+  label: "RaceData"
+  subtitle: "runtime / upstream race data"
   kind: service
   notation: component
   layout: {x: 850, y: 782, w: 240, h: 50}
@@ -261,6 +261,15 @@ nodes:
   notation: component
   layout: {x: 850, y: 842, w: 240, h: 50}
 
+- id: event-data-domain
+  object_id: EventData
+  group: domain-layer
+  label: "EventData"
+  subtitle: "TagId • RegistrationId • profile/provider"
+  kind: service
+  notation: component
+  layout: {x: 115, y: 956, w: 360, h: 60}
+
 - id: timing-data-domain
   object_id: TimingData
   group: domain-layer
@@ -268,7 +277,7 @@ nodes:
   subtitle: "LocationId • RegistrationId • record + codec"
   kind: service
   notation: component
-  layout: {x: 300, y: 956, w: 380, h: 60}
+  layout: {x: 495, y: 956, w: 360, h: 60}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
@@ -549,6 +558,13 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
+
+- from: tag-processor
+  to: event-data-domain
+  label: resolves
+  dashed: true
+  from_anchor: {side: bottom, position: 0.35}
+  to_anchor: {side: top, position: 0.70}
 
 - from: timing-node-aggregate
   to: timing-data-domain
