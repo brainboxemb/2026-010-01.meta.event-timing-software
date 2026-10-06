@@ -1340,11 +1340,12 @@ publishes them; Platform does not provide a central event bus.
 :::{arch} PlatformEnvironment  
 :id: PlatformEnvironment  
 
-`PlatformEnvironment` is the small process/platform time boundary composed by
+`PlatformEnvironment` is the small process/platform boundary composed by
 Runtime. It provides the absolute wall-clock `Clock` used when externally
-meaningful timestamps are attached and the `MonotonicClock` used for elapsed
-time, timeouts, filtering windows and metrics. It is deliberately not a general
-service locator for filesystem, networking or other OS facilities.
+meaningful timestamps are attached, the `MonotonicClock` used for elapsed time,
+timeouts, filtering windows and metrics, and a normalized `OperatingSystem`
+identity used for explicit Runtime composition defaults. It is deliberately not
+a general service locator for filesystem, networking or arbitrary OS facilities.
 :::
 
 #### Runtime and infrastructure
