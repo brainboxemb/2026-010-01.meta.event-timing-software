@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Extend IF-11 TimingSystem configuration with `eventDataProvider` beside `timingDataProvider`; public examples use the built-in `reference` provider id for both shared event/timing profile capabilities.
+
 - Align EventData as a shared runtime-loadable provider/profile capability parallel to TimingData while keeping RaceData TimingNode-local; improve Figure SI01-01 EventData/TimingData routing and I/O/Platform spacing.
 
 - Define shared `EventData` beside `TimingData` for runtime-loaded event profiles and multi-tag registration resolution; keep `RaceData` as TimingNode-local runtime/upstream data; preserve RegistrationId-keyed TagProcessor passage filtering while exposing per-TagId diagnostic attribution for engineering tools; place EventData parallel to TimingData in Figure SI01-01.
