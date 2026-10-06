@@ -276,19 +276,29 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      device/provider lifecycle + tag-observed event contract
       AntennaId.java                    configured software identity of one antenna
-      AntennaPowerControl.java          optional external power-switch capability
-      SimulatedAntennaPowerControl.java deterministic simulated external power channel
-      AntennaInfo.java                  hello/identity/version probe result
+      AntennaInfo.java                  self-test identity/version result
       TagObservation.java               EventData TagId + RSSI + TimingTimestamp fact
-      SimulatedAntenna.java             built-in reference/simulation implementation
+      model/
+        Antenna.java                    device/provider lifecycle + observation contract
+        SimulatedAntenna.java           built-in reference/simulation implementation
       manager/
-        AntennaManager.java             public activation/inventory/status boundary
-        AntennaSwitchController.java    set + multiplex switching coordination
-        ManagedAntenna.java             one-antenna power/probe/init/inventory state
-        AntennaManagerTypes.java        manager/status/failure value types
-        AntennaInstallation.java        AntennaId + package-local device/power binding
+        AntennaManager.java             lifecycle/status + task-admission boundary
+        InventoryController.java        requested/applied inventory reconciliation
+        ManagedAntennaSet.java          configured set lookup/status/group construction
+        ManagedAntenna.java             one-antenna power/init/inventory runtime state
+        AntennaSwitchController.java    current/next inventory member only
+        AntennaManagerTypes.java        manager/status value types
+        task/
+          AntennaTasks.java             task factory + narrow task execution ports
+          SelfTestTask.java             startup self-test state machine
+          InventoryEnableTask.java      prepare/start inventory state machine
+          InventoryDisableTask.java     stop/power-off state machine
+          AntennaSwitchTask.java        interval/yield switching state machine
+          AntennaShutdownTask.java      cooperative device shutdown
+    power/
+      PowerDevice.java                  external power-device contract
+      SimulatedPowerDevice.java         deterministic simulated power device
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
       Rev1CanDisplay.java               passive CAN display support when implemented
@@ -1405,11 +1415,13 @@ reconciles requested -> applied setting
 or disabled from TimingNode state. It does not issue device-mechanism commands such as
 power-on, initialize, power-cycle or reader switching.
 
-`AntennaManager` owns the configured 1..N antenna control capability for one
-TimingSystem. It owns the requested inventory setting and starts the operation task needed
-to reconcile requested state with physically applied state.
+`AntennaManager` is the public lifecycle/status boundary for the configured 1..N
+antenna capability of one TimingSystem. It starts startup/shutdown tasks and delegates
+inventory reconciliation to its package-local `InventoryController`.
 
-The manager uses a small `Setting<Boolean>` for inventory intent:
+`InventoryController` owns the requested inventory setting and starts the operation task
+needed to reconcile requested state with physically applied state. It uses a small
+`Setting<Boolean>` for inventory intent:
 
 ```text
 requestedValue
@@ -1417,8 +1429,9 @@ appliedValue
 changePending = requestedValue != appliedValue
 ```
 
-`Setting` owns no executor, lifecycle, retry policy or device action. The manager calls
-`markApplied(value)` only after that physical transition has completed successfully. A
+`Setting` owns no executor, lifecycle, retry policy or device action.
+`InventoryController` calls `markApplied(value)` only after that physical transition
+has completed successfully. A
 newer request may therefore arrive while an older transition is executing; once the older
 transition completes, `changePending` still exposes whether another transition is needed.
 
