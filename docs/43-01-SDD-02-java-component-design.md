@@ -607,7 +607,7 @@ Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
 - provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
-- the executable application chooses and configures the provider/backend before `runtime.TimingApplication.create(...)` starts normal application composition;
+- the executable application chooses and configures the provider/backend before `runtime.TimingApplicationRuntime.create(...)` starts normal application composition;
 - the default Java-8 application uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
 - `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
@@ -646,7 +646,7 @@ The application core owns the reusable SI-01 runtime and supporting infrastructu
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
     Lifecycle.java
-    TimingApplication.java
+    TimingApplicationRuntime.java
     RuntimeExecutors.java
     simulator/
       SimulationRuntime.java
@@ -673,17 +673,17 @@ io.github.brainboxemb.eventtiming/timingpoint/
 ```
 
 `runtime/` owns knowledge of the concrete running application through
-`TimingApplication`, execution-resource construction and the effective composition
+`TimingApplicationRuntime`, execution-resource construction and the effective composition
 configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
 Runtime is not another business/domain layer; it is where the executable object graph is
 assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
-`runtime.TimingApplication.create(...)` is the single concrete composition root and the
-returned `TimingApplication` owns the lifecycle of that already composed graph. A second
+`runtime.TimingApplicationRuntime.create(...)` is the single concrete composition root and the
+returned `TimingApplicationRuntime` owns the lifecycle of that already composed graph. A second
 bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
 construction, but cross-component relationships and lifecycle order remain visible in
-`TimingApplication.create(...)`. The visible composition order is:
+`TimingApplicationRuntime.create(...)`. The visible composition order is:
 
 ```text
 validated Config
@@ -735,7 +735,7 @@ immutable event value and does not need an `AntennaId` field merely for routing 
 the configured source identity is already known at the subscription point.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
-It selects simulated installations/mappings through the same `TimingApplication.create(...)`
+It selects simulated installations/mappings through the same `TimingApplicationRuntime.create(...)`
 path; it
 does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
@@ -760,7 +760,7 @@ timing-point-core.jar
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
-    TimingApplication.java
+    TimingApplicationRuntime.java
     ActivationManager.java
     RuntimeExecutors.java
     PresentationRuntime.java
@@ -803,13 +803,13 @@ main()
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> core runtime.TimingApplication.create(...)
+  -> core runtime.TimingApplicationRuntime.create(...)
        -> create PlatformEnvironment
        -> construct runtime resources and reusable application/domain/I/O objects
        -> construct and wire application.Conductor
        -> construct configured PresentationRuntime adapters
-       -> return composed TimingApplication
-  -> TimingApplication.activate()
+       -> return composed TimingApplicationRuntime
+  -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
        -> activate components in explicit order
        -> activate PresentationRuntime last
@@ -828,7 +828,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplication.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplication` owns activate/deactivate lifecycle.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplicationRuntime` owns activate/deactivate lifecycle.
 
 ### Running configuration model
 
@@ -909,7 +909,7 @@ The resolver responsibility must remain data/composition oriented:
 - platform defaults may select environment-specific values;
 - operating-mode defaults may replace real providers with simulated providers;
 - explicit IF-11 deployment values have highest non-secret precedence;
-- `runtime.TimingApplication.create(...)` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
+- `runtime.TimingApplicationRuntime.create(...)` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
 
 SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
@@ -1114,8 +1114,21 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
-The manager uses one project `SerialScheduledExecutor` control lane on the Runtime-owned
-shared scheduled I/O worker:
+The Java platform execution package also provides `ScheduledTaskRunner` as a small
+helper over an existing `SerialScheduledExecutor`. It centralizes bounded result waiting,
+timeout/cancellation propagation, asynchronous completion and delayed begin/complete
+continuations. It creates no executor, scheduler or worker.
+
+`ScheduledTaskRunner` is used only where that task-handling pattern is needed.
+AntennaManager uses it for provider/control operations. TimingNode and Conductor continue
+to use their serial execution primitives directly; TagProcessor continues to use
+`SerialScheduledExecutor` directly. Do not wrap every component merely for naming
+symmetry.
+
+The manager uses one project `SerialScheduledExecutor` control lane on one Runtime-owned
+scheduled I/O-role worker. The same worker services probe, initialize, power-control,
+start/stop inventory and multiplex switching; there is no separate initialize or switching
+executor in the baseline:
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1143,13 +1156,19 @@ control, result-bearing control and multiplex-rotation callbacks all enter the s
 lane. There is therefore no second timer callback that re-enqueues work into a different
 control executor.
 
-`AntennaControlLane` is a small adapter for admission, timeout and cancellation handling.
-It creates no thread. `AntennaSwitchController` coordinates the configured set and the
-optional mutual-exclusion group. `ManagedAntenna` contains the physical one-device
-sequence: optional power-on, stabilization, probe/initialize, inventory start/stop,
-power-off and close.
+`AntennaControlLane` is a small adapter for admission, timeout, cancellation and delayed
+continuation handling. It creates no thread. `AntennaSwitchController` coordinates the
+configured set and the optional mutual-exclusion group. `ManagedAntenna` owns the
+physical one-device state/provider steps but does not sleep for stabilization; it exposes
+the required delay between begin and complete steps so the control lane can schedule the
+continuation.
 
-Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
+Runtime owns the physical scheduled I/O-role worker; the manager owns only its logical
+lane. Probe, initialize and later multiplex switching deliberately share that same worker
+and lane so antenna lifecycle ordering remains explicit. Power-stabilization delays are
+implemented as delayed continuations on the existing `SerialScheduledExecutor`; the
+worker is not occupied by a sleep while the delay elapses.
+
 The one-worker I/O baseline is defined by the SSD runtime execution model. The known
 two-antenna 500 ms multiplex configuration still runs one inventory member at a time, so
 the Java design does not add I/O workers merely because that deployment uses a Raspberry
@@ -1491,7 +1510,7 @@ subject to V01 measurement; custom lower-level execution is an optimization opti
 baseline design.
 
 The previous separate `PeriodicExecutor` / `PeriodicTask` TagProcessor mechanism is not
-part of this design. `runtime.TimingApplication.create(...)` constructs and wires the worker and processor;
+part of this design. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the worker and processor;
 TagProcessor owns the worker lifecycle.
 
 `TagProcessor.start()` starts its serial execution lane. Shutdown first stops antenna inventory and
@@ -1560,7 +1579,7 @@ expose the application's bounded-admission and measurement semantics consistentl
 
 Runtime/engineering composition retains the same `TagProcessingMetrics` instance when
 it needs pull-based measurements. TagProcessor owns the supplied execution capability
-lifecycle; supplying it does not make `runtime.TimingApplication.create(...)` the execution model.
+lifecycle; supplying it does not make `runtime.TimingApplicationRuntime.create(...)` the execution model.
 
 `TagProcessingPolicy` owns at least:
 
@@ -2649,7 +2668,7 @@ is no longer merely a optional capability. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
-runtime.TimingApplication.create(...)
+runtime.TimingApplicationRuntime.create(...)
   -> infra extension discovery support
        -> discover built-in providers
        -> discover external provider JARs
@@ -2661,7 +2680,7 @@ runtime.TimingApplication.create(...)
        DisplayProtocolProvider
   -> validate configured provider IDs
   -> create normal typed implementations
-  -> return runtime.TimingApplication
+  -> return runtime.TimingApplicationRuntime
 ```
 
 For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`

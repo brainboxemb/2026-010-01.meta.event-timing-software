@@ -496,7 +496,7 @@ The primary logical view is a responsibility/layer view. It describes semantic o
 concrete running SI-01 object graph from validated effective configuration. It
 is a responsibility, not a requirement for a separate Java `Composition`
 object. The Java realization keeps this flow visible in
-`TimingApplication.create(...)`. It selects and constructs the required
+`TimingApplicationRuntime.create(...)`. It selects and constructs the required
 Presentation, I/O, Platform and Infrastructure objects together with the
 reusable application/domain objects. Those objects retain their own layer
 ownership; Runtime only knows how this executable is assembled.
@@ -507,7 +507,7 @@ ownership; Runtime only knows how this executable is assembled.
 
 `Application` is the architecture role for the top-level reusable Runtime
 object of one running SI-01 composition. The current Java realization names
-that object `TimingApplication`. It owns activation/deactivation and references
+that object `TimingApplicationRuntime`. It owns activation/deactivation and references
 the currently composed application/domain runtime state. It is deliberately
 shown in a separate **Runtime** block rather than inside the Application layer:
 Runtime is the running container/assembly context, not application/business
@@ -929,9 +929,13 @@ Application-wide coordination has a separate execution boundary. Conductor
 owns a serial application-coordination lane so cross-component behaviour does
 not execute synchronously on the thread that emitted a Domain or I/O event.
 
-AntennaManager owns one serial scheduled I/O lane. Immediate control,
-result-bearing control and multiplex rotation all enter that same logical lane;
-the lane runs on the Runtime-owned shared I/O worker.
+AntennaManager owns one serial scheduled I/O lane. Probe, initialize,
+power-control transitions, start/stop inventory and multiplex switching/rotation
+all enter that same logical lane; the lane runs on one Runtime-owned I/O-role
+worker. There is no separate initialization worker and no separate switching
+worker in the baseline. Elapsed-time waits such as power stabilization are
+scheduled continuations on that same lane, so the physical I/O worker is released
+while time passes.
 
 The baseline execution topology is therefore:
 
@@ -972,6 +976,17 @@ Additional physical parallelism is a measurement-driven refinement. V01 runtime
 characterization must demonstrate a concrete contention, latency or throughput
 problem before a role receives more physical workers. Any such change must
 preserve the component-local serial-lane semantics above.
+
+Platform provides reusable execution mechanics for components that need more
+than direct lane admission. In particular, bounded result waiting, timeout/cancellation
+propagation and delayed continuation are treated as shared execution concerns rather than
+being reimplemented independently by each I/O/Application component.
+
+That higher-level task-handling mechanism is optional. A component that only needs direct
+serial admission/ordering continues to use its execution lane directly. The presence of a
+shared task-handling capability does not require TimingNode, TagProcessor or Conductor to
+be wrapped in another abstraction when their semantics do not need timeout/result/delayed
+handling.
 
 Runtime worker items are deliberately bounded. A worker item must not occupy a
 physical worker merely to wait for time to pass. Delays such as antenna power
