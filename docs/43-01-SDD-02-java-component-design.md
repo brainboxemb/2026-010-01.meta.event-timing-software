@@ -1256,13 +1256,17 @@ auto-reg <registrationId> <time>
 config
 config tag-processing set <field=value>...
 config tag-processing clear
+log
+log T|D|I|W|E
 quit
 exit
 ```
 
 These are Presentation commands, not a second Domain/Application semantic contract.
 `open`, `close` and `auto-reg` delegate to `TimingNodeProxy`; configuration
-commands delegate to `ConfigurationControl`. LocalConsole and RemoteShell therefore
+commands delegate to `ConfigurationControl`. `log` reads/changes the temporary
+global log level through `LoggingLevelControl`; the single-letter forms map to
+TRACE, DEBUG, INFO, WARN and ERROR. LocalConsole and RemoteShell therefore
 cannot drift into separate implementations of node or configuration behaviour.
 
 Console, Remote Shell and API are baseline Timing Point Application capabilities.
@@ -2412,11 +2416,11 @@ Runtime TimingNode role executor
     maximumPoolSize = 1
     physical thread = tp-dml-node-worker
 
-TimingNode TN-01 SerialExecutor lane
+TimingNode A SerialExecutor lane
   bounded ArrayBlockingQueue
   at most one drain token scheduled
 
-TimingNode TN-02 SerialExecutor lane
+TimingNode B SerialExecutor lane
   bounded ArrayBlockingQueue
   at most one drain token scheduled
 ```

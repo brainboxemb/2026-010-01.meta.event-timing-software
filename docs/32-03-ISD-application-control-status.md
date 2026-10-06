@@ -63,6 +63,7 @@ The concrete network transports and wire representation are design choices of th
 current IF-03 realization and belong to the IDD.
 
 TimingNode-specific operations address an application-wide-unique `TimingNodeId`.
+A `TimingNodeId` is exactly one character: `A` through `Z` or `1` through `9`.
 `TimingSystemId` remains internal to SI-01 and is not part of the public IF-03 model.
 
 ## Build/version identity
