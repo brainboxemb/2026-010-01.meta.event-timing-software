@@ -595,6 +595,22 @@ unrelated jobs. In that case simplify or split the code first.
 Comments are maintained code. When ownership or behaviour changes, update or remove the
 old comment in the same pull request.
 
+For lambdas and callbacks, prefer the form that is easiest to understand in context.
+A lambda is fine when it is genuinely clearer or measurably useful in a hot path. Do not
+avoid a lambda merely because it is a lambda. However, a non-trivial lambda must not hide
+its purpose behind syntax alone: use a named method/method reference when that reads
+better, or add a short comment explaining what the callback does and why it belongs there.
+
+For example, this is fine when the named method already explains the callback:
+
+```java
+currentRunFuture.whenComplete(this::runCompleted);
+```
+
+An inline lambda that performs several steps, changes state, or has non-obvious lifecycle
+meaning should normally be replaced by a named method or have its intent explained directly
+above it.
+
 ---
 
 ### DR-11 — Use clear English and established project words
