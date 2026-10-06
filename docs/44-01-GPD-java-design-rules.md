@@ -265,6 +265,68 @@ At minimum, as applicable, cover:
 
 A happy-path unit test is not evidence for overload or lifecycle semantics.
 
+### DR-17 — Document non-obvious intent, ownership and constraints
+
+Code should be understandable from its public/component boundary before a reviewer must
+reverse-engineer the implementation.
+
+Use Javadoc or nearby comments when they explain information that is not obvious from the
+Java syntax, especially:
+
+- what a component owns and what it deliberately does **not** own;
+- lifecycle meaning and valid call order;
+- thread/lane ownership and whether a method is expected to run on a specific lane;
+- asynchronous sequencing, cancellation and stale-work guards;
+- invariants such as single-writer, at-most-one-active-member or bounded-queue behaviour;
+- why a seemingly simpler implementation would violate a requirement/design decision;
+- externally important side effects or failure-containment behaviour.
+
+Public component boundaries and reusable abstractions need enough Javadoc to answer:
+**what is this for, who owns it, how is it used, and what are the important lifecycle or
+threading constraints?**
+
+Comments should explain **intent, contract or rationale**, not narrate obvious syntax.
+Avoid comments such as "increment index", "set flag" or "loop over antennas" when the code
+already says exactly that.
+
+A complex method is not made acceptable merely by adding many comments. If a comment is
+needed to explain several unrelated responsibilities, first check whether the code should
+be simplified or split.
+
+Comments and Javadoc are part of the maintained design surface. When behaviour or
+ownership changes, update or remove stale comments in the same change. A misleading
+comment is worse than no comment.
+
+### DR-18 — Use one implementation language and stable terminology
+
+Java source uses **English** for:
+
+- identifiers and type/member names;
+- comments and Javadoc;
+- log messages;
+- exception messages;
+- test names and test diagnostics.
+
+Use terminology already established by the SSD/SDD/interface documents and domain model.
+Do not introduce a new synonym simply because it sounds convenient in one class.
+
+Examples of terminology that should stay distinct include:
+
+- `activate/deactivate` for software-component lifecycle;
+- `OPEN/CLOSED` for TimingNode operational lifecycle;
+- `initialize`, `inventory` and `shutdown` for antenna/provider operations;
+- `desired state`, `actual state` and `reconcile` where that model is used;
+- `TimingNode`, `AntennaManager`, `TagProcessor` and other established component names.
+
+Prefer specific names that reveal role and meaning over vague names such as `data`,
+`handler`, `manager`, `process`, `doWork` or `obj` when a more precise domain or
+technical term is available. Generic names remain acceptable when the abstraction itself
+is genuinely generic and the surrounding type makes the role unambiguous.
+
+Log and exception messages should be concise, grammatical English and include operational
+context rather than implementation trivia. Avoid unexplained abbreviations, casual wording
+and multiple spellings for the same concept.
+
 ## Review check
 
 For Java changes touching component behaviour, review the following before merge:
@@ -278,7 +340,9 @@ For Java changes touching component behaviour, review the following before merge
 7. **Freshness** — Does the consumer need every event, or only authoritative current state?
 8. **Observability** — Can status, metrics and logs together explain a failure afterwards?
 9. **Logging volume** — Are meaningful transitions logged without flooding high-rate paths?
-10. **Verification** — Is the important overload/lifecycle/failure behaviour tested?
+10. **Comments/Javadoc** — Are non-obvious ownership, lifecycle, threading and rationale documented without narrating obvious syntax?
+11. **Language** — Does the code use clear English and the established project/domain terminology consistently?
+12. **Verification** — Is the important overload/lifecycle/failure behaviour tested?
 
 A review may cite the stable rule identifier, for example `DR-06`, rather than restating
 the entire rationale in each pull request.
