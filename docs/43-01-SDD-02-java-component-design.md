@@ -227,11 +227,12 @@ domain/
     NextUpTeamsStore.java               persistence port for next-up analysis history
     StageStartTimes.java                passive per-node reference state
     StageStartTimesStore.java           persistence port for start-time analysis history
-    RaceData.java                       passive per-node reference state
-    RaceDataStore.java                  persistence port for race/reference analysis history
-    TagProcessor.java                   node-local tag filtering/mapping policy
-    TagRegistrationMapper.java          DecryptedTagId -> RegistrationId policy boundary
-    TagProcessingPolicy.java            compiled defaults + active tag-processing policy
+    eventdata/
+      EventData.java                    event-specific TagId/RegistrationId relationships
+      TagId.java                        semantic decoded RFID source identity
+    timing/
+      TagProcessor.java                 node-local registration-passage processing
+      TagProcessingPolicy.java          compiled defaults + active tag-processing policy
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -249,12 +250,10 @@ io/
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
-      DecryptedTagId.java               provider-decoded/decrypted source identity
-      TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
+      TagObservation.java               EventData TagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
       manager/
         AntennaManager.java             public activation/inventory/status boundary
-        AntennaControlLane.java         serial admission + timeout adapter
         AntennaSwitchController.java    set + multiplex switching coordination
         ManagedAntenna.java             one-antenna power/probe/init/inventory state
         AntennaManagerTypes.java        manager/status/failure value types
@@ -347,6 +346,30 @@ seams may use direct execution.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
+
+### EventData and TagProcessor realization
+
+The Java design introduces `domain.eventdata.EventData` beside the TimingData
+capability. `EventData` owns the semantic TagId-to-RegistrationId relationship;
+the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
+`TagRegistrationMapper`.
+
+The provider/antenna implementation may decode or decrypt proprietary source
+bytes, but after that boundary generic code uses `domain.eventdata.TagId`.
+`TagObservation` therefore carries TagId, RSSI and TimingTimestamp.
+
+TagProcessor resolves each observation through EventData and keeps its
+`TagObservationFilter` keyed by RegistrationId. The existing registration-keyed
+filtering model is retained rather than creating independent per-tag filters.
+
+The burst/passsage state is extended with per-TagId statistics and the selected
+observation identity. A package-level immutable diagnostic snapshot exposes this
+state read-only for Presentation/engineering use. The snapshot is diagnostic;
+it is not persisted as TimingData and cannot mutate TagProcessor state.
+
+The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
+registration, every TagId resolving to that RegistrationId is suppressed by the
+same duplicate window.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
