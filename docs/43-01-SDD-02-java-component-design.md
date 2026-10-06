@@ -1088,14 +1088,18 @@ The Java antenna boundary separates device lifecycle from decoded observation pr
 
 ### Antenna and manager
 
-`Antenna` represents one configured logical antenna capability. It owns its decoded
+`Antenna` represents one configured logical antenna capability. It owns the decoded
 observation event and the provider-specific device/session mechanics needed for probing,
 initialization and inventory control.
 
-Illustrative shape:
+The application-facing and device-facing lifecycle words are kept distinct. TimingNode
+uses `OPEN` / `CLOSED`; antenna/provider cleanup uses `shutdown()` rather than
+`close()` so a device cleanup operation is not confused with TimingNode state.
+
+Illustrative provider shape:
 
 ```java
-interface Antenna extends AutoCloseable {
+interface Antenna {
     AntennaInfo probe();
 
     void initialize();
@@ -1106,73 +1110,175 @@ interface Antenna extends AutoCloseable {
 
     boolean inventoryRunning();
 
+    void shutdown();
+
     EventSource<TagObservation> tagObservedEvent();
 }
 ```
 
-The exact checked/runtime exception family remains capability-specific; the important
-contract is that probe and normal inventory are different lifecycle operations.
+`probe()` is a one-shot health/compatibility action. It opens/starts the provider as
+needed, performs the provider-specific hello/identity/version exchange and returns the
+decoded `AntennaInfo`. Probe is not an on/off operating mode and it does not leave
+inventory running.
 
-`probe()` is a one-shot health/compatibility operation. It opens/starts the provider as
-needed, performs the provider's hello/identity/version exchange and returns the decoded
-`AntennaInfo`. The provider is not left inventorying after a probe.
+`initialize()` prepares the provider for normal use. `startInventory()` and
+`stopInventory()` control RFID observation delivery. `shutdown()` releases provider
+resources and is valid even when normal initialization never completed successfully.
 
-Normal operation uses `initialize()` followed by explicit
-`startInventory()/stopInventory()`. Closing the antenna stops delivery and releases the
-provider/device resources.
+#### Coordination ownership
 
-`AntennaManager` owns the configured set of 1..N antennas for one TimingSystem and
-the installation-level lifecycle around them. It coordinates independent startup health
-checks, normal initialize/shutdown, optional injected power control, per-antenna health
-and per-antenna inventory state. One provider failure is contained to that antenna; the
-manager does not roll back independently healthy antennas merely because another antenna
-fails.
-
-When AntennaManager activates it performs a non-inventory sanity sequence for every
-configured antenna:
+Application intent and device mechanics are separate responsibilities:
 
 ```text
-optional power ON
-        |
-        v
-configured stabilization delay
-        |
-        v
-one-shot probe / identity-health check
-        |
-        v
-optional power OFF
+TimingNode lifecycle / application startup
+                 |
+                 v
+             Conductor
+       decides what is required
+                 |
+                 v
+          AntennaManager
+   reconciles desired -> actual state
+        /                       \
+       v                         v
+ManagedAntenna(s)       AntennaSwitchController
+power/probe/init/       multiplex-group rotation
+inventory/recovery      only
+       |
+       v
+    Antenna
+ provider/device operations
 ```
 
-Failure of one sequence records that antenna as unavailable/error and the manager continues
-with the remaining configured antennas.
+`Conductor` owns cross-component application decisions. It decides when startup health
+checking is required and whether configured antennas are required for inventory because of
+TimingNode lifecycle. It does not issue device-mechanism commands such as power-on,
+initialize, power-cycle or provider retry.
 
-Inventory permission is driven by the lifecycle of the TimingNodes mapped to each
-antenna. When at least one assigned TimingNode is OPEN, the Conductor calls
-`requestInventoryEnabled(true)`. The manager then powers a healthy antenna when required,
-allows it to stabilize, initializes it and starts inventory. When no
-assigned TimingNode remains OPEN, inventory is stopped and externally controlled power is
-removed. An antenna mapped to several TimingNodes therefore remains active until the last
-mapped TimingNode closes.
+`AntennaManager` owns the configured 1..N antennas for one TimingSystem and the
+installation-level lifecycle needed to realise those decisions. It owns optional external
+power control, power-stabilization waits, health checks, initialization, inventory
+start/stop, failure state and recovery/reinitialization.
 
-The manager tracks per-antenna state separately from its aggregate health. Aggregate
-health may be degraded while healthy antennas remain operational.
+Activating `AntennaManager` only makes its logical control capability operational.
+Activation itself does not perform a hidden hardware probe. Startup health checking is an
+explicit application action coordinated by `Conductor`.
 
-The Java platform execution package also provides `ScheduledTaskRunner` as a small
-helper over an existing `SerialScheduledExecutor`. It centralizes bounded result waiting,
-timeout/cancellation propagation, asynchronous completion and delayed begin/complete
-continuations. It creates no executor, scheduler or worker.
+#### Startup health check
 
-`ScheduledTaskRunner` is used only where that task-handling pattern is needed.
-AntennaManager uses it for provider/control operations. TimingNode and Conductor continue
-to use their serial execution primitives directly; TagProcessor continues to use
-`SerialScheduledExecutor` directly. Do not wrap every component merely for naming
-symmetry.
+SI01-REQ-052 requires SI-01 to attempt a startup health probe for each configured antenna.
+The application coordination flow is:
 
-The manager uses one project `SerialScheduledExecutor` control lane on one Runtime-owned
-scheduled I/O-role worker. The same worker services probe, initialize, power-control,
-start/stop inventory and multiplex switching; there is no separate initialize or switching
-executor in the baseline:
+```text
+Runtime activates AntennaManager
+        |
+        |  control lane ready; no hardware action yet
+        v
+Conductor activates / startup reconcile
+        |
+        +--> AntennaManager.checkHealth()
+                    |
+                    +--> for each configured antenna
+                           |
+                           +--> optional external power ON
+                           +--> stabilization delay
+                           +--> Antenna.probe()
+                           +--> record health / compatibility result
+                           +--> optional power OFF
+                                when inventory is not required
+```
+
+Failure of one health-check sequence leaves that antenna represented as unavailable/error
+and does not stop checks or later operation of independently healthy antennas.
+
+Health and operational state are separate concepts. A successful probe followed by power
+off must not be represented ambiguously as if the antenna were both operationally ready
+and physically active. Status should therefore distinguish health/availability from the
+current operational state such as powered/preparing/inventorying.
+
+#### TimingNode-driven inventory intent
+
+SI01-REQ-053 is expressed as desired application state rather than a sequence of hardware
+commands. When at least one TimingNode assigned to an antenna is OPEN, `Conductor`
+requests inventory for that antenna. When no assigned TimingNode remains OPEN, it removes
+that request.
+
+```text
+TimingNode CLOSED -> OPEN
+        |
+        v
+statusChangedEvent
+        |
+        v
+Conductor
+        |
+        | inventory required = true
+        v
+AntennaManager
+        |
+        +--> healthy / recoverable?
+        +--> optional power ON
+        +--> stabilization delay
+        +--> initialize
+        +--> start inventory directly
+             or through multiplex group
+```
+
+The inverse flow is:
+
+```text
+last assigned TimingNode OPEN -> CLOSED
+        |
+        v
+Conductor
+        |
+        | inventory required = false
+        v
+AntennaManager
+        |
+        +--> stop inventory
+        +--> cancel no-longer-needed recovery work
+        +--> optional external power OFF
+```
+
+An antenna mapped to multiple TimingNodes therefore remains required until the last
+assigned TimingNode closes. Conductor owns the requirement; AntennaManager owns how the
+physical state is brought in line with it.
+
+#### Failure and recovery ownership
+
+While inventory remains required, a runtime device failure does not change the application
+intent. AntennaManager owns any recovery/reinitialization process needed to restore the
+requested state:
+
+```text
+desired inventory = true
+        |
+        v
+runtime antenna/provider failure
+        |
+        v
+AntennaManager records failure
+        |
+        +--> stop/clean up failed operation
+        +--> optional power cycle
+        +--> stabilization / health check as required
+        +--> reinitialize
+        +--> resume inventory when healthy
+```
+
+Conductor does not micromanage that recovery sequence and does not need to resend the same
+OPEN-derived intent after every provider failure. The exact automatic retry trigger,
+retry limit, delay/backoff and terminal-failure policy remain an open detailed-design
+decision and must be tied to an explicit requirement before implementation adds that
+policy.
+
+#### Execution and delayed device work
+
+AntennaManager owns one project `SerialScheduledExecutor` control lane on one
+Runtime-owned scheduled I/O-role worker. Probe, initialize, optional power-control
+transitions, start/stop inventory, recovery work and multiplex rotation all use that same
+logical lane. There is no separate initialization or switching worker in the baseline.
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1181,86 +1287,96 @@ executor in the baseline:
                SerialScheduledExecutor
                  AntennaManager lane
                          |
-          +--------------+---------------+
-          |              |               |
-    immediate       result-bearing   delayed rotation
-      control           control          callback
-          \              |               /
-           +-------------+--------------+
+          +--------------+----------------+
+          |              |                |
+    immediate       delayed device    multiplex timer
+      control        continuation
+          |              |                |
+          +--------------+----------------+
                          |
                   AntennaManager
-                         |
-              AntennaSwitchController
-                         |
-                   ManagedAntenna(s)
+                    /          \
+                   v            v
+          ManagedAntenna(s)   AntennaSwitchController
 ```
 
-`AntennaManager` never receives a JDK `ScheduledExecutorService`. Immediate manager
-control, result-bearing control and multiplex-rotation callbacks all enter the same serial
-lane. There is therefore no second timer callback that re-enqueues work into a different
-control executor.
+`ScheduledTaskRunner` supplies reusable bounded result waiting, timeout/cancellation
+propagation and delayed begin/complete handling where a manager operation needs those
+mechanics. It creates no executor, scheduler or worker. Antenna-specific classes must not
+reimplement a generic `CompletableFuture` sequence framework merely to chain these
+steps.
 
-`ScheduledTaskRunner` provides the reusable admission, timeout, cancellation and delayed
-continuation mechanics over the manager's existing serial scheduled lane. It creates no thread. `AntennaSwitchController` coordinates the
-configured set and the optional mutual-exclusion group. `ManagedAntenna` owns the
-physical one-device state/provider steps but does not sleep for stabilization; it exposes
-the required delay between begin and complete steps so the control lane can schedule the
-continuation.
-
-Runtime owns the physical scheduled I/O-role worker; the manager owns only its logical
-lane. Probe, initialize and later multiplex switching deliberately share that same worker
-and lane so antenna lifecycle ordering remains explicit. Power-stabilization delays are
-implemented as delayed continuations on the existing `SerialScheduledExecutor`; the
-worker is not occupied by a sleep while the delay elapses.
-
-The one-worker I/O baseline is defined by the SSD runtime execution model. The known
-two-antenna 500 ms multiplex configuration still runs one inventory member at a time, so
-the Java design does not add I/O workers merely because that deployment uses a Raspberry
-Pi 3 Model B. V01 runtime characterization remains the authority for increasing physical
-parallelism. Result-bearing provider operations retain explicit timeouts/cancellation
-policy so a stuck reader is visible as a control failure.
-
-Startup/runtime callers use result-bearing manager operations when they must know whether
-a probe/initialize/control transition succeeded. TimingNode/device observation processing
-does not synchronously wait for manager control work.
+Power-stabilization delays are scheduled continuations. The physical I/O worker is not
+occupied by a sleep while the delay elapses. Result-bearing provider operations retain
+explicit timeout/cancellation handling so a stuck device operation is visible as a
+control failure.
 
 Concrete `Antenna` construction is passive. Creating and wiring a provider object must
-not start inventory or hidden background device activity. Hardware interaction starts only
-through the explicit probe/initialize/inventory lifecycle owned by AntennaManager. This
-keeps Runtime composition side-effect free with respect to device activation.
+not start inventory or hidden background device activity.
+
+#### External power
 
 External power switching is optional. When deployment hardware exposes it, composition
-supplies an `AntennaPowerControl` capability to the manager so the manager can order
-power-on before probe/initialize and power-off after close. An antenna provider that owns
-its power mechanism internally may omit that external capability; the generic
-`Antenna` contract does not pretend every reader has a separately switchable supply.
+supplies an `AntennaPowerControl` capability to AntennaManager. The manager may then
+order power-on before probe/initialize, stabilization before provider I/O and power-off
+when the antenna is no longer required.
 
-`AntennaPowerControl` is deliberately separate from `Antenna`. A physical reader may be
-powered through a relay board, GPIO-controlled supply or another installation component
-that is unrelated to the reader's vendor protocol. The per-antenna installation
-configuration therefore binds an optional power-control capability and a power
-stabilization interval to the antenna. Provider-owned power remains possible by omitting
-the external capability.
+`AntennaPowerControl` remains separate from `Antenna`. A physical reader may be powered
+through a relay board, GPIO-controlled supply or another installation component unrelated
+to the reader vendor protocol. A provider that owns its power mechanism internally may
+omit the external capability.
 
-One AntennaManager supports zero or one inventory mutual-exclusion group. The manager may
-still own 1..N antennas; antennas outside the optional group operate independently. When
-the group is present it contains 2..N configured antennas that share RF/device constraints
-forbidding simultaneous inventory. AntennaManager owns the multiplex policy for that one
-group: at most one healthy member inventories at a time, the active member rotates at the
-configured interval, and a failed member is skipped without stopping healthy members. The
-public/reference baseline is the known two-antenna installation with a 500 ms interval.
+#### Multiplex switching
 
-The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
-owns lifecycle/status/failure value types. `ScheduledTaskRunner` supplies reusable admission/timeout task handling, `AntennaSwitchController` coordinates the configured set and optional
-multiplex group, and `ManagedAntenna` owns one physical antenna's power/probe/initialize/
-inventory sequence. This split is justified by concrete responsibilities; it is not a
-generic command/query framework. Public manager operations remain activate/deactivate,
-inventory-enable control and status queries.
+One AntennaManager supports zero or one inventory mutual-exclusion group. Antennas outside
+that group operate independently. The group contains 2..N configured antennas that may
+not inventory simultaneously.
 
-The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
+SI01-REQ-054 requires only this behaviour:
+
+```text
+inventory group required
+        |
+        v
+start first available member
+
+every configured interval:
+        current member inventory OFF
+                    |
+                    v
+        next healthy member inventory ON
+                    |
+                    +--> failed/unavailable member: skip
+```
+
+At most one healthy group member inventories at a time. A failed member is skipped without
+stopping healthy members.
+
+`AntennaSwitchController` owns only this round-robin selection/switching responsibility.
+It does not own:
+
+- startup health probing;
+- power-stabilization sequencing;
+- normal antenna initialization;
+- recovery policy;
+- manager-wide status/failure aggregation;
+- creation/ownership of all ManagedAntenna instances;
+- generic asynchronous sequencing.
+
+AntennaManager owns the scheduled rotation task on its existing serial scheduled lane and
+invokes the switch controller when a rotation is due. The switch controller only tracks
+the current group member and selects/stops/starts the next available member. This keeps the
+multiplex helper intentionally small and directly traceable to SI01-REQ-054.
+
+The public/reference baseline remains the known two-antenna group with a 500 ms interval.
+The number of configured antennas does not by itself justify more physical I/O workers;
+V01 runtime characterization remains the authority for increasing physical parallelism.
+
+The built-in `SimulatedAntenna` path models the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
 initialization/inventory preconditions and controllable probe/initialize/start failures so
-startup containment and degraded/multiplex behaviour can be verified without hardware.
+startup containment, recovery design and multiplex behaviour can be verified without
+hardware.
 
 ### TagObservation and local event delivery
 
@@ -2602,6 +2718,7 @@ Useful automated rules may include:
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
 - exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
 - concrete immutable TimingNode read-view representation and compact LogBook indexing required by the ranking/query implementation;
+- exact antenna automatic-recovery trigger, retry/backoff, retry-limit and terminal-failure policy;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
 - version alignment between public core/provider contracts and private implementations;
