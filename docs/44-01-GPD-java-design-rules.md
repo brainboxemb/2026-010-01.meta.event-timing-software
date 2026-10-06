@@ -125,8 +125,7 @@ application package merely because the first consumer happens to be application 
 **Rule**
 
 A constructor creates and validates an object. Runtime behaviour starts through an
-explicit operation such as `activate()`, `checkHealth()` or
-`requestEnableInventory()` or `requestDisableInventory()`.
+explicit operation such as `activate()`, `requestEnableInventory()` or `requestDisableInventory()`.
 
 **Why**
 
@@ -140,12 +139,11 @@ Good:
 ```java
 AntennaManager manager = new AntennaManager(...);
 manager.activate();
-manager.checkHealth();
 ```
 
 **Avoid**
 
-A constructor that immediately probes all antennas or starts inventory.
+A constructor that immediately self-tests all antennas or starts inventory.
 
 If construction has an unavoidable side effect, that must be an explicit design decision,
 not a convenience hidden in the constructor.
@@ -181,7 +179,7 @@ to understand.
 Making `AntennaManager.activate()` mean both:
 
 1. start the software component; and
-2. probe all physical antennas.
+2. synchronously self-test all physical antennas before returning.
 
 Those are different actions and may be requested by different owners.
 
@@ -440,23 +438,30 @@ For antennas:
 ```text
 AntennaManager
     owns:
-      health check
-      power preparation
-      initialize
-      inventory enable/disable
-      failure/recovery
+      lifecycle/status boundary
+      startup self-test admission
+      inventory intent admission
+
+InventoryController
+    owns:
+      requested/applied inventory reconciliation
+      enable/disable task admission
+      switch-task lifetime
+
+task/
+    owns:
+      cooperative multi-step device sequences
 
 AntennaSwitchController
     owns:
-      current multiplex member
-      stop current
-      start next available
+      current/next multiplex member only
 ```
 
 **Avoid**
 
-Putting probing, status aggregation, power sequencing, recovery and a generic
-`CompletableFuture` sequence engine inside `AntennaSwitchController`.
+Putting startup self-test, power sequencing, initialization, recovery or a generic
+`CompletableFuture` sequence engine inside `AntennaSwitchController` or back into
+`AntennaManager`.
 
 If several components genuinely need the same low-level scheduling primitive, that
 primitive may live in Platform. Component policy stays with the component.
@@ -643,12 +648,77 @@ For Conductor:
 
 For AntennaManager:
 
-- one probe failure must not disable another healthy antenna;
+- one self-test failure must not prevent another configured antenna from completing its self-test;
 - a disable request arriving during power stabilization must prevent stale inventory start;
 - only one multiplex-group member may inventory at a time.
 
 A test should make the design rule visible. Avoid tests that merely duplicate the
 implementation line by line.
+
+### DR-13 — Keep normal control flow linear
+
+**Rule**
+
+Use an early `return` for a guard, precondition or invalid state at the beginning of a
+method.
+
+For two or more normal, equivalent business paths, prefer an explicit `if / else`
+structure and let the method continue to its normal end. Avoid using a `return` in the
+middle of one normal branch merely to avoid writing `else`.
+
+**Why**
+
+A reader should be able to distinguish immediately between:
+
+- a condition that says "this method has nothing valid to do"; and
+- a normal business decision between two valid paths.
+
+Scattered returns inside the main flow make one normal path look exceptional and make the
+control flow harder to scan, especially in orchestration code.
+
+**Example**
+
+Good guard:
+
+```java
+if (!ready
+        || busy
+        || !inventoryEnabledSetting.changePending()) {
+    return;
+}
+```
+
+Good normal choice:
+
+```java
+if (inventoryRequestedEnabled()) {
+    startEnableOperation();
+} else {
+    stopSwitching();
+    startDisableOperation();
+}
+```
+
+**Avoid**
+
+```java
+if (inventoryRequestedEnabled()) {
+    startEnableOperation();
+    return;
+}
+
+stopSwitching();
+startDisableOperation();
+```
+
+Both enable and disable are normal paths. The early `return` incorrectly makes the
+enable path read like a special case.
+
+This is a readability rule, not a prohibition on multiple returns. Additional early
+returns are appropriate when they are true guards, fail-fast validation or other
+conditions that terminate the method before its normal main flow starts.
+
+---
 
 ## Pull-request review check
 
@@ -664,7 +734,8 @@ For Java component changes, a reviewer can use this short check:
 8. **Observability** — Can status, metrics and logs explain what happened afterwards?
 9. **Comments** — Are the non-obvious ownership/threading/reasoning points documented?
 10. **Language** — Are names and messages clear English using established terminology?
-11. **Tests** — Is the risky behaviour tested, not only the happy path?
+11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
+12. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
