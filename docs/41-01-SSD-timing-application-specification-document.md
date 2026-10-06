@@ -377,7 +377,7 @@ probing or later operation of other independently healthy configured antennas.
 The failed antenna shall remain represented as unavailable or in error.
 :::
 
-:::{req} Couple antenna operation to assigned TimingNode lifecycle  
+:::{req} Couple antenna operation to assigned TimingNode state  
 :id: SI01-REQ-053  
 :status: D  
 :derived_from: UC-001, UC-003  
@@ -401,7 +401,7 @@ Failure of one group member shall not stop remaining healthy group members.
 
 ### Lifecycle interpretation
 
-The first registration baseline uses the following TimingNode lifecycle semantics:
+The first registration baseline uses the following TimingNode operational-state semantics:
 
 - at least one configured TimingNode is represented;
 - a TimingNode that cannot safely complete contained startup recovery is represented
@@ -688,7 +688,7 @@ application/
 :::{arch} Conductor  
 :id: Conductor  
 
-`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes. It owns cross-component application coordination that does not belong to one Domain or I/O component. For example, when TimingNode lifecycle determines whether assigned antennas should inventory, Runtime composition wires that relationship through Conductor rather than placing the callback in a Runtime container or device class.
+`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes. It owns cross-component application coordination that does not belong to one Domain or I/O component. For example, when TimingNode state determines whether assigned antennas should inventory, Runtime composition wires that relationship through Conductor rather than placing the callback in a Runtime container or device class.
 :::
 
 :::{arch} Configuration control  
@@ -908,7 +908,7 @@ matching factory and codec.
 
 A `TimingDataProvider` supplies that coherent profile family. Its factory is
 stateless and constructs concrete TimingData values from explicit construction
-values; it does not own TimingNode lifecycle policy, sequence allocation,
+values; it does not own TimingNode state policy, sequence allocation,
 persistence or event publication. The same common provider/API boundary is
 reusable by SI-01 and engineering tools such as the JavaFX Development Client;
 normal domain users remain unaware of provider discovery mechanics.
@@ -939,6 +939,11 @@ logical lane
 physical worker
   = Runtime-owned thread/executor resource that executes work from one or more lanes
 ```
+
+Execution identity follows the same ownership split. The logical lane is identified
+with the component whose work it orders; physical worker/thread identity belongs to
+the Runtime resource that executes lane work. Sharing one physical worker therefore
+does not merge the logical execution identities of the components using it.
 
 A Timing Point Application may contain multiple TimingNodes without allocating
 one physical worker per node. Each TimingNode keeps an independent bounded
@@ -1796,7 +1801,7 @@ Status is a first-class current-state model and is distinct from logging.
 Status should allow presentation and diagnostics to observe application, timing-system and subsystem health without parsing log text. Representative areas include:
 
 - application version / uptime / overall health;
-- TimingNode lifecycle;
+- TimingNode state;
 - registration asset/source state;
 - TimingNode queue depth/high-water/overload health;
 - RFID power/startup/protocol/heartbeat;
