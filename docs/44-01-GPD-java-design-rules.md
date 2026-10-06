@@ -594,7 +594,6 @@ OPEN / CLOSED / ERROR       TimingNode state
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
-reconcile                   bring owned state in line with current intent
 ```
 
 Prefer:
@@ -852,6 +851,77 @@ polling internally. That implementation choice must not leak into the manager co
 
 ---
 
+### DR-16 — Keep contract checks compact
+
+**Rule**
+
+Use compact precondition helpers for programming-contract checks such as required state or
+argument validity.
+
+Prefer static `checkState(...)` and `checkArgument(...)` calls over repeated
+`if (...) { throw new IllegalStateException/...; }` blocks when the only purpose of the
+branch is to enforce a contract.
+
+Keep normal business decisions as ordinary control flow. A precondition helper must not
+hide a recoverable condition, device result or normal application branch.
+
+**Why**
+
+Repeated exception boilerplate makes a simple contract dominate the visual structure of a
+method. The reader should see the operation first and the contract as one concise guard.
+
+**Example**
+
+Prefer:
+
+```java
+synchronized (this) {
+    checkState(
+            state == State.NEW,
+            "AntennaManager must be NEW, was %s",
+            state);
+}
+```
+
+over:
+
+```java
+synchronized (this) {
+    if (state != State.NEW) {
+        throw new IllegalStateException(
+                "AntennaManager can only activate from NEW; current state="
+                        + state);
+    }
+}
+```
+
+For arguments:
+
+```java
+checkArgument(
+        controlLane != null,
+        "controlLane must not be null");
+```
+
+The project may provide these small helpers directly rather than adding a broad utility
+dependency solely for precondition syntax. Static imports are preferred at call sites when
+they improve readability.
+
+**Avoid**
+
+Using `checkState(...)` as a replacement for normal application flow:
+
+```java
+checkState(
+        inventoryRequestedEnabled(),
+        "inventory must be enabled");
+```
+
+when disabled inventory is a valid runtime state. That belongs in ordinary task/state
+logic, not in a programming-contract assertion.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -869,7 +939,8 @@ For Java component changes, a reviewer can use this short check:
 11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
 12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
 13. **Device completion** — Are real completion facts emitted by the operation owner rather than inferred from delays?
-14. **Tests** — Is the risky behaviour tested, not only the happy path?
+14. **Contract checks** — Are programming-contract failures expressed compactly without hiding normal control flow?
+15. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
