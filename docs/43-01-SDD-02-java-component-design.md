@@ -233,6 +233,8 @@ application/
 infra/
   property/
     TrackedProperty.java            generic tracked-value scheduling/change detection
+  extension/
+    ExtensionRegistry.java          typed provider discovery/selection
   configuration/
     ReadOnlyConfiguration.java     startup/current value + change observation
     DynamicConfiguration.java      validated runtime override/clear primitive
@@ -2719,50 +2721,82 @@ These are consumer possibilities, not modules to create now.
 ## Java 8 extension/provider mechanism
 
 A concrete public/private extension requirement now exists, so provider discovery
-is no longer merely a optional capability. Keep the mechanism narrow and
-composition-oriented:
+is no longer merely an optional capability. Keep the mechanism narrow and
+composition-oriented.
+
+The first V04 implementation slice covers only `EventDataProvider` and
+`TimingDataProvider`:
 
 ```text
+IF-11 provider ids
+        |
+        v
 runtime.TimingApplicationRuntime.create(...)
-  -> infra extension discovery support
-       -> discover built-in providers
-       -> discover external provider JARs
-  -> ExtensionRegistry
-       EventDataProvider
-       TimingDataProvider
-       UpstreamProtocolProvider
-       AntennaProvider
-       CanProtocolProvider
-       DisplayProtocolProvider
-  -> validate configured provider IDs
-  -> create normal typed implementations
-  -> return runtime.TimingApplicationRuntime
+        |
+        v
+infra.extension.ExtensionRegistry
+        |
+        +--> built-in EventDataProvider("reference")
+        +--> built-in TimingDataProvider("reference")
+        +--> ServiceLoader external EventDataProvider(s)
+        +--> ServiceLoader external TimingDataProvider(s)
+        |
+        v
+resolve configured ids
+        |
+        +--> EventData
+        +--> TimingDataFactory + TimingDataCodec
+        |
+        v
+normal application composition
 ```
 
-For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
-plus standard `ServiceLoader` SPI metadata. Discovery happens during startup;
-runtime hot reload/unload is deliberately out of scope. The provider registry
-combines built-in and external providers and rejects duplicate provider IDs.
+`infra.extension.ExtensionRegistry` owns only typed provider registration,
+duplicate-id detection, discovery from a supplied `ClassLoader` and lookup by
+stable provider ID. It is not a generic `Plugin` API and it does not know
+TimingNode/Application behaviour.
+
+The public built-in EventData and TimingData providers both use the IF-11 stable
+ID `reference`. TimingData therefore has a concrete
+`DefaultTimingDataProvider` beside the existing default factory/codec.
+
+For the Java 8 baseline, an external provider JAR uses normal
+`META-INF/services` metadata. A caller may create a dedicated
+`URLClassLoader` for one or more provider JARs and pass that loader to
+`ExtensionRegistry`; the registry then uses standard `ServiceLoader`.
+The registry does not choose a filesystem extension directory, scan arbitrary
+folders, own hot reload/unload or own class-loader lifecycle. The exact
+external-JAR directory/layout and dependency-isolation policy therefore remain
+separate/open deployment decisions.
+
+The current single-TimingSystem runtime configuration carries
+`eventDataProvider` and `timingDataProvider` selections. The reference IDs
+remain the compiled/default profile values when a deployment does not override
+them. Runtime resolves both provider IDs before creating TimingData persistence
+or the TimingNode. Unknown configured IDs and duplicate IDs within one provider
+family fail before normal composition rather than silently falling back.
+
+A synthetic V04 test creates an external provider JAR and a dedicated
+`URLClassLoader` to prove that `ServiceLoader` discovery works outside the
+built-in class set.
 
 Provider contracts belong with the capability whose meaning they create;
-class-loader/discovery mechanics belong under application-core Infrastructure support. Domain,
-application and I/O runtime code must not depend on `URLClassLoader`,
-`ServiceLoader` or a generic `Plugin` interface.
+class-loader/discovery mechanics belong under application-core Infrastructure
+support. Domain, Application and I/O component code must not depend on
+`URLClassLoader`, `ServiceLoader` or a generic extension interface.
 
-`SimulatedAntenna` and its provider are built into the public baseline and are
-always available. The public baseline also supplies a reference EventData profile.
-External JARs may add alternative `AntennaProvider` and `EventDataProvider`
-implementations. The same typed pattern is available for concrete EventData, TimingData,
-UpstreamProtocol, CAN-protocol and display-protocol implementations where a
-public/private or vendor boundary requires it.
+Later slices may register typed `UpstreamProtocolProvider`,
+`AntennaProvider`, `CanProtocolProvider` and
+`DisplayProtocolProvider` families in the same registry pattern when those
+capabilities are implemented. They are intentionally not created as empty
+families in the first EventData/TimingData slice.
 
 IF-11 selects providers by stable provider ID. Missing providers, duplicate IDs
 or an incompatible provider/configuration combination fail during validation or
 startup rather than silently falling back to another implementation.
 
-The exact external-JAR directory/layout, dependency isolation strategy and
-whether the provider contracts eventually justify a separately versioned SPI
-artifact remain implementation/evidence-driven decisions.
+Whether the provider contracts eventually justify a separately versioned SPI
+artifact remains implementation/evidence-driven.
 
 ## Public/private composition
 
