@@ -79,11 +79,13 @@ classes harder to change.
 Good:
 
 ```java
-antennaManager.requestInventoryEnabled(true);
+antennaManager.requestEnableInventory();
 ```
 
-The Conductor says that inventory is required. AntennaManager may then power the antenna,
-wait for stabilization, initialize it and start inventory.
+The Conductor explicitly requests inventory enable. AntennaManager may then power the
+antenna, wait for stabilization, initialize it and start inventory. When the TimingNode
+state becomes CLOSED or ERROR, Conductor explicitly calls
+`requestDisableInventory()`.
 
 **Avoid**
 
@@ -124,7 +126,7 @@ application package merely because the first consumer happens to be application 
 
 A constructor creates and validates an object. Runtime behaviour starts through an
 explicit operation such as `activate()`, `checkHealth()` or
-`requestInventoryEnabled(...)`.
+`requestEnableInventory()` or `requestDisableInventory()`.
 
 **Why**
 
@@ -160,7 +162,7 @@ For SI-01 we use, for example:
 
 ```text
 software component      activate / deactivate
-TimingNode              OPEN / CLOSED
+TimingNode state        OPEN / CLOSED / ERROR
 antenna provider         initialize / startInventory / stopInventory / shutdown
 ```
 
@@ -202,26 +204,55 @@ published the event and can accidentally propagate downstream problems back into
 
 **Example**
 
-Good:
+For a tracked application property, the source event only invalidates the cached value:
 
 ```java
-public void onTimingNodeStatusChanged(Status status) {
-    requestReconcile();
-}
+timingNode.statusChangedEvent()
+        .subscribe(
+                ignored -> timingNodeStateProperty.signalChanged());
 ```
 
-The callback only signals that something changed.
+The property rereads the authoritative TimingNode state on its serial lane.
+
+When the tracked value really changes, the property uses the same project event mechanism
+as other components:
+
+```java
+timingNodeStateProperty.changedEvent()
+        .subscribe(this::onTimingNodeStateChanged);
+```
+
+**Event and handler naming**
+
+Use `Event<T>` / `EventSource<T>` for observable post-fact notifications. Do not add a
+second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
+`setCallback(...)` when the project event abstraction already fits.
+
+Use these naming roles consistently:
+
+```text
+statusChangedEvent()        EventSource: observable notification
+changedEvent()              generic tracked-property notification
+signalChanged()             command/invalidation: reread the source
+onTimingNodeStateChanged()  listener/handler method
+```
+
+An `onXxx(...)` method is a handler name, not a subscription API.
+
+Initialization is also separate from events. A tracked property returns its first
+authoritative value from `initialize()`; that first value is not emitted as a
+`changedEvent`. Only a later real value change is an event.
 
 **Avoid**
 
 ```java
-public void onTimingNodeStatusChanged(Status status) {
-    antennaManager.setInventoryEnabled(
-            status.lifecycle() == Lifecycle.OPEN);
-}
+property.onChange(this::onTimingNodeStateChanged);
 ```
 
-Here TimingNode event delivery would execute AntennaManager control directly.
+This invents another event-registration mechanism next to `EventSource.subscribe(...)`.
+
+Also avoid doing downstream device control directly in the synchronous source-event
+callback.
 
 ---
 
@@ -307,17 +338,19 @@ Good:
 statusChangedEvent
         |
         v
-request one reconcile
+TrackedProperty.signalChanged()
         |
         v
-TimingNode.query(status)
+TimingNode.query(status).state()
+        |
+        +-- unchanged --> no event
         |
         v
-derive current inventory requirement
+changedEvent(newState)
 ```
 
-If many events arrive while one reconcile is already pending, they may be coalesced into
-one later reconcile, provided a change cannot be lost.
+If many source events arrive while one property refresh is already pending, they may be
+coalesced into one later refresh, provided a change cannot be lost.
 
 **Avoid**
 
@@ -436,8 +469,8 @@ authoritative current status.
 A useful diagnostic sequence could be:
 
 ```text
-INFO  TimingNode TN-01 status changed CLOSED -> OPEN
-INFO  Conductor TN-01 sets antenna inventory required=true
+INFO  TimingNode TN-01 state changed CLOSED -> OPEN
+INFO  TimingNode TN-01 state OPEN -> enable antenna inventory
 INFO  Antenna ANT1 inventory started
 WARN  Antenna ANT1 provider failed
 INFO  Antenna ANT1 recovery started
@@ -545,8 +578,8 @@ reconcile                   bring owned state in line with current intent
 Prefer:
 
 ```java
-requestInventoryEnabled(...)
-inventoryRequired
+requestEnableInventory()
+requestDisableInventory()
 currentInventoryIndex
 ```
 
@@ -584,9 +617,10 @@ provider fails during a delayed transition.
 
 For Conductor:
 
-- many status events while one reconcile is pending should not fill the queue;
-- a stale `Status` snapshot must not override the current TimingNode state;
-- Conductor queue overload must not throw back into TimingNode.
+- many source status events while one property refresh is pending should not fill the queue;
+- a stale `Status` snapshot must not override the authoritative current TimingNode state;
+- unchanged property values must not emit `changedEvent`;
+- property admission overload must not throw back into TimingNode event delivery.
 
 For AntennaManager:
 
