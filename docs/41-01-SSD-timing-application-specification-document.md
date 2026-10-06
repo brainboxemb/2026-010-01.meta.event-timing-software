@@ -929,9 +929,13 @@ Application-wide coordination has a separate execution boundary. Conductor
 owns a serial application-coordination lane so cross-component behaviour does
 not execute synchronously on the thread that emitted a Domain or I/O event.
 
-AntennaManager owns one serial scheduled I/O lane. Immediate control,
-result-bearing control and multiplex rotation all enter that same logical lane;
-the lane runs on the Runtime-owned shared I/O worker.
+AntennaManager owns one serial scheduled I/O lane. Probe, initialize,
+power-control transitions, start/stop inventory and multiplex switching/rotation
+all enter that same logical lane; the lane runs on one Runtime-owned I/O-role
+worker. There is no separate initialization worker and no separate switching
+worker in the baseline. Elapsed-time waits such as power stabilization are
+scheduled continuations on that same lane, so the physical I/O worker is released
+while time passes.
 
 The baseline execution topology is therefore:
 
