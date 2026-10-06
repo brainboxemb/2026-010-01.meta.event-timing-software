@@ -467,20 +467,24 @@ D04 fixes the boundary used by A01:
   power-control orchestration;
 - `TagProcessor` owns observation-burst aggregation, strongest-RSSI selection, duplicate suppression and bounded
   TimingNode submission;
-- `TagRegistrationMapper` owns TagId -> RegistrationId conversion as an injected policy;
-  it is not required to be an in-memory lookup table and may use RaceData only when a
-  concrete profile needs reference data;
+- shared `EventData` owns the stable event-profile TagId -> RegistrationId
+  relationship; TagProcessor resolves observations through EventData before
+  registration-keyed filtering. Alternate/private EventData providers may supply
+  event-specific mapping semantics behind the same shared EventData contract;
 - duplicate suppression uses monotonic elapsed time while the observation timestamp
   remains the registration effective time;
 - `SimulatedAntenna` implements the same lifecycle and observation event boundary as a
   real provider.
 
-The Java A01 implementation is now aligned with this decision. It includes the
-AntennaManager lifecycle/control boundary, application-owned subscription and
-TagProcessor lifecycle, bounded shared-I/O control, and the normal
-SimulatedAntenna -> TagProcessor -> TimingNode admission/TimingData commit path.
-The remaining IF-11 registration-routing/deployment configuration is a separate
-configuration-completion track and does not reopen the D04 runtime decision.
+The Java A01 implementation is aligned with this decision. It includes the
+AntennaManager lifecycle/control boundary, application-owned subscription,
+EventData-based TagId resolution, TagProcessor lifecycle, bounded shared-I/O
+control, and the normal SimulatedAntenna -> AntennaManager -> TagProcessor ->
+TimingNode -> TimingData/persistence/LogBook path. Normal Windows development
+startup now composes one explicitly logged simulated antenna so this path is also
+exercised by the normal executable. The remaining full IF-11 antenna
+routing/deployment configuration is a separate configuration-completion track and
+does not reopen the D04 runtime decision.
 
 ### D01 — Runtime execution and measurement plan
 
