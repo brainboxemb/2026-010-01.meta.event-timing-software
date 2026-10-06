@@ -283,15 +283,14 @@ io/
         Antenna.java                    device/provider lifecycle + observation contract
         SimulatedAntenna.java           built-in reference/simulation implementation
       manager/
-        AntennaManager.java             lifecycle/status + inventory intent
+        AntennaManager.java             lifecycle/status + control state machine
         AntennaSet.java                 composition-time antenna set + multiplex configuration
         ManagedAntenna.java             direct one-antenna operations + runtime status
         AntennaManagerTypes.java        manager/status value types
-        task/
-          AntennaTasks.java             reusable task set owned by AntennaManager
-          SelfTestTask.java             complete startup self-test round
-          InventoryTask.java            enable/disable/multiplex inventory state machine
-          AntennaShutdownTask.java      cooperative device shutdown
+        AntennaTasks.java               reusable task set owned by AntennaManager
+        SelfTestTask.java               complete startup self-test round
+        InventoryTask.java              enable/disable/multiplex inventory state machine
+        AntennaShutdownTask.java        cooperative device shutdown
     power/
       PowerDevice.java                  external power-device contract
       SimulatedPowerDevice.java         deterministic simulated power device
@@ -1412,8 +1411,10 @@ power-on, initialize, power-cycle or reader switching.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of
 one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
-task admission/cancellation. It does not contain the physical multi-step sequences; those
-live in the reusable task set under `manager/task`.
+one explicit manager control state machine. It does not contain the physical multi-step
+sequences; those live in the reusable task classes beside the manager. The task classes
+work directly on manager-owned `ManagedAntenna` objects; there is no second task-facing
+antenna interface.
 
 The manager uses a small `Setting<Boolean>` for inventory intent:
 
