@@ -922,6 +922,70 @@ logic, not in a programming-contract assertion.
 
 ---
 
+### DR-17 — Name asynchronous boundaries
+
+**Rule**
+
+Do not hide event delivery, queue admission or thread/lane transfer inside nested lambda
+expressions.
+
+At an asynchronous boundary, prefer a named method reference and move the admission step
+into that method. The call site should read as the architecture reads.
+
+**Why**
+
+Nested lambdas compress multiple execution contexts into punctuation. The code may be
+shorter, but a reader can no longer see where the event callback ends and where serial
+execution begins.
+
+**Example**
+
+Prefer:
+
+```java
+antenna.selfTestCompletedEvent()
+        .subscribe(
+                this::onSelfTestCompleted);
+
+private void onSelfTestCompleted(
+        AntennaSelfTestResult result) {
+    taskRunner.execute(
+            () -> selfTestCompleted(
+                    result));
+}
+```
+
+The names make the two boundaries explicit:
+
+```text
+device event callback
+        |
+        v
+onSelfTestCompleted
+        |
+        v
+manager serial lane
+        |
+        v
+selfTestCompleted
+```
+
+**Avoid**
+
+```java
+antenna.selfTestCompletedEvent()
+        .subscribe(
+                result ->
+                        taskRunner.execute(
+                                () -> selfTestCompleted(
+                                        result)));
+```
+
+Also avoid extracting meaningless methods such as `handle(...)` or `process(...)`.
+The extracted method must name the execution/event boundary it represents.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -940,7 +1004,8 @@ For Java component changes, a reviewer can use this short check:
 12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
 13. **Device completion** — Are real completion facts emitted by the operation owner rather than inferred from delays?
 14. **Contract checks** — Are programming-contract failures expressed compactly without hiding normal control flow?
-15. **Tests** — Is the risky behaviour tested, not only the happy path?
+15. **Async readability** — Are event and lane boundaries named instead of hidden in nested lambdas?
+16. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
