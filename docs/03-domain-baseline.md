@@ -326,8 +326,9 @@ Three IDs have different meanings:
 - `RegistrationId` is the canonical registration identity stored in committed
   TimingData.
 
-Source identities are resolved before TimingData construction, but the two
-input paths do not require the same resolver implementation:
+Source identities are resolved before TimingData construction. Event-specific
+source/reference relationships belong to `EventData`, a Domain capability
+alongside `TimingData`.
 
 ```text
 TagObservation
@@ -335,24 +336,33 @@ TagObservation
           |
           v
      TagProcessor
-  RSSI / duplicate policy
+          |
+          +--> EventData: TagId -> RegistrationId
           |
           v
-TagRegistrationMapper -------------------------+
-                                                +--> RegistrationId --> TimingData
-TeamId -> team/reference resolution -----------+
+registration passage keyed by RegistrationId
+  - duplicate suppression
+  - strongest-RSSI selection
+  - quiet/max-duration timeout
+  - per-TagId observation attribution
+          |
+          v
+RegistrationId + selected observed time
+          |
+          v
+TimingData
 ```
 
-An automatic registration therefore starts from a decoded `TagObservation`.
-The TagProcessor applies SI-01 input policy and a configured
-`TagRegistrationMapper` resolves the `TagId` to the canonical
-`RegistrationId`. The concrete mapping may be a deterministic transformation,
-provider/profile rule or a reference-data-backed lookup.
+One registration may be associated with 1..N TagIds. `EventData` owns that
+relationship and provides the reverse resolution needed by automatic timing:
+`TagId -> RegistrationId`.
 
-A manual registration starts from `TeamId` and may use RaceData/reference data
+The antenna/provider boundary owns physical decoding/decryption, but the decoded
+identity exposed to generic processing is the semantic `TagId`; provider-specific
+bytes, framing and encryption are not part of EventData.
+
+A manual registration starts from `TeamId` and may use EventData/reference data
 to resolve the same canonical `RegistrationId` concept.
-
-RaceData is therefore not a mandatory hop in every automatic-registration path.
 
 `RegistrationId` is not the TimingData record key. Record identity/order remains
 `(TimingNodeId, SequenceNumber)`.
@@ -376,57 +386,113 @@ A timestamp is **not** the source-ordering mechanism. Registration timing node s
 
 The SI-01 SAD owns the implementation architecture for `TimingTimestamp`, injectable clock/time sources, monotonic duration measurement and the risk created by wall-clock corrections.
 
-## Registration identity and source resolution
+## EventData and registration identity
+
+`EventData` is the event-specific reference-data capability alongside
+`TimingData`.
+
+The two concepts have deliberately different roles:
+
+```text
+EventData
+  = source/reference relationships for the event
+  = TagId / TeamId / RegistrationId relationships
+  = input-side identity resolution
+
+TimingData
+  = committed timing facts
+  = canonical RegistrationId after source resolution
+```
 
 `RegistrationId` is the canonical registration identity stored on committed
-TimingData. It is deliberately separate from the concrete source/reference IDs
-used to reach that registration.
+TimingData. It remains separate from the source identities used to reach it and
+from the TimingData record key `(TimingNodeId, SequenceNumber)`.
 
-For RFID input, `TagId` is part of a decoded `TagObservation` together with
-RSSI and the accepted observation timestamp. The TagProcessor applies the
-configured filtering/duplicate policy and delegates identity conversion to a
-`TagRegistrationMapper`.
-
-The mapping contract is intentionally narrow:
+For RFID input, EventData supports at least:
 
 ```text
-TagId -> RegistrationId
+RegistrationId R-123
+  <- TagId TAG-A
+  <- TagId TAG-B
 ```
 
-Concrete formats and mapping rules are event/profile/provider specific. A
-reference profile may use a deterministic transformation such as:
+and therefore the processing lookup:
 
 ```text
-TAG-001 -> N-001
-TAG-123 -> N-123
+TAG-A -> R-123
+TAG-B -> R-123
 ```
 
-A deployment may instead back the mapper with RaceData or another reference
-dataset when its actual contract requires that. The generic automatic-registration
-architecture does not require a lookup table.
+The exact event-data source may be deterministic, loaded reference data or an
+event-specific provider/import. That choice does not change TagProcessor
+semantics.
 
-`TeamId` remains the manual/reference-data source identity and may use RaceData
-to resolve the same canonical `RegistrationId`.
+### Registration passage processing
 
-`RegistrationId` also remains separate from the TimingData record key
-`(TimingNodeId, SequenceNumber)`.
+TagProcessor resolves each decoded TagObservation to `RegistrationId` before
+registration-level duplicate suppression and passage aggregation.
 
-## Race data
+The passage key is `RegistrationId`, not `TagId`. This means observations
+from multiple physical tags belonging to the same registration contribute to one
+logical passage and one strongest-RSSI decision.
 
-`RaceData` is locally available participant/reference data used by one
-`TimingNode`.
+Within a pending passage, TagProcessor retains enough attribution to distinguish
+the contributing TagIds. Conceptually:
 
-It may contain data used by manual TeamId resolution or by a concrete
-`TagRegistrationMapper` when an event/profile actually requires reference-data
-lookup. It is not part of the mandatory generic antenna-to-registration path.
+```text
+RegistrationId R-123
+  TAG-A
+    observation count
+    strongest RSSI
+    first/last observation
+  TAG-B
+    observation count
+    strongest RSSI
+    first/last observation
 
-Obtaining or synchronising RaceData from an external system is an
-integration/application responsibility rather than behaviour owned by
-`RaceData`.
+  selected observation
+    TagId
+    RSSI
+    observed time
+```
 
-Concrete source formats, production mappings and private compatibility rules are
-outside this public baseline. Stage start-time data remains a separate concern
-owned by `StageStartTimes`.
+The accepted automatic registration still contains the canonical
+`RegistrationId` and accepted observed time. Per-tag passage information is
+diagnostic/engineering state; it is not a second TimingData record model and
+need not be permanently persisted.
+
+Duplicate suppression after successful TimingNode admission is also keyed by
+`RegistrationId`. Therefore an accepted R-123 suppresses subsequent observations
+from every TagId that EventData resolves to R-123 during the duplicate window.
+Independent duplicate windows per physical tag are not required.
+
+### Engineering observability
+
+TagProcessor shall make its processing behaviour inspectable through a read-only
+diagnostic view suitable for engineering presentation. That view may expose,
+for pending/recent passage state:
+
+- RegistrationId;
+- contributing TagIds;
+- observation count per TagId;
+- strongest RSSI per TagId and for the whole passage;
+- selected TagId and selected observation time;
+- first/last observation timing where useful;
+- processing outcome such as pending, accepted or duplicate-suppressed where
+  that state is retained.
+
+This view explains processing decisions without becoming authoritative timing
+state. TimingData/LogBook remains authoritative for committed registrations.
+
+## Event reference data
+
+EventData is the preferred owner for participant/team/tag relationships that are
+specific to the active event. The existing `RaceData` working concept should
+not grow into a second overlapping owner of the same mappings; migration of
+remaining RaceData responsibilities is detailed design work.
+
+Stage-start-time semantics remain separately owned by `StageStartTimes` unless
+a later design deliberately folds them into EventData.
 
 ## Start-time reference data
 
