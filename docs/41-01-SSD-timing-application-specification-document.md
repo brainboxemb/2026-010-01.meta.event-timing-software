@@ -366,15 +366,18 @@ unavailability of those functions shall not by itself stop an operational Timing
 from accepting and committing local registrations.
 :::
 
-:::{req} Contain antenna startup and runtime failure  
+:::{req} Contain and expose antenna startup and runtime failure  
 :id: SI01-REQ-052  
 :status: D  
-:derived_from: UC-003  
+:derived_from: UC-003, UC-004  
 
-At application startup SI-01 shall attempt a health probe for every configured
-antenna. Failure of one configured antenna shall not by itself prevent health
-probing or later operation of other independently healthy configured antennas.
-The failed antenna shall remain represented as unavailable or in error.
+At application startup SI-01 shall attempt a self-test for every configured antenna.
+The self-test result is diagnostic state and shall not permanently gate later antenna
+operation. Failure of one configured antenna shall not by itself prevent self-test,
+recovery attempts or later operation of other independently usable configured antennas.
+
+A failed antenna operation shall remain observable through antenna status until later
+operation updates that status.
 :::
 
 :::{req} Couple antenna operation to assigned TimingNode lifecycle  
@@ -397,6 +400,20 @@ For antennas configured in the same inventory mutual-exclusion group, SI-01 shal
 keep at most one healthy group member inventorying at a time and shall rotate
 inventory between available group members using the configured inventory interval.
 Failure of one group member shall not stop remaining healthy group members.
+:::
+
+:::{req} Allow antenna recovery without process restart  
+:id: SI01-REQ-055  
+:status: D  
+:derived_from: UC-004  
+
+After a startup self-test, initialization or inventory attempt fails, SI-01 shall allow
+a later explicit antenna/inventory request to start a new preparation and inventory
+attempt without requiring SI-01 process restart.
+
+A failed attempt shall not be marked applied. The latest failure shall remain observable,
+and a later explicit request shall represent a new recovery attempt rather than being
+rejected solely because an earlier attempt failed.
 :::
 
 ### Lifecycle interpretation
@@ -439,9 +456,10 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 | SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
-| SI01-REQ-052 | UC-003 | per-antenna startup/runtime failure containment + observable antenna health |
+| SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
 | SI01-REQ-053 | UC-001/003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
+| SI01-REQ-055 | UC-004 | retry/recovery of antenna operation without process restart |
 
 ## Software-item architecture
 
