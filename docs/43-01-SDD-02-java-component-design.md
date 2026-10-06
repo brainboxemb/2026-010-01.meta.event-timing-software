@@ -225,8 +225,10 @@ application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
-  Conductor.java                   application lifecycle + cross-component rules
-  ComponentLifecycleManager.java   ordered activation/rollback helper
+  Conductor.java                   SI-01 cross-component rules
+  logic/
+    AbstractConductor.java          generic Conductor lifecycle template
+    ComponentLifecycleManager.java ordered activation/rollback helper
   property/
     TimingNodeLifecycleProperty.java
 
@@ -749,26 +751,56 @@ validated Config
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
   -> Conductor.activate()
-       -> ComponentLifecycleManager.activateAll()
-            -> TimingNode.activate()
-            -> AntennaManager.activate()
-       -> startup application actions
-            -> AntennaManager.checkHealth()
-       -> initialize tracked application properties
+       -> AbstractConductor lifecycle template
+            -> ComponentLifecycleManager.activateAll()
+                 -> TimingNode.activate()
+                 -> AntennaManager.activate()
+            -> start Application lane
+            -> Conductor.onActivated()
+                 -> AntennaManager.checkHealth()
+                 -> initialize tracked application properties
   -> PresentationRuntime.activate()
 ```
 
-`application.Conductor` owns application-wide coordination between already constructed
-components, including the ordered startup and shutdown of the application components it
-coordinates. Runtime creates and wires the Conductor but does not reimplement application
-startup policy in the composition root.
+`application.Conductor` owns SI-01 application coordination between already
+constructed components. Runtime creates and wires the Conductor but does not reimplement
+application startup policy in the composition root.
 
-Conductor uses a small `application.ComponentLifecycleManager` helper for the mechanical
-part of component lifecycle: registration, ordered `activate()`, rollback of components
-that already activated when a later activation fails, and reverse-order
-`deactivate()`. The helper does **not** decide when startup happens, perform health
-checks, reconcile application state, discover components or contain device-specific
-policy. Conductor owns those decisions.
+Generic Conductor lifecycle mechanics are deliberately kept out of the concrete SI-01
+class. `application.logic.AbstractConductor` owns the reusable lifecycle template:
+component registration, ordered activation, starting/closing the Application lane,
+activation-failure cleanup and reverse-order deactivation. It uses
+`application.logic.ComponentLifecycleManager` for the mechanical component order and
+rollback.
+
+The abstract base has one concrete-startup hook, `onActivated()`, called only after
+registered components are active and the Application lane is running. The base contains no
+TimingNode, AntennaManager, provider, property or SI-01 decision logic.
+
+The concrete `application.Conductor` registers its components and implements
+`onActivated()` with SI-01 startup actions such as antenna health checking and tracked
+property initialization. It also contains the application rules that map tracked values to
+component intent.
+
+```text
+AbstractConductor
+  generic lifecycle only
+      |
+      +--> ComponentLifecycleManager
+      +--> Application SerialExecutor lifecycle
+      +--> cleanup / rollback mechanics
+      |
+      v
+Conductor
+  SI-01 logic only
+      |
+      +--> TimingNodeLifecycleProperty
+      +--> antenna startup health check
+      +--> TimingNode lifecycle -> antenna inventory intent
+```
+
+Neither class is a general application framework. Component discovery, dependency
+injection, rule engines and provider lifecycle do not belong in this base hierarchy.
 
 Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
 application worker. Application-level values that drive cross-component behaviour are
@@ -870,7 +902,9 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ConfigurationControl.java
     Conductor.java
-    ComponentLifecycleManager.java
+    logic/
+      AbstractConductor.java
+      ComponentLifecycleManager.java
     property/
       TimingNodeLifecycleProperty.java
 
@@ -926,8 +960,8 @@ main()
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
        -> Conductor.activate()
-            -> ComponentLifecycleManager activates application components
-            -> Conductor performs startup health/reconcile work
+            -> AbstractConductor activates application components + Application lane
+            -> Conductor.onActivated() performs SI-01 startup health/property work
        -> PresentationRuntime.activate()
   -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
