@@ -858,11 +858,12 @@ worker.
 `NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
 :::
 
-:::{arch} RaceData  
-:id: RaceData  
+:::{arch} EventData  
+:id: EventData  
 
-`EventData` owns event-specific participant/team/tag reference relationships needed by
-TimingNode processing, including 1..N TagIds for one RegistrationId and TagId-to-RegistrationId resolution. The older `RaceData` working concept must not remain a second owner of the same mapping semantics.
+`EventData` owns event-specific participant/team/tag reference relationships
+needed by TimingNode processing, including 1..N TagIds for one RegistrationId
+and TagId-to-RegistrationId resolution.
 :::
 
 :::{arch} StageTiming  
@@ -898,11 +899,11 @@ normal domain users remain unaware of provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
-`TimeSource` is the Domain-owned absolute-time source of one `TimingSystem`.
-Production composition may delegate it to the platform wall clock; simulation
-and tests can provide a controlled source with an independent offset or stepped
-time. This keeps simulated clock behaviour scoped to the TimingSystem rather
-than global to the Java process.
+`PlatformEnvironment` supplies the process/runtime time capabilities used by
+SI-01: an absolute wall-clock `Clock` for externally meaningful timestamps and
+a `MonotonicClock` for elapsed-time semantics. Domain objects consume the
+semantic time values they need; they do not own a second per-TimingSystem clock
+abstraction.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
@@ -1284,13 +1285,11 @@ responsibilities. It contains JDK-only reusable primitives and low-level
 execution-environment abstractions:
 
 ```text
-bounded serial execution (SerialWorker)
-local typed events (Event<T>)
-clock / time source
-filesystem / path primitives
-executors / threads
-process / runtime information
-network / OS primitives
+bounded serial execution (SerialExecutor / SerialScheduledExecutor)
+optional scheduled task handling (ScheduledTaskRunner)
+local typed events (Event<T> / EventSource<T>)
+absolute wall clock (Clock)
+elapsed-time source (MonotonicClock)
 ```
 
 A domain or I/O component may compose a Platform primitive such as
@@ -1389,8 +1388,7 @@ One **Timing Point Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
 simulation contexts. Each TimingSystem owns a complete
 `SystemStatus` overview, a system-level
-`UpstreamMessagePort`, one `UpstreamProtocol` context, one
-`TimeSource` and 1..N TimingNodes. Its internal `TimingSystemId` is not
+`UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. Its internal `TimingSystemId` is not
 assumed to be part of the upstream wire contract.
 :::
 
@@ -1635,7 +1633,7 @@ Architecture rules:
 - the TimingNode behaves as an active object: one bounded serial execution
   boundary owns state-dependent command ordering and consistency-sensitive reads;
 - state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
-- the contained LogBook, NextUpTeams, StageStartTimes and RaceData objects remain
+- the contained LogBook, NextUpTeams, StageStartTimes and EventData objects remain
   passive and do not each receive their own execution thread;
 - short read operations may capture immutable snapshots for longer calculations outside the TimingNode lane;
 - different TimingNodes may make progress at the same time;
@@ -1696,27 +1694,29 @@ When a race/stage start is defined only by local time-of-day, elapsed-time calcu
 
 #### Time sources
 
-Code that needs the current absolute time receives it through the Domain-level `TimeSource` owned by the relevant `TimingSystem`. Production composition can delegate that source to the operating-system wall clock; deterministic tests can supply a controlled source that can be advanced, stepped or given a per-system offset explicitly. This allows multiple TimingSystems hosted by one process to run against different simulated absolute times without changing TimingNode logic.
-
-Elapsed durations, retry intervals, filtering windows, scheduling delays and timeout measurements should use a **monotonic time source** where their semantics are duration-based. On Java 8 this can be backed by `System.nanoTime()` behind a small platform abstraction. A monotonic mark is process-local and is not a persisted event timestamp.
-
-The distinction is therefore:
+SI-01 uses the Runtime-composed `PlatformEnvironment` as the process/platform
+time boundary.
 
 ```text
-TimingTimestamp / wall-clock source
-  absolute event time
-  persistence / synchronisation / external semantics
+Clock
+  absolute externally meaningful time
+  observation/event timestamps
+  persistence / synchronisation semantics
 
-monotonic time source
-  elapsed duration
-  timeout / retry / filtering windows
-  process-local only
-
-TimingNodeId + SequenceNumber
-  stable stream ordering / gap detection
+MonotonicClock
+  elapsed time only
+  filtering windows
+  scheduling delays
+  timeouts / metrics
 ```
 
-A source sequence is not derived from a timestamp. Two registrations may have equal timestamps, and a wall-clock correction may even make a later observation carry an earlier absolute timestamp; source ordering must remain recoverable from source sequence semantics.
+The absolute wall clock may be controlled by simulation composition when a
+deterministic scenario requires it. Monotonic values are process-local and are
+never persisted as event timestamps. Device/provider code attaches a
+`TimingTimestamp` at the earliest accepted decoded-observation point using the
+configured absolute clock when the provider does not supply a trustworthy
+source timestamp.
+
 
 #### Architecture risk — wall-clock discontinuity and local-time ambiguity
 
@@ -1990,13 +1990,13 @@ Working rules:
 Keep the data roles simple:
 
 - `LogBook` is passive state and holds committed immutable `TimingData` values;
-- `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
+- `NextUpTeams`, `StageStartTimes` and `EventData` are separate passive
   per-node state objects;
 - the TimingNode worker is the single writer for those mutable per-node objects;
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- when NextUpTeams, StageStartTimes or RaceData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when NextUpTeams, StageStartTimes or EventData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 For example, StageStartTimes may be sent again when a TimingNode is opened after
@@ -2081,7 +2081,7 @@ TagObservation
 The timestamp is attached at the earliest accepted point at which SI-01 can identify the
 observation as a decoded tag observation. When a provider exposes a trustworthy source
 timestamp that can be mapped to the SI-01 time model, the adapter may use it; otherwise the
-adapter uses the owning TimingSystem TimeSource at the observation boundary. Timestamp
+adapter uses the Runtime-composed PlatformEnvironment wall clock at the observation boundary. Timestamp
 assignment is not delayed until registration commit.
 
 An antenna publishes observations through the normal local typed event mechanism. The
@@ -2189,11 +2189,9 @@ Their durations are configuration/profile decisions. The processor must remain s
 when observations from multiple antennas arrive concurrently and must not add an unbounded
 worker merely to serialize them.
 
-`TagId -> RegistrationId` uses a narrow configured mapper. The mapper may be a
-deterministic transformation, provider/profile rule or reference-data-backed lookup. For a
-public deterministic example, `TAG-001 -> N-001` is a transformation rule, not a
-requirement for an in-memory lookup table. RaceData may back a concrete mapper where an
-event contract requires it; it is not a mandatory generic RFID step.
+`TagId -> RegistrationId` resolution is owned by `EventData`. One RegistrationId
+may be associated with multiple TagIds; TagProcessor resolves the semantic TagId
+before RegistrationId-keyed duplicate suppression and passage aggregation.
 
 Source/provider-specific decoding and mapping policy must not be guessed by a generic
 adapter. Built-in `SimulatedAntenna` uses the same lifecycle, observation event and
@@ -2319,7 +2317,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Build | Maven | accepted |
 | Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition and keeps the executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
-| Time model | dedicated `TimingTimestamp` + per-TimingSystem `TimeSource` for absolute time + separate monotonic duration source | IF-05 fixes canonical external timestamp serialization; controlled per-system offset/stepping supports simulation; clock synchronisation/correction policy remains to be completed |
+| Time model | dedicated `TimingTimestamp` + Runtime-composed `PlatformEnvironment` with absolute `Clock` and separate `MonotonicClock` | IF-05 fixes canonical external timestamp serialization; simulation may provide a controlled wall clock; clock synchronisation/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |
 | Logging | SLF4J API in reusable application core; default executable provider `slf4j-jdk14` / `java.util.logging` | handlers/retention remain configuration and operational concerns |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution; YAML/SnakeYAML is the default Java input realization | profile/platform/mode resolution is architecturally defined but not yet fully implemented |
