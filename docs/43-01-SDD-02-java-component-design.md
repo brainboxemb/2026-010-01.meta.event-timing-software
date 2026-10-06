@@ -908,7 +908,7 @@ validated Config
                  -> AntennaManager.activate()
             -> start Application lane
             -> Conductor.onActivated()
-                 -> AntennaManager.checkHealth()
+                 -> AntennaManager startup self-test runs asynchronously
                  -> initialize tracked application properties
   -> PresentationRuntime.activate()
 ```
@@ -929,7 +929,7 @@ registered components are active and the Application lane is running. The base c
 TimingNode, AntennaManager, provider, property or SI-01 decision logic.
 
 The concrete `application.Conductor` registers its components and implements
-`onActivated()` with SI-01 startup actions such as antenna health checking and tracked
+`onActivated()` with SI-01 startup actions such as tracked
 property initialization. It also contains the application rules that map tracked values to
 component intent.
 
@@ -946,7 +946,7 @@ Conductor
   SI-01 logic only
       |
       +--> TimingNodeStateProperty
-      +--> antenna startup health check
+      +--> antenna inventory intent from TimingNode state
       +--> TimingNode state -> explicit antenna inventory action
 ```
 
@@ -1375,7 +1375,7 @@ interface Antenna {
 
 `selfTest()` is the startup device check and has PASS/FAIL semantics at manager level.
 It may return decoded identity/version information for diagnostics, but SI-01 does not
-model a parallel antenna-health state machine merely to represent startup progress.
+model a parallel antenna status model merely to represent startup progress.
 `initialize()` prepares the provider for normal use. `startInventory()` and
 `stopInventory()` control observation delivery. `shutdown()` releases provider
 resources and remains valid when initialization did not complete successfully.
@@ -1507,8 +1507,8 @@ selfTestCompletedEvent(result)
        v
 AntennaManager
 
-all PASS -> manager ready
-any FAIL -> manager remains active but not ready
+self-test round complete -> manager ready for later control
+individual PASS/FAIL results remain diagnostic
 ```
 
 The configured stabilization interval is an actual physical wait and therefore uses
@@ -1549,7 +1549,7 @@ Conductor.onTimingNodeStateChanged(OPEN)
         v
 AntennaManager.requestEnableInventory()
         |
-        +--> self-test passed / usable?
+        +--> start a fresh preparation attempt
         +--> optional power ON
         +--> stabilization delay
         +--> initialize
@@ -1757,7 +1757,7 @@ V01 runtime characterization remains the authority for increasing physical paral
 
 The built-in `SimulatedAntenna` path models the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
-initialization/inventory preconditions and controllable probe/initialize/start failures so
+initialization/inventory preconditions and controllable self-test/initialize/start failures so
 startup containment, recovery design and multiplex behaviour can be verified without
 hardware.
 
