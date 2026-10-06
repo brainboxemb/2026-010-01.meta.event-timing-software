@@ -899,17 +899,119 @@ than global to the Java process.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
-#### Reusable runtime mechanics
+#### Runtime execution model
 
-Reusable execution mechanics support the layered architecture but are not a
-separate logical layer in Figure SI01-01:
+Execution mechanics support the layered architecture but are not a separate
+logical layer in Figure SI01-01. Runtime owns the physical execution resources;
+the functional components own their logical ordering/serialization boundaries.
+
+The architecture distinguishes a **logical serial lane** from a **physical
+worker**:
 
 ```text
-serial execution
-lifecycle mechanics
-scheduling
-asynchronous completion
+logical lane
+  = component-local ordering, admission and queue state
+
+physical worker
+  = Runtime-owned thread/executor resource that executes work from one or more lanes
 ```
+
+A Timing Point Application may contain multiple TimingNodes without allocating
+one physical worker per node. Each TimingNode keeps an independent bounded
+serial lane so its mutable state remains ordered and isolated, while all
+TimingNode lanes use one shared physical TimingNode worker by default.
+
+Each TimingNode-local TagProcessor likewise owns its own logical scheduled
+serial lane, while all TagProcessor lanes share one physical TagProcessor
+worker by default.
+
+Application-wide coordination has a separate execution boundary. Conductor
+owns a serial application-coordination lane so cross-component behaviour does
+not execute synchronously on the thread that emitted a Domain or I/O event.
+
+AntennaManager owns one serial scheduled I/O lane. Immediate control,
+result-bearing control and multiplex rotation all enter that same logical lane;
+the lane runs on the Runtime-owned shared I/O worker.
+
+The baseline execution topology is therefore:
+
+```text
+Domain
+  TimingNode 1 ─ serial lane ─┐
+  TimingNode 2 ─ serial lane ─┼─> one shared TimingNode worker
+  TimingNode N ─ serial lane ─┘
+
+  TagProcessor 1 ─ scheduled serial lane ─┐
+  TagProcessor 2 ─ scheduled serial lane ─┼─> one shared TagProcessor worker
+  TagProcessor N ─ scheduled serial lane ─┘
+
+Application
+  Conductor ─ serial lane ────────────────> one application worker
+
+I/O
+  AntennaManager ─ scheduled serial lane ─> one shared I/O worker
+```
+
+The default is **one physical worker per functional role**, not one worker per
+component instance and not one worker per CPU core.
+
+This minimal topology applies to both known deployment classes:
+
+- the simple one-antenna Timing Point Application on Raspberry Pi Zero;
+- the larger Raspberry Pi 3 Model B deployment, including the known
+  two-antenna configuration that multiplexes inventory at 500 ms.
+
+The Raspberry Pi 3 having more CPU cores does not by itself justify more
+physical workers. Likewise, configuring multiple TimingNodes or multiple
+antennas does not automatically increase worker count. In the known two-antenna
+baseline, AntennaManager deliberately inventories only one multiplex-group
+member at a time, so an additional I/O worker is not assumed to provide useful
+antenna parallelism.
+
+Additional physical parallelism is a measurement-driven refinement. V01 runtime
+characterization must demonstrate a concrete contention, latency or throughput
+problem before a role receives more physical workers. Any such change must
+preserve the component-local serial-lane semantics above.
+
+Runtime worker items are deliberately bounded. A worker item must not occupy a
+physical worker merely to wait for time to pass. Delays such as antenna power
+stabilization are represented as scheduled continuation work on the owning
+logical lane:
+
+```text
+power on
+  -> return worker
+  -> scheduled continuation after stabilization delay
+  -> probe / initialize
+```
+
+External I/O may require bounded waiting for one device/protocol operation, but a
+shared worker must not be monopolized by an unbounded wait, polling loop or sleep.
+A provider that needs long-lived blocking behaviour must expose that behaviour
+through an execution design that does not stall unrelated work on the shared
+role worker.
+
+TimingNode is a different kind of execution boundary: one admitted Domain item is
+normally processed to its semantic completion before the next item on that
+TimingNode lane. That may include short in-process state work, LogBook/persistence
+commit and publication of the resulting immutable event. TimingNode work must not,
+however, sleep for elapsed time or wait on external hardware/network activity.
+
+The one-worker I/O baseline is therefore not justified by an assumption that
+device calls are free or instantaneous. It is justified by the intended quality
+of worker items: short/bounded provider operations plus scheduled continuations
+for elapsed-time waits. Additional I/O workers remain a V01 evidence-based
+decision if independent I/O lanes later contend on genuinely blocking operations.
+
+Thread priorities are not part of correctness. The baseline uses normal/default
+JVM priority for all Runtime-owned workers; priority tuning requires measurement
+evidence and target-platform requalification.
+
+The concrete Java realization of these rules belongs in SDD-02. That design may
+use types such as `SerialExecutor`, `SerialScheduledExecutor`,
+`ThreadPoolExecutor` and `ScheduledThreadPoolExecutor`, but those Java types
+are implementation mechanisms rather than the architecture identity of the
+execution model.
 
 #### I/O
 

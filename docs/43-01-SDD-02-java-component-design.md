@@ -305,40 +305,48 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-`SerialExecutor` is the project execution primitive used by TimingNode. Each
-TimingNode owns one bounded FIFO lane with its own `ArrayBlockingQueue`, admission state and
-lane-local metrics. **The lane is not the physical worker.** Production Runtime supplies one
-shared single-worker `ThreadPoolExecutor` for the TimingNode role and all TimingNode lanes
-schedule short drain tokens onto that shared worker. `SerialExecutor` receives that worker
-as an external `Executor` dependency; it never creates, configures or shuts down the
-physical worker. Tests that need asynchronous execution create and own their test worker
-separately, while deterministic package-local seams may use direct execution.
+The SI-01 SSD defines the execution topology and ownership rules: component-local
+logical serial lanes, one shared physical worker per functional role by default, separate
+Application/I/O execution boundaries, and measurement-driven physical parallelism.
 
-`SerialScheduledExecutor` is the corresponding serial scheduling capability used by
-TagProcessor. Each TagProcessor keeps its own bounded observation queue and logical serial
-scheduled lane, while production Runtime supplies one shared single-worker
-`ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled housekeeping and
-coalesced immediate work are serialized per TagProcessor without allocating a physical
-worker per processor.
+The Java realization uses `SerialExecutor` for the TimingNode lane. Each TimingNode
+receives a distinct instance with its own bounded `ArrayBlockingQueue`, admission state
+and lane-local metrics. All instances use the Runtime-owned single-worker
+`ThreadPoolExecutor` for the TimingNode role.
 
-**Runtime composition constructs and owns the physical role workers centrally, then creates
-logical lanes over those workers.** TimingNode and TagProcessor do not choose production
-thread names or create hidden production threads. Runtime gives one logical
-`SerialExecutor` and one logical `SerialScheduledExecutor` to each composed TimingNode,
-but all nodes share the corresponding role worker. TimingNode owns the lifecycle of its
-node-local logical lanes together with its child TagProcessor; closing a lane never shuts
-down the supplied physical worker. Runtime retains physical-worker shutdown ownership.
-Shared blocking-I/O executors remain Runtime-owned and separate from both Domain role
-workers.
+`SerialScheduledExecutor` realizes the TagProcessor scheduled serial lane. Each
+TagProcessor receives a distinct logical lane, while all such lanes use the Runtime-owned
+single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
+housekeeping and immediate work therefore preserve node-local ordering without creating a
+thread per processor.
 
-The central construction point deliberately leaves Java thread priority at the JVM
-default. Correctness and forward progress do not depend on priority. A role-specific
-priority change remains a measurement-driven tuning option and must be requalified on the
-target JVM/OS.
+Runtime also creates the Conductor `SerialExecutor` over the application worker and the
+AntennaManager `SerialScheduledExecutor` over the shared scheduled I/O worker.
 
-These project types exist to make execution ownership and application semantics explicit.
-They are not justification for reimplementing JDK executor internals. A lower-level custom
-worker/scheduler requires Step-5 measurement evidence.
+The lane classes receive their backing JDK executor as an external dependency; they never
+create, configure or shut down the physical worker themselves. Closing a logical lane
+therefore never shuts down a shared worker. Runtime retains physical-worker lifecycle
+ownership.
+
+The current Java baseline uses one physical worker for each of these Runtime roles:
+
+```text
+TimingNode     -> ThreadPoolExecutor(1)
+TagProcessor   -> ScheduledThreadPoolExecutor(1)
+Conductor      -> ThreadPoolExecutor(1)
+shared I/O     -> ScheduledThreadPoolExecutor(1)
+```
+
+This worker count realizes the SSD baseline for both Raspberry Pi Zero and Raspberry Pi 3
+Model B deployments. It is not derived from available CPU-core count. V01 measurement
+evidence is required before increasing a role's physical worker count.
+
+All Runtime-owned workers use the normal JVM priority. Tests that need asynchronous
+execution create and own their test worker separately, while deterministic package-local
+seams may use direct execution.
+
+These project types exist to realize the SSD execution model; they are not justification
+for reimplementing JDK executor internals.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
@@ -1142,10 +1150,12 @@ sequence: optional power-on, stabilization, probe/initialize, inventory start/st
 power-off and close.
 
 Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
-The Step-5 baseline uses one physical shared I/O worker. Additional I/O worker parallelism
-is not assumed up front; V01 runtime characterization must justify increasing that count.
-Result-bearing provider operations retain explicit timeouts/cancellation policy so a
-stuck reader is visible as a control failure.
+The one-worker I/O baseline is defined by the SSD runtime execution model. The known
+two-antenna 500 ms multiplex configuration still runs one inventory member at a time, so
+the Java design does not add I/O workers merely because that deployment uses a Raspberry
+Pi 3 Model B. V01 runtime characterization remains the authority for increasing physical
+parallelism. Result-bearing provider operations retain explicit timeouts/cancellation
+policy so a stuck reader is visible as a control failure.
 
 Startup/runtime callers use result-bearing manager operations when they must know whether
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
