@@ -503,6 +503,16 @@ antennas: stop the current antenna, start the next antenna, then yield or wait f
 switch interval. It does not own startup self-test, power preparation or generic task
 scheduling.
 
+A concrete antenna/provider implementation may itself use the same cooperative-task pattern
+when its protocol requires multiple commands, waits, retries or readiness checks. That device
+state machine remains inside the antenna implementation rather than being copied into
+`AntennaManager`. A device-specific logical lane may be backed by the same Runtime-owned
+shared I/O worker when ordering/isolation requires a separate lane without another physical
+thread. Parent/manager code must observe such child work asynchronously; it must never block
+a shared worker waiting for work that still needs that worker (or the same serial lane) to
+run. The exact antenna-provider execution boundary remains implementation-driven until a
+real provider exists.
+
 The execution naming should preserve this distinction. A state-machine operation is a
 **task**. A low-level scheduled cancellation token is a **registration/handle**, not a task.
 The implementation should therefore avoid using `ScheduledTask` for a mere timer handle
