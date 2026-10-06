@@ -125,8 +125,7 @@ application package merely because the first consumer happens to be application 
 **Rule**
 
 A constructor creates and validates an object. Runtime behaviour starts through an
-explicit operation such as `activate()`, `checkHealth()` or
-`requestEnableInventory()` or `requestDisableInventory()`.
+explicit operation such as `activate()`, `requestEnableInventory()` or `requestDisableInventory()`.
 
 **Why**
 
@@ -140,12 +139,11 @@ Good:
 ```java
 AntennaManager manager = new AntennaManager(...);
 manager.activate();
-manager.checkHealth();
 ```
 
 **Avoid**
 
-A constructor that immediately probes all antennas or starts inventory.
+A constructor that immediately self-tests all antennas or starts inventory.
 
 If construction has an unavoidable side effect, that must be an explicit design decision,
 not a convenience hidden in the constructor.
@@ -181,7 +179,7 @@ to understand.
 Making `AntennaManager.activate()` mean both:
 
 1. start the software component; and
-2. probe all physical antennas.
+2. synchronously self-test all physical antennas before returning.
 
 Those are different actions and may be requested by different owners.
 
@@ -191,11 +189,16 @@ Those are different actions and may be requested by different owners.
 
 **Rule**
 
-A callback from local `Event<T>` may validate the event and hand work to a bounded
-serial lane. It should then return.
+A callback from local `Event<T>` must stay short. When the event arrives from outside
+the component's own serial lane, the callback may validate the event, hand work to that
+lane and then return.
 
-Do not perform blocking I/O, waits, retries or cross-component control directly on the
-producer thread.
+When the event is guaranteed to be emitted on the consumer's own serial lane, do **not**
+mechanically re-admit it to that same lane. A short handler may update owned state and
+admit the next task directly.
+
+Do not perform blocking I/O, waits, retries or cross-component control directly in the
+synchronous callback.
 
 **Why**
 
@@ -273,6 +276,21 @@ This invents another event-registration mechanism next to `EventSource.subscribe
 Also avoid doing downstream device control directly in the synchronous source-event
 callback.
 
+For an event emitted by a task already running on the same owner lane, prefer:
+
+```java
+selfTestCompletedEvent.subscribe(this::onSelfTestCompleted);
+
+private void onSelfTestCompleted(SelfTestResult result) {
+    selfTestPassed = result.passed();
+    startInventoryTaskIfNeeded();
+}
+```
+
+when both operations are short and `startInventoryTaskIfNeeded()` only admits later work.
+Do not add `taskRunner.execute(...)` merely to bounce the callback through the same lane
+again.
+
 ---
 
 ### DR-05 — Let the admission operation decide whether work was accepted
@@ -331,10 +349,17 @@ observability.
 
 **Rule**
 
-When a component only needs to know **what is true now**, treat a state-change event as
-"something changed" and read the current authoritative state during reconciliation.
+When a component only needs to know **what is true now**, read that truth from the
+authoritative owner state.
 
-Do not automatically treat the event snapshot as a command that must later be replayed.
+Do not keep an extra derived boolean merely because it is convenient. If a task already
+knows whether it is running and the owned devices already expose their self-test state,
+derive manager readiness from those facts instead of maintaining a second
+`selfTestPassed` flag.
+
+A state-change event may therefore mean only "something changed"; read the current
+authoritative state when handling it. Do not automatically treat the event snapshot as a
+command that must later be replayed.
 
 **Why**
 
@@ -440,23 +465,33 @@ For antennas:
 ```text
 AntennaManager
     owns:
-      health check
-      power preparation
-      initialize
-      inventory enable/disable
-      failure/recovery
+      lifecycle/status boundary
+      requested/applied inventory setting
+      deciding when a task should start or cancel
 
-AntennaSwitchController
+task/
     owns:
-      current multiplex member
-      stop current
-      start next available
+      cooperative multi-step device sequences
+      task-local state such as antenna index, phase and switch position
+      its current execution handle/Future when one is needed
+      its completion event
+
+ManagedAntenna
+    owns:
+      direct one-antenna device actions + runtime state
 ```
+
+There is deliberately no second inventory or switching controller. Switching is one
+cooperative state machine (`AntennaSwitchTask`) owned by the manager's reusable task set.
 
 **Avoid**
 
-Putting probing, status aggregation, power sequencing, recovery and a generic
-`CompletableFuture` sequence engine inside `AntennaSwitchController`.
+Adding an `InventoryController` or `AntennaSwitchController` merely to move parts of the
+same manager decision into another object. Also avoid putting device sequencing back into
+`AntennaManager`; the manager chooses when a task starts, while the task owns its steps
+and any execution handle required to represent that run. Do not keep a
+`CompletableFuture` field in the manager merely to observe a task's normal completion;
+prefer the task's completion event.
 
 If several components genuinely need the same low-level scheduling primitive, that
 primitive may live in Platform. Component policy stays with the component.
@@ -560,6 +595,22 @@ unrelated jobs. In that case simplify or split the code first.
 Comments are maintained code. When ownership or behaviour changes, update or remove the
 old comment in the same pull request.
 
+For lambdas and callbacks, prefer the form that is easiest to understand in context.
+A lambda is fine when it is genuinely clearer or measurably useful in a hot path. Do not
+avoid a lambda merely because it is a lambda. However, a non-trivial lambda must not hide
+its purpose behind syntax alone: use a named method/method reference when that reads
+better, or add a short comment explaining what the callback does and why it belongs there.
+
+For example, this is fine when the named method already explains the callback:
+
+```java
+currentRunFuture.whenComplete(this::runCompleted);
+```
+
+An inline lambda that performs several steps, changes state, or has non-obvious lifecycle
+meaning should normally be replaced by a named method or have its intent explained directly
+above it.
+
 ---
 
 ### DR-11 — Use clear English and established project words
@@ -591,7 +642,6 @@ OPEN / CLOSED / ERROR       TimingNode state
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
-reconcile                   bring owned state in line with current intent
 ```
 
 Prefer:
@@ -643,12 +693,497 @@ For Conductor:
 
 For AntennaManager:
 
-- one probe failure must not disable another healthy antenna;
+- one self-test failure must not prevent another configured antenna from completing its self-test;
 - a disable request arriving during power stabilization must prevent stale inventory start;
 - only one multiplex-group member may inventory at a time.
 
 A test should make the design rule visible. Avoid tests that merely duplicate the
 implementation line by line.
+
+### DR-13 — Keep normal control flow linear
+
+**Rule**
+
+Use an early `return` for a guard, precondition or invalid state at the beginning of a
+method.
+
+For two or more normal, equivalent business paths, prefer an explicit `if / else`
+structure and let the method continue to its normal end. Avoid using a `return` in the
+middle of one normal branch merely to avoid writing `else`.
+
+**Why**
+
+A reader should be able to distinguish immediately between:
+
+- a condition that says "this method has nothing valid to do"; and
+- a normal business decision between two valid paths.
+
+Scattered returns inside the main flow make one normal path look exceptional and make the
+control flow harder to scan, especially in orchestration code.
+
+**Example**
+
+Good guard:
+
+```java
+if (!ready
+        || busy
+        || !inventoryEnabledSetting.changePending()) {
+    return;
+}
+```
+
+Good normal choice:
+
+```java
+if (inventoryRequestedEnabled()) {
+    startEnableOperation();
+} else {
+    stopSwitching();
+    startDisableOperation();
+}
+```
+
+**Avoid**
+
+```java
+if (inventoryRequestedEnabled()) {
+    startEnableOperation();
+    return;
+}
+
+stopSwitching();
+startDisableOperation();
+```
+
+Both enable and disable are normal paths. The early `return` incorrectly makes the
+enable path read like a special case.
+
+This is a readability rule, not a prohibition on multiple returns. Additional early
+returns are appropriate when they are true guards, fail-fast validation or other
+conditions that terminate the method before its normal main flow starts.
+
+---
+
+### DR-14 — Reuse owned stateful helpers for recurring work
+
+**Rule**
+
+When a long-lived component repeatedly performs the same responsibility, prefer one
+long-lived owned helper/task object whose execution state is explicitly reset for a new run.
+
+Do not create a new mutable state-machine/helper object for every invocation merely because
+construction happens to reset its fields.
+
+This rule is about objects that represent a stable owned responsibility. It is **not** a
+general requirement to pool short-lived immutable values, events, DTOs or other ordinary
+temporary data.
+
+**Why**
+
+A recurring stateful task is part of the owning component's runtime structure. Recreating
+it for every run hides the lifecycle in object allocation, creates unnecessary garbage and
+makes it less obvious which state must be reset before reuse.
+
+Explicit reuse makes the lifecycle visible:
+
+```text
+construct component
+    |
+    +--> construct task once
+             |
+             +--> start -> run steps -> DONE
+             |
+             +--> reset/start -> run steps -> DONE
+             |
+             +--> reset/start -> ...
+```
+
+The task's reset/start operation must restore all per-run state before the task is admitted
+again. A task must never be restarted while a previous execution is still active.
+
+**Example**
+
+Prefer:
+
+```java
+final class InventoryDisableTask implements CooperativeTask {
+    private int antennaIndex;
+    private Phase phase;
+    private RuntimeException failure;
+
+    void reset() {
+        antennaIndex = antennas.size() - 1;
+        phase = Phase.STOP_INVENTORY;
+        failure = null;
+    }
+}
+```
+
+with one `InventoryDisableTask` owned by the manager's reusable `AntennaTasks` set.
+
+**Avoid**
+
+```java
+void disableInventory() {
+    runner.runTask(
+            new InventoryDisableTask(antennas));
+}
+```
+
+when disable is a normal recurring operation and the new object exists only to obtain a
+fresh index/phase/failure state.
+
+Also avoid generic object pooling for stateless or cheap value objects. Reuse should follow
+stable ownership and recurring responsibility, not become an optimization ritual.
+
+---
+
+### DR-15 — Device completion belongs to the device owner
+
+**Rule**
+
+When a device/provider operation can complete later, start the operation explicitly and
+let the component that owns that operation publish its completion/result.
+
+Do not make a caller infer operation completion from a configured delay. A delay is only
+appropriate when the delay itself is the physical requirement, such as power stabilization.
+
+**Why**
+
+These are different facts:
+
+```text
+power switched on
+    -> wait 200 ms because hardware requires stabilization
+
+self-test started
+    -> wait until the antenna reports that the self-test finished
+```
+
+The first is a time requirement and fits `TaskStep.after(...)`.
+The second is an operation-completion relationship and should be represented by an event
+or equivalent owner-controlled completion signal.
+
+This keeps provider timing and protocol details inside the device boundary and allows the
+caller to remain event-driven.
+
+**Example**
+
+Prefer:
+
+```text
+AntennaManager
+    -> antenna.startSelfTest()
+
+ManagedAntenna
+    -> performs self-test on its serial task runner
+    -> emits selfTestCompletedEvent(result)
+
+AntennaManager event listener
+    -> admits the result to its own serial lane
+    -> returns immediately
+```
+
+**Avoid**
+
+```java
+Duration delay = antenna.startSelfTest();
+return TaskStep.after(delay);
+```
+
+when the returned duration is merely a guess for when the self-test will be complete.
+
+A concrete provider may itself use cooperative tasks, callbacks, protocol events or bounded
+polling internally. That implementation choice must not leak into the manager contract.
+
+---
+
+### DR-16 — Keep contract checks compact
+
+**Rule**
+
+Use compact precondition helpers for programming-contract checks such as required state or
+argument validity.
+
+Prefer static `checkState(...)` and `checkArgument(...)` calls over repeated
+`if (...) { throw new IllegalStateException/...; }` blocks when the only purpose of the
+branch is to enforce a contract.
+
+Keep normal business decisions as ordinary control flow. A precondition helper must not
+hide a recoverable condition, device result or normal application branch.
+
+**Why**
+
+Repeated exception boilerplate makes a simple contract dominate the visual structure of a
+method. The reader should see the operation first and the contract as one concise guard.
+
+**Example**
+
+Prefer:
+
+```java
+synchronized (this) {
+    checkState(
+            state == State.NEW,
+            "AntennaManager must be NEW, was %s",
+            state);
+}
+```
+
+over:
+
+```java
+synchronized (this) {
+    if (state != State.NEW) {
+        throw new IllegalStateException(
+                "AntennaManager can only activate from NEW; current state="
+                        + state);
+    }
+}
+```
+
+For arguments:
+
+```java
+checkArgument(
+        controlLane != null,
+        "controlLane must not be null");
+```
+
+The project may provide these small helpers directly rather than adding a broad utility
+dependency solely for precondition syntax. Static imports are preferred at call sites when
+they improve readability.
+
+**Avoid**
+
+Using `checkState(...)` as a replacement for normal application flow:
+
+```java
+checkState(
+        inventoryRequestedEnabled(),
+        "inventory must be enabled");
+```
+
+when disabled inventory is a valid runtime state. That belongs in ordinary task/state
+logic, not in a programming-contract assertion.
+
+---
+
+### DR-17 — Name asynchronous boundaries
+
+**Rule**
+
+Do not hide event delivery, queue admission or thread/lane transfer inside nested lambda
+expressions.
+
+At an asynchronous boundary, prefer a named method reference and move the admission step
+into that method. The call site should read as the architecture reads.
+
+**Why**
+
+Nested lambdas compress multiple execution contexts into punctuation. The code may be
+shorter, but a reader can no longer see where the event callback ends and where serial
+execution begins.
+
+**Example**
+
+Prefer:
+
+```java
+antenna.selfTestCompletedEvent()
+        .subscribe(
+                this::onSelfTestCompleted);
+
+private void onSelfTestCompleted(
+        AntennaSelfTestResult result) {
+    taskRunner.execute(
+            () -> selfTestCompleted(
+                    result));
+}
+```
+
+The names make the two boundaries explicit:
+
+```text
+device event callback
+        |
+        v
+onSelfTestCompleted
+        |
+        v
+manager serial lane
+        |
+        v
+selfTestCompleted
+```
+
+**Avoid**
+
+```java
+antenna.selfTestCompletedEvent()
+        .subscribe(
+                result ->
+                        taskRunner.execute(
+                                () -> selfTestCompleted(
+                                        result)));
+```
+
+Also avoid extracting meaningless methods such as `handle(...)` or `process(...)`.
+The extracted method must name the execution/event boundary it represents.
+
+---
+
+### DR-18 — Keep line wrapping readable
+
+**Rule**
+
+Use **120 characters as the maximum Java source line length**.
+
+Do not wrap a statement merely because it has multiple arguments. When a complete,
+readable statement fits within 120 characters, keep it on one line.
+
+Wrap only when the line would exceed 120 characters or when the expression has enough
+logical structure that line breaks genuinely improve understanding.
+
+**Why**
+
+Over-wrapping turns simple Java into tall visual noise and hides the actual control flow.
+Line breaks should expose structure, not mechanically put every argument on its own line.
+
+**Example**
+
+Prefer:
+
+```java
+checkState(state == State.NEW, "AntennaManager must be NEW, was %s", state);
+```
+
+over:
+
+```java
+checkState(
+        state == State.NEW,
+        "AntennaManager must be NEW, was %s",
+        state);
+```
+
+Likewise, prefer:
+
+```java
+inventoryEnabledSetting.request(Boolean.valueOf(enabled));
+```
+
+when it fits comfortably within the limit.
+
+For a genuinely long or structured expression, break at logical boundaries and align the
+continuation so the structure remains visible.
+
+**Avoid**
+
+- one argument per line as a blanket formatting rule;
+- wrapping short method calls into three or four lines;
+- shortening meaningful names merely to satisfy the line limit.
+
+---
+
+### DR-19 — Deactivation is not destruction
+
+**Rule**
+
+A software component that exposes `activate()` and `deactivate()` is normally reusable:
+
+```text
+NEW -> ACTIVE -> INACTIVE -> ACTIVE -> INACTIVE ...
+```
+
+`NEW` means only that the component has never been activated. It must not be used as a
+synonym for "activation is allowed".
+
+Use a separate terminal lifecycle operation such as `close()`, `shutdown()` or
+`dispose()` only when the object really cannot be activated again afterwards.
+
+**Why**
+
+Component lifecycle and execution-resource lifecycle are different concerns. Treating every
+deactivation as object destruction makes composition brittle and forces callers to rebuild
+objects merely to restart behaviour.
+
+**Example**
+
+Prefer:
+
+```java
+checkState(
+        state == State.NEW || state == State.INACTIVE,
+        "AntennaManager cannot activate from %s",
+        state);
+```
+
+or an equivalent compact check that fits within the 120-character line limit.
+
+The same principle applies to serial lanes: stopping a logical lane must not automatically
+destroy the externally owned physical worker, and a cleanly stopped lane may be started
+again. A failed lane remains a separate terminal/faulted case unless recovery is explicitly
+designed.
+
+**Avoid**
+
+```java
+checkState(state == State.NEW, "...");
+```
+
+for an ordinary reusable component merely because its first implementation happened to be
+activated only once by Runtime.
+
+Also avoid calling a terminal provider `shutdown()` from ordinary component
+`deactivate()` if that would make later activation impossible.
+
+---
+
+### DR-20 — Synchronize the whole state transition
+
+**Rule**
+
+When correctness depends on a lifecycle/state precondition and the following state change,
+protect the **check and the transition together**.
+
+Do not synchronize only the check and then modify the guarded state outside that
+synchronization boundary.
+
+**Why**
+
+This is racy:
+
+```java
+synchronized (this) {
+    checkState(state == State.NEW || state == State.INACTIVE, "...");
+}
+
+taskRunner.start();
+state = State.ACTIVE;
+```
+
+Another thread can change lifecycle state after the check but before `state = ACTIVE`.
+
+Prefer one atomic lifecycle operation:
+
+```java
+public synchronized void activate() {
+    checkState(state == State.NEW || state == State.INACTIVE,
+            "AntennaManager cannot activate from %s", state);
+
+    taskRunner.start();
+    state = State.ACTIVE;
+}
+```
+
+If the protected operation would block for a long time, introduce an explicit transitional
+state such as `ACTIVATING`/`DEACTIVATING` and release the monitor only after that
+transition has been recorded. Do not create a check-then-act race merely to keep the
+critical section short.
+
+---
 
 ## Pull-request review check
 
@@ -664,7 +1199,15 @@ For Java component changes, a reviewer can use this short check:
 8. **Observability** — Can status, metrics and logs explain what happened afterwards?
 9. **Comments** — Are the non-obvious ownership/threading/reasoning points documented?
 10. **Language** — Are names and messages clear English using established terminology?
-11. **Tests** — Is the risky behaviour tested, not only the happy path?
+11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
+12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
+13. **Device completion** — Are real completion facts emitted by the operation owner rather than inferred from delays?
+14. **Contract checks** — Are programming-contract failures expressed compactly without hiding normal control flow?
+15. **Async readability** — Are event and lane boundaries named instead of hidden in nested lambdas?
+16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
+17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
+18. **State synchronization** — Are lifecycle checks and their state transitions protected by the same synchronization boundary?
+19. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.

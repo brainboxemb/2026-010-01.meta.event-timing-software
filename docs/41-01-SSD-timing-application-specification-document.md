@@ -366,15 +366,18 @@ unavailability of those functions shall not by itself stop an operational Timing
 from accepting and committing local registrations.
 :::
 
-:::{req} Contain antenna startup and runtime failure  
+:::{req} Contain and expose antenna startup and runtime failure  
 :id: SI01-REQ-052  
 :status: D  
-:derived_from: UC-003  
+:derived_from: UC-003, UC-004  
 
-At application startup SI-01 shall attempt a health probe for every configured
-antenna. Failure of one configured antenna shall not by itself prevent health
-probing or later operation of other independently healthy configured antennas.
-The failed antenna shall remain represented as unavailable or in error.
+At application startup SI-01 shall attempt one self-test for every configured antenna.
+The PASS/FAIL result is diagnostic information only. A FAIL shall not by itself prevent
+a later initialization or inventory attempt for that antenna.
+
+Failure of one antenna operation shall not prevent independent operation or later
+attempts of other configured antennas. The latest failed operation shall remain visible
+in antenna status until a later attempt updates that status.
 :::
 
 :::{req} Couple antenna operation to assigned TimingNode lifecycle  
@@ -382,10 +385,12 @@ The failed antenna shall remain represented as unavailable or in error.
 :status: D  
 :derived_from: UC-001, UC-003  
 
-A healthy configured antenna shall provide inventory while at least one TimingNode
-assigned to that antenna is OPEN. When no assigned TimingNode is OPEN, SI-01 shall
-stop inventory for that antenna and release or power down the antenna according to
-its configured installation lifecycle.
+When at least one TimingNode assigned to a configured antenna is OPEN, SI-01 shall
+request inventory from that antenna. A previous self-test FAIL or failed inventory
+attempt shall not by itself suppress this new attempt.
+
+When no assigned TimingNode is OPEN, SI-01 shall stop inventory for that antenna and
+release or power down the antenna according to its configured lifecycle.
 :::
 
 :::{req} Multiplex mutually exclusive antenna inventory  
@@ -394,9 +399,30 @@ its configured installation lifecycle.
 :derived_from: UC-003  
 
 For antennas configured in the same inventory mutual-exclusion group, SI-01 shall
-keep at most one healthy group member inventorying at a time and shall rotate
-inventory between available group members using the configured inventory interval.
-Failure of one group member shall not stop remaining healthy group members.
+keep at most one group member inventorying at a time and shall rotate attempts using
+the configured inventory interval.
+
+If one member fails to prepare or start inventory, SI-01 shall record that failed
+attempt and may continue with another group member. The failed member shall remain
+eligible for a later explicit inventory attempt.
+:::
+
+:::{req} Allow antenna recovery without process restart  
+:id: SI01-REQ-055  
+:status: D  
+:derived_from: UC-004  
+
+After a self-test, initialization or inventory attempt fails, SI-01 shall allow a
+later inventory demand to start a new preparation and inventory attempt without
+requiring SI-01 process restart.
+
+A later inventory demand is created at least when:
+- a mapped TimingNode changes from not requiring inventory to OPEN; or
+- an operator/API operation explicitly requests another inventory/start attempt.
+
+SI-01 shall not automatically loop retries solely because an attempt failed. A failed
+attempt shall not be marked applied. A later demand shall not be rejected solely because
+an earlier self-test or inventory attempt failed.
 :::
 
 ### Lifecycle interpretation
@@ -439,9 +465,10 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 | SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
-| SI01-REQ-052 | UC-003 | per-antenna startup/runtime failure containment + observable antenna health |
+| SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
 | SI01-REQ-053 | UC-001/003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
+| SI01-REQ-055 | UC-004 | retry/recovery of antenna operation without process restart |
 
 ## Software-item architecture
 
@@ -953,7 +980,7 @@ Application-wide coordination has a separate execution boundary. Conductor
 owns a serial application-coordination lane so cross-component behaviour does
 not execute synchronously on the thread that emitted a Domain or I/O event.
 
-AntennaManager owns one serial scheduled I/O lane. Probe, initialize,
+AntennaManager owns one serial scheduled I/O lane. Self-test, initialize,
 power-control transitions, start/stop inventory and multiplex switching/rotation
 all enter that same logical lane; the lane runs on one Runtime-owned I/O-role
 worker. There is no separate initialization worker and no separate switching
@@ -1021,7 +1048,7 @@ logical lane:
 power on
   -> return worker
   -> scheduled continuation after stabilization delay
-  -> probe / initialize
+  -> self-test / initialize
 ```
 
 External I/O may require bounded waiting for one device/protocol operation, but a
@@ -1173,7 +1200,7 @@ role.
 
 `AntennaPowerControl` is the optional software-facing I/O capability for an
 installation-owned external antenna power channel. AntennaManager uses it to order
-power-on, stabilization and power-off around probe and normal operation. It remains
+power-on, stabilization and power-off around self-test and normal operation. It remains
 separate from `Antenna` because the physical power switch may be a relay, GPIO or
 other installation device unrelated to the antenna vendor protocol.
 :::
@@ -2111,7 +2138,7 @@ Antenna operation has a lifecycle around observation delivery. An
 
 - optional power switching where the deployment provides it;
 - open/startup and initialization;
-- a one-shot startup probe that can power/open the antenna, perform a
+- a one-shot startup self-test that can power/open the antenna, perform a
   hello/identity/version check and close it again without starting normal inventory;
 - inventory start/stop per antenna so multiple configured antennas can be controlled
   independently;
@@ -2124,7 +2151,7 @@ power-control capability to the manager; external power switching is not require
 antenna.
 
 Antenna lifecycle/device-control calls are separate from observation delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
-for its configured antennas. Probe, power, initialize, inventory start/stop and shutdown
+for its configured antennas. Self-test, power, initialize, inventory start/stop and shutdown
 are submitted as bounded control work so potentially blocking device I/O does not run on
 a TimingNode lane or on a presentation callback. Application startup may wait for a
 result-bearing manager operation because readiness depends on that outcome.

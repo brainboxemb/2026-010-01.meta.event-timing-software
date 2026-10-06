@@ -267,12 +267,12 @@ Antenna installation fields have these semantics:
 - `power.controlRef` optionally references an installation-owned external power
   capability rather than reader/vendor protocol;
 - `power.stabilizationMillis` defines how long SI-01 waits after external power-on
-  before probing or initializing that antenna.
+  before self-testing or initializing that antenna.
 
 One AntennaManager may define **zero or one** `inventoryGroup`. When present:
 
 - `members` identifies 2..N configured antennas that cannot inventory concurrently;
-- `intervalMillis` is the rotation interval between healthy members;
+- `intervalMillis` is the rotation interval between configured group members;
 - the public/reference two-antenna baseline is 500 ms;
 - antennas not listed in the group may inventory independently.
 
@@ -283,9 +283,10 @@ until a concrete deployment requirement needs that capability.
 Omitting `power` means the antenna/provider is responsible for any internal power
 mechanism or is continuously powered.
 
-Startup health probing is per antenna. An invalid/unavailable antenna does not make
-other independently valid antennas unusable merely because they share one
-AntennaManager.
+Startup self-test is per antenna and is diagnostic. A failed self-test does not
+permanently disable that antenna and does not prevent a later inventory attempt.
+Failure of one antenna does not prevent independent operation or later attempts of
+other antennas merely because they share one AntennaManager.
 
 The `deviceNetworks.can` section configures the CAN network boundary. Exact
 bus/driver/discovery fields belong to the concrete device-network design.

@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define cooperative reusable task execution and the recoverable antenna-control model: startup self-test is diagnostic PASS/FAIL rather than a health gate, later inventory demand may retry after self-test/runtime failure, `AntennaSet` owns composition/group configuration, and Java readability guidance now makes non-trivial callback/lambda intent explicit.
+
 - Extend IF-11 TimingSystem configuration with `eventDataProvider` beside `timingDataProvider`; public examples use the built-in `reference` provider id for both shared event/timing profile capabilities.
 
 - Align EventData as a shared runtime-loadable provider/profile capability parallel to TimingData while keeping RaceData TimingNode-local; improve Figure SI01-01 EventData/TimingData routing and I/O/Platform spacing.

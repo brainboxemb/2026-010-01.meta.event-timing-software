@@ -276,19 +276,25 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      device/provider lifecycle + tag-observed event contract
       AntennaId.java                    configured software identity of one antenna
-      AntennaPowerControl.java          optional external power-switch capability
-      SimulatedAntennaPowerControl.java deterministic simulated external power channel
-      AntennaInfo.java                  hello/identity/version probe result
+      AntennaInfo.java                  self-test identity/version result
       TagObservation.java               EventData TagId + RSSI + TimingTimestamp fact
-      SimulatedAntenna.java             built-in reference/simulation implementation
+      model/
+        Antenna.java                    device/provider lifecycle + observation contract
+        SimulatedAntenna.java           built-in reference/simulation implementation
       manager/
-        AntennaManager.java             public activation/inventory/status boundary
-        AntennaSwitchController.java    set + multiplex switching coordination
-        ManagedAntenna.java             one-antenna power/probe/init/inventory state
-        AntennaManagerTypes.java        manager/status/failure value types
-        AntennaInstallation.java        AntennaId + package-local device/power binding
+        AntennaManager.java             lifecycle/status + control state machine
+        AntennaSet.java                 composition-time antenna set + multiplex configuration
+        ManagedAntenna.java             direct one-antenna operations + runtime status
+        AntennaManagerTypes.java        manager/status value types
+        task/
+          SelfTestTask.java             complete startup self-test round
+          InventoryTask.java            enable/disable/multiplex inventory state machine
+          AntennaShutdownTask.java      cooperative device shutdown
+          AntennaTaskResult.java        task completion success/failure value
+    power/
+      PowerDevice.java                  external power-device contract
+      SimulatedPowerDevice.java         deterministic simulated power device
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
       Rev1CanDisplay.java               passive CAN display support when implemented
@@ -317,8 +323,11 @@ platform/
   execution/
     SerialExecutor.java                    bounded serial lane + lifecycle
     SerialExecutorMetrics.java             lane-local queue/execution measurements
-    SerialScheduledExecutor.java           serial lane + fixed-delay scheduling
+    SerialScheduledExecutor.java           serial lane + delayed/fixed-delay scheduling
     SerialScheduledExecutorMetrics.java    scheduled-lane measurements
+    ScheduledTaskRunner.java               cooperative multi-step task execution
+    CooperativeTask.java                   one-step state-machine task contract
+    TaskStep.java                          AGAIN / AFTER / DONE continuation decision
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -377,6 +386,148 @@ seams may use direct execution.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
+
+### Cooperative scheduled task execution
+
+Some I/O operations consist of several ordered steps with explicit waits between them.
+Running the complete operation in one executor callback would either monopolise the serial
+lane or require blocking sleeps. Chaining ad-hoc `CompletableFuture` continuations in each
+component would instead duplicate scheduling, cancellation and failure mechanics.
+
+For these operations the Java design uses a small **cooperative task** model on top of the
+existing scheduled serial lane:
+
+```text
+Runtime-owned scheduled worker
+        |
+        v
+SerialScheduledExecutor
+        |
+        v
+ScheduledTaskRunner
+        |
+        | run one step
+        v
+CooperativeTask
+        |
+        +-- AGAIN ------> re-admit at the back of the same serial queue
+        |
+        +-- AFTER(t) ---> timer registration ---> re-admit when due
+        |
+        +-- DONE -------> complete the task
+```
+
+A cooperative task is a small state machine. One call executes one logical step and returns
+a `TaskStep` describing what should happen next. The task owns operation-specific state and
+policy; Platform execution types know only how to run a step and arrange its continuation.
+
+Conceptually:
+
+```java
+interface CooperativeTask {
+    TaskStep runStep();
+}
+
+TaskStep.again();
+TaskStep.after(Duration delay);
+TaskStep.done();
+```
+
+`AGAIN` is a deliberate yield point. It does **not** call the task recursively and does
+not execute the next state in the same callback. The runner re-admits the task at the back
+of the same bounded serial queue so already admitted work gets an opportunity to run first.
+This preserves responsiveness when multiple active objects share a small number of physical
+workers.
+
+`AFTER(delay)` similarly releases the physical worker. The delay is represented only by a
+timer registration. When the timer becomes due, the task is admitted to the same serial
+lane and continues with its next state. Multi-step tasks must therefore not use
+`Thread.sleep()` to model device stabilization, retry waits or other deliberate delays.
+
+A single task step should be short and bounded where the device API permits that. A blocking
+provider call such as `initialize()` may still occupy the worker for the duration of that
+call. The cooperative model does not pretend that a synchronous provider API is
+asynchronous. If a provider exposes explicit start/poll or start/completion semantics, the
+task should model those as separate states so the lane can be released between checks.
+
+The responsibilities are deliberately separated:
+
+```text
+CooperativeTask
+  operation-specific state machine
+  device/application decisions
+  no executor ownership
+
+TaskStep
+  next execution decision only:
+  AGAIN / AFTER(delay) / DONE
+
+ScheduledTaskRunner
+  run one task step
+  re-admit/yield
+  delayed continuation
+  task completion/cancellation/failure mapping
+  no antenna/domain knowledge
+
+SerialScheduledExecutor
+  bounded ordered logical lane
+  immediate/delayed admission
+  timer and queue mechanics
+  no multi-step task policy
+
+Runtime
+  physical worker creation, priority and lifecycle
+```
+
+The first concrete consumer is antenna control. For one antenna, startup self-test and
+inventory enable/disable are explicit task state machines rather than
+`CompletableFuture` chains in `AntennaManager`. A representative enable path is:
+
+```text
+InventoryTask
+  POWER_ON
+      |
+      +-- AFTER(powerStabilization)
+      v
+  INITIALIZE
+      |
+      +-- AGAIN
+      v
+  START_INVENTORY
+      |
+      v
+  DONE
+```
+
+The manager owns the requested setting and chooses which operation to start. The task owns
+the physical transition. The runner only executes task steps.
+
+Multiplexing is a second concern and is added only when 2..N antennas share inventory time.
+All participating antennas are first prepared/initialized. After that preparation,
+`AntennaSwitchController` owns only the transfer of active inventory between already-ready
+antennas: stop the current antenna, start the next antenna, then yield or wait for the next
+switch interval. It does not own startup self-test, power preparation or generic task
+scheduling.
+
+A concrete antenna/provider implementation may itself use the same cooperative-task pattern
+when its protocol requires multiple commands, waits, retries or readiness checks. That device
+state machine remains inside the antenna implementation rather than being copied into
+`AntennaManager`. A device-specific logical lane may be backed by the same Runtime-owned
+shared I/O worker when ordering/isolation requires a separate lane without another physical
+thread. Parent/manager code must observe such child work asynchronously; it must never block
+a shared worker waiting for work that still needs that worker (or the same serial lane) to
+run. The exact antenna-provider execution boundary remains implementation-driven until a
+real provider exists.
+
+The execution naming should preserve this distinction. A state-machine operation is a
+**task**. A low-level scheduled cancellation token is a **registration/handle**, not a task.
+The implementation should therefore avoid using `ScheduledTask` for a mere timer handle
+when `CooperativeTask` is the active operation concept.
+
+This cooperative model is an implementation technique for the SSD requirement to use
+component-local ordered execution with a small, measurement-driven number of physical
+workers. It does not change component ownership or add parallel execution within one serial
+lane.
 
 ### EventData and TagProcessor realization
 
@@ -757,7 +908,7 @@ validated Config
                  -> AntennaManager.activate()
             -> start Application lane
             -> Conductor.onActivated()
-                 -> AntennaManager.checkHealth()
+                 -> AntennaManager startup self-test runs asynchronously
                  -> initialize tracked application properties
   -> PresentationRuntime.activate()
 ```
@@ -778,7 +929,7 @@ registered components are active and the Application lane is running. The base c
 TimingNode, AntennaManager, provider, property or SI-01 decision logic.
 
 The concrete `application.Conductor` registers its components and implements
-`onActivated()` with SI-01 startup actions such as antenna health checking and tracked
+`onActivated()` with SI-01 startup actions such as tracked
 property initialization. It also contains the application rules that map tracked values to
 component intent.
 
@@ -795,7 +946,7 @@ Conductor
   SI-01 logic only
       |
       +--> TimingNodeStateProperty
-      +--> antenna startup health check
+      +--> antenna inventory intent from TimingNode state
       +--> TimingNode state -> explicit antenna inventory action
 ```
 
@@ -1194,19 +1345,19 @@ The Java antenna boundary separates device lifecycle from decoded observation pr
 
 ### Antenna and manager
 
-`Antenna` represents one configured logical antenna capability. It owns the decoded
-observation event and the provider-specific device/session mechanics needed for probing,
-initialization and inventory control.
+`Antenna` represents one configured logical antenna/device capability. It owns the
+decoded observation event and provider-specific device/session mechanics needed for
+startup self-test, initialization and inventory control.
 
 The application-facing and device-facing lifecycle words are kept distinct. TimingNode
 uses `OPEN` / `CLOSED`; antenna/provider cleanup uses `shutdown()` rather than
-`close()` so a device cleanup operation is not confused with TimingNode state.
+`close()` so device cleanup is not confused with TimingNode state.
 
 Illustrative provider shape:
 
 ```java
 interface Antenna {
-    AntennaInfo probe();
+    AntennaInfo selfTest();
 
     void initialize();
 
@@ -1222,53 +1373,74 @@ interface Antenna {
 }
 ```
 
-`probe()` is a one-shot health/compatibility action. It opens/starts the provider as
-needed, performs the provider-specific hello/identity/version exchange and returns the
-decoded `AntennaInfo`. Probe is not an on/off operating mode and it does not leave
-inventory running.
-
+`selfTest()` is the startup device check and has PASS/FAIL semantics at manager level.
+It may return decoded identity/version information for diagnostics, but SI-01 does not
+model a parallel antenna status model merely to represent startup progress.
 `initialize()` prepares the provider for normal use. `startInventory()` and
-`stopInventory()` control RFID observation delivery. `shutdown()` releases provider
-resources and is valid even when normal initialization never completed successfully.
+`stopInventory()` control observation delivery. `shutdown()` releases provider
+resources and remains valid when initialization did not complete successfully.
 
 #### Coordination ownership
 
 Application intent and device mechanics are separate responsibilities:
 
 ```text
-TimingNode state / application startup
-                 |
-                 v
-             Conductor
-       decides what is required
-                 |
-                 v
-          AntennaManager
-   reconciles desired -> actual state
-        /                       \
-       v                         v
-ManagedAntenna(s)       AntennaSwitchController
-power/probe/init/       multiplex-group rotation
-inventory/recovery      only
-       |
-       v
-    Antenna
- provider/device operations
+TimingNode state
+      |
+      v
+  Conductor
+decides inventory intent
+      |
+      v
+AntennaManager
+owns lifecycle + inventory intent
+      |
+      +--> AntennaSet
+      |       +--> ManagedAntenna(s)
+      |               +--> Antenna
+      |               +--> optional PowerDevice
+      |
+      +--> reusable SelfTestTask
+      +--> reusable InventoryTask
+      +--> reusable AntennaShutdownTask
 ```
 
-`Conductor` owns cross-component application decisions. It decides when startup health
-checking is required and whether antenna inventory must be enabled or disabled because of
-TimingNode state. It does not issue device-mechanism commands such as power-on,
-initialize, power-cycle or provider retry.
+`Conductor` owns cross-component application decisions. It requests inventory enabled
+or disabled from TimingNode state. It does not issue device-mechanism commands such as
+power-on, initialize, power-cycle or reader switching.
 
-`AntennaManager` owns the configured 1..N antennas for one TimingSystem and the
-installation-level lifecycle needed to realise those decisions. It owns optional external
-power control, power-stabilization waits, health checks, initialization, inventory
-start/stop, failure state and recovery/reinitialization.
+`AntennaManager` is the single controller for the configured 1..N antenna capability of
+one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
+one explicit manager control state machine. It owns the three reusable task objects
+directly. The physical multi-step sequences live in those task classes under `manager/task`.
+The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
+second task-facing antenna interface.
 
-Activating `AntennaManager` only makes its logical control capability operational.
-Activation itself does not perform a hidden hardware probe. Startup health checking is an
-explicit application action coordinated by `Conductor`.
+The manager uses a small `Setting<Boolean>` for inventory intent:
+
+```text
+requestedValue
+appliedValue
+changePending = requestedValue != appliedValue
+```
+
+`Setting` owns no executor, lifecycle, retry policy or device action.
+`AntennaManager` calls `markApplied(value)` only after the corresponding task has
+completed successfully. A
+newer request may therefore arrive while an older transition is executing; once the older
+transition completes, `changePending` still exposes whether another transition is needed.
+
+Device objects and configuration remain separate concepts. `Antenna` and
+`PowerDevice` are device objects. `AntennaSet` is the composition-time collection that
+binds those device objects to stable `AntennaId` values and stores the optional external
+power stabilization value. Multiplex membership and switch interval are configured once at
+set level. There is deliberately no per-antenna `AntennaInstallation` value.
+
+Activating `AntennaManager` starts one reusable `SelfTestTask` for the complete antenna
+set. The manager does not contain the per-antenna self-test sequence and does not wait for
+provider I/O. The task performs one physical action per turn, releases the shared worker
+during real stabilization waits and publishes one completion event when the complete round
+finishes. Presentation startup can therefore continue while self-test is in progress.
 
 #### Temporary Windows development default
 
@@ -1282,12 +1454,13 @@ and no explicit antenna composition available yet
         |
         v
 ANT1 -> built-in SimulatedAntenna
+        + optional SimulatedPowerDevice
         |
         v
 normal AntennaManager
         |
         v
-Conductor lifecycle + health + inventory intent
+asynchronous self-test + inventory intent
 ```
 
 This fallback is a development/platform default, not a silent physical-reader substitute.
@@ -1302,56 +1475,62 @@ Explicit IF-11 antenna configuration takes precedence as soon as that mapper/com
 path is implemented. The fallback does not redefine the IF-11 antenna schema or provider
 selection rules.
 
-#### Startup health check
+#### Startup self-test
 
-SI01-REQ-052 requires SI-01 to attempt a startup health probe for each configured antenna.
-The application coordination flow is:
+Startup self-test is one manager-owned cooperative task:
 
 ```text
-Runtime starts shared workers
+AntennaManager.activate()
         |
         v
-Conductor activates application components
-        |
-        +--> AntennaManager.activate()
-        |       control lane ready; no hardware action yet
-        |
-        +--> AntennaManager.checkHealth()
-                    |
-                    +--> for each configured antenna
-                           |
-                           +--> optional external power ON
-                           +--> stabilization delay
-                           +--> Antenna.probe()
-                           +--> record health / compatibility result
-                           +--> optional power OFF
-                                when inventory is not required
+SelfTestTask
+
+for each ManagedAntenna:
+    POWER_ON
+       |
+       +-- AFTER(stabilization)
+       v
+    provider selfTest
+       |
+       +-- AGAIN
+       v
+    POWER_OFF
+       |
+       v
+next antenna
+
+round complete
+       |
+       v
+selfTestCompletedEvent(result)
+       |
+       v
+AntennaManager
+
+self-test round complete -> manager ready for later control
+individual PASS/FAIL results remain diagnostic
 ```
 
-Failure of one health-check sequence leaves that antenna represented as unavailable/error
-and does not stop checks or later operation of independently healthy antennas.
+The configured stabilization interval is an actual physical wait and therefore uses
+`AFTER(delay)`. The task owns the round and its execution handle. `AntennaManager`
+subscribes once to the task completion event; it does not keep the task Future or duplicate
+the per-antenna progress state. The current provider call may still be synchronous within
+one task turn. A future provider may use callbacks, bounded polling or its own internal
+execution without changing the manager contract.
 
-Health and operational state are separate concepts. A successful probe followed by power
-off must not be represented ambiguously as if the antenna were both operationally ready
-and physically active.
+Startup self-test result and normal operating state remain separate. The antenna operation
+state is limited to the lifecycle needed for normal control:
 
-The Java status model keeps four dimensions distinct:
+```text
+INACTIVE -> PREPARING -> READY -> INVENTORY
+                              |
+                              +--> stop -> READY
 
-| Scope | Value | Meaning |
-| --- | --- | --- |
-| AntennaManager lifecycle | `NEW / ACTIVE / DEACTIVATING / INACTIVE / FAILED` | whether the software component/control lane can perform its role |
-| antenna-set health | `UNKNOWN / HEALTHY / DEGRADED / FAILED` | aggregate availability of the configured antenna set |
-| one antenna health | `UNKNOWN / CHECKING / HEALTHY / FAILED` | result/current progress of device health checking |
-| one antenna operation | `INACTIVE / PREPARING / READY / INVENTORY / SHUTDOWN` | current device preparation/inventory lifecycle |
+shutdown -> INACTIVE
+```
 
-For example, after a successful startup probe with external power removed, the antenna is
-`HEALTHY + INACTIVE`. `READY` is reserved for an antenna that has been initialized and
-kept prepared so inventory can start without repeating preparation.
-
-Failure of one configured antenna therefore changes antenna-set health to `DEGRADED`
-while AntennaManager itself remains `ACTIVE`, provided the manager/control lane can
-still perform its role. `AntennaManager.State.FAILED` is reserved for failure of that
-software/control capability rather than being another spelling of degraded device health.
+After a successful self-test with external power removed, the antenna is therefore
+self-test PASS + `INACTIVE`, not artificially `READY`.
 
 #### TimingNode-driven inventory actions
 
@@ -1370,7 +1549,7 @@ Conductor.onTimingNodeStateChanged(OPEN)
         v
 AntennaManager.requestEnableInventory()
         |
-        +--> healthy / recoverable?
+        +--> start a fresh preparation attempt
         +--> optional power ON
         +--> stabilization delay
         +--> initialize
@@ -1398,8 +1577,10 @@ AntennaManager.requestDisableInventory()
 ```
 
 `requestEnableInventory()` and `requestDisableInventory()` are asynchronous
-application-facing requests. Result-bearing callers that explicitly need completion use
-`enableInventory()` and `disableInventory()`.
+application-facing requests. The convenience `enableInventory()` and
+`disableInventory()` methods use the same asynchronous request path and only turn
+immediate request rejection into an exception; they do not wait for physical completion.
+Applied state is observed through manager/device status and the `Setting` state.
 
 Disabling inventory is an operational action, not provider shutdown. The AntennaManager
 remains ACTIVE and may enable the same antenna again after a later OPEN. Provider
@@ -1426,9 +1607,9 @@ AntennaManager records failure
         |
         +--> stop/clean up failed operation
         +--> optional power cycle
-        +--> stabilization / health check as required
+        +--> stabilization / self-test or readiness check as required
         +--> reinitialize
-        +--> resume inventory when healthy
+        +--> resume inventory when usable
 ```
 
 Conductor does not micromanage that recovery sequence and does not need to resend the same
@@ -1439,10 +1620,9 @@ policy.
 
 #### Execution and delayed device work
 
-AntennaManager owns one project `SerialScheduledExecutor` control lane on one
-Runtime-owned scheduled I/O-role worker. Probe, initialize, optional power-control
-transitions, start/stop inventory, recovery work and multiplex rotation all use that same
-logical lane. There is no separate initialization or switching worker in the baseline.
+AntennaManager owns one project `SerialScheduledExecutor` logical control lane on the
+Runtime-owned scheduled I/O-role worker. One `ScheduledTaskRunner` executes all three
+manager-owned reusable tasks. This does not add physical threads.
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1451,44 +1631,84 @@ logical lane. There is no separate initialization or switching worker in the bas
                SerialScheduledExecutor
                  AntennaManager lane
                          |
-          +--------------+----------------+
-          |              |                |
-    immediate       delayed device    multiplex timer
-      control        continuation
-          |              |                |
-          +--------------+----------------+
+                         v
+               ScheduledTaskRunner
+                  /       |       \
+                 v        v        v
+          SelfTestTask InventoryTask ShutdownTask
+                 \        |        /
+                  \       v       /
+                   -> ManagedAntenna(s)
                          |
-                  AntennaManager
-                    /          \
-                   v            v
-          ManagedAntenna(s)   AntennaSwitchController
+                         +--> Antenna
+                         +--> optional PowerDevice
 ```
 
-`ScheduledTaskRunner` supplies reusable bounded result waiting, timeout/cancellation
-propagation and delayed begin/complete handling where a manager operation needs those
-mechanics. It creates no executor, scheduler or worker. Antenna-specific classes must not
-reimplement a generic `CompletableFuture` sequence framework merely to chain these
-steps.
+Each cooperative task executes one logical step per turn and returns `AGAIN`,
+`AFTER(delay)` or `DONE`. `AGAIN` is a yield back to the queue. `AFTER(delay)`
+uses a timer registration and does not occupy the physical worker while waiting.
+Antenna-specific code must not rebuild these mechanics with ad-hoc
+`CompletableFuture.thenCompose(...)` chains.
 
-Power-stabilization delays are scheduled continuations. The physical I/O worker is not
-occupied by a sleep while the delay elapses. Result-bearing provider operations retain
-explicit timeout/cancellation handling so a stuck device operation is visible as a
-control failure.
+For antenna control, one task turn corresponds to at most one direct physical device
+action. `AntennaManager` owns one reusable self-test task, one reusable inventory task and
+one reusable shutdown task directly.
+
+Representative state machines are:
+
+```text
+SelfTestTask
+  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> POWER_OFF -> next antenna -> event
+
+InventoryTask
+  requested OFF:
+    STOP_INVENTORY -> POWER_OFF -> applied=false
+
+  requested ON:
+    POWER_ON -> AFTER(stabilization) -> INITIALIZE -> START_INVENTORY
+    -> applied=true
+
+  multiplex while requested ON:
+    WAIT(interval) -> STOP_CURRENT -> START_NEXT -> WAIT(interval)
+```
+
+The inventory task re-reads the requested `Setting<Boolean>` on each turn. A changed
+request therefore changes the next direction of the same long-lived state machine rather
+than causing a second inventory controller or a new enable/disable task object to be
+constructed.
+
+A synchronous provider method such as `selfTest()`, `initialize()`,
+`startInventory()` or `stopInventory()` still occupies the worker for the duration of
+that call. Cooperative scheduling cannot make a blocking provider API non-blocking. A real
+provider must therefore either use bounded device/protocol I/O for such a step or expose
+staged readiness/completion mechanics that its own cooperative state machine can use.
+
+The generic manager runner does not justify a second timeout thread merely to interrupt an
+unknown future provider implementation. Exact provider-operation timeout/cancellation
+semantics are deferred until a real antenna provider establishes what its serial/network
+API can guarantee. Whatever mechanism is chosen must not block the shared worker waiting
+for work that still needs that same worker or serial lane to execute.
+
+A concrete antenna/provider implementation may itself use cooperative tasks when one
+device operation consists of multiple protocol commands, waits, retries or readiness
+checks. If isolation requires a device-specific logical lane, that lane may still use the
+same Runtime-owned physical I/O worker. This preserves ordering/isolation without creating
+one operating-system thread per antenna.
 
 Concrete `Antenna` construction is passive. Creating and wiring a provider object must
-not start inventory or hidden background device activity.
+not start inventory or hidden background activity.
 
 #### External power
 
-External power switching is optional. When deployment hardware exposes it, composition
-supplies an `AntennaPowerControl` capability to AntennaManager. The manager may then
-order power-on before probe/initialize, stabilization before provider I/O and power-off
-when the antenna is no longer required.
+External power switching is optional and modelled as a separate `PowerDevice`.
+Composition may bind an antenna to a power device plus a stabilization duration. The
+manager task can then order power-on before self-test/initialize, yield for stabilization,
+and power-off when the antenna is no longer required.
 
-`AntennaPowerControl` remains separate from `Antenna`. A physical reader may be powered
-through a relay board, GPIO-controlled supply or another installation component unrelated
-to the reader vendor protocol. A provider that owns its power mechanism internally may
-omit the external capability.
+`PowerDevice` remains separate from `Antenna`. A physical reader may be powered through
+a relay board, GPIO-controlled supply or another installation component unrelated to the
+reader vendor protocol. A provider that owns its power mechanism internally may omit the
+external device.
 
 #### Multiplex switching
 
@@ -1517,25 +1737,19 @@ At most one healthy group member inventories at a time. A failed member is skipp
 stopping healthy members.
 
 The switch is fail-safe when stopping the currently active member fails. Because that
-reader may still be inventorying, the controller must **not** start another group member.
-The failed stop is recorded on the current antenna and normal recovery/diagnostics handle
-the fault; mutual exclusion takes priority over continuing round-robin rotation.
+reader may still be inventorying, `AntennaSwitchTask` must **not** start another group
+member. The failed stop is recorded on the current antenna and normal
+recovery/diagnostics handle the fault; mutual exclusion takes priority over continuing
+round-robin rotation.
 
-`AntennaSwitchController` owns only this round-robin selection/switching responsibility.
-It does not own:
+There is deliberately no separate switching controller. `AntennaSwitchTask` owns the
+small amount of switch-local state: phase, current/next selection and interval wait. It is
+one reusable state-machine object owned directly by `AntennaManager` and reset
+before a new switching run.
 
-- startup health probing;
-- power-stabilization sequencing;
-- normal antenna initialization;
-- recovery policy;
-- manager-wide status/failure aggregation;
-- creation/ownership of all ManagedAntenna instances;
-- generic asynchronous sequencing.
-
-AntennaManager owns the scheduled rotation task on its existing serial scheduled lane and
-invokes the switch controller when a rotation is due. The switch controller only tracks
-the current group member and selects/stops/starts the next available member. This keeps the
-multiplex helper intentionally small and directly traceable to SI01-REQ-054.
+The task does not own startup self-test, power preparation, antenna initialization,
+manager-wide status, requested/applied inventory state or generic scheduling mechanics.
+Those remain with their existing owners.
 
 The public/reference baseline remains the known two-antenna group with a 500 ms interval.
 The number of configured antennas does not by itself justify more physical I/O workers;
@@ -1543,7 +1757,7 @@ V01 runtime characterization remains the authority for increasing physical paral
 
 The built-in `SimulatedAntenna` path models the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
-initialization/inventory preconditions and controllable probe/initialize/start failures so
+initialization/inventory preconditions and controllable self-test/initialize/start failures so
 startup containment, recovery design and multiplex behaviour can be verified without
 hardware.
 
