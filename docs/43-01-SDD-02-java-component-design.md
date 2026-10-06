@@ -244,18 +244,21 @@ domain/
 io/
   devices/
     antenna/
-      Antenna.java                      stable device/lifecycle + observation contract
-      AntennaManager.java               execution/lifecycle boundary for 1..N antennas
-      AntennaManagerLogic.java          package-private antenna/power/multiplex state logic
-      AntennaManagerTypes.java          manager lifecycle/status/failure value types
-      AntennaInstallation.java          antenna + optional external-power installation binding
-      AntennaProvider.java              typed extension provider contract
+      Antenna.java                      device/provider lifecycle + tag-observed event contract
+      AntennaId.java                    configured software identity of one antenna
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
       DecryptedTagId.java               provider-decoded/decrypted source identity
       TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
+      manager/
+        AntennaManager.java             public activation/inventory/status boundary
+        AntennaControlLane.java         serial admission + timeout adapter
+        AntennaSwitchController.java    set + multiplex switching coordination
+        ManagedAntenna.java             one-antenna power/probe/init/inventory state
+        AntennaManagerTypes.java        manager/status/failure value types
+        AntennaInstallation.java        AntennaId + package-local device/power binding
     display/
       DisplayProtocolProvider.java      typed protocol-extension provider contract
       Rev1CanDisplay.java               passive CAN display support when implemented
@@ -289,7 +292,12 @@ platform/
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
-  environment/                            low-level environment adapters only when real types justify them
+  environment/
+    PlatformEnvironment.java              injected wall-clock + monotonic-clock boundary
+    MonotonicClock.java                   elapsed-time source
+    SystemMonotonicClock.java             JVM monotonic implementation
+  metrics/
+    RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
 ```
 
 The names above record ownership/direction, not a requirement to create empty
@@ -591,7 +599,7 @@ Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
 - provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
-- the executable application chooses and configures the provider/backend before `runtime.Composition` starts normal application composition;
+- the executable application chooses and configures the provider/backend before `runtime.TimingApplication.create(...)` starts normal application composition;
 - the default Java-8 application uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
 - concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
 - `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
@@ -629,10 +637,8 @@ The application core owns the reusable SI-01 runtime and supporting infrastructu
 ```text
 io.github.brainboxemb.eventtiming/timingpoint/
   runtime/
-    Application.java
-    ApplicationBootstrap.java
-    Composition.java
     Lifecycle.java
+    TimingApplication.java
     RuntimeExecutors.java
     simulator/
       SimulationRuntime.java
@@ -658,26 +664,76 @@ io.github.brainboxemb.eventtiming/timingpoint/
       LiveLogHandler.java
 ```
 
-`runtime/` owns knowledge of the concrete running application: `Application`, process-level
-`Composition`, construction-only `ApplicationBootstrap`, central execution-resource
-construction and the effective composition configuration. Figure SI01-01 shows this
-explicitly as the **Runtime** block. Runtime is not another business/domain layer; it is
-where the executable object graph is assembled and its lifecycle is coordinated.
+`runtime/` owns knowledge of the concrete running application through
+`TimingApplication`, execution-resource construction and the effective composition
+configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
+Runtime is not another business/domain layer; it is where the executable object graph is
+assembled.
 
-`ApplicationBootstrap` is deliberately a builder/construction helper, not a second
-runtime or an application-layer component. It creates storage adapters and
-`RuntimeExecutors`, constructs the complete TimingNode aggregate, optionally constructs
-I/O managers, and then returns one `Application`. After build, normal calls do not route
-through the bootstrap. `Composition` remains responsible for process-level presentation
-endpoints/shutdown-hook wiring and delegates object-graph construction to the bootstrap.
+The executable composition must remain readable as one linear construct-wire-start flow.
+`runtime.TimingApplication.create(...)` is the single concrete composition root and the
+returned `TimingApplication` owns the lifecycle of that already composed graph. A second
+bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
+construction, but cross-component relationships and lifecycle order remain visible in
+`TimingApplication.create(...)`. The visible composition order is:
+
+```text
+validated Config
+  -> PlatformEnvironment
+  -> RuntimeExecutors/resources
+  -> Domain + I/O + Application objects
+  -> explicit Conductor/event wiring
+  -> RuntimeExecutors.start()
+  -> component activate
+       TimingNode / TagProcessor
+       AntennaManager
+       Conductor
+       PresentationRuntime
+```
+
+`application.Conductor` owns application-wide coordination between already constructed
+components. Runtime creates and wires the Conductor but does not reimplement that
+coordination in component constructors or anonymous hidden wiring callbacks. Conductor
+owns one logical `SerialExecutor` application lane on a Runtime-owned application worker.
+Because local `Event<T>` delivery is synchronous, event callbacks into Conductor perform
+only bounded admission to that lane; cross-component behaviour never runs on the emitting
+TimingNode thread. `Conductor.activate()` queues a current-status reconcile on the same
+lane so startup/recovery and later status events use one behaviour path.
+`RuntimeExecutors` construction allocates executor objects only; physical worker startup
+is an explicit `start()` action. Application objects use `activate()/deactivate()` instead
+of thread terminology. `ActivationManager` records component activation order and
+deactivates successful components in reverse order. Runtime execution resources are
+closed only after application components are inactive.
+
+Cross-component event wiring is visible at the composition point. The antenna manager owns
+the concrete `Antenna` instances; it does not expose those device objects for callers to
+walk. Composition addresses a configured source by `AntennaId` and subscribes the target
+to the manager's subscription-only event source, conceptually:
+
+```java
+antennaManager.tagObservedEvent(antennaId)
+        .subscribe(timingNode.tagProcessor()::onTagObserved);
+
+timingNode.statusChangedEvent()
+        .subscribe(conductor::onTimingNodeStatusChanged);
+```
+
+For semantic local events, accessor names describe the fact that happened and end in
+`Event`, matching existing names such as `statusChangedEvent()` and
+`timingDataCommittedEvent()`. The antenna APIs therefore use
+`tagObservedEvent()` / `tagObservedEvent(AntennaId)`; a plural collection-like name such
+as `observations()` is not used for an `EventSource`. `TagObservation` remains the
+immutable event value and does not need an `AntennaId` field merely for routing because
+the configured source identity is already known at the subscription point.
 
 `runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
-It selects simulated installations/mappings through the same `ApplicationBootstrap`; it
+It selects simulated installations/mappings through the same `TimingApplication.create(...)`
+path; it
 does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
 
-The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. Application owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
+The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. the Application layer owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
 
-The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
+The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. Main selects the config file, supplies process console streams and installs the JVM shutdown hook, but does not construct or order concrete Presentation adapters. Runtime composition owns `PresentationRuntime`, which creates the configured HTTP/WebSocket/remote-shell/local-console adapters and participates in normal activate/deactivate ordering. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
 
 ```text
 timing-point-core.jar
@@ -696,9 +752,11 @@ timing-point-core.jar
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
-    Application.java
-    Composition.java
-    Lifecycle.java
+    TimingApplication.java
+    ActivationManager.java
+    RuntimeExecutors.java
+    PresentationRuntime.java
+    ShutdownSignal.java
     configuration/
       ApplicationConfiguration.java
       TimingNodeConfiguration.java
@@ -737,11 +795,17 @@ main()
   -> optional LoggingServer
        -> attach live handler + diagnostics listener
        -> use Logging for current level / common formatting
-  -> core runtime.Composition
-       -> select/construct concrete presentation/I/O/platform/infra objects
-       -> create reusable application/domain/runtime objects
-       -> install/start presentation and shutdown handling
-  -> runtime.Application
+  -> core runtime.TimingApplication.create(...)
+       -> create PlatformEnvironment
+       -> construct runtime resources and reusable application/domain/I/O objects
+       -> construct and wire application.Conductor
+       -> construct configured PresentationRuntime adapters
+       -> return composed TimingApplication
+  -> TimingApplication.activate()
+       -> RuntimeExecutors.start()
+       -> activate components in explicit order
+       -> activate PresentationRuntime last
+  -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
 
 The current `runtime.config.YamlLoader` implements only the explicit
@@ -756,7 +820,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.Composition` constructs the current graph and returns/starts `runtime.Application`.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplication.create(...)` constructs and wires the current graph; the returned `runtime.TimingApplication` owns activate/deactivate lifecycle.
 
 ### Running configuration model
 
@@ -837,7 +901,7 @@ The resolver responsibility must remain data/composition oriented:
 - platform defaults may select environment-specific values;
 - operating-mode defaults may replace real providers with simulated providers;
 - explicit IF-11 deployment values have highest non-secret precedence;
-- `runtime.Composition` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
+- `runtime.TimingApplication.create(...)` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
 
 SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
 remains independent of SnakeYAML APIs and another input adapter may construct the
@@ -990,7 +1054,7 @@ interface Antenna extends AutoCloseable {
 
     boolean inventoryRunning();
 
-    EventSource<TagObservation> observations();
+    EventSource<TagObservation> tagObservedEvent();
 }
 ```
 
@@ -1012,7 +1076,7 @@ and per-antenna inventory state. One provider failure is contained to that anten
 manager does not roll back independently healthy antennas merely because another antenna
 fails.
 
-At application startup the manager performs a non-inventory sanity sequence for every
+When AntennaManager activates it performs a non-inventory sanity sequence for every
 configured antenna:
 
 ```text
@@ -1031,9 +1095,10 @@ optional power OFF
 Failure of one sequence records that antenna as unavailable/error and the manager continues
 with the remaining configured antennas.
 
-Normal antenna operation is driven by the lifecycle of the TimingNodes mapped to each
-antenna. When at least one assigned TimingNode is OPEN, a healthy antenna is powered when
-required, allowed to stabilize, initialized and made available for inventory. When no
+Inventory permission is driven by the lifecycle of the TimingNodes mapped to each
+antenna. When at least one assigned TimingNode is OPEN, the Conductor calls
+`requestInventoryEnabled(true)`. The manager then powers a healthy antenna when required,
+allows it to stabilize, initializes it and starts inventory. When no
 assigned TimingNode remains OPEN, inventory is stopped and externally controlled power is
 removed. An antenna mapped to several TimingNodes therefore remains active until the last
 mapped TimingNode closes.
@@ -1041,39 +1106,55 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
-The manager serializes its lifecycle operations through the project-wide
-`SerialExecutor` primitive on top of the shared bounded I/O `ExecutorService`:
+The manager uses one project `SerialScheduledExecutor` control lane on the Runtime-owned
+shared scheduled I/O worker:
 
 ```text
-                    shared bounded I/O ExecutorService
-                    /              |               \
-                   /               |                \
-      SerialExecutor A      SerialExecutor B      other blocking I/O
-      manager A lane         manager B lane         capability work
-             |                     |
-             v                     v
-      AntennaManager A      AntennaManager B
-             |                     |
-             v                     v
-       provider A calls      provider B calls
+          Runtime-owned shared scheduled I/O worker
+                         |
+                         v
+               SerialScheduledExecutor
+                 AntennaManager lane
+                         |
+          +--------------+---------------+
+          |              |               |
+    immediate       result-bearing   delayed rotation
+      control           control          callback
+          \              |               /
+           +-------------+--------------+
+                         |
+                  AntennaManager
+                         |
+              AntennaSwitchController
+                         |
+                   ManagedAntenna(s)
 ```
 
-The per-manager `SerialExecutor` is a logical ordering boundary, not a dedicated Java
-thread. AntennaManager does not implement another private queue/drain executor. Runtime
-constructs the lane on the shared I/O worker; the manager owns its lane lifecycle while
-Runtime owns the physical worker lifecycle. At most one lifecycle operation for one
-manager executes at a time, while unrelated managers/capabilities may make progress on
-other I/O workers.
+`AntennaManager` never receives a JDK `ScheduledExecutorService`. Immediate manager
+control, result-bearing control and multiplex-rotation callbacks all enter the same serial
+lane. There is therefore no second timer callback that re-enqueues work into a different
+control executor.
 
-The shared executor itself is bounded and owned by runtime composition. It is not used by
-TagProcessor or the TimingNode worker. Result-bearing provider operations retain explicit
-timeouts/cancellation policy so a stuck reader does not consume executor capacity
-indefinitely. Lane admission failure remains visible rather than falling back to an
-unbounded queue.
+`AntennaControlLane` is a small adapter for admission, timeout and cancellation handling.
+It creates no thread. `AntennaSwitchController` coordinates the configured set and the
+optional mutual-exclusion group. `ManagedAntenna` contains the physical one-device
+sequence: optional power-on, stabilization, probe/initialize, inventory start/stop,
+power-off and close.
+
+Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
+The Step-5 baseline uses one physical shared I/O worker. Additional I/O worker parallelism
+is not assumed up front; V01 runtime characterization must justify increasing that count.
+Result-bearing provider operations retain explicit timeouts/cancellation policy so a
+stuck reader is visible as a control failure.
 
 Startup/runtime callers use result-bearing manager operations when they must know whether
 a probe/initialize/control transition succeeded. TimingNode/device observation processing
 does not synchronously wait for manager control work.
+
+Concrete `Antenna` construction is passive. Creating and wiring a provider object must
+not start inventory or hidden background device activity. Hardware interaction starts only
+through the explicit probe/initialize/inventory lifecycle owned by AntennaManager. This
+keeps Runtime composition side-effect free with respect to device activation.
 
 External power switching is optional. When deployment hardware exposes it, composition
 supplies an `AntennaPowerControl` capability to the manager so the manager can order
@@ -1097,11 +1178,12 @@ configured interval, and a failed member is skipped without stopping healthy mem
 public/reference baseline is the known two-antenna installation with a 500 ms interval.
 
 The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
-owns lifecycle/status/failure value types, while package-private `AntennaManagerLogic`
-owns mutable per-antenna state, power transitions and the single-group rotation rules.
-This split is justified by the manager's current size; it is not a generic command/query
-framework. Public manager operations remain start/close, synchronous or non-blocking
-operational transition, and status queries.
+owns lifecycle/status/failure value types. `AntennaControlLane` owns admission and
+timeout handling, `AntennaSwitchController` coordinates the configured set and optional
+multiplex group, and `ManagedAntenna` owns one physical antenna's power/probe/initialize/
+inventory sequence. This split is justified by concrete responsibilities; it is not a
+generic command/query framework. Public manager operations remain activate/deactivate,
+inventory-enable control and status queries.
 
 The built-in `SimulatedAntenna` path must model the same lifecycle contract. Simulation
 includes explicit powered/unpowered state when paired with simulated power control,
@@ -1134,7 +1216,7 @@ Each antenna owns:
 ```java
 private final Event<TagObservation> observationEvent = new Event<>();
 
-public EventSource<TagObservation> observations() {
+public EventSource<TagObservation> tagObservedEvent() {
     return observationEvent;
 }
 ```
@@ -1220,7 +1302,7 @@ TagProcessingMetrics
   -> owns the low-allocation processing counters
 ```
 
-`TagProcessor.onObservation(...)` is the Antenna EventSource callback. The antenna has
+`TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. The antenna has
 already decoded/decrypted the provider data into a `DecryptedTagId`. The callback only
 attempts bounded admission of the immutable observation to TagProcessor's serial execution
 lane and then returns. It does not map, filter or offer TimingNode work on the
@@ -1399,11 +1481,11 @@ subject to V01 measurement; custom lower-level execution is an optimization opti
 baseline design.
 
 The previous separate `PeriodicExecutor` / `PeriodicTask` TagProcessor mechanism is not
-part of this design. `runtime.Composition` constructs and wires the worker and processor;
+part of this design. `runtime.TimingApplication.create(...)` constructs and wires the worker and processor;
 TagProcessor owns the worker lifecycle.
 
-`TagProcessor.start()` starts its serial worker. Shutdown first stops antenna inventory and
-unsubscribes `TagProcessor.onObservation`, then stops TagProcessor so no new ingress is
+`TagProcessor.start()` starts its serial execution lane. Shutdown first stops antenna inventory and
+unsubscribes `TagProcessor.onTagObserved`, then stops TagProcessor so no new ingress is
 accepted. Accepted observation work follows the worker drain policy; future scheduled sweeps
 are cancelled. Shutdown does not force-close a passage that has not reached its normal
 quiet/max-duration condition.
@@ -1468,7 +1550,7 @@ expose the application's bounded-admission and measurement semantics consistentl
 
 Runtime/engineering composition retains the same `TagProcessingMetrics` instance when
 it needs pull-based measurements. TagProcessor owns the supplied execution capability
-lifecycle; supplying it does not make `runtime.Composition` the execution model.
+lifecycle; supplying it does not make `runtime.TimingApplication.create(...)` the execution model.
 
 `TagProcessingPolicy` owns at least:
 
@@ -2557,7 +2639,7 @@ is no longer merely a optional capability. Keep the mechanism narrow and
 composition-oriented:
 
 ```text
-runtime.Composition
+runtime.TimingApplication.create(...)
   -> infra extension discovery support
        -> discover built-in providers
        -> discover external provider JARs
@@ -2569,7 +2651,7 @@ runtime.Composition
        DisplayProtocolProvider
   -> validate configured provider IDs
   -> create normal typed implementations
-  -> compose runtime.Application
+  -> return runtime.TimingApplication
 ```
 
 For the Java 8 baseline, external discovery can use a dedicated `URLClassLoader`
