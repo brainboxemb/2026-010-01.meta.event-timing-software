@@ -317,8 +317,11 @@ platform/
   execution/
     SerialExecutor.java                    bounded serial lane + lifecycle
     SerialExecutorMetrics.java             lane-local queue/execution measurements
-    SerialScheduledExecutor.java           serial lane + fixed-delay scheduling
+    SerialScheduledExecutor.java           serial lane + delayed/fixed-delay scheduling
     SerialScheduledExecutorMetrics.java    scheduled-lane measurements
+    ScheduledTaskRunner.java               cooperative multi-step task execution
+    CooperativeTask.java                   one-step state-machine task contract
+    TaskStep.java                          AGAIN / AFTER / DONE continuation decision
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -377,6 +380,138 @@ seams may use direct execution.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
+
+### Cooperative scheduled task execution
+
+Some I/O operations consist of several ordered steps with explicit waits between them.
+Running the complete operation in one executor callback would either monopolise the serial
+lane or require blocking sleeps. Chaining ad-hoc `CompletableFuture` continuations in each
+component would instead duplicate scheduling, cancellation and failure mechanics.
+
+For these operations the Java design uses a small **cooperative task** model on top of the
+existing scheduled serial lane:
+
+```text
+Runtime-owned scheduled worker
+        |
+        v
+SerialScheduledExecutor
+        |
+        v
+ScheduledTaskRunner
+        |
+        | run one step
+        v
+CooperativeTask
+        |
+        +-- AGAIN ------> re-admit at the back of the same serial queue
+        |
+        +-- AFTER(t) ---> timer registration ---> re-admit when due
+        |
+        +-- DONE -------> complete the task
+```
+
+A cooperative task is a small state machine. One call executes one logical step and returns
+a `TaskStep` describing what should happen next. The task owns operation-specific state and
+policy; Platform execution types know only how to run a step and arrange its continuation.
+
+Conceptually:
+
+```java
+interface CooperativeTask {
+    TaskStep runStep();
+}
+
+TaskStep.again();
+TaskStep.after(Duration delay);
+TaskStep.done();
+```
+
+`AGAIN` is a deliberate yield point. It does **not** call the task recursively and does
+not execute the next state in the same callback. The runner re-admits the task at the back
+of the same bounded serial queue so already admitted work gets an opportunity to run first.
+This preserves responsiveness when multiple active objects share a small number of physical
+workers.
+
+`AFTER(delay)` similarly releases the physical worker. The delay is represented only by a
+timer registration. When the timer becomes due, the task is admitted to the same serial
+lane and continues with its next state. Multi-step tasks must therefore not use
+`Thread.sleep()` to model device stabilization, retry waits or other deliberate delays.
+
+A single task step should be short and bounded where the device API permits that. A blocking
+provider call such as `initialize()` may still occupy the worker for the duration of that
+call. The cooperative model does not pretend that a synchronous provider API is
+asynchronous. If a provider exposes explicit start/poll or start/completion semantics, the
+task should model those as separate states so the lane can be released between checks.
+
+The responsibilities are deliberately separated:
+
+```text
+CooperativeTask
+  operation-specific state machine
+  device/application decisions
+  no executor ownership
+
+TaskStep
+  next execution decision only:
+  AGAIN / AFTER(delay) / DONE
+
+ScheduledTaskRunner
+  run one task step
+  re-admit/yield
+  delayed continuation
+  task completion/cancellation/failure mapping
+  no antenna/domain knowledge
+
+SerialScheduledExecutor
+  bounded ordered logical lane
+  immediate/delayed admission
+  timer and queue mechanics
+  no multi-step task policy
+
+Runtime
+  physical worker creation, priority and lifecycle
+```
+
+The first concrete consumer is antenna control. For one antenna, startup self-test and
+inventory enable/disable are explicit task state machines rather than
+`CompletableFuture` chains in `AntennaManager`. A representative enable path is:
+
+```text
+InventoryTask
+  POWER_ON
+      |
+      +-- AFTER(powerStabilization)
+      v
+  INITIALIZE
+      |
+      +-- AGAIN
+      v
+  START_INVENTORY
+      |
+      v
+  DONE
+```
+
+The manager owns the requested setting and chooses which operation to start. The task owns
+the physical transition. The runner only executes task steps.
+
+Multiplexing is a second concern and is added only when 2..N antennas share inventory time.
+All participating antennas are first prepared/initialized. After that preparation,
+`AntennaSwitchController` owns only the transfer of active inventory between already-ready
+antennas: stop the current antenna, start the next antenna, then yield or wait for the next
+switch interval. It does not own startup self-test, power preparation or generic task
+scheduling.
+
+The execution naming should preserve this distinction. A state-machine operation is a
+**task**. A low-level scheduled cancellation token is a **registration/handle**, not a task.
+The implementation should therefore avoid using `ScheduledTask` for a mere timer handle
+when `CooperativeTask` is the active operation concept.
+
+This cooperative model is an implementation technique for the SSD requirement to use
+component-local ordered execution with a small, measurement-driven number of physical
+workers. It does not change component ownership or add parallel execution within one serial
+lane.
 
 ### EventData and TagProcessor realization
 
