@@ -95,8 +95,7 @@ groups:
   # not a separate pseudo-component.
   layout: {x: 1170, y: 85, w: 250, h: 415}
 - id: crosscutting-layer
-  label: "Infrastructure /
-cross-cutting"
+  label: "Infrastructure /\ncross-cutting"
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
   layout: {x: 1170, y: 520, w: 250, h: 926}
