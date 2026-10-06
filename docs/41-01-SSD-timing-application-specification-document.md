@@ -977,6 +977,17 @@ characterization must demonstrate a concrete contention, latency or throughput
 problem before a role receives more physical workers. Any such change must
 preserve the component-local serial-lane semantics above.
 
+Platform provides reusable execution mechanics for components that need more
+than direct lane admission. In particular, bounded result waiting, timeout/cancellation
+propagation and delayed continuation are treated as shared execution concerns rather than
+being reimplemented independently by each I/O/Application component.
+
+That higher-level task-handling mechanism is optional. A component that only needs direct
+serial admission/ordering continues to use its execution lane directly. The presence of a
+shared task-handling capability does not require TimingNode, TagProcessor or Conductor to
+be wrapped in another abstraction when their semantics do not need timeout/result/delayed
+handling.
+
 Runtime worker items are deliberately bounded. A worker item must not occupy a
 physical worker merely to wait for time to pass. Delays such as antenna power
 stabilization are represented as scheduled continuation work on the owning
