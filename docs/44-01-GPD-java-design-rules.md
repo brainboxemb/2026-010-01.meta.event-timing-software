@@ -239,6 +239,17 @@ onTimingNodeStateChanged()  listener/handler method
 
 An `onXxx(...)` method is a handler name, not a subscription API.
 
+`EventSource<T>` always has 0..N notification semantics. Do not introduce public
+`SingleEvent` / `MultiEvent` variants or cardinality configuration merely because a
+particular composition currently has one subscriber. When a relationship is semantically
+a direct action to one owned component, use a normal method call instead of an event.
+
+The `Event<T>` implementation may optimize the common 0/1-subscriber case internally.
+That optimization must remain invisible to callers: zero listeners need no listener
+container, one listener may be stored directly, and only two or more listeners require an
+array/snapshot structure. Thread-safe subscribe/unsubscribe, subscription order and stable
+emit snapshots remain unchanged.
+
 Initialization is also separate from events. A tracked property returns its first
 authoritative value from `initialize()`; that first value is not emitted as a
 `changedEvent`. Only a later real value change is an event.
