@@ -720,6 +720,80 @@ conditions that terminate the method before its normal main flow starts.
 
 ---
 
+### DR-14 — Reuse owned stateful helpers for recurring work
+
+**Rule**
+
+When a long-lived component repeatedly performs the same responsibility, prefer one
+long-lived owned helper/task object whose execution state is explicitly reset for a new run.
+
+Do not create a new mutable state-machine/helper object for every invocation merely because
+construction happens to reset its fields.
+
+This rule is about objects that represent a stable owned responsibility. It is **not** a
+general requirement to pool short-lived immutable values, events, DTOs or other ordinary
+temporary data.
+
+**Why**
+
+A recurring stateful task is part of the owning component's runtime structure. Recreating
+it for every run hides the lifecycle in object allocation, creates unnecessary garbage and
+makes it less obvious which state must be reset before reuse.
+
+Explicit reuse makes the lifecycle visible:
+
+```text
+construct component
+    |
+    +--> construct task once
+             |
+             +--> start -> run steps -> DONE
+             |
+             +--> reset/start -> run steps -> DONE
+             |
+             +--> reset/start -> ...
+```
+
+The task's reset/start operation must restore all per-run state before the task is admitted
+again. A task must never be restarted while a previous execution is still active.
+
+**Example**
+
+Prefer:
+
+```java
+final class InventoryDisableTask implements CooperativeTask {
+    private int antennaIndex;
+    private Phase phase;
+    private RuntimeException failure;
+
+    void reset() {
+        antennaIndex = antennas.size() - 1;
+        phase = Phase.STOP_INVENTORY;
+        failure = null;
+    }
+}
+```
+
+with one `InventoryDisableTask` owned by the antenna manager/runtime controller.
+
+**Avoid**
+
+```java
+void disableInventory() {
+    runner.runTask(
+            new InventoryDisableTask(antennas));
+}
+```
+
+when disable is a normal recurring operation and the new object exists only to obtain a
+fresh index/phase/failure state.
+
+Also avoid generic object pooling for stateless or cheap value objects. Reuse should follow
+stable ownership and recurring responsibility, not become an optimization ritual.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -735,7 +809,8 @@ For Java component changes, a reviewer can use this short check:
 9. **Comments** — Are the non-obvious ownership/threading/reasoning points documented?
 10. **Language** — Are names and messages clear English using established terminology?
 11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
-12. **Tests** — Is the risky behaviour tested, not only the happy path?
+12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
+13. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
