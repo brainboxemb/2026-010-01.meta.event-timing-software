@@ -283,14 +283,12 @@ io/
         Antenna.java                    device/provider lifecycle + observation contract
         SimulatedAntenna.java           built-in reference/simulation implementation
       manager/
-        AntennaManager.java             lifecycle/status + task-admission boundary
-        InventoryController.java        requested/applied inventory reconciliation
-        ManagedAntennaSet.java          configured set lookup/status/group construction
-        ManagedAntenna.java             one-antenna power/init/inventory runtime state
-        AntennaSwitchController.java    current/next inventory member only
+        AntennaManager.java             lifecycle/status + setting reconciliation + task admission
+        ManagedAntennaSet.java          configured set lookup/status/group configuration
+        ManagedAntenna.java             one-antenna direct device operations + runtime state
         AntennaManagerTypes.java        manager/status value types
         task/
-          AntennaTasks.java             task factory + narrow task execution ports
+          AntennaTasks.java             reusable task set + narrow task execution port
           SelfTestTask.java             startup self-test state machine
           InventoryEnableTask.java      prepare/start inventory state machine
           InventoryDisableTask.java     stop/power-off state machine
@@ -1407,21 +1405,20 @@ reconciles requested -> applied setting
       |       +--> Antenna
       |       +--> optional PowerDevice
       |
-      +--> AntennaSwitchController
-              inventory hand-off only
+      +--> reusable task set
+              including AntennaSwitchTask
 ```
 
 `Conductor` owns cross-component application decisions. It requests inventory enabled
 or disabled from TimingNode state. It does not issue device-mechanism commands such as
 power-on, initialize, power-cycle or reader switching.
 
-`AntennaManager` is the public lifecycle/status boundary for the configured 1..N
-antenna capability of one TimingSystem. It starts startup/shutdown tasks and delegates
-inventory reconciliation to its package-local `InventoryController`.
+`AntennaManager` is the single controller for the configured 1..N antenna capability of
+one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
+task admission/cancellation. It does not contain the physical multi-step sequences; those
+live in the reusable task set under `manager/task`.
 
-`InventoryController` owns the requested inventory setting and starts the operation task
-needed to reconcile requested state with physically applied state. It uses a small
-`Setting<Boolean>` for inventory intent:
+The manager uses a small `Setting<Boolean>` for inventory intent:
 
 ```text
 requestedValue
@@ -1430,8 +1427,8 @@ changePending = requestedValue != appliedValue
 ```
 
 `Setting` owns no executor, lifecycle, retry policy or device action.
-`InventoryController` calls `markApplied(value)` only after that physical transition
-has completed successfully. A
+`AntennaManager` calls `markApplied(value)` only after the corresponding task has
+completed successfully. A
 newer request may therefore arrive while an older transition is executing; once the older
 transition completes, `changePending` still exposes whether another transition is needed.
 
@@ -1633,8 +1630,8 @@ cooperative tasks executed by `ScheduledTaskRunner`.
                 Antenna   PowerDevice
 
 after preparation of a multiplex group:
-        AntennaSwitchController
-        owns inventory hand-off only
+        AntennaSwitchTask
+        owns WAIT / STOP_CURRENT / START_NEXT state
 ```
 
 Each cooperative task executes one logical step per turn and returns `AGAIN`,
@@ -1725,25 +1722,19 @@ At most one healthy group member inventories at a time. A failed member is skipp
 stopping healthy members.
 
 The switch is fail-safe when stopping the currently active member fails. Because that
-reader may still be inventorying, the controller must **not** start another group member.
-The failed stop is recorded on the current antenna and normal recovery/diagnostics handle
-the fault; mutual exclusion takes priority over continuing round-robin rotation.
+reader may still be inventorying, `AntennaSwitchTask` must **not** start another group
+member. The failed stop is recorded on the current antenna and normal
+recovery/diagnostics handle the fault; mutual exclusion takes priority over continuing
+round-robin rotation.
 
-`AntennaSwitchController` owns only this round-robin selection/switching responsibility.
-It does not own:
+There is deliberately no separate switching controller. `AntennaSwitchTask` owns the
+small amount of switch-local state: phase, current/next selection and interval wait. It is
+one reusable state-machine object owned by the manager's `AntennaTasks` set and reset
+before a new switching run.
 
-- startup health probing;
-- power-stabilization sequencing;
-- normal antenna initialization;
-- recovery policy;
-- manager-wide status/failure aggregation;
-- creation/ownership of all ManagedAntenna instances;
-- generic asynchronous sequencing.
-
-AntennaManager owns the scheduled rotation task on its existing serial scheduled lane and
-invokes the switch controller when a rotation is due. The switch controller only tracks
-the current group member and selects/stops/starts the next available member. This keeps the
-multiplex helper intentionally small and directly traceable to SI01-REQ-054.
+The task does not own startup self-test, power preparation, antenna initialization,
+manager-wide status, requested/applied inventory state or generic scheduling mechanics.
+Those remain with their existing owners.
 
 The public/reference baseline remains the known two-antenna group with a 500 ms interval.
 The number of configured antennas does not by itself justify more physical I/O workers;
