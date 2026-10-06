@@ -323,7 +323,7 @@ platform/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
   environment/
-    PlatformEnvironment.java              injected wall-clock + monotonic-clock boundary
+    PlatformEnvironment.java              wall clock + monotonic clock + OS/platform boundary
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
   metrics/
@@ -512,8 +512,11 @@ into TimingData or exposed as an upstream address.
 
 Absolute and monotonic time come from the composed `PlatformEnvironment`.
 Production uses the system wall clock plus the JVM monotonic source; tests and
-simulation may inject controlled equivalents. TimingSystem does not own a
-separate time-source component.
+simulation may inject controlled equivalents. PlatformEnvironment also exposes
+the normalized operating-system family used by Runtime composition for explicit
+platform defaults. TimingSystem does not own a separate time-source component,
+and device/provider timestamping uses the same injected absolute-clock basis
+when no trustworthy source timestamp is available.
 
 The I/O package structure is logical; executable composition is per
 `TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
@@ -581,7 +584,7 @@ application
   configuration semantics
 
 domain
-  domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
+  domain model, semantic ports, TimingData representation/codec and UpstreamProtocol semantics
 
 io
   hardware, messaging and storage adapters
