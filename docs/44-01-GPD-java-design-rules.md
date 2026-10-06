@@ -460,12 +460,14 @@ AntennaManager
     owns:
       lifecycle/status boundary
       requested/applied inventory setting
-      task admission/cancellation
+      deciding when a task should start or cancel
 
 task/
     owns:
       cooperative multi-step device sequences
       task-local state such as antenna index, phase and switch position
+      its current execution handle/Future when one is needed
+      its completion event
 
 ManagedAntenna
     owns:
@@ -479,7 +481,10 @@ cooperative state machine (`AntennaSwitchTask`) owned by the manager's reusable 
 
 Adding an `InventoryController` or `AntennaSwitchController` merely to move parts of the
 same manager decision into another object. Also avoid putting device sequencing back into
-`AntennaManager`; the manager chooses and admits a task, while the task owns its steps.
+`AntennaManager`; the manager chooses when a task starts, while the task owns its steps
+and any execution handle required to represent that run. Do not keep a
+`CompletableFuture` field in the manager merely to observe a task's normal completion;
+prefer the task's completion event.
 
 If several components genuinely need the same low-level scheduling primitive, that
 primitive may live in Platform. Component policy stays with the component.
