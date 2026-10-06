@@ -230,7 +230,7 @@ application/
     AbstractConductor.java          generic Conductor lifecycle template
     ComponentLifecycleManager.java ordered activation/rollback helper
   property/
-    TimingNodeLifecycleProperty.java
+    TimingNodeStateProperty.java
 
 infra/
   property/
@@ -794,9 +794,9 @@ AbstractConductor
 Conductor
   SI-01 logic only
       |
-      +--> TimingNodeLifecycleProperty
+      +--> TimingNodeStateProperty
       +--> antenna startup health check
-      +--> TimingNode lifecycle -> antenna inventory intent
+      +--> TimingNode state -> explicit antenna inventory action
 ```
 
 Neither class is a general application framework. Component discovery, dependency
@@ -826,7 +826,7 @@ TimingNode.statusChangedEvent
         |
         | change signal only
         v
-application.property.TimingNodeLifecycleProperty
+application.property.TimingNodeStateProperty
         |
         | read TimingNodeQueries.status().lifecycle()
         | compare with tracked current value
@@ -906,7 +906,7 @@ timing-point-core.jar
       AbstractConductor.java
       ComponentLifecycleManager.java
     property/
-      TimingNodeLifecycleProperty.java
+      TimingNodeStateProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
@@ -1236,7 +1236,7 @@ resources and is valid even when normal initialization never completed successfu
 Application intent and device mechanics are separate responsibilities:
 
 ```text
-TimingNode lifecycle / application startup
+TimingNode state / application startup
                  |
                  v
              Conductor
@@ -1257,8 +1257,8 @@ inventory/recovery      only
 ```
 
 `Conductor` owns cross-component application decisions. It decides when startup health
-checking is required and whether configured antennas are required for inventory because of
-TimingNode lifecycle. It does not issue device-mechanism commands such as power-on,
+checking is required and whether antenna inventory must be enabled or disabled because of
+TimingNode state. It does not issue device-mechanism commands such as power-on,
 initialize, power-cycle or provider retry.
 
 `AntennaManager` owns the configured 1..N antennas for one TimingSystem and the
@@ -1353,25 +1353,22 @@ while AntennaManager itself remains `ACTIVE`, provided the manager/control lane 
 still perform its role. `AntennaManager.State.FAILED` is reserved for failure of that
 software/control capability rather than being another spelling of degraded device health.
 
-#### TimingNode-driven inventory intent
+#### TimingNode-driven inventory actions
 
-SI01-REQ-053 is expressed as desired application state rather than a sequence of hardware
-commands. When at least one TimingNode assigned to an antenna is OPEN, `Conductor`
-requests inventory for that antenna. When no assigned TimingNode remains OPEN, it removes
-that request.
+SI01-REQ-053 is expressed as an application decision followed by an explicit
+AntennaManager action. Conductor does not encode that action as a boolean flag:
 
 ```text
-TimingNode CLOSED -> OPEN
+TimingNode state OPEN
         |
         v
-statusChangedEvent
+TimingNodeStateProperty.changedEvent()
         |
         v
-Conductor
+Conductor.onTimingNodeStateChanged(OPEN)
         |
-        | inventory required = true
         v
-AntennaManager
+AntennaManager.requestEnableInventory()
         |
         +--> healthy / recoverable?
         +--> optional power ON
@@ -1381,26 +1378,36 @@ AntennaManager
              or through multiplex group
 ```
 
-The inverse flow is:
+The inverse flow is equally explicit:
 
 ```text
-last assigned TimingNode OPEN -> CLOSED
+TimingNode state CLOSED or ERROR
         |
         v
-Conductor
+TimingNodeStateProperty.changedEvent()
         |
-        | inventory required = false
         v
-AntennaManager
+Conductor.onTimingNodeStateChanged(CLOSED/ERROR)
         |
+        v
+AntennaManager.requestDisableInventory()
+        |
+        +--> cancel multiplex rotation
         +--> stop inventory
-        +--> cancel no-longer-needed recovery work
         +--> optional external power OFF
 ```
 
-An antenna mapped to multiple TimingNodes therefore remains required until the last
-assigned TimingNode closes. Conductor owns the requirement; AntennaManager owns how the
-physical state is brought in line with it.
+`requestEnableInventory()` and `requestDisableInventory()` are asynchronous
+application-facing requests. Result-bearing callers that explicitly need completion use
+`enableInventory()` and `disableInventory()`.
+
+Disabling inventory is an operational action, not provider shutdown. The AntennaManager
+remains ACTIVE and may enable the same antenna again after a later OPEN. Provider
+`shutdown()` belongs to application/component deactivation.
+
+An antenna mapped to multiple TimingNodes therefore remains enabled until the last assigned
+TimingNode leaves OPEN. Conductor owns the application decision; AntennaManager owns the
+power/initialize/start/stop mechanics.
 
 #### Failure and recovery ownership
 
@@ -1409,7 +1416,7 @@ intent. AntennaManager owns any recovery/reinitialization process needed to rest
 requested state:
 
 ```text
-desired inventory = true
+inventory enable remains requested
         |
         v
 runtime antenna/provider failure
@@ -2097,7 +2104,7 @@ final class TimingNode {
 }
 
 final class TimingNodeLogic {
-    private Lifecycle lifecycle = Lifecycle.CLOSED;
+    private State state = State.CLOSED;
     private LocationId locationId;
     private final LogBook logBook;
 
@@ -2479,18 +2486,17 @@ for analysis.
 
 ### Simple typed events
 
-Local typed facts/notifications use a small `Event<T>` abstraction rather than a
-central event bus. Examples include decoded antenna observations and post-commit
-TimingData/status notifications. The reusable mechanism lives under `platform.events` because it
-is a small JDK-only reusable primitive rather than domain semantics, external I/O
-or concrete infrastructure.
+Local typed facts/notifications use the small `Event<T>` abstraction rather than a
+central event bus. Examples include decoded antenna observations, post-commit TimingData
+and tracked application-property changes. The reusable mechanism lives under
+`platform.events` because it is a small JDK-only primitive rather than domain semantics,
+external I/O or concrete infrastructure.
 
 Conceptually:
 
 ```java
 interface EventSource<T> {
     boolean subscribe(Consumer<T> listener);
-    boolean unsubscribe(Consumer<T> listener);
 }
 
 final class Event<T> implements EventSource<T> {
@@ -2498,9 +2504,42 @@ final class Event<T> implements EventSource<T> {
 }
 ```
 
-A component owns the mutable `Event<T>` instance and is the only code that emits
-the fact. Consumers receive an `EventSource<T>` subscription-only view, so they
-subscribe directly without gaining permission to publish the event.
+A component owns the mutable `Event<T>` instance and is the only code allowed to emit the
+fact. Consumers receive an `EventSource<T>` view, so they can wire a listener without
+gaining publication rights.
+
+Event wiring is part of application composition:
+
+```text
+Runtime.create(...)
+  -> construct components
+  -> subscribe EventSource listeners
+  -> wiring complete
+
+Runtime.activate()
+  -> components/workers become active
+  -> runtime uses emit(...)
+  -> no dynamic subscribe/unsubscribe rewiring
+```
+
+The event graph is therefore fixed before activation. `subscribe(...)` is a
+composition-time operation and `EventSource` deliberately exposes no `unsubscribe(...)`
+in the baseline. If a future requirement genuinely needs dynamic connection lifecycle,
+that requirement must define its ownership and concurrency semantics rather than silently
+turning every local event into a runtime-mutable graph.
+
+`EventSource<T>` always has 0..N notification semantics. Callers do not choose a
+single-listener or multi-listener event type. The implementation may optimize storage for
+the common case:
+
+```text
+0 listeners  -> null / no listener container
+1 listener   -> Consumer<T> directly
+2+ listeners -> immutable Consumer[] in subscription order
+```
+
+That 0/1/N representation is only an allocation/memory optimization. It does not change the
+public 0..N semantics.
 
 For committed TimingData the component owns an explicitly named post-fact event:
 
@@ -2524,34 +2563,37 @@ TimingNode serial lane
        +--> subscribed listener
 ```
 
-The design has no central dispatcher or string/topic routing; listeners
-subscribe directly to the exposed event source they need. The event name states
-the completed fact: a processed registration attempt that does not commit
-TimingData does not emit this event.
+Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
+concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
+An owner that requires ordered/non-overlapping callbacks emits from its own ordered
+execution boundary; TimingNode status and committed-TimingData events therefore originate
+from the TimingNode serial lane.
 
-Listeners must not become alternate owners of TimingNode mutable state. Slow
-network delivery or retry work must also not block the TimingNode serial lane;
-a listener that needs such work hands the TimingData value to its own bounded
-execution/delivery mechanism.
+Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
+one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
+are not swallowed.
 
-The `Event<T>` listener registry is thread-safe and uses snapshot iteration, so
-subscribe/unsubscribe may race safely with delivery. Delivery itself is
-synchronous on the emitting thread and `Event<T>` does not serialize concurrent
-`emit(...)` calls. An owner that requires ordering or non-overlapping callbacks
-must emit from its own ordered execution boundary. TimingNode status-change and
-committed-TimingData events are therefore emitted from the TimingNode serial
-lane.
+Listeners must not become alternate owners of component mutable state. A listener must
+also remain short and non-blocking. Slow network delivery, retry or persistence work hands
+the immutable value to its own bounded mechanism and returns. A WebSocket or transport
+adapter therefore never uses the TimingNode lane as its backpressure mechanism.
 
-This is part of the same ingress/latency risk analysis: a synchronous local listener is acceptable only when it is demonstrably short and non-blocking. A WebSocket or other transport adapter must enqueue/buffer its outbound work and return quickly, or introduce its own bounded delivery executor. The TimingNode lane is not a network backpressure mechanism.
+If listener notification fails after a TimingData record is committed, that does not roll
+back the commit. A consumer that needs reliable recovery uses authoritative
+persisted/LogBook state and its own reconciliation/delivery mechanism.
 
-If listener notification fails after the record is committed, that does not
-roll back the TimingData commit. A consumer that needs reliable recovery uses
-authoritative persisted/LogBook state and its own reconciliation/delivery
-mechanism.
+Tracked properties use the same event convention. A source event only calls
+`signalChanged()` to invalidate the cached value. After rereading the authoritative
+source, a real later value change is published through `changedEvent()`. The initial
+value is returned explicitly by `initialize()` and is not fabricated as a change event.
 
-Other local events may use the same `Event<T>` abstraction when a real consumer
-needs them. Do not introduce events merely to replace ordinary direct method
-calls.
+Use `onXxx(...)` for listener/handler methods, for example
+`onTimingNodeStateChanged(State state)`. Do not introduce a parallel callback
+registration API such as `onChange(Consumer<T>)`, `addListener(...)` or
+`setCallback(...)` when `EventSource.subscribe(...)` expresses the notification.
+
+Other local events may use the same abstraction when a real consumer needs them. Do not
+introduce events merely to replace an ordinary direct method call to one owned component.
 
 ### Multiple TimingNodes
 
@@ -2652,7 +2694,7 @@ returns a different concrete implementation.
 ### Stateless TimingData factory
 
 `TimingDataFactory` is a stateless construction service. It does not validate
-TimingNode lifecycle policy, allocate sequence numbers, resolve `TagId` or
+TimingNode state policy, allocate sequence numbers, resolve `TagId` or
 `TeamId`, commit data, own a LogBook or publish events. Those responsibilities
 stay with the TimingNode and its contained domain components.
 
