@@ -57,6 +57,7 @@ ApplicationConfig
 ├── timingSystems
 │   └── <timingSystem>
 │       ├── timingSystemId
+│       ├── eventDataProvider
 │       ├── timingDataProvider
 │       ├── upstreamProtocolProvider
 │       └── timingNodes
@@ -141,6 +142,7 @@ Representative fields:
 timingSystems
   timing-system-01
     timingSystemId
+    eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
     timingNodes
@@ -300,8 +302,12 @@ registration-asset identity is not part of the active software configuration
 model.
 
 Provider IDs are implementation-selection keys, not domain/device identities.
-The same rule applies to configured TimingData, UpstreamProtocol, CAN-protocol
-and display-protocol providers.
+The same rule applies to configured EventData, TimingData, UpstreamProtocol,
+CAN-protocol and display-protocol providers.
+
+For `eventDataProvider`, `reference` selects the built-in public/reference
+EventData profile. Alternate/private providers may supply event-specific
+TagId/RegistrationId semantics through the same shared EventData contract.
 
 For `timingDataProvider`, `reference` selects the built-in implementation of
 the canonical IF-05 representation. An alternate/private TimingData provider may
