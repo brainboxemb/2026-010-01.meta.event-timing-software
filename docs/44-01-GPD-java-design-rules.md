@@ -986,6 +986,59 @@ The extracted method must name the execution/event boundary it represents.
 
 ---
 
+### DR-18 — Keep line wrapping readable
+
+**Rule**
+
+Use **120 characters as the maximum Java source line length**.
+
+Do not wrap a statement merely because it has multiple arguments. When a complete,
+readable statement fits within 120 characters, keep it on one line.
+
+Wrap only when the line would exceed 120 characters or when the expression has enough
+logical structure that line breaks genuinely improve understanding.
+
+**Why**
+
+Over-wrapping turns simple Java into tall visual noise and hides the actual control flow.
+Line breaks should expose structure, not mechanically put every argument on its own line.
+
+**Example**
+
+Prefer:
+
+```java
+checkState(state == State.NEW, "AntennaManager must be NEW, was %s", state);
+```
+
+over:
+
+```java
+checkState(
+        state == State.NEW,
+        "AntennaManager must be NEW, was %s",
+        state);
+```
+
+Likewise, prefer:
+
+```java
+inventoryEnabledSetting.request(Boolean.valueOf(enabled));
+```
+
+when it fits comfortably within the limit.
+
+For a genuinely long or structured expression, break at logical boundaries and align the
+continuation so the structure remains visible.
+
+**Avoid**
+
+- one argument per line as a blanket formatting rule;
+- wrapping short method calls into three or four lines;
+- shortening meaningful names merely to satisfy the line limit.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1005,7 +1058,8 @@ For Java component changes, a reviewer can use this short check:
 13. **Device completion** — Are real completion facts emitted by the operation owner rather than inferred from delays?
 14. **Contract checks** — Are programming-contract failures expressed compactly without hiding normal control flow?
 15. **Async readability** — Are event and lane boundaries named instead of hidden in nested lambdas?
-16. **Tests** — Is the risky behaviour tested, not only the happy path?
+16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
+17. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
