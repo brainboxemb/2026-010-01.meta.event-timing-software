@@ -349,10 +349,17 @@ observability.
 
 **Rule**
 
-When a component only needs to know **what is true now**, treat a state-change event as
-"something changed" and read the current authoritative state during reconciliation.
+When a component only needs to know **what is true now**, read that truth from the
+authoritative owner state.
 
-Do not automatically treat the event snapshot as a command that must later be replayed.
+Do not keep an extra derived boolean merely because it is convenient. If a task already
+knows whether it is running and the owned devices already expose their self-test state,
+derive manager readiness from those facts instead of maintaining a second
+`selfTestPassed` flag.
+
+A state-change event may therefore mean only "something changed"; read the current
+authoritative state when handling it. Do not automatically treat the event snapshot as a
+command that must later be replayed.
 
 **Why**
 
