@@ -792,6 +792,66 @@ stable ownership and recurring responsibility, not become an optimization ritual
 
 ---
 
+### DR-15 — Device completion belongs to the device owner
+
+**Rule**
+
+When a device/provider operation can complete later, start the operation explicitly and
+let the component that owns that operation publish its completion/result.
+
+Do not make a caller infer operation completion from a configured delay. A delay is only
+appropriate when the delay itself is the physical requirement, such as power stabilization.
+
+**Why**
+
+These are different facts:
+
+```text
+power switched on
+    -> wait 200 ms because hardware requires stabilization
+
+self-test started
+    -> wait until the antenna reports that the self-test finished
+```
+
+The first is a time requirement and fits `TaskStep.after(...)`.
+The second is an operation-completion relationship and should be represented by an event
+or equivalent owner-controlled completion signal.
+
+This keeps provider timing and protocol details inside the device boundary and allows the
+caller to remain event-driven.
+
+**Example**
+
+Prefer:
+
+```text
+AntennaManager
+    -> antenna.startSelfTest()
+
+ManagedAntenna
+    -> performs self-test on its serial task runner
+    -> emits selfTestCompletedEvent(result)
+
+AntennaManager event listener
+    -> admits the result to its own serial lane
+    -> returns immediately
+```
+
+**Avoid**
+
+```java
+Duration delay = antenna.startSelfTest();
+return TaskStep.after(delay);
+```
+
+when the returned duration is merely a guess for when the self-test will be complete.
+
+A concrete provider may itself use cooperative tasks, callbacks, protocol events or bounded
+polling internally. That implementation choice must not leak into the manager contract.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -808,7 +868,8 @@ For Java component changes, a reviewer can use this short check:
 10. **Language** — Are names and messages clear English using established terminology?
 11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
 12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
-13. **Tests** — Is the risky behaviour tested, not only the happy path?
+13. **Device completion** — Are real completion facts emitted by the operation owner rather than inferred from delays?
+14. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
