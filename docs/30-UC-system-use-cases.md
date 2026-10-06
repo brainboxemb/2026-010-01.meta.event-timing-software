@@ -131,7 +131,7 @@ committed timing state.
    provider.
 5. If preparation succeeds, inventory starts and current antenna status reflects the
    recovered operational state.
-6. Existing committed TimingData and unrelated healthy antennas remain unaffected.
+6. Existing committed TimingData and other configured antennas remain unaffected.
 
 **Alternative / failure flows:**
 
@@ -139,8 +139,8 @@ committed timing state.
   stops or powers down the affected antenna as needed for a safe retry;
 - a failed attempt does not permanently disable the antenna: a later explicit request is
   a new recovery attempt;
-- repeated failures of one antenna do not prevent independent healthy antennas from
-  operating;
+- repeated failures of one antenna do not prevent independent configured antennas from
+  being operated or retried;
 - application-wide configuration errors or a deliberately disabled capability may reject
   the request because there is no valid antenna operation to retry.
 
