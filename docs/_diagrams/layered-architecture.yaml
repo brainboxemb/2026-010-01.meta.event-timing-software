@@ -575,17 +575,17 @@ edges:
   label: uses / produces
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.68}
+  to_anchor: {side: top, position: 0.70}
   route:
     - {x: 830, y: 936}
-    - {x: 558.4, y: 936}
+    - {x: 625, y: 936}
 
 - from: upstream-protocol-domain
   to: timing-data-domain
   label: uses
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  to_anchor: {side: top, position: 0.30}
   route:
-    - {x: 185, y: 920}
-    - {x: 565, y: 920}
+    - {x: 185, y: 900}
+    - {x: 505, y: 900}
