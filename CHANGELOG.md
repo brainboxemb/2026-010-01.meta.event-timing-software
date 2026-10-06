@@ -16,7 +16,7 @@ The repository is currently in its planning and research phase.
 
 - Separate serial-lane measurements into `SerialExecutorMetrics` / `SerialScheduledExecutorMetrics` and make both lane primitives depend only on externally owned physical workers; Runtime owns production worker construction/shutdown and lane snapshots no longer attribute shared worker CPU time.
 
-- Refine the Java execution model so TimingNodes and TagProcessors keep per-node serial lanes while sharing one physical worker per functional role; define 20 registrations/s as the current aggregate SI-01 stress workload rather than a per-node target.
+- Move the SI-01 execution topology into the SSD as architecture authority: keep per-TimingNode and per-TagProcessor logical serial lanes, use one shared physical worker per functional role by default, apply the same minimal baseline to Raspberry Pi Zero and Raspberry Pi 3 Model B deployments (including the known two-antenna 500 ms multiplex case), and require V01 measurement evidence before adding physical worker parallelism; keep the Java SDD focused on executor-class realization. Define 20 registrations/s as the current aggregate SI-01 stress workload rather than a per-node target.
 
 - Define independent per-antenna startup/operation, optional external `AntennaPowerControl`, TimingNode-driven antenna lifecycle and mutually exclusive inventory multiplexing; show `AntennaPowerControl` explicitly in the overall I/O architecture.
 
