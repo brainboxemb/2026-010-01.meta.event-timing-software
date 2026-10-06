@@ -1114,8 +1114,10 @@ mapped TimingNode closes.
 The manager tracks per-antenna state separately from its aggregate health. Aggregate
 health may be degraded while healthy antennas remain operational.
 
-The manager uses one project `SerialScheduledExecutor` control lane on the Runtime-owned
-shared scheduled I/O worker:
+The manager uses one project `SerialScheduledExecutor` control lane on one Runtime-owned
+scheduled I/O-role worker. The same worker services probe, initialize, power-control,
+start/stop inventory and multiplex switching; there is no separate initialize or switching
+executor in the baseline:
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1143,13 +1145,19 @@ control, result-bearing control and multiplex-rotation callbacks all enter the s
 lane. There is therefore no second timer callback that re-enqueues work into a different
 control executor.
 
-`AntennaControlLane` is a small adapter for admission, timeout and cancellation handling.
-It creates no thread. `AntennaSwitchController` coordinates the configured set and the
-optional mutual-exclusion group. `ManagedAntenna` contains the physical one-device
-sequence: optional power-on, stabilization, probe/initialize, inventory start/stop,
-power-off and close.
+`AntennaControlLane` is a small adapter for admission, timeout, cancellation and delayed
+continuation handling. It creates no thread. `AntennaSwitchController` coordinates the
+configured set and the optional mutual-exclusion group. `ManagedAntenna` owns the
+physical one-device state/provider steps but does not sleep for stabilization; it exposes
+the required delay between begin and complete steps so the control lane can schedule the
+continuation.
 
-Runtime owns the physical scheduled I/O worker; the manager owns only its logical lane.
+Runtime owns the physical scheduled I/O-role worker; the manager owns only its logical
+lane. Probe, initialize and later multiplex switching deliberately share that same worker
+and lane so antenna lifecycle ordering remains explicit. Power-stabilization delays are
+implemented as delayed continuations on the existing `SerialScheduledExecutor`; the
+worker is not occupied by a sleep while the delay elapses.
+
 The one-worker I/O baseline is defined by the SSD runtime execution model. The known
 two-antenna 500 ms multiplex configuration still runs one inventory member at a time, so
 the Java design does not add I/O workers merely because that deployment uses a Raspberry
