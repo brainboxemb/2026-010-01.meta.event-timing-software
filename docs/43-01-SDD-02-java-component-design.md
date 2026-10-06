@@ -225,10 +225,14 @@ application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
+  Conductor.java                   application lifecycle + cross-component rules
+  ComponentLifecycleManager.java   ordered activation/rollback helper
+  property/
+    TimingNodeLifecycleProperty.java
 
 infra/
   property/
-    TrackedProperty.java
+    TrackedProperty.java            generic tracked-value scheduling/change detection
   configuration/
     ReadOnlyConfiguration.java     startup/current value + change observation
     DynamicConfiguration.java      validated runtime override/clear primitive
@@ -748,7 +752,7 @@ validated Config
             -> AntennaManager.activate()
        -> startup application actions
             -> AntennaManager.checkHealth()
-       -> initialize tracked ApplicationProperty values
+       -> initialize tracked application properties
   -> PresentationRuntime.activate()
 ```
 
