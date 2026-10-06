@@ -3,9 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-06'
     change: >-
-      Requalified A01 against the accepted Java runtime path and completed V04
-      typed provider verification through Java PR #302, including built-in
-      reference selection and a synthetic external provider JAR.
+      A01 requalified on Java main; V04 provider bootstrap verified through PR
+      #302 with built-in reference providers and a synthetic external provider JAR.
   - date: '2026-10-04'
     change: >-
       D05 runtime measurement design is complete; A01 remains active because the
