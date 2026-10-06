@@ -1525,7 +1525,7 @@ Conductor.onTimingNodeStateChanged(OPEN)
         v
 AntennaManager.requestEnableInventory()
         |
-        +--> healthy / recoverable?
+        +--> self-test passed / usable?
         +--> optional power ON
         +--> stabilization delay
         +--> initialize
@@ -1553,8 +1553,10 @@ AntennaManager.requestDisableInventory()
 ```
 
 `requestEnableInventory()` and `requestDisableInventory()` are asynchronous
-application-facing requests. Result-bearing callers that explicitly need completion use
-`enableInventory()` and `disableInventory()`.
+application-facing requests. The convenience `enableInventory()` and
+`disableInventory()` methods use the same asynchronous request path and only turn
+immediate request rejection into an exception; they do not wait for physical completion.
+Applied state is observed through manager/device status and the `Setting` state.
 
 Disabling inventory is an operational action, not provider shutdown. The AntennaManager
 remains ACTIVE and may enable the same antenna again after a later OPEN. Provider
@@ -1581,9 +1583,9 @@ AntennaManager records failure
         |
         +--> stop/clean up failed operation
         +--> optional power cycle
-        +--> stabilization / health check as required
+        +--> stabilization / self-test or readiness check as required
         +--> reinitialize
-        +--> resume inventory when healthy
+        +--> resume inventory when usable
 ```
 
 Conductor does not micromanage that recovery sequence and does not need to resend the same
@@ -1594,10 +1596,9 @@ policy.
 
 #### Execution and delayed device work
 
-AntennaManager owns one project `SerialScheduledExecutor` control lane on one
-Runtime-owned scheduled I/O-role worker. Probe, initialize, optional power-control
-transitions, start/stop inventory, recovery work and multiplex rotation all use that same
-logical lane. There is no separate initialization or switching worker in the baseline.
+AntennaManager owns one project `SerialScheduledExecutor` logical control lane on the
+Runtime-owned scheduled I/O-role worker. Multi-step manager operations are represented as
+cooperative tasks executed by `ScheduledTaskRunner`.
 
 ```text
           Runtime-owned shared scheduled I/O worker
@@ -1606,44 +1607,61 @@ logical lane. There is no separate initialization or switching worker in the bas
                SerialScheduledExecutor
                  AntennaManager lane
                          |
-          +--------------+----------------+
-          |              |                |
-    immediate       delayed device    multiplex timer
-      control        continuation
-          |              |                |
-          +--------------+----------------+
-                         |
-                  AntennaManager
-                    /          \
-                   v            v
-          ManagedAntenna(s)   AntennaSwitchController
+                         v
+               ScheduledTaskRunner
+                  /             \
+                 v               v
+          SelfTestTask     inventory task(s)
+                 \               /
+                  v             v
+               ManagedAntenna(s)
+                    |       |
+                    v       v
+                Antenna   PowerDevice
+
+after preparation of a multiplex group:
+        AntennaSwitchController
+        owns inventory hand-off only
 ```
 
-`ScheduledTaskRunner` supplies reusable bounded result waiting, timeout/cancellation
-propagation and delayed begin/complete handling where a manager operation needs those
-mechanics. It creates no executor, scheduler or worker. Antenna-specific classes must not
-reimplement a generic `CompletableFuture` sequence framework merely to chain these
-steps.
+Each cooperative task executes one logical step per turn and returns `AGAIN`,
+`AFTER(delay)` or `DONE`. `AGAIN` is a yield back to the queue. `AFTER(delay)`
+uses a timer registration and does not occupy the physical worker while waiting.
+Antenna-specific code must not rebuild these mechanics with ad-hoc
+`CompletableFuture.thenCompose(...)` chains.
 
-Power-stabilization delays are scheduled continuations. The physical I/O worker is not
-occupied by a sleep while the delay elapses. Result-bearing provider operations retain
-explicit timeout/cancellation handling so a stuck device operation is visible as a
-control failure.
+A synchronous provider method such as `selfTest()`, `initialize()`,
+`startInventory()` or `stopInventory()` still occupies the worker for the duration of
+that call. Cooperative scheduling cannot make a blocking provider API non-blocking. A real
+provider must therefore either use bounded device/protocol I/O for such a step or expose
+staged readiness/completion mechanics that its own cooperative state machine can use.
+
+The generic manager runner does not justify a second timeout thread merely to interrupt an
+unknown future provider implementation. Exact provider-operation timeout/cancellation
+semantics are deferred until a real antenna provider establishes what its serial/network
+API can guarantee. Whatever mechanism is chosen must not block the shared worker waiting
+for work that still needs that same worker or serial lane to execute.
+
+A concrete antenna/provider implementation may itself use cooperative tasks when one
+device operation consists of multiple protocol commands, waits, retries or readiness
+checks. If isolation requires a device-specific logical lane, that lane may still use the
+same Runtime-owned physical I/O worker. This preserves ordering/isolation without creating
+one operating-system thread per antenna.
 
 Concrete `Antenna` construction is passive. Creating and wiring a provider object must
-not start inventory or hidden background device activity.
+not start inventory or hidden background activity.
 
 #### External power
 
-External power switching is optional. When deployment hardware exposes it, composition
-supplies an `AntennaPowerControl` capability to AntennaManager. The manager may then
-order power-on before probe/initialize, stabilization before provider I/O and power-off
-when the antenna is no longer required.
+External power switching is optional and modelled as a separate `PowerDevice`.
+Composition may bind an antenna to a power device plus a stabilization duration. The
+manager task can then order power-on before self-test/initialize, yield for stabilization,
+and power-off when the antenna is no longer required.
 
-`AntennaPowerControl` remains separate from `Antenna`. A physical reader may be powered
-through a relay board, GPIO-controlled supply or another installation component unrelated
-to the reader vendor protocol. A provider that owns its power mechanism internally may
-omit the external capability.
+`PowerDevice` remains separate from `Antenna`. A physical reader may be powered through
+a relay board, GPIO-controlled supply or another installation component unrelated to the
+reader vendor protocol. A provider that owns its power mechanism internally may omit the
+external device.
 
 #### Multiplex switching
 
