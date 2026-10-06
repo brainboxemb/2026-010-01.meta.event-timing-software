@@ -97,9 +97,9 @@ antennaManager.startInventory();
 
 from Conductor. This makes Conductor responsible for AntennaManager internals.
 
-The same rule applies to recovery. Conductor may keep
-`inventory required = true`; AntennaManager owns any device recovery needed to restore
-that state.
+The same rule applies to recovery. Conductor may have requested
+`requestEnableInventory()`; AntennaManager owns any device recovery needed to restore
+enabled inventory without requiring Conductor to micromanage the recovery sequence.
 
 The same ownership rule also guides package placement. A reusable technical mechanism
 that knows nothing about SI-01 application concepts belongs under `infra`; the concrete
@@ -111,8 +111,8 @@ Example:
 infra.property.TrackedProperty<T>
         generic scheduling + change detection
 
-application.property.TimingNodeLifecycleProperty
-        binds TrackedProperty to TimingNode lifecycle semantics
+application.property.TimingNodeStateProperty
+        binds TrackedProperty to TimingNode state semantics
 ```
 
 Avoid placing the generic scheduler/change-detection implementation in Conductor or in the
@@ -244,11 +244,15 @@ An `onXxx(...)` method is a handler name, not a subscription API.
 particular composition currently has one subscriber. When a relationship is semantically
 a direct action to one owned component, use a normal method call instead of an event.
 
+Event wiring is completed during Runtime composition before activation. `subscribe(...)`
+is therefore a composition-time operation; runtime operation is emit-only and the baseline
+`EventSource<T>` exposes no `unsubscribe(...)`.
+
 The `Event<T>` implementation may optimize the common 0/1-subscriber case internally.
-That optimization must remain invisible to callers: zero listeners need no listener
-container, one listener may be stored directly, and only two or more listeners require an
-array/snapshot structure. Thread-safe subscribe/unsubscribe, subscription order and stable
-emit snapshots remain unchanged.
+That optimization remains invisible to callers: zero listeners need no listener container,
+one listener may be stored directly, and only two or more listeners require an immutable
+array representation. Subscription order remains stable. Concurrent runtime
+`emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
 Initialization is also separate from events. A tracked property returns its first
 authoritative value from `initialize()`; that first value is not emitted as a
@@ -579,7 +583,7 @@ Keep these distinctions:
 
 ```text
 activate / deactivate       software component lifecycle
-OPEN / CLOSED               TimingNode state
+OPEN / CLOSED / ERROR       TimingNode state
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
