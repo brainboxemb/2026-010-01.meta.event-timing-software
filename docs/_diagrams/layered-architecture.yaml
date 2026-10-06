@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1476
+  height: 1500
   description: Working responsibility view of the Timing Point Application core and executable composition.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -70,7 +70,7 @@ groups:
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
-  layout: {x: 30, y: 978, w: 1120, h: 258}
+  layout: {x: 30, y: 978, w: 1120, h: 282}
   label_offset: {x: 0, y: 78}
   # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
   # same x breakpoints and diagonal rise gives a constant visible gap.
@@ -87,7 +87,7 @@ groups:
   label: Platform abstractions / execution environment
   kind: layer-platform
   # 42 px header/row offset + 120 px tallest component + 18 px bottom padding.
-  layout: {x: 30, y: 1266, w: 1120, h: 180}
+  layout: {x: 30, y: 1290, w: 1120, h: 180}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -98,7 +98,7 @@ groups:
   label: "Infrastructure /\ncross-cutting"
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1170, y: 520, w: 250, h: 926}
+  layout: {x: 1170, y: 520, w: 250, h: 950}
 nodes:
 - id: local-console
   object_id: Console
@@ -268,7 +268,7 @@ nodes:
   subtitle: "TagId • RegistrationId • profile/provider"
   kind: service
   notation: component
-  layout: {x: 115, y: 956, w: 360, h: 60}
+  layout: {x: 95, y: 956, w: 300, h: 60}
 
 - id: timing-data-domain
   object_id: TimingData
@@ -277,7 +277,7 @@ nodes:
   subtitle: "LocationId • RegistrationId • record + codec"
   kind: service
   notation: component
-  layout: {x: 495, y: 956, w: 360, h: 60}
+  layout: {x: 415, y: 956, w: 300, h: 60}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
@@ -381,7 +381,7 @@ nodes:
     - "ScheduledTaskRunner"
   kind: platform
   notation: packaging-component
-  layout: {x: 55, y: 1308, w: 280, h: 115}
+  layout: {x: 55, y: 1332, w: 280, h: 115}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
@@ -391,7 +391,7 @@ nodes:
     - "EventSource<T>"
   kind: platform
   notation: packaging-component
-  layout: {x: 355, y: 1308, w: 180, h: 95}
+  layout: {x: 355, y: 1332, w: 180, h: 95}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer
@@ -401,7 +401,7 @@ nodes:
     - "MonotonicClock — elapsed time"
   kind: platform
   notation: packaging-component
-  layout: {x: 555, y: 1308, w: 300, h: 95}
+  layout: {x: 555, y: 1332, w: 300, h: 95}
 
 - id: timing-application-runtime
   object_id: TimingApplicationRuntime
@@ -563,8 +563,12 @@ edges:
   to: event-data-domain
   label: resolves
   dashed: true
-  from_anchor: {side: bottom, position: 0.35}
-  to_anchor: {side: top, position: 0.70}
+  from_anchor: {side: left, position: 0.50}
+  to_anchor: {side: top, position: 0.65}
+  route:
+    - {x: 530, y: 747}
+    - {x: 530, y: 932}
+    - {x: 290, y: 932}
 
 - from: timing-node-aggregate
   to: timing-data-domain
@@ -580,7 +584,8 @@ edges:
   to: timing-data-domain
   label: uses
   dashed: true
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: top, position: 0.32}
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 421.6, y: 759.5}
+    - {x: 185, y: 920}
+    - {x: 565, y: 920}
