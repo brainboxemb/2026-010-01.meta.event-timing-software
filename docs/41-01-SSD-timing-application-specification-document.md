@@ -839,8 +839,11 @@ cross-aggregate target resolution.
 :id: TagProcessor  
 
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
-the registration semantics needed by the TimingNode. It does not write files
-from the antenna callback. State-changing registration work crosses the
+the registration semantics needed by the TimingNode. It resolves the semantic
+TagId through EventData before registration-level duplicate suppression and
+passage aggregation. Passage state is keyed by RegistrationId while preserving
+per-TagId attribution for diagnostics/engineering inspection. It does not write
+files from the antenna callback. State-changing registration work crosses the
 TimingNode's bounded serial execution boundary and is completed by that node's
 worker.
 :::
@@ -860,8 +863,8 @@ worker.
 :::{arch} RaceData  
 :id: RaceData  
 
-`RaceData` owns participant, team and tag reference data needed by one
-TimingNode's timing behaviour.
+`EventData` owns event-specific participant/team/tag reference relationships needed by
+TimingNode processing, including 1..N TagIds for one RegistrationId and TagId-to-RegistrationId resolution. The older `RaceData` working concept must not remain a second owner of the same mapping semantics.
 :::
 
 :::{arch} StageTiming  
@@ -875,6 +878,12 @@ accepted timing state and reference data.
 committed timing history as 0..N immutable `TimingData` values. Concrete objects
 may come from different compatible TimingData profiles; LogBook does not maintain
 a second logbook-specific record representation.
+
+`EventData` is a separate SI-01/domain capability alongside `TimingData`.
+EventData owns event-specific source/reference relationships; TimingData owns
+committed timing facts. One RegistrationId may map from multiple TagIds. The
+antenna/provider layer performs physical decoding/decryption but exposes a
+semantic TagId to generic processing.
 
 `TimingData` is the SI-01/domain capability that realises the system-owned
 IF-05 TimingData Interchange contract. IF-05 defines the common semantic

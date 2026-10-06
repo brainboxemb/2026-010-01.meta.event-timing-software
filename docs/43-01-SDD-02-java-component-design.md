@@ -219,19 +219,19 @@ domain/
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
     TimeSource.java                     per-system absolute time / test control
+  eventdata/
+    EventData.java                    event-specific TagId/RegistrationId relationships
+    TagId.java                        semantic decoded RFID source identity
   timing/
     TimingNode.java
     TimingNodeId.java
-    UpstreamMessagePort.java            TimingNode-level upstream messages
-    NextUpTeams.java                    passive per-node state
-    NextUpTeamsStore.java               persistence port for next-up analysis history
-    StageStartTimes.java                passive per-node reference state
-    StageStartTimesStore.java           persistence port for start-time analysis history
-    RaceData.java                       passive per-node reference state
-    RaceDataStore.java                  persistence port for race/reference analysis history
-    TagProcessor.java                   node-local tag filtering/mapping policy
-    TagRegistrationMapper.java          DecryptedTagId -> RegistrationId policy boundary
-    TagProcessingPolicy.java            compiled defaults + active tag-processing policy
+    UpstreamMessagePort.java          TimingNode-level upstream messages
+    NextUpTeams.java                  passive per-node state
+    NextUpTeamsStore.java             persistence port for next-up analysis history
+    StageStartTimes.java              passive per-node reference state
+    StageStartTimesStore.java         persistence port for start-time analysis history
+    TagProcessor.java                 node-local registration-passage processing
+    TagProcessingPolicy.java          compiled defaults + active tag-processing policy
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -249,12 +249,10 @@ io/
       AntennaPowerControl.java          optional external power-switch capability
       SimulatedAntennaPowerControl.java deterministic simulated external power channel
       AntennaInfo.java                  hello/identity/version probe result
-      DecryptedTagId.java               provider-decoded/decrypted source identity
-      TagObservation.java               DecryptedTagId + RSSI + TimingTimestamp fact
+      TagObservation.java               EventData TagId + RSSI + TimingTimestamp fact
       SimulatedAntenna.java             built-in reference/simulation implementation
       manager/
         AntennaManager.java             public activation/inventory/status boundary
-        AntennaControlLane.java         serial admission + timeout adapter
         AntennaSwitchController.java    set + multiplex switching coordination
         ManagedAntenna.java             one-antenna power/probe/init/inventory state
         AntennaManagerTypes.java        manager/status/failure value types
@@ -347,6 +345,30 @@ seams may use direct execution.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
+
+### EventData and TagProcessor realization
+
+The Java design introduces `domain.eventdata.EventData` beside the TimingData
+capability. `EventData` owns the semantic TagId-to-RegistrationId relationship;
+the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
+tag-to-registration mapper dependency.
+
+The provider/antenna implementation may decode or decrypt proprietary source
+bytes, but after that boundary generic code uses `domain.eventdata.TagId`.
+`TagObservation` therefore carries TagId, RSSI and TimingTimestamp.
+
+TagProcessor resolves each observation through EventData and keeps its
+`TagObservationFilter` keyed by RegistrationId. The existing registration-keyed
+filtering model is retained rather than creating independent per-tag filters.
+
+The burst/passsage state is extended with per-TagId statistics and the selected
+observation identity. A package-level immutable diagnostic snapshot exposes this
+state read-only for Presentation/engineering use. The snapshot is diagnostic;
+it is not persisted as TimingData and cannot mutate TagProcessor state.
+
+The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
+registration, every TagId resolving to that RegistrationId is suppressed by the
+same duplicate window.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
@@ -1156,8 +1178,8 @@ control, result-bearing control and multiplex-rotation callbacks all enter the s
 lane. There is therefore no second timer callback that re-enqueues work into a different
 control executor.
 
-`AntennaControlLane` is a small adapter for admission, timeout, cancellation and delayed
-continuation handling. It creates no thread. `AntennaSwitchController` coordinates the
+`ScheduledTaskRunner` provides the reusable admission, timeout, cancellation and delayed
+continuation mechanics over the manager's existing serial scheduled lane. It creates no thread. `AntennaSwitchController` coordinates the
 configured set and the optional mutual-exclusion group. `ManagedAntenna` owns the
 physical one-device state/provider steps but does not sleep for stabilization; it exposes
 the required delay between begin and complete steps so the control lane can schedule the
@@ -1207,8 +1229,7 @@ configured interval, and a failed member is skipped without stopping healthy mem
 public/reference baseline is the known two-antenna installation with a 500 ms interval.
 
 The Java implementation keeps the public manager boundary small. `AntennaManagerTypes`
-owns lifecycle/status/failure value types. `AntennaControlLane` owns admission and
-timeout handling, `AntennaSwitchController` coordinates the configured set and optional
+owns lifecycle/status/failure value types. `ScheduledTaskRunner` supplies reusable admission/timeout task handling, `AntennaSwitchController` coordinates the configured set and optional
 multiplex group, and `ManagedAntenna` owns one physical antenna's power/probe/initialize/
 inventory sequence. This split is justified by concrete responsibilities; it is not a
 generic command/query framework. Public manager operations remain activate/deactivate,
@@ -1225,20 +1246,21 @@ startup containment and degraded/multiplex behaviour can be verified without har
 
 ```java
 final class TagObservation {
-    DecryptedTagId tagId();
+    TagId tagId();
     int rssi();
     TimingTimestamp observedAt();
 }
 ```
 
-`DecryptedTagId` is the provider-decoded/decrypted tag identity exposed to TagProcessor.
-Vendor protocol bytes, framing, encryption and decryption mechanics do not escape the
-antenna/provider boundary. RSSI is the decoded/normalized signal-strength value
-used by the configured SI-01 filter policy.
+The antenna/provider implementation owns vendor bytes, framing, encryption and
+decryption. Once that work is complete, the generic observation carries the
+semantic `domain.eventdata.TagId`. RSSI is the decoded/normalized signal
+strength used by TagProcessor policy.
 
-The timestamp is attached at the earliest accepted decoded-observation point. It becomes
-the automatic registration effective time if the decrypted tag maps successfully, the
-resulting RegistrationId passage passes filtering and the command is admitted. TagProcessor does not replace it with a later processing/commit timestamp.
+The timestamp is attached at the earliest accepted decoded-observation point. It
+becomes the automatic registration effective time when that observation is selected
+as the strongest observation of the resolved RegistrationId passage and the
+TimingNode command is admitted.
 
 Each antenna owns:
 
@@ -1250,18 +1272,9 @@ public EventSource<TagObservation> tagObservedEvent() {
 }
 ```
 
-The provider emits synchronously on its callback/device thread. This deliberately reuses
-the project-wide `Event<T>/EventSource<T>` primitive instead of introducing an
-Antenna-specific listener registry. Runtime composition subscribes the relevant
-TagProcessor to the configured antenna event sources.
-
-Multiple antenna providers may call their events concurrently. TagProcessor handles that
-concurrency only at its bounded observation-input queue: each provider callback performs
-non-blocking ingress and returns. Mapping, passage filtering, duplicate filtering,
-housekeeping and runtime policy replacement execute on TagProcessor's one serial scheduled
-lane. Runtime constructs that `SerialScheduledExecutor` centrally; TimingNode creates and
-owns the TagProcessor child that uses it. Passive filter state therefore remains
-single-lane and requires no additional locks.
+Provider callbacks perform only bounded observation ingress. EventData resolution,
+duplicate suppression, passage filtering, diagnostics and TimingNode admission run
+on the TagProcessor serial scheduled lane.
 
 ### Optional raw-observation persistence
 
@@ -1312,81 +1325,69 @@ the generic TagObservation value merely for logging.
 
 ### Tag processing
 
-The node-local tag-processing path is split by responsibility:
+The node-local tag-processing path is:
 
 ```text
 TagProcessor
-  -> TagRegistrationMapper
+  -> EventData.registrationIdFor(TagId)
   -> RegistrationDuplicateFilter
   -> TagObservationFilter
+       keyed by RegistrationId
+       retains per-TagId passage attribution
   -> TimingNode.offer(...)
-
-TagProcessor
-  -> bounded TagObservation input queue
-  -> SerialScheduledExecutor
-       -> queue-drain work
-       -> scheduled housekeeping on the same serial lane
-
-TagProcessingMetrics
-  -> owns the low-allocation processing counters
 ```
 
-`TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. The antenna has
-already decoded/decrypted the provider data into a `DecryptedTagId`. The callback only
-attempts bounded admission of the immutable observation to TagProcessor's serial execution
-lane and then returns. It does not map, filter or offer TimingNode work on the
-antenna/provider callback thread.
+`TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. It only
+attempts bounded admission of the immutable observation and returns. Mapping,
+filtering and diagnostics do not run on the provider callback thread.
 
-TagProcessor is an active object. It owns the serial execution lane used for all processing
-of admitted observations and for its scheduled housekeeping. On that lane it maps
-`DecryptedTagId` to `RegistrationId`, rejects unmapped observations, suppresses a
-RegistrationId while it remains inside the duplicate window of a previously accepted
-TimingNode offer, updates passage state only for registrations that still need passage
-processing, and performs the non-blocking `TimingNode.offer(...)` handoff to the
-lower-priority TimingNode lane.
+On the TagProcessor lane, EventData first resolves the semantic `TagId` to a
+`RegistrationId`. Unmapped observations are counted and discarded. Duplicate
+suppression is then checked by RegistrationId. Only registrations that still need
+processing enter passage aggregation.
 
-Duplicate suppression is registration-based rather than raw-tag-based, so mapping remains
-before the duplicate check. A RegistrationId enters the duplicate window only after
-`TimingNode.offer(...)` returns `ACCEPTED`; `FULL` and `NOT_RUNNING` do not suppress
-later observations. This avoids maintaining burst/RSSI/housekeeping state that cannot
-produce usable work while preserving retry opportunity after rejected TimingNode admission.
+One participant/registration may have multiple physical tags. The passage filter
+therefore remains keyed by RegistrationId:
 
-Because all TagProcessor-owned mutable processing state is touched only on this one lane,
-`TagObservationFilter` and `RegistrationDuplicateFilter` remain passive state objects and
-do not need their own thread, scheduler, lifecycle or locking. The duplicate filter exposes
-the two distinct moments explicitly: check whether a RegistrationId is currently suppressed,
-and record it only after an accepted TimingNode offer.
-
-#### Observation burst aggregation
-
-A high-rate reader can report the same participant many times during one physical passage,
-and one participant may have multiple decrypted tags that map to the same
-`RegistrationId`. Passage aggregation therefore happens on the resolved
-`RegistrationId`, not on the source tag identity.
-
-Do not schedule/cancel a Java `TimerTask` for every observation and do not retain a
-`List<TagObservation>` merely to choose the strongest read. Keep only the state needed
-to determine passage expiry and the strongest observation.
-
-Keep one small mutable `BurstState` per currently active `RegistrationId`:
-
-```java
-final class BurstState {
-    long firstSeenNanos;
-    long lastSeenNanos;
-    int maxRssi;
-    TimingTimestamp maxRssiObservedAt;
-}
+```text
+TAG-A -> R-123 --+
+                  +--> one R-123 passage
+TAG-B -> R-123 --+
 ```
 
-On each observation:
+It does **not** maintain independent passage or duplicate windows per tag.
 
-1. create the state when the `RegistrationId` has no open burst;
-2. update `lastSeenNanos`;
-3. replace `maxRssi` and `maxRssiObservedAt` only when the new RSSI is strictly
-   greater, so equal maxima keep the earlier observation.
+#### Registration passage state
 
-A burst closes when either condition becomes true:
+A high-rate reader may report many observations during one physical passage. Keep
+one small mutable passage state per active RegistrationId. In addition to expiry
+and strongest-observation state, retain compact per-tag attribution:
+
+```text
+PassageState R-123
+  firstSeenNanos
+  lastSeenNanos
+
+  TAG-A
+    observationCount
+    strongestRssi
+    first/last observed time
+
+  TAG-B
+    observationCount
+    strongestRssi
+    first/last observed time
+
+  selected
+    TagId
+    strongestRssi
+    observedAt
+```
+
+The implementation need not retain every TagObservation. Per-tag counters/extrema
+are sufficient for the baseline diagnostic requirement.
+
+A passage closes when either condition becomes true:
 
 ```text
 now - lastSeen >= quietTimeout
@@ -1394,143 +1395,22 @@ OR
 now - firstSeen >= maxBurstDuration
 ```
 
-The quiet-time rule is essential: if no further observation arrives, expiry still closes
-the burst and immediately continues with duplicate filtering/admission. Registration
-therefore does not wait for a later tag callback.
+The selected candidate is the strongest observation over the complete
+RegistrationId passage, regardless of which associated TagId produced it. Equal
+RSSI keeps the earlier selected observation unless later requirements define
+another rule.
 
-The maximum-duration rule prevents a continuously visible tag from keeping one burst open
-forever. After forced closure, a later observation opens a new burst; the
-registration-level duplicate window prevents an already accepted RegistrationId from
-producing another registration inside its longer duplicate window.
+The selected observation's original TimingTimestamp becomes the automatic
+registration effective time.
 
-The selected candidate is the strongest observation in the burst and retains that
-observation's original `TimingTimestamp`.
+#### Duplicate suppression and admission
 
-Do not pre-filter observations on RSSI. The burst exists to find the maximum RSSI across
-the complete passage.
-
-The timestamp of the maximum-RSSI observation becomes the automatic-registration
-effective time. This intentionally targets the participant's closest observed approach to
-the antenna rather than the earliest possible read.
-
-D04 defines no minimum-RSSI rejection threshold. RSSI is used for strongest-observation
-selection only. A future rejection/filter rule requires separate requirement/design
-authority.
-
-Timing deadlines use `MonotonicClock`; they do not use `Date`,
-`System.currentTimeMillis()` or the potentially corrected observation timestamp.
-
-#### Burst expiry and scheduled serial work
-
-Quiet-time expiry must still happen when no new observation arrives. The same serial lane
-that processes admitted observations therefore also supports delayed/scheduled work.
-
-The execution model is:
+The filtering order is:
 
 ```text
-antenna/provider callback
-  -> TagProcessor.onObservation(observation)
-       -> bounded inputQueue.offer(observation)
-       -> return
-
-TagProcessor execution lane
-  -> drain/process queued observations
-       -> map
-       -> passage update
-       -> duplicate/admission processing
-  -> scheduled housekeeping
-       -> passage expiry
-       -> duplicate cleanup
-```
-
-Scheduled housekeeping is not executed on a second TagProcessor-specific worker thread.
-A due sweep enters the same **logical TagProcessor serial lane** as observation-drain and
-policy-change work. Production Runtime provides one shared scheduled role worker for all
-TagProcessor lanes.
-
-TagProcessor separates ingress buffering from execution:
-
-- one bounded input queue per TagProcessor stores accepted `TagObservation` values;
-- one logical serial lane per TagProcessor drains/processes that queue;
-- all TagProcessor lanes share the Runtime-owned physical scheduled worker;
-- scheduled housekeeping enters the same node-local lane as observation work.
-
-The input queue is not the shared role executor's work queue. The antenna callback only
-performs `inputQueue.offer(observation)` and returns. This keeps provider/event delivery
-independent from mapping/filtering execution and avoids creating one executor task object per
-observation.
-
-Drain work is coalesced. One drain invocation processes the queue depth captured when that
-drain begins; observations arriving during that batch cause a later drain token rather than
-extending the current invocation indefinitely. The queue bound therefore limits one batch,
-and task-boundary resubmission gives already-waiting sibling TagProcessor lanes and
-housekeeping work an opportunity to run on the shared worker.
-
-The baseline Java execution mechanism uses one Runtime-owned single-thread
-`ScheduledThreadPoolExecutor` for the TagProcessor role plus lane-local serial admission.
-The exact wake-up/coalescing strategy is Platform execution detail, but it must avoid
-periodic polling latency when observations arrive and must avoid one scheduled/executor task
-per observation.
-
-The JDK executor's scheduling/thread coordination remains the default implementation. Do not
-replace it with a custom timer heap, wait/notify loop or per-processor worker thread unless
-Step-5 runtime characterization shows a material CPU, allocation, latency or memory reason.
-
-For the Java-8 baseline, the shared `ScheduledThreadPoolExecutor` uses
-`setRemoveOnCancelPolicy(true)` so cancelled housekeeping triggers are removed promptly.
-The logical fixed-delay registration is implemented so its next trigger is scheduled only
-after the previous housekeeping execution has completed on that TagProcessor lane. Ordinary
-runtime failures are contained/reported and do not silently disable unrelated processor
-lanes.
-
-The bounded TagProcessor input queue provides the explicit observation-overload boundary. A
-full queue drops/rejects that incoming observation according to the defined FULL policy; it
-does not consume role-worker queue capacity. Sustained observation ingress must still not
-indefinitely starve due housekeeping or sibling processor lanes.
-
-TagProcessor keeps at most one logical housekeeping registration. When time-based processing
-state changes from empty to non-empty, it registers fixed-delay housekeeping at the
-configured sweep cadence. When no open passage or duplicate-window state remains,
-TagProcessor cancels that registration. A later transition from empty to non-empty starts one
-new logical registration.
-
-This avoids both extremes:
-- there is no timer/scheduled task per observation;
-- there is no permanently running housekeeping registration while TagProcessor has no timed
-  state;
-- there is no dedicated Java worker thread per TagProcessor.
-
-The timed state includes open passage state and any duplicate-window state that still needs
-housekeeping. Passive components may expose a small state query such as `isEmpty()` /
-`hasPendingState()`; they do not schedule themselves.
-
-The execution capability uses monotonic elapsed time for scheduled deadlines. Observation
-timestamps are not used for execution scheduling. The JDK executor implementation remains
-subject to V01 measurement; custom lower-level execution is an optimization option, not the
-baseline design.
-
-The previous separate `PeriodicExecutor` / `PeriodicTask` TagProcessor mechanism is not
-part of this design. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the worker and processor;
-TagProcessor owns the worker lifecycle.
-
-`TagProcessor.start()` starts its serial execution lane. Shutdown first stops antenna inventory and
-unsubscribes `TagProcessor.onTagObserved`, then stops TagProcessor so no new ingress is
-accepted. Accepted observation work follows the worker drain policy; future scheduled sweeps
-are cancelled. Shutdown does not force-close a passage that has not reached its normal
-quiet/max-duration condition.
-
-The bounded observation ingress introduces an explicit overload outcome. FULL or
-NOT_RUNNING admission must be observable through engineering counters/worker state and must
-not block the antenna/provider callback.
-
-#### Registration filtering and admission
-
-Mapping precedes passage aggregation:
-
-```text
-TagObservation(DecryptedTagId, RSSI, observedAt)
+TagObservation(TagId, RSSI, observedAt)
   |
-  +--> TagRegistrationMapper
+  +--> EventData.registrationIdFor(TagId)
           |
           +--> no RegistrationId ----------------------> unmapped
           |
@@ -1538,7 +1418,8 @@ TagObservation(DecryptedTagId, RSSI, observedAt)
           |
           +--> TagObservationFilter
                   keyed by RegistrationId
-                  strongest RSSI / selected observedAt
+                  per-TagId attribution
+                  strongest observation
                   |
                   +--> TimingNode.offer(addAutomaticRegistration)
                           |
@@ -1547,115 +1428,57 @@ TagObservation(DecryptedTagId, RSSI, observedAt)
                           +--> NOT_RUNNING -> do not suppress retry
 ```
 
-The passage filter and the longer registration duplicate window are both keyed by
-`RegistrationId`, but they solve different problems. The duplicate window is checked
-first, after tag-to-registration mapping: a recently admitted RegistrationId bypasses
-passage aggregation entirely. For registrations that are still eligible, passage filtering
-combines repeated reads, including reads from different decrypted tags for the same
-registration, into one strongest-RSSI passage.
+Record duplicate-window state only after `TimingNode.offer(...)` returns
+`ACCEPTED`. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
+suppressed because EventData resolves both to the same RegistrationId.
 
-`TimingNode.offer(...)` is a bounded fire-and-forget handoff. It only reports immediate
-admission to the lower-priority TimingNode queue; it never waits for TimingNode processing.
-Record duplicate-window state only when that offer returns `ACCEPTED`. `FULL` and
-`NOT_RUNNING` therefore do not prevent a later observation from retrying.
+#### Engineering diagnostic view
 
-The processor owns its bounded observation input queue and receives one serial scheduled
-execution capability for processing and housekeeping:
+TagProcessor exposes an immutable read-only diagnostic snapshot of pending/recent
+passage processing. It is intended for engineering presentation and may contain:
+
+- RegistrationId;
+- contributing TagIds;
+- observation count per TagId;
+- strongest RSSI per TagId;
+- selected TagId, RSSI and observed time;
+- first/last observation timing;
+- processing state/outcome where retained.
+
+The snapshot is not TimingData, is not authoritative commit state and does not
+allow mutation of TagProcessor. It may be sampled/published through the normal
+Presentation path without making the engineering client part of timing processing.
+
+#### Execution and housekeeping
+
+TagProcessor still owns one bounded observation input queue and one logical
+`SerialScheduledExecutor` lane. All TagProcessor lanes share the Runtime-owned
+TagProcessor worker. Observation draining, policy changes, passage expiry and
+duplicate cleanup use that same lane.
+
+Housekeeping uses monotonic elapsed time and remains scheduled only while timed
+processing state exists. No timer/scheduled task is created per observation and
+no dedicated thread is created per TagProcessor.
+
+The processor constructor receives EventData rather than a loose mapper:
 
 ```java
 TagProcessor(
     TimingNode timingNode,
-    TagRegistrationMapper mapper,
+    EventData eventData,
     TagProcessingPolicy policy,
     MonotonicClock monotonicClock,
     TagProcessingMetrics counters,
     SerialScheduledExecutor executor)
 ```
 
-`SerialScheduledExecutor` is a narrow project execution contract, not a requirement for a
-hand-written worker implementation. Its default implementation is JDK-backed. The contract
-exists to keep component code independent from JDK rejection/cancellation details and to
-expose the application's bounded-admission and measurement semantics consistently.
+`TimingApplicationRuntime.create(...)` does not expose a separate tag-to-registration
+mapper parameter. Normal and simulated compositions construct/use EventData and then use
+the same TagProcessor path.
 
-Runtime/engineering composition retains the same `TagProcessingMetrics` instance when
-it needs pull-based measurements. TagProcessor owns the supplied execution capability
-lifecycle; supplying it does not make `runtime.TimingApplicationRuntime.create(...)` the execution model.
-
-`TagProcessingPolicy` owns at least:
-
-- burst quiet timeout;
-- maximum burst duration;
-- registration duplicate window;
-- sweep cadence;
-- bounded observation input-queue capacity.
-
-The reusable `TagProcessingPolicy` owns usable compiled defaults so TagProcessor can be
-composed without mandatory deployment repetition. The current first-executable defaults are:
-
-- quiet timeout: 250 ms;
-- maximum burst duration: 1000 ms;
-- duplicate window: 15000 ms;
-- sweep cadence: 50 ms;
-- observation input-queue capacity: 256.
-
-Runtime composition resolves an immutable startup policy from those compiled defaults plus
-optional profile/platform/mode and explicit IF-11 overrides. Queue capacity is a resource
-bound owned by TagProcessor, not a TimingNode/domain identity value.
-
-IF-03 may replace runtime-adjustable policy fields while the application is running.
-Policy replacement is itself serialized onto the TagProcessor lane so no filter/housekeeping
-operation observes a partially updated policy. Quiet timeout, maximum burst duration,
-duplicate window and sweep cadence are runtime-adjustable. Existing first-seen/accepted
-timestamps remain unchanged; later expiry/duplicate decisions use the newly active policy.
-Changing sweep cadence replaces the housekeeping registration on the same lane.
-
-`observationQueueCapacity` is startup-only in the current baseline because it sizes the
-owned `ArrayBlockingQueue<TagObservation>`. A live override request for that field is
-rejected as restart-required rather than replacing the queue underneath concurrent ingress.
-
-Runtime overrides are process state. Clearing an override restores the resolved startup
-value; restart reconstructs the startup policy from compiled defaults plus IF-11 sources.
-
-#### Tag-processing map sizing
-
-`TagObservationFilter` keeps one map entry per currently open distinct `RegistrationId`.
-`RegistrationDuplicateFilter` keeps one entry per accepted `RegistrationId` whose
-duplicate-window state may still matter.
-
-Do not hard-code an arbitrary initial `HashMap` capacity as a presumed optimization.
-Java's default HashMap is lazy; an explicit capacity is useful only when a deployment
-profile provides a credible expected count or Step-5 measurements show resizing to be
-material.
-
-If an explicit capacity is introduced later, size it from the expected entry count and
-the map load factor so that the expected working set fits without immediate resizing.
-The value and its evidence belong to the implementation/profile documentation, not to a
-generic timing-domain requirement.
-
-### TagRegistrationMapper
-
-The mapper is a function/policy boundary, not a required in-memory map:
-
-```java
-interface TagRegistrationMapper {
-    RegistrationId map(DecryptedTagId tagId);
-}
-```
-
-Returning no RegistrationId means the decoded tag is not mappable by the active policy.
-A concrete mapper may:
-
-- perform a deterministic transformation;
-- apply provider/profile-specific conversion;
-- query locally available RaceData/reference data when that event actually requires it.
-
-The public deterministic reference mapper uses the documented transformation:
-
-```text
-TAG-001 -> N-001
-TAG-123 -> N-123
-```
-
+`TagProcessingPolicy` continues to own quiet timeout, maximum passage duration,
+registration duplicate window, sweep cadence and bounded observation-input queue
+capacity. Runtime policy replacement remains serialized onto the TagProcessor lane.
 
 ### SimulatedAntenna
 
@@ -2529,16 +2352,17 @@ returns a different concrete implementation.
 ### Stateless TimingData factory
 
 `TimingDataFactory` is a stateless construction service. It does not validate
-TimingNode lifecycle policy, allocate sequence numbers, resolve `DecryptedTagId` or
+TimingNode lifecycle policy, allocate sequence numbers, resolve `TagId` or
 `TeamId`, commit data, own a LogBook or publish events. Those responsibilities
 stay with the TimingNode and its contained domain components.
 
-Source/reference resolution happens before factory construction:
+Source/reference resolution happens through EventData before TimingData factory
+construction:
 
 ```text
-DecryptedTagId  -----> RaceData ----\
-                         +--> RegistrationId
-TeamId -----> RaceData ----/
+TagId  ------> EventData ----\
+                            +--> RegistrationId
+TeamId -----> EventData ----/
 ```
 
 The factory receives the already selected common construction values in one

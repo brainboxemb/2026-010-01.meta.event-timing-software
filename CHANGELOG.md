@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define `EventData` beside `TimingData` as the owner of event-specific TagId/RegistrationId relationships; make TagProcessor passages and duplicate suppression RegistrationId-based while retaining per-TagId diagnostic attribution for engineering observability; remove the loose TagRegistrationMapper from the intended top-level runtime composition API.
+
 - Clarify the SI-01 execution baseline: one antenna I/O-role worker handles probe, initialize, start/stop inventory and multiplex switching; shared Platform task-handling mechanics cover bounded result waiting, cancellation and delayed continuations only where needed; extend V01 to characterize thread count, effective JVM stack sizing and native/thread stack memory on Raspberry Pi Zero and Raspberry Pi 3 Model B; align the concrete composition-root name with `TimingApplicationRuntime`.
 
 - Clarify SI-01 executable composition as an explicit construct-wire-start sequence and assign cross-component application coordination to `Conductor`.
