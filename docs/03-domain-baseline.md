@@ -428,6 +428,47 @@ The exact event-data source may be deterministic, loaded reference data or an
 event-specific provider/import. That choice does not change TagProcessor
 semantics.
 
+### Default/reference identity convention
+
+The public default/reference EventData profile uses a deterministic identity
+convention rather than a large normal-participant lookup table.
+
+For a four-digit positive number `NNNN` (`0001` through `9999`):
+
+```text
+normal physical tags
+  TT-A-NNNN-1
+  TT-A-NNNN-2
+        |
+        +--> RT-A-NNNN --> TeamId NNNN
+
+reserve physical tags
+  TT-R-NNNN-1
+  TT-R-NNNN-2
+        |
+        +--> RT-R-NNNN --> TeamId lookup
+```
+
+The trailing tag index identifies the physical member of one two-tag set; it is
+not part of the logical RegistrationId. Therefore both `-1` and `-2` resolve
+to the same registration.
+
+For the default/reference profile:
+
+- `TT-X-NNNN-1` and `TT-X-NNNN-2` resolve to `RT-X-NNNN` for `X=A` and `X=R`;
+- `RT-A-NNNN` resolves directly to `TeamId NNNN`;
+- `RT-R-NNNN` requires reserve-assignment reference data to resolve a TeamId;
+- `0000` is invalid in both normal and reserve identifiers.
+
+This convention belongs to the selected EventData profile. The generic
+TimingData `RegistrationId` remains opaque and other EventData providers may
+define different identifier semantics.
+
+A live reserve assignment is mutable event/race state rather than part of the
+physical tag identity. RaceData may therefore provide a current
+`RT-R-NNNN <-> TeamId` override/lookup while EventData continues to own the
+stable identifier convention.
+
 ### Registration passage processing
 
 TagProcessor resolves each decoded TagObservation to `RegistrationId` before
@@ -495,10 +536,12 @@ A RegistrationId may have 1..N TagIds in the EventData profile. Event-specific J
 
 
 
-EventData owns the stable event-profile relationship. RaceData may contain
-live TimingNode-local additions or overrides received from upstream, such as a
-reserve TagId assignment. Resolution therefore has an explicit precedence rule:
-live RaceData override where present, otherwise the selected EventData profile.
+EventData owns the stable event-profile relationship and identifier
+translation rules. RaceData may contain live TimingNode-local additions or
+overrides received from upstream, such as the current assignment of a reserve
+RegistrationId to a TeamId. Resolution therefore has an explicit precedence
+rule: live RaceData override where present, otherwise the selected EventData
+profile.
 
 Stage-start-time semantics remain separately owned by `StageStartTimes` unless
 a later design deliberately folds them into EventData.
