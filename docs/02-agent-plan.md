@@ -286,17 +286,20 @@ T01 is complete on Java main through PR #327: the optional
 runtime-characterization module provides deterministic steady, burst and growing-history
 workloads plus retained machine-readable JSON evidence.
 
-The current execution focus is **V01**: run the repeatable development-host baseline,
-retain the evidence against the exact source/build revision and inspect queue, latency,
-CPU/thread, allocation/GC and history/query behaviour. Important findings are repeated later
-on Raspberry Pi Zero and Raspberry Pi 3 Model B; development-host results are not target
-evidence. **A03** remains planned until V01 evidence exists.
+V01 hosted-Linux evidence is retained on `prod/characterization` for Java revision
+`efc5797f2fb430e16ee1221fe60a91620d6db71b`. Steady 20 registrations/s and both
+1,000/9,999-record history cases completed without queue-full; the deliberately
+unpaced burst exposed the bounded TimingNode queue as intended. Raspberry Pi Zero
+and Raspberry Pi 3 Model B repetitions remain required target evidence, so V01 and
+the dependent A03 optimization decision remain open.
 
-OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
-(D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
-semantics before their implementation activities start. Runtime optimization
-choices remain evidence-driven; thread priorities, batching, pooling, copied
-snapshots/caches and extra asynchronous workers are not baseline assumptions.
+D02 now defines the OPEN/CLOSE TimingData contract and development-v1 mapping.
+The current non-hardware execution focus is therefore **A04**: implement successful
+CLOSED->OPEN and OPEN->CLOSED transitions through the normal TimingNode-owned
+TimingData sequence/persistence/LogBook path, followed by V05. Registration revoke
+(D03/A05/V06) remains the next parallel contract track. Runtime optimization choices
+remain evidence-driven; thread priorities, batching, pooling, copied snapshots/caches
+and extra asynchronous workers are not baseline assumptions.
 
 Multi-node operation, backoffice reference data and StageTiming remain later
 roadmap work and must not be pulled into Step 5.
