@@ -1398,7 +1398,8 @@ other OS facilities.
 :id: TimeSource  
 
 `TimeSource` is the shared lower-level capability for semantic absolute timing time.
-Domain and I/O components consume it when they must use the same timing basis.
+It exposes an absolute `Instant` without importing TimingData/domain types. Domain and
+I/O components consume it when they must use the same timing basis.
 The type itself has no TimingSystem/TimingNode ownership; Runtime composition chooses
 which components receive the same instance.
 :::
@@ -1801,8 +1802,9 @@ sharing explicitly. When multiple TimingNodes and their devices must use the
 same programmed/corrected time basis, Runtime supplies the same TimeSource
 instance to those components.
 
-The current baseline `ClockTimeSource` simply derives `TimingTimestamp` from
-`PlatformEnvironment.clock()`. A later synchronization/correction design may
+The current baseline `ClockTimeSource` simply exposes corrected absolute `Instant`
+values derived from `PlatformEnvironment.clock()`. A consuming Domain/I/O semantic
+boundary converts that instant to `TimingTimestamp` when the timing-data model requires it. A later synchronization/correction design may
 replace it with a TimeSource that applies a programmable correction without
 changing consumers. That correction is not applied to `MonotonicClock`.
 
