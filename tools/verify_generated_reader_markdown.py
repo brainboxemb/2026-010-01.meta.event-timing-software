@@ -14,11 +14,13 @@ forbidden = (
     "```{req}",
     "```{ifreq}",
     "```{arch}",
+    "```{design}",
     "```{vc}",
     ":::{uc}",
     ":::{req}",
     ":::{ifreq}",
     ":::{arch}",
+    ":::{design}",
     ":::{vc}",
 )
 for token in forbidden:
@@ -100,6 +102,30 @@ if vc_order != tuple(sorted(vc_order)):
     raise SystemExit(
         "generated reader Markdown does not render VC metadata before testcase body"
     )
+
+sdd = (root / "43-01-SDD-02-java-component-design.md").read_text(
+    encoding="utf-8"
+)
+if '<a id="DD-PresentationAccess"></a>' not in sdd:
+    raise SystemExit("generated reader Markdown missing DD-PresentationAccess")
+if "- **Type:** Detailed Design" not in sdd:
+    raise SystemExit("generated reader Markdown missing Detailed Design type label")
+
+presentation_start = ssd.index('<a id="PresentationGateway"></a>')
+presentation_end = ssd.index('<a id="TimingNodeProxy"></a>', presentation_start)
+presentation_block = ssd[presentation_start:presentation_end]
+if "- **Detailed by:**" not in presentation_block:
+    raise SystemExit("generated reader Markdown missing SSD detailed_by relation")
+if "DD-PresentationAccess" not in presentation_block:
+    raise SystemExit("generated reader Markdown does not link PresentationGateway to DD-PresentationAccess")
+
+design_start = sdd.index('<a id="DD-PresentationAccess"></a>')
+design_end = sdd.index("\n---\n", design_start)
+design_block = sdd[design_start:design_end]
+if "- **Details:**" not in design_block:
+    raise SystemExit("generated reader Markdown missing inverse detailed-design relation")
+if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_block:
+    raise SystemExit("generated reader Markdown missing inverse SSD architecture links")
 
 for number in range(1, 20):
     object_id = f"UC-{number:03d}"
