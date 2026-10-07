@@ -314,6 +314,29 @@ clock. SI-01 validates the request against current TimingNode state, captures th
 active LocationId, assigns the next source sequence and record-creation time, and
 commits one `MAN_REG` ADD record through the normal TimingNode commit path.
 
+### IF03-OP-013 — Start simulated tag passage
+
+Inputs:
+
+- addressed `TimingNodeId`;
+- resolved `RegistrationId`;
+- simulation profile identifier.
+
+This is an engineering operation and is available only when the corresponding
+simulation capability is advertised and enabled. It starts one simulated
+registration scenario **before** the TagProcessor boundary. The selected profile
+publishes one or more TagObservation values through the configured
+SimulatedAntenna, so normal AntennaManager, TagProcessor, TimingNode and TimingData
+behaviour remains in the path.
+
+The operation does not itself commit a registration and does not have the same
+semantics as IF03-OP-007 direct accepted-registration simulation. The eventual
+registration outcome remains observable through normal committed TimingData.
+
+The initial profile identifiers are `simple`, `normal` and `edge`. Their
+internal observation pattern is engineering simulation behaviour rather than
+TimingData/domain semantics.
+
 ## Operation ordering and concurrency
 
 Presentation clients may submit commands concurrently. IF-03 therefore requires
@@ -601,6 +624,18 @@ IF-03 shall provide IF03-OP-012 as a normal node-scoped manual-registration ADD
 operation. The client shall supply RegistrationId, effective registration time and
 whether that time was selected automatically by the client or entered/edited manually.
 SI-01 shall preserve the supplied effective time when creating the MAN_REG record.
+:::
+
+:::{ifreq} Simulated tag passage control  
+:id: IF03-REQ-024  
+:status: D  
+:derived_from: UC-009  
+
+When the simulation capability is supported and enabled, IF-03 shall provide
+IF03-OP-013 to start one simulated-tag profile for one resolved RegistrationId.
+The operation shall enter before TagProcessor by publishing observations through
+the configured SimulatedAntenna and shall not substitute direct TimingNode
+registration injection for the simulated antenna path.
 :::
 
 
