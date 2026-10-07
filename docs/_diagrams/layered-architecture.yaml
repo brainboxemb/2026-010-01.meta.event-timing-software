@@ -100,6 +100,8 @@ groups:
   # Align the technical column bottom with Platform.
   layout: {x: 1170, y: 520, w: 250, h: 990}
 nodes:
+# External interface ports belong to the in-process Presentation adapters.
+# Their downward relationships remain ordinary internal application connections.
 - id: local-console
   object_id: Console
   group: presentation-layer
@@ -107,7 +109,9 @@ nodes:
   subtitle: "local text interface"
   kind: presentation
   notation: component
-  layout: {x: 55, y: 125, w: 200, h: 65}
+  ports:
+    - {id: console, label: "Local console", side: top, position: 0.50}
+  layout: {x: 55, y: 145, w: 200, h: 65}
 - id: remote-shell
   object_id: RemoteShell
   group: presentation-layer
@@ -115,23 +119,30 @@ nodes:
   subtitle: "remote text interface"
   kind: presentation
   notation: component
-  layout: {x: 275, y: 125, w: 220, h: 65}
+  ports:
+    - {id: shell, label: "TCP shell", side: top, position: 0.50}
+  layout: {x: 275, y: 145, w: 220, h: 65}
 - id: web-interface
   object_id: Web
   group: presentation-layer
-  label: "Web (1 port per TimingNode)"
-  subtitle: "browser-facing interface"
+  label: "Web"
+  subtitle: "browser-facing • 1 binding per TimingNode"
   kind: presentation
   notation: component
-  layout: {x: 515, y: 125, w: 280, h: 65}
+  ports:
+    - {id: web, label: "Web listener", side: top, position: 0.50}
+  layout: {x: 515, y: 145, w: 280, h: 65}
 - id: remote-api
   object_id: Api
   group: presentation-layer
   label: "Api"
-  subtitle: "HTTP + WebSocket • tools / test / control"
+  subtitle: "tools / test / control"
   kind: presentation
   notation: component
-  layout: {x: 815, y: 125, w: 300, h: 65}
+  ports:
+    - {id: http, label: "HTTP", side: top, position: 0.32}
+    - {id: websocket, label: "WebSocket", side: top, position: 0.72}
+  layout: {x: 815, y: 145, w: 300, h: 65}
 - id: shared-terminal
   object_id: SharedTerminalHandler
   group: presentation-layer
