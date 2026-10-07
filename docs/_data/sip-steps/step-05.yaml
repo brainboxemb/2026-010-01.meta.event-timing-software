@@ -100,9 +100,9 @@ activities:
     note: >-
       Completed through meta issue #567 / PR #572 using released
       tool.eng-docs v0.10.0 from shared issue #100. Figure SI01-01 now shows
-      component-owned external interface ports: API has separate HTTP and
-      WebSocket ports, RemoteShell has a TCP-shell port, Console a local-console
-      port and Web its current listener boundary. SharedTerminalHandler and the
+      component-owned external interface ports: Web and API each have separate
+      HTTP and WebSocket ports, RemoteShell has a TCP-shell port and Console a
+      local-console port. SharedTerminalHandler and the
       Application-layer PresentationGateway remain internal and have no external
       port.
 
