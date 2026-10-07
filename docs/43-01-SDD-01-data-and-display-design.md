@@ -211,6 +211,18 @@ serial turn. A persistence failure therefore does not produce a successful
 do not allocate/commit a lifecycle record. There is no second lifecycle-event
 store or lifecycle-specific sequence owner.
 
+Registration REV uses the same append-only commit path. The caller supplies the
+registration family plus the Registration ID and original effective time; for a
+manual registration it also supplies the original AUTO/MAN time-source
+classification. TimingNode assigns only the new record sequence/recorded-at
+context and commits the resulting REV record.
+
+LogBook and this commit boundary are bookkeeping, not the owner of interpreted
+registration business state. They do not search prior history to decide whether
+an ADD is currently active, whether a matching REV already exists or whether a
+requested revoke is meaningful. Higher processing/application logic may interpret
+ADD/REV history and decide what operation to request.
+
 Only when the worker is ready to commit does it ask the LogBook for the next
 sequence. Sequence is therefore not assigned when work is placed on the queue.
 
