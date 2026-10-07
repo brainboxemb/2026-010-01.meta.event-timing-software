@@ -336,7 +336,7 @@ platform/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
   environment/
-    PlatformEnvironment.java              injected wall-clock + monotonic-clock boundary
+    PlatformEnvironment.java              wall-clock + monotonic-clock + OS boundary
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
   metrics/
@@ -788,7 +788,7 @@ application
   configuration semantics
 
 domain
-  domain model, semantic ports, per-TimingSystem TimeSource, TimingData representation/codec and UpstreamProtocol semantics
+  domain model, semantic ports, TimingData representation/codec and UpstreamProtocol semantics
 
 io
   hardware, messaging and storage adapters
@@ -1513,7 +1513,7 @@ PlatformEnvironment = WINDOWS
 and no explicit antenna composition available yet
         |
         v
-ANT1 -> built-in SimulatedAntenna
+1 -> built-in SimulatedAntenna
         + optional SimulatedPowerDevice
         |
         v

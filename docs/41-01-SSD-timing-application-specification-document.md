@@ -942,11 +942,13 @@ normal domain users remain unaware of provider discovery mechanics.
 
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
-`PlatformEnvironment` supplies the process/runtime time capabilities used by
-SI-01: an absolute wall-clock `Clock` for externally meaningful timestamps and
-a `MonotonicClock` for elapsed-time semantics. Domain objects consume the
-semantic time values they need; they do not own a second per-TimingSystem clock
-abstraction.
+`PlatformEnvironment` supplies the process/runtime environment capabilities used by
+SI-01: an absolute wall-clock `Clock` for externally meaningful timestamps, a
+`MonotonicClock` for elapsed-time semantics and a normalized `OperatingSystem`
+identity used by Runtime composition. Domain objects consume the semantic time values
+they need; they do not own a second per-TimingSystem clock abstraction. Platform-specific
+defaults use the normalized operating-system identity rather than scattered JVM property
+checks.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
@@ -1095,7 +1097,8 @@ io/
     AntennaManager
       Antenna (0..N)
         SimulatedAntenna
-    AntennaPowerControl (0..N)
+    PowerDevice (0..N)
+      SimulatedPowerDevice
     Display
       Rev1CanDisplay
       Rev2WifiDisplay
@@ -1142,10 +1145,11 @@ rather than as nested component boxes.
 `Devices` groups the software components that represent external device roles in
 SI-01. A TimingSystem may be configured without RFID antennas. When one or more
 antennas are configured, one `AntennaManager` coordinates that 1..N `Antenna`
-set for the TimingSystem. Optional `AntennaPowerControl` capabilities represent
+set for the TimingSystem. Optional `PowerDevice` capabilities represent generic
 installation-owned external power channels used by AntennaManager; they are peers of
 the antenna/provider role rather than hidden vendor-driver behaviour.
-`SimulatedAntenna` is the built-in reference/simulation implementation.
+`SimulatedAntenna` and `SimulatedPowerDevice` are the built-in
+reference/simulation implementations.
 `Display`, `Keypad` and `Beeper` name software-facing device roles; their
 concrete variants remain subordinate to this package/component boundary.
 :::
@@ -1201,22 +1205,22 @@ AntennaManager. Concrete vendor or simulated implementations remain behind this
 role.
 :::
 
-:::{arch} AntennaPowerControl  
-:id: AntennaPowerControl  
+:::{arch} PowerDevice  
+:id: PowerDevice  
 
-`AntennaPowerControl` is the optional software-facing I/O capability for an
-installation-owned external antenna power channel. AntennaManager uses it to order
+`PowerDevice` is the optional generic software-facing I/O capability for an
+installation-owned external power channel. AntennaManager may use one to order
 power-on, stabilization and power-off around self-test and normal operation. It remains
-separate from `Antenna` because the physical power switch may be a relay, GPIO or
-other installation device unrelated to the antenna vendor protocol.
+separate from `Antenna` because a relay, GPIO-controlled supply or other power device
+is not part of the antenna vendor protocol and may be reusable for other device roles.
 :::
 
-:::{arch} SimulatedAntennaPowerControl  
-:id: SimulatedAntennaPowerControl  
+:::{arch} SimulatedPowerDevice  
+:id: SimulatedPowerDevice  
 
-`SimulatedAntennaPowerControl` is the deterministic built-in implementation used
-with `SimulatedAntenna` to verify powered/unpowered state, stabilization sequencing
-and power-cycle behaviour without physical relay or reader hardware.
+`SimulatedPowerDevice` is the deterministic built-in implementation used with
+`SimulatedAntenna` to verify powered/unpowered state, stabilization sequencing and
+power-cycle behaviour without physical relay or reader hardware.
 :::
 
 :::{arch} SimulatedAntenna  
@@ -1335,15 +1339,19 @@ execution-environment abstractions:
 
 ```text
 bounded serial execution (SerialExecutor / SerialScheduledExecutor)
-optional scheduled task handling (ScheduledTaskRunner)
+cooperative task execution (SerialTaskRunner / ScheduledTaskRunner)
+coalesced component-task wake control (CooperativeTaskController)
 local typed events (Event<T> / EventSource<T>)
 absolute wall clock (Clock)
 elapsed-time source (MonotonicClock)
+normalized platform family (OperatingSystem)
 ```
 
-A domain or I/O component may compose a Platform primitive such as
-`SerialExecutor`, `SerialScheduledExecutor`, `ScheduledTaskRunner` or `Event<T>`; the primitive itself remains unaware of
-TimingNode, TimingData, presentation or external I/O semantics.
+A component may compose Platform execution primitives such as `SerialExecutor`,
+`SerialScheduledExecutor`, `SerialTaskRunner`, `ScheduledTaskRunner` or
+`CooperativeTaskController`, or local-event primitives such as `Event<T>`.
+The primitives themselves remain unaware of TimingNode, TimingData, presentation
+or external I/O semantics.
 
 The layered view groups Platform into three small technical responsibilities:
 
@@ -1351,9 +1359,11 @@ The layered view groups Platform into three small technical responsibilities:
 :id: PlatformExecution  
 
 `PlatformExecution` owns the reusable bounded serial execution primitives
-`SerialExecutor` and `SerialScheduledExecutor`. It also provides the optional
-`ScheduledTaskRunner` helper for bounded result waiting, cancellation
-propagation and delayed continuations on an existing scheduled serial lane.
+`SerialExecutor` and `SerialScheduledExecutor`. Cooperative tasks may run on an
+existing ordinary serial lane through `SerialTaskRunner` or on a scheduled serial
+lane through `ScheduledTaskRunner` when delayed continuation is required.
+`CooperativeTaskController` provides generic wake/coalescing control for a component
+control task without owning that component's application/domain/device state.
 These mechanisms own no TimingNode state or domain policy.
 :::
 
@@ -1368,11 +1378,12 @@ publishes them; Platform does not provide a central event bus.
 :::{arch} PlatformEnvironment  
 :id: PlatformEnvironment  
 
-`PlatformEnvironment` is the small process/platform time boundary composed by
-Runtime. It provides the absolute wall-clock `Clock` used when externally
-meaningful timestamps are attached and the `MonotonicClock` used for elapsed
-time, timeouts, filtering windows and metrics. It is deliberately not a general
-service locator for filesystem, networking or other OS facilities.
+`PlatformEnvironment` is the small process/platform boundary composed by Runtime.
+It provides the absolute wall-clock `Clock` used when externally meaningful timestamps
+are attached, the `MonotonicClock` used for elapsed time, timeouts, filtering windows
+and metrics, and a normalized `OperatingSystem` family for platform-dependent Runtime
+composition defaults. It is deliberately not a general service locator for filesystem,
+networking or other OS facilities.
 :::
 
 #### Runtime and infrastructure
