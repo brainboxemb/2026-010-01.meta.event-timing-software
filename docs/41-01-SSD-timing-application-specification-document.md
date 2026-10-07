@@ -637,6 +637,15 @@ presentation/
     terminal/         behaviour genuinely shared by console + shell
 ```
 
+In Figure SI01-01, a small port glyph on the outer edge of a Presentation
+component denotes an externally visible interface of that **in-process SI-01
+adapter**. Distinct externally meaningful endpoints are shown separately; for example,
+API HTTP and API WebSocket are two ports on the same API component. The lines from
+Presentation components down toward `SharedTerminalHandler` or
+`PresentationGateway` are ordinary in-process relationships, not sockets between
+separate processes. `PresentationGateway` is an internal Application-layer component
+and therefore has no external interface port.
+
 :::{arch} API  
 ---
 id: Api
