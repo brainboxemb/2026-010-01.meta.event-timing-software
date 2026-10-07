@@ -110,6 +110,10 @@ if '<a id="DD-PresentationAccess"></a>' not in sdd:
     raise SystemExit("generated reader Markdown missing DD-PresentationAccess")
 if "- **Type:** Detailed Design" not in sdd:
     raise SystemExit("generated reader Markdown missing Detailed Design type label")
+if "Node-scoped presentation access is exposed through `TimingNodeProxy`." not in sdd:
+    raise SystemExit(
+        "generated reader Markdown missing substantive DD-PresentationAccess body"
+    )
 
 presentation_start = ssd.index('<a id="PresentationGateway"></a>')
 presentation_end = ssd.index('<a id="TimingNodeProxy"></a>', presentation_start)
