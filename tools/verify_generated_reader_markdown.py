@@ -81,6 +81,26 @@ if uc_order != tuple(sorted(uc_order)):
         "generated reader Markdown does not retain full UC-001 narrative before metadata"
     )
 
+vts = (
+    root / "61-01-VTS-timing-application-verification-test-specification.md"
+).read_text(encoding="utf-8")
+vc_start = vts.index('<a id="VC-ST1-002"></a>')
+vc_end = vts.index('<a id="VC-ST1-003"></a>', vc_start)
+vc_block = vts[vc_start:vc_end]
+vc_order = (
+    vc_block.index("**VC-ST1-002 — Control and observe first committed registration**"),
+    vc_block.index("- **Type:** Verification Case"),
+    vc_block.index("- **Verifies:**"),
+    vc_block.index("— — —"),
+    vc_block.index("**Executable test**"),
+    vc_block.index("**Purpose**"),
+    vc_block.index("\n---\n"),
+)
+if vc_order != tuple(sorted(vc_order)):
+    raise SystemExit(
+        "generated reader Markdown does not render VC metadata before testcase body"
+    )
+
 for number in range(1, 20):
     object_id = f"UC-{number:03d}"
     if f'<a id="{object_id}"></a>' not in use_cases:
