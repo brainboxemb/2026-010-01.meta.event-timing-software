@@ -12,7 +12,7 @@ import sys
 import yaml
 
 NEED_BLOCK_RE = re.compile(
-    r"^(?P<fence>```|:::)\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n"
+    r"^(?P<fence>```|:::)\{(?:uc|req|ifreq|arch|design|vc)\}[^\n]*\n"
     r"(?P<body>.*?)(?=^(?P=fence)\s*$)",
     re.MULTILINE | re.DOTALL,
 )
