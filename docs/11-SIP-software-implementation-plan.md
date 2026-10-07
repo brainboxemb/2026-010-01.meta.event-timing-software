@@ -444,6 +444,7 @@ domain and persistence paths.
 | `D04` | Review simulated antenna/input architecture |
 | `D05` | Define internal runtime-observability architecture |
 | `D06` | Link SSD architecture Needs to detailed SDD design |
+| `D07` | Clarify Presentation external ports in architecture diagram |
 | `T01` | Runtime-characterization harness and evidence tooling |
 | `A01` | Qualify/implement simulated antenna and tag-processing path |
 | `A02` | Qualify/implement runtime markers and counters |
@@ -615,10 +616,11 @@ is not implemented ahead of V01/A03 evidence unless the bounded-resource contrac
 already requires a correction. Representative V01/V02 cases are repeated later on the
 selected target in Step 9; those target runs do not block Step-5 design decisions.
 
-D02/A04/V05 (OPEN/CLOSE TimingData), D03/A05/V06 (registration revoke) and D06
-(SSD-to-SDD Needs traceability, meta issue #564) are parallel Step-5 tracks and do not
-need to wait for every runtime-characterization result, but their implementations still
-require their own preceding contract/design decisions where applicable.
+D02/A04/V05 (OPEN/CLOSE TimingData), D03/A05/V06 (registration revoke), D06
+(SSD-to-SDD Needs traceability, meta issue #564) and D07 (Presentation interface-port
+clarity, meta issue #567 / tool.eng-docs issue #100) are parallel Step-5 tracks and do
+not need to wait for every runtime-characterization result, but their implementations
+still require their own preceding contract/design decisions where applicable.
 
 #### D01 exit
 
@@ -635,6 +637,24 @@ SSD `arch` objects to the corresponding detailed SDD design where such elaborati
 exists. The relationship must be visible in the engineering Object Explorer with an
 inverse link, use schema-validated source/target types and avoid replacing the existing
 `satisfies` requirement relation or duplicating ordinary Markdown link lists.
+
+### D07 — Presentation external-port clarity
+
+D07 is tracked by meta issue #567 and depends on the reusable diagram-port notation
+tracked in `tool.eng-docs` issue #100. Figure SI01-01 must distinguish the external
+interface of each in-process Presentation adapter from its ordinary internal Application
+connection:
+
+- API shows separate external `HTTP` and `WebSocket` ports;
+- RemoteShell shows one external `TCP shell` port;
+- Console shows one local `Console` interface port;
+- Web shows only transport ports that are actually established by its current contract;
+- SharedTerminalHandler and PresentationGateway have no external port;
+- adapter-to-SharedTerminalHandler/PresentationGateway connections remain normal
+  in-process relationships.
+
+This visual convention prevents PresentationGateway from being mistaken for an external
+socket-facing service merely because its name contains `Gateway`.
 
 ### A03 — Measurement-driven runtime decision
 
@@ -699,7 +719,9 @@ bounded-delivery baseline from Java PR #321.
 - recovery preserves lifecycle/registration records and sequence continuity;
 - provider loading is verified with public built-in/synthetic implementations;
 - Step-5 SSD architecture objects that have substantive SDD elaboration expose that
-  detailed-design relationship in the Needs engineering graph.
+  detailed-design relationship in the Needs engineering graph;
+- Figure SI01-01 distinguishes external Presentation ports from internal adapter-to-
+  Application relationships, without giving PresentationGateway an external port.
 
 ---
 
