@@ -340,7 +340,7 @@ platform/
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
   time/
-    TimeSource.java                       shared absolute timing-time contract
+    TimeSource.java                       shared absolute Instant source contract
     ClockTimeSource.java                  wall-clock-backed baseline implementation
   metrics/
     RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
@@ -722,8 +722,9 @@ into TimingData or exposed as an upstream address.
 
 The raw absolute wall clock and monotonic elapsed-time source come from
 `PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
-absolute Clock and passes that semantic timing source to components that attach
-or record event time. The current baseline implementation is `ClockTimeSource`;
+absolute Clock and passes that timing source to components that attach or record
+event time. TimeSource returns `Instant`, keeping Platform independent of the
+TimingData/domain value model. The current baseline implementation is `ClockTimeSource`;
 tests and simulation may inject controlled equivalents.
 
 TimeSource ownership is deliberately not encoded as TimingSystem or TimingNode
