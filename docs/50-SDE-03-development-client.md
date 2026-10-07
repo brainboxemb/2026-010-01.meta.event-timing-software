@@ -113,8 +113,22 @@ every UI action indicates accidental transport recreation.
 
 The Development Client exposes the capability-gated IF-03 engineering operation for
 direct injection of an **already accepted semantic registration**. That control enters
-the normal TimingNode registration operation after antenna/decoding/filtering. When
-exercising a running SI-01 through IF-03, the Development Client does not construct
+the normal TimingNode registration operation after antenna/decoding/filtering and is
+therefore explicitly **not** antenna simulation.
+
+A separate capability-gated simulated-tag control starts a named passage profile before
+the antenna-observation boundary. The Development Client requests only the
+RegistrationId and profile; SI-01 resolves the configured EventData tags and drives:
+
+```text
+SimulatedTag / profile
+  -> SimulatedAntenna
+  -> AntennaManager
+  -> TagProcessor
+  -> TimingNode
+```
+
+When exercising a running SI-01 through IF-03, the Development Client does not construct
 committed TimingData directly and does not choose the TimingNode-owned source identity,
 active location or sequence.
 
@@ -332,8 +346,9 @@ Time | Type | TeamID | Code | <action>
 manual registrations to describe how the effective registration time was obtained
 (`AUTO` or `MAN`). A manual registration with manually entered time therefore
 deliberately shows `MAN` twice: Type `MAN`, Code `MAN`. A manual registration
-using system-assigned time shows Type `MAN`, Code `AUTO`. An automatic registration
-already carries its meaning in Type `AUTO`, so its Code cell is empty.
+whose effective time was captured automatically by the client shows Type `MAN`, Code
+`AUTO`. An automatic registration already carries its meaning in Type `AUTO`, so its
+Code cell is empty.
 
 TeamID is an interpreted reference-data value and is not another name for
 `RegistrationId`. Until the applicable RaceData/reference mapping exists, TeamID may
@@ -399,9 +414,14 @@ whether that Registration ID is valid for the running event/profile.
 Time entry is also presentation-oriented:
 
 - date is shown separately from clock time;
-- ordinary clock-time entry is readable to whole seconds;
+- ordinary clock-time input/display uses hundredths of a second for the current
+  reference/API path;
 - the interpreted client time zone is shown explicitly beside the Time field;
-- **Now** fills date/time in that same displayed zone;
+- **Now** captures date/time in that same displayed zone and marks a manual-registration
+  request as time source `AUTO`;
+- editing the date or time marks a manual-registration request as time source `MAN`;
+- both `AUTO` and `MAN` carry the client-supplied effective registration time; SI-01
+  does not replace `AUTO` with its own current time;
 - for the current API/reference path, the client converts the explicit local civil value
   to the canonical UTC API timestamp when sending, so the conversion is visible rather
   than implicit;
@@ -409,9 +429,9 @@ Time entry is also presentation-oriented:
   interchange, remains owned by the configured `TimingDataCodec` rather than by form
   widgets or Development Client presentation code.
 
-The normal form does not require an engineer to type hundredths/nanoseconds. Where
-deterministic sub-second protocol testing is needed, an advanced/raw value may be
-provided without making fractional entry part of the everyday form.
+Nanosecond precision remains unnecessary in the ordinary form. The hundredth-second
+field matches the current registration presentation/reference-path precision without
+narrowing the generic TimingTimestamp representation.
 
 ### Logging behaviour
 
@@ -435,15 +455,36 @@ startup level; restarting the Development Client restores the configured value.
 
 ## Capability-driven engineering controls
 
-The Development Client must not assume that dev auto-reg is
-available in every SI-01 deployment. The running application advertises whether
-that engineering capability is supported and enabled; otherwise the control is
-disabled or absent.
+The Development Client must not assume that engineering simulation controls are available
+in every SI-01 deployment. The running application advertises each capability separately;
+a control is disabled or absent when its capability is unavailable.
 
-The engineering registration control is deliberately a **dev auto-reg** input. It is not
-antenna simulation and it is not an upstream backend message. DebugConnector/upstream
-simulation is a separate capability for inbound backoffice behaviour such as
-start-time/reference-data updates.
+`DIRECT_REGISTRATION_SIMULATION` is deliberately a **dev auto-reg** input. It injects
+an already accepted automatic registration after antenna/tag processing. It is not
+antenna simulation and it is not an upstream backend message.
+
+`TAG_SCENARIO_SIMULATION` is the separate simulated-tag passage capability. The
+**Simulated tags** pane provides:
+
+```text
+Profile       simple | normal | edge
+Count
+Number range  from .. to
+Order         ascending | random
+Seed          used for random order
+Interval ms
+Start / Stop
+Progress
+```
+
+The client owns batch selection and pacing only. The interval is between registration
+scenario starts. The selected profile owns the TagObservation sequence inside each
+passage, including whether one or multiple EventData-mapped tags are observed. Random
+selection is seedable so a run can be repeated. **Stop** prevents later scenario starts;
+it does not undo a scenario already accepted by SI-01.
+
+DebugConnector/upstream simulation remains a separate capability for inbound backoffice
+behaviour such as start-time/reference-data updates.
 
 ## Existing web-application compatibility
 
@@ -520,8 +561,13 @@ The Development Client remains independently testable:
 - service/client classes are unit tested without JavaFX handlers;
 - UI presentation can use deterministic fixture models;
 - interface integration uses a real running SI-01 through its public interfaces;
-- dev auto-reg enters SI-01 through IF-03 and the normal
-  TimingNode registration operation, never through package-private/internal mutation;
+- dev auto-reg enters SI-01 through IF-03 and the normal accepted-registration operation,
+  never through package-private/internal mutation;
+- simulated-tag profile requests enter through IF-03 and are verified through
+  SimulatedAntenna -> AntennaManager -> TagProcessor -> TimingNode rather than a direct
+  TimingNode shortcut;
+- client-side batch planning is unit tested for ascending and seedable pseudo-random
+  selection independently of JavaFX event handling;
 - screenshot generation verifies stable rendering, not business correctness.
 
 ## Development Client boundary
