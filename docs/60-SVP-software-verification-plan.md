@@ -67,7 +67,7 @@ Verification should provide evidence that:
 - faults and reconnect/recovery paths behave deliberately;
 - local operation remains available where required during backoffice/network outages;
 - multiple registration assets/sources remain isolated and correctly routed;
-- SI-01 runs correctly on the intended Raspberry Pi Zero / Zero W target;
+- SI-01 runs correctly on the selected target platform after that platform is chosen;
 - public core/reference implementation code can be consumed by external reference and private integration projects;
 - generated documentation and build artifacts are reproducible and reviewable.
 
@@ -145,7 +145,7 @@ Candidate scenarios:
 - SI-01 + RabbitMQ test broker with multiple configured source consumers/publishers;
 - SI-01 + JavaFX engineering client over localhost;
 - SI-01 + planned SI-02 GUI when that software item exists;
-- SI-01 on Raspberry Pi + an external IF-03 client;
+- SI-01 on the selected target + an external IF-03 client;
 - stub RFID + real domain pipeline + local persistence;
 - CAN scanner + keypad + Display V1 stub/real hardware;
 - backoffice disconnect/reconnect with local outbox;
@@ -159,7 +159,7 @@ Purpose: verify behaviour that cannot be adequately represented by normal automa
 
 Likely scope:
 
-- original Raspberry Pi Zero runtime behaviour;
+- selected target runtime/power/restart behaviour;
 - RFID reader power/boot/reinitialisation;
 - real RFID read/filter behaviour;
 - real CAN bus/device discovery;
@@ -174,7 +174,7 @@ Hardware tests should be separated from the fast normal pull-request path when t
 Purpose: record enough real target behaviour to detect an actual problem rather than
 assuming one in advance.
 
-For the first Pi proof, simple observations are sufficient:
+For the first selected-target proof, simple observations are sufficient:
 
 - startup time;
 - memory use;
@@ -183,7 +183,7 @@ For the first Pi proof, simple observations are sufficient:
 - basic API responsiveness.
 
 Add more detailed measurements only when a feature or observed problem justifies them.
-There are no numeric Pi resource budgets at this stage.
+There are no numeric target resource budgets at this stage.
 
 ## Development-host runtime characterization
 
@@ -391,17 +391,23 @@ Purpose: run representative system tests on target hardware and/or with real ext
 
 Possible compositions include:
 
-- SI-01 on original Raspberry Pi Zero with ST-1 application driver;
-- Pi Zero + socket simulator to isolate target runtime/network behaviour;
-- Pi Zero + RabbitMQ broker on another host;
-- Pi Zero + real RFID/CAN/display hardware;
+- SI-01 on the selected target with the ST-1 application driver;
+- selected target + socket simulator to isolate target runtime/network behaviour;
+- selected target + RabbitMQ broker on another host;
+- selected target + real RFID/CAN/display hardware;
 - engineering client and later SI-02 against the real target application.
 
 ST-4 is generally slower/on-demand and can reuse test scenarios first proven at ST-1/ST-3.
+It starts only after the SIP target-platform decision and bring-up work have established a
+reproducible target image/provisioning and runtime baseline.
 
-## Raspberry Pi Zero baseline evidence
+## Selected-target baseline evidence
 
-The original Raspberry Pi Zero / Zero W is an intended target for SI-01. The first representative executable should be run on real hardware using the selected runtime so target behaviour is known rather than guessed.
+Step 9 owns the first real-target baseline after Step 8 has selected the platform. Candidate
+Raspberry Pi models remain valid study inputs, but this SVP does not make Pi Zero/Zero W a
+precondition for earlier development-host verification. The first representative executable
+should be run on the selected real hardware using the documented OS/Java/deployment
+baseline so target behaviour is known rather than guessed.
 
 Useful first baseline:
 
@@ -425,7 +431,10 @@ version/status request latency
 notes / anomalies
 ```
 
-A later Java 11 evaluation must compare against the same or equivalent workload and hardware rather than only desktop benchmarks.
+Any later Java-runtime comparison must use the same or equivalent workload and selected
+hardware rather than only desktop benchmarks. The evidence should also identify how the
+target was provisioned (base image/image recipe and provisioning revision) so runtime
+comparisons are not confounded by an unknown machine setup.
 
 ## RabbitMQ container integration environment
 
@@ -513,7 +522,7 @@ scheduled/on-demand
   performance/resource regression where a suitable target exists
 
 hardware pipeline
-  ST-4 Pi Zero / RFID / CAN / display hardware-in-loop
+  ST-4 selected target / RFID / CAN / display hardware-in-loop
 ```
 
 The exact boundary between normal PR and merge-time ST-3 execution can be adjusted once runtime is known. Exact workflow names and triggers belong in implementation repositories and the SDE.

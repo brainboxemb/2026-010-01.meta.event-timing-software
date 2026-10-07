@@ -3,6 +3,9 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
+      Target-hardware evidence moved to Step 9; Step-5 V01 is the development-host baseline and releases A03.
+  - date: '2026-10-07'
+    change: >-
       T01 completed through Java PR #327; V01 baseline characterization is next.
   - date: '2026-10-06'
     change: >-
@@ -24,9 +27,6 @@ planning_changes:
     change: >-
       Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
       planning/design activity.
-  - date: '2026-10-02'
-    change: >-
-      Narrowed Step 5 to one-TimingNode simulated antenna input and runtime behaviour.
   - date: '2026-10-03'
     change: >-
       Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
@@ -82,6 +82,16 @@ activities:
       persistence, commit/event, TagProcessor and JVM snapshots without exposing
       engineering measurements through TimingData, Domain semantics or IF-03.
 
+  - id: D06
+    lane: documentation
+    kind: documentation
+    state: planned
+    note: >-
+      Meta issue #564: add explicit Sphinx-Needs traceability from SSD
+      architecture objects to their detailed SDD design so the relation and
+      inverse relation are visible in the Object Explorer and validated by the
+      engineering graph.
+
   - id: T01
     lane: tooling
     kind: setup
@@ -121,21 +131,19 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [D01, D04, D05, T01, A01, A02]
     note: >-
-      Hosted Linux steady/burst/growing-history evidence is retained on
-      prod/characterization for Java revision efc5797f2fb4. Repeat the relevant
-      baseline on Raspberry Pi Zero
-      and Raspberry Pi 3 Model B, including live thread count and effective JVM
-      stack configuration. Qualify any explicit -Xss tuning on target hardware;
-      do not infer it from workstation defaults. These are engineering baselines,
-      not product limits.
+      Development-host baseline is complete. Hosted Linux steady/burst and
+      growing-history evidence is retained on prod/characterization for Java
+      revision efc5797f2fb4. This evidence is sufficient for the Step-5 A03
+      design decision; selected-target repetitions, effective JVM stack
+      configuration and any target-specific tuning belong to Step 9.
 
   - id: A03
     lane: application
     kind: decision
-    state: planned
+    state: next
     depends_on: [V01]
     note: >-
       Decide from V01 evidence whether ordinary allocation/direct traversal and

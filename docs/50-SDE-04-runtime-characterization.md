@@ -93,7 +93,7 @@ placement is owned by the SI-01 design, but the engineering requirement is:
 - observe thread/native-memory reserved versus committed memory where the target
   JVM/OS exposes reliable data for it;
 - characterize whether an explicit lower `-Xss` is useful and safe on the target
-  Raspberry Pi deployments rather than inheriting a workstation-oriented default
+  selected target deployments rather than inheriting a workstation-oriented default
   without evidence.
 
 These observations are diagnostic engineering state. They are not TimingData, domain
@@ -173,16 +173,17 @@ portable per-thread byte count.
 Java stack-trace depth may be sampled to understand representative call depth, but it is
 not interpreted as exact stack bytes because Java/native/JIT frame sizes are not fixed.
 
-The first target comparison covers at least:
-
-- the simple one-antenna Raspberry Pi Zero deployment;
-- the Raspberry Pi 3 Model B deployment with the known two-antenna 500 ms multiplex
-  configuration.
+Target comparison is owned by SIP Step 9 after Step 8 selects the platform. Repeat
+the representative development-host cases on the selected target configuration(s).
+Raspberry Pi Zero/Zero W and Raspberry Pi 3 Model B remain useful candidate references
+while they are under consideration, including the known one-antenna and two-antenna
+500 ms multiplex shapes, but this SDE does not require both boards before Step-5
+development-host decisions can proceed.
 
 An explicit lower `-Xss` value is a candidate deployment tuning only after the same
-representative workloads complete safely on the target, including persistence, event
-publication, presentation and antenna lifecycle activity. Stack-size tuning must not be
-used to compensate for accidental thread proliferation.
+representative workloads complete safely on the selected target, including persistence,
+event publication, presentation and antenna lifecycle activity. Stack-size tuning must not
+be used to compensate for accidental thread proliferation.
 
 External profilers, JFR/JMC-style tooling or OS-specific samplers may be used to investigate
 a specific finding, but they are not baseline evidence until their exact tool/version and
@@ -213,7 +214,7 @@ the complete SI-01 application**. That is a characterization input, not 20/s per
 TimingNode and not yet a product limit. Multi-node runs keep the same aggregate rate and
 vary its distribution (for example one node at 20/s, or two nodes at 10/s each) so worker
 fairness, queue growth and persistence delay can be compared without silently multiplying
-the required Raspberry Pi capacity.
+the required target capacity.
 
 Use multiple measured repetitions for a comparison and retain ordinary variation; do not
 keep only the best run. Candidate changes use the same workload definition as their
