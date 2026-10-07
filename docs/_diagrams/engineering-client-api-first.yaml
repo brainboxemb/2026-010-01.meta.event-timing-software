@@ -58,7 +58,7 @@ nodes:
     layout: {x: 1165, y: 121, w: 135, h: 48}
 
   - id: tabs
-    label: "API | Events | Device Log | Terminal | Client Log"
+    label: "API | Events | Device Log | Client Log"
     subtitle: API
     kind: wireframe-surface
     notation: wireframe-tabs
@@ -66,137 +66,92 @@ nodes:
 
   - id: timing-view-state
     label: "Timing view"
-    subtitle: "LIVE  |  Sync view"
+    subtitle: "LIVE  |  Node A  |  State OPEN  |  Location 24  |  Sync view"
     kind: wireframe-live
     notation: wireframe-status
     layout: {x: 55, y: 232, w: 1245, h: 44}
 
-  - id: api-summary
-    label: API / application identity
-    subtitle: "application  |  version  |  API version"
+  - id: input-tabs
+    label: "TimingNode | Registration | Simulation | Terminal"
+    subtitle: TimingNode
     kind: wireframe-surface
-    notation: wireframe-panel
-    layout: {x: 55, y: 284, w: 615, h: 100}
-
-  - id: get-version
-    label: Version
-    kind: wireframe-action
-    notation: wireframe-button
-    layout: {x: 80, y: 335, w: 95, h: 36}
-
-  - id: get-status
-    label: Status
-    kind: wireframe-action
-    notation: wireframe-button
-    layout: {x: 185, y: 335, w: 95, h: 36}
-
-  - id: input-panel
-    label: TimingNode / input
-    subtitle: "Normal operator input on the left"
-    kind: wireframe-surface
-    notation: wireframe-panel
-    layout: {x: 55, y: 400, w: 615, h: 390}
+    notation: wireframe-tabs
+    layout: {x: 55, y: 292, w: 615, h: 255}
 
   - id: location
     label: LocationId
     subtitle: "24"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 80, y: 445, w: 150, h: 58}
+    layout: {x: 80, y: 350, w: 150, h: 54}
 
   - id: open
     label: Open
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 245, y: 456, w: 90, h: 36}
+    layout: {x: 245, y: 359, w: 90, h: 36}
 
   - id: close
     label: Close
     subtitle: send request
     kind: wireframe-action
     notation: wireframe-button
-    layout: {x: 345, y: 456, w: 90, h: 36}
+    layout: {x: 345, y: 359, w: 90, h: 36}
 
   - id: last-operation
     label: Last API operation
     subtitle: "seq 1"
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 80, y: 512, w: 555, h: 54}
+    layout: {x: 80, y: 420, w: 555, h: 54}
 
-  - id: registration
-    label: Registration input
-    subtitle: Structured local-time input; SI-01 remains authoritative
+  - id: api-summary
+    label: API / application identity
+    subtitle: "application  |  version  |  API version  |  Version  |  Status"
     kind: wireframe-surface
     notation: wireframe-panel
-    layout: {x: 75, y: 580, w: 570, h: 190}
-
-  - id: prefix
-    label: Prefix
-    subtitle: "N"
-    kind: wireframe-control
-    notation: wireframe-input
-    layout: {x: 95, y: 615, w: 100, h: 48}
-
-  - id: number
-    label: Number
-    subtitle: "0001"
-    kind: wireframe-control
-    notation: wireframe-input
-    layout: {x: 210, y: 615, w: 120, h: 48}
-
-  - id: reg-date
-    label: Date
-    subtitle: "2026-10-01"
-    kind: wireframe-control
-    notation: wireframe-input
-    layout: {x: 95, y: 672, w: 180, h: 48}
-
-  - id: reg-time
-    label: Time (Europe/Amsterdam)
-    subtitle: "12:00:00"
-    kind: wireframe-control
-    notation: wireframe-input
-    layout: {x: 290, y: 672, w: 190, h: 48}
-
-  - id: now
-    label: Now
-    kind: wireframe-action
-    notation: wireframe-button
-    layout: {x: 495, y: 680, w: 65, h: 32}
-
-  - id: auto-reg
-    label: Send auto-reg
-    kind: wireframe-action
-    notation: wireframe-button
-    layout: {x: 95, y: 728, w: 140, h: 32}
+    layout: {x: 685, y: 292, w: 615, h: 72}
 
   - id: interpreted
     label: Registrations
-    subtitle: "Interpreted view — Type + TeamID + time-origin Code; trash action has no header"
+    subtitle: "Interpreted view — Time | Type | TeamID | Code | action"
     kind: wireframe-surface
     notation: wireframe-table
     items:
-      - "Time     | Type | TeamID | Code |"
-      - "12:00:00 | AUTO | -      |      | [trash]"
-    layout: {x: 685, y: 284, w: 615, h: 205}
+      - "Time        | Type | TeamID | Code |"
+      - "12:00:00.25 | AUTO | 0001   |      | [trash]"
+    layout: {x: 685, y: 376, w: 615, h: 171}
+
+  - id: device-log
+    label: Device Log
+    subtitle: "Live SI-01 diagnostics"
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 55, y: 565, w: 615, h: 142}
+
+  - id: client-log
+    label: Client Log
+    subtitle: "Development Client diagnostics"
+    kind: wireframe-surface
+    notation: wireframe-panel
+    layout: {x: 55, y: 719, w: 615, h: 142}
 
   - id: history
     label: LogBook / committed TimingData
-    subtitle: "Immutable technical/audit view; source order and canonical profile values"
+    subtitle: "Immutable technical/audit view; raw canonical profile values"
     kind: wireframe-surface
     notation: wireframe-table
     items:
       - "Seq | Type     | Code | Location | Registration | Effective"
-      - "1   | AUTO_REG | ADD  | 24       | N0001        | 2026-10-01T10:00:00Z"
-    layout: {x: 685, y: 505, w: 615, h: 285}
+      - "1   | AUTO_REG | ADD  | 24       | RT-A-0001    | 2026-10-01T10:00:00.25Z"
+    layout: {x: 685, y: 565, w: 615, h: 296}
 
   - id: raw-response
-    label: Raw response / selected LogBook record
-    subtitle: Complete API JSON remains available; structured views never hide the committed record.
+    label: Raw response / selected record
+    subtitle: "Collapsed by default; complete API JSON remains available for diagnosis."
     kind: wireframe-control
     notation: wireframe-input
-    layout: {x: 55, y: 805, w: 1245, h: 48}
+    layout: {x: 55, y: 875, w: 1245, h: 36}
 
 edges: []
