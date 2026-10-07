@@ -636,6 +636,34 @@ exists. The relationship must be visible in the engineering Object Explorer with
 inverse link, use schema-validated source/target types and avoid replacing the existing
 `satisfies` requirement relation or duplicating ordinary Markdown link lists.
 
+### A03 — Measurement-driven runtime decision
+
+A03 uses the retained V01 development-host evidence rather than target-hardware results.
+
+The three steady 20 registrations/s repetitions and the 1,000/9,999-record history
+repetitions admitted and committed all measured registrations without queue-full. The
+bounded latest-100 LogBook query remained about 0.96-1.16 ms from 120 through 10,119
+total records and no GC collection occurred in the measured intervals. The deliberately
+unpaced 100-observation burst instead reached the configured TimingNode queue high-water
+of 32 and reproducibly admitted/committed 33 while rejecting 67 with explicit queue-full.
+
+That evidence does not justify another runtime mechanism. Step 5 therefore keeps:
+
+- ordinary allocation/new rather than object pooling;
+- direct bounded LogBook traversal rather than copied snapshots/caches/indexes for the
+  current query shape;
+- the current serial execution model and ordinary JVM scheduling rather than role-specific
+  thread-priority tuning;
+- the existing bounded queue/admission behaviour, including visible overload rejection.
+
+Heap growth with retained history remains something to observe on the selected target, but
+does not by itself justify a Step-5 cache/pool redesign. Target-specific JVM/thread/stack
+tuning belongs to Step 9.
+
+V02 is the remaining runtime verification activity and is tracked by Java issue #334. It
+focuses on sustained ingress and stalled/slow downstream IF-03 delivery using the current
+bounded-delivery baseline from Java PR #321.
+
 ### Result
 
 - Simulated antenna observations reach the normal registration path.
