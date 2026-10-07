@@ -943,12 +943,12 @@ normal domain users remain unaware of provider discovery mechanics.
 `UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
 
 `PlatformEnvironment` supplies the process/runtime environment capabilities used by
-SI-01: an absolute wall-clock `Clock` for externally meaningful timestamps, a
-`MonotonicClock` for elapsed-time semantics and a normalized `OperatingSystem`
-identity used by Runtime composition. Domain objects consume the semantic time values
-they need; they do not own a second per-TimingSystem clock abstraction. Platform-specific
-defaults use the normalized operating-system identity rather than scattered JVM property
-checks.
+SI-01: a raw absolute wall-clock `Clock`, a `MonotonicClock` for elapsed-time
+semantics and a normalized `OperatingSystem` identity used by Runtime composition.
+Runtime composes the timing `TimeSource` from the wall-clock basis and decides which
+Domain and I/O components share that source. The TimeSource contract itself is not tied
+to TimingSystem or TimingNode. Platform-specific defaults use the normalized
+operating-system identity rather than scattered JVM property checks.
 
 Detailed domain semantics belong in `03-domain-baseline.md`.
 
@@ -1754,28 +1754,47 @@ When a race/stage start is defined only by local time-of-day, elapsed-time calcu
 
 #### Time sources
 
-SI-01 uses the Runtime-composed `PlatformEnvironment` as the process/platform
-time boundary.
+SI-01 separates the raw process/platform clocks from the timing-time source used
+by timing components.
 
 ```text
-Clock
-  absolute externally meaningful time
-  observation/event timestamps
-  persistence / synchronisation semantics
-
-MonotonicClock
-  elapsed time only
-  filtering windows
-  scheduling delays
-  timeouts / metrics
+PlatformEnvironment
+  Clock
+    raw absolute wall-clock basis
+        |
+        v
+  Runtime composition
+        |
+        +--> TimeSource
+        |      shared absolute timing basis
+        |      observation/event timestamps
+        |      recordedAt / persistence semantics
+        |
+        +--> MonotonicClock
+               elapsed time only
+               filtering windows
+               scheduling delays
+               timeouts / metrics
 ```
 
-The absolute wall clock may be controlled by simulation composition when a
+`TimeSource` is a lower-level timing capability usable by both Domain and I/O.
+Its Java type does not encode whether one instance belongs to one TimingNode,
+one future TimingSystem or another composition scope. Runtime decides that
+sharing explicitly. When multiple TimingNodes and their devices must use the
+same programmed/corrected time basis, Runtime supplies the same TimeSource
+instance to those components.
+
+The current baseline `ClockTimeSource` simply derives `TimingTimestamp` from
+`PlatformEnvironment.clock()`. A later synchronization/correction design may
+replace it with a TimeSource that applies a programmable correction without
+changing consumers. That correction is not applied to `MonotonicClock`.
+
+The raw wall clock may be controlled by simulation composition when a
 deterministic scenario requires it. Monotonic values are process-local and are
-never persisted as event timestamps. Device/provider code attaches a
-`TimingTimestamp` at the earliest accepted decoded-observation point using the
-configured absolute clock when the provider does not supply a trustworthy
-source timestamp.
+never persisted as event timestamps. Device/provider code that must attach a
+timestamp at the earliest accepted decoded-observation point uses the composed
+TimeSource rather than bypassing it through the raw platform Clock, unless the
+device supplies its own trustworthy source timestamp.
 
 
 #### Architecture risk — wall-clock discontinuity and local-time ambiguity
