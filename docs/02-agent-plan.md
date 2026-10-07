@@ -306,8 +306,9 @@ persistence/LogBook path across restart. V05 is complete through Java PR #332 an
 green black-box VC-ST1-005 evidence. Server-side V06 / VC-ST1-006 is also green
 through that PR; the remaining client verification is the manual VC-ST1-003
 Development Client run for trash -> REV, the DELETED interpreted projection and
-restart/recovery in the real JavaFX client. D06 (meta issue #564) adds explicit
-SSD-architecture -> detailed-SDD Needs traceability for Object Explorer navigation.
+restart/recovery in the real JavaFX client. D06 is complete through meta issue
+#564 / PR #570: focused SDD Detailed Design Needs are linked from SSD architecture
+objects and are navigable in both directions in the engineering graph/Object Explorer.
 D07 (meta issue #567, shared tooling issue tool.eng-docs#100) makes the Presentation
 boundary visually explicit in Figure SI01-01: external HTTP/WebSocket/TCP/console ports
 belong to the in-process Presentation adapters, while SharedTerminalHandler and
