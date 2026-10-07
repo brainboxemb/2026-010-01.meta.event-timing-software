@@ -163,11 +163,15 @@ implementations report semantic status into this overview without becoming part
 of the Domain model. Those semantics remain isolated per simulated/hosted system
 rather than being application-global.
 
-`PlatformEnvironment` is composed by Runtime and supplies the absolute wall
-clock plus a monotonic elapsed-time source. Domain state consumes semantic
-timestamps/durations without owning another per-TimingSystem clock object.
-Simulation can provide a controlled PlatformEnvironment when deterministic time
-behaviour is required.
+`PlatformEnvironment` is composed by Runtime and supplies the raw absolute wall
+clock plus a monotonic elapsed-time source. Runtime may derive a shared timing
+`TimeSource` from that wall clock and supply the same instance to Domain and I/O
+components that must use one timing basis. The `TimeSource` type is not owned by
+`TimingSystem` or `TimingNode`; its sharing scope is a composition decision.
+A future TimingSystem composition can therefore give one corrected TimeSource to
+all of its TimingNodes and timestamp-producing device/provider components without
+creating another platform clock. Simulation can provide controlled equivalents
+when deterministic time behaviour is required.
 
 Each TimingNode contains one passive `LogBook`. The LogBook keeps the node's
 committed timing history as 0..N immutable `TimingData` values. The same
