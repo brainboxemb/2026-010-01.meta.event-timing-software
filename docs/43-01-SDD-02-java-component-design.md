@@ -1507,7 +1507,10 @@ The shared Presentation-facing application boundary remains small:
 `PresentationGateway.version()` returns build identity,
 `PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`, and
 `PresentationGateway.configuration()` returns the application-owned
-`ConfigurationControl`. The proxy obtains current node status through the TimingNode
+`ConfigurationControl`. A simulation-capable engineering composition may additionally
+provide the optional Application-layer `SimulationControl`; normal production
+composition does not gain a simulated-device dependency merely because IF-03 can expose
+engineering operations. The proxy obtains current node status through the TimingNode
 query/ownership boundary; the configuration control operates on Runtime-supplied typed
 configuration views. Presentation adapters therefore do not read node-owned fields or
 the concrete Runtime configuration tree directly.
@@ -2190,6 +2193,66 @@ probed/initialized, inventory can be enabled/disabled and deterministic
 
 It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
 specific capability is deterministic control of the decoded observations it publishes.
+
+### Simulated tag scenarios
+
+The simulated antenna remains deliberately passive. Behaviour such as repeated reads,
+one-versus-two-tag passages, RSSI shape and passage duration belongs to a separate
+engineering simulation layer rather than to `SimulatedAntenna` itself.
+
+The Application-facing engineering boundary is:
+
+```text
+SimulationControl
+  startRegistration(registrationId, profileId)
+```
+
+`SimulationControl` is optional and capability-gated. Runtime supplies it only when the
+composition has a controllable `SimulatedAntenna`. The API adapter calls this narrow
+boundary; it never receives the SimulatedAntenna object and never calls TagProcessor or
+TimingNode directly.
+
+The Runtime implementation, named `SimulatedTagScenarioRunner`, owns:
+
+- the selected `SimulatedAntenna`;
+- the same immutable `EventData` used by TagProcessor;
+- a shared `TimeSource` for observation timestamps;
+- one bounded scheduled execution capability supplied by Runtime.
+
+For one request it resolves `EventData.tagIdsFor(registrationId)`, chooses the requested
+profile and emits that profile's TagObservation sequence through the simulated antenna.
+No second TagId-to-RegistrationId mapping is introduced. A missing registration mapping,
+inactive simulated antenna or unavailable profile is an explicit rejected simulation
+request.
+
+Delayed observations use the shared scheduled-execution mechanism and release the physical
+worker between observations; profile delays must not be implemented with sleeps on the
+shared I/O worker. Multiple accepted scenarios may therefore interleave according to
+their scheduled observation times while still using bounded Runtime-owned execution.
+
+Initial built-in profile ids are:
+
+- `simple` — one minimal deterministic passage, using the first mapped tag;
+- `normal` — a representative clean passage and both mapped tags when at least two are
+  available;
+- `edge` — a deterministic edge-shape family including short, long and single-tag
+  behaviour. The selected edge shape is derived deterministically from the requested
+  RegistrationId so the same request is repeatable.
+
+Exact RSSI values, observation counts and relative offsets are implementation/test-fixture
+data, not Domain or IF-05 semantics. Tests assert the intended shape and resulting
+TagProcessor behaviour without promoting those fixture numbers into product requirements.
+
+For normal standalone development, the public synthetic EventData provider id
+`simulation` supplies RegistrationIds `N0001` through `N2000`. Each registration
+maps to two synthetic TagIds with `-A` and `-B` suffixes. This provider is an explicit
+development fixture; the default `reference` provider remains independent of it and
+event-specific providers may supply different relationships.
+
+The Development Client composes batches from the single-scenario IF-03 operation. Batch
+state stays client-side: count, numeric range, ascending versus seedable pseudo-random
+selection and interval between registration starts. The interval is deliberately outside
+the profile: the profile owns observation timing **inside** one passage.
 
 :::
 
