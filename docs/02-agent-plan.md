@@ -278,16 +278,15 @@ AntennaManager lifecycle/control, application-owned subscriptions and TagProcess
 lifecycle, and the normal non-blocking TimingNode admission/commit boundary without
 bypassing LogBook or persistence.
 
-The current execution focus is **A02 completion**. The low-allocation counters and
-component/executor metrics are present, but D05 still requires the engineering measurement
-surface to move out of the public TimingNode Domain contract into
-`runtime.measurement.RuntimeMeasurementReader`. Complete that boundary first.
+A02 is complete through Java PR #325: runtime measurements are now read through the
+engineering-only `runtime.measurement.RuntimeMeasurementReader` rather than the public
+TimingNode Domain contract.
 
-After A02, **T01** adds the engineering-only runtime-characterization harness and retained
-machine-readable evidence defined by SDE-04. T01 enables **V01**, which must run the
-repeatable baseline workloads before **A03** makes any allocation/data-access/execution-model
-decision. A03 therefore remains planned until V01 evidence exists; retain the simple
-baseline when evidence does not justify extra machinery.
+The current execution focus is **T01**: add the engineering-only runtime-characterization
+harness and retained machine-readable evidence defined by SDE-04. T01 enables **V01**,
+which must run the repeatable baseline workloads before **A03** makes any allocation/
+data-access/execution-model decision. A03 therefore remains planned until V01 evidence
+exists; retain the simple baseline when evidence does not justify extra machinery.
 
 OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
 (D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
