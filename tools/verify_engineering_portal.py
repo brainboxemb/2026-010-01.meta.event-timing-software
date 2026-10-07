@@ -72,6 +72,20 @@ if provenance["relation_count"] != graph["relation_count"]:
     raise SystemExit("portal relation count does not match engineering graph")
 if "DD-PresentationAccess" not in objects:
     raise SystemExit("engineering graph missing detailed-design object DD-PresentationAccess")
+presentation_design = objects["DD-PresentationAccess"]
+deep_design_text = "Node-scoped presentation access is exposed through `TimingNodeProxy`."
+if deep_design_text not in presentation_design.get("content", ""):
+    raise SystemExit(
+        "engineering graph detailed-design object contains only an anchor/summary; "
+        "full DD-PresentationAccess body is missing"
+    )
+presentation_design_page = (
+    site / "objects" / "DD-PresentationAccess" / "index.html"
+).read_text(encoding="utf-8")
+if "Node-scoped presentation access is exposed through" not in presentation_design_page:
+    raise SystemExit(
+        "portal DD-PresentationAccess page is missing substantive detailed-design content"
+    )
 if not any(
     relation.get("type") == "detailed_by"
     and relation.get("from") == "PresentationGateway"
