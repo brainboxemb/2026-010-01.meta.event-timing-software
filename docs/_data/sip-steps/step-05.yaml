@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
+      Hosted V01 evidence is retained; Pi target evidence remains pending.
+      D02 is completed by the lifecycle TimingData contract update and A04 is next.
+  - date: '2026-10-07'
+    change: >-
       T01 completed through Java PR #327; V01 baseline characterization is next.
   - date: '2026-10-06'
     change: >-
@@ -45,12 +49,12 @@ activities:
   - id: D02
     lane: documentation
     kind: decision
-    state: planned
+    state: done
     note: >-
-      Define TimingNode OPEN/CLOSE TimingData semantics and the default/reference
-      representation. Update 32-05 IF-05 and 33-05 IDD during Step 5, including
-      transition time, captured LocationId, record-type presence rules and the
-      rule that rejected lifecycle commands do not create committed TimingData.
+      Defines successful CLOSED->OPEN and OPEN->CLOSED lifecycle TimingData,
+      transition time/location capture, NODE_OPEN/NODE_CLOSE development-v1
+      mapping and the rule that no-op/rejected/failed lifecycle commands do not
+      create committed TimingData.
 
   - id: D03
     lane: documentation
@@ -124,9 +128,9 @@ activities:
     state: planned
     depends_on: [D01, D04, D05, T01, A01, A02]
     note: >-
-      Run repeatable one-TimingNode steady/burst/growing-history characterization
-      and retain queue, latency, CPU/thread, allocation/GC, query and thread-stack/
-      native-memory evidence. Repeat the relevant baseline on Raspberry Pi Zero
+      Hosted Linux steady/burst/growing-history evidence is retained on
+      prod/characterization for Java revision efc5797f2fb4. Repeat the relevant
+      baseline on Raspberry Pi Zero
       and Raspberry Pi 3 Model B, including live thread count and effective JVM
       stack configuration. Qualify any explicit -Xss tuning on target hardware;
       do not infer it from workstation defaults. These are engineering baselines,
