@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the default/reference EventData identity convention: `TT-A/R-NNNN-{1|2}` physical tags resolve to `RT-A/R-NNNN`, normal registrations resolve directly to TeamId `NNNN`, reserve TeamId assignment is lookup-driven, and `0000` is invalid.
+
 - Refactor the IF-05 TimingData IDD as a normative v1 representation design and define fixed timestamp text precision: two fractional digits for `time` and three for `recTime`.
 
 - Rewrite SI-01 requirement wording to remove roadmap/implementation-phase terminology and make observable status/interface behaviour clearer while preserving current requirement maturity and the latest antenna recovery semantics.
