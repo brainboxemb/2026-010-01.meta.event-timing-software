@@ -85,12 +85,13 @@ activities:
   - id: D06
     lane: documentation
     kind: documentation
-    state: planned
+    state: done
     note: >-
-      Meta issue #564: add explicit Sphinx-Needs traceability from SSD
-      architecture objects to their detailed SDD design so the relation and
-      inverse relation are visible in the Object Explorer and validated by the
-      engineering graph.
+      Completed through meta issue #564 / PR #570. SDD-02 now contains focused
+      Detailed Design Needs and SSD architecture objects link to them through
+      schema-validated detailed_by relations; the normalized engineering graph,
+      generated reader and Object Explorer expose both outgoing and inverse
+      traceability.
 
   - id: D07
     lane: documentation
