@@ -955,6 +955,8 @@ Detailed domain semantics belong in `03-domain-baseline.md`.
 Execution mechanics support the layered architecture but are not a separate
 logical layer in Figure SI01-01. Runtime owns the physical execution resources;
 the functional components own their logical ordering/serialization boundaries.
+Execution identity therefore belongs to the component whose work is being ordered,
+not to the physical worker that happens to execute one turn.
 
 The architecture distinguishes a **logical serial lane** from a **physical
 worker**:
@@ -1033,11 +1035,15 @@ than direct lane admission. In particular, bounded result waiting, timeout/cance
 propagation and delayed continuation are treated as shared execution concerns rather than
 being reimplemented independently by each I/O/Application component.
 
-That higher-level task-handling mechanism is optional. A component that only needs direct
-serial admission/ordering continues to use its execution lane directly. The presence of a
-shared task-handling capability does not require TimingNode, TagProcessor or Conductor to
-be wrapped in another abstraction when their semantics do not need timeout/result/delayed
-handling.
+Higher-level cooperative task handling is optional. A component that only needs direct
+serial admission/ordering continues to use its execution lane directly. TimingNode and
+TagProcessor therefore remain direct lane users in the baseline.
+
+Conductor uses cooperative turns on its existing application lane because several
+cross-component change signals may wake one application control pass. This does not imply
+that Conductor currently owns a multi-phase state machine, and it does not require a
+scheduled lane: elapsed-time continuation remains a separate capability used only where
+the component actually needs it.
 
 Runtime worker items are deliberately bounded. A worker item must not occupy a
 physical worker merely to wait for time to pass. Delays such as antenna power
