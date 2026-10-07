@@ -293,11 +293,11 @@ unpaced burst exposed the bounded TimingNode queue as intended. Raspberry Pi Zer
 and Raspberry Pi 3 Model B repetitions remain required target evidence, so V01 and
 the dependent A03 optimization decision remain open.
 
-D02 now defines the OPEN/CLOSE TimingData contract and development-v1 mapping.
-The current non-hardware execution focus is therefore **A04**: implement successful
-CLOSED->OPEN and OPEN->CLOSED transitions through the normal TimingNode-owned
-TimingData sequence/persistence/LogBook path, followed by V05. Registration revoke
-(D03/A05/V06) remains the next parallel contract track. Runtime optimization choices
+D02 now defines OPEN/CLOSE TimingData as `NODE_INFO` with OPEN/CLOSE code.
+D03 defines append-only registration revoke using the original `regId + time`,
+with AUTO_REG `REV` and MAN_REG `REV,AUTO` / `REV,MAN`. The current
+non-hardware execution focus is therefore **A04 + A05** through the normal
+TimingNode-owned TimingData sequence/persistence/LogBook path, followed by V05/V06. Runtime optimization choices
 remain evidence-driven; thread priorities, batching, pooling, copied snapshots/caches
 and extra asynchronous workers are not baseline assumptions.
 
