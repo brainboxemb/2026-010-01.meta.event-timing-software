@@ -648,8 +648,7 @@ ordinary internal Application connection:
 - API shows separate external `HTTP` and `WebSocket` ports;
 - RemoteShell shows one external `TCP shell` port;
 - Console shows one local-console interface port;
-- Web shows its currently established listener boundary without inventing a transport
-  decomposition that is not yet part of the contract;
+- Web, like API, shows separate external `HTTP` and `WebSocket` interface ports;
 - SharedTerminalHandler and PresentationGateway have no external port;
 - adapter-to-SharedTerminalHandler/PresentationGateway connections remain normal
   in-process relationships.
