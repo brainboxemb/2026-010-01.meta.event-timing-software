@@ -3,9 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
-      A02 accepted on Java main after the low-allocation instrumentation and
-      metrics-ownership cleanup. T01 is the next execution focus so V01 can run
-      before the evidence-driven A03 decision.
+      A02 requalification found one remaining D05 boundary gap: Java main still
+      exposes TimingNode.runtimeMetrics()/TimingNodeTypes.RuntimeMetrics and does
+      not yet provide runtime.measurement.RuntimeMeasurementReader. Complete A02
+      first; T01 then builds the harness, followed by V01 and A03.
   - date: '2026-10-06'
     change: >-
       A01 requalified on Java main; V04 provider bootstrap verified through PR
@@ -115,12 +116,14 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: done
+    state: blocked
     depends_on: [D05, A01]
     note: >-
-      Accepted on Java main: PR #231 introduced the low-allocation instrumentation
-      and PR #250 aligned component/executor metrics ownership. Pull-based snapshots
-      remain engineering diagnostics rather than Domain or IF-03 state.
+      PR #231 introduced the low-allocation instrumentation and PR #250 aligned
+      component/executor metrics ownership, but D05 is not yet fully realized:
+      remove TimingNode.runtimeMetrics()/TimingNodeTypes.RuntimeMetrics and expose
+      the engineering-only runtime.measurement.RuntimeMeasurementReader snapshots
+      required by SDD-02/SDE-04.
 
   - id: V01
     lane: verification
