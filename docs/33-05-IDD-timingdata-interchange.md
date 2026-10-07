@@ -120,8 +120,9 @@ Canonical writer output places the action (`ADD` or `REV`) first.
 Array order is not semantic to a reader; the valid code combination is.
 Duplicate, contradictory or unknown codes for a known record type are invalid.
 
-A revoke record repeats the original `regId` and `time`, receives a new
-`seqNr` and `recTime`, and never rewrites the original record. A `MAN_REG`
+A revoke record repeats the original `locId`, `regId` and `time`, receives
+a new `seqNr` and `recTime`, and never rewrites the original record. The
+registration reference remains `regId + time`; repeated `locId` is record context. A `MAN_REG`
 revoke also repeats the original `AUTO` or `MAN` subcode. Revoke does not
 carry a sequence reference to the original ADD record.
 
