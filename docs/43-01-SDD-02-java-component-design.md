@@ -174,6 +174,7 @@ shared/event-data/
   io.github.brainboxemb.eventtiming.eventdata/
     EventData.java
     TagId.java
+    TeamId.java
     EventDataProvider.java
     defaultprofile/
       DefaultEventData.java
@@ -613,9 +614,37 @@ Detailed Java realization of EventData-backed tag resolution, TagProcessor
 filtering/passage state and the boundary into TimingNode registration work.
 
 The Java design consumes the shared `event-data` capability beside the shared
-TimingData capability. `EventData` owns the stable event-profile TagId-to-RegistrationId relationship;
-the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
-tag-to-registration mapper dependency.
+TimingData capability. `EventData` owns the stable event-profile identity
+relationships needed to resolve TagId, RegistrationId and TeamId. The top-level
+`TimingApplicationRuntime.create(...)` API does not accept loose tag or team
+mapper dependencies.
+
+The default/reference profile performs normal identity translation
+algorithmically rather than materialising thousands of map entries:
+
+- `TT-A-NNNN-1` and `TT-A-NNNN-2` resolve to `RT-A-NNNN`;
+- `TT-R-NNNN-1` and `TT-R-NNNN-2` resolve to `RT-R-NNNN`;
+- `RT-A-NNNN` resolves to TeamId `NNNN`;
+- reserve `RT-R-NNNN` resolves to TeamId only when reserve-assignment data is
+  available;
+- `NNNN` is `0001` through `9999`; `0000` is invalid.
+
+The generic EventData API continues to expose semantic values rather than making
+TagProcessor understand this concrete string format. The intended shared API shape is:
+
+```text
+RegistrationId registrationIdFor(TagId tagId)
+List<TagId> tagIdsFor(RegistrationId registrationId)
+TeamId teamIdFor(RegistrationId registrationId)
+RegistrationId registrationIdFor(TeamId teamId)
+```
+
+A missing stable mapping is represented explicitly by the API contract. In the
+default/reference profile, normal RegistrationId/TeamId conversion is
+algorithmic while reserve RegistrationId/TeamId conversion has no stable
+EventData answer until assignment data exists. Runtime resolution may layer a
+RaceData override on top of EventData without changing TagProcessor's TagId to
+RegistrationId responsibility.
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
@@ -2244,10 +2273,12 @@ data, not Domain or IF-05 semantics. Tests assert the intended shape and resulti
 TagProcessor behaviour without promoting those fixture numbers into product requirements.
 
 For normal standalone development, the public synthetic EventData provider id
-`simulation` supplies RegistrationIds `N0001` through `N2000`. Each registration
-maps to two synthetic TagIds with `-A` and `-B` suffixes. This provider is an explicit
-development fixture; the default `reference` provider remains independent of it and
-event-specific providers may supply different relationships.
+`simulation` reuses the default/reference identifier convention for normal
+registrations `RT-A-0001` through `RT-A-2000`. Each registration resolves from
+the matching physical pair `TT-A-NNNN-1` and `TT-A-NNNN-2`. This keeps
+simulation behaviour representative without introducing a second synthetic
+identity grammar. Reserve scenarios may use `RT-R-NNNN` only when the required
+TeamId assignment is supplied by the scenario/reference data.
 
 The Development Client composes batches from the single-scenario IF-03 operation. Batch
 state stays client-side: count, numeric range, ascending versus seedable pseudo-random

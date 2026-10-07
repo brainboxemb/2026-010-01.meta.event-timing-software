@@ -115,16 +115,26 @@ TeamId -> team/reference resolution -----------/
 team/reference-data/manual path. Only the resolved `RegistrationId` is passed
 to the TimingData factory.
 
-The tag mapper is an injected policy boundary. It may perform a deterministic
-transformation, provider/profile-specific conversion or a RaceData/reference-data lookup.
-A lookup table is not the generic design. For the deterministic reference path, a rule
-such as `TAG-001 -> N-001` is sufficient.
+The tag mapper is an EventData/profile policy boundary. It may perform a
+deterministic transformation, provider/profile-specific conversion or a
+RaceData/reference-data lookup. A lookup table is not the generic design.
 
-Concrete source encoding, RSSI representation, categories, ranges, allowed
-RegistrationId values and production mapping rules remain outside this public SDD. A
-provider translates external protocol data to the stable decoded observation; the active
-event/reference profile supplies the concrete identity semantics while IF-05 keeps the
-shared RegistrationId representation stable.
+The public default/reference EventData profile uses a deterministic convention.
+For a four-digit positive number NNNN from 0001 through 9999, TagIds
+`TT-A-NNNN-1` and `TT-A-NNNN-2` both resolve to RegistrationId
+`RT-A-NNNN`, which resolves directly to TeamId `NNNN`. Reserve TagIds
+`TT-R-NNNN-1` and `TT-R-NNNN-2` both resolve to RegistrationId
+`RT-R-NNNN`; that reserve RegistrationId requires reserve-assignment reference
+data to resolve a TeamId. The numeric value 0000 is invalid.
+
+The final tag suffix identifies the physical member of a two-tag set and is not
+part of the logical RegistrationId. Live RaceData reserve assignments may
+override stable EventData reference relationships where applicable.
+
+This convention belongs to the default/reference EventData profile. Other
+providers may define different TagId, RegistrationId and TeamId semantics. The
+generic IF-05 RegistrationId therefore remains opaque outside the selected
+profile.
 
 ## TimingNode serial execution and timing-data commit
 

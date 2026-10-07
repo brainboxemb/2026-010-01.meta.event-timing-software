@@ -351,11 +351,14 @@ whose effective time was captured automatically by the client shows Type `MAN`, 
 Code cell is empty.
 
 TeamID is an interpreted reference-data value and is not another name for
-`RegistrationId`. Until the applicable RaceData/reference mapping exists, TeamID may
-remain unresolved in the normal view. The technical LogBook retains the actual
-RegistrationId together with committed sequence, record Type, record Code and profile
-time values. ADD/REV remain technical LogBook semantics and are not the interpreted
-Code column.
+`RegistrationId`. For the default/reference EventData profile, a normal
+RegistrationId `RT-A-NNNN` is displayed as TeamID `NNNN` without a lookup.
+A reserve RegistrationId `RT-R-NNNN` requires the current reserve-assignment
+reference data and remains unresolved when that assignment is unavailable.
+
+The technical LogBook retains the actual RegistrationId together with committed
+sequence, record Type, record Code and profile time values. ADD/REV remain
+technical LogBook semantics and are not the interpreted Code column.
 
 For the current default/reference profile the LogBook time remains the canonical
 absolute UTC value. The interpreted Registrations view converts it to normal local clock
