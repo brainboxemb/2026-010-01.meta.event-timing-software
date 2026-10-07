@@ -923,6 +923,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     Lifecycle.java
     TimingApplicationRuntime.java
     RuntimeExecutors.java
+    RuntimeTimeSources.java
     simulator/
       SimulationRuntime.java
     config/
@@ -964,6 +965,7 @@ construction, but cross-component relationships and lifecycle order remain visib
 validated Config
   -> PlatformEnvironment
   -> RuntimeExecutors/resources
+  -> RuntimeTimeSources -> TimeSource
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
@@ -1128,6 +1130,7 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
     RuntimeExecutors.java
+    RuntimeTimeSources.java
     PresentationRuntime.java
     ShutdownSignal.java
     configuration/
@@ -1170,7 +1173,9 @@ main()
        -> use Logging for current level / common formatting
   -> core runtime.TimingApplicationRuntime.create(...)
        -> create PlatformEnvironment
-       -> construct runtime resources and reusable application/domain/I/O objects
+       -> create RuntimeExecutors and RuntimeTimeSources
+       -> create one TimeSource for the current timing context
+       -> construct reusable application/domain/I/O objects
        -> construct and wire application.Conductor
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
