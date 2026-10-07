@@ -206,9 +206,9 @@ Inputs:
 - resolved `RegistrationId`;
 - accepted `time`.
 
-The current engineering capability supports action `ADD`. Additional actions such as
-REV require their semantics to be defined by the TimingData/IF-05 contract before they
-become supported IF-03 inputs.
+The current engineering capability supports action `ADD`. Registration revoke is a
+normal node-scoped operation defined separately by IF03-OP-011; it is not routed through
+this engineering-only simulation endpoint.
 
 SI-01 supplies its own source identity, active LocationId, next source sequence and any
 other TimingNode-owned commit context. The operation uses the same accepted-registration
@@ -267,6 +267,28 @@ accepting a partial change.
 
 Invalid values, unknown targets and unsupported runtime mutation expose explicit
 failure outcomes.
+
+### IF03-OP-011 — Revoke registration
+
+Inputs:
+
+- addressed `TimingNodeId`;
+- original registration family: automatic or manual;
+- original `LocationId`;
+- original `RegistrationId`;
+- original registration `time`;
+- for a manual registration, the original system-assigned or operator-entered
+  time-source classification.
+
+The operation requests one new append-only REV TimingData record. It does not delete
+or rewrite the original ADD record. The REV repeats the original LocationId,
+RegistrationId and time; a manual REV also repeats the original time-source
+classification. SI-01 assigns the new source sequence and record-creation time.
+
+The TimingNode commit/LogBook boundary treats this as bookkeeping. It does not search
+or fold prior ADD/REV history to decide whether the requested revoke is meaningful or
+already applied. A caller or higher application/business layer is responsible for
+selecting the registration semantics supplied to this operation.
 
 ## Operation ordering and concurrency
 
@@ -533,6 +555,19 @@ running application configuration changes. The event shall identify the affected
 configuration target and current active value while respecting configuration
 redaction/secret rules.
 :::
+
+:::{ifreq} Registration revoke  
+:id: IF03-REQ-022  
+:status: D  
+:derived_from: UC-009, UC-011  
+
+IF-03 shall provide IF03-OP-011 as a node-scoped append-only registration revoke
+operation using the original registration family, LocationId, RegistrationId, time
+and, for manual registrations, time-source classification. The operation shall create
+a new committed REV TimingData record and shall not delete or rewrite the original
+ADD record.
+:::
+
 
 :::{ifreq} Degraded TimingNode status  
 :id: IF03-REQ-017  
