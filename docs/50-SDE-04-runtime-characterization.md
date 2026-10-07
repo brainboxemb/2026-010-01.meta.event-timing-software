@@ -107,7 +107,7 @@ requires them.
 The SI-01 design keeps those measurements outside the public TimingNode Domain contract.
 The harness receives `runtime.measurement.RuntimeMeasurementReader` from its direct
 `timing-point-core` composition and reads `TimingNodeRuntimeSnapshot`,
-`TagProcessingCounters.Snapshot` and `JvmRuntimeSnapshot`. It does not use
+`TagProcessingMetrics.Snapshot` and `JvmRuntimeSnapshot`. It does not use
 `TimingNode.runtimeMetrics()`, `TimingNodeTypes.RuntimeMetrics` or an IF-03 endpoint.
 
 ## Environments and tools
@@ -124,9 +124,20 @@ A characterization result always records the actual JVM vendor/version and OS.
 
 ### Measurement harness
 
-Add an optional Maven profile/module named for runtime characterization. It is engineering
-code and is not included in the normal application reactor/artifact unless the profile is
-selected.
+The engineering harness is the optional Maven module/profile
+`runtime-characterization`. It is not included in the normal application reactor/artifact
+unless the profile is selected.
+
+Build/test it with:
+
+```text
+./mvnw verify -Pruntime-characterization -pl runtime-characterization -am
+```
+
+The executable harness is run from the same profile/module. Its default retained evidence
+directory is `runtime-characterization/target/evidence`. Each repetition writes one compact
+JSON summary and keeps its file-backed TimingData work stream under a repetition-specific
+work directory.
 
 The harness owns:
 
@@ -267,6 +278,5 @@ case.
 
 ## Open engineering questions
 
-- exact Maven module/profile name and evidence publication path (T01);
 - whether a specific workload needs raw sample retention in addition to aggregate summaries;
 - which development-host cases are important enough to repeat during later target bring-up.
