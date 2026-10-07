@@ -443,6 +443,7 @@ domain and persistence paths.
 | `D03` | Define registration revoke semantics and public contract |
 | `D04` | Review simulated antenna/input architecture |
 | `D05` | Define internal runtime-observability architecture |
+| `D06` | Link SSD architecture Needs to detailed SDD design |
 | `T01` | Runtime-characterization harness and evidence tooling |
 | `A01` | Qualify/implement simulated antenna and tag-processing path |
 | `A02` | Qualify/implement runtime markers and counters |
@@ -506,10 +507,12 @@ For one TimingNode on a development host, determine:
 - how growing committed history affects the bounded query shapes exercised in this step;
 - whether allocation/heap/GC or thread scheduling is material enough to justify changing
   the simple implementation;
-- which findings need to be repeated later on the selected target.
+- which findings should later be repeated on the selected target during Step 9.
 
-Development-host results are engineering evidence, not product limits or Raspberry Pi
-evidence. Multi-TimingNode scheduling remains outside Step 5.
+Development-host results are the Step-5 engineering evidence. They are not product
+limits and do not count as target-hardware evidence. Target execution, target JVM/runtime
+configuration and target-specific tuning are deliberately owned by Step 9 after the
+platform decision in Step 8. Multi-TimingNode scheduling remains outside Step 5.
 
 #### Measurement architecture split
 
@@ -600,25 +603,38 @@ D01 measurement plan
                          V02 fairness/backpressure
 ```
 
-V01 therefore precedes A03. A03 records whether direct traversal/ordinary allocation and
-the existing execution model remain adequate, or which specific change has evidence behind
-it. If A03 changes the design, rerun the affected V01 workload before treating the decision
-as qualified.
+V01 is the development-host baseline and therefore precedes A03. It does not wait for
+Raspberry Pi or other target hardware. A03 records whether direct traversal/ordinary
+allocation and the existing execution model remain adequate, or which specific change has
+evidence behind it. If A03 changes the design, rerun the affected V01 workload before
+treating the decision as qualified.
 
-V02 then covers sustained-ingress fairness and slow/stalled downstream delivery. Existing
-Java issue #131 belongs to that backpressure work; it is not implemented ahead of V01/A03
-evidence unless the bounded-resource contract itself already requires a correction.
+V02 then covers sustained-ingress fairness and slow/stalled downstream delivery on the
+development-host baseline. Existing Java issue #131 belongs to that backpressure work; it
+is not implemented ahead of V01/A03 evidence unless the bounded-resource contract itself
+already requires a correction. Representative V01/V02 cases are repeated later on the
+selected target in Step 9; those target runs do not block Step-5 design decisions.
 
-D02/A04/V05 (OPEN/CLOSE TimingData) and D03/A05/V06 (registration revoke) are parallel
-Step-5 semantic tracks and do not need to wait for every runtime-characterization result,
-but their implementations still require their own preceding contract decisions.
+D02/A04/V05 (OPEN/CLOSE TimingData), D03/A05/V06 (registration revoke) and D06
+(SSD-to-SDD Needs traceability, meta issue #564) are parallel Step-5 tracks and do not
+need to wait for every runtime-characterization result, but their implementations still
+require their own preceding contract/design decisions where applicable.
 
 #### D01 exit
 
 D01 is complete when the measurement questions, D04/D05 design gates, SDE-04 engineering
-environment, T01 harness activity, V01 evidence flow and A03-after-V01 dependency are
-reviewed as the Step-5 plan. Completion of Java instrumentation by itself is not D01
-closure.
+environment, T01 harness activity, development-host V01 evidence flow and A03-after-V01
+dependency are reviewed as the Step-5 plan. Target-hardware repetitions are a Step-9
+bring-up concern and are not part of D01/Step-5 closure. Completion of Java
+instrumentation by itself is not D01 closure.
+
+### D06 — Architecture-to-detailed-design traceability
+
+D06 is tracked by meta issue #564. It adds an explicit Sphinx-Needs relationship from
+SSD `arch` objects to the corresponding detailed SDD design where such elaboration
+exists. The relationship must be visible in the engineering Object Explorer with an
+inverse link, use schema-validated source/target types and avoid replacing the existing
+`satisfies` requirement relation or duplicating ordinary Markdown link lists.
 
 ### Result
 
@@ -653,7 +669,9 @@ closure.
   rejection/idempotence rules through API, LogBook, live event and recovery paths;
 - sustained/bursty input has repeatable measurements and does not starve required TimingNode work;
 - recovery preserves lifecycle/registration records and sequence continuity;
-- provider loading is verified with public built-in/synthetic implementations.
+- provider loading is verified with public built-in/synthetic implementations;
+- Step-5 SSD architecture objects that have substantive SDD elaboration expose that
+  detailed-design relationship in the Needs engineering graph.
 
 ---
 
@@ -856,13 +874,25 @@ Run the representative SI-01/SI-02 software stack on the selected target platfor
 ### Scope
 
 - acquire/assemble and provision the selected target;
-- install the chosen OS and Java runtime;
-- deploy and start SI-01;
-- connect through the public API and SI-02;
-- repeat representative Step-5/7 workloads on the target;
-- record startup, memory, CPU, thread, storage and restart observations;
-- tune deployment/runtime settings only where measurements justify it;
-- decide which update/deployment automation is actually useful.
+- choose and document a reproducible base-image/provisioning strategy: prefer a stock
+  supported OS image plus scripted provisioning unless a custom generated image solves a
+  concrete repeatability/deployment problem;
+- if a generated image is justified, build and version the image recipe rather than
+  keeping a hand-configured SD-card as the deployment baseline;
+- install and pin the chosen OS packages and Java runtime;
+- define the SI-01 filesystem layout, service account, configuration/persistence
+  directories, logging locations and startup/service behaviour;
+- provide repeatable deploy/update/start/stop/restart commands or automation;
+- document clean-device setup from blank media through first successful SI-01 start,
+  including network/remote-access prerequisites needed for development;
+- deploy and start SI-01 and connect through the public API and SI-02;
+- repeat the representative Step-5 development-host characterization cases and relevant
+  Step-7 workloads on the selected target;
+- record startup, memory, CPU, GC, thread/stack, storage and restart observations;
+- qualify target-specific JVM settings such as explicit stack-size tuning only where
+  target evidence justifies them;
+- decide which image/update/rollback automation is actually useful and keep speculative
+  deployment machinery out of the baseline.
 
 ### Needs
 
@@ -872,22 +902,28 @@ Run the representative SI-01/SI-02 software stack on the selected target platfor
 
 ### Result
 
-- SI-01 runs repeatably on the selected target.
+- A blank/clean selected target can be provisioned repeatably from documented inputs.
+- SI-01 runs repeatably on the selected target with a known OS/Java/deployment baseline.
 - Target resource limits are based on measurements rather than desktop assumptions.
-- The deployment/start/restart path is known before device integration begins.
+- The image/provisioning, deployment/start/restart and recovery paths are known before
+  device integration begins.
 
 ### Demo
 
-- Boot/provision the target and start SI-01.
+- Start from the documented target image/provisioning baseline and bring up a clean target.
+- Deploy/start SI-01 as the documented service/runtime.
 - Connect SI-02 and run a representative simulated/reference-data workload.
-- Show target measurements and a clean restart.
+- Show target measurements, persistence survival and a clean service/system restart.
 
 ### Done
 
 - target execution and restart are repeatable enough for continued development;
-- OS/runtime/install choices are recorded;
+- a clean target can be recreated from the documented image/provisioning procedure;
+- OS image, package/runtime and Java choices are recorded and reproducible;
+- SI-01 install/config/persistence/logging/service layout is documented;
+- representative Step-5 runtime evidence has been repeated on the selected target;
 - important target limitations are backed by measurements;
-- deployment/runtime tuning is based on observed need.
+- deployment/runtime tuning is based on observed need rather than workstation assumptions.
 
 ---
 

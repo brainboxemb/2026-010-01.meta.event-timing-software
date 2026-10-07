@@ -62,8 +62,8 @@ notes:
   - Actual effort is an approximate git-derived snapshot and is not used as formal time registration.
   - Per-step actuals use explicit merged-PR number boundaries per repository; original estimate, actual and remaining estimate are intentionally independent planning signals.
   - The original 11-step baseline totals 59 estimated project days before reserve and is retained as historical planning context.
-  - Remaining estimates were re-evaluated on 2 October 2026 after Step-4 implementation evidence and the Step-5/Step-7 scope review; forecasts use the current remaining estimates, not original estimate minus actual.
-  - Step 5 now owns one-TimingNode simulated antenna/runtime behaviour and TimingNode OPEN/CLOSE TimingData; multi-node, reference-data-driven StageTiming and backoffice integration are planned in Step 7.
+  - Remaining estimates were re-evaluated on 2 October 2026 after Step-4 implementation evidence and again on 7 October 2026 when target-hardware verification moved from Step 5 into Step 9 bring-up/deployment.
+  - Step 5 owns development-host one-TimingNode simulated antenna/runtime behaviour and TimingNode OPEN/CLOSE TimingData; target-hardware repetitions belong to Step 9 after the Step-8 platform decision.
   - Document maturity describes the established content; completeness is approximate project-wide document coverage, not completion of only the current slice.
   - Completeness percentages are planning indicators, intentionally coarse rather than time-tracking precision.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
@@ -141,7 +141,7 @@ steps:
 
   "5":
     estimate_project_days: 6
-    remaining_estimate_project_days: 6
+    remaining_estimate_project_days: 3
     workstream: simulation
     docs:
       requirements: {level: working, scope: "simulated antenna input, lifecycle TimingData, registration admission and recovery"}
@@ -201,13 +201,13 @@ steps:
 
   "9":
     estimate_project_days: 4
-    remaining_estimate_project_days: 4
+    remaining_estimate_project_days: 8
     workstream: platform
     docs:
       requirements: {level: working, scope: "selected target execution/deployment needs"}
       idd: {level: review, scope: "API used for target inspection"}
-      design: {level: working, scope: "selected runtime/deployment path"}
-      verification: {level: working, scope: "real target execution and measurements"}
+      design: {level: working, scope: "selected image/provisioning, runtime, service and deployment path"}
+      verification: {level: working, scope: "clean-target recreation, real target execution and repeated runtime measurements"}
     documents:
       - {name: 50-SDE-01, title: Target development environment, maturity: review, completeness: 75}
       - {name: 60-SVP, title: Target verification, maturity: review, completeness: 88}

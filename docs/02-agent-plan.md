@@ -286,12 +286,14 @@ T01 is complete on Java main through PR #327: the optional
 runtime-characterization module provides deterministic steady, burst and growing-history
 workloads plus retained machine-readable JSON evidence.
 
-V01 hosted-Linux evidence is retained on `prod/characterization` for Java revision
-`efc5797f2fb430e16ee1221fe60a91620d6db71b`. Steady 20 registrations/s and both
-1,000/9,999-record history cases completed without queue-full; the deliberately
-unpaced burst exposed the bounded TimingNode queue as intended. Raspberry Pi Zero
-and Raspberry Pi 3 Model B repetitions remain required target evidence, so V01 and
-the dependent A03 optimization decision remain open.
+V01 development-host evidence is retained on `prod/characterization` for Java
+revision `efc5797f2fb430e16ee1221fe60a91620d6db71b`. Steady 20 registrations/s and
+both 1,000/9,999-record history cases completed without queue-full; the deliberately
+unpaced burst exposed the bounded TimingNode queue as intended. V01 is therefore
+complete for Step 5 and A03 is released for its evidence-based design decision.
+Real target repetitions no longer block this step: Step 8 selects the platform and
+Step 9 owns image/provisioning, Java/runtime/deployment bring-up and repeated target
+measurements.
 
 D02 now defines OPEN/CLOSE TimingData as `NODE_INFO` with OPEN/CLOSE code.
 D03 defines append-only registration revoke using the original `regId + time`,
@@ -302,11 +304,14 @@ interpretation of ADD/REV stays outside bookkeeping. V03 is complete through Jav
 PR #333 using the normal SimulatedAntenna -> TagProcessor -> TimingNode ->
 persistence/LogBook path across restart. V05 is complete through Java PR #332 and
 green black-box VC-ST1-005 evidence. Server-side V06 / VC-ST1-006 is also green
-through that PR; the remaining non-hardware verification focus is the manual
-VC-ST1-003 Development Client run for trash -> REV, the DELETED interpreted
-projection and restart/recovery in the real JavaFX client. Runtime optimization
-choices remain evidence-driven; thread priorities, batching, pooling, copied
-snapshots/caches and extra asynchronous workers are not baseline assumptions.
+through that PR; the remaining client verification is the manual VC-ST1-003
+Development Client run for trash -> REV, the DELETED interpreted projection and
+restart/recovery in the real JavaFX client. D06 (meta issue #564) adds explicit
+SSD-architecture -> detailed-SDD Needs traceability for Object Explorer navigation.
+The active runtime path is now A03 followed by V02 on development-host evidence.
+Runtime optimization choices remain evidence-driven; thread priorities, batching,
+pooling, copied snapshots/caches and extra asynchronous workers are not baseline
+assumptions.
 
 Multi-node operation, backoffice reference data and StageTiming remain later
 roadmap work and must not be pulled into Step 5.
