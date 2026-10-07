@@ -90,7 +90,6 @@ verifies: >-
   SI01-REQ-020, SI01-REQ-021, SI01-REQ-031,
   IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006
 ---
-:::
 
 **Executable test**
 
@@ -136,6 +135,8 @@ after reconnect and shut down through the supported controlled path.
 Adapter/component tests may cover additional event-path details that are not yet
 observable through a supported black-box state-changing operation.
 
+:::
+
 :::{vc} Control and observe first committed registration  
 ---
 id: VC-ST1-002
@@ -144,7 +145,6 @@ verifies: >-
   IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015,
   IF05-REQ-003, IF05-REQ-008, IF05-REQ-009
 ---
-:::
 
 **Executable test**
 
@@ -210,6 +210,8 @@ storage recovery remains component-level persistence/codec verification.
   commits;
 - operational OPEN/CLOSED state is not restored merely from historical records.
 
+:::
+
 :::{vc} Development Client reconnect/resynchronisation integration  
 ---
 id: VC-ST1-003
@@ -217,7 +219,6 @@ verifies: >-
   SI01-REQ-044, IF03-REQ-016, IF03-REQ-022,
   IF05-REQ-006, IF05-REQ-007, IF05-REQ-008
 ---
-:::
 
 **Purpose**
 
@@ -272,6 +273,7 @@ SI-01 state.
 This remains a manual running-system verification case. Repository-local
 checklists may mirror it but shall not redefine it.
 
+:::
 
 :::{vc} Contain TimingData recovery failure and keep diagnostics available  
 ---
@@ -279,7 +281,6 @@ id: VC-ST1-004
 verifies: >-
   SI01-REQ-048, IF03-REQ-004, IF03-REQ-006, IF03-REQ-008, IF03-REQ-017
 ---
-:::
 
 **Executable test**
 
@@ -311,6 +312,7 @@ TimingNode while application-level diagnostic interfaces remain available.
 - HTTP, WebSocket and Remote Shell diagnostics remain usable;
 - normal state-changing work is rejected explicitly.
 
+:::
 
 :::{vc} Verify lifecycle TimingData source ordering and recovery  
 ---
@@ -319,7 +321,6 @@ verifies: >-
   IF03-REQ-011, IF03-REQ-014, IF03-REQ-015,
   IF05-REQ-002, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009, IF05-REQ-010
 ---
-:::
 
 **Executable test**
 
@@ -355,6 +356,7 @@ sequence.
 - registrations and lifecycle records share one contiguous sequence;
 - restart preserves committed order and the next record continues it.
 
+:::
 
 :::{vc} Verify append-only registration revoke bookkeeping  
 ---
@@ -363,7 +365,6 @@ verifies: >-
   IF03-REQ-008, IF03-REQ-014, IF03-REQ-015, IF03-REQ-022,
   IF05-REQ-002, IF05-REQ-003, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
 ---
-:::
 
 **Executable test**
 
@@ -413,6 +414,7 @@ stimulus is automatic-registration only. MAN_REG `REV,AUTO` / `REV,MAN`
 mapping is verified at codec/domain level until a public manual-add stimulus is
 part of this test profile.
 
+:::
 
 ## Evidence
 
