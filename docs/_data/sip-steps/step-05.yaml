@@ -3,6 +3,10 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
+      Added D08/A06/V07 for manual registration/precision and D09/A07/V08 for
+      simulated-tag profiles.
+  - date: '2026-10-07'
+    change: >-
       Target-hardware evidence moved to Step 9; Step-5 V01 is the development-host baseline and releases A03.
   - date: '2026-10-07'
     change: >-
@@ -27,11 +31,6 @@ planning_changes:
     change: >-
       Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
       planning/design activity.
-  - date: '2026-10-03'
-    change: >-
-      Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
-      before implementation and verification. Step-4 baseline is unchanged.
-
 activities:
   - id: D01
     lane: documentation
@@ -105,6 +104,28 @@ activities:
       local-console port. SharedTerminalHandler and the
       Application-layer PresentationGateway remain internal and have no external
       port.
+
+  - id: D08
+    lane: documentation
+    kind: decision
+    state: done
+    note: >-
+      Define normal IF-03 manual-registration ADD separately from the dev
+      accepted-automatic-registration injection. MAN_REG uses client-supplied
+      effective time for both AUTO/MAN classifications; NODE_INFO time uses
+      centisecond precision and newly assigned recTime uses millisecond precision.
+
+  - id: D09
+    lane: documentation
+    kind: decision
+    state: done
+    depends_on: [D04]
+    note: >-
+      Distinguish direct accepted-registration injection, SimulatedAntenna
+      observation input and simulated-tag/profile scenarios. Profiles drive
+      TagObservation sequences through SimulatedAntenna and reuse EventData
+      multi-tag mappings. Development Client batch control owns count/range/order/
+      interval while the selected profile owns the observations inside one passage.
 
   - id: T01
     lane: tooling
@@ -205,6 +226,28 @@ activities:
       TimingNode/LogBook kept as bookkeeping rather than ADD/REV business-state
       interpretation.
 
+  - id: A06
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D08]
+    note: >-
+      Implement normal manual-registration ADD through IF-03 and the existing
+      PresentationGateway/TimingNodeProxy boundary, apply lifecycle/recorded-time
+      precision policy, and finish Development Client hundredth-second input/display
+      plus current-open-location/All registration projection.
+
+  - id: A07
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D09]
+    note: >-
+      Implement deterministic simulated-tag profiles above SimulatedAntenna plus a
+      narrow engineering control that starts one profile passage. Add Development
+      Client batch generation by count, RegistrationId range, ascending or seedable
+      pseudo-random order and interval between passage starts.
+
   - id: V03
     lane: verification
     kind: verification
@@ -254,3 +297,23 @@ activities:
       qualification is the manual VC-ST1-003 Development Client run proving the
       trash action, DELETED interpreted projection and restart/recovery in the
       real JavaFX client.
+
+  - id: V07
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A06]
+    note: >-
+      Verify MAN_REG ADD for AUTO/MAN client-time classification, committed
+      timestamp precision and Development Client hundredth-second/current-location
+      behaviour.
+
+  - id: V08
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A07]
+    note: >-
+      Verify simple/normal/edge simulated-tag profiles through
+      SimulatedAntenna -> AntennaManager -> TagProcessor -> TimingNode, including
+      two tags for one RegistrationId and repeatable seeded batch generation.

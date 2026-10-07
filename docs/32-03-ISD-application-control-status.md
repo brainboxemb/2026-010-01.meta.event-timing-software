@@ -12,6 +12,11 @@ This Interface Specification Document defines the **semantic contract** between 
 planned **Desktop GUI Application** (SI-02), the Development Client and automated
 integration tooling.
 
+The **API** is the general programmable interface of SI-01 for remote clients,
+engineering tools and headless black-box/integration tests. Engineering-only
+operations are identified explicitly; their presence does not make the API itself
+an engineering-only interface.
+
 IF-03 defines what clients can query, command and observe. It deliberately does not
 define concrete HTTP resource paths, JSON member names, WebSocket envelope fields or
 HTTP status-code mappings. The current development-v1 HTTP/JSON + WebSocket realization
@@ -290,6 +295,48 @@ or fold prior ADD/REV history to decide whether the requested revoke is meaningf
 already applied. A caller or higher application/business layer is responsible for
 selecting the registration semantics supplied to this operation.
 
+### IF03-OP-012 — Add manual registration
+
+Inputs:
+
+- addressed `TimingNodeId`;
+- resolved `RegistrationId`;
+- effective registration `time`;
+- client time-source classification `AUTO` or `MAN`.
+
+This is a normal node-scoped registration operation, not a development simulation.
+The client supplies the effective registration time in both cases. `AUTO` means
+the client selected or captured that time automatically; `MAN` means an operator
+entered or edited it manually.
+
+The classification does not ask SI-01 to replace the supplied time with its own
+clock. SI-01 validates the request against current TimingNode state, captures the
+active LocationId, assigns the next source sequence and record-creation time, and
+commits one `MAN_REG` ADD record through the normal TimingNode commit path.
+
+### IF03-OP-013 — Start simulated tag passage
+
+Inputs:
+
+- addressed `TimingNodeId`;
+- resolved `RegistrationId`;
+- simulation profile identifier.
+
+This is an engineering operation and is available only when the corresponding
+simulation capability is advertised and enabled. It starts one simulated
+registration scenario **before** the TagProcessor boundary. The selected profile
+publishes one or more TagObservation values through the configured
+SimulatedAntenna, so normal AntennaManager, TagProcessor, TimingNode and TimingData
+behaviour remains in the path.
+
+The operation does not itself commit a registration and does not have the same
+semantics as IF03-OP-007 direct accepted-registration simulation. The eventual
+registration outcome remains observable through normal committed TimingData.
+
+The initial profile identifiers are `simple`, `normal` and `edge`. Their
+internal observation pattern is engineering simulation behaviour rather than
+TimingData/domain semantics.
+
 ## Operation ordering and concurrency
 
 Presentation clients may submit commands concurrently. IF-03 therefore requires
@@ -566,6 +613,29 @@ operation using the original registration family, LocationId, RegistrationId, ti
 and, for manual registrations, time-source classification. The operation shall create
 a new committed REV TimingData record and shall not delete or rewrite the original
 ADD record.
+:::
+
+:::{ifreq} Manual registration add  
+:id: IF03-REQ-023  
+:status: D  
+:derived_from: UC-008, UC-009  
+
+IF-03 shall provide IF03-OP-012 as a normal node-scoped manual-registration ADD
+operation. The client shall supply RegistrationId, effective registration time and
+whether that time was selected automatically by the client or entered/edited manually.
+SI-01 shall preserve the supplied effective time when creating the MAN_REG record.
+:::
+
+:::{ifreq} Simulated tag passage control  
+:id: IF03-REQ-024  
+:status: D  
+:derived_from: UC-009  
+
+When the simulation capability is supported and enabled, IF-03 shall provide
+IF03-OP-013 to start one simulated-tag profile for one resolved RegistrationId.
+The operation shall enter before TagProcessor by publishing observations through
+the configured SimulatedAntenna and shall not substitute direct TimingNode
+registration injection for the simulated antenna path.
 :::
 
 

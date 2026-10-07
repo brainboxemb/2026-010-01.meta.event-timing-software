@@ -95,7 +95,7 @@ same time
 
 ### MAN_REG
 
-Manual registration using system-assigned time:
+Manual registration using client-selected time:
 
 ```text
 recType = MAN_REG
@@ -225,6 +225,21 @@ Rules:
 - offsets such as `+02:00`, implicit local time and timezone names are not
   canonical v1 values.
 
+The syntax deliberately remains capable of preserving up to nine fractional
+digits so existing/recovered timing information is not lost. The current SI-01
+reference producer applies narrower precision only where SI-01 itself creates
+bookkeeping or lifecycle timestamps:
+
+- newly created `NODE_INFO.time` is normalized to **centisecond (10 ms)** resolution;
+- newly assigned `recTime` is normalized to **millisecond (1 ms)** resolution;
+- registration `time` is not globally rounded by the TimingData codec/value type;
+  it remains the effective time supplied by the originating registration path;
+- a REV record repeats the original registration `time` exactly rather than
+  re-normalizing it.
+
+Because canonical output removes trailing fractional zeroes, a value on an exact
+centisecond or millisecond boundary may serialize with fewer visible digits.
+
 This absolute UTC syntax is a property of the default/reference development-v1
 representation. It does not require every conforming TimingData profile to
 serialize an absolute timestamp literally. An alternative profile may use a
@@ -280,7 +295,7 @@ Automatic registration:
 {"v":1,"nodeId":"Test","seqNr":1,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00Z","regId":"N0001","code":["ADD"],"recTime":"2026-10-02T10:57:43.444Z"}
 ```
 
-Manual registration using system-assigned time:
+Manual registration using client-selected time:
 
 ```json
 {"v":1,"nodeId":"Test","seqNr":2,"locId":24,"recType":"MAN_REG","time":"2026-10-01T12:00:05Z","regId":"N0002","code":["ADD","AUTO"],"recTime":"2026-10-02T10:57:45.1Z"}
@@ -307,7 +322,7 @@ are used so examples remain convenient for later test sets containing up to
 TimingNode lifecycle examples:
 
 ```json
-{"v":1,"nodeId":"A","seqNr":6,"locId":24,"recType":"NODE_INFO","time":"2026-10-02T11:10:00Z","code":["OPEN"],"recTime":"2026-10-02T11:10:00.001Z"}
+{"v":1,"nodeId":"A","seqNr":6,"locId":24,"recType":"NODE_INFO","time":"2026-10-02T11:10:00.12Z","code":["OPEN"],"recTime":"2026-10-02T11:10:00.123Z"}
 {"v":1,"nodeId":"A","seqNr":7,"locId":24,"recType":"NODE_INFO","time":"2026-10-02T12:05:30.25Z","code":["CLOSE"],"recTime":"2026-10-02T12:05:30.251Z"}
 ```
 

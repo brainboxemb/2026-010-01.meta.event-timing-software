@@ -385,10 +385,16 @@ Status: active
 Move the test input one boundary closer to the real system without adding physical RFID
 hardware yet.
 
-Step 4 starts after tag interpretation: it injects an already-accepted registration.
+Step 4 starts after tag interpretation: its IF-03 development auto-reg operation injects
+an already-accepted automatic registration directly at the semantic registration
+boundary. It deliberately does **not** simulate AntennaManager, an antenna or
+TagProcessor.
+
 Step 5 starts at the antenna side. A built-in `SimulatedAntenna` can therefore exercise
 tag observation, filtering/resolution and registration admission through the same software
-path that a later real antenna adapter must use.
+path that a later real antenna adapter must use. A simulated-tag/profile layer can drive
+that antenna with repeatable multi-observation passages without introducing another
+direct TimingNode registration shortcut.
 
 This is also the first useful point to measure queueing, allocation and sustained-input
 behaviour. Those measurements should guide implementation choices before target-hardware
@@ -403,6 +409,12 @@ domain and persistence paths.
 
 - built-in `SimulatedAntenna` through the normal Antenna lifecycle/observation interface;
 - deterministic synthetic tag observations carrying TagId, RSSI and accepted observation time;
+- explicit separation between direct accepted-registration injection, antenna-level
+  observation simulation and higher-level simulated-tag/profile scenarios;
+- deterministic simulated-tag profiles that can use one or multiple EventData TagIds for
+  one RegistrationId and emit realistic observation sequences through SimulatedAntenna;
+- Development Client batch simulation by registration count, numeric range, ascending or
+  seedable pseudo-random selection and interval between registration starts;
 - `AntennaManager` lifecycle support for probe/hello-version, initialization,
   per-antenna inventory start/stop and normal shutdown, with optional power control;
 - TagProcessor observation-burst aggregation, strongest-RSSI selection and duplicate suppression before registration admission;
@@ -412,6 +424,10 @@ domain and persistence paths.
   TimingNode-owned source stream as registrations;
 - promote registration revoke/delete from reserved representation to supported
   TimingData/API behaviour, appending REV without rewriting the original registration;
+- add normal manual-registration ADD through IF-03 with client-supplied effective time
+  and explicit AUTO/MAN client time-selection classification;
+- align the Development Client registration view with hundredth-second input/display and
+  current-open-location versus All projection;
 - the same TimingNode commit, TimingData, LogBook and persistence path proven in Step 4;
 - runtime counters/markers needed to understand queue wait, processing and persistence;
 - sustained/bursty input tests and basic allocation/GC observations;
@@ -445,6 +461,8 @@ domain and persistence paths.
 | `D05` | Define internal runtime-observability architecture |
 | `D06` | Link SSD architecture Needs to detailed SDD design |
 | `D07` | Clarify Presentation external ports in architecture diagram |
+| `D08` | Define manual-registration API and timestamp precision |
+| `D09` | Define simulation layers, simulated tags and profile control |
 | `T01` | Runtime-characterization harness and evidence tooling |
 | `A01` | Qualify/implement simulated antenna and tag-processing path |
 | `A02` | Qualify/implement runtime markers and counters |
@@ -453,10 +471,14 @@ domain and persistence paths.
 | `V02` | Sustained tag-observation load and stalled-downstream fairness/backpressure |
 | `A04` | Commit OPEN/CLOSE through the normal TimingData path |
 | `A05` | Commit registration revoke through the normal TimingData path |
+| `A06` | Implement manual-registration API, precision policy and Development Client controls |
+| `A07` | Implement simulated-tag profiles and Development Client batch simulation |
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
 | `V06` | Registration revoke/API/Development Client verification |
+| `V07` | Manual registration, timestamp precision and Development Client projection verification |
+| `V08` | Simulated-tag profile and batch-driver verification |
 
 ### D04 — Antenna input architecture decision
 
@@ -656,6 +678,72 @@ ordinary internal Application connection:
 This prevents PresentationGateway from being mistaken for an external socket-facing
 service merely because its name contains `Gateway`.
 
+### D08 — Manual registration and timestamp precision
+
+D08 completes the registration-side presentation contract exposed by Development Client
+review. IF-03 remains the general programmable SI-01 interface for remote clients,
+engineering tools and headless black-box/integration tests. The dedicated Web interface
+is a separate Presentation adapter; Web and API may invoke the same
+PresentationGateway/TimingNodeProxy application operations without routing Web through
+the API adapter.
+
+Normal manual registration is therefore an IF-03 operation, not a development
+simulation. For `MAN_REG` ADD the client supplies the effective registration time in
+both cases: `AUTO` means the client selected/captured that time automatically and
+`MAN` means the operator entered or edited it manually. SI-01 does not replace an
+AUTO-classified client time with server current time.
+
+The generic TimingTimestamp/codec contract keeps its existing precision range. The
+reference producer narrows only timestamps SI-01 creates itself: newly created
+`NODE_INFO` lifecycle effective time uses centisecond resolution and newly assigned
+`recTime` uses millisecond resolution. Registration effective time remains timing
+information supplied by its originating path; REV repeats the original time unchanged.
+
+### D09 — Simulation depth and tag profiles
+
+Step 5 uses three distinct engineering input depths:
+
+```text
+direct dev auto-reg
+  -> accepted automatic-registration boundary
+  -> TimingNode
+
+SimulatedAntenna observation
+  -> AntennaManager
+  -> TagProcessor
+  -> TimingNode
+
+simulated tag/profile
+  -> timed TagObservation sequence
+  -> SimulatedAntenna
+  -> AntennaManager
+  -> TagProcessor
+  -> TimingNode
+```
+
+The first path is intentionally shallow and remains useful for focused IF-03,
+TimingNode and TimingData tests. The second and third paths are the Step-5 antenna-side
+simulation. A simulated tag/profile must publish observations through
+`SimulatedAntenna`; it must not call TagProcessor or TimingNode directly.
+
+Profiles reuse EventData relationships. When EventData maps two TagIds to the same
+RegistrationId, a profile may emit observations from both tags and therefore exercise
+passage aggregation, strongest-RSSI selection and registration-keyed duplicate
+suppression. The first reusable profile set is:
+
+- `simple` — minimal deterministic passage;
+- `normal` — representative clean passage and, where available, two tags for one
+  registration;
+- `edge` — deterministic variants including very short/long passage shapes and one-tag
+  versus two-tag registrations.
+
+The profile owns relative observation timing/RSSI/tag-use inside one passage. A narrow
+engineering control starts one profile passage for one resolved RegistrationId. The
+Development Client owns batch orchestration above that control: count, numeric
+RegistrationId range, ascending or seedable pseudo-random selection and interval between
+passage starts. The batch interval is not an observation interval; it separates complete
+registration scenarios.
+
 ### A03 — Measurement-driven runtime decision
 
 A03 uses the retained V01 development-host evidence rather than target-hardware results.
@@ -694,6 +782,9 @@ was needed.
   TimingData source stream according to the Step-5 IF-05/IDD update.
 - Registration revoke appends REV through the same committed source stream and leaves the
   original ADD history intact.
+- Normal manual-registration ADD is available through IF-03 with client-supplied
+  AUTO/MAN time-selection semantics while dev auto-reg remains simulation-only.
+- Simulated-tag profiles drive the normal antenna path rather than direct registration.
 - Sustained input can be measured without bypassing TimingNode ownership.
 - Restart/recovery works with the same simulated input path used by automated tests.
 
@@ -702,6 +793,10 @@ was needed.
 - Open one TimingNode and show the committed OPEN TimingData record.
 - Feed repeatable tag observations through `SimulatedAntenna` and show which observations
   become committed registrations.
+- Add manual registrations using both client-selected current time and operator-entered
+  time and show their MAN_REG AUTO/MAN classification.
+- Run a short simulated-tag batch and show one representative two-tag passage reaching
+  one automatic registration through SimulatedAntenna and TagProcessor.
 - Revoke one registration and show ADD plus REV in the technical LogBook while the
   interpreted registration remains visible as DELETED.
 - Close the TimingNode and show the CLOSE record in the same source sequence.
@@ -718,6 +813,14 @@ was needed.
   behaviour follows the explicit D02 decision;
 - revoke never rewrites/removes committed ADD records and follows the explicit D03
   rejection/idempotence rules through API, LogBook, live event and recovery paths;
+- normal manual ADD preserves client-supplied effective time and AUTO/MAN selection
+  semantics through API, TimingNode commit, LogBook and recovery;
+- newly produced NODE_INFO time and recTime follow the D08 centisecond/millisecond
+  producer policy without globally truncating registration effective timing;
+- simulated-tag profiles exercise SimulatedAntenna, AntennaManager and TagProcessor rather
+  than bypassing them, including the EventData multi-tag mapping case;
+- Development Client batch generation is repeatable for ascending and seeded random
+  selection and keeps passage-internal observation behaviour profile-owned;
 - sustained/bursty input has repeatable measurements and does not starve required TimingNode work;
 - recovery preserves lifecycle/registration records and sequence continuity;
 - provider loading is verified with public built-in/synthetic implementations;
