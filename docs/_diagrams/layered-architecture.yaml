@@ -18,7 +18,7 @@ diagram:
 # - For shaped layers, "local top" means the visible top edge at that x-position, not the group's raw y origin.
 # - Component width follows content/established columns; do not stretch blocks to fill a layer.
 # - Component height follows displayed content; do not add empty height merely to align bottoms.
-# Platform deliberately reuses the lower I/O row columns (x=55, 275, 535).
+# Platform uses four compact sibling blocks across the main stack.
 
 groups:
 - id: presentation-layer
@@ -397,12 +397,22 @@ nodes:
   group: platform-layer
   label: "PlatformEnvironment"
   items:
-    - "Clock — absolute time"
+    - "Clock — raw absolute time"
     - "MonotonicClock — elapsed time"
     - "OperatingSystem — platform family"
   kind: platform
   notation: packaging-component
   layout: {x: 555, y: 1332, w: 300, h: 115}
+- id: platform-time
+  object_id: TimeSource
+  group: platform-layer
+  label: "Timing time"
+  items:
+    - "TimeSource"
+    - "ClockTimeSource"
+  kind: platform
+  notation: packaging-component
+  layout: {x: 875, y: 1332, w: 250, h: 95}
 
 - id: timing-application-runtime
   object_id: TimingApplicationRuntime
