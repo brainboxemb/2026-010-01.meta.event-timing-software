@@ -539,8 +539,7 @@ are torn down.
 
 :::{arch} RuntimeExecutors  
 :id: RuntimeExecutors  
-:detailed_by: DD-RuntimeExecution  
-
+:detailed_by: DD-RuntimeExecution, DD-RuntimeWorkAndMeasurements  
 `RuntimeExecutors` owns the physical execution resources used by the logical
 component lanes. It owns worker lifecycle but not Domain/Application semantics.
 :::
@@ -794,6 +793,7 @@ do not introduce messages merely to preserve a layer diagram.
 :::{arch} UpstreamMessageRouter  
 :id: UpstreamMessageRouter  
 
+:detailed_by: DD-DomainIntegration  
 `UpstreamMessageRouter` owns target resolution for messages exchanged with the
 upstream system at application scope. **Upstream** describes that external
 system relationship, not the direction of an individual message; the exchange is
@@ -866,6 +866,7 @@ identities in Figure SI01-01 so interactive selection remains unambiguous.
 :::{arch} TimingSystem UpstreamMessagePort  
 :id: SystemUpstreamMessagePort  
 
+:detailed_by: DD-DomainIntegration  
 The TimingSystem-level `UpstreamMessagePort` receives and emits system-level
 operations such as status/heartbeat and synchronisation control that do not
 target one TimingNode. It does not own transport connections, connector
@@ -875,6 +876,7 @@ lifecycle or cross-aggregate target resolution.
 :::{arch} TimingNode UpstreamMessagePort  
 :id: TimingNodeUpstreamMessagePort  
 
+:detailed_by: DD-DomainIntegration  
 The TimingNode-level `UpstreamMessagePort` receives and emits node-scoped
 operations after `UpstreamMessageRouter` has resolved the owning TimingSystem
 and target `TimingNodeId`. It does not own transport connections or
@@ -883,8 +885,7 @@ cross-aggregate target resolution.
 
 :::{arch} TagProcessor  
 :id: TagProcessor  
-:detailed_by: DD-EventTagProcessing  
-
+:detailed_by: DD-EventTagProcessing, DD-RuntimeWorkAndMeasurements  
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
 the registration semantics needed by the TimingNode. It resolves the semantic
 TagId through EventData before registration-level duplicate suppression and
@@ -918,8 +919,7 @@ the owning TimingNode execution boundary.
 
 :::{arch} EventData
 :id: EventData
-:detailed_by: DD-EventTagProcessing  
-
+:detailed_by: DD-EventTagProcessing, DD-ExtensionAndComposition  
 `EventData` is a shared Domain capability parallel to `TimingData`. A
 configured EventData profile defines stable event-specific source/reference
 semantics, including the 1..N relationship between `RegistrationId` and
@@ -1313,6 +1313,7 @@ connection/implementation is selected only when required by deployment design.
 :::{arch} CanNetworkController  
 :id: CanNetworkController  
 
+:detailed_by: DD-IOComposition  
 `CanNetworkController` owns CAN-bus lifecycle, discovery/scanning, online state
 and CAN-device communication for the DeviceNetworks package.
 :::
@@ -1320,6 +1321,7 @@ and CAN-device communication for the DeviceNetworks package.
 :::{arch} NetworkDeviceService  
 :id: NetworkDeviceService  
 
+:detailed_by: DD-IOComposition  
 `NetworkDeviceService` owns the bidirectional boundary for
 network-attached/smart devices, including data sent outward and device-originated
 messages/events received inward.
@@ -1328,6 +1330,7 @@ messages/events received inward.
 :::{arch} UpstreamGateway  
 :id: UpstreamGateway  
 
+:detailed_by: DD-DomainIntegration  
 `UpstreamGateway` is the Messaging-owned external upstream transport/session
 boundary. It owns connector coordination but not UpstreamProtocol semantics.
 :::
@@ -1384,8 +1387,7 @@ The layered view groups Platform into three small technical responsibilities:
 
 :::{arch} PlatformExecution  
 :id: PlatformExecution  
-:detailed_by: DD-CooperativeExecution, DD-RuntimeExecution  
-
+:detailed_by: DD-CooperativeExecution, DD-RuntimeExecution, DD-RuntimeWorkAndMeasurements  
 `PlatformExecution` owns the reusable bounded serial execution primitives
 `SerialExecutor` and `SerialScheduledExecutor`. Cooperative tasks may run on an
 existing ordinary serial lane through `SerialTaskRunner` or on a scheduled serial
@@ -1579,6 +1581,7 @@ interface and live delivery remains best effort.
 :::{arch} TimingSystem  
 :id: TimingSystem  
 
+:detailed_by: DD-IOComposition, DD-DomainIntegration  
 A `TimingSystem` is an internal parent domain aggregate.
 One **Timing Point Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
@@ -1591,6 +1594,7 @@ assumed to be part of the upstream wire contract.
 :::{arch} SystemStatus  
 :id: SystemStatus  
 
+:detailed_by: DD-DomainIntegration  
 `SystemStatus` is a dedicated Domain component contained by one
 `TimingSystem`. It owns the complete current operational overview of that
 system, including TimingNode state plus semantic device, device-network,
@@ -1601,7 +1605,7 @@ inputs.
 
 :::{arch} TimingNode  
 :id: TimingNode  
-:detailed_by: DD-TimingNodeExecution  
+:detailed_by: DD-TimingNodeExecution, DD-RuntimeWorkAndMeasurements  
 :satisfies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021  
 
 A `TimingNode` is the independently addressed
@@ -1625,8 +1629,7 @@ logbook-specific timing-record representation.
 
 :::{arch} TimingData  
 :id: TimingData  
-:detailed_by: DD-TimingDataProfiles  
-
+:detailed_by: DD-TimingDataProfiles, DD-ExtensionAndComposition  
 `TimingData` is the shared Domain capability that realises
 system-owned IF-05 inside SI-01. It exposes the typed
 common `TimingData` semantic interfaces plus configured factory/codec services needed
@@ -1638,6 +1641,7 @@ protocol code consume that contract without redefining it.
 :::{arch} UpstreamProtocol  
 :id: UpstreamProtocol  
 
+:detailed_by: DD-DomainIntegration  
 Each TimingSystem owns one `UpstreamProtocol` context. It uses
 TimingData for timing-record transfer and owns protocol-level
 synchronisation, reconciliation and ping/heartbeat semantics so
