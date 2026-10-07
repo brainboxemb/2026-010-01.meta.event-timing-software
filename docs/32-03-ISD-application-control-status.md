@@ -490,7 +490,7 @@ view live.
 
 
 :::{ifreq} Bounded live-event delivery  
-:id: IF03-REQ-017  
+:id: IF03-REQ-021  
 :status: D  
 :derived_from: UC-009, UC-011  
 
