@@ -92,6 +92,18 @@ activities:
       inverse relation are visible in the Object Explorer and validated by the
       engineering graph.
 
+  - id: D07
+    lane: documentation
+    kind: documentation
+    state: planned
+    note: >-
+      Meta issue #567, using shared tool.eng-docs issue #100: clarify the
+      Presentation boundary in Figure SI01-01 with explicit external interface
+      ports on in-process adapters. API gets separate HTTP and WebSocket ports,
+      RemoteShell gets a TCP-shell port and Console a local console port;
+      SharedTerminalHandler and the Application-layer PresentationGateway remain
+      internal and have no external port.
+
   - id: T01
     lane: tooling
     kind: setup
