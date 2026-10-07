@@ -1375,12 +1375,65 @@ control task without owning that component's application/domain/device state.
 These mechanisms own no TimingNode state or domain policy.
 :::
 
+:::{arch} SerialExecutor  
+:id: SerialExecutor  
+
+`SerialExecutor` is one bounded logical serial lane on an ordinary Runtime-owned
+worker. It provides ordered admission/execution without owning component semantics.
+:::
+
+:::{arch} SerialScheduledExecutor  
+:id: SerialScheduledExecutor  
+
+`SerialScheduledExecutor` is the scheduled counterpart of `SerialExecutor`.
+It preserves one serial logical lane while allowing delayed admission without sleeping
+the physical worker.
+:::
+
+:::{arch} SerialTaskRunner  
+:id: SerialTaskRunner  
+
+`SerialTaskRunner` runs cooperative task turns on an existing `SerialExecutor`.
+It supports yield/re-admission through `AGAIN` and completion through `DONE`,
+without adding elapsed-time scheduling.
+:::
+
+:::{arch} ScheduledTaskRunner  
+:id: ScheduledTaskRunner  
+
+`ScheduledTaskRunner` runs cooperative task turns on an existing
+`SerialScheduledExecutor`, including delayed `AFTER` continuation and bounded
+task completion waiting/cancellation.
+:::
+
+:::{arch} CooperativeTaskController  
+:id: CooperativeTaskController  
+
+`CooperativeTaskController` coalesces wake-ups for one long-lived cooperative
+control task. It owns only run/wake scheduling state; component state remains with
+the controlled task.
+:::
+
 :::{arch} PlatformEvents  
 :id: PlatformEvents  
 
 `PlatformEvents` supplies the small typed `Event<T>` / `EventSource<T>` local-event mechanism used for
 post-fact notifications. Event instances remain owned by the component that
 publishes them; Platform does not provide a central event bus.
+:::
+
+:::{arch} Event  
+:id: Event  
+
+`Event<T>` is the owned typed local publisher used for synchronous post-fact
+notification within the process.
+:::
+
+:::{arch} EventSource  
+:id: EventSource  
+
+`EventSource<T>` is the subscription-only view exposed by an event owner so
+consumers cannot publish through the source reference.
 :::
 
 :::{arch} PlatformEnvironment  
@@ -1394,6 +1447,20 @@ It is deliberately not a general service locator for filesystem, networking or
 other OS facilities.
 :::
 
+:::{arch} MonotonicClock  
+:id: MonotonicClock  
+
+`MonotonicClock` supplies process-local elapsed time for delays, timeouts,
+filtering windows and metrics. It is never used as a persisted/event timestamp.
+:::
+
+:::{arch} OperatingSystem  
+:id: OperatingSystem  
+
+`OperatingSystem` is the normalized platform-family identity used by Runtime
+when selecting platform-dependent composition defaults.
+:::
+
 :::{arch} TimeSource  
 :id: TimeSource  
 
@@ -1402,6 +1469,13 @@ It exposes an absolute `Instant` without importing TimingData/domain types. Doma
 I/O components consume it when they must use the same timing basis.
 The type itself has no TimingSystem/TimingNode ownership; Runtime composition chooses
 which components receive the same instance.
+:::
+
+:::{arch} ClockTimeSource  
+:id: ClockTimeSource  
+
+`ClockTimeSource` is the baseline `TimeSource` implementation backed by the raw
+`PlatformEnvironment` wall clock. It applies no timing correction itself.
 :::
 
 #### Runtime and infrastructure
