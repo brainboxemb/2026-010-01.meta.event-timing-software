@@ -287,6 +287,16 @@ Use ordinary Markdown links for incidental references. Use `detailed_by` when th
 relationship belongs in the engineering graph and should therefore be visible in the
 Object Explorer with its inverse relation.
 
+A `design` Need owns the **substantive detailed-design content** for that object.
+Do not use a two-line Need merely as a traceability anchor and then place the actual
+design prose, examples or code immediately outside the directive. Keeping the detail
+inside the Need makes the same authoritative content available to Sphinx-Needs, the
+normalized engineering graph, generated reader Markdown and the Engineering Portal.
+
+Keep one coherent design responsibility per Need. Cross-cutting document guidance may
+remain ordinary Markdown, and unresolved/open design decisions stay outside accepted
+design objects until they become real design authority.
+
 ## Requirement maturity
 
 Software and interface requirements use the standard Sphinx-Needs `status` field:
