@@ -553,13 +553,17 @@ InventoryTask
   SWITCH / DONE
 ```
 
-`Conductor` uses the same model for Application-layer coordination, but does **not** gain a
-scheduled lane. It remains on its normal Application `SerialExecutor` and runs through
-`SerialTaskRunner`. TimingNode property-change events only wake Conductor. The
-cross-component rule is read and applied in `Conductor.runStep()` from the latest
-authoritative tracked state. This keeps future application coordination in one explicit
-state-machine boundary rather than letting event handlers become the implicit state
-machine.
+`Conductor` uses cooperative task execution for Application-layer coordination, but does
+**not** currently define its own state-machine phases. It remains on its normal Application
+`SerialExecutor` and runs through `SerialTaskRunner`. TimingNode property-change events
+only wake the Conductor control task. `Conductor.runStep()` reads the latest authoritative
+`TimingNodeTypes.State` and applies the corresponding cross-component rule.
+
+The remembered TimingNode state in Conductor is input history used to avoid repeating the
+same rule after coalesced wake-ups; it is **not** Conductor state. If future application
+coordination needs several ordered phases or waits, Conductor may then introduce its own
+explicit `Phase`/state-machine. Until that need exists, calling the current Conductor itself
+a state machine would be misleading.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
