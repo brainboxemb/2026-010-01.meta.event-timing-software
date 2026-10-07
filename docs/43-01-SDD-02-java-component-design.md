@@ -1176,7 +1176,7 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ConfigurationControl.java
     Conductor.java
-    logic/
+    framework/
       AbstractConductor.java
       ComponentLifecycleManager.java
     property/
