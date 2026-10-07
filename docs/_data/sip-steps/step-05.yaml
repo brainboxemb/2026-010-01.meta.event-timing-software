@@ -168,15 +168,15 @@ activities:
   - id: V02
     lane: verification
     kind: verification
-    state: next
+    state: done
     depends_on: [A03]
     note: >-
-      Java issue #334: verify sustained simulated ingress and stalled/slow
-      downstream IF-03 delivery cannot starve required TimingNode work or create
-      unbounded application-owned delivery state. Existing bounded WebSocket
-      delivery from PR #321 is part of the baseline; introduce further
-      fairness/backpressure changes only if this verification exposes a concrete
-      failure.
+      Completed through Java issue #334 / PR #335. The existing bounded
+      WebSocket delivery policy disconnects a permanently buffered client at its
+      configured send bound without introducing another application payload
+      queue, while later TimingNode registration commits and LogBook progress
+      continue after downstream disconnect. No batching, priority or additional
+      worker/state-owner change was required.
 
   - id: A04
     lane: application
