@@ -415,7 +415,7 @@ nodes:
   notation: packaging-component
   layout: {x: 555, y: 1332, w: 300, h: 115}
 - id: platform-time
-  object_id: TimeSource
+  object_id: PlatformTime
   group: platform-layer
   label: "Timing time"
   items:
