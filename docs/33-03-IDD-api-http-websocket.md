@@ -64,6 +64,7 @@ GET  /api/v1/configuration
 
 POST /api/v1/node/{id}/open
 POST /api/v1/node/{id}/close
+POST /api/v1/node/{id}/registration/revoke
 
 GET  /api/v1/node/{id}/logbook
 GET  /api/v1/node/{id}/logbook?from=...&limit=...
@@ -280,8 +281,61 @@ The operation is available only when
 
 This development operation represents the automatic-registration `ADD` action.
 The presentation-facing application boundary receives that action together with
-`registrationId` and `time`. Additional actions such as REV require an explicit
-IF-03/IF-05 contract extension; they are not inferred from this ADD-only request.
+`registrationId` and `time`. Registration REV uses IF03-OP-011 and is not
+inferred from this ADD-only engineering request.
+
+## IF03-OP-011 — Registration revoke
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/registration/revoke
+```
+
+Automatic-registration request:
+
+```json
+{
+  "recordType": "AUTO_REG",
+  "locationId": 24,
+  "regId": "N0001",
+  "time": "2026-10-01T12:00:00Z"
+}
+```
+
+Manual-registration request:
+
+```json
+{
+  "recordType": "MAN_REG",
+  "locationId": 24,
+  "regId": "N0003",
+  "time": "2026-10-01T11:59:58.25Z",
+  "timeSource": "MAN"
+}
+```
+
+For `MAN_REG`, `timeSource` is required and is exactly `AUTO` or `MAN`.
+For `AUTO_REG`, `timeSource` is absent. The request values describe the
+original registration; the server does not use a source-sequence reference.
+
+The application maps the request to an append-only REV TimingData commit:
+
+- `AUTO_REG` -> `code=["REV"]`;
+- `MAN_REG` + `AUTO` -> `code=["REV","AUTO"]`;
+- `MAN_REG` + `MAN` -> `code=["REV","MAN"]`.
+
+Successful response:
+
+```json
+{
+  "seq": 42
+}
+```
+
+The returned sequence is the new REV record sequence. The HTTP adapter does not
+search LogBook history to decide whether the supplied registration is currently
+active/deleted; the application/business caller owns that interpretation.
 
 ## IF03-OP-008 — LogBook query
 
@@ -623,6 +677,7 @@ development-v1 design yet.
 | IF03-OP-008 / IF03-REQ-014 | bounded `/api/v1/node/{id}/logbook` resources |
 | IF03-OP-009 / IF03-REQ-018 | `GET /api/v1/configuration` |
 | IF03-OP-010 / IF03-REQ-019 | `POST /api/v1/node/{id}/configuration/tag-processing` |
+| IF03-OP-011 / IF03-REQ-022 | `POST /api/v1/node/{id}/registration/revoke` |
 | IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
 
 ## Open design points

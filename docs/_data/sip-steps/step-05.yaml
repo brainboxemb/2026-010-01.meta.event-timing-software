@@ -48,19 +48,19 @@ activities:
     state: done
     note: >-
       Defines successful CLOSED->OPEN and OPEN->CLOSED lifecycle TimingData,
-      transition time/location capture, NODE_OPEN/NODE_CLOSE development-v1
-      mapping and the rule that no-op/rejected/failed lifecycle commands do not
-      create committed TimingData.
+      transition time/location capture, NODE_INFO with OPEN/CLOSE code in the
+      development-v1 mapping and the rule that no-op/rejected/failed lifecycle
+      commands do not create committed TimingData.
 
   - id: D03
     lane: documentation
     kind: decision
-    state: planned
+    state: done
     note: >-
-      Promote registration revoke from reserved reference-format mapping to an
-      explicit TimingData/API semantic. Define matching-record identity,
-      repeated time/RegistrationId rules, idempotence/rejection and the rule
-      that revoke appends a new committed record instead of rewriting history.
+      Defines append-only registration revoke as a new TimingData record using
+      the same regId and original time. AUTO_REG uses REV; MAN_REG uses REV with
+      the original AUTO/MAN subcode. TimingNode/LogBook remain bookkeeping and
+      do not infer active/deleted business state from prior ADD/REV history.
 
   - id: D04
     lane: documentation
