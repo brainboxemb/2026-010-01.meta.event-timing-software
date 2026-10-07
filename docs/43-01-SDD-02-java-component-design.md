@@ -336,9 +336,12 @@ platform/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
   environment/
-    PlatformEnvironment.java              wall-clock + monotonic-clock + OS boundary
+    PlatformEnvironment.java              raw wall-clock + monotonic-clock + OS boundary
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
+  time/
+    TimeSource.java                       shared absolute Instant source contract
+    ClockTimeSource.java                  wall-clock-backed baseline implementation
   metrics/
     RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
 ```
@@ -717,10 +720,18 @@ are defined. The Domain command for that implemented action is
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
 
-Absolute and monotonic time come from the composed `PlatformEnvironment`.
-Production uses the system wall clock plus the JVM monotonic source; tests and
-simulation may inject controlled equivalents. TimingSystem does not own a
-separate time-source component.
+The raw absolute wall clock and monotonic elapsed-time source come from
+`PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
+absolute Clock and passes that timing source to components that attach or record
+event time. TimeSource returns `Instant`, keeping Platform independent of the
+TimingData/domain value model. The current baseline implementation is `ClockTimeSource`;
+tests and simulation may inject controlled equivalents.
+
+TimeSource ownership is deliberately not encoded as TimingSystem or TimingNode
+API. Composition decides its sharing scope. The current single-node Runtime has
+one source; a later TimingSystem composition may pass one shared source to all
+TimingNodes and timestamp-producing I/O providers in that system. This preserves
+one corrected timing basis without creating another raw platform clock.
 
 The I/O package structure is logical; executable composition is per
 `TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
@@ -913,6 +924,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     Lifecycle.java
     TimingApplicationRuntime.java
     RuntimeExecutors.java
+    RuntimeTimeSources.java
     simulator/
       SimulationRuntime.java
     config/
@@ -954,6 +966,7 @@ construction, but cross-component relationships and lifecycle order remain visib
 validated Config
   -> PlatformEnvironment
   -> RuntimeExecutors/resources
+  -> RuntimeTimeSources -> TimeSource
   -> Domain + I/O + Application objects
   -> explicit Conductor/event wiring
   -> RuntimeExecutors.start()
@@ -1118,6 +1131,7 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
     RuntimeExecutors.java
+    RuntimeTimeSources.java
     PresentationRuntime.java
     ShutdownSignal.java
     configuration/
@@ -1160,7 +1174,9 @@ main()
        -> use Logging for current level / common formatting
   -> core runtime.TimingApplicationRuntime.create(...)
        -> create PlatformEnvironment
-       -> construct runtime resources and reusable application/domain/I/O objects
+       -> create RuntimeExecutors and RuntimeTimeSources
+       -> create one TimeSource for the current timing context
+       -> construct reusable application/domain/I/O objects
        -> construct and wire application.Conductor
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
