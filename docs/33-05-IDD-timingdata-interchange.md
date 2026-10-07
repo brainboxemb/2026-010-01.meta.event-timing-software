@@ -123,12 +123,41 @@ Duplicate, contradictory or unknown codes for a known record type are invalid.
 A revoke record using the reserved mapping repeats the original `regId` and `time`,
 receives a new `seqNr` and `recTime`, and never rewrites the original record.
 
+## TimingNode lifecycle record mapping
+
+The development-v1 reference representation maps lifecycle transitions to
+dedicated record types:
+
+```text
+CLOSED -> OPEN
+recType = NODE_OPEN
+time    = effective transition instant
+locId   = location becoming active
+```
+
+```text
+OPEN -> CLOSED
+recType = NODE_CLOSE
+time    = effective transition instant
+locId   = location active immediately before close
+```
+
+`NODE_OPEN` and `NODE_CLOSE` do not carry `regId` or `code`. The
+record type itself contains the lifecycle meaning. `recTime`, when emitted,
+remains optional record-creation metadata and does not replace lifecycle
+`time`.
+
+An idempotent/already-in-state lifecycle command or a command that fails before
+commit produces no lifecycle JSON record.
+
 ## Development-v1 record matrix
 
-| Record type | Current add code | Required registration data | Reserved revoke code |
+| Record type | Meaning | Required type-specific data | `code` |
 | --- | --- | --- | --- |
-| `AUTO_REG` | `["ADD"]` | `regId`, `time` | `["REV"]` |
-| `MAN_REG` | `["ADD","AUTO"]` or `["ADD","MAN"]` | `regId`, `time` | `["REV","AUTO"]` or `["REV","MAN"]` |
+| `AUTO_REG` | automatic registration | `regId`, `time` | `["ADD"]`; `["REV"]` reserved |
+| `MAN_REG` | manual registration | `regId`, `time` | `["ADD","AUTO"]` or `["ADD","MAN"]`; corresponding REV mapping reserved |
+| `NODE_OPEN` | CLOSED -> OPEN lifecycle transition | `time` | absent |
+| `NODE_CLOSE` | OPEN -> CLOSED lifecycle transition | `time` | absent |
 
 ## Development-v1 JSON contract
 
@@ -141,9 +170,9 @@ Known members use the following JSON types and validation rules.
 | `seqNr` | integer | Always | `1..9007199254740991`; plain decimal; v1 reference-design limit |
 | `locId` | integer | Always | positive Location ID representation |
 | `recType` | string | Always | identifies the concrete v1 record type |
-| `time` | string | By record type | required for `AUTO_REG` and `MAN_REG`; canonical time text |
-| `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; non-empty Registration ID |
-| `code` | array of strings | By record type | required for `AUTO_REG` and `MAN_REG`; labels/codes valid for the selected `recType` |
+| `time` | string | By record type | required for `AUTO_REG`, `MAN_REG`, `NODE_OPEN` and `NODE_CLOSE`; canonical time text |
+| `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; absent for lifecycle records |
+| `code` | array of strings | By record type | required for registration records; absent for `NODE_OPEN` and `NODE_CLOSE` |
 | `recTime` | string | Optional | canonical record-creation time metadata when emitted |
 
 Canonical writer member order:
@@ -168,15 +197,16 @@ Validation rules:
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
 - the development-v1 `AUTO_REG` mapping accepts exactly `["ADD"]` while REV remains reserved;
 - the development-v1 `MAN_REG` mapping accepts `ADD` plus exactly one of `AUTO` or `MAN` while REV remains reserved;
-- readers may accept a valid `code` combination in another array order;
+- `NODE_OPEN` and `NODE_CLOSE` require `time` and shall not contain `regId` or `code`;
+- readers may accept a valid registration `code` combination in another array order;
 - canonical writer output always emits action first;
 - `seqNr` remains authoritative source order; no chronological ordering is
   inferred from `time` or `recTime`.
 
 ## Timestamp encoding
 
-Canonical development-v1 timestamp text for registration `time`, and for
-optional `recTime` when present, is:
+Canonical development-v1 timestamp text for registration/lifecycle `time`,
+and for optional `recTime` when present, is:
 
 ```text
 YYYY-MM-DDTHH:mm:ss[.fraction]Z
@@ -269,6 +299,18 @@ The Registration IDs above are synthetic test/example data. Four numeric digits
 are used so examples remain convenient for later test sets containing up to
 2000 teams; IF-05 does not impose that display convention on Registration ID.
 
+
+TimingNode lifecycle examples:
+
+```json
+{"v":1,"nodeId":"A","seqNr":6,"locId":24,"recType":"NODE_OPEN","time":"2026-10-02T11:10:00Z","recTime":"2026-10-02T11:10:00.001Z"}
+{"v":1,"nodeId":"A","seqNr":7,"locId":24,"recType":"NODE_CLOSE","time":"2026-10-02T12:05:30.25Z","recTime":"2026-10-02T12:05:30.251Z"}
+```
+
+The examples show only successful state transitions. `ALREADY_OPEN`,
+`ALREADY_CLOSED`, rejected and failed lifecycle commands do not produce a
+reference record.
+
 ## Compatibility and versioning design
 
 Development v1 includes explicit per-record representation versioning through
@@ -316,6 +358,9 @@ the next odd-numbered development format.
 | IF05-REQ-005 | registration records carry `regId` and `time` |
 | IF05-REQ-006 | `code[]` represents ADD/REV while revoke repeats `regId` + `time` in a new record |
 | IF05-REQ-007 | JSON Lines persistence is append-only; an existing committed record is not rewritten |
+| IF05-REQ-008 | `NODE_OPEN` and `NODE_CLOSE` represent successful lifecycle transitions in the normal source stream |
+| IF05-REQ-009 | lifecycle records carry the transition `locId` and `time` and omit registration-only values |
+| IF05-REQ-010 | no lifecycle JSON record is written for no-op/already/rejected/failed transitions |
 
 JSON Lines completion rules, unknown-member handling, integer `v`, the v1
 `seqNr` limit, odd/even version-number convention and optional `recTime`
