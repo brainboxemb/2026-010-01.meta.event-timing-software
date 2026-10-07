@@ -1,10 +1,6 @@
 step: 5
 
 planning_changes:
-  - date: '2026-10-07'
-    change: >-
-      A02 requalification found one remaining D05 boundary gap. Complete the
-      engineering-only RuntimeMeasurementReader boundary before T01/V01/A03.
   - date: '2026-10-06'
     change: >-
       A01 requalified on Java main; V04 provider bootstrap verified through PR
