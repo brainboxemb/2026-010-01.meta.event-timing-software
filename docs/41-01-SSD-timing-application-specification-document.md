@@ -1339,15 +1339,19 @@ execution-environment abstractions:
 
 ```text
 bounded serial execution (SerialExecutor / SerialScheduledExecutor)
-optional scheduled task handling (ScheduledTaskRunner)
+cooperative task execution (SerialTaskRunner / ScheduledTaskRunner)
+coalesced component-task wake control (CooperativeTaskController)
 local typed events (Event<T> / EventSource<T>)
 absolute wall clock (Clock)
 elapsed-time source (MonotonicClock)
+normalized platform family (OperatingSystem)
 ```
 
-A domain or I/O component may compose a Platform primitive such as
-`SerialExecutor`, `SerialScheduledExecutor`, `ScheduledTaskRunner` or `Event<T>`; the primitive itself remains unaware of
-TimingNode, TimingData, presentation or external I/O semantics.
+A component may compose Platform execution primitives such as `SerialExecutor`,
+`SerialScheduledExecutor`, `SerialTaskRunner`, `ScheduledTaskRunner` or
+`CooperativeTaskController`, or local-event primitives such as `Event<T>`.
+The primitives themselves remain unaware of TimingNode, TimingData, presentation
+or external I/O semantics.
 
 The layered view groups Platform into three small technical responsibilities:
 
@@ -1355,9 +1359,11 @@ The layered view groups Platform into three small technical responsibilities:
 :id: PlatformExecution  
 
 `PlatformExecution` owns the reusable bounded serial execution primitives
-`SerialExecutor` and `SerialScheduledExecutor`. It also provides the optional
-`ScheduledTaskRunner` helper for bounded result waiting, cancellation
-propagation and delayed continuations on an existing scheduled serial lane.
+`SerialExecutor` and `SerialScheduledExecutor`. Cooperative tasks may run on an
+existing ordinary serial lane through `SerialTaskRunner` or on a scheduled serial
+lane through `ScheduledTaskRunner` when delayed continuation is required.
+`CooperativeTaskController` provides generic wake/coalescing control for a component
+control task without owning that component's application/domain/device state.
 These mechanisms own no TimingNode state or domain policy.
 :::
 
