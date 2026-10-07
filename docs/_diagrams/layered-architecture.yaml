@@ -137,7 +137,7 @@ nodes:
   object_id: Api
   group: presentation-layer
   label: "Api"
-  subtitle: "tools / test / control"
+  subtitle: "remote clients • tools • test"
   kind: presentation
   notation: component
   ports:
