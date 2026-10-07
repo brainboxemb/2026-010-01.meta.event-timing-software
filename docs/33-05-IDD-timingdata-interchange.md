@@ -175,7 +175,7 @@ Known members use the following JSON types and validation rules.
 | `recType` | string | Always | identifies the concrete v1 record type |
 | `time` | string | By record type | required for `AUTO_REG`, `MAN_REG` and `NODE_INFO`; canonical time text |
 | `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; absent for lifecycle records |
-| `code` | array of strings | By record type | required for registration records; absent for `NODE_INFO` |
+| `code` | array of strings | By record type | required for registration and `NODE_INFO` records |
 | `recTime` | string | Optional | canonical record-creation time metadata when emitted |
 
 Canonical writer member order:
@@ -198,8 +198,8 @@ Validation rules:
 - every `By record type` member required by the selected `recType` is present and non-null;
 - `Optional` members such as `recTime` may be omitted;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
-- the development-v1 `AUTO_REG` mapping accepts exactly `["ADD"]` while REV remains reserved;
-- the development-v1 `MAN_REG` mapping accepts `ADD` plus exactly one of `AUTO` or `MAN` while REV remains reserved;
+- the development-v1 `AUTO_REG` mapping accepts exactly `["ADD"]` or `["REV"]`;
+- the development-v1 `MAN_REG` mapping accepts exactly one action (`ADD` or `REV`) plus exactly one of `AUTO` or `MAN`;
 - `NODE_INFO` requires `time`, shall not contain `regId`, and accepts exactly one lifecycle code: `OPEN` or `CLOSE`;
 - readers may accept a valid registration `code` combination in another array order;
 - canonical writer output always emits action first;
