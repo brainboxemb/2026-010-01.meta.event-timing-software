@@ -137,8 +137,6 @@ def render_need(
         "",
     ]
 
-    output.extend(body)
-
     metadata = [f"**Type:** {label}"]
     status = need.get("status")
     if isinstance(status, str) and status:
@@ -149,9 +147,20 @@ def render_need(
             )
         metadata.append(f"**Status:** {STATUS_LABELS.get(status, status)}")
     metadata.extend(relation_items(need, needs))
-    if metadata:
-        output.extend(["", "— — —", ""])
-        output.extend(f"- {item}" for item in metadata)
+
+    if directive == "vc":
+        # Verification cases often contain a long test specification. Keep
+        # traceability visible directly below the title so the reader does not
+        # have to reach the end of the procedure before seeing what it verifies.
+        if metadata:
+            output.extend(f"- {item}" for item in metadata)
+            output.extend(["", "— — —", ""])
+        output.extend(body)
+    else:
+        output.extend(body)
+        if metadata:
+            output.extend(["", "— — —", ""])
+            output.extend(f"- {item}" for item in metadata)
 
     output.extend(["", "---", ""])
     return output
