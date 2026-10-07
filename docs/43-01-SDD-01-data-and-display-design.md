@@ -211,11 +211,24 @@ serial turn. A persistence failure therefore does not produce a successful
 do not allocate/commit a lifecycle record. There is no second lifecycle-event
 store or lifecycle-specific sequence owner.
 
+Manual registration ADD uses the same ordered commit path. The
+Presentation/Application caller supplies the resolved RegistrationId, effective
+registration time and AUTO/MAN time-source classification. AUTO means the
+presentation client selected or captured that time automatically; MAN means the
+operator entered or edited it. TimingNode does not replace an AUTO-classified
+client time with its own current time.
+
 Registration REV uses the same append-only commit path. The caller supplies the
 registration family plus the Registration ID and original effective time; for a
 manual registration it also supplies the original AUTO/MAN time-source
 classification. TimingNode assigns only the new record sequence/recorded-at
 context and commits the resulting REV record.
+
+TimingNode-generated timestamp precision is deliberately narrower than the generic
+TimingTimestamp value range: lifecycle NODE_INFO effective time is captured at
+centisecond resolution and newly assigned record-creation time at millisecond
+resolution. Registration effective time remains supplied timing information and
+is not globally truncated by the TimingData model.
 
 LogBook and this commit boundary are bookkeeping, not the owner of interpreted
 registration business state. They do not search prior history to decide whether
