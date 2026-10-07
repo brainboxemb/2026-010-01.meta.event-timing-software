@@ -26,9 +26,8 @@ IF-05 does not define Java classes, provider/factory APIs, worker threads,
 storage classes or UI behaviour. Those are software-item design concerns.
 
 IF-05 defines TimingNode OPEN/CLOSE lifecycle records in addition to registration
-records. It also defines append-only registration revocation semantics, while revoke
-disambiguation and the concrete default/reference mapping remain draft
-interface/design decisions.
+records. It also defines append-only registration revocation semantics. The
+default/reference mapping is defined in the accompanying IDD.
 
 ## Terms and abbreviations
 
@@ -141,7 +140,8 @@ Lifecycle-record values are:
 - **time** — the absolute instant assigned to the lifecycle transition when the
   ordered TimingNode operation is processed;
 - **Registration ID** — not present;
-- **code** — not required by the current OPEN/CLOSE lifecycle record types.
+- **code** — identifies the lifecycle transition as OPEN or CLOSE in the
+  default/reference representation.
 
 The lifecycle `time` is the effective transition time. It is distinct from
 optional record-creation metadata such as the default/reference `recTime`.
@@ -186,11 +186,17 @@ Registration semantics shall support:
 - revoking a previously added registration.
 
 A revocation is represented by a new TimingData record and does not modify the
-original committed registration record. It refers to the registration being
-withdrawn using the Registration ID and time associated with that registration.
+original committed registration record. The revocation record repeats the
+Registration ID and time of the registration being withdrawn. A manual
+registration revocation also preserves whether the original manual registration
+used system-assigned or operator-entered time.
 
-Whether further disambiguation is needed when the same Registration ID/time
-combination can occur more than once remains a draft/open interface decision.
+The TimingData commit/LogBook boundary is bookkeeping. It does not search or fold
+earlier ADD/REV history to decide whether a requested revocation is meaningful,
+already applied or otherwise valid in business terms. The caller or a higher
+processing/application layer owns that interpretation and supplies the semantic
+registration values to commit. No sequence-reference field is required to express
+the revocation.
 
 The concrete representation of add/revoke, automatic/manual registration and
 time-source metadata belongs to the IDD.
@@ -322,9 +328,10 @@ time of the registration to which it refers.
 :status: D  
 
 IF-05 shall support adding a registration and revoking a previously added
-registration. A revocation shall be represented by a new TimingData record and
-shall refer to the registration being withdrawn using its Registration ID and
-time; it shall not modify the original committed record.
+registration. A revocation shall be represented by a new TimingData record,
+shall repeat the Registration ID and time of the registration being withdrawn
+and shall not modify the original committed record. A manual-registration
+revocation shall preserve the original manual time-source classification.
 :::
 
 :::{ifreq} Committed record immutability  
@@ -369,5 +376,4 @@ before commit.
 
 ## Open points
 
-- start-procedure record type and payload;
-- revoke disambiguation beyond Registration ID + time, if needed.
+- start-procedure record type and payload.
