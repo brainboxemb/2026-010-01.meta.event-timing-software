@@ -48,7 +48,7 @@ activities:
     note: >-
       Defines successful CLOSED->OPEN and OPEN->CLOSED lifecycle TimingData,
       transition time/location capture, NODE_INFO with OPEN/CLOSE code in the
-      development-v1 mapping and the rule that no-op/rejected/failed lifecycle
+      IF-05 v1 mapping and the rule that no-op/rejected/failed lifecycle
       commands do not create committed TimingData.
 
   - id: D03
@@ -112,8 +112,8 @@ activities:
     note: >-
       Define normal IF-03 manual-registration ADD separately from the dev
       accepted-automatic-registration injection. MAN_REG uses client-supplied
-      effective time for both AUTO/MAN classifications; NODE_INFO time uses
-      centisecond precision and newly assigned recTime uses millisecond precision.
+      effective time for both AUTO/MAN classifications; IF-05 v1 `time` uses
+      centisecond precision and `recTime` uses millisecond precision.
 
   - id: D09
     lane: documentation
@@ -234,8 +234,8 @@ activities:
     note: >-
       Completed through Java issue #336 / PR #338. Normal MAN_REG ADD now uses
       IF-03 -> PresentationGateway/TimingNodeProxy with client-supplied AUTO/MAN
-      effective time, NODE_INFO time is centisecond precision, newly assigned
-      recTime is millisecond precision, and the Development Client provides
+      effective time, IF-05 v1 `time` is centisecond precision and `recTime`
+      is millisecond precision, and the Development Client provides
       hundredth-second input/display plus current-open-location/All projection.
 
   - id: A07
@@ -244,10 +244,12 @@ activities:
     state: done
     depends_on: [D09]
     note: >-
-      Completed through Java issue #337 / PR #339. The simple/normal/edge profiles
-      publish observations through SimulatedAntenna -> AntennaManager -> TagProcessor
-      -> TimingNode, the synthetic simulation EventData maps N0001..N2000 to A/B
-      tags, and the Development Client batch driver supports count, range,
+      Completed through Java issue #337 / PR #339 and later aligned with the
+      default/reference EventData identity convention in Java PR #350. The
+      simple/normal/edge profiles publish observations through SimulatedAntenna
+      -> AntennaManager -> TagProcessor -> TimingNode; simulation registrations
+      use RT-A-NNNN with physical tags TT-A-NNNN-1 and TT-A-NNNN-2. The
+      Development Client batch driver supports count, range,
       ascending/seeded-random order, interval and Start/Stop.
 
   - id: V03
