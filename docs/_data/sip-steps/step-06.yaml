@@ -1,0 +1,49 @@
+step: 6
+
+planning_changes:
+  - date: '2026-10-07'
+    change: >-
+      Promote the first SI-02 Draft requirements before selecting GUI technology; implementation still waits for Step-5 V06.
+
+activities:
+  - id: D01
+    lane: documentation
+    kind: documentation
+    state: done
+    note: >-
+      Meta issue #577. Promote the first technology-independent SI-02 Draft
+      requirements for public IF-03 use, endpoint/connection state, connected
+      identity, TimingNode status, stale/disconnected presentation,
+      reconnect/history rebuild, committed registration presentation and
+      lifecycle control outcome handling.
+
+  - id: D02
+    lane: application
+    kind: decision
+    state: next
+    depends_on: [D01]
+    note: >-
+      Select the SI-02 GUI toolkit/runtime, HTTP/WebSocket client approach and
+      packaging/distribution model against the approved Draft requirement slice.
+      The existing JavaFX Development Client is evidence/tooling only and does
+      not preselect the product technology.
+
+  - id: A01
+    lane: application
+    kind: implementation
+    state: blocked
+    depends_on: [D01, D02]
+    note: >-
+      Create the first independently buildable SI-02 skeleton and public IF-03
+      client boundary only after Step-5 V06 manual Development Client evidence is
+      closed. Normal operation must not depend on SI-01 internal classes/files.
+
+  - id: V01
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Verify endpoint selection, connect/status identity, stale/disconnected
+      presentation and reconnect baseline rebuild using fake-client tests plus a
+      real SI-01 public-interface integration path.

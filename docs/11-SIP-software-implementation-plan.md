@@ -866,7 +866,45 @@ Create the first useful **Desktop GUI Application** (SI-02) as an independent AP
 
 - stable IF-03 behaviour from Steps 3-5;
 - representative running SI-01 test data;
-- an explicit GUI technology decision when the step starts.
+- an explicit GUI technology decision before product implementation starts;
+- Step-5 V06 manual Development Client evidence closed before SI-02 implementation begins.
+
+The first SI-02 requirement slice may be prepared while V06 is still open because it
+only promotes already-agreed software-item/interface obligations; it does not start
+product implementation or select GUI technology.
+
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `D01` | Promote first SI-02 Draft requirements |
+| `D02` | Select GUI technology, runtime/client libraries and packaging |
+| `A01` | Create independently buildable SI-02 skeleton and IF-03 client boundary |
+| `V01` | Verify connection/status/stale/reconnect baseline |
+
+### D01 — First SI-02 requirement slice
+
+D01 promotes the technology-independent baseline already implied by UC-001, UC-002,
+UC-008, the SSSD allocation and current IF-03 contract. The first requirements cover:
+
+- public IF-03-only normal operation;
+- endpoint selection and visible connection/synchronisation state;
+- connected application/version identity;
+- current TimingNode status from SI-01;
+- explicit stale/disconnected cached state;
+- reconnect baseline rebuild before declaring the view live;
+- committed registration history/live presentation; and
+- OPEN/CLOSE lifecycle control with explicit/unknown operation outcome handling.
+
+All first-slice requirements start as Draft. D01 deliberately does **not** select JavaFX,
+Swing, web technology, .NET or another product GUI framework.
+
+### D02 — GUI technology and packaging decision
+
+Only after D01 is available for review, select the SI-02 toolkit/runtime, HTTP/WebSocket
+client approach and packaging/distribution model against those requirements. The
+Development Client is evidence and engineering tooling only; its current JavaFX choice
+does not preselect SI-02 technology.
 
 ### Result
 
