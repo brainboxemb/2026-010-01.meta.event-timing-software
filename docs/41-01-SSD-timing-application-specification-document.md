@@ -248,8 +248,10 @@ as committed state.
 
 The development auto-registration control shall be usable only when SI-01
 advertises the corresponding engineering capability as both supported and
-enabled. A client using this control shall not supply final TimingData, source
-sequence, active `LocationId` or source identity.
+enabled. The control shall inject an already-accepted automatic registration at
+the registration boundary after antenna/tag processing. A client using this
+control shall not supply final TimingData, source sequence, active `LocationId`
+or source identity.
 :::
 
 :::{req} Reconnect rebuild before live presentation  
@@ -362,15 +364,18 @@ unavailability of those functions shall not by itself stop an operational Timing
 from accepting and committing local registrations.
 :::
 
-:::{req} Contain antenna startup and runtime failure  
+:::{req} Contain and expose antenna startup and runtime failure  
 :id: SI01-REQ-052  
 :status: D  
-:derived_from: UC-003  
+:derived_from: UC-003, UC-004  
 
-At application startup SI-01 shall attempt a health probe for every configured
-antenna. Failure of one configured antenna shall not by itself prevent health
-probing or later operation of other independently healthy configured antennas.
-The failed antenna shall remain represented as unavailable or in error.
+At application startup SI-01 shall attempt one self-test for every configured antenna.
+The PASS/FAIL result is diagnostic information only. A FAIL shall not by itself prevent
+a later initialization or inventory attempt for that antenna.
+
+Failure of one antenna operation shall not prevent independent operation or later
+attempts of other configured antennas. The latest failed operation shall remain visible
+in antenna status until a later attempt updates that status.
 :::
 
 :::{req} Couple antenna operation to assigned TimingNode lifecycle  
@@ -378,10 +383,12 @@ The failed antenna shall remain represented as unavailable or in error.
 :status: D  
 :derived_from: UC-001, UC-003  
 
-A healthy configured antenna shall provide inventory while at least one TimingNode
-assigned to that antenna is OPEN. When no assigned TimingNode is OPEN, SI-01 shall
-stop inventory for that antenna and release or power down the antenna according to
-its configured installation lifecycle.
+When at least one TimingNode assigned to a configured antenna is OPEN, SI-01 shall
+request inventory from that antenna. A previous self-test FAIL or failed inventory
+attempt shall not by itself suppress this new attempt.
+
+When no assigned TimingNode is OPEN, SI-01 shall stop inventory for that antenna and
+release or power down the antenna according to its configured lifecycle.
 :::
 
 :::{req} Multiplex mutually exclusive antenna inventory  
@@ -390,9 +397,12 @@ its configured installation lifecycle.
 :derived_from: UC-003  
 
 For antennas configured in the same inventory mutual-exclusion group, SI-01 shall
-keep at most one healthy group member inventorying at a time and shall rotate
-inventory between available group members using the configured inventory interval.
-Failure of one group member shall not stop remaining healthy group members.
+keep at most one group member inventorying at a time and shall rotate attempts using
+the configured inventory interval.
+
+If one member fails to prepare or start inventory, SI-01 shall record that failed
+attempt and may continue with another group member. The failed member shall remain
+eligible for a later explicit inventory attempt.
 :::
 
 :::{req} Allow antenna recovery without process restart  
