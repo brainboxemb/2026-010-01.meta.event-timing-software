@@ -94,9 +94,7 @@ vc_order = (
     vc_block.index("— — —"),
     vc_block.index("**Executable test**"),
     vc_block.index("**Purpose**"),
-    vc_block.index("
----
-"),
+    vc_block.index("\\n---\\n"),
 )
 if vc_order != tuple(sorted(vc_order)):
     raise SystemExit(
