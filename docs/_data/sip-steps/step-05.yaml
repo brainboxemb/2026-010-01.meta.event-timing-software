@@ -113,9 +113,11 @@ activities:
     state: blocked
     depends_on: [D05, A01]
     note: >-
-      Qualify/implement the low-allocation counters and snapshot reader defined
-      by D05. Java PR #231 is prototype input and is not accepted completion
-      until its public Domain measurement API is corrected.
+      PR #231 introduced the low-allocation instrumentation and PR #250 aligned
+      component/executor metrics ownership, but D05 is not yet fully realized:
+      remove TimingNode.runtimeMetrics()/TimingNodeTypes.RuntimeMetrics and expose
+      the engineering-only runtime.measurement.RuntimeMeasurementReader snapshots
+      required by SDD-02/SDE-04.
 
   - id: V01
     lane: verification
