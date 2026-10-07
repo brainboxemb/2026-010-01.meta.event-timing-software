@@ -3,10 +3,6 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
-      Hosted V01 evidence is retained; Pi target evidence remains pending.
-      D02 is completed by the lifecycle TimingData contract update and A04 is next.
-  - date: '2026-10-07'
-    change: >-
       T01 completed through Java PR #327; V01 baseline characterization is next.
   - date: '2026-10-06'
     change: >-
