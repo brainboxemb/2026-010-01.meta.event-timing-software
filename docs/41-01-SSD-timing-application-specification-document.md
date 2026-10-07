@@ -1461,6 +1461,14 @@ filtering windows and metrics. It is never used as a persisted/event timestamp.
 when selecting platform-dependent composition defaults.
 :::
 
+:::{arch} PlatformTime  
+:id: PlatformTime  
+
+`PlatformTime` groups the shared absolute timing-time capability below Domain
+and I/O. Runtime selects/composes the concrete source; this grouping owns no
+TimingSystem, TimingNode or device state.
+:::
+
 :::{arch} TimeSource  
 :id: TimeSource  
 
