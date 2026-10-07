@@ -519,6 +519,7 @@ The primary logical view is a responsibility/layer view. It describes semantic o
 :::{arch} TimingApplicationRuntime  
 :id: TimingApplicationRuntime  
 
+:detailed_by: DD-ExecutableComposition  
 `TimingApplicationRuntime` is the top-level Runtime composition and lifecycle
 owner for one running SI-01 process. It constructs and owns the concrete object
 graph from validated effective configuration, including the Domain, I/O,
@@ -529,6 +530,7 @@ of this runtime object, not a separate architectural component.
 :::{arch} PresentationRuntime  
 :id: PresentationRuntime  
 
+:detailed_by: DD-ExecutableComposition  
 `PresentationRuntime` is the Runtime-owned child that contains the concrete
 presentation adapters and their lifecycle. It activates after the core
 Domain/I/O/Application graph is ready and deactivates before those dependencies
@@ -538,6 +540,7 @@ are torn down.
 :::{arch} RuntimeExecutors  
 :id: RuntimeExecutors  
 
+:detailed_by: DD-RuntimeExecution  
 `RuntimeExecutors` owns the physical execution resources used by the logical
 component lanes. It owns worker lifecycle but not Domain/Application semantics.
 :::
@@ -545,6 +548,7 @@ component lanes. It owns worker lifecycle but not Domain/Application semantics.
 :::{arch} RuntimeTimeSources  
 :id: RuntimeTimeSources  
 
+:detailed_by: DD-TimingTimeComposition  
 `RuntimeTimeSources` composes semantic timing `TimeSource` instances from the
 raw platform wall-clock basis. It does not decide TimingSystem/TimingNode ownership;
 the composition root decides which components share one returned source.
@@ -637,6 +641,7 @@ presentation/
 :::{arch} API  
 ---
 id: Api
+detailed_by: DD-ExecutableComposition
 satisfies: >-
   SI01-REQ-031, IF03-REQ-001, IF03-REQ-002,
   IF03-REQ-004
@@ -667,6 +672,7 @@ technology.
 :::{arch} Console  
 :id: Console  
 
+:detailed_by: DD-ExecutableComposition  
 `Console` is the local text presentation interface. It delegates common
 terminal parsing/session behaviour to `SharedTerminalHandler` and reaches
 application behaviour through the shared `PresentationGateway`; it does not own
@@ -676,6 +682,7 @@ application/domain state.
 :::{arch} RemoteShell  
 :id: RemoteShell  
 
+:detailed_by: DD-ExecutableComposition  
 `RemoteShell` is the remote text presentation interface. It shares terminal
 session behaviour with Console through `SharedTerminalHandler` while remaining
 a separate external interface and transport concern.
@@ -684,6 +691,7 @@ a separate external interface and transport concern.
 :::{arch} SharedTerminalHandler  
 :id: SharedTerminalHandler  
 
+:detailed_by: DD-ExecutableComposition  
 `SharedTerminalHandler` owns command parsing and terminal-session behaviour that
 is genuinely shared by Console and RemoteShell. It converges those interfaces on
 the same `PresentationGateway` used by other presentation interfaces.
@@ -723,12 +731,14 @@ application/
 :::{arch} Conductor  
 :id: Conductor  
 
+:detailed_by: DD-CooperativeExecution  
 `Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes. It owns cross-component application coordination that does not belong to one Domain or I/O component. For example, when TimingNode lifecycle determines whether assigned antennas should inventory, Runtime composition wires that relationship through Conductor rather than placing the callback in a Runtime container or device class.
 :::
 
 :::{arch} Configuration control  
 :id: ConfigurationControl  
 
+:detailed_by: DD-RunningConfiguration  
 `ConfigurationControl` is the Application-layer use-case boundary for reading
 running configuration and requesting validated runtime overrides. Presentation
 interfaces call this boundary rather than mutating the Runtime configuration tree
@@ -738,6 +748,7 @@ or generic configuration values directly.
 :::{arch} PresentationGateway  
 ---
 id: PresentationGateway
+detailed_by: DD-PresentationAccess
 satisfies: >-
   SI01-REQ-022, SI01-REQ-030, SI01-REQ-031,
   IF03-REQ-001, IF03-REQ-004
@@ -760,6 +771,7 @@ TimingNode-facing object rather than appearing as context-free methods on the ga
 :::{arch} TimingNodeProxy  
 :id: TimingNodeProxy  
 
+:detailed_by: DD-PresentationAccess  
 `TimingNodeProxy` is the Application-layer boundary object for one addressed
 `TimingNode`. The architectural multiplicity is therefore **1..N TimingNodeProxy
 instances per application composition: one proxy per composed TimingNode**. The default
@@ -872,6 +884,7 @@ cross-aggregate target resolution.
 :::{arch} TagProcessor  
 :id: TagProcessor  
 
+:detailed_by: DD-EventTagProcessing  
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
 the registration semantics needed by the TimingNode. It resolves the semantic
 TagId through EventData before registration-level duplicate suppression and
@@ -906,6 +919,7 @@ the owning TimingNode execution boundary.
 :::{arch} EventData
 :id: EventData
 
+:detailed_by: DD-EventTagProcessing  
 `EventData` is a shared Domain capability parallel to `TimingData`. A
 configured EventData profile defines stable event-specific source/reference
 semantics, including the 1..N relationship between `RegistrationId` and
@@ -1200,6 +1214,7 @@ and use the same engineering identity model as top-level diagram nodes.
 :::{arch} AntennaManager  
 :id: AntennaManager  
 
+:detailed_by: DD-AntennaRuntime  
 `AntennaManager` coordinates 1..N configured Antenna components for one
 TimingSystem. If that TimingSystem has no configured antenna, no AntennaManager
 is required.
@@ -1208,6 +1223,7 @@ is required.
 :::{arch} Antenna  
 :id: Antenna  
 
+:detailed_by: DD-AntennaRuntime  
 `Antenna` is the software-facing RFID antenna/reader role consumed by
 AntennaManager. Concrete vendor or simulated implementations remain behind this
 role.
@@ -1216,6 +1232,7 @@ role.
 :::{arch} PowerDevice  
 :id: PowerDevice  
 
+:detailed_by: DD-AntennaRuntime  
 `PowerDevice` is the optional generic software-facing I/O capability for an
 installation-owned external power channel. AntennaManager may use one to order
 power-on, stabilization and power-off around self-test and normal operation. It remains
@@ -1226,6 +1243,7 @@ is not part of the antenna vendor protocol and may be reusable for other device 
 :::{arch} SimulatedPowerDevice  
 :id: SimulatedPowerDevice  
 
+:detailed_by: DD-AntennaRuntime  
 `SimulatedPowerDevice` is the deterministic built-in implementation used with
 `SimulatedAntenna` to verify powered/unpowered state, stabilization sequencing and
 power-cycle behaviour without physical relay or reader hardware.
@@ -1234,6 +1252,7 @@ power-cycle behaviour without physical relay or reader hardware.
 :::{arch} SimulatedAntenna  
 :id: SimulatedAntenna  
 
+:detailed_by: DD-AntennaRuntime  
 `SimulatedAntenna` is the built-in controllable Antenna implementation used for
 development, simulation and hardware-independent verification.
 :::
@@ -1366,6 +1385,7 @@ The layered view groups Platform into three small technical responsibilities:
 :::{arch} PlatformExecution  
 :id: PlatformExecution  
 
+:detailed_by: DD-CooperativeExecution, DD-RuntimeExecution  
 `PlatformExecution` owns the reusable bounded serial execution primitives
 `SerialExecutor` and `SerialScheduledExecutor`. Cooperative tasks may run on an
 existing ordinary serial lane through `SerialTaskRunner` or on a scheduled serial
@@ -1378,6 +1398,7 @@ These mechanisms own no TimingNode state or domain policy.
 :::{arch} SerialExecutor  
 :id: SerialExecutor  
 
+:detailed_by: DD-RuntimeExecution  
 `SerialExecutor` is one bounded logical serial lane on an ordinary Runtime-owned
 worker. It provides ordered admission/execution without owning component semantics.
 :::
@@ -1385,6 +1406,7 @@ worker. It provides ordered admission/execution without owning component semanti
 :::{arch} SerialScheduledExecutor  
 :id: SerialScheduledExecutor  
 
+:detailed_by: DD-RuntimeExecution  
 `SerialScheduledExecutor` is the scheduled counterpart of `SerialExecutor`.
 It preserves one serial logical lane while allowing delayed admission without sleeping
 the physical worker.
@@ -1393,6 +1415,7 @@ the physical worker.
 :::{arch} SerialTaskRunner  
 :id: SerialTaskRunner  
 
+:detailed_by: DD-CooperativeExecution  
 `SerialTaskRunner` runs cooperative task turns on an existing `SerialExecutor`.
 It supports yield/re-admission through `AGAIN` and completion through `DONE`,
 without adding elapsed-time scheduling.
@@ -1401,6 +1424,7 @@ without adding elapsed-time scheduling.
 :::{arch} ScheduledTaskRunner  
 :id: ScheduledTaskRunner  
 
+:detailed_by: DD-CooperativeExecution  
 `ScheduledTaskRunner` runs cooperative task turns on an existing
 `SerialScheduledExecutor`, including delayed `AFTER` continuation and bounded
 task completion waiting/cancellation.
@@ -1409,6 +1433,7 @@ task completion waiting/cancellation.
 :::{arch} CooperativeTaskController  
 :id: CooperativeTaskController  
 
+:detailed_by: DD-CooperativeExecution  
 `CooperativeTaskController` coalesces wake-ups for one long-lived cooperative
 control task. It owns only run/wake scheduling state; component state remains with
 the controlled task.
@@ -1417,6 +1442,7 @@ the controlled task.
 :::{arch} PlatformEvents  
 :id: PlatformEvents  
 
+:detailed_by: DD-TimingNodeExecution  
 `PlatformEvents` supplies the small typed `Event<T>` / `EventSource<T>` local-event mechanism used for
 post-fact notifications. Event instances remain owned by the component that
 publishes them; Platform does not provide a central event bus.
@@ -1425,6 +1451,7 @@ publishes them; Platform does not provide a central event bus.
 :::{arch} Event  
 :id: Event  
 
+:detailed_by: DD-TimingNodeExecution  
 `Event<T>` is the owned typed local publisher used for synchronous post-fact
 notification within the process.
 :::
@@ -1432,6 +1459,7 @@ notification within the process.
 :::{arch} EventSource  
 :id: EventSource  
 
+:detailed_by: DD-TimingNodeExecution  
 `EventSource<T>` is the subscription-only view exposed by an event owner so
 consumers cannot publish through the source reference.
 :::
@@ -1439,6 +1467,7 @@ consumers cannot publish through the source reference.
 :::{arch} PlatformEnvironment  
 :id: PlatformEnvironment  
 
+:detailed_by: DD-TimingTimeComposition  
 `PlatformEnvironment` is the small process/platform boundary composed by Runtime.
 It provides the raw absolute wall-clock `Clock`, the `MonotonicClock` used for
 elapsed time, timeouts, filtering windows and metrics, and a normalized
@@ -1464,6 +1493,7 @@ when selecting platform-dependent composition defaults.
 :::{arch} PlatformTime  
 :id: PlatformTime  
 
+:detailed_by: DD-TimingTimeComposition  
 `PlatformTime` groups the shared absolute timing-time capability below Domain
 and I/O. Runtime selects/composes the concrete source; this grouping owns no
 TimingSystem, TimingNode or device state.
@@ -1472,6 +1502,7 @@ TimingSystem, TimingNode or device state.
 :::{arch} TimeSource  
 :id: TimeSource  
 
+:detailed_by: DD-TimingTimeComposition  
 `TimeSource` is the shared lower-level capability for semantic absolute timing time.
 It exposes an absolute `Instant` without importing TimingData/domain types. Domain and
 I/O components consume it when they must use the same timing basis.
@@ -1482,6 +1513,7 @@ which components receive the same instance.
 :::{arch} ClockTimeSource  
 :id: ClockTimeSource  
 
+:detailed_by: DD-TimingTimeComposition  
 `ClockTimeSource` is the baseline `TimeSource` implementation backed by the raw
 `PlatformEnvironment` wall clock. It applies no timing correction itself.
 :::
@@ -1496,6 +1528,7 @@ The right-hand side of the layered view separates two technical responsibilities
 :::{arch} Application configuration  
 :id: ApplicationConfiguration  
 
+:detailed_by: DD-RunningConfiguration  
 `ApplicationConfiguration` is the concrete Runtime configuration tree for the
 currently composed SI-01 process. It contains typed branches such as per-TimingNode
 configuration and references Infrastructure configuration values, but it does not
@@ -1505,6 +1538,7 @@ own external YAML parsing or presentation-facing control use-cases.
 :::{arch} Typed configuration values  
 :id: Configuration  
 
+:detailed_by: DD-RunningConfiguration  
 `Configuration<T>` represents the reusable Infrastructure responsibility for
 typed startup/current values, validated runtime override state and post-change
 notification. These mechanics contain no knowledge of TimingNode, TagProcessor,
@@ -1520,6 +1554,7 @@ support such as `BuildIdentity`; it is not the I/O layer.
 :::{arch} Logging  
 :id: Logging  
 
+:detailed_by: DD-LoggingRuntime  
 `Logging` is reusable runtime logging infrastructure owned by the core artifact. Reusable
 application-core/domain code emits records through SLF4J; the default executable selects
 `slf4j-jdk14 -> java.util.logging` and starts the core-provided logging composition.
@@ -1530,6 +1565,7 @@ application or domain state.
 :::{arch} LoggingServer  
 :id: LoggingServer  
 
+:detailed_by: DD-LoggingRuntime  
 `LoggingServer` is the optional external engineering interface for live log records and
 temporary global-level control. The engineering client initiates the connection. This
 logging-specific TCP boundary is separate from the IF-03 API/status/event
@@ -1565,6 +1601,7 @@ inputs.
 
 :::{arch} TimingNode  
 :id: TimingNode  
+:detailed_by: DD-TimingNodeExecution  
 :satisfies: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021  
 
 A `TimingNode` is the independently addressed
@@ -1579,6 +1616,7 @@ TimingData contracts remain centred on `TimingNodeId`.
 :::{arch} LogBook  
 :id: LogBook  
 
+:detailed_by: DD-TimingNodeExecution  
 A `LogBook` is passive state contained by one TimingNode.
 It holds that node's committed immutable `TimingData` values.
 The current design does not introduce a second
@@ -1588,6 +1626,7 @@ logbook-specific timing-record representation.
 :::{arch} TimingData  
 :id: TimingData  
 
+:detailed_by: DD-TimingDataProfiles  
 `TimingData` is the shared Domain capability that realises
 system-owned IF-05 inside SI-01. It exposes the typed
 common `TimingData` semantic interfaces plus configured factory/codec services needed
