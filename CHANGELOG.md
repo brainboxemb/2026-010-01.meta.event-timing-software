@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refactor the IF-05 TimingData IDD as a normative v1 representation design and define fixed timestamp text precision: two fractional digits for `time` and three for `recTime`.
+
 - Rewrite SI-01 requirement wording to remove roadmap/implementation-phase terminology and make observable status/interface behaviour clearer while preserving current requirement maturity and the latest antenna recovery semantics.
 
 - Record completed Step-5 manual-registration/simulated-tag implementation and verification, and align the Development Client SDE with hundredth-second registration input plus separate direct-registration and tag-scenario simulation controls.
