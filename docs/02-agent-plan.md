@@ -308,10 +308,14 @@ through that PR; the remaining client verification is the manual VC-ST1-003
 Development Client run for trash -> REV, the DELETED interpreted projection and
 restart/recovery in the real JavaFX client. D06 (meta issue #564) adds explicit
 SSD-architecture -> detailed-SDD Needs traceability for Object Explorer navigation.
-The active runtime path is now A03 followed by V02 on development-host evidence.
-Runtime optimization choices remain evidence-driven; thread priorities, batching,
-pooling, copied snapshots/caches and extra asynchronous workers are not baseline
-assumptions.
+A03 is complete from the retained V01 development-host evidence: ordinary
+allocation, direct bounded LogBook traversal, the current serial execution model and
+ordinary JVM scheduling remain the baseline; no pool/cache/snapshot/index or
+thread-priority optimization is justified. The active runtime verification is now V02
+(Java issue #334), focused on sustained ingress plus stalled/slow downstream IF-03
+delivery and bounded forward progress. Runtime optimization choices remain
+evidence-driven; batching, pooling, copied snapshots/caches and extra asynchronous
+workers are not baseline assumptions.
 
 Multi-node operation, backoffice reference data and StageTiming remain later
 roadmap work and must not be pulled into Step 5.
