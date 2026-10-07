@@ -336,9 +336,12 @@ platform/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
   environment/
-    PlatformEnvironment.java              wall-clock + monotonic-clock + OS boundary
+    PlatformEnvironment.java              raw wall-clock + monotonic-clock + OS boundary
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
+  time/
+    TimeSource.java                       shared absolute timing-time contract
+    ClockTimeSource.java                  wall-clock-backed baseline implementation
   metrics/
     RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
 ```
@@ -717,10 +720,17 @@ are defined. The Domain command for that implemented action is
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
 
-Absolute and monotonic time come from the composed `PlatformEnvironment`.
-Production uses the system wall clock plus the JVM monotonic source; tests and
-simulation may inject controlled equivalents. TimingSystem does not own a
-separate time-source component.
+The raw absolute wall clock and monotonic elapsed-time source come from
+`PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
+absolute Clock and passes that semantic timing source to components that attach
+or record event time. The current baseline implementation is `ClockTimeSource`;
+tests and simulation may inject controlled equivalents.
+
+TimeSource ownership is deliberately not encoded as TimingSystem or TimingNode
+API. Composition decides its sharing scope. The current single-node Runtime has
+one source; a later TimingSystem composition may pass one shared source to all
+TimingNodes and timestamp-producing I/O providers in that system. This preserves
+one corrected timing basis without creating another raw platform clock.
 
 The I/O package structure is logical; executable composition is per
 `TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
