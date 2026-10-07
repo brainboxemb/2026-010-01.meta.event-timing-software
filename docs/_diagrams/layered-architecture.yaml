@@ -339,7 +339,7 @@ nodes:
   notation: packaging-component
   # Aligned with the Domain column above and fully enclosed by the shallower I/O
   # shoulder.
-  layout: {x: 910, y: 1000, w: 220, h: 235}
+  layout: {x: 890, y: 1000, w: 240, h: 245}
 - id: device-network-io
   object_id: DeviceNetworks
   group: io-layer
@@ -376,9 +376,16 @@ nodes:
   group: platform-layer
   label: "Execution"
   items:
-    - "SerialExecutor / SerialScheduledExecutor"
-    - "SerialTaskRunner / ScheduledTaskRunner"
-    - "CooperativeTaskController"
+    - label: SerialExecutor
+      object_id: SerialExecutor
+    - label: SerialScheduledExecutor
+      object_id: SerialScheduledExecutor
+    - label: SerialTaskRunner
+      object_id: SerialTaskRunner
+    - label: ScheduledTaskRunner
+      object_id: ScheduledTaskRunner
+    - label: CooperativeTaskController
+      object_id: CooperativeTaskController
   kind: platform
   notation: packaging-component
   layout: {x: 55, y: 1332, w: 280, h: 115}
@@ -387,8 +394,10 @@ nodes:
   group: platform-layer
   label: "Events"
   items:
-    - "Event<T>"
-    - "EventSource<T>"
+    - label: "Event<T>"
+      object_id: Event
+    - label: "EventSource<T>"
+      object_id: EventSource
   kind: platform
   notation: packaging-component
   layout: {x: 355, y: 1332, w: 180, h: 95}
@@ -398,8 +407,10 @@ nodes:
   label: "PlatformEnvironment"
   items:
     - "Clock — raw absolute time"
-    - "MonotonicClock — elapsed time"
-    - "OperatingSystem — platform family"
+    - label: "MonotonicClock — elapsed time"
+      object_id: MonotonicClock
+    - label: "OperatingSystem — platform family"
+      object_id: OperatingSystem
   kind: platform
   notation: packaging-component
   layout: {x: 555, y: 1332, w: 300, h: 115}
@@ -408,8 +419,10 @@ nodes:
   group: platform-layer
   label: "Timing time"
   items:
-    - "TimeSource"
-    - "ClockTimeSource"
+    - label: TimeSource
+      object_id: TimeSource
+    - label: ClockTimeSource
+      object_id: ClockTimeSource
   kind: platform
   notation: packaging-component
   layout: {x: 875, y: 1332, w: 250, h: 95}
