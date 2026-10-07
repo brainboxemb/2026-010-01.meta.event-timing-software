@@ -63,6 +63,7 @@ VC-ST1-001  ->  VcSt1_001Test
 VC-ST1-002  ->  VcSt1_002Test
 VC-ST1-004  ->  VcSt1_004Test
 VC-ST1-005  ->  VcSt1_005Test
+VC-ST1-006  ->  VcSt1_006Test
 ```
 
 The case ID is authoritative. The Java class name preserves that ID so the
@@ -272,9 +273,48 @@ This remains a manual running-system verification case. Repository-local
 checklists may mirror it but shall not redefine it.
 
 
-:::{vc} Verify lifecycle TimingData source ordering and recovery  
+:::{vc} Contain TimingData recovery failure and keep diagnostics available  
 ---
 id: VC-ST1-004
+verifies: >-
+  SI01-REQ-048, IF03-REQ-004, IF03-REQ-006, IF03-REQ-008, IF03-REQ-017
+---
+:::
+
+**Executable test**
+
+`system-test/.../VcSt1_004Test.java`
+
+**Purpose**
+
+Verify that a TimingData recovery failure is contained to the affected
+TimingNode while application-level diagnostic interfaces remain available.
+
+**Procedure**
+
+1. Prepare a syntactically valid persisted TimingData record owned by a
+   different NodeId than the configured TimingNode.
+2. Start SI-01 and verify the process remains running.
+3. Query IF-03 status and verify the affected node is `ERROR` with
+   `TIMING_DATA_RECOVERY_FAILED`.
+4. Query the Remote Shell status and verify the same contained problem.
+5. Attempt OPEN and verify an explicit failure response rather than normal
+   acceptance.
+6. Connect/reconnect IF-03 events and verify each session starts with an ERROR
+   status snapshot that retains the problem.
+7. Shut down through the supported control path.
+
+**Expected result**
+
+- invalid recovered ownership does not terminate SI-01;
+- the affected TimingNode remains contained in ERROR;
+- HTTP, WebSocket and Remote Shell diagnostics remain usable;
+- normal state-changing work is rejected explicitly.
+
+
+:::{vc} Verify lifecycle TimingData source ordering and recovery  
+---
+id: VC-ST1-005
 verifies: >-
   IF03-REQ-011, IF03-REQ-014, IF03-REQ-015,
   IF05-REQ-002, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009, IF05-REQ-010
@@ -283,7 +323,7 @@ verifies: >-
 
 **Executable test**
 
-`system-test/.../VcSt1_004Test.java`
+`system-test/.../VcSt1_005Test.java`
 
 **Purpose**
 
@@ -318,7 +358,7 @@ sequence.
 
 :::{vc} Verify append-only registration revoke bookkeeping  
 ---
-id: VC-ST1-005
+id: VC-ST1-006
 verifies: >-
   IF03-REQ-008, IF03-REQ-014, IF03-REQ-015, IF03-REQ-022,
   IF05-REQ-002, IF05-REQ-003, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
@@ -327,7 +367,7 @@ verifies: >-
 
 **Executable test**
 
-`system-test/.../VcSt1_005Test.java`
+`system-test/.../VcSt1_006Test.java`
 
 **Purpose**
 
