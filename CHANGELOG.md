@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define normal IF-03 manual-registration ADD with client-supplied AUTO/MAN time selection, distinguish direct dev auto-reg injection from SimulatedAntenna and simulated-tag profile paths, add repeatable simple/normal/edge simulation profiles and Development Client batch-driving intent, set reference-producer NODE_INFO time to centisecond and recTime to millisecond precision, and clarify the API architecture label as a general remote-client/tools/test interface.
+
 - Specify compact identifiers: TimingNodeId is one character `A`..`Z` or `1`..`9`, AntennaId is one digit `1`..`9`; document concise lifecycle logging and shared terminal `log T|D|I|W|E` runtime level control.
 
 - Define cooperative reusable task execution and the recoverable antenna-control model: startup self-test is diagnostic PASS/FAIL rather than a health gate, later inventory demand may retry after self-test/runtime failure, `AntennaSet` owns composition/group configuration, and Java readability guidance now makes non-trivial callback/lambda intent explicit.
