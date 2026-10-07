@@ -3,9 +3,8 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
-      Added D08/A06/V07 for normal manual-registration API plus timestamp precision,
-      and D09/A07/V08 for explicit simulation-depth separation, simulated-tag profiles
-      and Development Client batch simulation.
+      Added D08/A06/V07 for manual registration/precision and D09/A07/V08 for
+      simulated-tag profiles.
   - date: '2026-10-07'
     change: >-
       Target-hardware evidence moved to Step 9; Step-5 V01 is the development-host baseline and releases A03.
