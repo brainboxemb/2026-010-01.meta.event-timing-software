@@ -295,9 +295,11 @@ the dependent A03 optimization decision remain open.
 
 D02 now defines OPEN/CLOSE TimingData as `NODE_INFO` with OPEN/CLOSE code.
 D03 defines append-only registration revoke using the original `regId + time`,
-with AUTO_REG `REV` and MAN_REG `REV,AUTO` / `REV,MAN`. The current
-non-hardware execution focus is therefore **A04 + A05** through the normal
-TimingNode-owned TimingData sequence/persistence/LogBook path, followed by V05/V06. Runtime optimization choices
+with AUTO_REG `REV` and MAN_REG `REV,AUTO` / `REV,MAN`. A04 and A05 are
+complete on Java main through PR #330: lifecycle and revoke records use the normal
+TimingNode-owned TimingData sequence/persistence/LogBook path, while business
+interpretation of ADD/REV stays outside bookkeeping. The current non-hardware
+execution focus is therefore **V05 + V06**. Runtime optimization choices
 remain evidence-driven; thread priorities, batching, pooling, copied snapshots/caches
 and extra asynchronous workers are not baseline assumptions.
 
