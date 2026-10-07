@@ -25,9 +25,10 @@ defined in `33-05-IDD-timingdata-interchange.md`.
 IF-05 does not define Java classes, provider/factory APIs, worker threads,
 storage classes or UI behaviour. Those are software-item design concerns.
 
-IF-05 does not yet define TimingNode OPEN/CLOSE record types. It does define
-append-only registration revocation semantics, while revoke disambiguation and
-the concrete default/reference mapping remain draft interface/design decisions.
+IF-05 defines TimingNode OPEN/CLOSE lifecycle records in addition to registration
+records. It also defines append-only registration revocation semantics, while revoke
+disambiguation and the concrete default/reference mapping remain draft
+interface/design decisions.
 
 ## Terms and abbreviations
 
@@ -119,6 +120,53 @@ Sequence rules:
 
 How software allocates and durably commits the next sequence is outside IF-05.
 
+## TimingNode lifecycle semantics
+
+IF-05 defines lifecycle TimingData for the two actual TimingNode state
+transitions in the current contract:
+
+- **OPEN** — a successful `CLOSED -> OPEN` transition at the requested
+  Location ID;
+- **CLOSE** — a successful `OPEN -> CLOSED` transition for the currently
+  active Location ID.
+
+Each successful transition creates exactly one committed TimingData record in the
+same Node ID source stream and therefore consumes the next sequence number in
+source order with registrations and other TimingData.
+
+Lifecycle-record values are:
+
+- **Location ID** — for OPEN, the requested Location ID that becomes active; for
+  CLOSE, the Location ID that was active immediately before the transition;
+- **time** — the absolute instant assigned to the lifecycle transition when the
+  ordered TimingNode operation is processed;
+- **Registration ID** — not present;
+- **code** — not required by the current OPEN/CLOSE lifecycle record types.
+
+The lifecycle `time` is the effective transition time. It is distinct from
+optional record-creation metadata such as the default/reference `recTime`.
+
+A state-changing OPEN/CLOSE operation and its lifecycle TimingData commit form
+one externally successful semantic operation. The transition shall not be
+reported as successful, and the changed live state shall not be published as a
+successful state change, unless the corresponding lifecycle TimingData record
+has reached the normal committed-record visibility point.
+
+No lifecycle TimingData is created for an operation that produces no lifecycle
+transition. This includes `ALREADY_OPEN`, `ALREADY_CLOSED`, rejected input and
+an operation that fails before the lifecycle record can be committed.
+
+An OPEN request made while already OPEN does not create another OPEN lifecycle
+record under the current contract, including the currently unresolved case where
+the request carries a different Location ID. If a future interface contract
+allows changing the active Location ID while remaining OPEN, that change requires
+its own explicit TimingData semantics rather than being represented as a false
+OPEN transition.
+
+Lifecycle TimingData is historical source-stream data. Recovery of an earlier
+OPEN/CLOSE record does not by itself restore live TimingNode lifecycle state
+after process restart.
+
 ## Registration semantics
 
 IF-05 defines registration semantics for:
@@ -162,7 +210,9 @@ Registration ID is separate from record identity (Node ID + sequence number).
 ## Time
 
 For the current registration record types, `time` represents the absolute
-instant assigned to that registration.
+instant assigned to that registration. For TimingNode lifecycle records,
+`time` represents the effective OPEN/CLOSE transition instant assigned while
+that ordered lifecycle operation is processed.
 
 The common IF-05 semantic value is therefore an absolute instant even when a
 concrete representation does not carry an absolute timestamp literally. A
@@ -286,8 +336,38 @@ operation that changes the meaning of earlier data shall be represented by a new
 TimingData record.
 :::
 
+
+:::{ifreq} TimingNode lifecycle records  
+:id: IF05-REQ-008  
+:status: D  
+
+A successful `CLOSED -> OPEN` TimingNode transition shall create one OPEN
+lifecycle TimingData record, and a successful `OPEN -> CLOSED` transition
+shall create one CLOSE lifecycle TimingData record in the same Node ID source
+stream as other committed TimingData.
+:::
+
+:::{ifreq} Lifecycle transition values  
+:id: IF05-REQ-009  
+:status: D  
+
+An OPEN/CLOSE lifecycle TimingData record shall identify the Location ID to which
+the transition applies and the absolute effective time of that transition. An
+OPEN record shall capture the Location ID becoming active; a CLOSE record shall
+capture the Location ID that was active immediately before closing.
+:::
+
+:::{ifreq} No lifecycle record without transition  
+:id: IF05-REQ-010  
+:status: D  
+
+A lifecycle operation that does not produce the corresponding TimingNode state
+transition shall not create an OPEN/CLOSE TimingData record. This includes
+idempotent/already-in-state outcomes and operations that are rejected or fail
+before commit.
+:::
+
 ## Open points
 
-- TimingNode OPEN/CLOSE record type and payload;
 - start-procedure record type and payload;
 - revoke disambiguation beyond Registration ID + time, if needed.
