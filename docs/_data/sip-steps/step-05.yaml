@@ -1,6 +1,11 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-07'
+    change: >-
+      A02 accepted on Java main after the low-allocation instrumentation and
+      metrics-ownership cleanup. T01 is the next execution focus so V01 can run
+      before the evidence-driven A03 decision.
   - date: '2026-10-06'
     change: >-
       A01 requalified on Java main; V04 provider bootstrap verified through PR
@@ -110,12 +115,12 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: blocked
+    state: done
     depends_on: [D05, A01]
     note: >-
-      Qualify/implement the low-allocation counters and snapshot reader defined
-      by D05. Java PR #231 is prototype input and is not accepted completion
-      until its public Domain measurement API is corrected.
+      Accepted on Java main: PR #231 introduced the low-allocation instrumentation
+      and PR #250 aligned component/executor metrics ownership. Pull-based snapshots
+      remain engineering diagnostics rather than Domain or IF-03 state.
 
   - id: V01
     lane: verification
