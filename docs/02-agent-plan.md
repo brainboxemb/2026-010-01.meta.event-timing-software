@@ -298,10 +298,13 @@ D03 defines append-only registration revoke using the original `regId + time`,
 with AUTO_REG `REV` and MAN_REG `REV,AUTO` / `REV,MAN`. A04 and A05 are
 complete on Java main through PR #330: lifecycle and revoke records use the normal
 TimingNode-owned TimingData sequence/persistence/LogBook path, while business
-interpretation of ADD/REV stays outside bookkeeping. The current non-hardware
-execution focus is therefore **V05 + V06**. Runtime optimization choices
-remain evidence-driven; thread priorities, batching, pooling, copied snapshots/caches
-and extra asynchronous workers are not baseline assumptions.
+interpretation of ADD/REV stays outside bookkeeping. V05 is complete through Java
+PR #332 and green black-box VC-ST1-005 evidence. Server-side V06 / VC-ST1-006 is
+also green through that PR; the remaining non-hardware verification focus is the
+manual VC-ST1-003 Development Client run for trash -> REV, the DELETED interpreted
+projection and restart/recovery in the real JavaFX client. Runtime optimization
+choices remain evidence-driven; thread priorities, batching, pooling, copied
+snapshots/caches and extra asynchronous workers are not baseline assumptions.
 
 Multi-node operation, backoffice reference data and StageTiming remain later
 roadmap work and must not be pulled into Step 5.
