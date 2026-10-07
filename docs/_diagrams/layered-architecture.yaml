@@ -17,7 +17,7 @@ diagram:
 # - Normal bottom padding after the tallest component is 18 px, matching Presentation/Application.
 # - For shaped layers, "local top" means the visible top edge at that x-position, not the group's raw y origin.
 # - Component width follows content/established columns; do not stretch blocks to fill a layer.
-# - Component height follows displayed content; do not add empty height merely to align bottoms.
+# - Ordinary component blocks use a uniform 50 px height across Presentation, Application, Domain, Runtime and Infrastructure; aggregates/property blocks may differ.
 # Platform uses four compact sibling blocks across the main stack.
 
 groups:
@@ -111,7 +111,7 @@ nodes:
   notation: component
   ports:
     - {id: console, label: "Local console", side: top, position: 0.50}
-  layout: {x: 55, y: 145, w: 200, h: 65}
+  layout: {x: 55, y: 145, w: 200, h: 50}
 - id: remote-shell
   object_id: RemoteShell
   group: presentation-layer
@@ -121,7 +121,7 @@ nodes:
   notation: component
   ports:
     - {id: shell, label: "TCP shell", side: top, position: 0.50}
-  layout: {x: 275, y: 145, w: 220, h: 65}
+  layout: {x: 275, y: 145, w: 220, h: 50}
 - id: web-interface
   object_id: Web
   group: presentation-layer
@@ -130,8 +130,9 @@ nodes:
   kind: presentation
   notation: component
   ports:
-    - {id: web, label: "Web listener", side: top, position: 0.50}
-  layout: {x: 515, y: 145, w: 280, h: 65}
+    - {id: http, label: "HTTP", side: top, position: 0.32}
+    - {id: websocket, label: "WebSocket", side: top, position: 0.72}
+  layout: {x: 515, y: 145, w: 280, h: 50}
 - id: remote-api
   object_id: Api
   group: presentation-layer
@@ -142,7 +143,7 @@ nodes:
   ports:
     - {id: http, label: "HTTP", side: top, position: 0.32}
     - {id: websocket, label: "WebSocket", side: top, position: 0.72}
-  layout: {x: 815, y: 145, w: 300, h: 65}
+  layout: {x: 815, y: 145, w: 300, h: 50}
 - id: shared-terminal
   object_id: SharedTerminalHandler
   group: presentation-layer
@@ -150,7 +151,7 @@ nodes:
   subtitle: "command parsing • terminal session behaviour"
   kind: presentation
   notation: component
-  layout: {x: 55, y: 220, w: 440, h: 60}
+  layout: {x: 55, y: 220, w: 440, h: 50}
 
 # Application keeps entry/proxy on the right-hand vertical axis. ConfigurationControl
 # and Conductor sit lower on the left, leaving clear routing space above them.
@@ -161,7 +162,7 @@ nodes:
   subtitle: "lifecycle / application-wide coordination"
   kind: application
   notation: component
-  layout: {x: 295, y: 425, w: 230, h: 68}
+  layout: {x: 295, y: 425, w: 230, h: 50}
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -169,7 +170,7 @@ nodes:
   subtitle: "application entry / node proxy access"
   kind: application
   notation: component
-  layout: {x: 545, y: 345, w: 220, h: 68}
+  layout: {x: 545, y: 345, w: 220, h: 50}
 - id: timing-node-proxy
   object_id: TimingNodeProxy
   group: application-layer
@@ -177,7 +178,7 @@ nodes:
   subtitle: "commands / queries / events"
   kind: application
   notation: component
-  layout: {x: 545, y: 445, w: 220, h: 68}
+  layout: {x: 545, y: 445, w: 220, h: 50}
 - id: configuration-control
   object_id: ConfigurationControl
   group: application-layer
@@ -185,7 +186,7 @@ nodes:
   subtitle: "query / runtime override use-cases"
   kind: application
   notation: component
-  layout: {x: 55, y: 425, w: 220, h: 68}
+  layout: {x: 55, y: 425, w: 220, h: 50}
 - id: upstream-message-router
   object_id: UpstreamMessageRouter
   group: application-layer
@@ -193,7 +194,7 @@ nodes:
   subtitle: "upstream target resolution / routing"
   kind: application
   notation: component
-  layout: {x: 870, y: 425, w: 260, h: 68}
+  layout: {x: 870, y: 425, w: 260, h: 50}
 
 - id: system-upstream-message-port
   object_id: SystemUpstreamMessagePort
@@ -202,7 +203,7 @@ nodes:
   subtitle: "system-level upstream"
   kind: service
   notation: component
-  layout: {x: 75, y: 667, w: 220, h: 55}
+  layout: {x: 75, y: 667, w: 220, h: 50}
 
 - id: system-status-domain
   object_id: SystemStatus
@@ -211,7 +212,7 @@ nodes:
   subtitle: "complete system overview"
   kind: service
   notation: component
-  layout: {x: 315, y: 667, w: 220, h: 55}
+  layout: {x: 315, y: 667, w: 220, h: 50}
 
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
@@ -220,7 +221,7 @@ nodes:
   subtitle: "node-level upstream"
   kind: service
   notation: component
-  layout: {x: 850, y: 657, w: 240, h: 55}
+  layout: {x: 850, y: 657, w: 240, h: 50}
 
 - id: tag-processor
   object_id: TagProcessor
@@ -279,7 +280,7 @@ nodes:
   subtitle: "TagId • RegistrationId • profile/provider"
   kind: service
   notation: component
-  layout: {x: 95, y: 956, w: 300, h: 60}
+  layout: {x: 95, y: 956, w: 300, h: 50}
 
 - id: timing-data-domain
   object_id: TimingData
@@ -288,7 +289,7 @@ nodes:
   subtitle: "LocationId • RegistrationId • record + codec"
   kind: service
   notation: component
-  layout: {x: 415, y: 956, w: 300, h: 60}
+  layout: {x: 415, y: 956, w: 300, h: 50}
 
 - id: upstream-protocol-domain
   object_id: UpstreamProtocol
@@ -297,7 +298,7 @@ nodes:
   subtitle: "TimingData • sync • ping / pong"
   kind: service
   notation: component
-  layout: {x: 75, y: 732, w: 220, h: 55}
+  layout: {x: 75, y: 732, w: 220, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -445,7 +446,7 @@ nodes:
   subtitle: "composition root • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 115, w: 220, h: 65}
+  layout: {x: 1185, y: 115, w: 220, h: 50}
 - id: presentation-runtime
   object_id: PresentationRuntime
   group: runtime-layer
@@ -453,7 +454,7 @@ nodes:
   subtitle: "presentation adapters • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 190, w: 220, h: 65}
+  layout: {x: 1185, y: 190, w: 220, h: 50}
 - id: runtime-executors
   object_id: RuntimeExecutors
   group: runtime-layer
@@ -461,7 +462,7 @@ nodes:
   subtitle: "physical role workers"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 265, w: 220, h: 65}
+  layout: {x: 1185, y: 265, w: 220, h: 50}
 - id: runtime-time-sources
   object_id: RuntimeTimeSources
   group: runtime-layer
@@ -469,7 +470,7 @@ nodes:
   subtitle: "timing source composition"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 340, w: 220, h: 65}
+  layout: {x: 1185, y: 340, w: 220, h: 50}
 - id: application-configuration-runtime
   object_id: ApplicationConfiguration
   group: runtime-layer
@@ -477,7 +478,7 @@ nodes:
   subtitle: "effective running configuration"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 415, w: 220, h: 70}
+  layout: {x: 1185, y: 415, w: 220, h: 50}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
@@ -485,7 +486,7 @@ nodes:
   subtitle: "live diagnostics • external TCP"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 560, w: 220, h: 85}
+  layout: {x: 1185, y: 560, w: 220, h: 50}
 - id: logging-infra
   object_id: Logging
   group: crosscutting-layer
@@ -493,12 +494,12 @@ nodes:
   subtitle: "levels • console • retained file"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 665, w: 220, h: 85}
+  layout: {x: 1185, y: 665, w: 220, h: 50}
 - id: build-identity
   group: crosscutting-layer
   label: "Build / version identity"
   kind: crosscutting
-  layout: {x: 1185, y: 770, w: 220, h: 80}
+  layout: {x: 1185, y: 770, w: 220, h: 50}
 - id: configuration-infra
   object_id: Configuration
   group: crosscutting-layer
@@ -506,7 +507,7 @@ nodes:
   subtitle: "values • overrides • events"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 870, w: 220, h: 85}
+  layout: {x: 1185, y: 870, w: 220, h: 50}
 edges:
 - from: logging-server
   to: logging-infra

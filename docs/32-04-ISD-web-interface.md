@@ -15,9 +15,10 @@ The interface defines the state, commands, results and ordering that a conformin
 Web client can use. It does not define page layout, widgets, styling or other GUI
 design.
 
-Concrete URL paths, HTTP/WebSocket methods, payload member names and browser
-transport details belong in an optional IF-04 Interface Design Description when
-that realization is designed.
+The current transport shape uses HTTP for request/response operations and
+WebSocket for live browser updates. Concrete URL paths, HTTP methods, WebSocket
+message/envelope details and payload member names belong in an optional IF-04
+Interface Design Description when that realization is designed.
 
 ## Terms and abbreviations
 
@@ -56,7 +57,10 @@ or duplicate lifecycle business rules.
 
 ## Binding and addressing
 
-Each configured TimingNode has one configured Web binding.
+Each configured TimingNode has one configured Web binding. The binding presents
+two externally meaningful protocol surfaces: HTTP request/response and WebSocket
+live updates. These are one Web-interface binding for the TimingNode; showing
+them as two architecture ports does not require two different TCP port numbers.
 
 The Web binding therefore identifies the TimingNode to which IF-04 commands and
 queries apply. A normal IF-04 command does not need to carry a separate
