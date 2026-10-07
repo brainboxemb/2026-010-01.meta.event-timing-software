@@ -26,6 +26,7 @@ TYPE_LABELS = {
     "req": "Requirement",
     "ifreq": "Interface Requirement",
     "arch": "Architecture Element",
+    "design": "Detailed Design",
     "vc": "Verification Case",
 }
 
@@ -36,6 +37,8 @@ RELATION_LABELS = (
     ("satisfies_back", "Satisfied by"),
     ("verifies", "Verifies"),
     ("verifies_back", "Verified by"),
+    ("detailed_by", "Detailed by"),
+    ("detailed_by_back", "Details"),
 )
 
 

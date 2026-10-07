@@ -260,6 +260,33 @@ Private or proprietary source material may remain outside this public repository
 its applicable identity and revision are recorded generically when that can be done
 safely.
 
+## SSD-to-SDD design traceability
+
+Architecture elements defined in an SSD use the Sphinx-Needs `arch` type. When an
+architecture element has substantive Java or implementation design elaboration in an
+SDD, the SSD object may declare `detailed_by` to one or more focused SDD
+`design` objects.
+
+The relationship is directional:
+
+```text
+SSD architecture element
+        |
+        | detailed_by
+        v
+focused SDD detailed-design object
+```
+
+The SSD remains the architecture authority. The SDD `design` object elaborates how one
+focused design responsibility is realised; it must not duplicate or silently redefine the
+SSD architecture. One SDD design object may detail several related SSD architecture
+objects where they are explained together. Do not create one design object per Java class
+only to manufacture traceability.
+
+Use ordinary Markdown links for incidental references. Use `detailed_by` when the
+relationship belongs in the engineering graph and should therefore be visible in the
+Object Explorer with its inverse relation.
+
 ## Requirement maturity
 
 Software and interface requirements use the standard Sphinx-Needs `status` field:

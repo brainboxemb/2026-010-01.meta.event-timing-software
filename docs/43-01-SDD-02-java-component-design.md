@@ -396,6 +396,14 @@ for reimplementing JDK executor internals.
 
 ### Cooperative task execution
 
+:::{design} Cooperative execution and application coordination
+:id: DD-CooperativeExecution
+
+Detailed Java design for cooperative task runners/controllers and the
+Application-layer coordination pattern used by Conductor.
+:::
+
+
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
 complete operation in one executor callback would either monopolise the lane or require
@@ -598,6 +606,14 @@ lane.
 
 ### EventData and TagProcessor realization
 
+:::{design} EventData and TagProcessor realization
+:id: DD-EventTagProcessing
+
+Detailed Java realization of EventData-backed tag resolution, TagProcessor
+filtering/passage state and the boundary into TimingNode registration work.
+:::
+
+
 The Java design consumes the shared `event-data` capability beside the shared
 TimingData capability. `EventData` owns the stable event-profile TagId-to-RegistrationId relationship;
 the top-level `TimingApplicationRuntime.create(...)` API does not accept a loose
@@ -643,6 +659,13 @@ seam exists for deterministic TimingNode execution-boundary tests and is documen
 test-only in code.
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
+
+:::{design} Presentation-facing application access
+:id: DD-PresentationAccess
+
+Detailed Application-layer design for PresentationGateway and its node-scoped
+TimingNodeProxy boundary. Presentation transports remain outside this boundary.
+:::
 
 The application `PresentationGateway` is always composed with a complete
 `TimingNode`; there is no status-only or partially configured production
@@ -727,6 +750,13 @@ are defined. The Domain command for that implemented action is
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
+
+:::{design} Timing-time composition
+:id: DD-TimingTimeComposition
+
+Detailed composition of raw platform time and the shared semantic TimeSource
+used by Domain and I/O timestamp producers.
+:::
 
 The raw absolute wall clock and monotonic elapsed-time source come from
 `PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
@@ -862,6 +892,14 @@ and selected external libraries.
 
 ## Logging dependency placement
 
+:::{design} Runtime logging infrastructure
+:id: DD-LoggingRuntime
+
+Detailed Java design for reusable Logging ownership, retained/live sinks,
+LoggingServer and runtime logging-level control.
+:::
+
+
 Logging follows the same library-versus-executable composition boundary.
 
 ```text
@@ -914,6 +952,14 @@ This keeps provider selection replaceable at the executable boundary while allow
 application core to provide the default JUL logging infrastructure and its configuration contract.
 
 ## Default executable application
+
+:::{design} Executable and presentation composition
+:id: DD-ExecutableComposition
+
+Detailed Java composition/lifecycle design for TimingApplicationRuntime,
+PresentationRuntime and the built-in Console, RemoteShell and API adapters.
+:::
+
 
 `timing-point-app` is the executable consumer of the application-core library.
 
@@ -1130,7 +1176,7 @@ timing-point-core.jar
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ConfigurationControl.java
     Conductor.java
-    logic/
+    framework/
       AbstractConductor.java
       ComponentLifecycleManager.java
     property/
@@ -1212,6 +1258,14 @@ Reusable application behaviour should not migrate into the executable merely bec
 The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; `application.Conductor` owns lifecycle coordination of the application components inside that graph.
 
 ### Running configuration model
+
+:::{design} Running configuration model
+:id: DD-RunningConfiguration
+
+Detailed design for ApplicationConfiguration, reusable typed Configuration
+values and presentation-facing ConfigurationControl use-cases.
+:::
+
 
 The configuration design has three deliberately separate ownership levels:
 
@@ -1434,6 +1488,14 @@ configuration views. Presentation adapters therefore do not read node-owned fiel
 the concrete Runtime configuration tree directly.
 
 ## Antenna input and tag-processing implementation
+
+:::{design} Antenna runtime and device control
+:id: DD-AntennaRuntime
+
+Detailed Java design for AntennaManager, Antenna implementations, optional
+PowerDevice control, inventory lifecycle and SimulatedAntenna behaviour.
+:::
+
 
 The Java antenna boundary separates device lifecycle from decoded observation processing.
 
@@ -2289,6 +2351,14 @@ TagProcessor burst expiry is unrelated to runtime measurement.
 
 ## Runtime thread ownership and naming
 
+:::{design} Runtime execution model
+:id: DD-RuntimeExecution
+
+Detailed Java design for Runtime-owned physical workers and the bounded
+SerialExecutor / SerialScheduledExecutor logical-lane realization.
+:::
+
+
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<qualifier>]`. The prefix makes Timing Point Application threads easy
 to separate from JDK, Maven/JGit and third-party library threads in a debugger, profiler or
@@ -2359,6 +2429,14 @@ thread priority. Java priority is only a scheduler hint and may behave different
 JVM/OS combinations.
 
 ## TimingNode active-object execution and persistence
+
+:::{design} TimingNode execution, LogBook and local events
+:id: DD-TimingNodeExecution
+
+Detailed design for TimingNode ordered execution, durable TimingData commit,
+passive LogBook reads and the local Event/EventSource publication boundary.
+:::
+
 
 The Java design implements the **Active Object pattern** for each TimingNode,
 but does not make `TimingNode` inherit from an `ActiveObject` base class.
@@ -2929,6 +3007,14 @@ measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specif
 Java realization only where a concrete component boundary requires it.
 
 ## Shared TimingData library and concrete profiles
+
+:::{design} TimingData shared contract and profiles
+:id: DD-TimingDataProfiles
+
+Detailed Java design for the shared TimingData API, default profile,
+factory/codec boundary and typed provider mechanism.
+:::
+
 
 Both SI-01 and the Development Client need common TimingData contracts without
 depending on the whole SI-01 application core. The shared artifact therefore

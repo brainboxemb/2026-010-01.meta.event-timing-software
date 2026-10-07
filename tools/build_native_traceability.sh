@@ -8,6 +8,7 @@ cp docs/_sphinx-needs/conf.py bld/sphinx-needs/source/conf.py
 cp docs/_sphinx-needs/schemas.json bld/sphinx-needs/source/schemas.json
 cp docs/30-UC-system-use-cases.md bld/sphinx-needs/source/docs/
 cp docs/41-01-SSD-timing-application-specification-document.md bld/sphinx-needs/source/docs/
+cp docs/43-01-SDD-02-java-component-design.md bld/sphinx-needs/source/docs/
 cp docs/32-03-ISD-application-control-status.md bld/sphinx-needs/source/docs/
 cp docs/32-04-ISD-web-interface.md bld/sphinx-needs/source/docs/
 cp docs/32-05-ISD-timingdata-interchange.md bld/sphinx-needs/source/docs/
@@ -38,6 +39,7 @@ cat > bld/sphinx-needs/source/index.md <<'EOF'
 
 docs/30-UC-system-use-cases
 docs/41-01-SSD-timing-application-specification-document
+docs/43-01-SDD-02-java-component-design
 docs/32-03-ISD-application-control-status
 docs/32-04-ISD-web-interface
 docs/32-05-ISD-timingdata-interchange

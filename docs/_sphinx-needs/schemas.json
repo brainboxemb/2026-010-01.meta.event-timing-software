@@ -65,6 +65,20 @@
           ]
         }
       }
+    },
+    "type-design": {
+      "properties": {
+        "type": {
+          "const": "design"
+        }
+      }
+    },
+    "design-target": {
+      "properties": {
+        "type": {
+          "const": "design"
+        }
+      }
     }
   },
   "schemas": [
@@ -179,6 +193,24 @@
             "items": {
               "local": {
                 "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "arch-detailed-by-design",
+      "message": "Architecture detailed_by links may target detailed-design objects.",
+      "select": {
+        "$ref": "#/$defs/type-arch"
+      },
+      "validate": {
+        "network": {
+          "detailed_by": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/design-target"
               }
             }
           }

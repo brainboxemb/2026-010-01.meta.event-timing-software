@@ -12,7 +12,7 @@ import sys
 import yaml
 
 NEED_BLOCK_RE = re.compile(
-    r"^(?P<fence>```|:::)\{(?:uc|req|ifreq|arch|vc)\}[^\n]*\n"
+    r"^(?P<fence>```|:::)\{(?:uc|req|ifreq|arch|design|vc)\}[^\n]*\n"
     r"(?P<body>.*?)(?=^(?P=fence)\s*$)",
     re.MULTILINE | re.DOTALL,
 )
@@ -124,6 +124,7 @@ def describe(ids: set[str]) -> str:
         "SI requirements": sorted(i for i in ids if re.fullmatch(r"SI\d{2}-REQ-\d{3}", i)),
         "IF requirements": sorted(i for i in ids if re.fullmatch(r"IF\d{2}-REQ-\d{3}", i)),
         "verification": sorted(i for i in ids if i.startswith("VC-")),
+        "detailed design": sorted(i for i in ids if i.startswith("DD-")),
     }
     known = set().union(*groups.values())
     groups["architecture/other"] = sorted(ids - known)

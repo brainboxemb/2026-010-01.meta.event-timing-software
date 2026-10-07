@@ -70,6 +70,17 @@ if provenance["object_count"] != graph["object_count"]:
     raise SystemExit("portal object count does not match engineering graph")
 if provenance["relation_count"] != graph["relation_count"]:
     raise SystemExit("portal relation count does not match engineering graph")
+if "DD-PresentationAccess" not in objects:
+    raise SystemExit("engineering graph missing detailed-design object DD-PresentationAccess")
+if not any(
+    relation.get("type") == "detailed_by"
+    and relation.get("from") == "PresentationGateway"
+    and relation.get("to") == "DD-PresentationAccess"
+    for relation in graph["relations"]
+):
+    raise SystemExit(
+        "engineering graph missing PresentationGateway -> DD-PresentationAccess detailed_by relation"
+    )
 expected_tool_eng_docs = {
     "ref": "v0.9.4",
     "sha": "787b5cc0378f9dedaaee1d0dab49707c21c92804",
@@ -247,7 +258,7 @@ if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explor
     raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
-for object_id in ("TimingNode", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
+for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (

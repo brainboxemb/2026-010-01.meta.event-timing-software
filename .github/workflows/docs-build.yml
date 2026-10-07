@@ -139,6 +139,7 @@ jobs:
             --relation derived_from \
             --relation satisfies \
             --relation verifies \
+            --relation detailed_by \
             --diagrams bld/sphinx-needs/diagrams \
             --source-revision "$SOURCE_REVISION" \
             --out bld/engineering-graph.json \
