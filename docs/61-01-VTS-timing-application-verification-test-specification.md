@@ -62,6 +62,8 @@ Java-identifier-safe form:
 VC-ST1-001  ->  VcSt1_001Test
 VC-ST1-002  ->  VcSt1_002Test
 VC-ST1-004  ->  VcSt1_004Test
+VC-ST1-005  ->  VcSt1_005Test
+VC-ST1-006  ->  VcSt1_006Test
 ```
 
 The case ID is authoritative. The Java class name preserves that ID so the
@@ -139,7 +141,8 @@ observable through a supported black-box state-changing operation.
 id: VC-ST1-002
 verifies: >-
   SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-047,
-  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015
+  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015,
+  IF05-REQ-003, IF05-REQ-008, IF05-REQ-009
 ---
 :::
 
@@ -149,14 +152,13 @@ verifies: >-
 
 **Purpose**
 
-Verify the first public registration slice through a real SI-01 process:
-operational LocationId/lifecycle control, capability-gated engineering
-registration input, committed LogBook/history and live post-commit observation.
+Verify the first public registration slice through a real SI-01 process while
+remaining correct for the current append-only TimingData stream: lifecycle
+OPEN/CLOSE records, one automatic registration, committed LogBook/history and
+live post-commit observation.
 
-The second process run verifies the restart-recovery requirement
-`SI01-REQ-047`. Invalid/corrupt/incomplete recovery cases from
-`SI01-REQ-048` remain component-level persistence/codec verification rather
-than being forced into this happy-path black-box case.
+The second process run verifies restart recovery. Invalid/corrupt/incomplete
+storage recovery remains component-level persistence/codec verification.
 
 **Setup**
 
@@ -169,128 +171,248 @@ than being forced into this happy-path black-box case.
 **Procedure — run 1**
 
 1. Start SI-01 and verify the TimingNode is `CLOSED` with no current LocationId.
-2. Request `OPEN` with synthetic LocationId `24` and verify the node becomes
-   `OPEN` with LocationId `24` as one processed operation.
-3. Submit one node-addressed dev auto-reg request with deterministic `id` and
-   `time`.
-4. Verify the response returns sequence 1 and that the request did not supply
-   source identity or active location.
-5. Query LogBook metadata and verify one committed record with first/last
-   sequence 1.
-6. Fetch a bounded LogBook range and verify the sequence-1 record contains the
-   active LocationId and supplied time.
-7. Verify one `TIMING_DATA_COMMITTED` live event represents the same Node ID +
-   sequence number.
-8. Request `CLOSE` and verify `CLOSED`.
-9. Disconnect and reconnect the WebSocket client.
-10. Verify the new session starts with a current `STATUS_SNAPSHOT`, the
-    committed LogBook record remains queryable and the old record is not emitted
-    again as a new `TIMING_DATA_COMMITTED` event.
-11. Shut the first SI-01 process down through the controlled path.
+2. Request `OPEN` with LocationId `24`.
+3. Verify `TIMING_DATA_COMMITTED` first exposes sequence 1 as
+   `NODE_INFO`, LocationId 24, code `OPEN`; then verify the successful
+   `STATUS_CHANGED` reports `OPEN` at LocationId 24.
+4. Submit one node-addressed dev auto-reg request with deterministic
+   RegistrationId and time. Verify the response returns sequence 2.
+5. Verify one `TIMING_DATA_COMMITTED` event exposes sequence 2 as
+   `AUTO_REG` with code `ADD`, the supplied RegistrationId/time and
+   LocationId 24.
+6. Query LogBook metadata/range and verify source order is sequence 1 OPEN,
+   sequence 2 registration.
+7. Request `CLOSE`. Verify sequence 3 is committed first as
+   `NODE_INFO` / `CLOSE` with LocationId 24, followed by successful
+   `STATUS_CHANGED` to `CLOSED`.
+8. Reconnect the WebSocket client. Verify the new session starts from current
+   `STATUS_SNAPSHOT`, LogBook sequences 1..3 remain queryable and recovered
+   history is not emitted again as new `TIMING_DATA_COMMITTED` events.
+9. Shut the first process down through the controlled path.
 
 **Procedure — run 2 restart recovery**
 
 1. Start a second SI-01 process with the same TimingData persistence file.
-2. Verify the TimingNode starts `CLOSED` with no current operational LocationId.
-3. Verify the LogBook still contains the original sequence-1 record with the
-   same Node ID + sequence number.
-4. Verify the WebSocket session starts with `STATUS_SNAPSHOT` and the recovered
-   record is not emitted as a new `TIMING_DATA_COMMITTED` event.
-5. Shut the second process down through the controlled path.
+2. Verify operational state starts `CLOSED` with no current LocationId.
+3. Verify LogBook contains the original three committed records, in sequence:
+   OPEN, registration ADD, CLOSE.
+4. Verify a new WebSocket session begins with `STATUS_SNAPSHOT` and does not
+   replay those records as new commit events.
+5. Shut the second process down.
 
 **Expected result**
 
-- lifecycle rules gate registration correctly;
-- SI-01, not the client, supplies the committed source/location/sequence context;
-- one accepted registration becomes one committed history record and one live
-  post-commit event;
-- reconnect exposes current state/history without re-emitting the historical
-  record as a new commit;
-- the second process run rebuilds the committed record while operational state
-  starts CLOSED/no-location.
+- lifecycle and registration records share one contiguous NodeId-scoped sequence;
+- OPEN/CLOSE records reach the committed-data visibility point before the
+  corresponding successful status change;
+- the registration remains committed between its surrounding lifecycle records;
+- reconnect/restart exposes committed history without replaying it as new live
+  commits;
+- operational OPEN/CLOSED state is not restored merely from historical records.
 
 :::{vc} Development Client reconnect/resynchronisation integration  
 ---
 id: VC-ST1-003
 verifies: >-
-  SI01-REQ-044, IF03-REQ-016
+  SI01-REQ-044, IF03-REQ-016, IF03-REQ-022,
+  IF05-REQ-006, IF05-REQ-007, IF05-REQ-008
 ---
 :::
 
 **Purpose**
 
-Verify through the real JavaFX Development Client that the current API-first client can
-drive and observe the public TimingNode registration flow without private SI-01 state,
-and can rebuild current status plus bounded TimingData history after reconnect/restart
-before presenting that history as LIVE.
-
-This manual case does not re-prove the server-side lifecycle, registration, LogBook
-persistence or restart recovery already covered by `VC-ST1-002`.
+Verify through the real JavaFX Development Client that the current API-first
+client can drive and interpret the public TimingNode lifecycle/registration
+stream, append a registration REV through the trash action and rebuild current
+status plus bounded TimingData history after reconnect/restart without private
+SI-01 state.
 
 **Setup**
 
-- packaged SI-01 application started with deterministic verification
-  configuration/storage;
-- JavaFX Development Client started independently on Java 17;
+- packaged SI-01 application with deterministic verification storage;
+- JavaFX Development Client independently on Java 17;
 - public IF-03, Remote Shell and LoggingServer boundaries only;
-- one deterministic registration `N0001` committed during the first run.
+- one deterministic automatic registration.
 
 **Procedure**
 
-1. Start SI-01 with empty verification TimingData storage and start the Development Client.
-2. Verify the target host/IP is editable, **Apply target** selects the active host and the
-   stateless API **CHECK** reports the IF-03 HTTP boundary as READY.
-3. Verify the main client tabs are **API**, **Events**, **Device Log**, **Terminal** and
-   **Client Log**, with Device Log and Client Log independent.
-4. Verify the prominent **Timing view** state above Version/Status initially shows
-   **NOT SYNCED — connect Events**. Connect **Events** and verify it changes to
-   **SYNCING**, keeps mutating controls disabled and becomes **LIVE** only after the
-   status/capabilities/LogBook baseline plus buffered live events are reconciled.
-5. Enter Location ID 24 and OPEN the TimingNode. Verify OPEN applies LocationId 24 in the
-   same request; no separate Set Location operation is used.
-6. Enter date `2026-10-01` and time `12:00:00`, then commit deterministic auto-reg
-   `N0001`. Verify the Development Client shows the interpreted time zone beside the
-   field and that the public record contains the correct canonical UTC equivalent. For
-   `Europe/Amsterdam` on this date, `12:00:00` maps to
-   `2026-10-01T10:00:00Z`.
-7. Verify the interpreted **Registrations** view shows one row with normal local clock
-   time, Type `AUTO`, TeamID unresolved (`-`) while no reference-data mapping is
-   available, an empty Code cell, and an icon-only disabled trash action with no text column
-   heading.
-8. Verify sequence 1 appears separately in the technical LogBook with RegistrationId
-   `N0001`, Type `AUTO_REG` and Code `ADD` shown separately, and inspect the
-   complete selected public record/raw response.
-9. Verify one matching `TIMING_DATA_COMMITTED` live event is visible.
-10. Verify Client Log remains usable independently of the SI-01 Device Log connection and
-   that Events, Terminal and Device Log can be connected/disconnected independently.
-11. CLOSE the TimingNode and stop SI-01 through the supported Terminal control.
-12. Keep the verification TimingData file, restart SI-01 and reconnect Events.
-13. Verify the client resynchronises to current CLOSED/no-location status, restores
-    sequence 1 / `N0001` in both the interpreted registration view and bounded technical
-    history, does not present recovered history as a new live commit and merges any
-    history/live overlap by stable record key.
-14. Verify the history view reaches LIVE only after baseline plus buffered live events are
-    reconciled, then shut SI-01 down cleanly.
+1. Start SI-01 with empty verification storage and start the Development Client.
+2. Apply/check the target, connect Events and verify the Timing view reaches
+   LIVE only after status/capabilities/LogBook baseline synchronisation.
+3. OPEN LocationId 24. Verify technical LogBook sequence 1 is
+   `NODE_INFO / OPEN`.
+4. Commit deterministic auto-reg `N0001`. Verify the interpreted
+   Registrations view shows one non-deleted AUTO row and technical LogBook
+   sequence 2 is `AUTO_REG / ADD`.
+5. Verify the trash action is enabled for that interpreted row. Activate it.
+6. Verify sequence 3 is appended as `AUTO_REG / REV` with the same
+   RegistrationId, original registration time and LocationId; sequence 2 remains
+   unchanged in the technical LogBook.
+7. Verify the interpreted row remains present and is displayed as `DELETED`
+   instead of disappearing.
+8. CLOSE the TimingNode and verify sequence 4 is `NODE_INFO / CLOSE`.
+9. Stop SI-01, preserve the verification TimingData file, restart and reconnect
+   Events.
+10. Verify status starts CLOSED/no-location, technical history restores
+    sequences 1..4, the interpreted registration is still DELETED and recovered
+    records are not presented as new live commits.
+11. Verify Device Log and Client Log remain independent and shut down cleanly.
 
 **Expected result**
 
-- the current API-first Development Client reaches the required public SI-01 boundaries;
-- Open carries LocationId and SI-01 remains authoritative for command acceptance;
-- committed TimingData is visible both as an interpreted registration and as immutable
-  technical LogBook history, plus live delivery;
-- Device Log and Client Log remain independent;
-- reconnect/restart is visible as synchronisation rather than immediately LIVE;
-- history is resynchronised before LIVE presentation;
-- duplicate history/live observations collapse to one record;
-- recovered historical data is not presented as a new committed event;
-- the running-system flow uses no private SI-01 state.
+- the Development Client interprets lifecycle records separately from
+  registration rows;
+- trash invokes append-only public revoke rather than destructive deletion;
+- ADD and REV remain independently visible in technical history;
+- the interpreted row folds ADD/REV to DELETED in the client/business view;
+- reconnect/restart rebuilds the same interpretation from committed history.
 
 **Execution**
 
-This is a manual verification case. This VTS procedure is the authority for what must be
-exercised and observed. A repository-local convenience checklist may mirror the procedure
-but shall not redefine it. Run-specific PASS/FAIL, revisions and supporting artifacts are
-retained as verification evidence rather than in this VTS.
+This remains a manual running-system verification case. Repository-local
+checklists may mirror it but shall not redefine it.
+
+
+:::{vc} Contain TimingData recovery failure and keep diagnostics available  
+---
+id: VC-ST1-004
+verifies: >-
+  SI01-REQ-048, IF03-REQ-004, IF03-REQ-006, IF03-REQ-008, IF03-REQ-017
+---
+:::
+
+**Executable test**
+
+`system-test/.../VcSt1_004Test.java`
+
+**Purpose**
+
+Verify that a TimingData recovery failure is contained to the affected
+TimingNode while application-level diagnostic interfaces remain available.
+
+**Procedure**
+
+1. Prepare a syntactically valid persisted TimingData record owned by a
+   different NodeId than the configured TimingNode.
+2. Start SI-01 and verify the process remains running.
+3. Query IF-03 status and verify the affected node is `ERROR` with
+   `TIMING_DATA_RECOVERY_FAILED`.
+4. Query the Remote Shell status and verify the same contained problem.
+5. Attempt OPEN and verify an explicit failure response rather than normal
+   acceptance.
+6. Connect/reconnect IF-03 events and verify each session starts with an ERROR
+   status snapshot that retains the problem.
+7. Shut down through the supported control path.
+
+**Expected result**
+
+- invalid recovered ownership does not terminate SI-01;
+- the affected TimingNode remains contained in ERROR;
+- HTTP, WebSocket and Remote Shell diagnostics remain usable;
+- normal state-changing work is rejected explicitly.
+
+
+:::{vc} Verify lifecycle TimingData source ordering and recovery  
+---
+id: VC-ST1-005
+verifies: >-
+  IF03-REQ-011, IF03-REQ-014, IF03-REQ-015,
+  IF05-REQ-002, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009, IF05-REQ-010
+---
+:::
+
+**Executable test**
+
+`system-test/.../VcSt1_005Test.java`
+
+**Purpose**
+
+Verify V05 through public interfaces: lifecycle records use the normal source
+sequence with registrations, idempotent lifecycle requests create no record,
+restart recovers history and the next successful transition continues the
+sequence.
+
+**Procedure**
+
+1. Start with empty TimingData storage and connect IF-03 events.
+2. OPEN LocationId 24 and verify sequence 1 is `NODE_INFO / OPEN`.
+3. Repeat OPEN while already OPEN. Verify `ALREADY_OPEN`, no new committed
+   lifecycle event and LogBook count remains 1.
+4. Commit one deterministic auto registration and verify sequence 2.
+5. CLOSE and verify sequence 3 is `NODE_INFO / CLOSE`.
+6. Repeat CLOSE. Verify `ALREADY_CLOSED`, no new commit and count remains 3.
+7. Shut down and restart against the same persistence file.
+8. Verify sequences 1..3 recover in exact source order and are not replayed live.
+9. OPEN LocationId 25 and verify the newly committed OPEN record is sequence 4,
+   proving sequence continuity after recovery.
+10. Shut down cleanly.
+
+**Expected result**
+
+- actual CLOSED->OPEN and OPEN->CLOSED transitions each create exactly one
+  lifecycle TimingData record;
+- no-op/already-in-state lifecycle calls create none;
+- registrations and lifecycle records share one contiguous sequence;
+- restart preserves committed order and the next record continues it.
+
+
+:::{vc} Verify append-only registration revoke bookkeeping  
+---
+id: VC-ST1-006
+verifies: >-
+  IF03-REQ-008, IF03-REQ-014, IF03-REQ-015, IF03-REQ-022,
+  IF05-REQ-002, IF05-REQ-003, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
+---
+:::
+
+**Executable test**
+
+`system-test/.../VcSt1_006Test.java`
+
+**Purpose**
+
+Verify V06 server-side revoke semantics through public IF-03 while preserving
+the bookkeeping/business boundary: REV appends history and never rewrites ADD;
+TimingNode/LogBook do not infer an already-deleted business state.
+
+**Procedure**
+
+1. Start with empty TimingData storage and OPEN LocationId 24, producing
+   lifecycle sequence 1.
+2. Commit automatic registration `N0005` at a deterministic time; verify
+   `AUTO_REG / ADD` sequence 2.
+3. POST IF03-OP-011 using the original record family, LocationId,
+   RegistrationId and time.
+4. Verify response sequence 3 and one committed `AUTO_REG / REV` record with
+   the same LocationId, RegistrationId and original time.
+5. Query LogBook and verify the original sequence-2 ADD is unchanged and both
+   records are present.
+6. Deliberately submit the same well-formed revoke again. Verify bookkeeping
+   does not silently fold/deduplicate business state: another REV is appended as
+   sequence 4.
+7. Submit a structurally invalid MAN_REG revoke without required AUTO/MAN
+   time-source classification. Verify an explicit 400-class failure and no new
+   TimingData record.
+8. Restart SI-01 using the same persistence file. Verify sequences 1..4 recover
+   unchanged and are not replayed as new live events.
+9. Shut down cleanly.
+
+**Expected result**
+
+- each accepted revoke is a new immutable REV record;
+- ADD remains untouched;
+- REV repeats the original registration identity values;
+- raw bookkeeping does not decide whether a registration is already deleted;
+- malformed interface input is rejected before commit;
+- restart preserves the append-only history.
+
+**Scope note**
+
+The black-box flow uses AUTO_REG because the current public engineering add
+stimulus is automatic-registration only. MAN_REG `REV,AUTO` / `REV,MAN`
+mapping is verified at codec/domain level until a public manual-add stimulus is
+part of this test profile.
+
 
 ## Evidence
 
