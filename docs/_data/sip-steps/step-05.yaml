@@ -3,10 +3,6 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
-      A04/A05 completed through Java PR #330; V05/V06 are now the next
-      non-hardware verification activities while V01 Pi evidence still blocks A03.
-  - date: '2026-10-07'
-    change: >-
       T01 completed through Java PR #327; V01 baseline characterization is next.
   - date: '2026-10-06'
     change: >-
