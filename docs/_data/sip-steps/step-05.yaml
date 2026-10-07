@@ -143,23 +143,28 @@ activities:
   - id: A03
     lane: application
     kind: decision
-    state: next
+    state: done
     depends_on: [V01]
     note: >-
-      Decide from V01 evidence whether ordinary allocation/direct traversal and
-      the current execution model remain adequate or which specific change is
-      justified. Re-run affected V01 workloads after a design change.
+      V01 development-host evidence justifies keeping ordinary allocation,
+      direct bounded LogBook traversal, the current serial execution model and
+      ordinary JVM scheduling. No object pool, copied snapshot/cache/index or
+      thread-priority change is justified. Unpaced burst rejection at the
+      configured queue bound remains explicit bounded-overload behaviour; target
+      JVM tuning is deferred to Step 9.
 
   - id: V02
     lane: verification
     kind: verification
-    state: planned
+    state: next
     depends_on: [A03]
     note: >-
-      Verify sustained/bursty tag observations and stalled downstream delivery cannot
-      starve required TimingNode work or create unbounded application-owned
-      delivery state. Introduce fairness/backpressure changes only when required
-      by contract or supported by evidence.
+      Java issue #334: verify sustained simulated ingress and stalled/slow
+      downstream IF-03 delivery cannot starve required TimingNode work or create
+      unbounded application-owned delivery state. Existing bounded WebSocket
+      delivery from PR #321 is part of the baseline; introduce further
+      fairness/backpressure changes only if this verification exposes a concrete
+      failure.
 
   - id: A04
     lane: application
