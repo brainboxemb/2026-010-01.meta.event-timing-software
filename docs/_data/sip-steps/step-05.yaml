@@ -96,14 +96,15 @@ activities:
   - id: D07
     lane: documentation
     kind: documentation
-    state: planned
+    state: done
     note: >-
-      Meta issue #567, using shared tool.eng-docs issue #100: clarify the
-      Presentation boundary in Figure SI01-01 with explicit external interface
-      ports on in-process adapters. API gets separate HTTP and WebSocket ports,
-      RemoteShell gets a TCP-shell port and Console a local console port;
-      SharedTerminalHandler and the Application-layer PresentationGateway remain
-      internal and have no external port.
+      Completed through meta issue #567 / PR #572 using released
+      tool.eng-docs v0.10.0 from shared issue #100. Figure SI01-01 now shows
+      component-owned external interface ports: API has separate HTTP and
+      WebSocket ports, RemoteShell has a TCP-shell port, Console a local-console
+      port and Web its current listener boundary. SharedTerminalHandler and the
+      Application-layer PresentationGateway remain internal and have no external
+      port.
 
   - id: T01
     lane: tooling

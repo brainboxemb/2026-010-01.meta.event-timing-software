@@ -640,21 +640,22 @@ inverse link, use schema-validated source/target types and avoid replacing the e
 
 ### D07 — Presentation external-port clarity
 
-D07 is tracked by meta issue #567 and depends on the reusable diagram-port notation
-tracked in `tool.eng-docs` issue #100. Figure SI01-01 must distinguish the external
-interface of each in-process Presentation adapter from its ordinary internal Application
-connection:
+D07 is complete through meta issue #567 / PR #572 using the reusable component-port
+notation released in `tool.eng-docs v0.10.0` from issue #100. Figure SI01-01 now
+distinguishes the external interface of each in-process Presentation adapter from its
+ordinary internal Application connection:
 
 - API shows separate external `HTTP` and `WebSocket` ports;
 - RemoteShell shows one external `TCP shell` port;
-- Console shows one local `Console` interface port;
-- Web shows only transport ports that are actually established by its current contract;
+- Console shows one local-console interface port;
+- Web shows its currently established listener boundary without inventing a transport
+  decomposition that is not yet part of the contract;
 - SharedTerminalHandler and PresentationGateway have no external port;
 - adapter-to-SharedTerminalHandler/PresentationGateway connections remain normal
   in-process relationships.
 
-This visual convention prevents PresentationGateway from being mistaken for an external
-socket-facing service merely because its name contains `Gateway`.
+This prevents PresentationGateway from being mistaken for an external socket-facing
+service merely because its name contains `Gateway`.
 
 ### A03 — Measurement-driven runtime decision
 
