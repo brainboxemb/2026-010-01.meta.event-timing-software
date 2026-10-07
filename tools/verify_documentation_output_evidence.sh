@@ -104,6 +104,8 @@ for execution_id, (capability, action) in expected.items():
         "6b87c723d8687f7751dfb3e67da2013a5781f75a",
         # Immutable v0.9.4 polygon-aware explicit-anchor release.
         "787b5cc0378f9dedaaee1d0dab49707c21c92804",
+        # Immutable v0.10.0 component-boundary port release.
+        "417feac3b9f8b277a544337968087d97b8204a3d",
     }
     if data["tool_eng_docs_sha"] not in allowed_tool_eng_docs_producers:
         raise SystemExit(f"tool.eng-docs revision mismatch: {execution_id}")

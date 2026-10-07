@@ -672,9 +672,12 @@ second production construction mode.
 
 `PresentationGateway` is an Application-layer component named for the adjacent
 Presentation side whose traffic it mediates. Gateway names describe the side of
-the architectural boundary, not the owning package/layer. `UpstreamGateway`
-follows the same naming principle on the I/O/upstream boundary, but owns external
-transport/integration rather than presentation-facing application operations.
+the architectural boundary, not the owning package/layer. `PresentationGateway`
+is entirely in-process: external Console, shell, Web and API endpoints terminate
+at their Presentation adapters, and only those adapters carry external port
+notation in Figure SI01-01. `UpstreamGateway` follows the same directional naming
+principle on the I/O/upstream boundary, but owns external transport/integration
+rather than presentation-facing application operations.
 
 Node-scoped presentation access is exposed through `TimingNodeProxy`.
 `PresentationGateway` owns application-wide presentation information such as

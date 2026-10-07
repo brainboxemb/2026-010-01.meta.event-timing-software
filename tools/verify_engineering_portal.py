@@ -96,8 +96,8 @@ if not any(
         "engineering graph missing PresentationGateway -> DD-PresentationAccess detailed_by relation"
     )
 expected_tool_eng_docs = {
-    "ref": "v0.9.4",
-    "sha": "787b5cc0378f9dedaaee1d0dab49707c21c92804",
+    "ref": "v0.10.0",
+    "sha": "417feac3b9f8b277a544337968087d97b8204a3d",
 }
 if provenance["tool_eng_docs"] != expected_tool_eng_docs:
     raise SystemExit(
