@@ -181,12 +181,15 @@ activities:
   - id: V03
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A01]
     note: >-
-      Restart SI-01 after simulated registrations, rebuild committed history and
-      continue through the same reviewed simulated-input path without sequence
-      reuse or a test-only commit bypass.
+      Completed through Java PR #333. The runtime integration verification
+      commits registrations through SimulatedAntenna -> TagProcessor ->
+      TimingNode -> persistence/LogBook, restarts against the same persisted
+      history, confirms operational OPEN/location state is not restored, then
+      reopens and commits another simulated registration with the recovered
+      source sequence continuing without reuse or a test-only commit bypass.
 
   - id: V04
     lane: verification
