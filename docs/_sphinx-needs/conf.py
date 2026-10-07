@@ -37,6 +37,7 @@ needs_types = [
     {"directive": "req", "title": "Requirement", "prefix": "REQ-", "color": "#FEDCD2", "style": "node"},
     {"directive": "ifreq", "title": "Interface Requirement", "prefix": "IF-", "color": "#F6E5A8", "style": "node"},
     {"directive": "arch", "title": "Architecture Element", "prefix": "ARCH-", "color": "#D9EAF7", "style": "node"},
+    {"directive": "design", "title": "Detailed Design", "prefix": "DD-", "color": "#E7DCF4", "style": "node"},
     {"directive": "vc", "title": "Verification Case", "prefix": "VC-", "color": "#D8E7C5", "style": "node"},
 ]
 
@@ -59,6 +60,13 @@ needs_links = {
         "description": "Verification coverage",
         "incoming": "verified by",
         "outgoing": "verifies",
+        "copy": False,
+        "allow_dead_links": False,
+    },
+    "detailed_by": {
+        "description": "Detailed design elaboration",
+        "incoming": "details",
+        "outgoing": "detailed by",
         "copy": False,
         "allow_dead_links": False,
     },
