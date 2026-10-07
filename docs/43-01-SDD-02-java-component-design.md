@@ -562,11 +562,19 @@ InventoryTask
 only wake the Conductor control task. `Conductor.runStep()` reads the latest authoritative
 `TimingNodeTypes.State` and applies the corresponding cross-component rule.
 
-The remembered TimingNode state in Conductor is input history used to avoid repeating the
-same rule after coalesced wake-ups; it is **not** Conductor state. If future application
-coordination needs several ordered phases or waits, Conductor may then introduce its own
-explicit `Phase`/state-machine. Until that need exists, calling the current Conductor itself
-a state machine would be misleading.
+Conductor does not keep a second copy of TimingNode state or a separate
+"last handled state" marker. `TimingNodeStateProperty` remains the sole holder of the
+tracked TimingNode state. Conductor maps the current value to idempotent desired inventory
+state on `AntennaManager`.
+
+AntennaManager reuses its existing `Setting<Boolean>` for that desired/applied inventory
+state. State-driven updates use an idempotent setting update so a coalesced duplicate wake
+does not become an implicit retry. Explicit repeated inventory requests remain a separate
+retry mechanism and deliberately advance the Setting request revision.
+
+If future application coordination needs several ordered phases or waits, Conductor may
+then introduce its own explicit `Phase`/state-machine. Until that need exists, calling the
+current Conductor itself a state machine would be misleading.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
