@@ -229,24 +229,26 @@ activities:
   - id: A06
     lane: application
     kind: implementation
-    state: planned
+    state: done
     depends_on: [D08]
     note: >-
-      Implement normal manual-registration ADD through IF-03 and the existing
-      PresentationGateway/TimingNodeProxy boundary, apply lifecycle/recorded-time
-      precision policy, and finish Development Client hundredth-second input/display
-      plus current-open-location/All registration projection.
+      Completed through Java issue #336 / PR #338. Normal MAN_REG ADD now uses
+      IF-03 -> PresentationGateway/TimingNodeProxy with client-supplied AUTO/MAN
+      effective time, NODE_INFO time is centisecond precision, newly assigned
+      recTime is millisecond precision, and the Development Client provides
+      hundredth-second input/display plus current-open-location/All projection.
 
   - id: A07
     lane: application
     kind: implementation
-    state: planned
+    state: done
     depends_on: [D09]
     note: >-
-      Implement deterministic simulated-tag profiles above SimulatedAntenna plus a
-      narrow engineering control that starts one profile passage. Add Development
-      Client batch generation by count, RegistrationId range, ascending or seedable
-      pseudo-random order and interval between passage starts.
+      Completed through Java issue #337 / PR #339. The simple/normal/edge profiles
+      publish observations through SimulatedAntenna -> AntennaManager -> TagProcessor
+      -> TimingNode, the synthetic simulation EventData maps N0001..N2000 to A/B
+      tags, and the Development Client batch driver supports count, range,
+      ascending/seeded-random order, interval and Start/Stop.
 
   - id: V03
     lane: verification
@@ -301,19 +303,23 @@ activities:
   - id: V07
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A06]
     note: >-
-      Verify MAN_REG ADD for AUTO/MAN client-time classification, committed
-      timestamp precision and Development Client hundredth-second/current-location
-      behaviour.
+      Completed with the automated verification delivered in Java PR #338:
+      IF-03 MAN_REG ADD covers AUTO and MAN client-time classification, TimingNode
+      tests verify lifecycle/recorded timestamp precision, and Development Client
+      tests cover hundredth-second canonical input plus current-open-location/All
+      registration projection.
 
   - id: V08
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A07]
     note: >-
-      Verify simple/normal/edge simulated-tag profiles through
-      SimulatedAntenna -> AntennaManager -> TagProcessor -> TimingNode, including
-      two tags for one RegistrationId and repeatable seeded batch generation.
+      Completed through Java issue #340 / PR #341. End-to-end runtime verification
+      starts simple, normal and edge through SimulationControl, observes both mapped
+      tags in normal, proves the selected edge variant remains single-tag and confirms
+      all three scenarios commit AUTO_REG only through the full
+      SimulatedAntenna -> AntennaManager -> TagProcessor -> TimingNode path.

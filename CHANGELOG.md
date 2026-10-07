@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Record completed Step-5 manual-registration/simulated-tag implementation and verification, and align the Development Client SDE with hundredth-second registration input plus separate direct-registration and tag-scenario simulation controls.
+
 - Define normal IF-03 manual-registration ADD with client-supplied AUTO/MAN time selection, reference-producer NODE_INFO/recTime precision, and Development Client follow-up scope.
 
 - Distinguish direct accepted-registration injection from SimulatedAntenna input, and define simulated-tag profiles plus repeatable Development Client batch simulation.
