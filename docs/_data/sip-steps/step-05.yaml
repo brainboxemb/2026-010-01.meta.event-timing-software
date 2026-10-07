@@ -205,7 +205,7 @@ activities:
     state: planned
     depends_on: [A04]
     note: >-
-      Execute VC-ST1-004: verify OPEN/CLOSE TimingData in source order with
+      Execute VC-ST1-005: verify OPEN/CLOSE TimingData in source order with
       registrations, persisted restart/recovery and sequence continuity. Verify
       idempotent already-in-state lifecycle requests according to D02 and confirm
       no unintended lifecycle record is committed.
@@ -216,7 +216,7 @@ activities:
     state: planned
     depends_on: [A05]
     note: >-
-      Execute VC-ST1-005 plus the current Development Client case: the original
+      Execute VC-ST1-006 plus the current Development Client case: the original
       ADD remains in the technical LogBook, REV is appended in source order, the
       interpreted row remains visible as DELETED and restart/recovery preserves
       history. Raw bookkeeping does not deduplicate a repeated well-formed REV;
