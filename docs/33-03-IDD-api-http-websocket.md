@@ -64,6 +64,7 @@ GET  /api/v1/configuration
 
 POST /api/v1/node/{id}/open
 POST /api/v1/node/{id}/close
+POST /api/v1/node/{id}/registration/manual
 POST /api/v1/node/{id}/registration/revoke
 
 GET  /api/v1/node/{id}/logbook
@@ -336,6 +337,45 @@ Successful response:
 The returned sequence is the new REV record sequence. The HTTP adapter does not
 search LogBook history to decide whether the supplied registration is currently
 active/deleted; the application/business caller owns that interpretation.
+
+## IF03-OP-012 — Manual registration add
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/registration/manual
+```
+
+Request:
+
+```json
+{
+  "regId": "N0003",
+  "time": "2026-10-01T11:59:58.25Z",
+  "timeSource": "AUTO"
+}
+```
+
+`timeSource` is required and is exactly `AUTO` or `MAN`. `AUTO` means the
+client selected/captured the supplied effective time automatically. `MAN` means
+an operator entered or edited the supplied effective time manually.
+
+The client supplies `time` in both cases. The HTTP adapter does not replace an
+`AUTO`-classified time with server current time. The application maps the request
+to a normal manual-registration ADD operation; TimingNode captures the active
+LocationId and assigns the committed sequence and record-creation time.
+
+Successful response:
+
+```json
+{
+  "seq": 43
+}
+```
+
+The resulting IF-05 reference record is `MAN_REG` with `["ADD","AUTO"]` or
+`["ADD","MAN"]` according to `timeSource`. Normal TimingNode state rules apply,
+including rejection when the node is not open.
 
 ## IF03-OP-008 — LogBook query
 
@@ -649,6 +689,8 @@ Current v1 request parsing rules include:
 - request bodies are bounded by the implementation;
 - configuration SET bodies accept only the documented TagProcessingPolicy members;
 - configuration CLEAR bodies do not accept a `value` object;
+- manual-registration ADD requires `regId`, `time` and `timeSource`, with
+  `timeSource` exactly `AUTO` or `MAN`;
 - durations are represented as integral milliseconds and queue capacity as a positive integer;
 - methods other than the mapping defined above return an explicit failure.
 
@@ -678,6 +720,7 @@ development-v1 design yet.
 | IF03-OP-009 / IF03-REQ-018 | `GET /api/v1/configuration` |
 | IF03-OP-010 / IF03-REQ-019 | `POST /api/v1/node/{id}/configuration/tag-processing` |
 | IF03-OP-011 / IF03-REQ-022 | `POST /api/v1/node/{id}/registration/revoke` |
+| IF03-OP-012 / IF03-REQ-023 | `POST /api/v1/node/{id}/registration/manual` |
 | IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
 
 ## Open design points
