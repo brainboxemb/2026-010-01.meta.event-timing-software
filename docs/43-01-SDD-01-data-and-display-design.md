@@ -193,6 +193,24 @@ means the registration operation has reached its defined commit/visibility point
 for submission-only device ingress there is no synchronous caller waiting for
 that later result.
 
+
+OPEN/CLOSE lifecycle TimingData follows the same ownership and commit boundary.
+For a real `CLOSED -> OPEN` transition, the TimingNode worker captures the
+requested Location ID and lifecycle effective time and prepares the OPEN record.
+For `OPEN -> CLOSED`, it captures the currently active Location ID before the
+state change and prepares the CLOSE record.
+
+The lifecycle command is one ordered operation from the caller's perspective:
+required TimingData persistence succeeds before the operation is exposed as a
+successful state change. After durable append, the worker updates the in-memory
+lifecycle/location state and normal committed history/live-event views in one
+serial turn. A persistence failure therefore does not produce a successful
+`OPENED`/`CLOSED` result or a successful status-change notification.
+
+`ALREADY_OPEN`, `ALREADY_CLOSED` and rejected/failed lifecycle operations
+do not allocate/commit a lifecycle record. There is no second lifecycle-event
+store or lifecycle-specific sequence owner.
+
 Only when the worker is ready to commit does it ask the LogBook for the next
 sequence. Sequence is therefore not assigned when work is placed on the queue.
 
