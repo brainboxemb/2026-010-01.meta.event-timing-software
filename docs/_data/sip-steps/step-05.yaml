@@ -3,11 +3,6 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
-      Refreshed completed Step-5 notes after IF-05 v1 precision cleanup
-      (meta #588 / Java #346) and the default EventData identity convention
-      (meta #589 / Java #350); no activity state or dependency changed.
-  - date: '2026-10-07'
-    change: >-
       Added D08/A06/V07 for manual registration/precision and D09/A07/V08 for
       simulated-tag profiles.
   - date: '2026-10-07'
