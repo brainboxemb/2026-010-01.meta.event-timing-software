@@ -31,11 +31,6 @@ planning_changes:
     change: >-
       Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
       planning/design activity.
-  - date: '2026-10-03'
-    change: >-
-      Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
-      before implementation and verification. Step-4 baseline is unchanged.
-
 activities:
   - id: D01
     lane: documentation
