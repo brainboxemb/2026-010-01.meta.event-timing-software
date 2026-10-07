@@ -205,10 +205,10 @@ activities:
     state: planned
     depends_on: [A04]
     note: >-
-      Verify OPEN/CLOSE TimingData in source order with registrations, including
-      persisted restart/recovery and sequence continuity. Verify rejected or
-      idempotent lifecycle requests according to D02 and confirm no unintended
-      lifecycle record is committed.
+      Execute VC-ST1-004: verify OPEN/CLOSE TimingData in source order with
+      registrations, persisted restart/recovery and sequence continuity. Verify
+      idempotent already-in-state lifecycle requests according to D02 and confirm
+      no unintended lifecycle record is committed.
 
   - id: V06
     lane: verification
@@ -216,7 +216,8 @@ activities:
     state: planned
     depends_on: [A05]
     note: >-
-      Verify revoke through the public API and Development Client: the original
+      Execute VC-ST1-005 plus the current Development Client case: the original
       ADD remains in the technical LogBook, REV is appended in source order, the
-      interpreted row remains visible as DELETED, restart/recovery preserves
-      both records and repeated/invalid revoke follows D03 semantics.
+      interpreted row remains visible as DELETED and restart/recovery preserves
+      history. Raw bookkeeping does not deduplicate a repeated well-formed REV;
+      structurally invalid IF-03 input is rejected before commit.
