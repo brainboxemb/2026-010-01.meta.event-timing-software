@@ -401,8 +401,6 @@ for reimplementing JDK executor internals.
 
 Detailed Java design for cooperative task runners/controllers and the
 Application-layer coordination pattern used by Conductor.
-:::
-
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
@@ -604,6 +602,8 @@ component-local ordered execution with a small, measurement-driven number of phy
 workers. It does not change component ownership or add parallel execution within one serial
 lane.
 
+:::
+
 ### EventData and TagProcessor realization
 
 :::{design} EventData and TagProcessor realization
@@ -611,8 +611,6 @@ lane.
 
 Detailed Java realization of EventData-backed tag resolution, TagProcessor
 filtering/passage state and the boundary into TimingNode registration work.
-:::
-
 
 The Java design consumes the shared `event-data` capability beside the shared
 TimingData capability. `EventData` owns the stable event-profile TagId-to-RegistrationId relationship;
@@ -660,13 +658,13 @@ test-only in code.
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
+:::
+
 :::{design} Presentation-facing application access
 :id: DD-PresentationAccess
 
 Detailed Application-layer design for PresentationGateway and its node-scoped
 TimingNodeProxy boundary. Presentation transports remain outside this boundary.
-:::
-
 The application `PresentationGateway` is always composed with a complete
 `TimingNode`; there is no status-only or partially configured production
 gateway. Presentation tests use complete test fixtures rather than adding a
@@ -751,13 +749,13 @@ are defined. The Domain command for that implemented action is
 multiple hosted/simulated systems locally; it is not automatically serialized
 into TimingData or exposed as an upstream address.
 
+:::
+
 :::{design} Timing-time composition
 :id: DD-TimingTimeComposition
 
 Detailed composition of raw platform time and the shared semantic TimeSource
 used by Domain and I/O timestamp producers.
-:::
-
 The raw absolute wall clock and monotonic elapsed-time source come from
 `PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
 absolute Clock and passes that timing source to components that attach or record
@@ -770,6 +768,14 @@ API. Composition decides its sharing scope. The current single-node Runtime has
 one source; a later TimingSystem composition may pass one shared source to all
 TimingNodes and timestamp-producing I/O providers in that system. This preserves
 one corrected timing basis without creating another raw platform clock.
+
+:::
+
+:::{design} I/O composition and network-device boundary
+:id: DD-IOComposition
+
+Detailed composition of per-TimingSystem I/O ownership and the
+CanNetworkController / NetworkDeviceService boundary.
 
 The I/O package structure is logical; executable composition is per
 `TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
@@ -789,6 +795,14 @@ should not acquire socket, mDNS or transport knowledge merely because it is
 reached through this service. The smart display remains an external client and
 therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
 mirror the hardware name.
+
+:::
+
+:::{design} Domain data, upstream and system-status composition
+:id: DD-DomainIntegration
+
+Detailed Domain composition for LogBook/TimingData ownership, UpstreamProtocol
+routing boundaries and SystemStatus aggregation.
 
 `TimingNode` contains its passive `LogBook` as part of the TimingNode
 aggregate. LogBook keeps 0..N committed `TimingData` values. The current
@@ -824,7 +838,15 @@ An external interface response shape does not require an equally shaped internal
 For example, the status JSON does not by itself require classes named
 `TimingNodeStatusSnapshot` or `TimingNodeStatusModel`.
 
+:::
+
 ## Contract placement
+
+:::{design} Contract and internal dependency placement
+:id: DD-DependencyPlacement
+
+Detailed placement rules for semantic contracts, implementation dependencies
+and the allowed direction between SI-01 packages.
 
 Place contracts with the responsibility that owns their meaning:
 
@@ -890,6 +912,8 @@ validation. This keeps `io.storage` independent from Domain.
 Executable composition may depend on the complete supported application-core surface
 and selected external libraries.
 
+:::
+
 ## Logging dependency placement
 
 :::{design} Runtime logging infrastructure
@@ -897,8 +921,6 @@ and selected external libraries.
 
 Detailed Java design for reusable Logging ownership, retained/live sinks,
 LoggingServer and runtime logging-level control.
-:::
-
 
 Logging follows the same library-versus-executable composition boundary.
 
@@ -951,6 +973,8 @@ Working rules:
 This keeps provider selection replaceable at the executable boundary while allowing the reusable
 application core to provide the default JUL logging infrastructure and its configuration contract.
 
+:::
+
 ## Default executable application
 
 :::{design} Executable and presentation composition
@@ -958,8 +982,6 @@ application core to provide the default JUL logging infrastructure and its confi
 
 Detailed Java composition/lifecycle design for TimingApplicationRuntime,
 PresentationRuntime and the built-in Console, RemoteShell and API adapters.
-:::
-
 
 `timing-point-app` is the executable consumer of the application-core library.
 
@@ -1257,6 +1279,8 @@ Reusable application behaviour should not migrate into the executable merely bec
 
 The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; `application.Conductor` owns lifecycle coordination of the application components inside that graph.
 
+:::
+
 ### Running configuration model
 
 :::{design} Running configuration model
@@ -1264,8 +1288,6 @@ The application core uses one explicit runtime composition boundary. There is no
 
 Detailed design for ApplicationConfiguration, reusable typed Configuration
 values and presentation-facing ConfigurationControl use-cases.
-:::
-
 
 The configuration design has three deliberately separate ownership levels:
 
@@ -1487,6 +1509,8 @@ query/ownership boundary; the configuration control operates on Runtime-supplied
 configuration views. Presentation adapters therefore do not read node-owned fields or
 the concrete Runtime configuration tree directly.
 
+:::
+
 ## Antenna input and tag-processing implementation
 
 :::{design} Antenna runtime and device control
@@ -1494,8 +1518,6 @@ the concrete Runtime configuration tree directly.
 
 Detailed Java design for AntennaManager, Antenna implementations, optional
 PowerDevice control, inventory lifecycle and SimulatedAntenna behaviour.
-:::
-
 
 The Java antenna boundary separates device lifecycle from decoded observation processing.
 
@@ -2166,7 +2188,15 @@ probed/initialized, inventory can be enabled/disabled and deterministic
 It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
 specific capability is deterministic control of the decoded observations it publishes.
 
+:::
+
 ## Registration work and other runtime work
+
+:::{design} Registration workload and runtime measurement
+:id: DD-RuntimeWorkAndMeasurements
+
+Detailed execution-budget and measurement design for registration work,
+background/runtime work, counters, snapshots and engineering access.
 
 The normal automatic-registration flow is:
 
@@ -2349,6 +2379,8 @@ registration admission or TimingData commit behaviour.
 No continuous measurement thread is introduced. Timer/scheduler work used for
 TagProcessor burst expiry is unrelated to runtime measurement.
 
+:::
+
 ## Runtime thread ownership and naming
 
 :::{design} Runtime execution model
@@ -2356,8 +2388,6 @@ TagProcessor burst expiry is unrelated to runtime measurement.
 
 Detailed Java design for Runtime-owned physical workers and the bounded
 SerialExecutor / SerialScheduledExecutor logical-lane realization.
-:::
-
 
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<qualifier>]`. The prefix makes Timing Point Application threads easy
@@ -2428,6 +2458,8 @@ Correct registration behaviour, ordering and overload handling must never depend
 thread priority. Java priority is only a scheduler hint and may behave differently between
 JVM/OS combinations.
 
+:::
+
 ## TimingNode active-object execution and persistence
 
 :::{design} TimingNode execution, LogBook and local events
@@ -2435,8 +2467,6 @@ JVM/OS combinations.
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBook reads and the local Event/EventSource publication boundary.
-:::
-
 
 The Java design implements the **Active Object pattern** for each TimingNode,
 but does not make `TimingNode` inherit from an `ActiveObject` base class.
@@ -3006,6 +3036,8 @@ The cross-cutting bounded-resource, single-writer, immutability and
 measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specifies the
 Java realization only where a concrete component boundary requires it.
 
+:::
+
 ## Shared TimingData library and concrete profiles
 
 :::{design} TimingData shared contract and profiles
@@ -3013,8 +3045,6 @@ Java realization only where a concrete component boundary requires it.
 
 Detailed Java design for the shared TimingData API, default profile,
 factory/codec boundary and typed provider mechanism.
-:::
-
 
 Both SI-01 and the Development Client need common TimingData contracts without
 depending on the whole SI-01 application core. The shared artifact therefore
@@ -3207,7 +3237,15 @@ This artifact contains no SI-01 runtime/application classes and no JavaFX code.
 Its Java API must remain usable from both the Java-8 SI-01 baseline and the
 Java-17 Development Client.
 
+:::
+
 ## Derived consumers
+
+:::{design} Extension and product composition
+:id: DD-ExtensionAndComposition
+
+Detailed design for supported consumer topologies, Java-8 provider discovery,
+public/private composition, artifact extraction and dependency checks.
 
 The application core is deliberately not tied to one executable topology. Plausible consumers include:
 
@@ -3339,6 +3377,8 @@ Useful automated rules may include:
 - the executable consumes `timing-point-core` rather than copying/forking application-core source;
 - the core artifact does not carry a concrete SLF4J provider/backend transitively;
 - an executable runtime contains exactly one intended SLF4J provider.
+
+:::
 
 ## Open detailed-design decisions
 
