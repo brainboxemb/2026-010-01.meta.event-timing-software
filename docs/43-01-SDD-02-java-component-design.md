@@ -387,41 +387,37 @@ seams may use direct execution.
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
 
-### Cooperative scheduled task execution
+### Cooperative task execution
 
-Some I/O operations consist of several ordered steps with explicit waits between them.
-Running the complete operation in one executor callback would either monopolise the serial
-lane or require blocking sleeps. Chaining ad-hoc `CompletableFuture` continuations in each
-component would instead duplicate scheduling, cancellation and failure mechanics.
+Some component operations consist of several ordered steps. Some of those steps only
+need to yield the owning serial lane; others must also wait for elapsed time. Running the
+complete operation in one executor callback would either monopolise the lane or require
+blocking sleeps. Spreading the same control flow over ad-hoc callbacks or
+`CompletableFuture` chains would instead make the component's state machine implicit and
+duplicate wake/coalescing, cancellation and failure mechanics.
 
-For these operations the Java design uses a small **cooperative task** model on top of the
-existing scheduled serial lane:
+The Java design therefore uses a small **cooperative task** model on top of the existing
+serial lanes. The component/task remains the owner of its state machine. Platform execution
+code owns only admission and continuation:
 
 ```text
-Runtime-owned scheduled worker
-        |
-        v
-SerialScheduledExecutor
-        |
-        v
-ScheduledTaskRunner
-        |
-        | run one step
-        v
-CooperativeTask
-        |
-        +-- AGAIN ------> re-admit at the back of the same serial queue
-        |
-        +-- AFTER(t) ---> timer registration ---> re-admit when due
-        |
-        +-- DONE -------> complete the task
+                    CooperativeTask
+                          |
+                          | runStep()
+                          v
+                       TaskStep
+                    /      |      \
+                 AGAIN   AFTER(t)  DONE
+                   |        |        |
+                   |        |        +--> run complete
+                   |        |
+                   |        +--> scheduled continuation
+                   |
+                   +--> re-admit at back of serial lane
 ```
 
 A cooperative task is a small state machine. One call executes one logical step and returns
-a `TaskStep` describing what should happen next. The task owns operation-specific state and
-policy; Platform execution types know only how to run a step and arrange its continuation.
-
-Conceptually:
+a `TaskStep` describing what should happen next:
 
 ```java
 interface CooperativeTask {
@@ -436,52 +432,105 @@ TaskStep.done();
 `AGAIN` is a deliberate yield point. It does **not** call the task recursively and does
 not execute the next state in the same callback. The runner re-admits the task at the back
 of the same bounded serial queue so already admitted work gets an opportunity to run first.
-This preserves responsiveness when multiple active objects share a small number of physical
-workers.
 
-`AFTER(delay)` similarly releases the physical worker. The delay is represented only by a
-timer registration. When the timer becomes due, the task is admitted to the same serial
-lane and continues with its next state. Multi-step tasks must therefore not use
-`Thread.sleep()` to model device stabilization, retry waits or other deliberate delays.
+`AFTER(delay)` additionally needs scheduled execution. It releases the physical worker and
+represents the wait only as a timer registration before the next task step is admitted.
+Multi-step tasks must therefore not use `Thread.sleep()` to model stabilization, retry
+waits or other deliberate delays.
 
-A single task step should be short and bounded where the device API permits that. A blocking
-provider call such as `initialize()` may still occupy the worker for the duration of that
-call. The cooperative model does not pretend that a synchronous provider API is
-asynchronous. If a provider exposes explicit start/poll or start/completion semantics, the
-task should model those as separate states so the lane can be released between checks.
+Two runner forms realize the same task contract:
+
+```text
+SerialExecutor
+    |
+    +-- SerialTaskRunner
+            AGAIN / DONE
+
+SerialScheduledExecutor
+    |
+    +-- ScheduledTaskRunner
+            AGAIN / AFTER(delay) / DONE
+```
+
+A component must not receive a scheduled lane merely because it uses the cooperative task
+model. If the state machine only needs short serial turns, `SerialTaskRunner` uses the
+component's existing `SerialExecutor`. `ScheduledTaskRunner` is reserved for operations
+that actually need delayed continuation or its bounded result/timeout support.
+
+For long-lived component control state machines, external events and child-task completion
+signals are treated as **wake-ups**, not as places to execute transition logic.
+`CooperativeTaskController` owns only the generic scheduling facts:
+
+```text
+event/request/completion
+        |
+        v
+      wake()
+        |
+        +-- no run active ----> start one cooperative run
+        |
+        +-- run active -------> remember one pending wake
+
+run completes
+        |
+        +-- wake pending -----> start one fresh current-state run
+        |
+        +-- otherwise --------> idle
+```
+
+Any number of wake-ups while one run is active therefore coalesce into one later pass. The
+component's `runStep()` reads current authoritative state again; it does not replay stale
+event payloads. Scheduling state such as "run active" and "wake pending" is kept out of the
+component's application/device state.
 
 The responsibilities are deliberately separated:
 
 ```text
 CooperativeTask
-  operation-specific state machine
-  device/application decisions
+  component/operation-specific state machine
+  application/domain/device decisions
   no executor ownership
 
 TaskStep
   next execution decision only:
   AGAIN / AFTER(delay) / DONE
 
-ScheduledTaskRunner
-  run one task step
-  re-admit/yield
-  delayed continuation
-  task completion/cancellation/failure mapping
-  no antenna/domain knowledge
+CooperativeTaskController
+  wake/coalescing lifecycle for a long-lived state machine
+  no application/domain/device decisions
 
-SerialScheduledExecutor
+SerialTaskRunner
+  cooperative turns on an existing SerialExecutor
+  no elapsed-time scheduling
+
+ScheduledTaskRunner
+  cooperative turns on an existing SerialScheduledExecutor
+  delayed continuation
+  bounded result waiting/cancellation/failure mapping
+
+SerialExecutor / SerialScheduledExecutor
   bounded ordered logical lane
-  immediate/delayed admission
-  timer and queue mechanics
-  no multi-step task policy
+  queue/admission mechanics
 
 Runtime
-  physical worker creation, priority and lifecycle
+  physical worker creation, role assignment and lifecycle
 ```
 
-The first concrete consumer is antenna control. For one antenna, startup self-test and
-inventory enable/disable are explicit task state machines rather than
-`CompletableFuture` chains in `AntennaManager`. A representative enable path is:
+A single task step should be short and bounded where the underlying API permits that. A
+blocking provider call may still occupy the worker for the duration of that call; the
+cooperative model does not pretend that a synchronous provider API is asynchronous. If a
+provider exposes explicit start/poll or start/completion semantics, those belong in
+separate task states so the lane can be released between them.
+
+The first concrete consumer is antenna control. `AntennaManager` is itself a cooperative
+control state machine. Startup self-test and inventory work are child tasks. External
+inventory requests and child-task completions only wake the manager; manager
+`runStep()` decides the next transition from current state. The generic controller owns
+wake coalescing rather than `AntennaManager` maintaining local
+`stateMachineRunning/stateMachineWakePending` flags.
+
+`InventoryTask` owns the requested/applied inventory reconciliation, power preparation,
+direct-antenna start/stop and multiplex rotation. A representative enable path is:
 
 ```text
 InventoryTask
@@ -493,36 +542,35 @@ InventoryTask
       |
       +-- AGAIN
       v
-  START_INVENTORY
+  START_DIRECT / START_GROUP
       |
+      +-- AFTER(inventoryInterval) when multiplexing
       v
-  DONE
+  SWITCH / DONE
 ```
 
-The manager owns the requested setting and chooses which operation to start. The task owns
-the physical transition. The runner only executes task steps.
+`Conductor` uses the same model for Application-layer coordination, but does **not** gain a
+scheduled lane. It remains on its normal Application `SerialExecutor` and runs through
+`SerialTaskRunner`. TimingNode property-change events only wake Conductor. The
+cross-component rule is read and applied in `Conductor.runStep()` from the latest
+authoritative tracked state. This keeps future application coordination in one explicit
+state-machine boundary rather than letting event handlers become the implicit state
+machine.
 
-Multiplexing is a second concern and is added only when 2..N antennas share inventory time.
-All participating antennas are first prepared/initialized. After that preparation,
-`AntennaSwitchController` owns only the transfer of active inventory between already-ready
-antennas: stop the current antenna, start the next antenna, then yield or wait for the next
-switch interval. It does not own startup self-test, power preparation or generic task
-scheduling.
+The cooperative model is deliberately optional. A component that only needs one short
+ordered action continues to submit that action directly to its serial lane. TimingNode and
+TagProcessor are not wrapped in a cooperative state-machine abstraction merely for
+uniformity. Introduce the model when it makes ownership, sequencing or elapsed-time waits
+clearer.
 
 A concrete antenna/provider implementation may itself use the same cooperative-task pattern
-when its protocol requires multiple commands, waits, retries or readiness checks. That device
-state machine remains inside the antenna implementation rather than being copied into
+when its protocol requires multiple commands, waits, retries or readiness checks. That
+device state machine remains inside the antenna implementation rather than being copied into
 `AntennaManager`. A device-specific logical lane may be backed by the same Runtime-owned
 shared I/O worker when ordering/isolation requires a separate lane without another physical
 thread. Parent/manager code must observe such child work asynchronously; it must never block
 a shared worker waiting for work that still needs that worker (or the same serial lane) to
-run. The exact antenna-provider execution boundary remains implementation-driven until a
-real provider exists.
-
-The execution naming should preserve this distinction. A state-machine operation is a
-**task**. A low-level scheduled cancellation token is a **registration/handle**, not a task.
-The implementation should therefore avoid using `ScheduledTask` for a mere timer handle
-when `CooperativeTask` is the active operation concept.
+run.
 
 This cooperative model is an implementation technique for the SSD requirement to use
 component-local ordered execution with a small, measurement-driven number of physical
