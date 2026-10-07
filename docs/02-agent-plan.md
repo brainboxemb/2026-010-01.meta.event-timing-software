@@ -282,12 +282,15 @@ A02 is complete on Java main through PR #325: runtime measurements are now read
 through the engineering-only `runtime.measurement.RuntimeMeasurementReader` rather than
 the public TimingNode Domain contract.
 
-The current execution focus is **T01**: add the optional runtime-characterization Maven
-profile/module, deterministic workload driver and retained machine-readable evidence defined
-by SDE-04. T01 enables **V01**, which must run the repeatable baseline workloads before
-**A03** makes any allocation/data-access/execution-model decision. A03 therefore remains
-planned until V01 evidence exists; retain the simple baseline when evidence does not justify
-extra machinery.
+T01 is complete on Java main through PR #327: the optional
+runtime-characterization module provides deterministic steady, burst and growing-history
+workloads plus retained machine-readable JSON evidence.
+
+The current execution focus is **V01**: run the repeatable development-host baseline,
+retain the evidence against the exact source/build revision and inspect queue, latency,
+CPU/thread, allocation/GC and history/query behaviour. Important findings are repeated later
+on Raspberry Pi Zero and Raspberry Pi 3 Model B; development-host results are not target
+evidence. **A03** remains planned until V01 evidence exists.
 
 OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
 (D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
