@@ -376,9 +376,9 @@ nodes:
   group: platform-layer
   label: "Execution"
   items:
-    - "SerialExecutor"
-    - "SerialScheduledExecutor"
-    - "ScheduledTaskRunner"
+    - "SerialExecutor / SerialScheduledExecutor"
+    - "SerialTaskRunner / ScheduledTaskRunner"
+    - "CooperativeTaskController"
   kind: platform
   notation: packaging-component
   layout: {x: 55, y: 1332, w: 280, h: 115}
