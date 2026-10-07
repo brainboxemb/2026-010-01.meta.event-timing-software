@@ -2,7 +2,7 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1500
+  height: 1520
   description: Working responsibility view of the Timing Point Application core and executable composition.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
@@ -86,8 +86,8 @@ groups:
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  # 42 px header/row offset + 140 px Execution block + 18 px bottom padding.
-  layout: {x: 30, y: 1290, w: 1120, h: 200}
+  # 42 px header/row offset + 160 px Execution block + 18 px bottom padding.
+  layout: {x: 30, y: 1290, w: 1120, h: 220}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -98,7 +98,7 @@ groups:
   label: "Infrastructure /\ncross-cutting"
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1170, y: 520, w: 250, h: 970}
+  layout: {x: 1170, y: 520, w: 250, h: 990}
 nodes:
 - id: local-console
   object_id: Console
@@ -388,7 +388,7 @@ nodes:
       object_id: CooperativeTaskController
   kind: platform
   notation: packaging-component
-  layout: {x: 55, y: 1332, w: 280, h: 140}
+  layout: {x: 55, y: 1332, w: 280, h: 160}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
