@@ -3,6 +3,9 @@ step: 5
 planning_changes:
   - date: '2026-10-07'
     change: >-
+      Added D08/A06/V07 for normal manual-registration API plus timestamp/display precision, and D09/A07/V08 for explicit simulation-depth separation, simulated-tag profiles and Development Client batch simulation.
+  - date: '2026-10-07'
+    change: >-
       Target-hardware evidence moved to Step 9; Step-5 V01 is the development-host baseline and releases A03.
   - date: '2026-10-07'
     change: >-
@@ -106,6 +109,31 @@ activities:
       Application-layer PresentationGateway remain internal and have no external
       port.
 
+  - id: D08
+    lane: documentation
+    kind: decision
+    state: done
+    note: >-
+      Defines normal IF-03 manual-registration ADD separately from dev auto-reg
+      injection. The client supplies MAN_REG effective time for both AUTO/MAN
+      classifications; NODE_INFO time is centisecond precision and newly assigned
+      recTime is millisecond precision. API remains the general programmable
+      interface while Web is a separate Presentation adapter that may use the
+      same PresentationGateway operations.
+
+  - id: D09
+    lane: documentation
+    kind: decision
+    state: done
+    depends_on: [D04]
+    note: >-
+      Distinguishes direct accepted-registration injection, SimulatedAntenna
+      observation input and simulated-tag/profile input. SimulatedTag profiles
+      drive observations through SimulatedAntenna and reuse EventData multi-tag
+      relationships. Initial profiles are simple, normal and edge; Development
+      Client batch control owns count, range, ascending/seeded-random selection
+      and interval between registration starts.
+
   - id: T01
     lane: tooling
     kind: setup
@@ -205,6 +233,29 @@ activities:
       TimingNode/LogBook kept as bookkeeping rather than ADD/REV business-state
       interpretation.
 
+  - id: A06
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D08]
+    note: >-
+      Implement IF-03 manual-registration ADD through PresentationGateway /
+      TimingNodeProxy, apply centisecond NODE_INFO and millisecond recTime
+      producer precision, then extend the Development Client with hundredth-second
+      input/display, current-open-location filtering with All, and normal manual
+      registration controls.
+
+  - id: A07
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D09]
+    note: >-
+      Implement the simulated-tag/profile layer above SimulatedAntenna without
+      bypassing AntennaManager or TagProcessor. Add simple/normal/edge profile
+      behaviour and the narrow engineering control needed by the Development
+      Client batch driver.
+
   - id: V03
     lane: verification
     kind: verification
@@ -254,3 +305,24 @@ activities:
       qualification is the manual VC-ST1-003 Development Client run proving the
       trash action, DELETED interpreted projection and restart/recovery in the
       real JavaFX client.
+
+  - id: V07
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A06]
+    note: >-
+      Verify MAN_REG ADD for AUTO/MAN client-time classification, NODE_INFO and
+      recTime producer precision, and Development Client hundredth-second input,
+      current-open-location projection and All view.
+
+  - id: V08
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A07]
+    note: >-
+      Verify simple/normal/edge simulated-tag profiles through
+      SimulatedAntenna -> AntennaManager -> TagProcessor -> TimingNode, including
+      multiple tags for one RegistrationId and repeatable ascending/seeded-random
+      Development Client batches with configured interval.
