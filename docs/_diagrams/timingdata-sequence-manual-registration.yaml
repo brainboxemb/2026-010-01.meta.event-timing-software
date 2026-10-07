@@ -15,8 +15,8 @@ participants:
   - {id: store, label: "TimingDataStore\nfile persistence / recovery", kind: storage}
 
 messages:
-  - {from: client, to: api, label: "register(identity, time)", kind: call}
-  - {from: api, to: node, label: "register(identity, time)", kind: call}
+  - {from: client, to: api, label: "register(regId, time, timeSource)", kind: call}
+  - {from: api, to: node, label: "register(regId, time, timeSource)", kind: call}
   - {from: node, to: node, label: "queue internal work + Future", kind: async}
   - {from: node, to: node, label: "worker validates against current TimingNode state", kind: call}
   - {from: node, to: logbook, label: "nextSequence()", kind: call}
