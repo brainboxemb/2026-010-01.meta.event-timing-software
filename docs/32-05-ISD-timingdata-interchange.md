@@ -186,10 +186,11 @@ Registration semantics shall support:
 - revoking a previously added registration.
 
 A revocation is represented by a new TimingData record and does not modify the
-original committed registration record. The revocation record repeats the
-Registration ID and time of the registration being withdrawn. A manual
-registration revocation also preserves whether the original manual registration
-used system-assigned or operator-entered time.
+original committed registration record. The revocation record repeats the original Location ID, Registration ID and time
+of the registration being withdrawn. Registration ID + time remain the semantic
+registration reference; Location ID is repeated record context rather than an
+additional matching key. A manual registration revocation also preserves whether
+the original manual registration used system-assigned or operator-entered time.
 
 The TimingData commit/LogBook boundary is bookkeeping. It does not search or fold
 earlier ADD/REV history to decide whether a requested revocation is meaningful,
