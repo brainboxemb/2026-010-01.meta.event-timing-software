@@ -1,6 +1,9 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-07'
+    change: >-
+      A02 completed through Java PR #325; T01 is now active before V01/A03.
   - date: '2026-10-06'
     change: >-
       A01 requalified on Java main; V04 provider bootstrap verified through PR
@@ -24,10 +27,6 @@ planning_changes:
   - date: '2026-10-02'
     change: >-
       Narrowed Step 5 to one-TimingNode simulated antenna input and runtime behaviour.
-  - date: '2026-10-02'
-    change: >-
-      Added explicit runtime performance and memory engineering so scheduling,
-      allocation and data-access choices are measurement-driven.
   - date: '2026-10-03'
     change: >-
       Assigned TimingNode OPEN/CLOSE TimingData to Step 5; D02 updates IF-05/IDD
@@ -110,14 +109,12 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: blocked
+    state: done
     depends_on: [D05, A01]
     note: >-
-      PR #231 introduced the low-allocation instrumentation and PR #250 aligned
-      component/executor metrics ownership, but D05 is not yet fully realized:
-      remove TimingNode.runtimeMetrics()/TimingNodeTypes.RuntimeMetrics and expose
-      the engineering-only runtime.measurement.RuntimeMeasurementReader snapshots
-      required by SDD-02/SDE-04.
+      Completed through Java PR #325: runtime measurement moved out of
+      TimingNode/TimingNodeTypes into runtime.measurement.RuntimeMeasurementReader
+      with component-owned counters and pull-based snapshots required by D05.
 
   - id: V01
     lane: verification
