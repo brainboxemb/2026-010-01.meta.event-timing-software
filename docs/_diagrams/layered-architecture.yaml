@@ -421,7 +421,7 @@ nodes:
   subtitle: "composition root • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 125, w: 220, h: 75}
+  layout: {x: 1185, y: 115, w: 220, h: 65}
 - id: presentation-runtime
   object_id: PresentationRuntime
   group: runtime-layer
@@ -429,7 +429,7 @@ nodes:
   subtitle: "presentation adapters • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 215, w: 220, h: 75}
+  layout: {x: 1185, y: 190, w: 220, h: 65}
 - id: runtime-executors
   object_id: RuntimeExecutors
   group: runtime-layer
@@ -437,7 +437,15 @@ nodes:
   subtitle: "physical role workers"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 305, w: 220, h: 75}
+  layout: {x: 1185, y: 265, w: 220, h: 65}
+- id: runtime-time-sources
+  object_id: RuntimeTimeSources
+  group: runtime-layer
+  label: "RuntimeTimeSources"
+  subtitle: "timing source composition"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1185, y: 340, w: 220, h: 65}
 - id: application-configuration-runtime
   object_id: ApplicationConfiguration
   group: runtime-layer
@@ -445,7 +453,7 @@ nodes:
   subtitle: "effective running configuration"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 395, w: 220, h: 85}
+  layout: {x: 1185, y: 415, w: 220, h: 70}
 - id: logging-server
   object_id: LoggingServer
   group: crosscutting-layer
