@@ -14,6 +14,7 @@
     if (type === "derived_from") return "derived from this";
     if (type === "satisfies") return "satisfies this";
     if (type === "verifies") return "verifies this";
+    if (type === "detailed_by") return "details this";
     return label + " this";
   }
 
