@@ -1306,6 +1306,7 @@ presentation/
     api/
       HttpEndpoint
       WebSocketEndpoint
+      WebSocketOutboundDelivery
       MessageWriter
   common/
     terminal/
@@ -1376,6 +1377,15 @@ The local class names deliberately omit the `Api` prefix because the enclosing `
 The WebSocket transport uses `Java-WebSocket 1.6.0` in the reusable
 application core and keeps the JDK HTTP transport unchanged rather than replacing
 both transports with a larger combined stack.
+
+`WebSocketOutboundDelivery` owns only per-client transport backlog bookkeeping.
+`WebSocketEndpoint` still owns connection/event semantics. The delivery helper does not
+buffer event values itself: it counts sends while the Java-WebSocket connection still
+reports buffered data. After 32 such sends without an observed full drain, it refuses the
+next event and requests close code 1013. This bounds application-driven growth of the
+library's otherwise unbounded outbound queue without blocking, retrying or moving
+backpressure onto TimingNode. Reconnect recovery remains authoritative through
+`STATUS_SNAPSHOT` plus LogBook queries.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 

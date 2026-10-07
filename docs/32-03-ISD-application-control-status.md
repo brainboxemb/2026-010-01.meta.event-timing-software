@@ -489,6 +489,19 @@ view live.
 :::
 
 
+:::{ifreq} Bounded live-event delivery  
+:id: IF03-REQ-021  
+:status: D  
+:derived_from: UC-009, UC-011  
+
+IF03-OP-003 shall not require unbounded server-side event accumulation to preserve a
+slow client's live stream. When a client cannot keep up within the bounded live-delivery
+capacity of the active realization, SI-01 may terminate that live connection. The client
+shall recover through the normal reconnect/current-status and committed-LogBook recovery
+semantics of IF03-REQ-006 and IF03-REQ-016.
+:::
+
+
 :::{ifreq} Runtime configuration query  
 :id: IF03-REQ-018  
 :status: D  
