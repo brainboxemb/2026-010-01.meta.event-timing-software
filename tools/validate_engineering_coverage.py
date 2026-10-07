@@ -124,6 +124,7 @@ def describe(ids: set[str]) -> str:
         "SI requirements": sorted(i for i in ids if re.fullmatch(r"SI\d{2}-REQ-\d{3}", i)),
         "IF requirements": sorted(i for i in ids if re.fullmatch(r"IF\d{2}-REQ-\d{3}", i)),
         "verification": sorted(i for i in ids if i.startswith("VC-")),
+        "detailed design": sorted(i for i in ids if i.startswith("DD-")),
     }
     known = set().union(*groups.values())
     groups["architecture/other"] = sorted(ids - known)
