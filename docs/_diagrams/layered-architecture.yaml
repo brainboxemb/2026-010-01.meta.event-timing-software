@@ -316,11 +316,11 @@ nodes:
               object_id: SimulatedAntenna
             - label: VendorAntenna
               object_id: VendorAntenna
-    - label: "AntennaPowerControl (0..N)"
-      object_id: AntennaPowerControl
+    - label: "PowerDevice (0..N)"
+      object_id: PowerDevice
       items:
-        - label: SimulatedAntennaPowerControl
-          object_id: SimulatedAntennaPowerControl
+        - label: SimulatedPowerDevice
+          object_id: SimulatedPowerDevice
     - label: Display
       object_id: Display
       items:
@@ -399,9 +399,10 @@ nodes:
   items:
     - "Clock — absolute time"
     - "MonotonicClock — elapsed time"
+    - "OperatingSystem — platform family"
   kind: platform
   notation: packaging-component
-  layout: {x: 555, y: 1332, w: 300, h: 95}
+  layout: {x: 555, y: 1332, w: 300, h: 115}
 
 - id: timing-application-runtime
   object_id: TimingApplicationRuntime
