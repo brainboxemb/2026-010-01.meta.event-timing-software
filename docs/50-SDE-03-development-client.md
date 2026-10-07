@@ -209,11 +209,15 @@ decisions; this SDE does not turn them into an SI-01 public interface.
 
 ### Tab structure
 
-The reviewed tab order is:
+The reviewed top-level tab order is:
 
 ```text
-API | Events | Device Log | Terminal | Client Log
+API | Events | Device Log | Client Log
 ```
+
+The Remote Terminal remains a separately connected external boundary, but its
+interactive terminal surface is embedded as a tab in the API Timing workbench
+rather than occupying a separate top-level application tab.
 
 **API** is the first tab and primary work surface. It combines the useful parts of the
 current Status and Timing tabs:
@@ -238,7 +242,8 @@ SI-01 `LoggingServer` and has its own **current level** and **set level** contro
 temporary SI-01 runtime level.
 
 **Terminal** remains the Remote Shell client. Its connection is controlled from the
-target bar; opening the Terminal tab is not itself a connection side effect.
+target bar; selecting the workbench **Terminal** tab is not itself a connection side
+effect.
 
 **Client Log** is the final top-level tab. It shows the Development Client's own runtime
 log and has independent **current level** and **set level** controls for the local runtime
@@ -323,17 +328,26 @@ response/error remains available for diagnosis.
 
 ### Timing workbench layout
 
-The current Timing workbench separates **operator-oriented interpretation** from the
-immutable technical history:
+The current Timing workbench separates controls, interpreted registration data and
+technical diagnostics in a two-column/two-row layout:
 
-- the workbench uses an explicit approximately 50/50 horizontal split rather than
-  relying on preferred-width hints;
-- both columns are explicitly top-aligned;
-- the left column starts with **API / application identity**, followed by the selected
-  TimingNode state, Open/Close controls and registration input;
-- the right column starts at that same vertical position with **Registrations** and shows
-  **LogBook / committed TimingData** below it;
-- there is no separate full-width identity panel above the two-column workbench.
+- the compact Timing-view status row above the workbench shows synchronisation state,
+  selected TimingNode, node state and LocationId;
+- the **upper-left** contains one tab set:
+  **TimingNode | Registration | Simulation | Terminal**;
+- the **upper-right** contains the compact **API / application identity** row directly
+  above **Registrations**;
+- the **lower-left** keeps **Device Log** and **Client Log** simultaneously visible,
+  stacked vertically rather than hidden behind another tab set;
+- the **lower-right** contains **LogBook / committed TimingData**;
+- the workbench keeps an approximately 50/50 horizontal split while allowing the lower
+  diagnostic row to use more vertical space than the compact input row;
+- **Raw response / selected record** remains available below the workbench but is
+  collapsed by default because it is a diagnostic detail rather than the primary view.
+
+The full top-level Device Log and Client Log tabs remain available for focused inspection.
+The embedded lower-left views mirror those logs so timing work and recent diagnostics can
+be seen at the same time.
 
 The two right-hand views are deliberately not duplicates. **Registrations** is a
 presentation projection intended to resemble normal timing use. Its compact columns are:
