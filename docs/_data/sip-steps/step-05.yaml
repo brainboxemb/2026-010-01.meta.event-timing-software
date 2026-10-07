@@ -202,13 +202,14 @@ activities:
   - id: V05
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A04]
     note: >-
-      Execute VC-ST1-005: verify OPEN/CLOSE TimingData in source order with
-      registrations, persisted restart/recovery and sequence continuity. Verify
-      idempotent already-in-state lifecycle requests according to D02 and confirm
-      no unintended lifecycle record is committed.
+      Completed through Java PR #332. VC-ST1-005 passed in black-box system
+      verification: OPEN/CLOSE lifecycle records share source order with
+      registrations, already-in-state requests commit no lifecycle record,
+      restart recovers committed history without live replay and the next OPEN
+      continues the sequence.
 
   - id: V06
     lane: verification
@@ -216,8 +217,10 @@ activities:
     state: planned
     depends_on: [A05]
     note: >-
-      Execute VC-ST1-006 plus the current Development Client case: the original
-      ADD remains in the technical LogBook, REV is appended in source order, the
-      interpreted row remains visible as DELETED and restart/recovery preserves
-      history. Raw bookkeeping does not deduplicate a repeated well-formed REV;
-      structurally invalid IF-03 input is rejected before commit.
+      Server-side VC-ST1-006 is green through Java PR #332: ADD remains
+      immutable, accepted REV records append in source order, repeated
+      well-formed raw revoke is not business-deduplicated, malformed IF-03 input
+      is rejected before commit and restart preserves history. Remaining
+      qualification is the manual VC-ST1-003 Development Client run proving the
+      trash action, DELETED interpreted projection and restart/recovery in the
+      real JavaFX client.
