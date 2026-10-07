@@ -519,6 +519,25 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 After connection SI-01 sends `STATUS_SNAPSHOT` before the client relies on subsequent
 change events.
 
+### Slow-client / outbound backlog policy
+
+The development-v1 Java-WebSocket realization does not add a second unbounded
+application event queue. Each connected client has one small transport-local counter that
+tracks outbound event sends while Java-WebSocket still reports buffered data.
+
+The current safety bound is **32 event sends without observing the connection's outbound
+buffer fully drain**. The 33rd event is not added to the client backlog. SI-01 requests a
+WebSocket close with code **1013 (Try Again Later)** and reason
+`IF-03 outbound backlog limit reached`.
+
+This is intentionally a conservative guard, not an exact measurement of the library's
+internal queue depth. A fully drained connection resets the counter. No event listener
+waits for socket drain, retries delivery or blocks a TimingNode/Application lane.
+
+A disconnected client recovers through the normal reconnect sequence below:
+`STATUS_SNAPSHOT` restores current status and bounded LogBook queries restore missed
+committed TimingData. Transient live events are not durably replayed.
+
 ## Reconnect realization
 
 The current client-side sequence is:
@@ -596,7 +615,7 @@ development-v1 design yet.
 | --- | --- |
 | IF03-OP-001 / IF03-REQ-003 | `GET /api/v1/version` |
 | IF03-OP-002 / IF03-REQ-004 | `GET /api/v1/status` |
-| IF03-OP-003 / IF03-REQ-005/006/015/016 | WebSocket `/api/v1/events` + LogBook recovery |
+| IF03-OP-003 / IF03-REQ-005/006/015/016/017 | WebSocket `/api/v1/events` + bounded slow-client disconnect + LogBook recovery |
 | IF03-OP-004 / IF03-REQ-012 | `GET /api/v1/capabilities` |
 | IF03-OP-005 / IF03-REQ-011 | `POST /api/v1/node/{id}/open` with `locationId` |
 | IF03-OP-006 | `POST /api/v1/node/{id}/close` |
