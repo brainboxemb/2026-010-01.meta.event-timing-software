@@ -630,7 +630,21 @@ algorithmically rather than materialising thousands of map entries:
 - `NNNN` is `0001` through `9999`; `0000` is invalid.
 
 The generic EventData API continues to expose semantic values rather than making
-TagProcessor understand this concrete string format.
+TagProcessor understand this concrete string format. The intended shared API shape is:
+
+```text
+RegistrationId registrationIdFor(TagId tagId)
+List<TagId> tagIdsFor(RegistrationId registrationId)
+TeamId teamIdFor(RegistrationId registrationId)
+RegistrationId registrationIdFor(TeamId teamId)
+```
+
+A missing stable mapping is represented explicitly by the API contract. In the
+default/reference profile, normal RegistrationId/TeamId conversion is
+algorithmic while reserve RegistrationId/TeamId conversion has no stable
+EventData answer until assignment data exists. Runtime resolution may layer a
+RaceData override on top of EventData without changing TagProcessor's TagId to
+RegistrationId responsibility.
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
