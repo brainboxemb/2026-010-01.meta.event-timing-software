@@ -70,6 +70,13 @@ if provenance["object_count"] != graph["object_count"]:
     raise SystemExit("portal object count does not match engineering graph")
 if provenance["relation_count"] != graph["relation_count"]:
     raise SystemExit("portal relation count does not match engineering graph")
+if "SI02-REQ-001" not in objects:
+    raise SystemExit("engineering graph missing first SI-02 requirement")
+si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
+    encoding="utf-8"
+)
+if "Use only the public SI-01 interface boundary" not in si02_page:
+    raise SystemExit("portal SI02-REQ-001 page is missing authored requirement content")
 if "DD-PresentationAccess" not in objects:
     raise SystemExit("engineering graph missing detailed-design object DD-PresentationAccess")
 presentation_design = objects["DD-PresentationAccess"]
@@ -272,7 +279,7 @@ if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explor
     raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
-for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
+for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-REQ-001", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (
