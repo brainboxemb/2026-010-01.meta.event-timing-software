@@ -325,7 +325,11 @@ platform/
     SerialExecutorMetrics.java             lane-local queue/execution measurements
     SerialScheduledExecutor.java           serial lane + delayed/fixed-delay scheduling
     SerialScheduledExecutorMetrics.java    scheduled-lane measurements
-    ScheduledTaskRunner.java               cooperative multi-step task execution
+    CooperativeTaskRunner.java             cooperative task-runner contract
+    SerialTaskRunner.java                  cooperative turns on SerialExecutor
+    ScheduledTaskRunner.java               cooperative turns + delayed/result handling
+    CooperativeTaskController.java         wake/coalescing for component state machines
+    AbstractTask.java                      reusable child-task execution lifecycle
     CooperativeTask.java                   one-step state-machine task contract
     TaskStep.java                          AGAIN / AFTER / DONE continuation decision
   events/
