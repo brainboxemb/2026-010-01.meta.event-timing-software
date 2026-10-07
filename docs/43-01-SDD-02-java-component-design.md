@@ -739,13 +739,21 @@ compact derived/indexed state only when measurement justifies it. Typed
 command/query objects are local operation descriptions, not another component,
 central dispatcher or generic message bus.
 
-The presentation-facing automatic-registration boundary is
-`applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
-because an automatic-registration record can express more than one semantic
-action; the current implemented action set contains only `ADD` until REV semantics
-are defined. The Domain command for that implemented action is
-`addAutomaticRegistration(...)`. The short IF-03 engineering resource name
-`auto-reg` remains a transport concern.
+The presentation-facing direct automatic-registration boundary is
+`applyAutomaticRegistration(action, registrationId, time)`. It is the semantic
+boundary used by the IF-03 engineering `dev/.../auto-reg` control and deliberately
+starts **after** antenna observation and TagProcessor processing. It therefore tests
+accepted automatic-registration handling without claiming to simulate RFID input.
+
+Normal manual registration is a separate application operation. Presentation supplies
+RegistrationId, effective time and ManualTimeSource. Both AUTO and MAN classifications
+carry a client-supplied effective time; AUTO means the client selected/captured it and
+MAN means the operator entered or edited it. TimingNodeProxy maps this directly to
+`TimingNodeCommands.commitManualRegistration(...)` and does not replace AUTO time
+with server current time.
+
+Registration revoke remains the separate append-only operation defined by D03. The
+short IF-03 engineering resource name `auto-reg` remains a transport concern.
 
 `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
@@ -2188,8 +2196,44 @@ capacity. Runtime policy replacement remains serialized onto the TagProcessor la
 probed/initialized, inventory can be enabled/disabled and deterministic
 `TagObservation` values can be emitted only while inventory is active.
 
-It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
-specific capability is deterministic control of the decoded observations it publishes.
+It owns no TimingNode, mapper, filter, scenario timing or persistence shortcut. Its
+test/simulation-specific responsibility stays at the device boundary: publish the decoded
+observations it is instructed to publish.
+
+### Simulated tags and passage profiles
+
+A simulated tag/profile layer sits **above** SimulatedAntenna. It generates repeatable
+observation sequences and feeds them through the same antenna event boundary used by a
+real reader:
+
+```text
+SimulatedTag / SimulationProfile
+  -> TagObservation(TagId, RSSI, time)
+  -> SimulatedAntenna
+  -> AntennaManager
+  -> TagProcessor
+  -> TimingNode
+```
+
+This layer is engineering/simulation support, not another Domain registration path.
+It shall not call TagProcessor or TimingNode directly.
+
+Profiles reuse EventData for TagId-to-RegistrationId relationships. One RegistrationId
+may therefore be represented by multiple tags; a normal profile can emit observations
+from two configured tags for the same registration so passage aggregation and
+strongest-RSSI selection are exercised. Initial profile categories are:
+
+- `simple`: one minimal deterministic passage;
+- `normal`: representative clean observation sequence, including multiple tags where
+  EventData provides them;
+- `edge`: deterministic variants such as very short/long passages and one-tag versus
+  two-tag cases.
+
+The Development Client may request a batch of profile starts. Batch controls own only
+which RegistrationIds are selected and when each passage starts: count, numeric range,
+ascending or seedable pseudo-random order and interval. The profile itself owns the
+observation pattern inside one passage. This keeps a batch run reproducible and prevents
+the client from flattening a profile into repeated direct `dev/auto-reg` calls.
 
 :::
 
