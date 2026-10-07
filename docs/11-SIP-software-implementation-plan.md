@@ -680,9 +680,12 @@ Heap growth with retained history remains something to observe on the selected t
 does not by itself justify a Step-5 cache/pool redesign. Target-specific JVM/thread/stack
 tuning belongs to Step 9.
 
-V02 is the remaining runtime verification activity and is tracked by Java issue #334. It
-focuses on sustained ingress and stalled/slow downstream IF-03 delivery using the current
-bounded-delivery baseline from Java PR #321.
+V02 is complete through Java issue #334 / PR #335. The verification connected real
+TimingNode committed-event production to a permanently buffered outbound transport,
+confirmed the existing bounded-delivery policy disconnects that client at the configured
+send bound, and then proved later registration commits and LogBook progress continue.
+No extra application payload queue, batching, role-priority change or additional worker
+was needed.
 
 ### Result
 
