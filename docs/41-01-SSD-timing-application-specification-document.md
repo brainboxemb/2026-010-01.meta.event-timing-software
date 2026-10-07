@@ -542,6 +542,14 @@ are torn down.
 component lanes. It owns worker lifecycle but not Domain/Application semantics.
 :::
 
+:::{arch} RuntimeTimeSources  
+:id: RuntimeTimeSources  
+
+`RuntimeTimeSources` composes semantic timing `TimeSource` instances from the
+raw platform wall-clock basis. It does not decide TimingSystem/TimingNode ownership;
+the composition root decides which components share one returned source.
+:::
+
 The executable has one visible composition flow. From validated configuration it proceeds in a deliberately simple order:
 
 ```text
@@ -1379,11 +1387,20 @@ publishes them; Platform does not provide a central event bus.
 :id: PlatformEnvironment  
 
 `PlatformEnvironment` is the small process/platform boundary composed by Runtime.
-It provides the absolute wall-clock `Clock` used when externally meaningful timestamps
-are attached, the `MonotonicClock` used for elapsed time, timeouts, filtering windows
-and metrics, and a normalized `OperatingSystem` family for platform-dependent Runtime
-composition defaults. It is deliberately not a general service locator for filesystem,
-networking or other OS facilities.
+It provides the raw absolute wall-clock `Clock`, the `MonotonicClock` used for
+elapsed time, timeouts, filtering windows and metrics, and a normalized
+`OperatingSystem` family for platform-dependent Runtime composition defaults.
+It is deliberately not a general service locator for filesystem, networking or
+other OS facilities.
+:::
+
+:::{arch} TimeSource  
+:id: TimeSource  
+
+`TimeSource` is the shared lower-level capability for semantic absolute timing time.
+Domain and I/O components consume it when they must use the same timing basis.
+The type itself has no TimingSystem/TimingNode ownership; Runtime composition chooses
+which components receive the same instance.
 :::
 
 #### Runtime and infrastructure
@@ -2162,7 +2179,7 @@ TagObservation
 The timestamp is attached at the earliest accepted point at which SI-01 can identify the
 observation as a decoded tag observation. When a provider exposes a trustworthy source
 timestamp that can be mapped to the SI-01 time model, the adapter may use it; otherwise the
-adapter uses the Runtime-composed PlatformEnvironment wall clock at the observation boundary. Timestamp
+adapter uses the Runtime-composed TimeSource at the observation boundary. Timestamp
 assignment is not delayed until registration commit.
 
 An antenna publishes observations through the normal local typed event mechanism. The
@@ -2398,7 +2415,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Build | Maven | accepted |
 | Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition and keeps the executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
-| Time model | dedicated `TimingTimestamp` + Runtime-composed `PlatformEnvironment` with absolute `Clock` and separate `MonotonicClock` | IF-05 fixes canonical external timestamp serialization; simulation may provide a controlled wall clock; clock synchronisation/correction policy remains to be completed |
+| Time model | dedicated `TimingTimestamp`; raw `PlatformEnvironment.Clock`; Runtime-composed shared `TimeSource`; separate `MonotonicClock` | IF-05 fixes canonical external timestamp serialization; RuntimeTimeSources selects the timing source implementation/sharing scope; synchronization/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |
 | Logging | SLF4J API in reusable application core; default executable provider `slf4j-jdk14` / `java.util.logging` | handlers/retention remain configuration and operational concerns |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution; YAML/SnakeYAML is the default Java input realization | profile/platform/mode resolution is architecturally defined but not yet fully implemented |
