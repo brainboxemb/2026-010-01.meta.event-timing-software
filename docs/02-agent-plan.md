@@ -277,10 +277,13 @@ complete against D04: the simulated antenna/tag-processing path includes
 AntennaManager lifecycle/control, application-owned subscriptions and TagProcessor
 lifecycle, and the normal non-blocking TimingNode admission/commit boundary without
 bypassing LogBook or persistence. A02 has completed the low-allocation runtime
-markers/counters defined by D01. A03 is now the active decision activity: use
-measurements to decide whether any allocation, data-access or scratch-state change
-is justified; retain the simple baseline when evidence does not justify extra
-machinery.
+markers/counters defined by D01.
+
+The current execution focus is **T01**: add the engineering-only runtime-characterization
+harness and retained machine-readable evidence defined by SDE-04. That harness enables
+**V01**, which must run the repeatable baseline workloads before **A03** makes any
+allocation/data-access/execution-model decision. A03 therefore remains planned until V01
+evidence exists; retain the simple baseline when evidence does not justify extra machinery.
 
 OPEN/CLOSE TimingData (D02/A04/V05) and registration revoke
 (D03/A05/V06) are parallel Step-5 contract tracks but must mature their public
