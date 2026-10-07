@@ -270,7 +270,7 @@ domain/
     TimingDataPersistence.java          TimingData-specific persistence contract
     DefaultTimingDataPersistence.java   TimingData codec/identity/sequence mapping
   upstream/
-    UpstreamProtocol.java               TimingData + sync/reconcile/ping semantics
+    UpstreamProtocol.java               TimingData + sync/ping semantics
     UpstreamProtocolProvider.java       typed extension provider contract
 
 io/
@@ -533,8 +533,8 @@ inventory requests and child-task completions only wake the manager; manager
 wake coalescing rather than `AntennaManager` maintaining local
 `stateMachineRunning/stateMachineWakePending` flags.
 
-`InventoryTask` owns the requested/applied inventory reconciliation, power preparation,
-direct-antenna start/stop and multiplex rotation. A representative enable path is:
+`InventoryTask` drives the requested inventory state to the applied device state and owns
+power preparation, direct-antenna start/stop and multiplex rotation. A representative enable path is:
 
 ```text
 InventoryTask
@@ -748,7 +748,7 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization/reconciliation and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
+`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -1009,7 +1009,7 @@ Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
 application worker. Application-level values that drive cross-component behaviour are
 represented explicitly as application properties backed by the generic
 `infra.property.TrackedProperty<T>` mechanism rather than as Conductor-specific
-reconcile flags.
+refresh flags.
 
 `infra.property.TrackedProperty<T>` owns only the reusable mechanism: a readable name,
 an authoritative value reader, the shared Application lane, current-value tracking,
@@ -2444,7 +2444,7 @@ operation/execution exception rather than `OpenResult`.
 A timeout is different again. It means only that the caller did not receive the
 processed result within the configured guard time. TimingNode timeout handling
 must not automatically cancel or interrupt an already accepted state change.
-The caller must treat the final outcome as unknown and re-query/reconcile state
+The caller must treat the final outcome as unknown and re-query the current state
 before assuming that the command did not happen.
 
 TimingNode uses a small operation/execution exception model rather than leaking
@@ -2850,7 +2850,7 @@ adapter therefore never uses the TimingNode lane as its backpressure mechanism.
 
 If listener notification fails after a TimingData record is committed, that does not roll
 back the commit. A consumer that needs reliable recovery uses authoritative
-persisted/LogBook state and its own reconciliation/delivery mechanism.
+persisted/LogBook state and its own recovery/delivery mechanism.
 
 Tracked properties use the same event convention. A source event only calls
 `signalChanged()` to invalidate the cached value. After rereading the authoritative
