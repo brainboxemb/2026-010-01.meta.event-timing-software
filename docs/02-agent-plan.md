@@ -308,6 +308,10 @@ through that PR; the remaining client verification is the manual VC-ST1-003
 Development Client run for trash -> REV, the DELETED interpreted projection and
 restart/recovery in the real JavaFX client. D06 (meta issue #564) adds explicit
 SSD-architecture -> detailed-SDD Needs traceability for Object Explorer navigation.
+D07 (meta issue #567, shared tooling issue tool.eng-docs#100) makes the Presentation
+boundary visually explicit in Figure SI01-01: external HTTP/WebSocket/TCP/console ports
+belong to the in-process Presentation adapters, while SharedTerminalHandler and
+PresentationGateway remain internal and have no external port.
 A03 is complete from the retained V01 development-host evidence: ordinary
 allocation, direct bounded LogBook traversal, the current serial execution model and
 ordinary JVM scheduling remain the baseline; no pool/cache/snapshot/index or
