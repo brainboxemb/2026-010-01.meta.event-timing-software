@@ -180,6 +180,13 @@ A registration record carries a **Registration ID** and **time**.
 These values are specific to registration records; they are not common
 TimingData-envelope values.
 
+For a manual registration, the time-source classification describes how the
+presentation client obtained the effective registration time. `AUTO` means the
+client selected or captured the time automatically; `MAN` means an operator
+entered or edited it manually. Both classifications carry a client-supplied
+registration time; neither classification means that SI-01 substitutes its own
+clock time.
+
 Registration semantics shall support:
 
 - adding a registration; and
@@ -190,7 +197,8 @@ original committed registration record. The revocation record repeats the origin
 of the registration being withdrawn. Registration ID + time remain the semantic
 registration reference; Location ID is repeated record context rather than an
 additional matching key. A manual registration revocation also preserves whether
-the original manual registration used system-assigned or operator-entered time.
+the original manual registration time was selected automatically by the client or
+entered/edited manually by the operator.
 
 The TimingData commit/LogBook boundary is bookkeeping. It does not search or fold
 earlier ADD/REV history to decide whether a requested revocation is meaningful,
