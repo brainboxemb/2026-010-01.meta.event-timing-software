@@ -615,7 +615,7 @@ development-v1 design yet.
 | --- | --- |
 | IF03-OP-001 / IF03-REQ-003 | `GET /api/v1/version` |
 | IF03-OP-002 / IF03-REQ-004 | `GET /api/v1/status` |
-| IF03-OP-003 / IF03-REQ-005/006/015/016/017 | WebSocket `/api/v1/events` + bounded slow-client disconnect + LogBook recovery |
+| IF03-OP-003 / IF03-REQ-005/006/015/016/021 | WebSocket `/api/v1/events` + bounded slow-client disconnect + LogBook recovery |
 | IF03-OP-004 / IF03-REQ-012 | `GET /api/v1/capabilities` |
 | IF03-OP-005 / IF03-REQ-011 | `POST /api/v1/node/{id}/open` with `locationId` |
 | IF03-OP-006 | `POST /api/v1/node/{id}/close` |
