@@ -110,14 +110,13 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: blocked
+    state: done
     depends_on: [D05, A01]
     note: >-
-      PR #231 introduced the low-allocation instrumentation and PR #250 aligned
-      component/executor metrics ownership, but D05 is not yet fully realized:
-      remove TimingNode.runtimeMetrics()/TimingNodeTypes.RuntimeMetrics and expose
-      the engineering-only runtime.measurement.RuntimeMeasurementReader snapshots
-      required by SDD-02/SDE-04.
+      Requalified and corrected on Java main through PR #325: runtime measurement
+      is removed from the public TimingNode/TimingNodeTypes contract and exposed
+      through engineering-only runtime.measurement.RuntimeMeasurementReader using
+      component-owned TimingNode, TagProcessor, lane and JVM snapshots.
 
   - id: V01
     lane: verification
