@@ -7,10 +7,10 @@ Software item: **SI-02 — Desktop GUI Application**
 
 ## Purpose
 
-This combined SSD currently contains a working SI-02 architecture direction and no
-stable promoted SI-02 requirement set. Requirements are added to this same document as
-they mature; a separate SRD/SAD pair is not required unless that split later has a clear
-engineering benefit.
+This combined SSD contains the working SI-02 architecture direction and the first
+Draft software-item requirement slice. Requirements mature in this same document; a
+separate SRD/SAD pair is not required unless that split later has a clear engineering
+benefit.
 
 ## Terms and abbreviations
 
@@ -36,8 +36,96 @@ The SIP may schedule SI-02 work but is not requirement/design authority.
 
 ## Software-item requirements status
 
-No stable SI-02 requirement set has yet been promoted. The existing text below remains
-the working specification/architecture direction until that requirement slice is ready.
+The first SI-02 software-item requirements are **Draft**. They establish the
+technology-independent public-interface and connection/recovery baseline needed before
+selecting a GUI toolkit, runtime or packaging model.
+
+:::{req} Use only the public SI-01 interface boundary  
+:id: SI02-REQ-001  
+:status: D  
+:derived_from: UC-008, IF03-REQ-001, IF03-REQ-007  
+
+For normal monitoring and operator control, SI-02 shall communicate with SI-01
+through the system-defined IF-03 boundary. SI-02 shall not require direct access
+to SI-01 process memory, internal Java classes/objects or private runtime files.
+:::
+
+:::{req} Select endpoint and expose connection state  
+:id: SI02-REQ-002  
+:status: D  
+:derived_from: UC-001, UC-008, IF03-REQ-002, IF03-REQ-009  
+
+SI-02 shall allow an operator to select or configure the SI-01 endpoint it uses
+and shall visibly distinguish at least disconnected, connection/synchronisation
+in progress and usable live state. A view that has not completed synchronisation
+shall not be presented as live.
+:::
+
+:::{req} Show connected application identity  
+:id: SI02-REQ-003  
+:status: D  
+:derived_from: UC-001, UC-008, IF03-REQ-003  
+
+After connecting to SI-01, SI-02 shall obtain and display the connected
+application/version identity provided through IF-03 so the operator can identify
+the system instance being operated.
+:::
+
+:::{req} Present current TimingNode operational status  
+:id: SI02-REQ-004  
+:status: D  
+:derived_from: UC-001, UC-008, IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017  
+
+For each TimingNode exposed through IF-03, SI-02 shall present its current
+identity, optional operational LocationId, lifecycle state and explicit problem
+state when present. The displayed state shall come from SI-01 rather than from a
+GUI-owned lifecycle model.
+:::
+
+:::{req} Mark disconnected cached state as stale  
+:id: SI02-REQ-005  
+:status: D  
+:derived_from: UC-001, UC-008, IF03-REQ-006, IF03-REQ-021  
+
+When the live IF-03 connection is lost, SI-02 shall make clear that previously
+displayed status/history is stale or disconnected and shall not continue to
+present cached information as current live state.
+:::
+
+:::{req} Rebuild baseline before declaring the view live  
+:id: SI02-REQ-006  
+:status: D  
+:derived_from: UC-008, IF03-REQ-006, IF03-REQ-014, IF03-REQ-016  
+
+After initial connection or reconnect, SI-02 shall rebuild the current status and
+the committed LogBook history required for its view before declaring that view
+live. Where history and later live delivery overlap, SI-02 shall use the stable
+TimingData source identity (Node ID plus sequence number) to avoid presenting the
+same committed record twice.
+:::
+
+:::{req} Present committed registration history and live updates  
+:id: SI02-REQ-007  
+:status: D  
+:derived_from: UC-008, IF03-REQ-014, IF03-REQ-015  
+
+SI-02 shall be able to present committed registration history and later
+committed registration updates delivered through IF-03. It shall not present an
+uncommitted command/request result as if it were committed TimingData.
+:::
+
+:::{req} Execute lifecycle control with explicit outcome  
+:id: SI02-REQ-008  
+:status: D  
+:derived_from: UC-002, UC-008, IF03-REQ-008, IF03-REQ-011  
+
+SI-02 shall support the IF-03 OPEN-at-location and CLOSE operations made
+available for normal operator control and shall present the operation outcome
+separately from the resulting observed state. If connectivity is lost after a
+request was submitted but before its outcome can be confirmed, SI-02 shall keep
+that outcome visibly unknown until resynchronisation establishes the current
+state.
+:::
 
 ## Software-item architecture
 
@@ -89,10 +177,10 @@ software-item/interface boundary:
 - connect/disconnect;
 - query/display application version;
 - show connection state;
-- show central application status;
-- show available `TimingSystem` status;
+- show the connected application identity;
+- show current TimingNode status;
 - show stale/disconnected state explicitly;
-- reconnect cleanly after temporary network loss.
+- reconnect and rebuild current status/history before treating the view as live.
 
 This baseline is sufficient to verify that the GUI can operate against a Timing Point
 Application across the supported network boundary without requiring operational timing
