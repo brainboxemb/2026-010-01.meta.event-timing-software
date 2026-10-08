@@ -397,12 +397,12 @@ for reimplementing JDK executor internals.
 
 ### Cooperative task execution
 
-:::{design} Cooperative execution and application coordination
+:::{design} Cooperative execution and TimingSystem coordination
 :id: DD-CooperativeExecution
-:elaborates: Conductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
+:elaborates: SystemConductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
 
 Detailed Java design for cooperative task runners/controllers and the
-TimingSystem-scoped coordination pattern used by Conductor.
+TimingSystem-scoped coordination pattern used by `domain.system.Conductor`.
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
