@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define IF-11 AntennaManager bindings per TimingSystem under `io.devices.antennaManagers`. Each binding references one `timingSystemId`; antenna observation targets must belong to that system, and at most one manager may be configured per TimingSystem.
+
 - Align Java design documentation with the implemented 1..N TimingSystem Runtime composition: providers resolve per system, each system receives its own TimeSource and domain.system.Conductor, and all configured TimingNodes are composed without a placeholder TimingSystem domain class.
 
 - Define IF-11 multi-TimingNode TimingData storage bindings under `io.storage.timingData.nodes`, retaining the existing single-node `path` shorthand and requiring one unique persistence file per configured `TimingNodeId`.
