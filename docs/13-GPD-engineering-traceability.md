@@ -94,14 +94,12 @@ readable descriptions of one stored relation:
 | `fulfills` | fulfills | fulfilled by |
 | `verifies` | verifies | verified by |
 
-The generated Engineering Portal displays incoming relations by the **role of
-the related object** (for example, *Requirements* for a use case and *Detailed
-designs* for an architecture element). This avoids treating the automatically
-generated reverse verb as a sentence that readers must interpret. Outgoing
-relations retain their active verb. Long groups of six or more links use
-collapsible sections labelled with the identity of each **authored source
-document**; this is a presentation choice and neither restricts the number of
-valid links nor alters the engineering graph.
+The Engineering Portal describes incoming relations by the **role of
+the related object** (for example, *Requirements* for a use case and
+*Detailed designs* for an architecture element). Outgoing relations
+retain their active verb. All links are displayed as compact, directly
+accessible object rows in the Explorer, comparison workspace and object
+pages. The UI does not collapse or hide relations based on count.
 
 The author declares only the outgoing `:relation: target-id` option;
 Sphinx-Needs supplies `relation_back`. The

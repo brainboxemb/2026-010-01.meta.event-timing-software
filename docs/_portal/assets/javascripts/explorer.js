@@ -58,30 +58,9 @@
             "</p>"
           : "";
 
-        let relatedRows;
-        if (group.document_groups && group.document_groups.length) {
-          relatedRows = group.document_groups
-            .map((document) => {
-              return (
-                '<details class="eng-relation__document">' +
-                "<summary>" +
-                escapeHtml(document.title) +
-                " (" +
-                document.related_ids.length +
-                ")</summary>" +
-                '<div class="eng-relation__items">' +
-                document.related_ids
-                  .map((id) => relationButton(id, mode))
-                  .join("") +
-                "</div></details>"
-              );
-            })
-            .join("");
-        } else {
-          relatedRows = group.related_ids
-            .map((id) => relationButton(id, mode))
-            .join("");
-        }
+        const relatedRows = group.related_ids
+          .map((id) => relationButton(id, mode))
+          .join("");
 
         sections.push(
           '<section class="eng-detail__relations" data-eng-relation-type="' +

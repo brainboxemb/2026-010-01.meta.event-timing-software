@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Render all Engineering Portal relation targets as consistent flat, visible and clickable object rows, removing conditional document grouping and expandable relationship cards.
+
 - Make Engineering Portal incoming links role-oriented (Requirements, Detailed designs, etc.); group long relation lists by authored source document with expandable sections in Explorer, Workspace and object pages, preserving the traceability graph.
 
 - Present Engineering Portal relationships as sentences centered on the selected object, using Sphinx-Needs labels, and remove redundant one-hop lists from the Explorer, comparison workspace and object pages.

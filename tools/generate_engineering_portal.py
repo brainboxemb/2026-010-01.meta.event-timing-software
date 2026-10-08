@@ -31,8 +31,6 @@ INCOMING_ROLES = {
     "fulfills": ("Implementations", "Source implementations associated with this requirement."),
     "verifies": ("Verification cases", "Verification cases checking this requirement."),
 }
-DOCUMENT_GROUP_THRESHOLD = 6
-
 SOURCE_RE = re.compile(r"^(?P<path>.+):(?P<line>[0-9]+)$")
 NEED_OPEN_RE = re.compile(
     r"^(?P<fence>:::|```)\{(?P<directive>[A-Za-z0-9_-]+)\}(?:\s+.*)?$"
@@ -177,31 +175,6 @@ def source_context(
     }
 
 
-def source_document_label(source_root: Path, source_path: str) -> str:
-    """Name a source document from its authored heading/identity, not a Need ID."""
-
-    path = (source_root / source_path).resolve()
-    root = source_root.resolve()
-    if root != path and root not in path.parents:
-        raise PortalError(f"document path escapes repository root: {source_path}")
-    if not path.is_file():
-        return Path(source_path).stem
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    for line in lines[:30]:
-        match = re.match(
-            r"^(?:System interface|Software item):\s*\*\*(.+?)\*\*",
-            line.strip(),
-            flags=re.IGNORECASE,
-        )
-        if match:
-            return match.group(1)
-    for line in lines:
-        if line.startswith("# "):
-            return line[2:].strip()
-    return Path(source_path).stem
-
-
 def build_relation_groups(item: dict, objects: dict[str, dict]) -> list[dict]:
     """Build one display representation shared by all Engineering Portal views."""
 
@@ -230,23 +203,7 @@ def build_relation_groups(item: dict, objects: dict[str, dict]) -> list[dict]:
                 "title": heading,
                 "description": description,
                 "related_ids": ids,
-                "document_groups": [],
             }
-            if len(ids) >= DOCUMENT_GROUP_THRESHOLD:
-                grouped: dict[str, dict] = {}
-                for related_id in ids:
-                    document = objects[related_id]["source_document"]
-                    key = document["path"]
-                    if key not in grouped:
-                        grouped[key] = {
-                            "path": key,
-                            "title": document["title"],
-                            "related_ids": [],
-                        }
-                    grouped[key]["related_ids"].append(related_id)
-                section["document_groups"] = sorted(
-                    grouped.values(), key=lambda group: (group["title"], group["path"])
-                )
             sections.append(section)
     return sections
 
@@ -254,7 +211,6 @@ def build_relation_groups(item: dict, objects: dict[str, dict]) -> list[dict]:
 def make_view(graph: dict, repository: str, source_root: Path) -> dict:
     revision = graph["source_revision"]
     objects: dict[str, dict] = {}
-    document_titles: dict[str, str] = {}
 
     for item in graph["objects"]:
         object_id = item["id"]
@@ -264,17 +220,6 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
         resolved_source = item["source"]
         if context and context.get("definition"):
             resolved_source = f"{context['path']}:{context['line']}"
-
-        source_match = SOURCE_RE.match(resolved_source)
-        document_path = (
-            context["path"]
-            if context
-            else source_match.group("path") if source_match else resolved_source
-        )
-        if document_path not in document_titles:
-            document_titles[document_path] = source_document_label(
-                source_root, document_path
-            )
 
         objects[object_id] = {
             "id": object_id,
@@ -289,7 +234,6 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
             ),
             "source": item["source"],
             "source_url": source_url(repository, revision, resolved_source),
-            "source_document": {"path": document_path, "title": document_titles[document_path]},
             "source_context": context,
             "diagram_refs": item.get("diagram_refs") or [],
             "outgoing": [],
@@ -406,30 +350,16 @@ def render_relation_groups(obj: dict, objects: dict[str, dict]) -> list[str]:
         if section["description"]:
             result.extend([section["description"], ""])
 
-        groups = section["document_groups"]
-        if groups:
-            for group in groups:
-                result.extend(
-                    [
-                        '<details class="eng-relation__document">',
-                        f'<summary>{html.escape(group["title"])} ({len(group["related_ids"])})</summary>',
-                        "<ul>",
-                    ]
-                )
-                for related_id in group["related_ids"]:
-                    related = objects[related_id]
-                    result.append(
-                        f'<li><a href="../{html.escape(related_id)}/">'
-                        f'{html.escape(related_id)} — {html.escape(related["title"])}</a></li>'
-                    )
-                result.extend(["</ul>", "</details>", ""])
-        else:
-            for related_id in section["related_ids"]:
-                related = objects[related_id]
-                result.append(
-                    f"- [{related_id} — {related['title']}](../{related_id}/)"
-                )
-            result.append("")
+        for related_id in section["related_ids"]:
+            related = objects[related_id]
+            result.append(
+                '<a class="eng-relation" '
+                f'href="../{html.escape(related_id)}/">'
+                f'<span class="eng-relation__object">'
+                f'{html.escape(related_id)} — {html.escape(related["title"])}'
+                '</span></a>'
+            )
+        result.append("")
 
     return result or ["No traceability relationships are recorded for this object.", ""]
 
