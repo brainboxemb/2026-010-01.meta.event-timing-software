@@ -229,8 +229,8 @@ application/
   ConfigurationControl.java        configuration query/update use-cases
 infra/
   lifecycle/
-    AbstractConductor.java          reusable coordinator lifecycle template
-    ComponentLifecycleManager.java  component activation/rollback mechanics
+    AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
+    ComponentLifecycleManager.java  application/system activation and rollback mechanics
   property/
     TrackedProperty.java            generic tracked-value scheduling/change detection
   extension/
@@ -564,8 +564,8 @@ InventoryTask
   SWITCH / DONE
 ```
 
-Each Conductor uses `SerialTaskRunner` and
-`CooperativeTaskController` to reconcile the authoritative states of its
+Each TimingSystem `Conductor` uses `SerialTaskRunner` and
+`CooperativeTaskController` to reconcile the current states of its
 1..N TimingNodes. Status events merely wake the task; they do not execute
 inventory control on the emitting thread. Manager-wide inventory is needed
 while any node is OPEN, and not needed otherwise.
@@ -3361,7 +3361,7 @@ Extraction is preferred over speculative libraries: keep package/responsibility 
 Useful automated rules may include:
 
 - presentation packages do not own or persist application state;
-- domain services do not reference presentation or concrete I/O classes;
+- Domain does not depend on Presentation; Domain-to-I/O dependencies must be explicit design relationships, such as `domain.system.Conductor -> AntennaManager`;
 - platform packages do not depend on event-timing application/domain behaviour;
 - wire/protocol classes stay with their presentation or I/O capability;
 - semantic contracts are not moved into transport packages merely because transport code uses them;
