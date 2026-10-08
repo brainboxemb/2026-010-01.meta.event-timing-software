@@ -562,22 +562,26 @@ resolve effective configuration
   -> construct Domain, I/O, Application and Presentation objects
   -> wire cross-component relationships
   -> Runtime execution resources start
-  -> components activate in explicit order
-       Domain / I/O / Application / Presentation
+  -> Application Conductor activates the application core
+       AntennaManager
+       TimingSystem Conductor(s)
+         TimingNode(s)
+  -> Presentation activates
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Each TimingSystem's operational coordination is owned by its `Conductor`, wired explicitly to the system's TimingNodes and inventory-control port before activation. Runtime owns process-wide startup and shutdown. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Runtime constructs and wires the object graph and owns the physical execution resources. The Application `Conductor` owns activation order and rollback for the major application components. It activates the `AntennaManager` before the Domain TimingSystem `Conductor`, so the system Conductor can apply its initial inventory decision after its TimingNodes are active. Deactivation uses the reverse order. Concrete Presentation adapters are composed by Runtime and activate after the coordinated application core. Normal application/domain interactions do not route through Runtime after activation.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
 ```text
 Application
   +-- ApplicationId
+  +-- Conductor                 application lifecycle / activation order
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
+        +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
-        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -619,9 +623,10 @@ The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
 layer cake**. Domain has extra space below its contained components and yields
 through a lower-right polygon cut-away. I/O uses a complementary polygon with a
 raised right shoulder around Devices. A small visible gap remains between both
-layer outlines, so neither responsibility appears to overlap the other. This
-expresses architectural proximity/cohesion only; it does not permit Domain to
-depend on concrete I/O.
+layer outlines, so neither responsibility appears to overlap the other. This expresses architectural proximity/cohesion only. Domain may call an I/O
+component directly when the domain behaviour genuinely depends on that component;
+for example, the TimingSystem `Conductor` calls its `AntennaManager` to change
+the shared inventory state.
 
 #### Presentation
 
@@ -721,6 +726,9 @@ The application responsibility coordinates use cases:
 
 ```text
 application/
+  Conductor
+    application component lifecycle / activation order
+
   PresentationGateway
     shared presentation-facing application gateway
 
@@ -733,6 +741,16 @@ application/
   UpstreamMessageRouter
     upstream-only application/domain target resolution and routing
 ```
+
+:::{arch} Application Conductor
+:id: ApplicationConductor
+
+`application.Conductor` owns activation order, rollback and reverse
+deactivation of the major application components. In the current composition it
+activates `AntennaManager` before the TimingSystem `Conductor`; the latter then
+activates the TimingNodes in its own TimingSystem. The Application Conductor does
+not decide inventory state or process tag observations.
+:::
 
 :::{arch} Configuration control  
 :id: ConfigurationControl  
@@ -758,9 +776,9 @@ This uses the same directional naming principle as `UpstreamGateway`, while the 
 remain separate responsibilities: `PresentationGateway` is transport-independent
 application access and `UpstreamGateway` owns external upstream transport/integration.
 The gateway exposes application-wide information such as `version()` and capabilities.
-Runtime owns process-wide lifecycle; no additional application-wide Conductor is
-required. Node-scoped work is exposed through `TimingNodeProxy`, so operations
-such as `open(...)` belong to a selected TimingNode. The system Conductor is
+Application-wide component lifecycle is coordinated by `application.Conductor`.
+Node-scoped work is exposed through `TimingNodeProxy`, so operations such as
+`open(...)` belong to a selected TimingNode. The TimingSystem `Conductor` is
 not a mandatory hop for normal node commands.
 :::
 
@@ -812,8 +830,8 @@ one parent/child tree:
 ```text
 TimingSystem (1..N per Application)
   TimingSystemId              internal only
+  Conductor                   first system coordinator; TimingNodes + inventory
   SystemStatus                complete current system overview
-  Conductor       one per TimingSystem; joint operational coordination
   UpstreamMessagePort         system-level upstream messages
   UpstreamProtocol
     TimingData transfer
@@ -839,18 +857,19 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, one `Conductor`, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
-:::{arch} Conductor
-:id: Conductor
+:::{arch} TimingSystem Conductor
+:id: SystemConductor
 :realizes: SI01-REQ-053
 
-One `Conductor` belongs to each TimingSystem in Domain. It observes
-the authoritative OPEN/CLOSED/ERROR states of that system's 1..N TimingNodes.
-It requests shared manager-wide inventory if any node is OPEN, otherwise stop.
-It neither routes tag observations nor controls individual antennas. Runtime
-wires a narrow inventory-control contract to the system's I/O AntennaManager;
-that manager keeps power, initialization, multiplexing and recovery behavior.
+One `domain.system.Conductor` belongs to each TimingSystem. It is the first
+system-level coordinator and owns the lifecycle of that system's 1..N
+`TimingNode` components. It reads their OPEN/CLOSED/ERROR states and calls the
+associated `AntennaManager` directly: inventory is enabled while at least one
+TimingNode is OPEN and disabled when none is OPEN. The Conductor does not perform
+antenna power, self-test, initialization or multiplexing and does not route
+TagObservation events.
 :::
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
@@ -1006,10 +1025,11 @@ Each TimingNode-local TagProcessor likewise owns its own logical scheduled
 serial lane, while all TagProcessor lanes share one physical TagProcessor
 worker by default.
 
-Each Conductor owns a logical serial coordination lane.
-Its cross-component work never runs synchronously on the thread emitting a
-TimingNode state event. Different conductor lanes may share one Runtime-owned
-coordination worker.
+Each TimingSystem `Conductor` owns a logical serial coordination lane.
+Its state reconciliation never runs synchronously on the thread emitting a
+TimingNode state event. Different system-Conductor lanes may share one
+Runtime-owned coordination worker. The Application `Conductor` performs
+lifecycle ordering and does not need its own coordination lane.
 
 AntennaManager owns one serial scheduled I/O lane. Self-test, initialize,
 power-control transitions, start/stop inventory and multiplex switching/rotation
@@ -1032,8 +1052,8 @@ Domain
   TagProcessor N ─ scheduled serial lane ─┘
 
 Domain
-  Conductor 1 ─ serial lane ─┐
-  Conductor N ─ serial lane ─┴─> one shared coordination worker
+  system Conductor 1 ─ serial lane ─┐
+  system Conductor N ─ serial lane ─┴─> one shared coordination worker
 
 I/O
   AntennaManager ─ scheduled serial lane ─> one shared I/O worker
@@ -1069,9 +1089,10 @@ Higher-level cooperative task handling is optional. A component that only needs 
 serial admission/ordering continues to use its execution lane directly. TimingNode and
 TagProcessor therefore remain direct lane users in the baseline.
 
-Conductor uses cooperative turns on its serial lane to coalesce
-multiple TimingNode change signals into one system-level reconciliation.
-No scheduled lane is necessary for this rule; AntennaManager owns timed work.
+The TimingSystem `Conductor` uses cooperative turns on its serial lane to
+coalesce multiple TimingNode change signals into one system-level
+reconciliation. No scheduled lane is necessary for this rule; AntennaManager
+owns timed work.
 
 Runtime worker items are deliberately bounded. A worker item must not occupy a
 physical worker merely to wait for time to pass. Delays such as antenna power
@@ -1630,11 +1651,12 @@ The architecture deliberately uses **separate views** for software/domain decomp
 ```text
 Application
   +-- ApplicationId
+  +-- Conductor                 application lifecycle / activation order
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
+        +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
-        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -2439,8 +2461,8 @@ Architecture-level boundaries are:
   executable application;
 - the public IF-05 Java contract must be independently consumable by SI-01 and
   engineering/test tooling without depending on SI-01 internal Domain packages;
-- dependencies normally follow the layer order downward; lower I/O code does not import Application/Domain types;
-- higher layers may use generic lower-layer I/O contracts while Runtime composition selects concrete I/O implementations;
+- dependencies normally follow the layer order downward; I/O code does not import Application or Domain merely to reverse a dependency;
+- Domain may call a concrete I/O component when the design requires that relationship; for example, `domain.system.Conductor` calls `AntennaManager` for manager-wide inventory control;
 - public reference/core implementation code compiles and verifies without private
   production implementations.
 
