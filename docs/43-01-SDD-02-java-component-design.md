@@ -1070,9 +1070,9 @@ assembled.
 The executable composition must remain readable as one linear construct-wire-start flow.
 The Runtime composition root constructs 1..N TimingSystem contexts from
 validated effective configuration. Each contains 1..N TimingNodes, one
-`domain.system.Conductor` and its associated I/O composition. Multi-node
-support is in the current project plan, even though the current Java executable
-still composes one TimingNode.
+`domain.system.Conductor` and its associated I/O composition. The Java Runtime
+materializes the configured TimingSystems and TimingNodes directly; no
+placeholder `TimingSystem` domain class is required for composition.
 
 ```text
 validated effective configuration
@@ -3329,12 +3329,13 @@ folders, own hot reload/unload or own class-loader lifecycle. The exact
 external-JAR directory/layout and dependency-isolation policy therefore remain
 separate/open deployment decisions.
 
-The current single-TimingSystem runtime configuration carries
-`eventDataProvider` and `timingDataProvider` selections. The reference IDs
-remain the compiled/default profile values when a deployment does not override
-them. Runtime resolves both provider IDs before creating TimingData persistence
-or the TimingNode. Unknown configured IDs and duplicate IDs within one provider
-family fail before normal composition rather than silently falling back.
+Each configured TimingSystem carries its own `eventDataProvider` and
+`timingDataProvider` selections. The reference IDs remain the compiled/default
+profile values when a deployment does not override them. Runtime resolves both
+provider IDs per TimingSystem before creating that system's TimingData
+persistence or TimingNodes. Unknown configured IDs and duplicate discovered IDs
+within one provider family fail before normal composition rather than silently
+falling back.
 
 A synthetic V04 test creates an external provider JAR and a dedicated
 `URLClassLoader` to prove that `ServiceLoader` discovery works outside the
