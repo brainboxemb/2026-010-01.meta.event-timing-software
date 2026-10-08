@@ -494,7 +494,7 @@ run completes
 ```
 
 Any number of wake-ups while one run is active therefore coalesce into one later pass. The
-component's `runStep()` reads current current state again; it does not replay stale
+component's `runStep()` reads current state again; it does not replay stale
 event payloads. Scheduling state such as "run active" and "wake pending" is kept out of the
 component's application/device state.
 
