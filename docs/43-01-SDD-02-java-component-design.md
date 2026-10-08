@@ -366,7 +366,7 @@ single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
 housekeeping and immediate work therefore preserve node-local ordering without creating a
 thread per processor.
 
-Runtime creates a logical `SerialExecutor` per Conductor
+Runtime creates a logical `SerialExecutor` per TimingSystem `Conductor`
 over a shared coordination worker and a `SerialScheduledExecutor` per
 AntennaManager over the shared scheduled I/O worker.
 
@@ -573,8 +573,8 @@ while any node is OPEN, and not needed otherwise.
 The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
 requests from explicit retry attempts. Per-node state tracking may reuse the
 generic `TrackedProperty<T>`, but must be owned within the Domain/system
-boundary rather than importing Application-owned property types. The Conductor
-does not require a multiphase state machine for this rule.
+boundary rather than importing Application-owned property types. The TimingSystem
+`Conductor` does not require a multiphase state machine for this rule.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
