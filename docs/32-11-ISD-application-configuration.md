@@ -397,7 +397,7 @@ For a single-TimingNode composition, the compact form remains valid:
 io:
   storage:
     timingData:
-      path: data/timing-data.jsonl
+      path: data/node_A_logbook.jsonl
 ```
 
 For a multi-TimingNode composition, use explicit node bindings:
