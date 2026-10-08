@@ -58,9 +58,31 @@
             "</p>"
           : "";
 
-        const relatedRows = group.related_ids
-          .map((id) => relationButton(id, mode))
-          .join("");
+        // Every item stays directly visible; headings simply partition
+        // the existing flat rows by their authored source document.
+        let relatedRows;
+        if (group.document_groups && group.document_groups.length > 1) {
+          relatedRows = group.document_groups
+            .map((document) => {
+              return (
+                '<div class="eng-relation__source-group">' +
+                '<h4 class="eng-relation__source-heading">' +
+                escapeHtml(document.title) +
+                " (" +
+                document.related_ids.length +
+                ")</h4>" +
+                document.related_ids
+                  .map((id) => relationButton(id, mode))
+                  .join("") +
+                "</div>"
+              );
+            })
+            .join("");
+        } else {
+          relatedRows = group.related_ids
+            .map((id) => relationButton(id, mode))
+            .join("");
+        }
 
         sections.push(
           '<section class="eng-detail__relations" data-eng-relation-type="' +

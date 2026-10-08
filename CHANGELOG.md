@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Show plain authored source-document subheadings within Engineering Portal relation lists when multiple documents contribute links, retaining the same always-visible flat object rows in all views.
+
 - Render all Engineering Portal relation targets as consistent flat, visible and clickable object rows, removing conditional document grouping and expandable relationship cards.
 
 - Make Engineering Portal incoming links role-oriented (Requirements, Detailed designs, etc.); group long relation lists by authored source document with expandable sections in Explorer, Workspace and object pages, preserving the traceability graph.

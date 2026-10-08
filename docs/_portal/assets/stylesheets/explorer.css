@@ -614,6 +614,19 @@ body.eng-explorer-page .md-content__inner {
   margin: 0.1rem 0 0.3rem;
 }
 
+.eng-relation__source-group {
+  margin: 0.22rem 0 0.34rem;
+}
+
+.eng-detail .eng-relation__source-heading,
+.md-typeset .eng-relation__source-heading {
+  margin: 0.18rem 0 0.1rem;
+  font-size: calc(0.58rem + 1px);
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+}
+
 .eng-relation {
   display: block;
   width: 100%;
