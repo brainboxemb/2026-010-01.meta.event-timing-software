@@ -453,14 +453,27 @@ grep -q 'Select a related object to compare.' bld/engineering-portal/browser-wor
   > bld/engineering-portal/browser-explorer.html
 
 grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
-grep -q 'This architecture element realizes:' bld/engineering-portal/browser-explorer.html
-grep -q 'This architecture element is elaborated by:' bld/engineering-portal/browser-explorer.html
-grep -q 'data-object-id="SI01-REQ-020"' bld/engineering-portal/browser-explorer.html
-grep -q 'data-object-id="DD-TimingNodeExecution"' bld/engineering-portal/browser-explorer.html
-! grep -q 'Outgoing relationships' bld/engineering-portal/browser-explorer.html
-! grep -q 'Incoming relationships' bld/engineering-portal/browser-explorer.html
-! grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
-! grep -q 'ELABORATES THIS' bld/engineering-portal/browser-explorer.html
+# Report the exact missing/obsolete phrase if a browser UX assertion fails.
+portal_has() {
+  if ! grep -q "$2" "$1"; then
+    echo "Portal browser check: missing '$2' in $1" >&2
+    return 1
+  fi
+}
+portal_lacks() {
+  if grep -q "$2" "$1"; then
+    echo "Portal browser check: unexpected '$2' in $1" >&2
+    return 1
+  fi
+}
+portal_has bld/engineering-portal/browser-explorer.html 'This architecture element realizes:'
+portal_has bld/engineering-portal/browser-explorer.html 'This architecture element is elaborated by:'
+portal_has bld/engineering-portal/browser-explorer.html 'data-object-id="SI01-REQ-020"'
+portal_has bld/engineering-portal/browser-explorer.html 'data-object-id="DD-TimingNodeExecution"'
+portal_lacks bld/engineering-portal/browser-explorer.html 'Outgoing relationships'
+portal_lacks bld/engineering-portal/browser-explorer.html 'Incoming relationships'
+portal_lacks bld/engineering-portal/browser-explorer.html 'One-hop context'
+portal_lacks bld/engineering-portal/browser-explorer.html 'ELABORATES THIS'
 
 "$chrome" \
   --headless \
@@ -472,11 +485,11 @@ grep -q 'data-object-id="DD-TimingNodeExecution"' bld/engineering-portal/browser
   "http://127.0.0.1:8765/workspace/?object=TimingNode&compare=DD-TimingNodeExecution" \
   > bld/engineering-portal/browser-workspace-TimingNode.html
 
-grep -q 'This architecture element realizes:' bld/engineering-portal/browser-workspace-TimingNode.html
-grep -q 'This architecture element is elaborated by:' bld/engineering-portal/browser-workspace-TimingNode.html
-grep -q 'This detailed design elaborates:' bld/engineering-portal/browser-workspace-TimingNode.html
-grep -q 'data-compare-object-id="DD-TimingNodeExecution"' bld/engineering-portal/browser-workspace-TimingNode.html
-! grep -q 'One-hop context' bld/engineering-portal/browser-workspace-TimingNode.html
+portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This architecture element realizes:'
+portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This architecture element is elaborated by:'
+portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This detailed design elaborates:'
+portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'data-compare-object-id="DD-TimingNodeExecution"'
+portal_lacks bld/engineering-portal/browser-workspace-TimingNode.html 'One-hop context'
 
 
 grep -q 'eng-explorer-workspace' bld/engineering-portal/browser-explorer.html
