@@ -25,7 +25,7 @@ Source: [useblocks/SPLed](https://github.com/useblocks/SPLed) at commit `e79a759
 
 Type: illustrative Sphinx-Needs engineering traceability implementation.
 
-[Reference analysis](spled-traceability-analysis.md) documents its relationship labels, source-code and test traceability, and the limitations of linking many component designs to one high-level architecture object. The project-specific design is kept in [13-GPD — Engineering Traceability](../docs/13-GPD-engineering-traceability.md).
+[Reverse-engineered SPLed documentation guide](spled-traceability-analysis.md) explains, for each of the seven configured link types, its observed source and target objects, authoring syntax and usage (or lack of observed usage). It also traces one requirement through architecture, detailed design, C source, C++ tests and generated JUnit results. The project-specific design is kept in [13-GPD — Engineering Traceability](../docs/13-GPD-engineering-traceability.md).
 
 ### 4+1 architectural view model
 
