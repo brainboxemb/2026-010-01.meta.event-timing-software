@@ -43,7 +43,8 @@ selecting a GUI toolkit, runtime or packaging model.
 :::{req} Use only the public SI-01 interface boundary  
 :id: SI02-REQ-001  
 :status: D  
-:derived_from: UC-008, IF03-REQ-001, IF03-REQ-007  
+:specifies: UC-008  
+:depends_on: IF03-REQ-001, IF03-REQ-007  
 
 For normal monitoring and operator control, SI-02 shall communicate with SI-01
 through the system-defined IF-03 boundary. SI-02 shall not require direct access
@@ -53,7 +54,8 @@ to SI-01 process memory, internal Java classes/objects or private runtime files.
 :::{req} Select endpoint and expose connection state  
 :id: SI02-REQ-002  
 :status: D  
-:derived_from: UC-001, UC-008, IF03-REQ-002, IF03-REQ-009  
+:specifies: UC-001, UC-008  
+:depends_on: IF03-REQ-002, IF03-REQ-009  
 
 SI-02 shall allow an operator to select or configure the SI-01 endpoint it uses
 and shall visibly distinguish at least disconnected, connection/synchronisation
@@ -64,7 +66,8 @@ shall not be presented as live.
 :::{req} Show connected application identity  
 :id: SI02-REQ-003  
 :status: D  
-:derived_from: UC-001, UC-008, IF03-REQ-003  
+:specifies: UC-001, UC-008  
+:depends_on: IF03-REQ-003  
 
 After connecting to SI-01, SI-02 shall obtain and display the connected
 application/version identity provided through IF-03 so the operator can identify
@@ -74,7 +77,8 @@ the system instance being operated.
 :::{req} Present current TimingNode operational status  
 :id: SI02-REQ-004  
 :status: D  
-:derived_from: UC-001, UC-008, IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017  
+:specifies: UC-001, UC-008  
+:depends_on: IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017  
 
 For each TimingNode exposed through IF-03, SI-02 shall present its current
 identity, optional operational LocationId, lifecycle state and explicit problem
@@ -85,7 +89,8 @@ GUI-owned lifecycle model.
 :::{req} Mark disconnected cached state as stale  
 :id: SI02-REQ-005  
 :status: D  
-:derived_from: UC-001, UC-008, IF03-REQ-006, IF03-REQ-021  
+:specifies: UC-001, UC-008  
+:depends_on: IF03-REQ-006, IF03-REQ-021  
 
 When the live IF-03 connection is lost, SI-02 shall make clear that previously
 displayed status/history is stale or disconnected and shall not continue to
@@ -95,7 +100,8 @@ present cached information as current live state.
 :::{req} Rebuild baseline before declaring the view live  
 :id: SI02-REQ-006  
 :status: D  
-:derived_from: UC-008, IF03-REQ-006, IF03-REQ-014, IF03-REQ-016  
+:specifies: UC-008  
+:depends_on: IF03-REQ-006, IF03-REQ-014, IF03-REQ-016  
 
 After initial connection or reconnect, SI-02 shall rebuild the current status and
 the committed LogBook history required for its view before declaring that view
@@ -107,7 +113,8 @@ same committed record twice.
 :::{req} Present committed registration history and live updates  
 :id: SI02-REQ-007  
 :status: D  
-:derived_from: UC-008, IF03-REQ-014, IF03-REQ-015  
+:specifies: UC-008  
+:depends_on: IF03-REQ-014, IF03-REQ-015  
 
 SI-02 shall be able to present committed registration history and later
 committed registration updates delivered through IF-03. It shall not present an
@@ -117,7 +124,8 @@ uncommitted command/request result as if it were committed TimingData.
 :::{req} Execute lifecycle control with explicit outcome  
 :id: SI02-REQ-008  
 :status: D  
-:derived_from: UC-002, UC-008, IF03-REQ-008, IF03-REQ-011  
+:specifies: UC-002, UC-008  
+:depends_on: IF03-REQ-008, IF03-REQ-011  
 
 SI-02 shall support the IF-03 OPEN-at-location and CLOSE operations made
 available for normal operator control and shall present the operation outcome
