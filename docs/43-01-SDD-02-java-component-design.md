@@ -1284,6 +1284,14 @@ Runtime owns `ApplicationConfiguration` and its concrete branches such as
 currently composed process. It is not a generic key/value map and it is not the
 external IF-11/YAML DTO.
 
+IF-11 TimingData storage is resolved during Runtime configuration/composition.
+The single-TimingNode `io.storage.timingData.path` shorthand expands to one
+node binding; the multi-node `io.storage.timingData.nodes` form resolves each
+application-wide `NodeId` to exactly one validated filesystem path before
+TimingNode persistence is constructed. Runtime passes the resolved target to the
+existing persistence implementation; this does not introduce a generic storage
+registry or make storage part of TimingNode domain state.
+
 Application owns `ConfigurationControl`: the use-case boundary for querying current
 configuration and requesting runtime changes. Runtime composition supplies the
 node-scoped `DynamicConfiguration<TagProcessingPolicy>` views when constructing this
