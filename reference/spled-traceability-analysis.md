@@ -111,13 +111,13 @@ responsibility; evidence of a successful test run is a separate fact.
 
 [Source: `doc/software_architecture/index.md`](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/doc/software_architecture/index.md)
 
-```markdown
+````markdown
 ```{arch} <Overall Software Component Architecture>
 :id: SWARCH_001
 :realizes: REQ_2, REQ_36, REQ_38, ...
 ...
 ```
-```
+````
 
 This object owns an architectural view and a list of software requirements.
 The real declaration contains **18** `:realizes:` targets. SPLed does
@@ -127,14 +127,14 @@ not use one Need per architectural component here.
 
 [Source: `components/light_controller/doc/index.md`](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/components/light_controller/doc/index.md)
 
-```text
+````text
 ```{spec} State Management
 :id: SWDD_LC-100
 :refines: SWARCH_001
 
 The light can be in one of two states: ON or OFF.
 ```
-```
+````
 
 This is a component-level specification that elaborates the broad architecture
 Need. Other component documents use the same pattern, including design Needs
@@ -164,12 +164,12 @@ without a direct `fulfills` target.
 
 SPLed enables `sphinx-codelinks` and uses:
 
-```text
+````text
 ```{src-trace}
 :project: components
 :directory: light_controller
 ```
-```
+````
 
 This exposes traced source objects on a component's documentation page.
 The source must be represented by the build's actual compilation settings,
