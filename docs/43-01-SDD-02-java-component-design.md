@@ -227,6 +227,9 @@ application/
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
 infra/
+  lifecycle/
+    AbstractConductor.java          reusable coordinator lifecycle template
+    ComponentLifecycleManager.java  component activation/rollback mechanics
   property/
     TrackedProperty.java            generic tracked-value scheduling/change detection
   extension/
@@ -910,7 +913,7 @@ interfaces.
 ```text
 presentation --> application
 application  --> domain / I/O / platform
-domain       --> I/O / platform
+domain       --> I/O / shared infra support / platform
 io           --> platform / JDK
 runtime      --> application / domain / presentation / I/O / infra / platform
 infra        --> owned support contracts + platform / JDK / selected support libraries
@@ -1080,10 +1083,10 @@ and outer Presentation lifetime. The system Conductor owns system-local
 operational coordination. There is no separate application-wide Conductor.
 
 The Domain Conductor consumes a narrow generic I/O inventory-control contract,
-not the concrete AntennaManager type. Move/reuse suitable lifecycle and
-tracking helpers without importing `application.framework.AbstractConductor`
-or `application.property.TimingNodeStateProperty` into Domain. Do not
-create a general-purpose coordination framework to replace these helpers.
+not the concrete AntennaManager type. Reuse `infra.lifecycle.AbstractConductor` and its `ComponentLifecycleManager`
+for generic ordered activation and rollback, while Domain owns its own
+`TimingNodeStateProperty`. Neither helper owns TimingNode or antenna policy;
+Domain must not import Application-owned lifecycle or property classes.
 
 Each Conductor uses its own logical serial lane with `SerialTaskRunner`;
 multiple conductor lanes may share one physical worker. Neither tag events
