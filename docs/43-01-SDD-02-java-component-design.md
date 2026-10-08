@@ -1100,17 +1100,21 @@ TimingSystem. The TimingSystem `Conductor` owns the lifecycle
 of its TimingNodes and the system-level inventory decision.
 
 The TimingSystem `Conductor` holds the associated `AntennaManager` directly.
-There is no separate inventory-control interface. It may read manager status or
-request manager-wide inventory as system behaviour requires; the manager still
-owns antenna power, self-test, initialization, multiplexing, recovery and
-shutdown mechanics.
+There is no separate inventory-control interface. Runtime resolves the IF-11
+`io.devices.antennaManagers` binding by `timingSystemId`; at most one manager
+is composed for each TimingSystem. It may read manager status or request
+manager-wide inventory as system behaviour requires; the manager still owns
+antenna power, self-test, initialization, multiplexing, recovery and shutdown
+mechanics.
 
 The TimingSystem `Conductor` uses its own logical serial lane with
 `SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
-Application `Conductor` only orders lifecycle and does not need a coordination
+`ApplicationConductor` only orders lifecycle and does not need a coordination
 lane. Tag events and individual antenna commands do not pass through either
-Conductor. Runtime performs configured observation routing directly, including
-fan-out:
+Conductor. Runtime wires each configured antenna observation directly to the
+TagProcessors named by that antenna's `timingNodes` mapping. Those targets must
+belong to the manager's referenced TimingSystem; one antenna may fan out to
+multiple nodes in that system.
 
 ```java
 antennaManager.tagObservedEvent(antennaId)
