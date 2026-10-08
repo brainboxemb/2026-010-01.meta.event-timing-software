@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Review SPLed's requirement-to-code/test traceability and record a focused, typed-link model plus UC-001 relationship-audit guidance in the Documentation Guide; existing Sphinx-Needs links are unchanged.
+
 - Align the Development Client SDE and API-first wireframe with the compact two-row workbench: control/Terminal tabs upper-left, identity plus Registrations upper-right, stacked Device/Client logs lower-left and LogBook lower-right.
 
 - Define the default/reference EventData identity convention: `TT-A/R-NNNN-{1|2}` physical tags resolve to `RT-A/R-NNNN`, normal registrations resolve directly to TeamId `NNNN`, reserve TeamId assignment is lookup-driven, and `0000` is invalid.
