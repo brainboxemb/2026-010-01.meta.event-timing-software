@@ -409,10 +409,10 @@ io:
       nodes:
         node-a:
           timingNodeId: A
-          path: data/timing-data-a.jsonl
+          path: data/node_A_logbook.jsonl
         node-b:
           timingNodeId: B
-          path: data/timing-data-b.jsonl
+          path: data/node_B_logbook.jsonl
 ```
 
 The key below `nodes` is a deployment-local binding name only.
@@ -438,7 +438,10 @@ Rules:
 - startup recovery opens/validates each resolved file and rebuilds that
   TimingNode's committed LogBook state before the TimingNode begins accepting
   operational work;
-- public examples use generic local paths and do not disclose deployment paths.
+- public examples use generic local paths and do not disclose deployment paths;
+- the reference/example filename convention is
+  `node_<TimingNodeId>_logbook.jsonl`, for example
+  `node_A_logbook.jsonl`; the configured path remains authoritative.
 
 Because `TimingNodeId` is application-wide unique, the same storage mapping
 works for one or multiple TimingSystems without adding `TimingSystemId` to the
