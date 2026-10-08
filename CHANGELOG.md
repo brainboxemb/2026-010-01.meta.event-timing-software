@@ -6,7 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Restore separate Application and TimingSystem Conductor responsibilities: Application owns application-component lifecycle order; the system Conductor owns TimingNode lifecycle and directly controls its AntennaManager inventory. Remove the temporary generic inventory-control boundary and show the system Conductor first inside TimingSystem.\n\n- Rename the system-local Domain component from `TimingSystemConductor` to `Conductor` (`domain.system.Conductor`), including the architecture and traceability identity.
+- Restore separate Application and TimingSystem Conductor responsibilities: Application owns application-component lifecycle order; the system Conductor owns TimingNode lifecycle and directly controls its AntennaManager inventory. Remove the temporary generic inventory-control boundary and show the system Conductor first inside TimingSystem.
+
+- Rename the system-local Domain component from `TimingSystemConductor` to `Conductor` (`domain.system.Conductor`), including the architecture and traceability identity.
 
 - Define one Domain TimingSystemConductor per TimingSystem for 1..N TimingNodes with manager-wide inventory; defer individual antenna controls to the roadmap.
 
