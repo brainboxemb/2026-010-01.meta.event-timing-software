@@ -453,6 +453,32 @@ grep -q 'Select a related object to compare.' bld/engineering-portal/browser-wor
   > bld/engineering-portal/browser-explorer.html
 
 grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
+grep -q 'This architecture element realizes:' bld/engineering-portal/browser-explorer.html
+grep -q 'This architecture element is elaborated by:' bld/engineering-portal/browser-explorer.html
+grep -q 'data-object-id="SI01-REQ-020"' bld/engineering-portal/browser-explorer.html
+grep -q 'data-object-id="DD-TimingNodeExecution"' bld/engineering-portal/browser-explorer.html
+! grep -q 'Outgoing relationships' bld/engineering-portal/browser-explorer.html
+! grep -q 'Incoming relationships' bld/engineering-portal/browser-explorer.html
+! grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
+! grep -q 'ELABORATES THIS' bld/engineering-portal/browser-explorer.html
+
+"$chrome" \
+  --headless \
+  --no-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --virtual-time-budget=2500 \
+  --dump-dom \
+  "http://127.0.0.1:8765/workspace/?object=TimingNode&compare=DD-TimingNodeExecution" \
+  > bld/engineering-portal/browser-workspace-TimingNode.html
+
+grep -q 'This architecture element realizes:' bld/engineering-portal/browser-workspace-TimingNode.html
+grep -q 'This architecture element is elaborated by:' bld/engineering-portal/browser-workspace-TimingNode.html
+grep -q 'This detailed design elaborates:' bld/engineering-portal/browser-workspace-TimingNode.html
+grep -q 'data-compare-object-id="DD-TimingNodeExecution"' bld/engineering-portal/browser-workspace-TimingNode.html
+! grep -q 'One-hop context' bld/engineering-portal/browser-workspace-TimingNode.html
+
+
 grep -q 'eng-explorer-workspace' bld/engineering-portal/browser-explorer.html
 grep -q 'data-eng-detail' bld/engineering-portal/browser-explorer.html
 grep -q 'data-engineering-id="TimingNode"' bld/engineering-portal/browser-explorer.html
