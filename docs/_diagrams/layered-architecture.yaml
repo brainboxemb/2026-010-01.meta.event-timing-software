@@ -153,16 +153,7 @@ nodes:
   notation: component
   layout: {x: 55, y: 220, w: 440, h: 50}
 
-# Application keeps entry/proxy on the right-hand vertical axis. ConfigurationControl
-# and Conductor sit lower on the left, leaving clear routing space above them.
-- id: application-conductor
-  object_id: Conductor
-  group: application-layer
-  label: "Conductor"
-  subtitle: "lifecycle / application-wide coordination"
-  kind: application
-  notation: component
-  layout: {x: 295, y: 425, w: 230, h: 50}
+# Application gateway/proxies remain outside Domain; Conductor is system-local.
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -213,6 +204,15 @@ nodes:
   kind: service
   notation: component
   layout: {x: 315, y: 667, w: 220, h: 50}
+
+- id: timing-system-conductor
+  object_id: TimingSystemConductor
+  group: timing-system-aggregate
+  label: "TimingSystemConductor"
+  subtitle: "node states • shared inventory"
+  kind: service
+  notation: component
+  layout: {x: 315, y: 732, w: 220, h: 50}
 
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
@@ -542,13 +542,6 @@ edges:
     - {x: 710, y: 290}
 
 - from: presentation-gateway
-  to: application-conductor
-  from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-  route:
-    - {x: 410, y: 379}
-
-- from: presentation-gateway
   to: timing-node-proxy
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
@@ -591,11 +584,6 @@ edges:
     - {x: 1165, y: 459}
     - {x: 1165, y: 1046}
     - {x: 665, y: 1046}
-
-- from: application-conductor
-  to: domain-layer
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.3392857143}
 
 - from: timing-node-proxy
   to: timing-node-aggregate

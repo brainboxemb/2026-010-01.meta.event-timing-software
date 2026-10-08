@@ -21,6 +21,7 @@ TimingApplication
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
+        +-- TimingSystemConductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -129,6 +130,7 @@ TimingApplication
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
+        +-- TimingSystemConductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -151,7 +153,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates.
+The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates and one `TimingSystemConductor`. It derives one shared inventory demand from the node states: enabled while any node is OPEN, otherwise disabled. TagObservation routing remains a separate Runtime connection; individual antenna controls are not implied.
 
 Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
 `UpstreamMessagePort`, `UpstreamProtocol` context and heartbeat/ping semantics. `SystemStatus` is the

@@ -385,12 +385,16 @@ in antenna status until a later attempt updates that status.
 :status: D  
 :specifies: UC-003  
 
-When at least one TimingNode assigned to a configured antenna is OPEN, SI-01 shall
-request inventory from that antenna. A previous self-test FAIL or failed inventory
-attempt shall not by itself suppress this new attempt.
+Within each TimingSystem, SI-01 shall request inventory from its AntennaManager
+while at least one of that system's TimingNodes is OPEN. It shall request inventory
+to stop when none is OPEN. The manager applies this shared demand to its entire
+antenna set, including internal multiplexing, power preparation and power-down.
+A prior diagnostic self-test FAIL or inventory failure shall not suppress a
+later new attempt.
 
-When no assigned TimingNode is OPEN, SI-01 shall stop inventory for that antenna and
-release or power down the antenna according to its configured lifecycle.
+Antenna-to-TimingNode observation routing remains separate from this
+manager-wide inventory control. Individual antenna start/stop/cycle commands
+are not part of the current interface.
 :::
 
 :::{req} Multiplex mutually exclusive antenna inventory  
@@ -562,7 +566,7 @@ resolve effective configuration
        Domain / I/O / Application / Presentation
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Cross-component application coordination is owned by `Conductor` and is connected explicitly before component activation. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Each TimingSystem's operational coordination is owned by its `TimingSystemConductor`, wired explicitly to the system's TimingNodes and inventory-control port before activation. Runtime owns process-wide startup and shutdown. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -573,6 +577,7 @@ Application
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
+        +-- TimingSystemConductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -716,9 +721,6 @@ The application responsibility coordinates use cases:
 
 ```text
 application/
-  Conductor
-    lifecycle and application-wide coordination
-
   PresentationGateway
     shared presentation-facing application gateway
 
@@ -731,12 +733,6 @@ application/
   UpstreamMessageRouter
     upstream-only application/domain target resolution and routing
 ```
-
-:::{arch} Conductor  
-:id: Conductor  
-
-`Conductor` coordinates application-wide lifecycle and the 1..N active `TimingSystem` aggregates, including their TimingNodes. It owns cross-component application coordination that does not belong to one Domain or I/O component. For example, when TimingNode lifecycle determines whether assigned antennas should inventory, Runtime composition wires that relationship through Conductor rather than placing the callback in a Runtime container or device class.
-:::
 
 :::{arch} Configuration control  
 :id: ConfigurationControl  
@@ -762,11 +758,10 @@ This uses the same directional naming principle as `UpstreamGateway`, while the 
 remain separate responsibilities: `PresentationGateway` is transport-independent
 application access and `UpstreamGateway` owns external upstream transport/integration.
 The gateway exposes application-wide information such as `version()` and capabilities.
-Application-wide operations delegate to `Conductor` where lifecycle or cross-node
-coordination is required. Node-scoped presentation work is exposed through a
-`TimingNodeProxy` so operations such as `open(...)` are explicitly attached to a
-TimingNode-facing object rather than appearing as context-free methods on the gateway.
-`Conductor` is not a mandatory hop for TimingNode-scoped work.
+Runtime owns process-wide lifecycle; no additional application-wide Conductor is
+required. Node-scoped work is exposed through `TimingNodeProxy`, so operations
+such as `open(...)` belong to a selected TimingNode. The system Conductor is
+not a mandatory hop for normal node commands.
 :::
 
 :::{arch} TimingNodeProxy  
@@ -818,6 +813,7 @@ one parent/child tree:
 TimingSystem (1..N per Application)
   TimingSystemId              internal only
   SystemStatus                complete current system overview
+  TimingSystemConductor       one per TimingSystem; joint operational coordination
   UpstreamMessagePort         system-level upstream messages
   UpstreamProtocol
     TimingData transfer
@@ -843,7 +839,19 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, one `TimingSystemConductor`, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+
+:::{arch} TimingSystemConductor
+:id: TimingSystemConductor
+:realizes: SI01-REQ-053
+
+One `TimingSystemConductor` belongs to each TimingSystem in Domain. It observes
+the authoritative OPEN/CLOSED/ERROR states of that system's 1..N TimingNodes.
+It requests shared manager-wide inventory if any node is OPEN, otherwise stop.
+It neither routes tag observations nor controls individual antennas. Runtime
+wires a narrow inventory-control contract to the system's I/O AntennaManager;
+that manager keeps power, initialization, multiplexing and recovery behavior.
+:::
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
 identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
@@ -998,9 +1006,10 @@ Each TimingNode-local TagProcessor likewise owns its own logical scheduled
 serial lane, while all TagProcessor lanes share one physical TagProcessor
 worker by default.
 
-Application-wide coordination has a separate execution boundary. Conductor
-owns a serial application-coordination lane so cross-component behaviour does
-not execute synchronously on the thread that emitted a Domain or I/O event.
+Each TimingSystemConductor owns a logical serial coordination lane.
+Its cross-component work never runs synchronously on the thread emitting a
+TimingNode state event. Different conductor lanes may share one Runtime-owned
+coordination worker.
 
 AntennaManager owns one serial scheduled I/O lane. Self-test, initialize,
 power-control transitions, start/stop inventory and multiplex switching/rotation
@@ -1022,8 +1031,9 @@ Domain
   TagProcessor 2 ─ scheduled serial lane ─┼─> one shared TagProcessor worker
   TagProcessor N ─ scheduled serial lane ─┘
 
-Application
-  Conductor ─ serial lane ────────────────> one application worker
+Domain
+  TimingSystemConductor 1 ─ serial lane ─┐
+  TimingSystemConductor N ─ serial lane ─┴─> one shared coordination worker
 
 I/O
   AntennaManager ─ scheduled serial lane ─> one shared I/O worker
@@ -1059,11 +1069,9 @@ Higher-level cooperative task handling is optional. A component that only needs 
 serial admission/ordering continues to use its execution lane directly. TimingNode and
 TagProcessor therefore remain direct lane users in the baseline.
 
-Conductor uses cooperative turns on its existing application lane because several
-cross-component change signals may wake one application control pass. This does not imply
-that Conductor currently owns a multi-phase state machine, and it does not require a
-scheduled lane: elapsed-time continuation remains a separate capability used only where
-the component actually needs it.
+TimingSystemConductor uses cooperative turns on its serial lane to coalesce
+multiple TimingNode change signals into one system-level reconciliation.
+No scheduled lane is necessary for this rule; AntennaManager owns timed work.
 
 Runtime worker items are deliberately bounded. A worker item must not occupy a
 physical worker merely to wait for time to pass. Delays such as antenna power
@@ -1626,6 +1634,7 @@ Application
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
+        +-- TimingSystemConductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
