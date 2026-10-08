@@ -282,7 +282,7 @@ Example of a MyST interface requirement:
 ```markdown
 :::{ifreq} Status query
 :id: IF03-REQ-004
-:status: A
+:status: R
 :specifies: UC-001, UC-008, UC-009
 
 IF-03 shall provide IF03-OP-002.

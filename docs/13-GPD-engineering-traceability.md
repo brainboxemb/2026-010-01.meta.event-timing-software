@@ -87,7 +87,7 @@ readable descriptions of one stored relation:
 | --- | --- | --- |
 | `specifies` | specifies | specified by |
 | `refines` | refines | refined by |
-| `depends_on` | depends on | depended on by |
+| `depends_on` | depends on | required by |
 | `realizes` | realizes | realized by |
 | `elaborates` | elaborates | elaborated by |
 | `implements` | implements | implemented by |

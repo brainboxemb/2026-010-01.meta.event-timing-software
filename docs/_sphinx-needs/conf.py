@@ -62,7 +62,7 @@ needs_links = {
     "depends_on": {
         "description": "Requirement depends on another requirement",
         "outgoing": "depends on",
-        "incoming": "depended on by",
+        "incoming": "required by",
         "copy": False,
         "allow_dead_links": False,
     },
