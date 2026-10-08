@@ -122,8 +122,17 @@ expected = [
 ]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit("UC-001 direct requirements disappeared or changed")
-if "document_groups" in requirements:
-    raise SystemExit("flat relationship model still exposes document groups")
+counts = {group["title"]: len(group["related_ids"]) for group in requirements["document_groups"]}
+expected_counts = {
+    "IF-03 — API": 4,
+    "IF-04 — Web Interface": 2,
+    "SI-01 — Timing Point Application": 3,
+    "SI-02 — Desktop GUI Application": 4,
+}
+if counts != expected_counts:
+    raise SystemExit(f"UC-001 unexpected document headings or counts: {counts}")
+if sorted(id for group in requirements["document_groups"] for id in group["related_ids"]) != sorted(expected):
+    raise SystemExit("UC-001 grouping changed linked object IDs")
 
 if "This use case is specified by:" in (
     site / "objects" / "UC-001" / "index.html"
@@ -134,6 +143,11 @@ uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
 )
 if "Requirements (13)" not in uc_page:
     raise SystemExit("UC-001 object page missing role-based heading")
+for title, count in expected_counts.items():
+    if f"{title} ({count})" not in uc_page:
+        raise SystemExit("UC-001 object page missing source heading: " + title)
+if uc_page.count('class="eng-relation__source-heading"') != 4:
+    raise SystemExit("UC-001 must show four non-collapsible source headings")
 if 'class="eng-relation__document"' in uc_page or "<details" in uc_page:
     raise SystemExit("UC-001 object page renders a collapsible relation instead of flat rows")
 for target in expected:
@@ -147,7 +161,7 @@ timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
 realizes = next(
     group for group in timing_node_groups if group["type"] == "realizes"
 )
-if len(realizes["related_ids"]) != 3 or "document_groups" in realizes:
+if len(realizes["related_ids"]) != 3 or realizes["document_groups"]:
     raise SystemExit("short architecture links differ from the flat relation contract")
 
 if "SI02-REQ-001" not in objects:
