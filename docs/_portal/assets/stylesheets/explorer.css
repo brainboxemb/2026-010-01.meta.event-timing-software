@@ -614,33 +614,28 @@ body.eng-explorer-page .md-content__inner {
   margin: 0.1rem 0 0.3rem;
 }
 
-.eng-relation__document {
-  border: 1px solid var(--md-default-fg-color--lightest);
-  margin: 0.14rem 0;
-}
-
-.eng-relation__document > summary {
-  cursor: pointer;
-  font-size: calc(0.58rem + 1px);
-  padding: 0.3rem 0.35rem;
-  overflow-wrap: anywhere;
-}
-
-.eng-relation__document > summary:hover,
-.eng-relation__document > summary:focus-visible {
-  background: var(--md-default-fg-color--lightest);
-}
-
-.eng-relation__items {
-  padding: 0.1rem 0.15rem 0.28rem 0.45rem;
-}
-
 .eng-relation {
   display: block;
   width: 100%;
+  box-sizing: border-box;
   padding: 0.14rem 0.18rem;
   margin: 0.08rem 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0;
+  background: transparent;
+  color: var(--md-default-fg-color);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.2;
+}
+
+.eng-relation:hover,
+.eng-relation:focus-visible,
+.eng-relation.is-selected {
+  background: var(--md-code-bg-color);
+  border-color: var(--md-accent-fg-color);
+  outline: none;
 }
 
 .eng-relation__object {
