@@ -224,6 +224,7 @@ The TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
+  Conductor.java                   application lifecycle / activation order
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
 infra/
@@ -249,8 +250,8 @@ domain/
   system/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
-    Conductor.java          joint coordination of 1..N TimingNodes
-    TimingNodeStateProperty.java        per-node authoritative state tracking
+    Conductor.java                      first system coordinator; node lifecycle + inventory
+    TimingNodeStateProperty.java        per-node state tracking
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
   timing/
@@ -493,7 +494,7 @@ run completes
 ```
 
 Any number of wake-ups while one run is active therefore coalesce into one later pass. The
-component's `runStep()` reads current authoritative state again; it does not replay stale
+component's `runStep()` reads current current state again; it does not replay stale
 event payloads. Scheduling state such as "run active" and "wake pending" is kept out of the
 component's application/device state.
 
@@ -921,10 +922,11 @@ platform     --> JDK and low-level environment only
 ```
 
 The normal dependency direction follows the layer order and is intentionally
-easy to read from imports. A lower layer does not import a higher layer merely
-to implement one of its interfaces. Domain may depend on a generic I/O contract,
-but not on a concrete I/O implementation; Runtime composition selects the
-concrete implementation.
+easy to read from imports. I/O code does not import Application or Domain merely
+to reverse a dependency. Domain may call an I/O component directly when the
+domain behaviour requires it. In the current design,
+`domain.system.Conductor` calls its associated `AntennaManager` directly for
+manager-wide inventory control.
 
 For example:
 
@@ -1064,34 +1066,44 @@ assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
 The Runtime composition root constructs 1..N TimingSystem contexts from
-validated effective configuration. Each contains 1..N TimingNodes and a
-Conductor, together with its own I/O composition. Multi-node
+validated effective configuration. Each contains 1..N TimingNodes, one
+`domain.system.Conductor` and its associated I/O composition. Multi-node
 support is in the current project plan, even though the current Java executable
 still composes one TimingNode.
 
 ```text
 validated effective configuration
   -> PlatformEnvironment / Runtime time / shared executors
-  -> per TimingSystem: TimingNodes, I/O, system Conductor
+  -> construct TimingNodes, AntennaManager and system Conductor
+  -> construct application.Conductor around the major application components
   -> wire node status signals to the system Conductor
   -> wire antenna observations directly to configured TagProcessors
-  -> start physical workers, activate systems, activate Presentation
+  -> start physical workers
+  -> application.Conductor.activate()
+       -> AntennaManager.activate()
+       -> domain.system.Conductor.activate()
+            -> TimingNode(s).activate()
+            -> initial node-state reconciliation
+  -> PresentationRuntime.activate()
 ```
 
-Runtime owns process-level construction, activation/rollback, physical workers
-and outer Presentation lifetime. The system Conductor owns system-local
-operational coordination. There is no separate application-wide Conductor.
+Runtime owns construction, wiring and physical worker lifetime. The Application
+`Conductor` owns activation order, rollback and reverse deactivation of the
+major application components. The TimingSystem `Conductor` owns the lifecycle
+of its TimingNodes and the system-level inventory decision.
 
-The Domain Conductor consumes a narrow generic I/O inventory-control contract,
-not the concrete AntennaManager type. Reuse `infra.lifecycle.AbstractConductor` and its `ComponentLifecycleManager`
-for generic ordered activation and rollback, while Domain owns its own
-`TimingNodeStateProperty`. Neither helper owns TimingNode or antenna policy;
-Domain must not import Application-owned lifecycle or property classes.
+The TimingSystem `Conductor` holds the associated `AntennaManager` directly.
+There is no separate inventory-control interface. It may read manager status or
+request manager-wide inventory as system behaviour requires; the manager still
+owns antenna power, self-test, initialization, multiplexing, recovery and
+shutdown mechanics.
 
-Each Conductor uses its own logical serial lane with `SerialTaskRunner`;
-multiple conductor lanes may share one physical worker. Neither tag events
-nor individual antenna commands pass through the Conductor. Runtime performs
-the configured observation routing directly, including fan-out:
+The TimingSystem `Conductor` uses its own logical serial lane with
+`SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
+Application `Conductor` only orders lifecycle and does not need a coordination
+lane. Tag events and individual antenna commands do not pass through either
+Conductor. Runtime performs configured observation routing directly, including
+fan-out:
 
 ```java
 antennaManager.tagObservedEvent(antennaId)
@@ -1129,6 +1141,7 @@ timing-point-core.jar
       FixedConfiguration.java
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
+    Conductor.java
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.domain.system/
@@ -1184,13 +1197,17 @@ main()
        -> create RuntimeExecutors and RuntimeTimeSources
        -> create one TimeSource for the current timing context
        -> construct reusable application/domain/I/O objects
-       -> construct and wire per-system Conductor
+       -> construct and wire each domain.system.Conductor
+       -> construct application.Conductor for application lifecycle
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
-       -> activate each TimingSystem's components and Conductor
-            -> initialize node-state tracking
+       -> application.Conductor.activate()
+            -> AntennaManager.activate()
+            -> domain.system.Conductor.activate()
+                 -> TimingNode(s).activate()
+                 -> initialize node-state tracking
        -> PresentationRuntime.activate()
   -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
@@ -1207,7 +1224,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; each `Conductor` owns coordinated operational behavior within its system.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.Conductor` owns application-component lifecycle order. Each `domain.system.Conductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
 
 :::
 
@@ -1495,18 +1512,22 @@ resources and remains valid when initialization did not complete successfully.
 
 #### Coordination ownership
 
-TimingSystem-owned intent and I/O device mechanics are separate:
+TimingSystem behaviour and I/O device mechanics are separate:
 
 ```text
-TimingNode states (1..N)
+application.Conductor
       |
-      v
-Conductor
-decides shared inventory demand
+      +--> AntennaManager lifecycle
       |
-      v
-AntennaManager
-owns lifecycle + inventory intent
+      +--> domain.system.Conductor lifecycle
+              |
+              +--> TimingNode lifecycle (1..N)
+              |
+              +--> node states -> shared inventory demand
+                            |
+                            v
+                      AntennaManager
+                      inventory / device mechanics
       |
       +--> AntennaSet
       |       +--> ManagedAntenna(s)
@@ -1518,9 +1539,11 @@ owns lifecycle + inventory intent
       +--> reusable AntennaShutdownTask
 ```
 
-`Conductor` requests manager-wide inventory while any of
-its TimingNodes is OPEN. It does not issue device-mechanism commands
-such as power-on, initialize, power-cycle or antenna switching.
+`domain.system.Conductor` calls its associated `AntennaManager` directly.
+It requests manager-wide inventory while any TimingNode in that system is OPEN.
+It does not issue device-mechanism commands such as power-on, initialize,
+power-cycle or antenna switching. `application.Conductor` owns the lifecycle
+ordering between the AntennaManager and the system Conductor.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of
 one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
@@ -1653,15 +1676,15 @@ SI01-REQ-053 uses one system-scoped inventory demand:
 TimingNode A/B/... state change
        |
        v
-Conductor (serial/coalesced authoritative read)
+domain.system.Conductor (serial/coalesced current-state read)
        |
        +--> any node OPEN? yes -> manager-wide inventory enabled
        |                   no  -> manager-wide inventory disabled
        v
-I/O inventory-control contract
+AntennaManager.setInventoryEnabled(...)
        |
        v
-AntennaManager -> InventoryTask -> managed antennas / optional power
+InventoryTask -> managed antennas / optional power
 ```
 
 `setInventoryEnabled(boolean)` is idempotent for unchanged state.
