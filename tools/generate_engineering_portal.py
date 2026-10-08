@@ -19,6 +19,20 @@ LINK_OPTIONS = runpy.run_path(
     str(Path(__file__).resolve().parents[1] / "docs/_sphinx-needs/conf.py")
 )["needs_links"]
 
+# Incoming relationships are navigated by the role of the linked objects.
+# This is presentation vocabulary, distinct from Sphinx-Needs relation labels.
+INCOMING_ROLES = {
+    "specifies": ("Requirements", "Requirements defining the behaviour of this use case."),
+    "refines": ("More specific requirements", "Requirements adding detail to this requirement."),
+    "depends_on": ("Dependent requirements", "Requirements depending on this requirement."),
+    "realizes": ("Architecture elements", "Architecture elements responsible for this requirement."),
+    "elaborates": ("Detailed designs", "Designs detailing this architecture element."),
+    "implements": ("Implementations", "Source implementations associated with this design."),
+    "fulfills": ("Implementations", "Source implementations associated with this requirement."),
+    "verifies": ("Verification cases", "Verification cases checking this requirement."),
+}
+DOCUMENT_GROUP_THRESHOLD = 6
+
 SOURCE_RE = re.compile(r"^(?P<path>.+):(?P<line>[0-9]+)$")
 NEED_OPEN_RE = re.compile(
     r"^(?P<fence>:::|```)\{(?P<directive>[A-Za-z0-9_-]+)\}(?:\s+.*)?$"
@@ -163,9 +177,84 @@ def source_context(
     }
 
 
+def source_document_label(source_root: Path, source_path: str) -> str:
+    """Name a source document from its authored heading/identity, not a Need ID."""
+
+    path = (source_root / source_path).resolve()
+    root = source_root.resolve()
+    if root != path and root not in path.parents:
+        raise PortalError(f"document path escapes repository root: {source_path}")
+    if not path.is_file():
+        return Path(source_path).stem
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for line in lines[:30]:
+        match = re.match(
+            r"^(?:System interface|Software item):\s*\*\*(.+?)\*\*",
+            line.strip(),
+            flags=re.IGNORECASE,
+        )
+        if match:
+            return match.group(1)
+    for line in lines:
+        if line.startswith("# "):
+            return line[2:].strip()
+    return Path(source_path).stem
+
+
+def build_relation_groups(item: dict, objects: dict[str, dict]) -> list[dict]:
+    """Build one display representation shared by all Engineering Portal views."""
+
+    sections = []
+    for direction, target_field, incoming in (
+        ("outgoing", "target", False),
+        ("incoming", "source", True),
+    ):
+        types: dict[str, list[str]] = {}
+        for edge in item[direction]:
+            types.setdefault(edge["type"], []).append(edge[target_field])
+
+        for relation_type, ids in types.items():
+            if incoming:
+                title, description = INCOMING_ROLES[relation_type]
+                heading = f"{title} ({len(ids)})"
+            else:
+                title = item["type_label"].lower()
+                verb = LINK_OPTIONS[relation_type]["outgoing"]
+                heading = f"This {title} {verb}:"
+                description = ""
+
+            section = {
+                "type": relation_type,
+                "direction": direction,
+                "title": heading,
+                "description": description,
+                "related_ids": ids,
+                "document_groups": [],
+            }
+            if len(ids) >= DOCUMENT_GROUP_THRESHOLD:
+                grouped: dict[str, dict] = {}
+                for related_id in ids:
+                    document = objects[related_id]["source_document"]
+                    key = document["path"]
+                    if key not in grouped:
+                        grouped[key] = {
+                            "path": key,
+                            "title": document["title"],
+                            "related_ids": [],
+                        }
+                    grouped[key]["related_ids"].append(related_id)
+                section["document_groups"] = sorted(
+                    grouped.values(), key=lambda group: (group["title"], group["path"])
+                )
+            sections.append(section)
+    return sections
+
+
 def make_view(graph: dict, repository: str, source_root: Path) -> dict:
     revision = graph["source_revision"]
     objects: dict[str, dict] = {}
+    document_titles: dict[str, str] = {}
 
     for item in graph["objects"]:
         object_id = item["id"]
@@ -175,6 +264,17 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
         resolved_source = item["source"]
         if context and context.get("definition"):
             resolved_source = f"{context['path']}:{context['line']}"
+
+        source_match = SOURCE_RE.match(resolved_source)
+        document_path = (
+            context["path"]
+            if context
+            else source_match.group("path") if source_match else resolved_source
+        )
+        if document_path not in document_titles:
+            document_titles[document_path] = source_document_label(
+                source_root, document_path
+            )
 
         objects[object_id] = {
             "id": object_id,
@@ -189,6 +289,7 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
             ),
             "source": item["source"],
             "source_url": source_url(repository, revision, resolved_source),
+            "source_document": {"path": document_path, "title": document_titles[document_path]},
             "source_context": context,
             "diagram_refs": item.get("diagram_refs") or [],
             "outgoing": [],
@@ -216,6 +317,9 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
     for item in objects.values():
         item["outgoing"].sort(key=lambda rel: (rel["type"], rel["target"]))
         item["incoming"].sort(key=lambda rel: (rel["type"], rel["source"]))
+
+    for item in objects.values():
+        item["relation_groups"] = build_relation_groups(item, objects)
 
     focus_depth_1: dict[str, dict] = {}
     for object_id, item in objects.items():
@@ -293,31 +397,38 @@ def render_object_index(view: dict) -> str:
     return "\n".join(lines)
 
 
-def relation_heading(obj: dict, relation_type: str, incoming: bool) -> str:
-    """Read a link as a sentence from the selected object's perspective."""
-
-    labels = LINK_OPTIONS[relation_type]
-    verb = labels["incoming" if incoming else "outgoing"]
-    return f"This {obj['type_label'].lower()}{' is ' if incoming else ' '}{verb}:"
-
-
 def render_relation_groups(obj: dict, objects: dict[str, dict]) -> list[str]:
-    """Group links by semantic verb instead of exposing graph edge direction."""
+    """Render the same role-based sections as the Explorer and Workspace."""
 
     result = []
-    for direction, endpoint, incoming in (
-        ("outgoing", "target", False),
-        ("incoming", "source", True),
-    ):
-        groups: dict[str, list[str]] = {}
-        for relation in obj[direction]:
-            groups.setdefault(relation["type"], []).append(relation[endpoint])
+    for section in obj["relation_groups"]:
+        result.extend(["## " + section["title"], ""])
+        if section["description"]:
+            result.extend([section["description"], ""])
 
-        for relation_type, ids in groups.items():
-            result.extend(["## " + relation_heading(obj, relation_type, incoming), ""])
-            for related_id in ids:
+        groups = section["document_groups"]
+        if groups:
+            for group in groups:
+                result.extend(
+                    [
+                        '<details class="eng-relation__document">',
+                        f'<summary>{html.escape(group["title"])} ({len(group["related_ids"])})</summary>',
+                        "<ul>",
+                    ]
+                )
+                for related_id in group["related_ids"]:
+                    related = objects[related_id]
+                    result.append(
+                        f'<li><a href="../{html.escape(related_id)}/">'
+                        f'{html.escape(related_id)} — {html.escape(related["title"])}</a></li>'
+                    )
+                result.extend(["</ul>", "</details>", ""])
+        else:
+            for related_id in section["related_ids"]:
                 related = objects[related_id]
-                result.append(f"- [{related_id} — {related['title']}](../{related_id}/)")
+                result.append(
+                    f"- [{related_id} — {related['title']}](../{related_id}/)"
+                )
             result.append("")
 
     return result or ["No traceability relationships are recorded for this object.", ""]

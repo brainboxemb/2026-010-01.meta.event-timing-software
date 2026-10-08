@@ -20,19 +20,9 @@
       return;
     }
 
-    // The verbs are provided by Sphinx-Needs through the generated view.
-    function relationshipHeading(object, type, incoming) {
-      const labels = data.relation_labels[type];
-      if (!labels) throw new Error("Unknown engineering relation: " + type);
-      return (
-        "This " +
-        String(object.type_label).toLowerCase() +
-        (incoming ? " is " : " ") +
-        labels[incoming ? "incoming" : "outgoing"] +
-        ":"
-      );
-    }
-
+    // The portal generator creates these headings for all three view types.
+    // Incoming links are labelled by the linked object's role, not a passive
+    // inversion of the authored Sphinx-Needs verb.
     function relationButton(id, mode) {
       const object = data.objects[id];
       if (!object) return "";
@@ -53,28 +43,57 @@
       );
     }
 
-    // Keep directional meaning while eliminating edge-technical jargon.
     function relationGroups(object, mode) {
       const sections = [];
-      for (const [direction, incoming, endpoint] of [
-        ["outgoing", false, "target"],
-        ["incoming", true, "source"],
-      ]) {
-        const groups = new Map();
-        for (const relation of object[direction]) {
-          if (!groups.has(relation.type)) groups.set(relation.type, []);
-          groups.get(relation.type).push(relation[endpoint]);
+      for (const group of object.relation_groups || []) {
+        const heading =
+          '<h3 title="Traceability relation: ' +
+          escapeHtml(group.type) +
+          '">' +
+          escapeHtml(group.title) +
+          "</h3>";
+        const description = group.description
+          ? '<p class="eng-relation__hint">' +
+            escapeHtml(group.description) +
+            "</p>"
+          : "";
+
+        let relatedRows;
+        if (group.document_groups && group.document_groups.length) {
+          relatedRows = group.document_groups
+            .map((document) => {
+              return (
+                '<details class="eng-relation__document">' +
+                "<summary>" +
+                escapeHtml(document.title) +
+                " (" +
+                document.related_ids.length +
+                ")</summary>" +
+                '<div class="eng-relation__items">' +
+                document.related_ids
+                  .map((id) => relationButton(id, mode))
+                  .join("") +
+                "</div></details>"
+              );
+            })
+            .join("");
+        } else {
+          relatedRows = group.related_ids
+            .map((id) => relationButton(id, mode))
+            .join("");
         }
-        for (const [type, relatedIds] of groups) {
-          sections.push(
-            '<section class="eng-detail__relations">' +
-            "<h3>" +
-            escapeHtml(relationshipHeading(object, type, incoming)) +
-            "</h3>" +
-            relatedIds.map((id) => relationButton(id, mode)).join("") +
+
+        sections.push(
+          '<section class="eng-detail__relations" data-eng-relation-type="' +
+            escapeHtml(group.type) +
+            '" data-eng-relation-direction="' +
+            escapeHtml(group.direction) +
+            '">' +
+            heading +
+            description +
+            relatedRows +
             "</section>"
-          );
-        }
+        );
       }
       return sections.length
         ? sections.join("")

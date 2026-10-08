@@ -88,7 +88,7 @@ timing_node_page = (site / "objects" / "TimingNode" / "index.html").read_text(
 )
 for heading in (
     "This architecture element realizes:",
-    "This architecture element is elaborated by:",
+    "Detailed designs (2)",
 ):
     if heading not in timing_node_page:
         raise SystemExit("object details missing semantic heading: " + heading)
@@ -100,6 +100,56 @@ design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_
 )
 if "This detailed design elaborates:" not in design_page:
     raise SystemExit("design details missing outgoing elaborates heading")
+
+# Incoming relationships should describe *who the related objects are*, not
+# force readers to invert the traceability verb.
+uc = portal_view["objects"]["UC-001"]
+specification_sections = [
+    section for section in uc["relation_groups"]
+    if section["type"] == "specifies" and section["direction"] == "incoming"
+]
+if len(specification_sections) != 1:
+    raise SystemExit("UC-001 missing a unique incoming requirement section")
+requirements = specification_sections[0]
+if requirements["title"] != "Requirements (13)":
+    raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
+actual_documents = {
+    group["title"]: len(group["related_ids"])
+    for group in requirements["document_groups"]
+}
+expected_documents = {
+    "IF-03 — API": 4,
+    "IF-04 — Web Interface": 2,
+    "SI-01 — Timing Point Application": 3,
+    "SI-02 — Desktop GUI Application": 4,
+}
+if actual_documents != expected_documents:
+    raise SystemExit(
+        f"UC-001 source-document group identities/counts differ: {actual_documents}"
+    )
+if sorted(
+    related for group in requirements["document_groups"]
+    for related in group["related_ids"]
+) != sorted(requirements["related_ids"]):
+    raise SystemExit("document grouping lost or duplicated traceability targets")
+if "This use case is specified by:" in (
+    site / "objects" / "UC-001" / "index.html"
+).read_text(encoding="utf-8"):
+    raise SystemExit("old reverse-grammar label found in UC-001 object page")
+uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
+    encoding="utf-8"
+)
+for token in ("Requirements (13)", "IF-03 — API (4)", 'class="eng-relation__document"'):
+    if token not in uc_page:
+        raise SystemExit("UC-001 object page missing grouped requirement label: " + token)
+
+# Short relations remain flat, without unnecessary collapsed document levels.
+timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
+realizes = next(
+    group for group in timing_node_groups if group["type"] == "realizes"
+)
+if realizes["document_groups"] or len(realizes["related_ids"]) != 3:
+    raise SystemExit("short architecture requirement links should remain directly visible")
 
 if "SI02-REQ-001" not in objects:
     raise SystemExit("engineering graph missing first SI-02 requirement")
