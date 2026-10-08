@@ -26,6 +26,7 @@ Detailed numbering and document-family rules are owned by
 | Verification | [60-SVP](60-SVP-software-verification-plan.md) and [61-01-VTS](61-01-VTS-timing-application-verification-test-specification.md) |
 | User guidance | [70-01-SUM](70-01-SUM-headless-timing-application.md) |
 | Documentation rules | [12-GPD](12-GPD-documentation-guide.md) |
+| Engineering traceability model and Sphinx-Needs integration | [13-GPD](13-GPD-engineering-traceability.md) |
 | Unresolved ideas | [00-brainstorm](00-brainstorm.md) |
 
 ## Working context

@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Review SPLed's requirement-to-code/test traceability and record a focused, typed-link model plus UC-001 relationship-audit guidance in the Documentation Guide; existing Sphinx-Needs links are unchanged.
+- Separate Sphinx-Needs authoring instructions, the technical engineering traceability model, and the pinned SPLed reference analysis into their respective documentation and reference files; preserve current configured links.
 
 - Align the Development Client SDE and API-first wireframe with the compact two-row workbench: control/Terminal tabs upper-left, identity plus Registrations upper-right, stacked Device/Client logs lower-left and LogBook lower-right.
 

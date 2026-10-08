@@ -95,6 +95,7 @@ Current examples are:
 10-SDP
 11-SIP
 12-GPD-documentation-guide
+13-GPD-engineering-traceability
 
 20-EXT-external-system-inputs
 
@@ -260,151 +261,44 @@ Private or proprietary source material may remain outside this public repository
 its applicable identity and revision are recorded generically when that can be done
 safely.
 
-## Engineering traceability — model review
+## Linking engineering objects with Sphinx-Needs
 
-The engineering graph should explain how an operational goal is specified, designed,
-implemented and verified. Each direct link is a meaningful engineering claim, not
-just a navigation shortcut. The incoming and outgoing views show direction; the
-link type explains the claim. Sphinx-Needs generates the reverse view from one
-authored link.
+Use a directed Sphinx-Needs link when one engineering object makes a
+specific traceability claim about another. The option is written in the
+source Need's header and names the target ID. The reverse (incoming) link
+is generated automatically.
 
-**Status:** the vocabulary below is the proposed direction for review, not an
-active migration. The current Sphinx-Needs configuration still uses
-`derived_from`, `satisfies`, `detailed_by` and `verifies`. Do not use the proposed
-new link names in authored Needs until they are configured and the existing
-relationships have been reviewed.
+These are the configured fields available in this project:
 
-### Reference review — useblocks/SPLed
+| Header option | Source → target | Relation |
+| --- | --- | --- |
+| `:derived_from:` | Requirement → source use case or upstream requirement | Derived from |
+| `:satisfies:` | Architecture/design → requirement | Satisfies |
+| `:detailed_by:` | SSD architecture element → focused SDD design Need | Detailed by |
+| `:verifies:` | Verification case → requirement or behaviour checked | Verifies |
 
-[SPLed](https://github.com/useblocks/SPLed) is a small software-product-line
-demonstrator that uses Sphinx-Needs across requirements, architecture, component
-design, source code and tests. Reviewed revision:
-[`e79a759d`](https://github.com/useblocks/SPLed/tree/e79a759d54a8d00f04e234af0f7b148de53dd222).
+For example, in a MyST Markdown `ifreq` directive:
 
-- Its [`ubproject.toml`](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/ubproject.toml)
-  configures `realizes`, `fulfills`, `refines`, `implements`, `results`,
-  `verifies` and `tests`, each with outgoing and incoming labels. It does not
-  configure `derived_from` or `specifies`.
-- The [software architecture](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/doc/software_architecture/index.md)
-  uses `SWARCH_001 :realizes:` to connect architecture to 18 requirements.
-  Component [detailed designs](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/components/light_controller/doc/index.md)
-  contain `spec` Needs using `:refines: SWARCH_001`.
-- [C source](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/components/light_controller/src/light_controller.c)
-  contains `// @need` implementation annotations referring to design and
-  requirement IDs. [C++ tests](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/components/light_controller/test/test_light_controller.cc)
-  declare `:tests:` links to specific design Needs. Its
-  [traceability table](https://github.com/useblocks/SPLed/blob/e79a759d54a8d00f04e234af0f7b148de53dd222/doc/results/index.md)
-  uses `needtable` to display requirement implementation/test backlinks.
-- There is also a scaling problem: in six inspected component design files,
-  **48** `spec` Needs all point to the same broad `SWARCH_001` node. Typed
-  links alone do not prevent a hub or a spiderweb if the linked architecture
-  objects are too broad.
+```markdown
+:::{ifreq} Status query
+:id: IF03-REQ-004
+:derived_from: UC-001, UC-008, UC-009
 
-**Lesson for this project:** retain meaningful relation types and the ability to
-trace into actual code/tests, but use focused existing architecture/design objects
-instead of linking every detailed element to one general architecture node.
-Do not copy SPLed's link vocabulary or code-annotation mechanism without a
-specific need and a working Java implementation path.
-
-### Proposed relationship model
-
-Prefer a small set of active verbs, consistently directed from the more concrete
-object to the object whose obligation or design it addresses:
-
-| Source object | Target object | Candidate link | Meaning |
-| --- | --- | --- | --- |
-| Requirement in SSSD, ISD or SSD | System/software-item use case | `specifies` | States a requirement for that use-case behaviour. |
-| Architecture element | Requirement | `realizes` | Design responsibility meets the requirement. |
-| Focused SDD/IDD design object | Architecture/interface design authority | `elaborates` | Adds implementation-level design detail. |
-| Identified source implementation | Design or requirement it implements | `implements` | Concrete code is responsible for the specified behaviour. |
-| Verification case | Requirement or behaviour actually checked | `verifies` | Verification coverage supported by a real case/evidence. |
-
-These names are **candidates**, not approved new Sphinx-Needs link types.
-SPLed's `refines` is a viable alternative to `elaborates` for design detail;
-use `refines` for requirement-to-requirement refinement only if that separate
-meaning is needed and unambiguous. `tests` may be valuable for source-level
-unit tests, distinct from formal `verifies`, once the test objects are
-represented in the graph. Do not introduce either merely for naming symmetry.
-
-The document-family flow (UC, SSSD, ISD/IDD, SSD, SDD, implementation, VTS) is
-**not** a mandatory one-object-per-level chain. An interface requirement can
-directly constrain a software item, and one design can address several valid
-requirements. Link the closest meaningful objects; add a cross-level direct
-link when it states a separate, useful obligation, not just because both
-objects belong to the same feature.
-
-For example, a future `SI02-REQ-002 :specifies: UC-001` would mean that the
-client endpoint/connection-state requirement specifies part of the connection
-use case. It would appear outgoing from the requirement and incoming at UC-001.
-A related design does not also need a direct UC-001 link if it is already
-traceable through that requirement.
-
-### How to avoid redundant links
-
-1. For every direct edge, ask: what claim does this particular link make?
-   If the answer is merely “related to the same feature”, use a Markdown
-   reference or follow the existing graph path instead.
-2. Keep direct links where the source really specifies, realizes, elaborates,
-   implements or verifies the target. Do not add every transitive connection
-   as another direct link.
-3. Maintain enough granularity: a single broad architecture Need receiving
-   links from many unrelated designs hides useful ownership. Conversely, do
-   not create empty Needs or a Need per Java class just to increase coverage.
-4. Do not infer that source code is implemented or a requirement is verified
-   from a design description alone. Implementation anchors and test evidence
-   must be real and separately inspectable.
-5. In the Engineering Portal show readable, directional link labels, and
-   allow navigation across multiple hops. Incoming/outgoing alone do not
-   communicate the engineering meaning.
-
-**Initial review case:** UC-001, “Connect to a registration system”, currently
-has 18 incoming `derived_from` links. Audit these by actual meaning: direct
-use-case specification, a narrower requirement refinement, a cross-cutting
-constraint, an indirect dependency or an incorrect link. Review IF-03, IF-04,
-SI-01 and SI-02 requirements together. Keep genuine direct links even when
-there are many; remove or redirect redundant links only after confirming that
-no valid trace path is lost. A link count is a diagnostic, not a limit.
-
-The current [SSD-to-SDD design traceability](#ssd-to-sdd-design-traceability)
-rule below remains in force until a separate link-model migration is agreed,
-configured, validated in the graph and reviewed in generated documentation.
-
-## SSD-to-SDD design traceability
-
-Architecture elements defined in an SSD use the Sphinx-Needs `arch` type. When an
-architecture element has substantive Java or implementation design elaboration in an
-SDD, the SSD object may declare `detailed_by` to one or more focused SDD
-`design` objects.
-
-The relationship is directional:
-
-```text
-SSD architecture element
-        |
-        | detailed_by
-        v
-focused SDD detailed-design object
+The interface provides the current application status.
+:::
 ```
 
-The SSD remains the architecture authority. The SDD `design` object elaborates how one
-focused design responsibility is realised; it must not duplicate or silently redefine the
-SSD architecture. One SDD design object may detail several related SSD architecture
-objects where they are explained together. Do not create one design object per Java class
-only to manufacture traceability.
+The Need with ID `IF03-REQ-004` has outgoing `derived_from` links
+to the listed use cases; each use case automatically has an incoming
+link from that requirement. Put multiple target IDs in one option,
+separated by commas. Use ordinary Markdown links for incidental
+references rather than adding unrelated graph edges.
 
-Use ordinary Markdown links for incidental references. Use `detailed_by` when the
-relationship belongs in the engineering graph and should therefore be visible in the
-Object Explorer with its inverse relation.
-
-A `design` Need owns the **substantive detailed-design content** for that object.
-Do not use a two-line Need merely as a traceability anchor and then place the actual
-design prose, examples or code immediately outside the directive. Keeping the detail
-inside the Need makes the same authoritative content available to Sphinx-Needs, the
-normalized engineering graph, generated reader Markdown and the Engineering Portal.
-
-Keep one coherent design responsibility per Need. Cross-cutting document guidance may
-remain ordinary Markdown, and unresolved/open design decisions stay outside accepted
-design objects until they become real design authority.
+The meaning, direction, design granularity and Sphinx-Needs/Portal
+implementation are explained in
+[13-GPD — Engineering Traceability](13-GPD-engineering-traceability.md).
+That guide also covers how the documentation graph relates to actual
+Java implementation and verification evidence.
 
 ## Requirement maturity
 

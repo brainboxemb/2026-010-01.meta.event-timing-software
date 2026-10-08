@@ -19,6 +19,14 @@ Do not use filenames or notes that identify the specific real-world event that m
 
 ## Sources
 
+### SPLed software-traceability reference
+
+Source: [useblocks/SPLed](https://github.com/useblocks/SPLed) at commit `e79a759d54a8d00f04e234af0f7b148de53dd222`.
+
+Type: illustrative Sphinx-Needs engineering traceability implementation.
+
+[Reference analysis](spled-traceability-analysis.md) documents its relationship labels, source-code and test traceability, and the limitations of linking many component designs to one high-level architecture object. The project-specific design is kept in [13-GPD — Engineering Traceability](../docs/13-GPD-engineering-traceability.md).
+
 ### 4+1 architectural view model
 
 Source: Philippe Kruchten, *Architectural Blueprints — The “4+1” View Model of Software Architecture*, IEEE Software 12(6), November 1995, pp. 42–50.
