@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Reconstruct the SPLed reference as a usage guide for all seven link types, including observed versus merely configured relations, source-code mappings, unit tests and generated JUnit result links.
+
 - Separate Sphinx-Needs authoring instructions, the technical engineering traceability model, and the pinned SPLed reference analysis into their respective documentation and reference files; preserve current configured links.
 
 - Align the Development Client SDE and API-first wireframe with the compact two-row workbench: control/Terminal tabs upper-left, identity plus Registrations upper-right, stacked Device/Client logs lower-left and LogBook lower-right.
