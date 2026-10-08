@@ -467,7 +467,7 @@ portal_lacks() {
   fi
 }
 portal_has bld/engineering-portal/browser-explorer.html 'This architecture element realizes:'
-portal_has bld/engineering-portal/browser-explorer.html 'This architecture element is elaborated by:'
+portal_has bld/engineering-portal/browser-explorer.html 'Detailed designs (2)'
 portal_has bld/engineering-portal/browser-explorer.html 'data-object-id="SI01-REQ-020"'
 portal_has bld/engineering-portal/browser-explorer.html 'data-object-id="DD-TimingNodeExecution"'
 portal_lacks bld/engineering-portal/browser-explorer.html 'Outgoing relationships'
@@ -486,7 +486,7 @@ portal_lacks bld/engineering-portal/browser-explorer.html 'ELABORATES THIS'
   > bld/engineering-portal/browser-workspace-TimingNode.html
 
 portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This architecture element realizes:'
-portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This architecture element is elaborated by:'
+portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'Detailed designs (2)'
 portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'This detailed design elaborates:'
 portal_has bld/engineering-portal/browser-workspace-TimingNode.html 'data-compare-object-id="DD-TimingNodeExecution"'
 portal_lacks bld/engineering-portal/browser-workspace-TimingNode.html 'One-hop context'
@@ -511,6 +511,14 @@ grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
   > bld/engineering-portal/browser-explorer-UC-001.html
 
 grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (13)'
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'IF-03 — API (4)'
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'IF-04 — Web Interface (2)'
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'SI-01 — Timing Point Application (3)'
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'SI-02 — Desktop GUI Application (4)'
+portal_has bld/engineering-portal/browser-explorer-UC-001.html '<details class="eng-relation__document">'
+portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case is specified by:'
+
 grep -q 'Preconditions' bld/engineering-portal/browser-explorer-UC-001.html
 grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-001.html
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer-UC-001.html
