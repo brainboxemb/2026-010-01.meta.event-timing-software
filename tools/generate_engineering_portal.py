@@ -8,10 +8,16 @@ import html
 import json
 from pathlib import Path
 import re
+import runpy
 
 import markdown
 import shutil
 import xml.etree.ElementTree as ET
+
+# Use the same Sphinx-Needs label definitions as the authored Needs.
+LINK_OPTIONS = runpy.run_path(
+    str(Path(__file__).resolve().parents[1] / "docs/_sphinx-needs/conf.py")
+)["needs_links"]
 
 SOURCE_RE = re.compile(r"^(?P<path>.+):(?P<line>[0-9]+)$")
 NEED_OPEN_RE = re.compile(
@@ -293,9 +299,8 @@ def render_relation_table(
             [
                 (
                     "Incoming relations are declared by the listed source objects "
-                    "and point to this object. For example, an incoming "
-                    "`derived_from` means the listed source object is derived "
-                    "from this object."
+                    "and point to this object. The label describes the inverse "
+                    "view of the outgoing relationship."
                 ),
                 "",
             ]
@@ -320,7 +325,7 @@ def render_relation_table(
         related_id = relation[endpoint]
         related = objects[related_id]
         lines.append(
-            f"| `{relation['type']}` | "
+            f"| {LINK_OPTIONS.get(relation['type'], {}).get('incoming' if incoming else 'outgoing', relation['type'])} (`{relation['type']}`) | "
             f"[{related_id} — {related['title']}](../{related_id}/) |"
         )
     lines.append("")
