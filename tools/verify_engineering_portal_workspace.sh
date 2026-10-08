@@ -452,6 +452,7 @@ grep -q 'Select a related object to compare.' bld/engineering-portal/browser-wor
   "http://127.0.0.1:8765/explorer/?object=TimingNode" \
   > bld/engineering-portal/browser-explorer.html
 
+set -x
 grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
 # Report the exact missing/obsolete phrase if a browser UX assertion fails.
 portal_has() {
