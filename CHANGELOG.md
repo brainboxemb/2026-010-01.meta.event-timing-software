@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Implement typed Sphinx-Needs traceability and target schemas; migrate requirement and architecture/design links, unify reader/portal labels, and document the actual link semantics and rationale in the GPD guides.
+
 - Reconstruct the SPLed reference as a usage guide for all seven link types, including observed versus merely configured relations, source-code mappings, unit tests and generated JUnit result links.
 
 - Separate Sphinx-Needs authoring instructions, the technical engineering traceability model, and the pinned SPLed reference analysis into their respective documentation and reference files; preserve current configured links.

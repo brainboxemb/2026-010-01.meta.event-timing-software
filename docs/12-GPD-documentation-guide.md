@@ -263,42 +263,40 @@ safely.
 
 ## Linking engineering objects with Sphinx-Needs
 
-Use a directed Sphinx-Needs link when one engineering object makes a
-specific traceability claim about another. The option is written in the
-source Need's header and names the target ID. The reverse (incoming) link
-is generated automatically.
+Write a directed relationship in the **source** Need's header. Its value
+contains one or more target IDs; Sphinx-Needs generates incoming backlinks.
 
-These are the configured fields available in this project:
-
-| Header option | Source → target | Relation |
+| Header field | Source → target | Meaning |
 | --- | --- | --- |
-| `:derived_from:` | Requirement → source use case or upstream requirement | Derived from |
-| `:satisfies:` | Architecture/design → requirement | Satisfies |
-| `:detailed_by:` | SSD architecture element → focused SDD design Need | Detailed by |
-| `:verifies:` | Verification case → requirement or behaviour checked | Verifies |
+| `:specifies:` | Requirement → use case | Defines required behaviour for a use case. |
+| `:refines:` | Specific requirement → parent requirement | Makes an existing requirement more specific. |
+| `:depends_on:` | Requirement → requirement | Depends on another contract/capability. |
+| `:realizes:` | Architecture → requirement | Allocates a requirement to an architecture element. |
+| `:elaborates:` | Detailed design → architecture | Elaborates an architecture element. |
+| `:implements:` | Implementation → detailed design | Identifies source code implementing a design. |
+| `:fulfills:` | Implementation → requirement | Directly identifies source code fulfilling an obligation. |
+| `:verifies:` | Verification case → requirement | Defines verification coverage. |
 
-For example, in a MyST Markdown `ifreq` directive:
+Example of a MyST interface requirement:
 
 ```markdown
 :::{ifreq} Status query
 :id: IF03-REQ-004
-:derived_from: UC-001, UC-008, UC-009
+:status: A
+:specifies: UC-001, UC-008, UC-009
 
-The interface provides the current application status.
+IF-03 shall provide IF03-OP-002.
 :::
 ```
 
-The Need with ID `IF03-REQ-004` has outgoing `derived_from` links
-to the listed use cases; each use case automatically has an incoming
-link from that requirement. Put multiple target IDs in one option,
-separated by commas. Use ordinary Markdown links for incidental
-references rather than adding unrelated graph edges.
+If a requirement depends on another requirement, use a separate
+`:depends_on: SI01-REQ-001` option. Do not author the reverse link;
+it appears automatically on the target Need.
 
-The meaning, direction, design granularity and Sphinx-Needs/Portal
-implementation are explained in
-[13-GPD — Engineering Traceability](13-GPD-engineering-traceability.md).
-That guide also covers how the documentation graph relates to actual
-Java implementation and verification evidence.
+Use ordinary Markdown links for references that are only for navigation.
+The [Engineering Traceability guide](13-GPD-engineering-traceability.md)
+explains relation meaning, direct versus indirect paths and code/evidence
+boundaries.
 
 ## Requirement maturity
 
