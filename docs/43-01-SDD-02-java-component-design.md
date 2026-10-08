@@ -1078,7 +1078,9 @@ still composes one TimingNode.
 validated effective configuration
   -> PlatformEnvironment / Runtime time / shared executors
   -> construct TimingNodes, AntennaManager and system Conductor
-  -> construct application.ApplicationConductor around the major application components
+  -> construct one application.ApplicationConductor
+  -> for each TimingSystem:
+       -> registerTimingSystem(AntennaManager, domain.system.Conductor)
   -> wire node status signals to the system Conductor
   -> wire antenna observations directly to configured TagProcessors
   -> start physical workers
@@ -1090,9 +1092,11 @@ validated effective configuration
   -> PresentationRuntime.activate()
 ```
 
-Runtime owns construction, wiring and physical worker lifetime. The Application
-`Conductor` owns activation order, rollback and reverse deactivation of the
-major application components. The TimingSystem `Conductor` owns the lifecycle
+Runtime owns construction, wiring and physical worker lifetime. The
+`ApplicationConductor` owns activation order, rollback and reverse deactivation
+of the major application components. Runtime registers every composed
+TimingSystem with it before activation; the class does not assume one
+TimingSystem. The TimingSystem `Conductor` owns the lifecycle
 of its TimingNodes and the system-level inventory decision.
 
 The TimingSystem `Conductor` holds the associated `AntennaManager` directly.
