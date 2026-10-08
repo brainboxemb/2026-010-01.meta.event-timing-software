@@ -135,7 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           # Select exactly the relation types configured for Sphinx-Needs.
-          mapfile -t link_names < <(python -c 'import runpy; print(*runpy.run_path("docs/_sphinx-needs/conf.py")["needs_links"], sep="\\n")')
+          mapfile -t link_names < <(python -c 'import runpy; print(*runpy.run_path("docs/_sphinx-needs/conf.py")["needs_links"], sep=chr(10))')
           link_args=()
           for name in "${link_names[@]}"; do
             link_args+=(--relation "$name")
