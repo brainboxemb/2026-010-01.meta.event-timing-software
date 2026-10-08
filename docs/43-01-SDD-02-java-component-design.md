@@ -226,13 +226,6 @@ application/
   ApplicationId.java
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
-  Conductor.java                   SI-01 cross-component rules
-  logic/
-    AbstractConductor.java          generic Conductor lifecycle template
-    ComponentLifecycleManager.java ordered activation/rollback helper
-  property/
-    TimingNodeStateProperty.java
-
 infra/
   property/
     TrackedProperty.java            generic tracked-value scheduling/change detection
@@ -253,6 +246,8 @@ domain/
   system/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
+    TimingSystemConductor.java          joint coordination of 1..N TimingNodes
+    TimingNodeStateProperty.java        per-node authoritative state tracking
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
   timing/
@@ -367,8 +362,9 @@ single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
 housekeeping and immediate work therefore preserve node-local ordering without creating a
 thread per processor.
 
-Runtime also creates the Conductor `SerialExecutor` over the application worker and the
-AntennaManager `SerialScheduledExecutor` over the shared scheduled I/O worker.
+Runtime creates a logical `SerialExecutor` per TimingSystemConductor
+over a shared coordination worker and a `SerialScheduledExecutor` per
+AntennaManager over the shared scheduled I/O worker.
 
 The lane classes receive their backing JDK executor as an external dependency; they never
 create, configure or shut down the physical worker themselves. Closing a logical lane
@@ -380,7 +376,7 @@ The current Java baseline uses one physical worker for each of these Runtime rol
 ```text
 TimingNode     -> ThreadPoolExecutor(1)
 TagProcessor   -> ScheduledThreadPoolExecutor(1)
-Conductor      -> ThreadPoolExecutor(1)
+System coordination -> ThreadPoolExecutor(1)
 shared I/O     -> ScheduledThreadPoolExecutor(1)
 ```
 
@@ -399,10 +395,10 @@ for reimplementing JDK executor internals.
 
 :::{design} Cooperative execution and application coordination
 :id: DD-CooperativeExecution
-:elaborates: Conductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
+:elaborates: TimingSystemConductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
 
 Detailed Java design for cooperative task runners/controllers and the
-Application-layer coordination pattern used by Conductor.
+TimingSystem-scoped coordination pattern used by TimingSystemConductor.
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
@@ -564,25 +560,17 @@ InventoryTask
   SWITCH / DONE
 ```
 
-`Conductor` uses cooperative task execution for Application-layer coordination, but does
-**not** currently define its own state-machine phases. It remains on its normal Application
-`SerialExecutor` and runs through `SerialTaskRunner`. TimingNode property-change events
-only wake the Conductor control task. `Conductor.runStep()` reads the latest authoritative
-`TimingNodeTypes.State` and applies the corresponding cross-component rule.
+Each TimingSystemConductor uses `SerialTaskRunner` and
+`CooperativeTaskController` to reconcile the authoritative states of its
+1..N TimingNodes. Status events merely wake the task; they do not execute
+inventory control on the emitting thread. Manager-wide inventory is needed
+while any node is OPEN, and not needed otherwise.
 
-Conductor does not keep a second copy of TimingNode state or a separate
-"last handled state" marker. `TimingNodeStateProperty` remains the sole holder of the
-tracked TimingNode state. Conductor maps the current value to idempotent desired inventory
-state on `AntennaManager`.
-
-AntennaManager reuses its existing `Setting<Boolean>` for that desired/applied inventory
-state. State-driven updates use an idempotent setting update so a coalesced duplicate wake
-does not become an implicit retry. Explicit repeated inventory requests remain a separate
-retry mechanism and deliberately advance the Setting request revision.
-
-If future application coordination needs several ordered phases or waits, Conductor may
-then introduce its own explicit `Phase`/state-machine. Until that need exists, calling the
-current Conductor itself a state machine would be misleading.
+The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
+requests from explicit retry attempts. Per-node state tracking may reuse the
+generic `TrackedProperty<T>`, but must be owned within the Domain/system
+boundary rather than importing Application-owned property types. The Conductor
+does not require a multiphase state machine for this rule.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
@@ -1072,137 +1060,39 @@ Runtime is not another business/domain layer; it is where the executable object 
 assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
-`runtime.TimingApplicationRuntime.create(...)` is the single concrete composition root and the
-returned `TimingApplicationRuntime` owns the lifecycle of that already composed graph. A second
-bootstrap/builder/composition class must not hide the object graph. Small private helpers may format repetitive local
-construction, but cross-component relationships and lifecycle order remain visible in
-`TimingApplicationRuntime.create(...)`. The visible composition and startup ownership is:
+The Runtime composition root constructs 1..N TimingSystem contexts from
+validated effective configuration. Each contains 1..N TimingNodes and a
+TimingSystemConductor, together with its own I/O composition. Multi-node
+support is in the current project plan, even though the current Java executable
+still composes one TimingNode.
 
 ```text
-validated Config
-  -> PlatformEnvironment
-  -> RuntimeExecutors/resources
-  -> RuntimeTimeSources -> TimeSource
-  -> Domain + I/O + Application objects
-  -> explicit Conductor/event wiring
-  -> RuntimeExecutors.start()
-  -> Conductor.activate()
-       -> AbstractConductor lifecycle template
-            -> ComponentLifecycleManager.activateAll()
-                 -> TimingNode.activate()
-                 -> AntennaManager.activate()
-            -> start Application lane
-            -> Conductor.onActivated()
-                 -> AntennaManager startup self-test runs asynchronously
-                 -> initialize tracked application properties
-  -> PresentationRuntime.activate()
+validated effective configuration
+  -> PlatformEnvironment / Runtime time / shared executors
+  -> per TimingSystem: TimingNodes, I/O, system Conductor
+  -> wire node status signals to the system Conductor
+  -> wire antenna observations directly to configured TagProcessors
+  -> start physical workers, activate systems, activate Presentation
 ```
 
-`application.Conductor` owns SI-01 application coordination between already
-constructed components. Runtime creates and wires the Conductor but does not reimplement
-application startup policy in the composition root.
+Runtime owns process-level construction, activation/rollback, physical workers
+and outer Presentation lifetime. The system Conductor owns system-local
+operational coordination. There is no separate application-wide Conductor.
 
-Generic Conductor lifecycle mechanics are deliberately kept out of the concrete SI-01
-class. `application.logic.AbstractConductor` owns the reusable lifecycle template:
-component registration, ordered activation, starting/closing the Application lane,
-activation-failure cleanup and reverse-order deactivation. It uses
-`application.logic.ComponentLifecycleManager` for the mechanical component order and
-rollback.
+The Domain Conductor consumes a narrow generic I/O inventory-control contract,
+not the concrete AntennaManager type. Move/reuse suitable lifecycle and
+tracking helpers without importing `application.framework.AbstractConductor`
+or `application.property.TimingNodeStateProperty` into Domain. Do not
+create a general-purpose coordination framework to replace these helpers.
 
-The abstract base has one concrete-startup hook, `onActivated()`, called only after
-registered components are active and the Application lane is running. The base contains no
-TimingNode, AntennaManager, provider, property or SI-01 decision logic.
-
-The concrete `application.Conductor` registers its components and implements
-`onActivated()` with SI-01 startup actions such as tracked
-property initialization. It also contains the application rules that map tracked values to
-component intent.
-
-```text
-AbstractConductor
-  generic lifecycle only
-      |
-      +--> ComponentLifecycleManager
-      +--> Application SerialExecutor lifecycle
-      +--> cleanup / rollback mechanics
-      |
-      v
-Conductor
-  SI-01 logic only
-      |
-      +--> TimingNodeStateProperty
-      +--> antenna inventory intent from TimingNode state
-      +--> TimingNode state -> explicit antenna inventory action
-```
-
-Neither class is a general application framework. Component discovery, dependency
-injection, rule engines and provider lifecycle do not belong in this base hierarchy.
-
-Conductor owns one logical `SerialExecutor` application lane on a Runtime-owned
-application worker. Application-level values that drive cross-component behaviour are
-represented explicitly as application properties backed by the generic
-`infra.property.TrackedProperty<T>` mechanism rather than as Conductor-specific
-refresh flags.
-
-`infra.property.TrackedProperty<T>` owns only the reusable mechanism: a readable name,
-an authoritative value reader, the shared Application lane, current-value tracking,
-change detection and coalesced refresh scheduling. It has no knowledge of TimingNode,
-AntennaManager or Conductor.
-
-Concrete application properties live under `application.property`. They bind the generic
-mechanism to one application concept and expose a domain-meaningful change signal. A source
-event is only a **change signal**: it never becomes the stored value directly. The tracked
-property schedules its own refresh on the Application lane, reads the current authoritative
-value and invokes application behaviour only when the effective value changed.
-
-The first concrete property is `TimingNode.lifecycle`:
-
-```text
-TimingNode.statusChangedEvent
-        |
-        | change signal only
-        v
-application.property.TimingNodeStateProperty
-        |
-        | read TimingNodeQueries.status().lifecycle()
-        | compare with tracked current value
-        v
-lifecycle changed
-        |
-        v
-Conductor application rule
-        |
-        +--> AntennaManager inventory required = (lifecycle == OPEN)
-```
-
-Because local `Event<T>` delivery is synchronous, the event callback performs only
-bounded property signalling; cross-component behaviour never runs on the emitting
-TimingNode thread. During startup Conductor first activates components and performs
-required health work, then performs an explicit initial property refresh before startup is
-reported complete. The same property logic handles later changes without replaying stale
-event snapshots.
-
-`TrackedProperty<T>` is deliberately not a general reactive framework, rule engine
-or dependency graph. New properties are added only for concrete application-level values
-that need tracked current state and change-driven behaviour.
-
-`RuntimeExecutors` construction allocates executor objects only; physical worker startup
-is an explicit `start()` action owned by Runtime. Runtime also owns the outer
-`PresentationRuntime` lifecycle and activates Presentation only after Conductor has made
-the application core ready. Runtime execution resources are closed only after Conductor
-has deactivated its application components and Presentation is inactive.
-
-Cross-component event wiring is visible at the composition point. The antenna manager owns
-the concrete `Antenna` instances; it does not expose those device objects for callers to
-walk. Composition addresses a configured source by `AntennaId` and subscribes the target
-to the manager's subscription-only event source, conceptually:
+Each Conductor uses its own logical serial lane with `SerialTaskRunner`;
+multiple conductor lanes may share one physical worker. Neither tag events
+nor individual antenna commands pass through the Conductor. Runtime performs
+the configured observation routing directly, including fan-out:
 
 ```java
 antennaManager.tagObservedEvent(antennaId)
-        .subscribe(timingNode.tagProcessor()::onTagObserved);
-
-timingNode.statusChangedEvent()
-        .subscribe(conductor.timingNodeLifecycleProperty().changeSignal());
+    .subscribe(timingNode.tagProcessor()::onTagObserved);
 ```
 
 For semantic local events, accessor names describe the fact that happened and end in
@@ -1237,12 +1127,10 @@ timing-point-core.jar
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ConfigurationControl.java
-    Conductor.java
-    framework/
-      AbstractConductor.java
-      ComponentLifecycleManager.java
-    property/
-      TimingNodeStateProperty.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.domain.system/
+    TimingSystemConductor.java
+    TimingNodeStateProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
@@ -1293,14 +1181,13 @@ main()
        -> create RuntimeExecutors and RuntimeTimeSources
        -> create one TimeSource for the current timing context
        -> construct reusable application/domain/I/O objects
-       -> construct and wire application.Conductor
+       -> construct and wire per-system TimingSystemConductor
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
-       -> Conductor.activate()
-            -> AbstractConductor activates application components + Application lane
-            -> Conductor.onActivated() performs SI-01 startup health/property work
+       -> activate each TimingSystem's components and Conductor
+            -> initialize node-state tracking
        -> PresentationRuntime.activate()
   -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
@@ -1317,7 +1204,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; `application.Conductor` owns lifecycle coordination of the application components inside that graph.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; each `TimingSystemConductor` owns coordinated operational behavior within its system.
 
 :::
 
@@ -1605,14 +1492,14 @@ resources and remains valid when initialization did not complete successfully.
 
 #### Coordination ownership
 
-Application intent and device mechanics are separate responsibilities:
+TimingSystem-owned intent and I/O device mechanics are separate:
 
 ```text
-TimingNode state
+TimingNode states (1..N)
       |
       v
-  Conductor
-decides inventory intent
+TimingSystemConductor
+decides shared inventory demand
       |
       v
 AntennaManager
@@ -1628,9 +1515,9 @@ owns lifecycle + inventory intent
       +--> reusable AntennaShutdownTask
 ```
 
-`Conductor` owns cross-component application decisions. It requests inventory enabled
-or disabled from TimingNode state. It does not issue device-mechanism commands such as
-power-on, initialize, power-cycle or reader switching.
+`TimingSystemConductor` requests manager-wide inventory while any of
+its TimingNodes is OPEN. It does not issue device-mechanism commands
+such as power-on, initialize, power-cycle or antenna switching.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of
 one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
@@ -1757,61 +1644,30 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 
 #### TimingNode-driven inventory actions
 
-SI01-REQ-053 is expressed as an application decision followed by an explicit
-AntennaManager action. Conductor does not encode that action as a boolean flag:
+SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode state OPEN
-        |
-        v
-TimingNodeStateProperty.changedEvent()
-        |
-        v
-Conductor.onTimingNodeStateChanged(OPEN)
-        |
-        v
-AntennaManager.requestEnableInventory()
-        |
-        +--> start a fresh preparation attempt
-        +--> optional power ON
-        +--> stabilization delay
-        +--> initialize
-        +--> start inventory directly
-             or through multiplex group
+TimingNode A/B/... state change
+       |
+       v
+TimingSystemConductor (serial/coalesced authoritative read)
+       |
+       +--> any node OPEN? yes -> manager-wide inventory enabled
+       |                   no  -> manager-wide inventory disabled
+       v
+I/O inventory-control contract
+       |
+       v
+AntennaManager -> InventoryTask -> managed antennas / optional power
 ```
 
-The inverse flow is equally explicit:
-
-```text
-TimingNode state CLOSED or ERROR
-        |
-        v
-TimingNodeStateProperty.changedEvent()
-        |
-        v
-Conductor.onTimingNodeStateChanged(CLOSED/ERROR)
-        |
-        v
-AntennaManager.requestDisableInventory()
-        |
-        +--> cancel multiplex rotation
-        +--> stop inventory
-        +--> optional external power OFF
-```
-
-`requestEnableInventory()` and `requestDisableInventory()` are asynchronous
-application-facing requests. The convenience `enableInventory()` and
-`disableInventory()` methods use the same asynchronous request path and only turn
-immediate request rejection into an exception; they do not wait for physical completion.
-Applied state is observed through manager/device status and the `Setting` state.
-
-Disabling inventory is an operational action, not provider shutdown. The AntennaManager
-remains ACTIVE and may enable the same antenna again after a later OPEN. Provider
-`shutdown()` belongs to application/component deactivation.
-
-An antenna mapped to multiple TimingNodes therefore remains enabled until the last assigned
-TimingNode leaves OPEN. Conductor owns the application decision; AntennaManager owns the
-power/initialize/start/stop mechanics.
+`setInventoryEnabled(boolean)` is idempotent for unchanged state.
+Explicit `requestEnableInventory()` / `requestDisableInventory()`
+calls are separate retry attempts. AntennaManager owns all physical
+mechanics: self-test, power, initialization, multiplexing and shutdown.
+Runtime separately wires antenna observations to configured TimingNode
+TagProcessors. Per-antenna commands and individual cycling are future
+roadmap features; internal multiplex rotation already works.
 
 #### Failure and recovery ownership
 

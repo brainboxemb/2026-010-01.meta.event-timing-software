@@ -256,15 +256,16 @@ io
       displayProtocolProvider: reference
 ```
 
-`AntennaManager` is an optional configured I/O capability. When present it owns 1..N antennas.
+`AntennaManager` is an optional I/O capability per TimingSystem. When present it owns 1..N antennas and accepts one shared inventory demand: enabled while any TimingNode of that system is OPEN, otherwise disabled. Internal multiplex rotation is distinct from future individual antenna-control features.
 `AntennaId` is exactly one digit `1`..`9` and is distinct from `TimingNodeId`.
 One antenna may intentionally map to 1..N TimingNodes; this
 fan-out does not merge their state or sequence streams.
 
 Antenna installation fields have these semantics:
 
-- `timingNodes` maps an antenna to one or more TimingNodes whose OPEN/CLOSED state
-  drives whether that antenna is required for normal inventory;
+- `timingNodes` routes antenna observations to one or more TimingNodes
+  within the owning TimingSystem; this mapping does not imply independently
+  starting/stopping inventory per antenna;
 - `power.controlRef` optionally references an installation-owned external power
   capability rather than reader/vendor protocol;
 - `power.stabilizationMillis` defines how long SI-01 waits after external power-on
