@@ -224,7 +224,7 @@ The TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
-  Conductor.java                   application lifecycle / activation order
+  ApplicationConductor.java        application lifecycle / activation order
   UpstreamMessageRouter.java       when upstream messaging is implemented
   ConfigurationControl.java        configuration query/update use-cases
 infra/
@@ -689,10 +689,12 @@ test-only in code.
 
 Detailed Application-layer design for PresentationGateway and its node-scoped
 TimingNodeProxy boundary. Presentation transports remain outside this boundary.
-The application `PresentationGateway` is always composed with a complete
-`TimingNode`; there is no status-only or partially configured production
-gateway. Presentation tests use complete test fixtures rather than adding a
-second production construction mode.
+The application `PresentationGateway` is composed with the complete set of
+currently composed `TimingNode` instances. It creates one
+`TimingNodeProxy` per node, indexes those proxies by application-wide
+`NodeId`, and does not expose a separate single-node production mode.
+Presentation tests use complete test fixtures rather than a second construction
+path.
 
 `PresentationGateway` is an Application-layer component named for the adjacent
 Presentation side whose traffic it mediates. Gateway names describe the side of
@@ -737,7 +739,8 @@ TimingNodeTypes.Status status =
 Presentation adapters use the node-scoped Application boundary:
 
 ```java
-TimingNodeProxy node = presentationGateway.timingNode();
+TimingNodeProxy node =
+        presentationGateway.timingNode(nodeId);
 
 node.open(locationId);
 node.applyAutomaticRegistration(
@@ -1075,11 +1078,13 @@ still composes one TimingNode.
 validated effective configuration
   -> PlatformEnvironment / Runtime time / shared executors
   -> construct TimingNodes, AntennaManager and system Conductor
-  -> construct application.Conductor around the major application components
+  -> construct one application.ApplicationConductor
+  -> for each TimingSystem:
+       -> registerTimingSystem(AntennaManager, domain.system.Conductor)
   -> wire node status signals to the system Conductor
   -> wire antenna observations directly to configured TagProcessors
   -> start physical workers
-  -> application.Conductor.activate()
+  -> application.ApplicationConductor.activate()
        -> AntennaManager.activate()
        -> domain.system.Conductor.activate()
             -> TimingNode(s).activate()
@@ -1087,9 +1092,11 @@ validated effective configuration
   -> PresentationRuntime.activate()
 ```
 
-Runtime owns construction, wiring and physical worker lifetime. The Application
-`Conductor` owns activation order, rollback and reverse deactivation of the
-major application components. The TimingSystem `Conductor` owns the lifecycle
+Runtime owns construction, wiring and physical worker lifetime. The
+`ApplicationConductor` owns activation order, rollback and reverse deactivation
+of the major application components. Runtime registers every composed
+TimingSystem with it before activation; the class does not assume one
+TimingSystem. The TimingSystem `Conductor` owns the lifecycle
 of its TimingNodes and the system-level inventory decision.
 
 The TimingSystem `Conductor` holds the associated `AntennaManager` directly.
@@ -1198,12 +1205,12 @@ main()
        -> create one TimeSource for the current timing context
        -> construct reusable application/domain/I/O objects
        -> construct and wire each domain.system.Conductor
-       -> construct application.Conductor for application lifecycle
+       -> construct application.ApplicationConductor for application lifecycle
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
-       -> application.Conductor.activate()
+       -> application.ApplicationConductor.activate()
             -> AntennaManager.activate()
             -> domain.system.Conductor.activate()
                  -> TimingNode(s).activate()
@@ -1224,7 +1231,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.Conductor` owns application-component lifecycle order. Each `domain.system.Conductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.ApplicationConductor` owns application-component lifecycle order. Each `domain.system.Conductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
 
 :::
 
@@ -1355,6 +1362,7 @@ terminal command baseline is:
 help
 version
 status
+node [id]
 open <locationId>
 close
 auto-reg <registrationId> <time>
@@ -1368,7 +1376,9 @@ exit
 ```
 
 These are Presentation commands, not a second Domain/Application semantic contract.
-`open`, `close` and `auto-reg` delegate to `TimingNodeProxy`; configuration
+Each terminal session has one selected TimingNode. `node [id]` shows or changes
+that selection; `open`, `close` and `auto-reg` delegate to the selected
+`TimingNodeProxy`. Configuration
 commands delegate to `ConfigurationControl`. `log` reads/changes the temporary
 global log level through `LoggingLevelControl`; the single-letter forms map to
 TRACE, DEBUG, INFO, WARN and ERROR. LocalConsole and RemoteShell therefore
@@ -1416,8 +1426,14 @@ buffer event values itself: it counts sends while the Java-WebSocket connection 
 reports buffered data. After 32 such sends without an observed full drain, it refuses the
 next event and requests close code 1013. This bounds application-driven growth of the
 library's otherwise unbounded outbound queue without blocking, retrying or moving
-backpressure onto TimingNode. Reconnect recovery remains authoritative through
-`STATUS_SNAPSHOT` plus LogBook queries.
+backpressure onto TimingNode. Reconnect recovery uses `STATUS_SNAPSHOT` plus LogBook queries.
+
+`WebSocketEndpoint` keeps the complete current TimingNode status needed for
+`STATUS_SNAPSHOT` and `STATUS_CHANGED`. When Presentation starts, it reads
+the current status of every composed `TimingNodeProxy` once and stores the
+result by `NodeId`. A later node-status event replaces only that node's cached
+entry and broadcasts the complete cached status. The event callback does not
+query TimingNodes, so it does not wait on another TimingNode serial lane.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
@@ -1450,7 +1466,9 @@ SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
 
 The shared Presentation-facing application boundary remains small:
 `PresentationGateway.version()` returns build identity,
-`PresentationGateway.timingNode()` returns the node-scoped `TimingNodeProxy`, and
+`PresentationGateway.timingNode(nodeId)` resolves one node-scoped
+`TimingNodeProxy`, `PresentationGateway.timingNodes()` exposes the composed
+proxy set for application-wide status/event wiring, and
 `PresentationGateway.configuration()` returns the application-owned
 `ConfigurationControl`. A simulation-capable engineering composition may additionally
 provide the optional Application-layer `SimulationControl`; normal production
@@ -1515,7 +1533,7 @@ resources and remains valid when initialization did not complete successfully.
 TimingSystem behaviour and I/O device mechanics are separate:
 
 ```text
-application.Conductor
+application.ApplicationConductor
       |
       +--> AntennaManager lifecycle
       |
@@ -1542,7 +1560,7 @@ application.Conductor
 `domain.system.Conductor` calls its associated `AntennaManager` directly.
 It requests manager-wide inventory while any TimingNode in that system is OPEN.
 It does not issue device-mechanism commands such as power-on, initialize,
-power-cycle or antenna switching. `application.Conductor` owns the lifecycle
+power-cycle or antenna switching. `application.ApplicationConductor` owns the lifecycle
 ordering between the AntennaManager and the system Conductor.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of

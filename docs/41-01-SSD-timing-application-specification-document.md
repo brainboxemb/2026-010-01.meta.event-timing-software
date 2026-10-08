@@ -726,7 +726,7 @@ The application responsibility coordinates use cases:
 
 ```text
 application/
-  Conductor
+  ApplicationConductor
     application component lifecycle / activation order
 
   PresentationGateway
@@ -745,7 +745,7 @@ application/
 :::{arch} Application Conductor
 :id: ApplicationConductor
 
-`application.Conductor` owns activation order, rollback and reverse
+`application.ApplicationConductor` owns activation order, rollback and reverse
 deactivation of the major application components. In the current composition it
 activates `AntennaManager` before the TimingSystem `Conductor`; the latter then
 activates the TimingNodes in its own TimingSystem. The Application Conductor does
@@ -776,7 +776,7 @@ This uses the same directional naming principle as `UpstreamGateway`, while the 
 remain separate responsibilities: `PresentationGateway` is transport-independent
 application access and `UpstreamGateway` owns external upstream transport/integration.
 The gateway exposes application-wide information such as `version()` and capabilities.
-Application-wide component lifecycle is coordinated by `application.Conductor`.
+Application-wide component lifecycle is coordinated by `application.ApplicationConductor`.
 Node-scoped work is exposed through `TimingNodeProxy`, so operations such as
 `open(...)` belong to a selected TimingNode. The TimingSystem `Conductor` is
 not a mandatory hop for normal node commands.

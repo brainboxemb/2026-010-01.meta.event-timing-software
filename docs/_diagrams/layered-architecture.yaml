@@ -158,8 +158,8 @@ nodes:
 - id: application-conductor
   object_id: ApplicationConductor
   group: application-layer
-  label: "Conductor"
-  subtitle: "application lifecycle / activation order"
+  label: "ApplicationConductor"
+  subtitle: "lifecycle / activation order"
   kind: application
   notation: component
   layout: {x: 295, y: 425, w: 220, h: 50}
