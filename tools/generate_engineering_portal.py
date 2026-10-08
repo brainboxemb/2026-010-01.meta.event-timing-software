@@ -190,7 +190,7 @@ def source_document_label(source_root: Path, source_path: str) -> str:
     lines = path.read_text(encoding="utf-8").splitlines()
     for line in lines[:30]:
         match = re.match(
-            r"^(?:System interface|Software item):\\s*\\*\\*(.+?)\\*\\*",
+            r"^(?:System interface|Software item):\s*\*\*(.+?)\*\*",
             line.strip(),
             flags=re.IGNORECASE,
         )

@@ -608,6 +608,33 @@ body.eng-explorer-page .md-content__inner {
   line-height: 1.3;
 }
 
+.eng-relation__hint {
+  color: var(--md-default-fg-color--light);
+  font-size: calc(0.54rem + 1px);
+  margin: 0.1rem 0 0.3rem;
+}
+
+.eng-relation__document {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  margin: 0.14rem 0;
+}
+
+.eng-relation__document > summary {
+  cursor: pointer;
+  font-size: calc(0.58rem + 1px);
+  padding: 0.3rem 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.eng-relation__document > summary:hover,
+.eng-relation__document > summary:focus-visible {
+  background: var(--md-default-fg-color--lightest);
+}
+
+.eng-relation__items {
+  padding: 0.1rem 0.15rem 0.28rem 0.45rem;
+}
+
 .eng-relation {
   display: block;
   width: 100%;
