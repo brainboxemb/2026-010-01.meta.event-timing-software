@@ -1422,8 +1422,14 @@ buffer event values itself: it counts sends while the Java-WebSocket connection 
 reports buffered data. After 32 such sends without an observed full drain, it refuses the
 next event and requests close code 1013. This bounds application-driven growth of the
 library's otherwise unbounded outbound queue without blocking, retrying or moving
-backpressure onto TimingNode. Reconnect recovery remains authoritative through
-`STATUS_SNAPSHOT` plus LogBook queries.
+backpressure onto TimingNode. Reconnect recovery uses `STATUS_SNAPSHOT` plus LogBook queries.
+
+`WebSocketEndpoint` keeps the complete current TimingNode status needed for
+`STATUS_SNAPSHOT` and `STATUS_CHANGED`. When Presentation starts, it reads
+the current status of every composed `TimingNodeProxy` once and stores the
+result by `NodeId`. A later node-status event replaces only that node's cached
+entry and broadcasts the complete cached status. The event callback does not
+query TimingNodes, so it does not wait on another TimingNode serial lane.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
