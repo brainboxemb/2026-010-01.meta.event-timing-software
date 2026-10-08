@@ -399,6 +399,7 @@ for reimplementing JDK executor internals.
 
 :::{design} Cooperative execution and application coordination
 :id: DD-CooperativeExecution
+:elaborates: Conductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
 
 Detailed Java design for cooperative task runners/controllers and the
 Application-layer coordination pattern used by Conductor.
@@ -609,6 +610,7 @@ lane.
 
 :::{design} EventData and TagProcessor realization
 :id: DD-EventTagProcessing
+:elaborates: TagProcessor, EventData
 
 Detailed Java realization of EventData-backed tag resolution, TagProcessor
 filtering/passage state and the boundary into TimingNode registration work.
@@ -691,6 +693,7 @@ test-only in code.
 
 :::{design} Presentation-facing application access
 :id: DD-PresentationAccess
+:elaborates: TimingNodeProxy, PresentationGateway
 
 Detailed Application-layer design for PresentationGateway and its node-scoped
 TimingNodeProxy boundary. Presentation transports remain outside this boundary.
@@ -785,6 +788,7 @@ into TimingData or exposed as an upstream address.
 
 :::{design} Timing-time composition
 :id: DD-TimingTimeComposition
+:elaborates: RuntimeTimeSources, PlatformEnvironment, PlatformTime, TimeSource, ClockTimeSource
 
 Detailed composition of raw platform time and the shared semantic TimeSource
 used by Domain and I/O timestamp producers.
@@ -805,6 +809,7 @@ one corrected timing basis without creating another raw platform clock.
 
 :::{design} I/O composition and network-device boundary
 :id: DD-IOComposition
+:elaborates: CanNetworkController, NetworkDeviceService, TimingSystem
 
 Detailed composition of per-TimingSystem I/O ownership and the
 CanNetworkController / NetworkDeviceService boundary.
@@ -832,6 +837,7 @@ mirror the hardware name.
 
 :::{design} Domain data, upstream and system-status composition
 :id: DD-DomainIntegration
+:elaborates: UpstreamMessageRouter, SystemUpstreamMessagePort, TimingNodeUpstreamMessagePort, UpstreamGateway, TimingSystem, SystemStatus, UpstreamProtocol
 
 Detailed Domain composition for LogBook/TimingData ownership, UpstreamProtocol
 routing boundaries and SystemStatus aggregation.
@@ -950,6 +956,7 @@ and selected external libraries.
 
 :::{design} Runtime logging infrastructure
 :id: DD-LoggingRuntime
+:elaborates: Logging, LoggingServer
 
 Detailed Java design for reusable Logging ownership, retained/live sinks,
 LoggingServer and runtime logging-level control.
@@ -1011,6 +1018,7 @@ application core to provide the default JUL logging infrastructure and its confi
 
 :::{design} Executable and presentation composition
 :id: DD-ExecutableComposition
+:elaborates: TimingApplicationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler, Api
 
 Detailed Java composition/lifecycle design for TimingApplicationRuntime,
 PresentationRuntime and the built-in Console, RemoteShell and API adapters.
@@ -1317,6 +1325,7 @@ The application core uses one explicit runtime composition boundary. There is no
 
 :::{design} Running configuration model
 :id: DD-RunningConfiguration
+:elaborates: ConfigurationControl, ApplicationConfiguration, Configuration
 
 Detailed design for ApplicationConfiguration, reusable typed Configuration
 values and presentation-facing ConfigurationControl use-cases.
@@ -1550,6 +1559,7 @@ the concrete Runtime configuration tree directly.
 
 :::{design} Antenna runtime and device control
 :id: DD-AntennaRuntime
+:elaborates: AntennaManager, Antenna, PowerDevice, SimulatedPowerDevice, SimulatedAntenna
 
 Detailed Java design for AntennaManager, Antenna implementations, optional
 PowerDevice control, inventory lifecycle and SimulatedAntenna behaviour.
@@ -2291,6 +2301,7 @@ the profile: the profile owns observation timing **inside** one passage.
 
 :::{design} Registration workload and runtime measurement
 :id: DD-RuntimeWorkAndMeasurements
+:elaborates: RuntimeExecutors, TagProcessor, PlatformExecution, TimingNode
 
 Detailed execution-budget and measurement design for registration work,
 background/runtime work, counters, snapshots and engineering access.
@@ -2482,6 +2493,7 @@ TagProcessor burst expiry is unrelated to runtime measurement.
 
 :::{design} Runtime execution model
 :id: DD-RuntimeExecution
+:elaborates: RuntimeExecutors, PlatformExecution, SerialExecutor, SerialScheduledExecutor
 
 Detailed Java design for Runtime-owned physical workers and the bounded
 SerialExecutor / SerialScheduledExecutor logical-lane realization.
@@ -2561,6 +2573,7 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBook reads and the local Event/EventSource publication boundary.
@@ -3139,6 +3152,7 @@ Java realization only where a concrete component boundary requires it.
 
 :::{design} TimingData shared contract and profiles
 :id: DD-TimingDataProfiles
+:elaborates: TimingData
 
 Detailed Java design for the shared TimingData API, default profile,
 factory/codec boundary and typed provider mechanism.
@@ -3340,6 +3354,7 @@ Java-17 Development Client.
 
 :::{design} Extension and product composition
 :id: DD-ExtensionAndComposition
+:elaborates: EventData, TimingData
 
 Detailed design for supported consumer topologies, Java-8 provider discovery,
 public/private composition, artifact extraction and dependency checks.

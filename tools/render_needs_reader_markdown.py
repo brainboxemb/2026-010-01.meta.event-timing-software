@@ -27,20 +27,24 @@ TYPE_LABELS = {
     "ifreq": "Interface Requirement",
     "arch": "Architecture Element",
     "design": "Detailed Design",
+    "impl": "Implementation",
     "vc": "Verification Case",
 }
 
-RELATION_LABELS = (
-    ("derived_from", "Derived from"),
-    ("derived_from_back", "Source for"),
-    ("satisfies", "Satisfies"),
-    ("satisfies_back", "Satisfied by"),
-    ("verifies", "Verifies"),
-    ("verifies_back", "Verified by"),
-    ("detailed_by", "Detailed by"),
-    ("detailed_by_back", "Details"),
-)
+# Reuse the project Sphinx-Needs link labels for reader output.
+import runpy
 
+LINK_OPTIONS = runpy.run_path(
+    str(Path(__file__).resolve().parents[1] / "docs/_sphinx-needs/conf.py")
+)["needs_links"]
+RELATION_LABELS = tuple(
+    entry
+    for name, definition in LINK_OPTIONS.items()
+    for entry in (
+        (name, definition["outgoing"].capitalize()),
+        (name + "_back", definition["incoming"].capitalize()),
+    )
+)
 
 class ReaderRenderError(ValueError):
     pass

@@ -134,12 +134,15 @@ jobs:
           SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
+          # Select exactly the relation types configured for Sphinx-Needs.
+          mapfile -t link_names < <(python -c 'import runpy; print(*runpy.run_path("docs/_sphinx-needs/conf.py")["needs_links"], sep=chr(10))')
+          link_args=()
+          for name in "${link_names[@]}"; do
+            link_args+=(--relation "$name")
+          done
           eng-docs graph \
             --needs bld/sphinx-needs/needs/needs.json \
-            --relation derived_from \
-            --relation satisfies \
-            --relation verifies \
-            --relation detailed_by \
+            "${link_args[@]}" \
             --diagrams bld/sphinx-needs/diagrams \
             --source-revision "$SOURCE_REVISION" \
             --out bld/engineering-graph.json \

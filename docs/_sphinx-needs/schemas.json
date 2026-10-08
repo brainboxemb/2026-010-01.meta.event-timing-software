@@ -35,17 +35,6 @@
         }
       }
     },
-    "upstream-requirement-source": {
-      "properties": {
-        "type": {
-          "enum": [
-            "uc",
-            "req",
-            "ifreq"
-          ]
-        }
-      }
-    },
     "requirement-target": {
       "properties": {
         "type": {
@@ -77,6 +66,20 @@
       "properties": {
         "type": {
           "const": "design"
+        }
+      }
+    },
+    "type-impl": {
+      "properties": {
+        "type": {
+          "const": "impl"
+        }
+      }
+    },
+    "architecture-target": {
+      "properties": {
+        "type": {
+          "const": "arch"
         }
       }
     }
@@ -128,50 +131,28 @@
       }
     },
     {
-      "id": "req-derived-from-source-type",
-      "message": "Software/system requirements may derive from use cases, requirements or interface requirements.",
+      "id": "requirement-typed-links",
+      "message": "Requirement links must specify a use case or refer to a requirement.",
       "select": {
-        "$ref": "#/$defs/type-req"
+        "$ref": "#/$defs/type-requirement"
       },
       "validate": {
         "network": {
-          "derived_from": {
+          "specifies": {
             "items": {
               "local": {
-                "$ref": "#/$defs/upstream-requirement-source"
+                "$ref": "#/$defs/type-uc"
               }
             }
-          }
-        }
-      }
-    },
-    {
-      "id": "ifreq-derived-from-source-type",
-      "message": "Interface requirements may derive from use cases, requirements or interface requirements.",
-      "select": {
-        "$ref": "#/$defs/type-ifreq"
-      },
-      "validate": {
-        "network": {
-          "derived_from": {
+          },
+          "refines": {
             "items": {
               "local": {
-                "$ref": "#/$defs/upstream-requirement-source"
+                "$ref": "#/$defs/requirement-target"
               }
             }
-          }
-        }
-      }
-    },
-    {
-      "id": "arch-satisfies-requirement",
-      "message": "Architecture satisfies links may target software/interface requirements.",
-      "select": {
-        "$ref": "#/$defs/type-arch"
-      },
-      "validate": {
-        "network": {
-          "satisfies": {
+          },
+          "depends_on": {
             "items": {
               "local": {
                 "$ref": "#/$defs/requirement-target"
@@ -182,8 +163,69 @@
       }
     },
     {
-      "id": "vc-verifies-requirement",
-      "message": "Verification verifies links may target software/interface requirements.",
+      "id": "architecture-realizes-requirement",
+      "message": "Architecture realizes must target requirements.",
+      "select": {
+        "$ref": "#/$defs/type-arch"
+      },
+      "validate": {
+        "network": {
+          "realizes": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "design-elaborates-architecture",
+      "message": "Detailed design elaborates must target architecture.",
+      "select": {
+        "$ref": "#/$defs/type-design"
+      },
+      "validate": {
+        "network": {
+          "elaborates": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/architecture-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "implementation-links",
+      "message": "Implementation mappings must target detailed design or requirements.",
+      "select": {
+        "$ref": "#/$defs/type-impl"
+      },
+      "validate": {
+        "network": {
+          "implements": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/design-target"
+              }
+            }
+          },
+          "fulfills": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verification-verifies-requirement",
+      "message": "Verification cases must reference requirements.",
       "select": {
         "$ref": "#/$defs/type-vc"
       },
@@ -193,24 +235,6 @@
             "items": {
               "local": {
                 "$ref": "#/$defs/requirement-target"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "arch-detailed-by-design",
-      "message": "Architecture detailed_by links may target detailed-design objects.",
-      "select": {
-        "$ref": "#/$defs/type-arch"
-      },
-      "validate": {
-        "network": {
-          "detailed_by": {
-            "items": {
-              "local": {
-                "$ref": "#/$defs/design-target"
               }
             }
           }

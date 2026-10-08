@@ -94,13 +94,13 @@ if "Node-scoped presentation access is exposed through" not in presentation_desi
         "portal DD-PresentationAccess page is missing substantive detailed-design content"
     )
 if not any(
-    relation.get("type") == "detailed_by"
-    and relation.get("from") == "PresentationGateway"
-    and relation.get("to") == "DD-PresentationAccess"
+    relation.get("type") == "elaborates"
+    and relation.get("from") == "DD-PresentationAccess"
+    and relation.get("to") == "PresentationGateway"
     for relation in graph["relations"]
 ):
     raise SystemExit(
-        "engineering graph missing PresentationGateway -> DD-PresentationAccess detailed_by relation"
+        "engineering graph missing DD-PresentationAccess -> PresentationGateway elaborates relation"
     )
 expected_tool_eng_docs = {
     "ref": "v0.10.0",
