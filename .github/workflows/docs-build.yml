@@ -245,6 +245,11 @@ jobs:
   deploy-engineering-portal:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: documentation
+    # Pages allows one deployment at a time. Older main runs may still be
+    # deploying when a newer docs build finishes; queue those deployments.
+    concurrency:
+      group: engineering-portal-pages-${{ github.repository }}
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     permissions:
       pages: write
