@@ -78,7 +78,11 @@ ApplicationConfig
 │   │       └── connectors
 │   └── storage
 │       └── timingData
-│           └── path
+│           ├── path (single-TimingNode shorthand)
+│           └── nodes (multi-TimingNode mapping)
+│               └── <storageBinding>
+│                   ├── timingNodeId
+│                   └── path
 ├── presentation
 ├── logging
 ├── runtime
@@ -383,7 +387,11 @@ Storage settings remain under I/O because they configure external persistence.
 
 ### TimingData storage
 
-The reference single-TimingNode configuration includes this storage setting:
+TimingData persistence remains an I/O/deployment concern. Each configured
+TimingNode that uses the reference file store resolves to exactly one authoritative
+append-only TimingData file.
+
+For a single-TimingNode composition, the compact form remains valid:
 
 ```yaml
 io:
@@ -392,22 +400,49 @@ io:
       path: data/timing-data.jsonl
 ```
 
-`io.storage.timingData.path` identifies the authoritative append-only TimingData
-file used by the current configured TimingNode. It is deployment/composition
-configuration, not TimingNode domain state.
+For a multi-TimingNode composition, use explicit node bindings:
+
+```yaml
+io:
+  storage:
+    timingData:
+      nodes:
+        node-a:
+          timingNodeId: A
+          path: data/timing-data-a.jsonl
+        node-b:
+          timingNodeId: B
+          path: data/timing-data-b.jsonl
+```
+
+The key below `nodes` is a deployment-local binding name only.
+`timingNodeId` is the real application-wide TimingNode reference. The storage
+binding does not become part of TimingNode domain state.
 
 Rules:
 
-- the path is required when the reference TimingData file store is composed;
-- the path may be relative to the application working directory or absolute;
+- `path` is the single-TimingNode shorthand and is valid only when the
+  effective application composition contains exactly one TimingNode;
+- `nodes` is required for a multi-TimingNode composition when the reference
+  TimingData file store is composed;
+- `path` and `nodes` are mutually exclusive;
+- every configured TimingNode using the reference file store must resolve to
+  exactly one storage binding;
+- every `nodes.*.timingNodeId` must reference a configured TimingNode and may
+  occur only once in the storage mapping;
+- two bindings must not resolve to the same normalized filesystem path;
+- a path may be relative to the application working directory or absolute;
 - the configured path selects the file location only; IF-05 and the Java
   persistence design own record encoding, append ordering, recovery and
   corruption handling;
-- startup recovery opens/validates this file and rebuilds committed LogBook
-  state before the TimingNode begins accepting operational work;
-- public examples use generic local paths and do not disclose deployment paths;
-- a generalized per-node storage registry or multi-TimingNode file mapping is
-  not defined by the current configuration contract.
+- startup recovery opens/validates each resolved file and rebuilds that
+  TimingNode's committed LogBook state before the TimingNode begins accepting
+  operational work;
+- public examples use generic local paths and do not disclose deployment paths.
+
+Because `TimingNodeId` is application-wide unique, the same storage mapping
+works for one or multiple TimingSystems without adding `TimingSystemId` to the
+persistence binding.
 
 The storage path does not contain a LocationId or RegistrationId policy. Those
 identifier domains remain event/profile/reference-data concerns.
@@ -648,8 +683,15 @@ Validation includes, where applicable:
 - unsupported adapter/driver types;
 - missing required secret references or unresolved required secret values;
 - invalid runtime values such as impossible queue/executor settings;
-- missing/blank `io.storage.timingData.path` when the reference TimingData file
-  store is part of the effective composition.
+- missing/blank TimingData storage paths when the reference file store is part
+  of the effective composition;
+- use of single-node `io.storage.timingData.path` with more than one configured
+  TimingNode;
+- simultaneous use of `io.storage.timingData.path` and
+  `io.storage.timingData.nodes`;
+- missing, duplicate or unknown `timingNodeId` references in
+  `io.storage.timingData.nodes`;
+- duplicate normalized TimingData file paths across node storage bindings.
 
 Configuration loading, configuration validation and application composition are distinct responsibilities even when the initial implementation keeps them small.
 
