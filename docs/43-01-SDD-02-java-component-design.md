@@ -693,7 +693,7 @@ test-only in code.
 
 :::{design} Presentation-facing application access
 :id: DD-PresentationAccess
-:elaborates: TimingNodeProxy
+:elaborates: TimingNodeProxy, PresentationGateway
 
 Detailed Application-layer design for PresentationGateway and its node-scoped
 TimingNodeProxy boundary. Presentation transports remain outside this boundary.
@@ -1018,7 +1018,7 @@ application core to provide the default JUL logging infrastructure and its confi
 
 :::{design} Executable and presentation composition
 :id: DD-ExecutableComposition
-:elaborates: TimingApplicationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler
+:elaborates: TimingApplicationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler, Api
 
 Detailed Java composition/lifecycle design for TimingApplicationRuntime,
 PresentationRuntime and the built-in Console, RemoteShell and API adapters.

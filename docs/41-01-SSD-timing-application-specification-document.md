@@ -647,8 +647,7 @@ and therefore has no external interface port.
 :::{arch} API  
 ---
 id: Api
-detailed_by: DD-ExecutableComposition
-satisfies: >-
+realizes: >-
   SI01-REQ-031, IF03-REQ-001, IF03-REQ-002,
   IF03-REQ-004
 ---
@@ -751,8 +750,7 @@ or generic configuration values directly.
 :::{arch} PresentationGateway  
 ---
 id: PresentationGateway
-detailed_by: DD-PresentationAccess
-satisfies: >-
+realizes: >-
   SI01-REQ-022, SI01-REQ-030, SI01-REQ-031,
   IF03-REQ-001, IF03-REQ-004
 ---
