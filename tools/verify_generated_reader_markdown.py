@@ -32,8 +32,8 @@ required = (
     '— — —',
     '- **Type:** Requirement',
     '- **Status:** Review',
-    '- **Derived from:**',
-    '- **Satisfied by:**',
+    '- **Specifies:**',
+    '- **Realized by:**',
     '- **Verified by:**',
     '<a id="SI01-REQ-003"></a>',
 )
@@ -53,8 +53,8 @@ order = (
     block.index(body_text),
     block.index("— — —"),
     block.index("- **Type:** Requirement"),
-    block.index("- **Derived from:**"),
-    block.index("- **Satisfied by:**"),
+    block.index("- **Specifies:**"),
+    block.index("- **Realized by:**"),
     block.index("- **Verified by:**"),
     block.index("\n---\n"),
 )
@@ -118,16 +118,16 @@ if "Node-scoped presentation access is exposed through `TimingNodeProxy`." not i
 presentation_start = ssd.index('<a id="PresentationGateway"></a>')
 presentation_end = ssd.index('<a id="TimingNodeProxy"></a>', presentation_start)
 presentation_block = ssd[presentation_start:presentation_end]
-if "- **Detailed by:**" not in presentation_block:
-    raise SystemExit("generated reader Markdown missing SSD detailed_by relation")
+if "- **Elaborated by:**" not in presentation_block:
+    raise SystemExit("generated reader Markdown missing incoming elaborates relation")
 if "DD-PresentationAccess" not in presentation_block:
     raise SystemExit("generated reader Markdown does not link PresentationGateway to DD-PresentationAccess")
 
 design_start = sdd.index('<a id="DD-PresentationAccess"></a>')
 design_end = sdd.index("\n---\n", design_start)
 design_block = sdd[design_start:design_end]
-if "- **Details:**" not in design_block:
-    raise SystemExit("generated reader Markdown missing inverse detailed-design relation")
+if "- **Elaborates:**" not in design_block:
+    raise SystemExit("generated reader Markdown missing outgoing elaborates relation")
 if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_block:
     raise SystemExit("generated reader Markdown missing inverse SSD architecture links")
 
