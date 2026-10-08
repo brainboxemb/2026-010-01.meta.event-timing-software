@@ -113,25 +113,18 @@ if len(specification_sections) != 1:
 requirements = specification_sections[0]
 if requirements["title"] != "Requirements (13)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-actual_documents = {
-    group["title"]: len(group["related_ids"])
-    for group in requirements["document_groups"]
-}
-expected_documents = {
-    "IF-03 — API": 4,
-    "IF-04 — Web Interface": 2,
-    "SI-01 — Timing Point Application": 3,
-    "SI-02 — Desktop GUI Application": 4,
-}
-if actual_documents != expected_documents:
-    raise SystemExit(
-        f"UC-001 source-document group identities/counts differ: {actual_documents}"
-    )
-if sorted(
-    related for group in requirements["document_groups"]
-    for related in group["related_ids"]
-) != sorted(requirements["related_ids"]):
-    raise SystemExit("document grouping lost or duplicated traceability targets")
+# Every linked object remains directly accessible, independently of link count.
+expected = [
+    "IF03-REQ-003", "IF03-REQ-004", "IF03-REQ-006", "IF03-REQ-011",
+    "IF04-REQ-002", "IF04-REQ-006",
+    "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-040",
+    "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004", "SI02-REQ-005",
+]
+if sorted(requirements["related_ids"]) != sorted(expected):
+    raise SystemExit("UC-001 direct requirements disappeared or changed")
+if "document_groups" in requirements:
+    raise SystemExit("flat relationship model still exposes document groups")
+
 if "This use case is specified by:" in (
     site / "objects" / "UC-001" / "index.html"
 ).read_text(encoding="utf-8"):
@@ -139,17 +132,23 @@ if "This use case is specified by:" in (
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-for token in ("Requirements (13)", "IF-03 — API (4)", 'class="eng-relation__document"'):
-    if token not in uc_page:
-        raise SystemExit("UC-001 object page missing grouped requirement label: " + token)
+if "Requirements (13)" not in uc_page:
+    raise SystemExit("UC-001 object page missing role-based heading")
+if 'class="eng-relation__document"' in uc_page or "<details" in uc_page:
+    raise SystemExit("UC-001 object page renders a collapsible relation instead of flat rows")
+for target in expected:
+    if f'href="../{target}/"' not in uc_page:
+        raise SystemExit("UC-001 object page missing visible link to " + target)
+if uc_page.count('class="eng-relation"') < 13:
+    raise SystemExit("UC-001 object page has fewer than 13 flat relation rows")
 
-# Short relations remain flat, without unnecessary collapsed document levels.
+# Both small and large link sets use the same, flat row presentation.
 timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
 realizes = next(
     group for group in timing_node_groups if group["type"] == "realizes"
 )
-if realizes["document_groups"] or len(realizes["related_ids"]) != 3:
-    raise SystemExit("short architecture requirement links should remain directly visible")
+if len(realizes["related_ids"]) != 3 or "document_groups" in realizes:
+    raise SystemExit("short architecture links differ from the flat relation contract")
 
 if "SI02-REQ-001" not in objects:
     raise SystemExit("engineering graph missing first SI-02 requirement")
