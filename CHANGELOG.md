@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define IF-11 multi-TimingNode TimingData storage bindings under `io.storage.timingData.nodes`, retaining the existing single-node `path` shorthand and requiring one unique persistence file per configured `TimingNodeId`.
+
 - Name the application lifecycle coordinator `ApplicationConductor` and align Presentation design with one `TimingNodeProxy` per composed TimingNode, NodeId-based lookup, complete multi-node status/event publication, and explicit terminal node selection.
 
 - Restore separate Application and TimingSystem Conductor responsibilities: Application owns application-component lifecycle order; the system Conductor owns TimingNode lifecycle and directly controls its AntennaManager inventory. Remove the temporary generic inventory-control boundary and show the system Conductor first inside TimingSystem.
