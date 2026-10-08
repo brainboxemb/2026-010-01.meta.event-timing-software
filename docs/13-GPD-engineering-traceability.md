@@ -29,8 +29,9 @@ Markdown. This document owns the technical traceability model and the meaning
 of engineering links. Neither document replaces requirement or architecture
 authority in the SSSD, ISDs, SSDs, IDDs, SDDs or VTS.
 
-The external [SPLed traceability reference analysis](../reference/spled-traceability-analysis.md)
-records the example used to inform this model. It is a reference, not an
+The external [reverse-engineered SPLed documentation guide](../reference/spled-traceability-analysis.md)
+explains when each configured SPLed relation is used, with links to authored
+source and generated test-result machinery. It is a reference, not an
 authority over this project's design.
 
 ## Model and relationship direction
@@ -121,6 +122,6 @@ traceable through its architecture/interface and requirement links; it does
 not need an additional direct link to `UC-001` unless that link expresses
 a distinct claim.
 
-Use the [SPLed reference analysis](../reference/spled-traceability-analysis.md)
+Use the [SPLed documentation guide](../reference/spled-traceability-analysis.md)
 for a concrete example of both end-to-end source/test traceability and the
 problems created by an overly broad central architecture object.
