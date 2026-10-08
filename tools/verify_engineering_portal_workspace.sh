@@ -512,6 +512,10 @@ grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
 
 grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
 portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (13)'
+for heading in 'IF-03 — API (4)' 'IF-04 — Web Interface (2)' 'SI-01 — Timing Point Application (3)' 'SI-02 — Desktop GUI Application (4)'; do
+  portal_has bld/engineering-portal/browser-explorer-UC-001.html "$heading"
+done
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'eng-relation__source-heading'
 # All thirteen links appear as plain rows without opening any document group.
 for target in IF03-REQ-003 IF03-REQ-004 IF03-REQ-006 IF03-REQ-011 \
   IF04-REQ-002 IF04-REQ-006 \
@@ -534,6 +538,9 @@ portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case 
   > bld/engineering-portal/browser-workspace-UC-001.html
 
 portal_has bld/engineering-portal/browser-workspace-UC-001.html 'Requirements (13)'
+for heading in 'IF-03 — API (4)' 'IF-04 — Web Interface (2)' 'SI-01 — Timing Point Application (3)' 'SI-02 — Desktop GUI Application (4)'; do
+  portal_has bld/engineering-portal/browser-workspace-UC-001.html "$heading"
+done
 portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="IF03-REQ-004"'
 portal_lacks bld/engineering-portal/browser-workspace-UC-001.html 'class="eng-relation__document"'
 
