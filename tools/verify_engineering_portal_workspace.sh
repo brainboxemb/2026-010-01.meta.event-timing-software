@@ -452,7 +452,6 @@ grep -q 'Select a related object to compare.' bld/engineering-portal/browser-wor
   "http://127.0.0.1:8765/explorer/?object=TimingNode" \
   > bld/engineering-portal/browser-explorer.html
 
-set -x
 grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer.html
 # Report the exact missing/obsolete phrase if a browser UX assertion fails.
 portal_has() {
@@ -496,7 +495,7 @@ portal_lacks bld/engineering-portal/browser-workspace-TimingNode.html 'One-hop c
 grep -q 'eng-explorer-workspace' bld/engineering-portal/browser-explorer.html
 grep -q 'data-eng-detail' bld/engineering-portal/browser-explorer.html
 grep -q 'data-engineering-id="TimingNode"' bld/engineering-portal/browser-explorer.html
-grep -q 'One-hop context' bld/engineering-portal/browser-explorer.html
+# The old one-hop list duplicated the typed relationship groups above.
 grep -q 'Open details &amp; relations' bld/engineering-portal/browser-explorer.html
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
 ! grep -q 'data-eng-compare-detail' bld/engineering-portal/browser-explorer.html
