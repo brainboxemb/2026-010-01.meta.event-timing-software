@@ -566,7 +566,7 @@ resolve effective configuration
        Domain / I/O / Application / Presentation
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Each TimingSystem's operational coordination is owned by its `TimingSystemConductor`, wired explicitly to the system's TimingNodes and inventory-control port before activation. Runtime owns process-wide startup and shutdown. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
+Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Each TimingSystem's operational coordination is owned by its `Conductor`, wired explicitly to the system's TimingNodes and inventory-control port before activation. Runtime owns process-wide startup and shutdown. Concrete Presentation adapters are also composed here rather than in the executable launcher. Deactivation follows ownership in reverse order, followed by closing Runtime execution resources. Normal application/domain interactions do not route through the composition responsibility after activation. Presentation, I/O, Platform and Infrastructure objects keep their semantic layer ownership even though Runtime composition creates them.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -577,7 +577,7 @@ Application
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
-        +-- TimingSystemConductor system-local operational coordination
+        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -813,7 +813,7 @@ one parent/child tree:
 TimingSystem (1..N per Application)
   TimingSystemId              internal only
   SystemStatus                complete current system overview
-  TimingSystemConductor       one per TimingSystem; joint operational coordination
+  Conductor       one per TimingSystem; joint operational coordination
   UpstreamMessagePort         system-level upstream messages
   UpstreamProtocol
     TimingData transfer
@@ -839,13 +839,13 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, one `TimingSystemConductor`, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, a complete `SystemStatus` overview, one `Conductor`, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
-:::{arch} TimingSystemConductor
-:id: TimingSystemConductor
+:::{arch} Conductor
+:id: Conductor
 :realizes: SI01-REQ-053
 
-One `TimingSystemConductor` belongs to each TimingSystem in Domain. It observes
+One `Conductor` belongs to each TimingSystem in Domain. It observes
 the authoritative OPEN/CLOSED/ERROR states of that system's 1..N TimingNodes.
 It requests shared manager-wide inventory if any node is OPEN, otherwise stop.
 It neither routes tag observations nor controls individual antennas. Runtime
@@ -1006,7 +1006,7 @@ Each TimingNode-local TagProcessor likewise owns its own logical scheduled
 serial lane, while all TagProcessor lanes share one physical TagProcessor
 worker by default.
 
-Each TimingSystemConductor owns a logical serial coordination lane.
+Each Conductor owns a logical serial coordination lane.
 Its cross-component work never runs synchronously on the thread emitting a
 TimingNode state event. Different conductor lanes may share one Runtime-owned
 coordination worker.
@@ -1032,8 +1032,8 @@ Domain
   TagProcessor N ─ scheduled serial lane ─┘
 
 Domain
-  TimingSystemConductor 1 ─ serial lane ─┐
-  TimingSystemConductor N ─ serial lane ─┴─> one shared coordination worker
+  Conductor 1 ─ serial lane ─┐
+  Conductor N ─ serial lane ─┴─> one shared coordination worker
 
 I/O
   AntennaManager ─ scheduled serial lane ─> one shared I/O worker
@@ -1069,7 +1069,7 @@ Higher-level cooperative task handling is optional. A component that only needs 
 serial admission/ordering continues to use its execution lane directly. TimingNode and
 TagProcessor therefore remain direct lane users in the baseline.
 
-TimingSystemConductor uses cooperative turns on its serial lane to coalesce
+Conductor uses cooperative turns on its serial lane to coalesce
 multiple TimingNode change signals into one system-level reconciliation.
 No scheduled lane is necessary for this rule; AntennaManager owns timed work.
 
@@ -1634,7 +1634,7 @@ Application
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
         +-- SystemStatus          complete current system overview
-        +-- TimingSystemConductor system-local operational coordination
+        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
