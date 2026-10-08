@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align Java design documentation with the implemented 1..N TimingSystem Runtime composition: providers resolve per system, each system receives its own TimeSource and domain.system.Conductor, and all configured TimingNodes are composed without a placeholder TimingSystem domain class.
+
 - Define IF-11 multi-TimingNode TimingData storage bindings under `io.storage.timingData.nodes`, retaining the existing single-node `path` shorthand and requiring one unique persistence file per configured `TimingNodeId`.
 
 - Name the application lifecycle coordinator `ApplicationConductor` and align Presentation design with one `TimingNodeProxy` per composed TimingNode, NodeId-based lookup, complete multi-node status/event publication, and explicit terminal node selection.
