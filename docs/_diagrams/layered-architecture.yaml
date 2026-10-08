@@ -153,7 +153,17 @@ nodes:
   notation: component
   layout: {x: 55, y: 220, w: 440, h: 50}
 
-# Application gateway/proxies remain outside Domain; Conductor is system-local.
+# Application owns process-level component lifecycle; each TimingSystem has its
+# own Domain Conductor for TimingNode lifecycle and system behaviour.
+- id: application-conductor
+  object_id: ApplicationConductor
+  group: application-layer
+  label: "Conductor"
+  subtitle: "application lifecycle / activation order"
+  kind: application
+  notation: component
+  layout: {x: 295, y: 425, w: 220, h: 50}
+
 - id: presentation-gateway
   object_id: PresentationGateway
   group: application-layer
@@ -187,11 +197,11 @@ nodes:
   notation: component
   layout: {x: 870, y: 425, w: 260, h: 50}
 
-- id: system-upstream-message-port
-  object_id: SystemUpstreamMessagePort
+- id: system-conductor
+  object_id: SystemConductor
   group: timing-system-aggregate
-  label: "UpstreamMessagePort"
-  subtitle: "system-level upstream"
+  label: "Conductor"
+  subtitle: "TimingNodes • shared inventory"
   kind: service
   notation: component
   layout: {x: 75, y: 667, w: 220, h: 50}
@@ -205,14 +215,14 @@ nodes:
   notation: component
   layout: {x: 315, y: 667, w: 220, h: 50}
 
-- id: conductor
-  object_id: Conductor
+- id: system-upstream-message-port
+  object_id: SystemUpstreamMessagePort
   group: timing-system-aggregate
-  label: "Conductor"
-  subtitle: "per TimingSystem • shared inventory"
+  label: "UpstreamMessagePort"
+  subtitle: "system-level upstream"
   kind: service
   notation: component
-  layout: {x: 315, y: 732, w: 220, h: 50}
+  layout: {x: 75, y: 732, w: 220, h: 50}
 
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
@@ -298,7 +308,7 @@ nodes:
   subtitle: "TimingData • sync • ping / pong"
   kind: service
   notation: component
-  layout: {x: 75, y: 732, w: 220, h: 50}
+  layout: {x: 315, y: 732, w: 220, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -540,6 +550,36 @@ edges:
   route:
     - {x: 965, y: 290}
     - {x: 710, y: 290}
+
+- from: application-conductor
+  to: system-conductor
+  label: lifecycle
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
+  route:
+    - {x: 405, y: 510}
+    - {x: 185, y: 510}
+
+- from: application-conductor
+  to: devices-io
+  label: lifecycle
+  from_anchor: {side: bottom, position: 0.70}
+  to_anchor: {side: top, position: 0.50}
+  route:
+    - {x: 450, y: 515}
+    - {x: 1160, y: 515}
+    - {x: 1160, y: 975}
+    - {x: 1010, y: 975}
+
+- from: system-conductor
+  to: devices-io
+  label: "inventory → AntennaManager"
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: left, position: 0.25}
+  route:
+    - {x: 185, y: 925}
+    - {x: 850, y: 925}
+    - {x: 850, y: 1061}
 
 - from: presentation-gateway
   to: timing-node-proxy

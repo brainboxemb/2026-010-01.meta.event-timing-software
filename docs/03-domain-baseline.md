@@ -20,8 +20,8 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
+        +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
-        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -129,8 +129,8 @@ TimingApplication
   |
   +-- 1..N TimingSystem
         +-- TimingSystemId        internal composition/simulation identity
+        +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
-        +-- Conductor system-local operational coordination
         +-- UpstreamMessagePort   system-level upstream messages
         +-- UpstreamProtocol
         |     +-- heartbeat / ping
@@ -153,7 +153,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`; each TimingSystem owns 1..N `TimingNode` aggregates and one `Conductor`. It derives one shared inventory demand from the node states: enabled while any node is OPEN, otherwise disabled. TagObservation routing remains a separate Runtime connection; individual antenna controls are not implied.
+The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`. Its `Conductor` is the first system-level coordinator: it owns the lifecycle of that system's 1..N `TimingNode` aggregates and derives one shared inventory demand from their states. It calls the associated `AntennaManager` directly to enable or disable inventory. TagObservation routing remains a separate Runtime connection; individual antenna controls are not implied.
 
 Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
 `UpstreamMessagePort`, `UpstreamProtocol` context and heartbeat/ping semantics. `SystemStatus` is the
