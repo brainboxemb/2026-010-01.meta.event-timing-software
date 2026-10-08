@@ -67,9 +67,11 @@ ApplicationConfig
 │               └── tagProcessing
 ├── io
 │   ├── devices
-│   │   └── antennaManager
-│   │       ├── antennas
-│   │       └── inventoryGroup (optional)
+│   │   └── antennaManagers
+│   │       └── <managerBinding>
+│   │           ├── timingSystemId
+│   │           ├── antennas
+│   │           └── inventoryGroup (optional)
 │   ├── deviceNetworks
 │   │   ├── can
 │   │   └── network
@@ -230,25 +232,27 @@ Representative device configuration direction:
 ```text
 io
   devices
-    antennaManager
-      antennas
-        1
-          provider: simulated
-          type: rfid
-          timingNodes: [A, B]
-          power
-            controlRef: antenna-power-1
-            stabilizationMillis: 1000
-        2
-          provider: simulated
-          type: rfid
-          timingNodes: [B]
-          power
-            controlRef: antenna-power-2
-            stabilizationMillis: 1000
-      inventoryGroup
-        members: [1, 2]
-        intervalMillis: 500
+    antennaManagers
+      system-one-antennas
+        timingSystemId: system-one
+        antennas
+          1
+            provider: simulated
+            type: rfid
+            timingNodes: [A, B]
+            power
+              controlRef: antenna-power-1
+              stabilizationMillis: 1000
+          2
+            provider: simulated
+            type: rfid
+            timingNodes: [B]
+            power
+              controlRef: antenna-power-2
+              stabilizationMillis: 1000
+        inventoryGroup
+          members: [1, 2]
+          intervalMillis: 500
 
   deviceNetworks
     can
@@ -260,15 +264,25 @@ io
       displayProtocolProvider: reference
 ```
 
-`AntennaManager` is an optional I/O capability per TimingSystem. When present it owns 1..N antennas and accepts one shared inventory demand: enabled while any TimingNode of that system is OPEN, otherwise disabled. Internal multiplex rotation is distinct from future individual antenna-control features.
-`AntennaId` is exactly one digit `1`..`9` and is distinct from `TimingNodeId`.
-One antenna may intentionally map to 1..N TimingNodes; this
-fan-out does not merge their state or sequence streams.
+`AntennaManager` is an optional I/O capability per TimingSystem. The
+`antennaManagers` mapping makes that ownership explicit: each binding contains
+one `timingSystemId` reference, and the binding key itself is deployment-local
+only. A TimingSystem may have zero or one manager binding. When present the
+manager owns 1..N antennas and accepts one shared inventory demand: enabled while
+any TimingNode of that system is OPEN, otherwise disabled. Internal multiplex
+rotation is distinct from future individual antenna-control features.
+
+`AntennaId` is exactly one digit `1`..`9` and is distinct from
+`TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes within
+the manager's referenced TimingSystem; this fan-out does not merge their state
+or sequence streams.
 
 Antenna installation fields have these semantics:
 
-- `timingNodes` routes antenna observations to one or more TimingNodes
-  within the owning TimingSystem; this mapping does not imply independently
+- `timingSystemId` on the manager binding must reference one configured
+  TimingSystem and may occur only once across manager bindings;
+- `timingNodes` routes antenna observations to one or more TimingNodes that
+  belong to that same TimingSystem; this mapping does not imply independently
   starting/stopping inventory per antenna;
 - `power.controlRef` optionally references an installation-owned external power
   capability rather than reader/vendor protocol;
@@ -672,8 +686,12 @@ Validation includes, where applicable:
 - duplicate application-wide `TimingNodeId` values;
 - a configured TimingNode `LocationId` that violates an explicitly defined compatibility rule of the selected application profile;
 - references to unknown TimingSystems or TimingNodes;
+- AntennaManager bindings that reference an unknown TimingSystem;
+- more than one AntennaManager binding for the same TimingSystem;
 - invalid/duplicate `AntennaId` values;
 - empty or invalid antenna-routing targets;
+- antenna-routing targets that do not belong to the manager's referenced
+  TimingSystem;
 - duplicate discovered provider IDs;
 - unknown configured TimingData/UpstreamProtocol/Antenna/CAN/display provider IDs;
 - provider/configuration combinations rejected by the selected provider;
