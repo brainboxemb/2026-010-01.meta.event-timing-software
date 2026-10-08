@@ -205,11 +205,11 @@ nodes:
   notation: component
   layout: {x: 315, y: 667, w: 220, h: 50}
 
-- id: timing-system-conductor
-  object_id: TimingSystemConductor
+- id: conductor
+  object_id: Conductor
   group: timing-system-aggregate
-  label: "TimingSystemConductor"
-  subtitle: "node states • shared inventory"
+  label: "Conductor"
+  subtitle: "per TimingSystem • shared inventory"
   kind: service
   notation: component
   layout: {x: 315, y: 732, w: 220, h: 50}

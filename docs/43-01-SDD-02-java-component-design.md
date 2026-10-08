@@ -249,7 +249,7 @@ domain/
   system/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
-    TimingSystemConductor.java          joint coordination of 1..N TimingNodes
+    Conductor.java          joint coordination of 1..N TimingNodes
     TimingNodeStateProperty.java        per-node authoritative state tracking
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
@@ -365,7 +365,7 @@ single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
 housekeeping and immediate work therefore preserve node-local ordering without creating a
 thread per processor.
 
-Runtime creates a logical `SerialExecutor` per TimingSystemConductor
+Runtime creates a logical `SerialExecutor` per Conductor
 over a shared coordination worker and a `SerialScheduledExecutor` per
 AntennaManager over the shared scheduled I/O worker.
 
@@ -398,10 +398,10 @@ for reimplementing JDK executor internals.
 
 :::{design} Cooperative execution and application coordination
 :id: DD-CooperativeExecution
-:elaborates: TimingSystemConductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
+:elaborates: Conductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
 
 Detailed Java design for cooperative task runners/controllers and the
-TimingSystem-scoped coordination pattern used by TimingSystemConductor.
+TimingSystem-scoped coordination pattern used by Conductor.
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
@@ -563,7 +563,7 @@ InventoryTask
   SWITCH / DONE
 ```
 
-Each TimingSystemConductor uses `SerialTaskRunner` and
+Each Conductor uses `SerialTaskRunner` and
 `CooperativeTaskController` to reconcile the authoritative states of its
 1..N TimingNodes. Status events merely wake the task; they do not execute
 inventory control on the emitting thread. Manager-wide inventory is needed
@@ -1065,7 +1065,7 @@ assembled.
 The executable composition must remain readable as one linear construct-wire-start flow.
 The Runtime composition root constructs 1..N TimingSystem contexts from
 validated effective configuration. Each contains 1..N TimingNodes and a
-TimingSystemConductor, together with its own I/O composition. Multi-node
+Conductor, together with its own I/O composition. Multi-node
 support is in the current project plan, even though the current Java executable
 still composes one TimingNode.
 
@@ -1132,7 +1132,7 @@ timing-point-core.jar
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.domain.system/
-    TimingSystemConductor.java
+    Conductor.java
     TimingNodeStateProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
@@ -1184,7 +1184,7 @@ main()
        -> create RuntimeExecutors and RuntimeTimeSources
        -> create one TimeSource for the current timing context
        -> construct reusable application/domain/I/O objects
-       -> construct and wire per-system TimingSystemConductor
+       -> construct and wire per-system Conductor
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
@@ -1207,7 +1207,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; each `TimingSystemConductor` owns coordinated operational behavior within its system.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. The returned Runtime owns process-level composition, physical execution resources and outer Presentation lifecycle; each `Conductor` owns coordinated operational behavior within its system.
 
 :::
 
@@ -1501,7 +1501,7 @@ TimingSystem-owned intent and I/O device mechanics are separate:
 TimingNode states (1..N)
       |
       v
-TimingSystemConductor
+Conductor
 decides shared inventory demand
       |
       v
@@ -1518,7 +1518,7 @@ owns lifecycle + inventory intent
       +--> reusable AntennaShutdownTask
 ```
 
-`TimingSystemConductor` requests manager-wide inventory while any of
+`Conductor` requests manager-wide inventory while any of
 its TimingNodes is OPEN. It does not issue device-mechanism commands
 such as power-on, initialize, power-cycle or antenna switching.
 
@@ -1653,7 +1653,7 @@ SI01-REQ-053 uses one system-scoped inventory demand:
 TimingNode A/B/... state change
        |
        v
-TimingSystemConductor (serial/coalesced authoritative read)
+Conductor (serial/coalesced authoritative read)
        |
        +--> any node OPEN? yes -> manager-wide inventory enabled
        |                   no  -> manager-wide inventory disabled
