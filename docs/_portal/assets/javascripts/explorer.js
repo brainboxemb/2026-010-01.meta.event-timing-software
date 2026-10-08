@@ -8,16 +8,6 @@
       .replaceAll("'", "&#039;");
   }
 
-  function relationLabel(type, incoming) {
-    const label = String(type).replaceAll("_", " ");
-    if (!incoming) return label;
-    if (type === "derived_from") return "derived from this";
-    if (type === "satisfies") return "satisfies this";
-    if (type === "verifies") return "verifies this";
-    if (type === "detailed_by") return "details this";
-    return label + " this";
-  }
-
   function initializePortalViews() {
     const dataNode = document.getElementById("eng-graph-data");
     if (!dataNode) return;
@@ -30,7 +20,20 @@
       return;
     }
 
-    function relationButton(id, relationType, incoming, mode) {
+    // The verbs are provided by Sphinx-Needs through the generated view.
+    function relationshipHeading(object, type, incoming) {
+      const labels = data.relation_labels[type];
+      if (!labels) throw new Error("Unknown engineering relation: " + type);
+      return (
+        "This " +
+        String(object.type_label).toLowerCase() +
+        (incoming ? " is " : " ") +
+        labels[incoming ? "incoming" : "outgoing"] +
+        ":"
+      );
+    }
+
+    function relationButton(id, mode) {
       const object = data.objects[id];
       if (!object) return "";
       const attribute =
@@ -41,9 +44,6 @@
         '<button class="eng-relation" type="button" ' +
         attribute +
         ">" +
-        '<span class="eng-relation__type">' +
-        escapeHtml(relationLabel(relationType, incoming)) +
-        "</span>" +
         '<span class="eng-relation__object">' +
         escapeHtml(object.id) +
         " — " +
@@ -53,49 +53,32 @@
       );
     }
 
-    function relationSection(title, relations, endpointKey, incoming, mode) {
-      const explanation = incoming
-        ? "Declared by the listed source object and directed to this object."
-        : "Declared by this object and directed to the listed target object.";
-      if (!relations.length) {
-        return (
-          '<section class="eng-detail__relations">' +
-          "<h3>" +
-          escapeHtml(title) +
-          "</h3><p>" +
-          escapeHtml(explanation) +
-          "</p><p>None in this production slice.</p></section>"
-        );
+    // Keep directional meaning while eliminating edge-technical jargon.
+    function relationGroups(object, mode) {
+      const sections = [];
+      for (const [direction, incoming, endpoint] of [
+        ["outgoing", false, "target"],
+        ["incoming", true, "source"],
+      ]) {
+        const groups = new Map();
+        for (const relation of object[direction]) {
+          if (!groups.has(relation.type)) groups.set(relation.type, []);
+          groups.get(relation.type).push(relation[endpoint]);
+        }
+        for (const [type, relatedIds] of groups) {
+          sections.push(
+            '<section class="eng-detail__relations">' +
+            "<h3>" +
+            escapeHtml(relationshipHeading(object, type, incoming)) +
+            "</h3>" +
+            relatedIds.map((id) => relationButton(id, mode)).join("") +
+            "</section>"
+          );
+        }
       }
-      return (
-        '<section class="eng-detail__relations"><h3>' +
-        escapeHtml(title) +
-        "</h3><p>" +
-        escapeHtml(explanation) +
-        "</p>" +
-        relations
-          .map((relation) =>
-            relationButton(relation[endpointKey], relation.type, incoming, mode)
-          )
-          .join("") +
-        "</section>"
-      );
-    }
-
-    function focusSection(id, mode) {
-      const focus = data.focus_depth_1[id];
-      if (!focus) return "";
-      const neighbors = focus.objects.filter((objectId) => objectId !== id);
-      return (
-        '<section class="eng-detail__focus">' +
-        "<h3>One-hop context</h3>" +
-        "<p>Incoming and outgoing graph neighbors at exact depth 1.</p>" +
-        '<div class="eng-focus-list">' +
-        neighbors
-          .map((neighbor) => relationButton(neighbor, "one hop", false, mode))
-          .join("") +
-        "</div></section>"
-      );
+      return sections.length
+        ? sections.join("")
+        : "<p>No traceability relationships are recorded for this object.</p>";
     }
 
     function maturityStatus(object) {
@@ -200,21 +183,7 @@
         promoteAction +
         "</div>" +
         sourceContextPanel(object) +
-        relationSection(
-          "Outgoing relationships",
-          object.outgoing,
-          "target",
-          false,
-          mode
-        ) +
-        relationSection(
-          "Incoming relationships",
-          object.incoming,
-          "source",
-          true,
-          mode
-        ) +
-        focusSection(object.id, mode)
+        relationGroups(object, mode)
       );
     }
 
@@ -765,7 +734,7 @@
           compareDetail.innerHTML =
             '<div class="eng-compare-empty">' +
             "<strong>Compare a related object</strong>" +
-            "<p>Click an Incoming, Outgoing or one-hop relation in the selected object. " +
+            "<p>Click a linked object under the selected object's relationship headings. " +
             "The root object stays visible while the related object opens here.</p>" +
             "</div>";
         } else {
