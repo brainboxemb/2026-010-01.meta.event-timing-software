@@ -99,7 +99,9 @@ the related object** (for example, *Requirements* for a use case and
 *Detailed designs* for an architecture element). Outgoing relations
 retain their active verb. All links are displayed as compact, directly
 accessible object rows in the Explorer, comparison workspace and object
-pages. The UI does not collapse or hide relations based on count.
+pages. Where a relation spans multiple source documents, simple
+subheadings identify each authored document and its linked-item count.
+The UI does not collapse or hide relations based on count.
 
 The author declares only the outgoing `:relation: target-id` option;
 Sphinx-Needs supplies `relation_back`. The
