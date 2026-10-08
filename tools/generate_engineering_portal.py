@@ -202,6 +202,10 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
             raise PortalError(
                 f"relation target/source missing: {source_id} -> {target_id}"
             )
+        if relation["type"] not in LINK_OPTIONS:
+            raise PortalError(
+                f"relation has no configured readable label: {relation['type']}"
+            )
         objects[source_id]["outgoing"].append(
             {"type": relation["type"], "target": target_id}
         )
@@ -230,6 +234,10 @@ def make_view(graph: dict, repository: str, source_root: Path) -> dict:
         "default_object": None,
         "objects": objects,
         "focus_depth_1": focus_depth_1,
+        "relation_labels": {
+            key: {"outgoing": value["outgoing"], "incoming": value["incoming"]}
+            for key, value in LINK_OPTIONS.items()
+        },
     }
 
 
@@ -285,51 +293,34 @@ def render_object_index(view: dict) -> str:
     return "\n".join(lines)
 
 
-def render_relation_table(
-    title: str,
-    relations: list[dict],
-    *,
-    endpoint: str,
-    objects: dict[str, dict],
-    incoming: bool = False,
-) -> list[str]:
-    lines = [f"## {title}", ""]
-    if incoming:
-        lines.extend(
-            [
-                (
-                    "Incoming relations are declared by the listed source objects "
-                    "and point to this object. The label describes the inverse "
-                    "view of the outgoing relationship."
-                ),
-                "",
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                (
-                    "Outgoing relations are declared by this object and point to "
-                    "the listed target objects."
-                ),
-                "",
-            ]
-        )
-    if not relations:
-        return [*lines, "None in the current engineering graph.", ""]
+def relation_heading(obj: dict, relation_type: str, incoming: bool) -> str:
+    """Read a link as a sentence from the selected object's perspective."""
 
-    heading = "Target" if endpoint == "target" else "Source object"
-    relation_heading = "Relation" if not incoming else "Relation declared by source"
-    lines.extend([f"| {relation_heading} | {heading} |", "| --- | --- |"])
-    for relation in relations:
-        related_id = relation[endpoint]
-        related = objects[related_id]
-        lines.append(
-            f"| {LINK_OPTIONS.get(relation['type'], {}).get('incoming' if incoming else 'outgoing', relation['type'])} (`{relation['type']}`) | "
-            f"[{related_id} — {related['title']}](../{related_id}/) |"
-        )
-    lines.append("")
-    return lines
+    labels = LINK_OPTIONS[relation_type]
+    verb = labels["incoming" if incoming else "outgoing"]
+    return f"This {obj['type_label'].lower()}{' is ' if incoming else ' '}{verb}:"
+
+
+def render_relation_groups(obj: dict, objects: dict[str, dict]) -> list[str]:
+    """Group links by semantic verb instead of exposing graph edge direction."""
+
+    result = []
+    for direction, endpoint, incoming in (
+        ("outgoing", "target", False),
+        ("incoming", "source", True),
+    ):
+        groups: dict[str, list[str]] = {}
+        for relation in obj[direction]:
+            groups.setdefault(relation["type"], []).append(relation[endpoint])
+
+        for relation_type, ids in groups.items():
+            result.extend(["## " + relation_heading(obj, relation_type, incoming), ""])
+            for related_id in ids:
+                related = objects[related_id]
+                result.append(f"- [{related_id} — {related['title']}](../{related_id}/)")
+            result.append("")
+
+    return result or ["No traceability relationships are recorded for this object.", ""]
 
 
 def render_object_page(obj: dict, view: dict) -> str:
@@ -350,10 +341,8 @@ def render_object_page(obj: dict, view: dict) -> str:
         ),
         "",
         (
-            "This is a **derived portal page**. It combines the selected engineering "
-            "object with its incoming/outgoing relations and one-hop graph context. "
-            "Change engineering meaning in the authored source definition; the portal "
-            "is regenerated from that source."
+            "This is a **derived portal page**. Engineering meaning is maintained "
+            "in the authored Need, not in this generated presentation."
         ),
         "",
     ]
@@ -361,41 +350,7 @@ def render_object_page(obj: dict, view: dict) -> str:
     if obj["content"]:
         lines.extend(["## Definition", "", obj["content"], ""])
 
-    lines.extend(
-        render_relation_table(
-            "Outgoing relationships",
-            obj["outgoing"],
-            endpoint="target",
-            objects=view["objects"],
-        )
-    )
-    lines.extend(
-        render_relation_table(
-            "Incoming relationships",
-            obj["incoming"],
-            endpoint="source",
-            objects=view["objects"],
-            incoming=True,
-        )
-    )
-
-    focus = view["focus_depth_1"][obj["id"]]["objects"]
-    lines.extend(
-        [
-            "## One-hop context",
-            "",
-            "Incoming and outgoing graph neighbors at exact shortest-path depth 1.",
-            "",
-        ]
-    )
-    for related_id in focus:
-        if related_id == obj["id"]:
-            continue
-        related = view["objects"][related_id]
-        lines.append(
-            f"- [{related_id} — {related['title']}](../{related_id}/)"
-        )
-    lines.append("")
+    lines.extend(render_relation_groups(obj, view["objects"]))
     return "\n".join(lines)
 
 
@@ -415,9 +370,9 @@ evidence.
 - [Engineering explorer](explorer.md) — keep the real SI-01 architecture visible
   while inspecting one selected engineering object.
 - [Traceability comparison](workspace.md) — keep one engineering object fixed
-  on the left while opening related Incoming/Outgoing objects on the right.
+  on the left while opening related objects on the right.
 - [Engineering object index](objects/index.md) — searchable generated object
-  pages with incoming/outgoing and one-hop context.
+  pages with readable, direction-aware relationship headings.
 - [Engineering Client UI](engineering-client-ui.md) — review the Step-4 Timing
   UI wireframes and state/interaction design.
 - [Architecture Book](book.md) — the existing assembled Book remains a

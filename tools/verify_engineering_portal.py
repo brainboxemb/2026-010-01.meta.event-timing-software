@@ -70,6 +70,37 @@ if provenance["object_count"] != graph["object_count"]:
     raise SystemExit("portal object count does not match engineering graph")
 if provenance["relation_count"] != graph["relation_count"]:
     raise SystemExit("portal relation count does not match engineering graph")
+# The portal must use Sphinx-Needs relationship labels, including backlinks.
+portal_view = json.loads(
+    (root / "docs" / "assets" / "engineering-graph.json").read_text(encoding="utf-8")
+)
+labels = portal_view["relation_labels"]
+if labels["realizes"] != {"outgoing": "realizes", "incoming": "realized by"}:
+    raise SystemExit("portal realizes labels drifted from Sphinx-Needs")
+if labels["elaborates"] != {"outgoing": "elaborates", "incoming": "elaborated by"}:
+    raise SystemExit("portal elaborates labels drifted from Sphinx-Needs")
+for obsolete in ("derived_from", "satisfies", "detailed_by"):
+    if obsolete in labels:
+        raise SystemExit("obsolete relation label survived: " + obsolete)
+
+timing_node_page = (site / "objects" / "TimingNode" / "index.html").read_text(
+    encoding="utf-8"
+)
+for heading in (
+    "This architecture element realizes:",
+    "This architecture element is elaborated by:",
+):
+    if heading not in timing_node_page:
+        raise SystemExit("object details missing semantic heading: " + heading)
+if "One-hop context" in timing_node_page:
+    raise SystemExit("object details duplicate neighbors in a one-hop list")
+
+design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_text(
+    encoding="utf-8"
+)
+if "This detailed design elaborates:" not in design_page:
+    raise SystemExit("design details missing outgoing elaborates heading")
+
 if "SI02-REQ-001" not in objects:
     raise SystemExit("engineering graph missing first SI-02 requirement")
 si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
