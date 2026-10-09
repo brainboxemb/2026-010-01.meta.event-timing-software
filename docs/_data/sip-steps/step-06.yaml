@@ -5,7 +5,9 @@ planning_changes:
     change: >-
       Complete A01 through Java PR #402: SI-02 now runs on Java 21 / JavaFX 21
       with BentoFX, an instance-scoped system context, real dockable panes and a
-      CI-verified Windows jpackage app-image. V01 is next.
+      CI-verified Windows jpackage app-image. V01 is next; with only that
+      running-system verification remaining, the Step-6 remainder is re-estimated
+      at 1 project day.
   - date: '2026-10-09'
     change: >-
       Classify the reusable Engineering Desktop Client as SI-02. Keep UC-009 as its
