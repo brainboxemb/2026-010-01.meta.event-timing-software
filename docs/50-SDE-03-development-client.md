@@ -19,10 +19,10 @@ It is deliberately **not**:
 - an owner of timing/domain state;
 - a shortcut that may mutate SI-01 internals directly.
 
-The current implementation is a standalone Java-17/JavaFX Maven project. It remains
-in the same implementation repository as SI-01 because its interface-inspection role
-currently evolves together with SI-01. Repository co-location does not make it part of
-the SI-01 software item.
+The current implementation is a standalone Java 21 / JavaFX 21 Maven application using
+BentoFX 0.16.0 for workbench composition. It remains in the same implementation repository
+as SI-01 because its public-interface integration evolves together with SI-01. Repository
+co-location does not make it part of the SI-01 software item.
 
 ## Terms and abbreviations
 
@@ -79,9 +79,8 @@ Current placement:
 ├── app/             SI-01 executable
 ├── system-test/     separate-process verification
 ├── shared/timing-data/ shared TimingData model + codec/provider SPI
-└── test-client/     Development Client
-                    standalone Java 17 + JavaFX application
-                    may depend on event-timing-data only
+└── test-client/     SI-02 Engineering Desktop Client
+                    standalone Java 21 + JavaFX 21 + BentoFX application
                     no SI-01 core/app implementation dependency
 ```
 
@@ -118,9 +117,11 @@ Step 6 D02 selects the following target baseline for the Engineering Desktop Cli
 | First Windows distribution | self-contained `jpackage` application image |
 | Module model | classpath/non-JPMS initially |
 
-This is a target baseline, not a statement that the current implementation has already
-migrated. The existing `test-client` uses Java 17 until Step 6 A01 performs the
-Java 21 / JavaFX 21 desktop restructuring. Step 6 V01 then verifies the real SI-02
+This baseline is implemented in `test-client` through Java PR #402. The application
+uses an instance-scoped `EngineeringSystemContext` for one connected SI-01 target,
+keeps the functional JavaFX panes independent from BentoFX APIs and composes those panes
+through the BentoFX workbench. Linux CI verifies the standalone client and Windows CI
+builds the self-contained `jpackage` app-image. Step 6 V01 verifies the real SI-02
 revoke/recovery GUI behaviour against SI-01.
 
 ### Decision rationale

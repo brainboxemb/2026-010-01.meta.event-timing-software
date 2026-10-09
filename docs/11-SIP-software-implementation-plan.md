@@ -952,13 +952,32 @@ client context so later multi-system work does not require a new architecture. F
 or another embedded scripting adapter may call those same services; scripting itself is
 not a Step-6 implementation requirement.
 
+### A01 — SI-02 desktop restructuring
+
+A01 is complete through Java issue #401 / PR #402.
+
+The standalone `test-client` now implements the selected SI-02 baseline:
+
+- Java 21 / JavaFX 21 with BentoFX 0.16.0;
+- an instance-scoped `EngineeringSystemContext` for one connected SI-01 target;
+- TimingNode / Registration / Simulation, Device Log, Terminal, Client Log,
+  Registrations, LogBook and Raw Data / Events composed as real workbench panes;
+- functional JavaFX panes kept independent from BentoFX-specific APIs;
+- existing IF-03 synchronisation/reconnect, registration/revoke, simulation,
+  Remote Shell and diagnostic-log behaviour retained;
+- a Windows `jpackage` app-image built and checked in CI.
+
+A01 provides the runnable client needed by V01. It does not itself constitute the
+manual VC-ST1-003 GUI verification result.
+
 ### Result
 
 - SI-02 is defined as the maintainable Engineering Desktop Client software item.
 - Normal operator interaction remains IF-04 Web.
 - SI-02 remains independent from SI-01 implementation classes/files and keeps
   engineering behaviour behind public interfaces.
-- Desktop technology, workbench and packaging choices are explicit and reviewable.
+- The Java 21 / BentoFX workbench and Windows app-image path are implemented and
+  CI-qualified; V01 remains the running-system GUI verification.
 
 ### Demo
 
