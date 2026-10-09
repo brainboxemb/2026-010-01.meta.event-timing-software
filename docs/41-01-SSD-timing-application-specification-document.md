@@ -123,7 +123,7 @@ The semantic build identity is defined by IF-03. The current v1 wire fields are 
 :::{req} Current application status snapshot  
 :id: SI01-REQ-020  
 :status: R  
-:specifies: UC-008  
+:specifies: UC-009  
 
 SI-01 shall provide a queryable current application status snapshot independently
 of diagnostic log output.
@@ -132,7 +132,7 @@ of diagnostic log output.
 :::{req} Application status content  
 :id: SI01-REQ-021  
 :status: R  
-:specifies: UC-008, UC-020  
+:specifies: UC-009, UC-020  
 :depends_on: SI01-REQ-024  
 
 The current application status snapshot shall contain at least:
@@ -150,7 +150,7 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 :::{req} Equivalent status semantics across interfaces  
 :id: SI01-REQ-022  
 :status: R  
-:specifies: UC-008  
+:specifies: UC-001, UC-009  
 
 For each application-status value exposed by more than one supported SI-01
 interface, those interfaces shall report the same semantic value for the same
@@ -160,7 +160,7 @@ running application state. Transport-specific encoding may differ.
 :::{req} TimingNode operational state-change publication  
 :id: SI01-REQ-023  
 :status: R  
-:specifies: UC-001, UC-008, UC-009  
+:specifies: UC-001, UC-009  
 :depends_on: SI01-REQ-024  
 
 When a value represented in a TimingNode's current operational state changes,
@@ -173,7 +173,7 @@ delivery.
 :::{req} Current TimingNode operational state  
 :id: SI01-REQ-024  
 :status: R  
-:specifies: UC-001, UC-002, UC-008, UC-009, UC-020  
+:specifies: UC-001, UC-002, UC-009, UC-020  
 
 For each configured TimingNode, SI-01 shall provide a queryable current
 operational state independently of presentation transport. That state shall
@@ -188,7 +188,7 @@ contain at least:
 :::{req} Presentation current-state recovery  
 :id: SI01-REQ-025  
 :status: R  
-:specifies: UC-001, UC-008, UC-009  
+:specifies: UC-001, UC-009  
 :depends_on: SI01-REQ-023, SI01-REQ-024  
 
 After initial connection or reconnection, SI-01 shall allow a presentation
@@ -203,7 +203,7 @@ live.
 :::{req} Lifecycle command outcome  
 :id: SI01-REQ-026  
 :status: R  
-:specifies: UC-002, UC-008, UC-009  
+:specifies: UC-002, UC-009  
 :depends_on: SI01-REQ-024, SI01-REQ-040  
 
 A lifecycle/location command accepted by SI-01 shall return an explicit semantic
@@ -255,7 +255,7 @@ interface version or a separately specified migration contract.
 :::{req} Operational location and lifecycle  
 :id: SI01-REQ-040  
 :status: R  
-:specifies: UC-002, UC-008, UC-009  
+:specifies: UC-002, UC-009  
 
 An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
 When the command is accepted, SI-01 shall apply that LocationId and the
@@ -629,13 +629,13 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | --- | --- | --- |
 | SI01-REQ-001/002 | SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime |
 | SI01-REQ-003 | UC-014/015; SSSD software-item topology | IF-11 + SI-01 runtime composition |
-| SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
-| SI01-REQ-020/021/022 | UC-008/020; SSSD application-status allocation | Status service/model + IF-01/02/03 |
-| SI01-REQ-023/024/025/026 | UC-001/002/008/009/020; shared presentation-state and lifecycle-result semantics | TimingNode current-state model + presentation adapters |
-| SI01-REQ-030/031 | UC-008/009/014/015/016; SSSD interface/testability separation | shared application boundary |
+| SI01-REQ-010/011 | UC-009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
+| SI01-REQ-020/021/022 | UC-001/009/020; SSSD application-status allocation | Status service/model + IF-01/02/03 |
+| SI01-REQ-023/024/025/026 | UC-001/002/009/020; shared presentation-state and lifecycle-result semantics | TimingNode current-state model + presentation adapters |
+| SI01-REQ-030/031 | UC-009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040 | UC-002/008/009 | TimingNode + IF-03/IF-04 control/status |
+| SI01-REQ-040 | UC-002/009 | TimingNode + IF-03/IF-04 control/status |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |
