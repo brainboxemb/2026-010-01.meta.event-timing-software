@@ -1,6 +1,12 @@
 step: 5
 
 planning_changes:
+  - date: '2026-10-09'
+    change: >-
+      Complete Step 5 on the proven SI-01/server verification baseline. Narrow
+      V06 closure to automated revoke/API/persistence evidence; the outstanding
+      manual GUI trash/DELETED/reconnect/recovery run is deliberately moved to
+      Step 6 V01 on the new Engineering Desktop Client, not marked as passed.
   - date: '2026-10-07'
     change: >-
       Added D08/A06/V07 for manual registration/precision and D09/A07/V08 for
@@ -291,16 +297,17 @@ activities:
   - id: V06
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A05]
     note: >-
-      Server-side VC-ST1-006 is green through Java PR #332: ADD remains
-      immutable, accepted REV records append in source order, repeated
-      well-formed raw revoke is not business-deduplicated, malformed IF-03 input
-      is rejected before commit and restart preserves history. Remaining
-      qualification is the manual VC-ST1-003 Development Client run proving the
-      trash action, DELETED interpreted projection and restart/recovery in the
-      real JavaFX client.
+      Completed for SI-01 revoke/API/persistence through Java PR #332 and
+      black-box VC-ST1-006: original ADD is immutable, accepted REV appends
+      in source order, repeated well-formed raw revoke is not deduplicated,
+      malformed input is rejected before commit, and restart retains history.
+      The additional manual VC-ST1-003 Development Client trash/DELETED and
+      reconnect/recovery UI run was NOT executed in Step 5. That GUI
+      evidence is explicitly transferred to Step 6 V01 on the new Engineering
+      Desktop Client. Do not report it as a Step-5 test pass.
 
   - id: V07
     lane: verification
