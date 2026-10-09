@@ -111,9 +111,9 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (3)":
+if requirements["title"] != "Requirements (4)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = ["SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
+expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit(
         f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
@@ -124,7 +124,7 @@ if requirements["document_groups"]:
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Requirements (3)" not in uc_page:
+if "Requirements (4)" not in uc_page:
     raise SystemExit("UC-001 object page missing application-requirement heading")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
