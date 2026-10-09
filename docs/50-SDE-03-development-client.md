@@ -1,8 +1,8 @@
-# Development Client development and UI baseline
+# Engineering Client development and UI baseline
 
 Status: working engineering baseline
 
-Development tool: **Development Client**  
+Development tool: **Engineering Desktop Client**  
 Implementation location: `test-client/` in `2026-010-02.java.timing-point-application`
 
 
@@ -102,6 +102,91 @@ development-client changes normally belong to the same development increment. A
 separate repository becomes useful only when evidence shows an independent release
 cycle, independent ownership, substantial external reuse, or lower coordination cost
 from splitting it.
+
+## Step 6 desktop technology baseline
+
+Step 6 D02 selects the following target baseline for the Engineering Desktop Client:
+
+| Concern | Selected baseline |
+| --- | --- |
+| Language/runtime | Java 21 |
+| UI toolkit | JavaFX 21 |
+| Workbench | BentoFX 0.16.0 |
+| Required styling | application-owned JavaFX CSS |
+| Optional theme layer | Transit may be used where it adds value; it is not architecture-critical |
+| HTTP/JSON | JDK `java.net.http.HttpClient` |
+| WebSocket | JDK `java.net.http.WebSocket` |
+| JSON | Jackson |
+| Build | Maven |
+| First Windows distribution | self-contained `jpackage` application image |
+| Module model | classpath/non-JPMS initially |
+
+This is a target baseline, not a statement that the current implementation has already
+migrated. The existing `test-client` still uses Java 17 until Step 6 A01 performs the
+desktop restructuring after the Step-5 V06 manual baseline has closed.
+
+### Decision rationale
+
+The decision deliberately builds on qualified project evidence rather than introducing a
+second desktop technology stack.
+
+**Java 21 / JavaFX 21** are selected because the existing client, its protocol and
+synchronisation services and Experiment 008 already establish the required desktop
+behaviour. A .NET, Compose or desktop-web implementation would add another language,
+runtime/build toolchain and duplicate client integration without a demonstrated
+compensating benefit.
+
+**BentoFX 0.16.0** is selected because the Engineering Client genuinely benefits from a
+dockable engineering workbench: logs, terminal, controls, registrations, technical
+LogBook and raw inspection are useful simultaneously and across flexible layouts.
+Experiment 008 preferred BentoFX to SnapFX because BentoFX's explicit
+root/branch/leaf model produced clearer application composition, needed less corrective
+adapter/presentation code and resolves through the normal Maven Central path. Plain
+JavaFX remains a viable fallback if docking later stops providing useful engineering
+value.
+
+BentoFX does not make layout persistence an application/domain contract. Persisted
+workbench layout, if later useful, is application-owned desktop state and may be added
+without changing the view/service boundary.
+
+The existing **JDK HTTP/WebSocket client plus Jackson** remains the selected IF-03
+implementation approach. D02 found no concrete protocol gap that justifies another
+HTTP/WebSocket dependency.
+
+The first packaging target is a self-contained Windows **`jpackage` app-image**. This
+avoids requiring a separately installed JRE while keeping the first distribution step
+smaller than an installer/update programme. MSI/WiX, automatic update and rollback are
+added only when a deployment need justifies them.
+
+The client remains **non-modular/classpath-based initially**. Experiment 008's JavaFX
+unnamed-module warning is not sufficient reason to introduce JPMS by itself. A module
+path/runtime-image change should be driven by a packaging, dependency or maintainability
+benefit.
+
+### Application/service boundary
+
+D02 also fixes a design constraint needed by the workbench and future automation:
+
+```text
+JavaFX / BentoFX views ----+
+                           |
+future scripting ----------+--> client/application services --> public SI-01 interfaces
+                           |
+tests / fakes -------------+
+```
+
+Connection/session lifecycle, baseline synchronisation, live-event buffering and
+reconciliation, command execution, raw-message context and target/system state belong in
+client/application services rather than JavaFX event handlers or docking objects.
+
+A connected timing system is modelled as an **instance-scoped client context**, not as
+global UI state. The first Step-6 workbench may still present one primary system, but
+this boundary allows later multi-system engineering workflows and the scripting direction
+tracked separately without another architectural rewrite.
+
+Future embedded scripting is intentionally **not** part of D02 implementation scope.
+When introduced, a Lua or other script adapter shall call the same application/client
+services as the GUI; it shall not automate JavaFX controls.
 
 ## Component architecture
 
