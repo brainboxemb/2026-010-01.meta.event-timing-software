@@ -3,6 +3,10 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
+      Select Java 21, JavaFX 21, BentoFX 0.16.0, JDK HTTP/WebSocket and
+      jpackage app-image as the Engineering Client D02 baseline.
+  - date: '2026-10-09'
+    change: >-
       Withdraw SI-02 operator desktop; IF-04 remains the operator path and
       Step 6 now matures the Engineering Client.
   - date: '2026-10-07'
@@ -24,14 +28,15 @@ activities:
   - id: D02
     lane: application
     kind: decision
-    state: next
+    state: done
     depends_on: [D01]
     note: >-
-      Select the Engineering Client Java/runtime, JavaFX/workbench,
-      HTTP/WebSocket client boundary and packaging baseline. Experiment 008 is
-      retained evidence and currently prefers BentoFX over SnapFX; future scripting
-      compatibility is an architecture constraint, not a Step-6 implementation
-      requirement.
+      Select Java 21, JavaFX 21, BentoFX 0.16.0, application-owned CSS,
+      JDK HttpClient/WebSocket, Jackson, Maven and a self-contained Windows
+      jpackage app-image. Keep client/application services below JavaFX so later
+      multi-system and scripting adapters can reuse the same public-interface
+      operations. Transit is optional; JPMS/installers/auto-update remain later
+      needs rather than baseline requirements.
 
   - id: A01
     lane: application
