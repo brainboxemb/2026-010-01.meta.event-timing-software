@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align the Java SDD Domain package layout with the system/node architecture: use `domain.node` and `domain.node.processing` for TimingNode responsibilities; keep `domain.system`, `domain.timingdata`, and the architecture diagram unchanged.
+
 - Define IF-11 AntennaManager bindings per TimingSystem under `io.devices.antennaManagers`. Each binding references one `timingSystemId`; antenna observation targets must belong to that system, and at most one manager may be configured per TimingSystem.
 
 - Align Java design documentation with the implemented 1..N TimingSystem Runtime composition: providers resolve per system, each system receives its own TimeSource and domain.system.Conductor, and all configured TimingNodes are composed without a placeholder TimingSystem domain class.
