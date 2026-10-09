@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Close Step 5 on verified SI-01/server behaviour; transfer the not-yet-executed manual GUI revoke/DELETED/recovery scenario to Step 6 V01 on the new Engineering Desktop Client and unblock A01 without misreporting test evidence.
+
 - Complete Step 6 D02 for the Engineering Desktop Client: select Java 21, JavaFX 21, BentoFX 0.16.0, application-owned CSS, JDK HttpClient/WebSocket, Jackson and Maven, with a self-contained Windows jpackage app-image as the first packaging target; keep Transit optional, defer JPMS/installer/update machinery until concrete need, and preserve an instance-scoped client-service boundary for later multi-system and embedded scripting.
 
 - Withdraw the separate SI-02 operator-desktop product allocation: keep IF-04 Web as the normal operator interface, retain UC-009/50-SDE-03 as the Engineering Desktop Client authority through public IF-03 and diagnostic boundaries, retire the former UC-008/SI02-REQ-001..008 Draft slice without reusing those identities, and reframe Step 6 around evolving the existing Development Client into a maintainable engineering workbench.
