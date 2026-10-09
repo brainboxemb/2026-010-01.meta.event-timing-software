@@ -511,14 +511,10 @@ grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
   > bld/engineering-portal/browser-explorer-UC-001.html
 
 grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
-portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (5)'
-for target in IF04-REQ-001 IF04-REQ-002 IF04-REQ-006 IF04-REQ-008 IF04-REQ-009; do
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (3)'
+for target in SI01-REQ-023 SI01-REQ-024 SI01-REQ-025; do
   portal_has bld/engineering-portal/browser-explorer-UC-001.html "data-object-id=\"$target\""
 done
-# The left Explorer tree contains all engineering IDs; absence of non-Web
-# UC-001 relations is asserted from the generated relation model in
-# verify_engineering_portal.py rather than by scanning the entire browser DOM.
-portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'eng-relation__source-heading'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'class="eng-relation__document"'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case is specified by:'
 
@@ -529,13 +525,15 @@ portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case 
   --disable-dev-shm-usage \
   --virtual-time-budget=2500 \
   --dump-dom \
-  "http://127.0.0.1:8765/workspace/?object=UC-001&compare=IF04-REQ-002" \
+  "http://127.0.0.1:8765/workspace/?object=UC-001&compare=SI01-REQ-024" \
   > bld/engineering-portal/browser-workspace-UC-001.html
 
-portal_has bld/engineering-portal/browser-workspace-UC-001.html 'Requirements (5)'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'Requirements (3)'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="SI01-REQ-024"'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'This requirement specifies:'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'More specific requirements (2)'
 portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="IF04-REQ-002"'
-portal_has bld/engineering-portal/browser-workspace-UC-001.html 'This interface requirement specifies:'
-portal_lacks bld/engineering-portal/browser-workspace-UC-001.html 'eng-relation__source-heading'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="IF03-REQ-004"'
 portal_lacks bld/engineering-portal/browser-workspace-UC-001.html 'class="eng-relation__document"'
 
 grep -q 'Preconditions' bld/engineering-portal/browser-explorer-UC-001.html
