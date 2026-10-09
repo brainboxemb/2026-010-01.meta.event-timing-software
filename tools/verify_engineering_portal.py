@@ -372,7 +372,7 @@ for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-R
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (
-    "The operator application connects to the registration system.",
+    "The browser-based Web client connects to the configured IF-04 Web binding.",
     "SI-02 connects through the system-defined application-control/status interface.",
     "Settings describe several independently addressed",
 ):
