@@ -47,6 +47,43 @@ application composition
 
 Build provenance is outside IF-11. `BuildIdentity` comes from the built application artifact and remains separate from deployment configuration.
 
+## Source template parameters
+
+The external YAML source may define a small `parameters` mapping for deployment-local
+string constants. Parameters are resolved before the effective `ApplicationConfig` is
+created, so template syntax never becomes runtime/domain state.
+
+Example:
+
+```yaml
+parameters:
+  ID: A
+
+timingSystems:
+  primary:
+    timingSystemId: SID-{ID}
+    timingNodes:
+      primary:
+        timingNodeId: "{ID}"
+```
+
+Rules:
+
+- parameter names are non-blank identifiers and parameter values are YAML strings;
+- a string scalar may reference a configured parameter as `{Name}`;
+- parameter substitution is deterministic text replacement only: it does not evaluate
+  expressions, execute code, load includes or introduce recursive inheritance;
+- unknown or unresolved parameter references are configuration errors;
+- mapping keys are not templated; deployment-local keys such as `primary` remain ordinary
+  YAML structure and are not identities;
+- `{NodeId}` and `{SystemId}` are reserved contextual placeholders. They are resolved only
+  where the owning field defines that context, currently TimingData storage paths;
+- after substitution, the normal field-specific IF-11 validation rules still apply.
+
+For the common single-system/single-node form, `ID: A`, `timingNodeId: "{ID}"` and
+`timingSystemId: SID-{ID}` produce the compact local identities `A` and `SID-A`.
+Multi-system deployments may define separate parameters or explicit IDs as needed.
+
 ## Effective configuration model
 
 The logical **effective** configuration root is:
@@ -142,25 +179,27 @@ TimingSystem owns 1..N TimingNodes plus its own system-status/upstream-protocol
 state. `TimingSystemId` is a local composition/simulation identity and is not
 part of the upstream functional addressing contract.
 
-Representative fields:
+Representative source:
 
-```text
-timingSystems
-  timing-system-01
-    timingSystemId
+```yaml
+parameters:
+  ID: A
+
+timingSystems:
+  primary:
+    timingSystemId: SID-{ID}
     eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
-    timingNodes
-      timing-node-01
-        timingNodeId
-        locationId
-        tagProcessing
-          quietTimeoutMillis
-          maxBurstDurationMillis
-          duplicateWindowMillis
-          sweepCadenceMillis
-          observationQueueCapacity
+    timingNodes:
+      primary:
+        timingNodeId: "{ID}"
+        tagProcessing:
+          quietTimeoutMillis: 250
+          maxBurstDurationMillis: 1000
+          duplicateWindowMillis: 15000
+          sweepCadenceMillis: 50
+          observationQueueCapacity: 256
 ```
 
 Rules:
@@ -405,14 +444,16 @@ TimingData persistence remains an I/O/deployment concern. Each configured
 TimingNode that uses the reference file store resolves to exactly one authoritative
 append-only TimingData file.
 
-For a single-TimingNode composition, the compact form remains valid:
+A compact path template can resolve storage for one or more TimingNodes:
 
 ```yaml
 io:
   storage:
     timingData:
-      path: data/node_A_logbook.jsonl
+      path: data/node-{NodeId}-logbook.jsonl
 ```
+
+For a single TimingNode `A`, this resolves to `data/node-A-logbook.jsonl`.
 
 For a multi-TimingNode composition, use explicit node bindings:
 
@@ -435,10 +476,14 @@ binding does not become part of TimingNode domain state.
 
 Rules:
 
-- `path` is the single-TimingNode shorthand and is valid only when the
-  effective application composition contains exactly one TimingNode;
-- `nodes` is required for a multi-TimingNode composition when the reference
-  TimingData file store is composed;
+- a literal `path` without contextual placeholders is the single-TimingNode shorthand
+  and is valid only when the effective application composition contains exactly one
+  TimingNode;
+- a `path` containing `{NodeId}` and/or `{SystemId}` is resolved separately for
+  every configured TimingNode and may therefore be used for multi-TimingNode composition;
+- every expanded path must still be unique after normal filesystem normalization;
+- `nodes` remains the explicit per-node alternative when different path shapes or
+  additional deployment-specific bindings are required;
 - `path` and `nodes` are mutually exclusive;
 - every configured TimingNode using the reference file store must resolve to
   exactly one storage binding;
@@ -454,8 +499,8 @@ Rules:
   operational work;
 - public examples use generic local paths and do not disclose deployment paths;
 - the reference/example filename convention is
-  `node_<TimingNodeId>_logbook.jsonl`, for example
-  `node_A_logbook.jsonl`; the configured path remains authoritative.
+  `node-<TimingNodeId>-logbook.jsonl`, for example
+  `node-A-logbook.jsonl`; the configured path remains authoritative.
 
 Because `TimingNodeId` is application-wide unique, the same storage mapping
 works for one or multiple TimingSystems without adding `TimingSystemId` to the
@@ -590,6 +635,10 @@ This baseline does not require a general `SecretProvider` hierarchy.
 
 ## Configuration sources and precedence
 
+Source template parameters are resolved within the explicit deployment YAML before that
+source participates in effective-configuration validation. They are a convenience for
+writing one source file, not an additional precedence layer and not a runtime override.
+
 The application resolves configuration **from compiled defaults toward explicit
 deployment intent**. Explicit deployment values win over lower-precedence defaults,
 but they do not override built-in profile compatibility constraints.
@@ -681,6 +730,10 @@ SI-01 validates the complete effective configuration before normal application c
 Validation includes, where applicable:
 
 - missing/invalid `ApplicationId`;
+- invalid template parameter names or non-string parameter values;
+- unknown or unresolved `{Parameter}` references;
+- unresolved contextual `{NodeId}` / `{SystemId}` references outside fields that own
+  those contexts;
 - missing/invalid or duplicate internal `TimingSystemId` values;
 - TimingSystems without at least one configured TimingNode;
 - duplicate application-wide `TimingNodeId` values;
@@ -706,8 +759,8 @@ Validation includes, where applicable:
 - invalid runtime values such as impossible queue/executor settings;
 - missing/blank TimingData storage paths when the reference file store is part
   of the effective composition;
-- use of single-node `io.storage.timingData.path` with more than one configured
-  TimingNode;
+- use of a literal single-node `io.storage.timingData.path` with more than one configured
+  TimingNode, or a multi-node path template whose expansion is not unique;
 - simultaneous use of `io.storage.timingData.path` and
   `io.storage.timingData.nodes`;
 - missing, duplicate or unknown `timingNodeId` references in
