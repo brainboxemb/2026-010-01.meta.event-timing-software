@@ -3,9 +3,8 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
-      Withdraw the separate SI-02 operator-desktop allocation. Normal operator use
-      remains IF-04 Web; Step 6 now matures the existing Engineering Desktop Client
-      through public engineering boundaries such as IF-03.
+      Withdraw SI-02 operator desktop; IF-04 remains the operator path and
+      Step 6 now matures the Engineering Client.
   - date: '2026-10-07'
     change: >-
       Promote the first SI-02 Draft requirements before selecting GUI technology; implementation still waits for Step-5 V06.
