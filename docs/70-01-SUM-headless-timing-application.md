@@ -199,11 +199,11 @@ The committed development configuration binds this listener to
 `127.0.0.1:8081`. Responses are UTF-8 JSON and follow IF-03. The listener is
 loopback-only in the example so remote exposure remains an explicit deployment choice.
 
-## 11. JavaFX test client
+## 11. Engineering Desktop Client
 
-A small desktop test client is available under `test-client/` for manual IF-03
-inspection. It is engineering support rather than SI-02 and is deliberately outside
-the Java-8 SI-01 Maven reactor.
+The Engineering Desktop Client is available under `test-client/` for IF-03
+inspection, integration and diagnostics. It is engineering support rather than a
+separate operator product and is deliberately outside the Java-8 SI-01 Maven reactor.
 
 Use a JDK 21 environment and run:
 
