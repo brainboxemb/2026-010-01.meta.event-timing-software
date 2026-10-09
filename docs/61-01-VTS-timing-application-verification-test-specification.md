@@ -212,7 +212,7 @@ storage recovery remains component-level persistence/codec verification.
 
 :::
 
-:::{vc} Development Client reconnect/resynchronisation integration  
+:::{vc} Engineering Client reconnect/resynchronisation integration  
 ---
 id: VC-ST1-003
 verifies: >-
@@ -222,27 +222,28 @@ verifies: >-
 
 **Purpose**
 
-Verify through the real JavaFX Development Client that the current API-first
-client can drive and interpret the public TimingNode lifecycle/registration
-stream, append a registration REV through the trash action and rebuild current
-status plus bounded TimingData history after reconnect/restart without private
-SI-01 state.
+Verify through the real JavaFX Engineering Desktop Client that it can drive
+and interpret the public TimingNode lifecycle/registration stream, append a
+registration REV through the trash action and rebuild current status plus
+bounded TimingData history after reconnect/restart without private SI-01
+state. This manual case is now a Step-6 V01 acceptance scenario; it was not
+executed for the Step-5 V06 server-side closeout.
 
 **Setup**
 
 - packaged SI-01 application with deterministic verification storage;
-- JavaFX Development Client independently on Java 17;
+- new Java 21/JavaFX 21 Engineering Desktop Client independently of SI-01;
 - public IF-03, Remote Shell and LoggingServer boundaries only;
 - one deterministic automatic registration.
 
 **Procedure**
 
-1. Start SI-01 with empty verification storage and start the Development Client.
+1. Start SI-01 with empty verification storage and start the Engineering Client.
 2. Apply/check the target, connect Events and verify the Timing view reaches
    LIVE only after status/capabilities/LogBook baseline synchronisation.
 3. OPEN LocationId 24. Verify technical LogBook sequence 1 is
    `NODE_INFO / OPEN`.
-4. Commit deterministic auto-reg `N0001`. Verify the interpreted
+4. Commit deterministic auto-reg `RT-A-0001`. Verify the interpreted
    Registrations view shows one non-deleted AUTO row and technical LogBook
    sequence 2 is `AUTO_REG / ADD`.
 5. Verify the trash action is enabled for that interpreted row. Activate it.
@@ -261,7 +262,7 @@ SI-01 state.
 
 **Expected result**
 
-- the Development Client interprets lifecycle records separately from
+- the Engineering Client interprets lifecycle records separately from
   registration rows;
 - trash invokes append-only public revoke rather than destructive deletion;
 - ADD and REV remain independently visible in technical history;
@@ -270,7 +271,9 @@ SI-01 state.
 
 **Execution**
 
-This remains a manual running-system verification case. Repository-local
+This remains a manual running-system verification case. Execute it during
+Step-6 V01 after the new Engineering Desktop Client is available; do not mark
+it passed on the strength of Step-5 server/headless qualification. Repository-local
 checklists may mirror it but shall not redefine it.
 
 :::
