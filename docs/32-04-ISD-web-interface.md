@@ -198,7 +198,7 @@ encoding belong to the IF-04 design/configuration layer rather than this ISD.
 :::{ifreq} Per-TimingNode Web binding  
 :id: IF04-REQ-001  
 :status: D  
-:specifies: UC-001, UC-002  
+:specifies: UC-002  
 
 IF-04 shall support one configured Web binding per TimingNode. The binding shall
 identify the TimingNode to which IF-04 operations apply without making the Web
@@ -208,7 +208,8 @@ endpoint part of TimingNode domain identity.
 :::{ifreq} Current TimingNode state  
 :id: IF04-REQ-002  
 :status: D  
-:specifies: UC-001, UC-002  
+:specifies: UC-002  
+:refines: SI01-REQ-024  
 
 IF-04 shall expose the bound TimingNode identity, current operational LocationId
 when assigned, OPEN/CLOSED lifecycle state and relevant explicit problem state.
@@ -243,7 +244,7 @@ separate lifecycle or LocationId state model.
 :::{ifreq} Explicit failure outcome  
 :id: IF04-REQ-006  
 :status: D  
-:specifies: UC-001, UC-002  
+:specifies: UC-002  
 
 Invalid, rejected, unavailable and outcome-unknown operations shall be
 distinguishable from successful operations. A concrete compatibility mapping may
@@ -263,7 +264,7 @@ results and ordering defined by this ISD.
 :::{ifreq} Current-state baseline after connect or reconnect  
 :id: IF04-REQ-008  
 :status: D  
-:specifies: UC-001  
+:refines: SI01-REQ-025  
 
 On initial connection and after reconnect, IF-04 shall allow the Web client to
 establish the complete current state of the bound TimingNode through IF04-OP-001
@@ -273,7 +274,7 @@ before treating later live changes as current.
 :::{ifreq} Live-state delivery and loss handling  
 :id: IF04-REQ-009  
 :status: D  
-:specifies: UC-001  
+:refines: SI01-REQ-023  
 
 IF-04 shall provide IF04-OP-004 for live state-change delivery. When that live
 connection is lost, a conforming Web client shall treat its previously displayed
