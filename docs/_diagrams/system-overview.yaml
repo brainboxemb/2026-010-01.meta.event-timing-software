@@ -10,12 +10,13 @@ groups: []
 nodes:
   - {id: console, label: "Local console", kind: client, layout: {x: 40, y: 90, w: 190, h: 70}}
   - {id: remote, label: "Remote terminal", kind: client, layout: {x: 250, y: 90, w: 190, h: 70}}
-  - {id: desktop, label: "Desktop GUI Application (SI-02)\nplanned • technology open", kind: client, layout: {x: 450, y: 75, w: 250, h: 100}}
+  - {id: browser, label: "Browser / tablet operator\nIF-04 Web", kind: client, layout: {x: 450, y: 75, w: 250, h: 100}}
   - {id: test_client, label: "Engineering / test clients\nJavaFX • scripts • optional web", kind: client, layout: {x: 730, y: 75, w: 260, h: 100}}
   - {id: backend, label: "Backend system", kind: external, layout: {x: 1260, y: 90, w: 190, h: 70}}
   - {id: console_adapter, label: "Console adapter", kind: interface, layout: {x: 40, y: 230, w: 190, h: 70}}
   - {id: remote_adapter, label: "Remote shell adapter", kind: interface, layout: {x: 250, y: 230, w: 190, h: 70}}
-  - {id: web_adapter, label: "API\nHTTP + WebSocket", kind: interface, layout: {x: 530, y: 215, w: 350, h: 100}}
+  - {id: web_adapter, label: "Web Interface\nIF-04 HTTP + WebSocket", kind: interface, layout: {x: 465, y: 215, w: 250, h: 100}}
+  - {id: api_adapter, label: "API\nIF-03 HTTP + WebSocket", kind: interface, layout: {x: 740, y: 215, w: 260, h: 100}}
   - {id: backend_connector, label: "Connector\nRabbitMQ / other transport", kind: interface, layout: {x: 1210, y: 215, w: 260, h: 100}}
   - {id: command_boundary, label: "Shared command / query boundary", kind: core, layout: {x: 275, y: 390, w: 400, h: 80}}
   - {id: events, label: "Shared status + event stream", kind: core, layout: {x: 720, y: 390, w: 320, h: 80}}
@@ -33,13 +34,15 @@ nodes:
 edges:
   - {from: console, to: console_adapter}
   - {from: remote, to: remote_adapter}
-  - {from: desktop, to: web_adapter}
-  - {from: test_client, to: web_adapter}
+  - {from: browser, to: web_adapter}
+  - {from: test_client, to: api_adapter}
   - {from: backend, to: backend_connector}
   - {from: console_adapter, to: command_boundary}
   - {from: remote_adapter, to: command_boundary}
   - {from: web_adapter, to: command_boundary}
+  - {from: api_adapter, to: command_boundary}
   - {from: events, to: web_adapter, label: "WebSocket push", dashed: true}
+  - {from: events, to: api_adapter, label: "WebSocket push", dashed: true}
   - {from: backend_connector, to: backend_gateway}
   - {from: command_boundary, to: runtime}
   - {from: command_boundary, to: domain}
