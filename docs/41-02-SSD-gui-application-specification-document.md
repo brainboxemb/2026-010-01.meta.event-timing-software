@@ -1,63 +1,223 @@
-# Withdrawn Desktop GUI Application specification record
+# Engineering Desktop Client Specification Document (SSD)
 
-Status: **withdrawn — former SI-02 operator-desktop allocation is no longer active**
+Status: working draft / non-authoritative
 
-Former software item: **SI-02 — Desktop GUI Application**
+Software item: **SI-02 — Engineering Desktop Client**
 
-## Decision
+## Purpose
 
-The earlier architecture allocated a separate operator-facing Desktop GUI Application
-in addition to the browser/operator path through IF-04.
+This SSD defines the current requirements and architecture direction for the
+**Engineering Desktop Client (SI-02)**.
 
-That allocation is withdrawn.
+SI-02 is a reusable desktop software item for development, integration,
+commissioning, diagnostics and system testing. It is intended to be packaged and
+used by multiple people rather than serving as a disposable local test utility.
 
-Normal field/operator interaction is owned by the SI-01 **IF-04 Web Interface**.
-The desktop application direction is the **Engineering Client**: development,
-integration and diagnostic tooling that exercises supported public boundaries such as
-IF-03. It is not promoted to another product software item merely because it has a
-substantial desktop UI.
+Normal field/operator interaction remains the SI-01-owned **IF-04 Web Interface**.
+SI-02 is therefore not the normal operator GUI.
 
-The software-item identity **SI-02** and use-case identity **UC-008** are retained as
-historical identifiers and shall not be reused for unrelated future items.
+## Relationship to other documents
 
-## Former Draft requirements
+SI-02 consumes:
 
-The former Draft requirements `SI02-REQ-001` through `SI02-REQ-008` were created
-while the separate operator-desktop allocation was still assumed.
+- `31-SSSD-software-system-specification-document.md` for software-item allocation;
+- `30-UC-system-use-cases.md`, especially UC-009;
+- `32-03-ISD-application-control-status.md` for IF-03 semantics;
+- `33-03-IDD-api-http-websocket.md` for the current HTTP/JSON + WebSocket realization;
+- applicable external inputs registered by `20-EXT-external-system-inputs.md`.
 
-They were never promoted beyond Draft and are now withdrawn with that allocation.
-They are not active product requirements and must not be used as authority for
-implementation or verification.
+`50-SDE-03-development-client.md` records the selected desktop technology,
+workbench and detailed working UI/client-service baseline. The SIP schedules the
+work. Neither document replaces this software-item specification.
 
-Several underlying behaviours remain useful for the Engineering Client and are already
-owned by public-interface contracts and engineering-tool design, including:
+## Software-item role
 
-- use of public IF-03 rather than SI-01 internals;
-- endpoint selection and explicit connection/synchronisation state;
-- application/version identity;
-- TimingNode status;
-- stale/disconnected presentation;
-- reconnect/history rebuild;
-- committed registration/history presentation;
-- explicit command outcomes.
+SI-02 has its own requirements, architecture baseline, build/runtime/package,
+version identity and verification activities.
 
-Those behaviours belong in the applicable IF-03 requirements plus
-`50-SDE-03-development-client.md` and UC-009. They do not require a separate
-operator-desktop software item.
+It may be used:
 
-## Current authority
+- by developers while building SI-01 and its integrations;
+- by engineers during commissioning and diagnostics;
+- by system testers as the real desktop client in running-system verification;
+- later by scripted engineering workflows through the same client/application services.
 
-Use:
+SI-02 does not own TimingNode or TimingData domain state. SI-01 remains
+authoritative and SI-02 uses supported external interfaces.
 
-- `30-UC-system-use-cases.md` — UC-001/UC-002 for normal operator behaviour and
-  UC-009 for Engineering Client behaviour;
-- `31-SSSD-software-system-specification-document.md` — current software-item and
-  system-interface allocation;
-- `32-03-ISD-application-control-status.md` and
-  `33-03-IDD-api-http-websocket.md` — IF-03 contract/design;
-- `32-04-ISD-web-interface.md` — normal browser/operator interface;
-- `50-SDE-03-development-client.md` — Engineering Client architecture and UI baseline;
-- `11-SIP-software-implementation-plan.md` — current implementation sequencing.
+## Software-item requirements
 
-This file remains only to make the withdrawn allocation explicit and to preserve
-review history. It is not an active software-item specification.
+The initial SI-02 requirements are Draft and trace to UC-009.
+
+:::{req} Use only supported public SI-01 boundaries
+:id: SI02-REQ-001
+:status: D
+:specifies: UC-009
+:depends_on: IF03-REQ-001, IF03-REQ-007
+
+For live engineering, integration, commissioning and system-test operation,
+SI-02 shall communicate with SI-01 through supported public interfaces. SI-02
+shall not require direct access to SI-01 process memory, internal Java
+classes/objects or private runtime files.
+:::
+
+:::{req} Select target and expose connection state
+:id: SI02-REQ-002
+:status: D
+:specifies: UC-009
+:depends_on: IF03-REQ-002, IF03-REQ-009
+
+SI-02 shall allow the user or test setup to select or configure the SI-01
+target and shall visibly distinguish disconnected, synchronising and usable
+live state. A view that has not completed synchronisation shall not be
+presented as live.
+:::
+
+:::{req} Show connected application identity
+:id: SI02-REQ-003
+:status: D
+:specifies: UC-009
+:depends_on: IF03-REQ-003
+
+After connecting to SI-01, SI-02 shall obtain and display the connected
+application/version identity provided through IF-03.
+:::
+
+:::{req} Present current TimingNode operational status
+:id: SI02-REQ-004
+:status: D
+:specifies: UC-009
+:refines: SI01-REQ-024
+:depends_on: IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017
+
+For each TimingNode exposed through IF-03, SI-02 shall present its identity,
+optional operational LocationId, lifecycle state and explicit problem state
+when present. The displayed state shall come from SI-01 rather than from an
+SI-02-owned lifecycle model.
+:::
+
+:::{req} Mark disconnected cached state as stale
+:id: SI02-REQ-005
+:status: D
+:specifies: UC-009
+:refines: SI01-REQ-025
+:depends_on: IF03-REQ-006, IF03-REQ-021
+
+When the live IF-03 connection is lost, SI-02 shall make clear that previously
+displayed status/history is stale or disconnected and shall not present cached
+information as current live state.
+:::
+
+:::{req} Rebuild baseline before declaring the view live
+:id: SI02-REQ-006
+:status: D
+:specifies: UC-009
+:refines: SI01-REQ-025
+:depends_on: IF03-REQ-006, IF03-REQ-014, IF03-REQ-016
+
+After initial connection or reconnect, SI-02 shall rebuild current status and
+the committed history required for its view before declaring that view live.
+Where baseline history and later live delivery overlap, SI-02 shall use stable
+source identity to avoid presenting the same committed record twice.
+:::
+
+:::{req} Present committed registration history and live updates
+:id: SI02-REQ-007
+:status: D
+:specifies: UC-009
+:refines: SI01-REQ-042
+:depends_on: IF03-REQ-014, IF03-REQ-015
+
+SI-02 shall present committed registration history and later committed updates
+delivered through IF-03. It shall not present an uncommitted command/request
+result as committed TimingData.
+:::
+
+:::{req} Execute engineering controls with explicit outcome
+:id: SI02-REQ-008
+:status: D
+:specifies: UC-009
+:refines: SI01-REQ-040, SI01-REQ-026
+:depends_on: IF03-REQ-008, IF03-REQ-011
+
+SI-02 shall support the IF-03 lifecycle and engineering operations made
+available to the client and shall present operation outcome separately from
+resulting observed state. If connectivity is lost after submission but before
+the outcome can be confirmed, SI-02 shall keep that outcome visibly unknown
+until resynchronisation establishes current state.
+:::
+
+## Software-item architecture
+
+The principal boundary is:
+
+```text
+JavaFX / BentoFX views ----+
+                           |
+future scripting ----------+--> SI-02 client/application services --> IF-03 --> SI-01
+                           |
+tests / fakes -------------+
+```
+
+Connection/session lifecycle, baseline synchronisation, live-event buffering
+and reconciliation, command execution, raw-message context and target/system
+state belong below JavaFX controls and docking objects.
+
+A connected timing system is represented as an **instance-scoped client
+context**, not global UI state. The first workbench may still present one
+primary system.
+
+## Selected desktop baseline
+
+| Concern | Selected baseline |
+| --- | --- |
+| Runtime | Java 21 |
+| UI | JavaFX 21 |
+| Workbench | BentoFX 0.16.0 |
+| Styling | application-owned JavaFX CSS |
+| Optional theme layer | Transit where useful; not architecture-critical |
+| HTTP/JSON | JDK `java.net.http.HttpClient` |
+| WebSocket | JDK `java.net.http.WebSocket` |
+| JSON | Jackson |
+| Build | Maven |
+| First Windows distribution | self-contained `jpackage` application image |
+| Module model | classpath/non-JPMS initially |
+
+Installer/update machinery and JPMS are later decisions driven by actual need.
+
+## Deployment and repository boundary
+
+SI-02 runs on engineering, commissioning and system-test workstations. It may
+connect to SI-01 on the same host, a development machine or a field target.
+
+The implementation may remain co-located with SI-01 in the current Java
+repository while the two evolve together. Repository co-location does not
+remove the SI-02 software-item boundary.
+
+## Relationship to IF-04 Web
+
+**IF-04 Web Interface** remains the normal browser/tablet operator interface
+exposed by SI-01.
+
+SI-02 may expose richer engineering-only capabilities such as raw protocol
+inspection, negative-path controls, simulation, Remote Shell, device logs and
+client logs.
+
+## Verification and system-test role
+
+SI-02 shall support:
+
+1. unit tests of client/application services using fakes;
+2. deterministic presentation/view-model tests;
+3. integration tests against public SI-01 interfaces;
+4. running-system tests using the real packaged SI-02 where GUI behaviour is
+   part of the evidence.
+
+Step 6 V01 uses the real SI-02 for the revoke/DELETED/restart/reconnect GUI
+scenario. Headless verification does not replace that UI evidence.
+
+## Future scripting
+
+Later embedded scripting may drive the same SI-02 client/application services
+as the GUI. Scripts shall not need to automate JavaFX controls. Scripting is a
+separate later capability.
