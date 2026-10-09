@@ -213,7 +213,7 @@ for registrations, and close it again.
 
 **Preconditions:**
 
-- the operator application is connected to the registration system;
+- the operator is connected through the normal browser/IF-04 path established by UC-001;
 - the current registration state is available.
 
 **Main flow:**
@@ -242,7 +242,7 @@ upstream is a later interface/protocol decision.
 - another required open condition is not satisfied;
 - the command cannot be completed or its resulting state cannot be confirmed.
 
-**Observable result:** the operator application shows the selected location and
+**Observable result:** the browser presentation shows the selected location and
 the resulting `OPEN` or `CLOSED` state explicitly.
 
 :::
