@@ -555,8 +555,8 @@ portal_has bld/engineering-portal/browser-explorer-UC-002.html 'Requirements (3)
 for target in SI01-REQ-024 SI01-REQ-026 SI01-REQ-040; do
   portal_has bld/engineering-portal/browser-explorer-UC-002.html "data-object-id=\"$target\""
 done
-portal_lacks bld/engineering-portal/browser-explorer-UC-002.html 'data-object-id="IF04-REQ-003"'
-portal_lacks bld/engineering-portal/browser-explorer-UC-002.html 'data-object-id="IF03-REQ-011"'
+# Negative relation membership is asserted against the generated graph in
+# verify_engineering_portal.py; the Explorer DOM also contains the global object tree.
 
 "$chrome" \
   --headless \
