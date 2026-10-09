@@ -3,6 +3,11 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
+      Complete A01 through Java PR #402: SI-02 now runs on Java 21 / JavaFX 21
+      with BentoFX, an instance-scoped system context, real dockable panes and a
+      CI-verified Windows jpackage app-image. V01 is next.
+  - date: '2026-10-09'
+    change: >-
       Classify the reusable Engineering Desktop Client as SI-02. Keep UC-009 as its
       system use case, IF-03 as its primary SI-01 boundary and IF-04 Web as the
       normal operator path; UC-008 remains outside the current baseline.
@@ -49,17 +54,19 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: next
+    state: done
     depends_on: [D01, D02]
     note: >-
-      Restructure the existing JavaFX implementation into SI-02 around the selected
-      instance-scoped client/application services and BentoFX workbench. Preserve the
-      public IF-03 boundary and prepare the real application for V01 verification.
+      Completed through Java issue #401 / PR #402. SI-02 now uses Java 21 /
+      JavaFX 21 and BentoFX, composes the real functional panes through a
+      framework-isolated workbench, owns one connected SI-01 target through an
+      instance-scoped EngineeringSystemContext and builds a CI-verified Windows
+      jpackage app-image while preserving public-interface-only operation.
 
   - id: V01
     lane: verification
     kind: verification
-    state: planned
+    state: next
     depends_on: [A01]
     note: >-
       Verify connection/status identity, stale/disconnected state, baseline
