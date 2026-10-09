@@ -101,8 +101,7 @@ design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_
 if "This detailed design elaborates:" not in design_page:
     raise SystemExit("design details missing outgoing elaborates heading")
 
-# Incoming relationships should describe *who the related objects are*, not
-# force readers to invert the traceability verb.
+# UC-001 is specifically the normal browser/IF-04 path.
 uc = portal_view["objects"]["UC-001"]
 specification_sections = [
     section for section in uc["relation_groups"]
@@ -111,52 +110,48 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (13)":
+if requirements["title"] != "Requirements (5)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-# Every linked object remains directly accessible, independently of link count.
 expected = [
-    "IF03-REQ-003", "IF03-REQ-004", "IF03-REQ-006", "IF03-REQ-011",
-    "IF04-REQ-002", "IF04-REQ-006",
-    "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-040",
-    "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004", "SI02-REQ-005",
+    "IF04-REQ-001",
+    "IF04-REQ-002",
+    "IF04-REQ-006",
+    "IF04-REQ-008",
+    "IF04-REQ-009",
 ]
 if sorted(requirements["related_ids"]) != sorted(expected):
-    raise SystemExit("UC-001 direct requirements disappeared or changed")
-counts = {group["title"]: len(group["related_ids"]) for group in requirements["document_groups"]}
-expected_counts = {
-    "IF-03 — API": 4,
-    "IF-04 — Web Interface": 2,
-    "SI-01 — Timing Point Application": 3,
-    "SI-02 — Desktop GUI Application": 4,
-}
-if counts != expected_counts:
-    raise SystemExit(f"UC-001 unexpected document headings or counts: {counts}")
-if sorted(id for group in requirements["document_groups"] for id in group["related_ids"]) != sorted(expected):
-    raise SystemExit("UC-001 grouping changed linked object IDs")
+    raise SystemExit(
+        f"UC-001 must link only to its IF-04 browser requirements: {requirements['related_ids']}"
+    )
+if requirements["document_groups"]:
+    raise SystemExit("single-source UC-001 requirements should remain a flat list")
 
-if "This use case is specified by:" in (
-    site / "objects" / "UC-001" / "index.html"
-).read_text(encoding="utf-8"):
-    raise SystemExit("old reverse-grammar label found in UC-001 object page")
+for forbidden in (
+    "IF03-REQ-003", "IF03-REQ-004", "IF03-REQ-006", "IF03-REQ-011",
+    "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-040",
+    "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004", "SI02-REQ-005",
+):
+    if forbidden in requirements["related_ids"]:
+        raise SystemExit("UC-001 still contains non-Web direct trace: " + forbidden)
+
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Requirements (13)" not in uc_page:
+if "This use case is specified by:" in uc_page:
+    raise SystemExit("old reverse-grammar label found in UC-001 object page")
+if "Requirements (5)" not in uc_page:
     raise SystemExit("UC-001 object page missing role-based heading")
-for title, count in expected_counts.items():
-    if f"{title} ({count})" not in uc_page:
-        raise SystemExit("UC-001 object page missing source heading: " + title)
-if uc_page.count('class="eng-relation__source-heading"') != 4:
-    raise SystemExit("UC-001 must show four non-collapsible source headings")
+if 'class="eng-relation__source-heading"' in uc_page:
+    raise SystemExit("single-source UC-001 list should not need document subheadings")
 if 'class="eng-relation__document"' in uc_page or "<details" in uc_page:
     raise SystemExit("UC-001 object page renders a collapsible relation instead of flat rows")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
         raise SystemExit("UC-001 object page missing visible link to " + target)
-if uc_page.count('class="eng-relation"') < 13:
-    raise SystemExit("UC-001 object page has fewer than 13 flat relation rows")
+if uc_page.count('class="eng-relation"') < 5:
+    raise SystemExit("UC-001 object page has fewer than five flat relation rows")
 
-# Both small and large link sets use the same, flat row presentation.
+# Both small and large link sets use the same flat row presentation.
 timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
 realizes = next(
     group for group in timing_node_groups if group["type"] == "realizes"
@@ -377,7 +372,7 @@ for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-R
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (
-    "The operator application connects to the registration system.",
+    "The browser-based Web client connects to the configured IF-04 Web binding.",
     "SI-02 connects through the system-defined application-control/status interface.",
     "Settings describe several independently addressed",
 ):

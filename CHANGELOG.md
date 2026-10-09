@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify UC-001 as the normal browser/IF-04 operator path, remove API/Desktop-GUI and generic SI-01 direct trace links from that use case, and complete IF-04 connect/reconnect/live-state requirements.
+
 - Add `SimulationRuntime` to the Runtime architecture block and align the Java SDD on the `runtime.simulation` package containing `SimulationRuntime` and `SimulatedTagScenarioRunner`; unrelated architecture relationships remain unchanged.
 
 - Label the Application-level coordination role `Conductor` in the layered architecture diagram, matching the existing TimingSystem `Conductor` label; retain `ApplicationConductor` and `SystemConductor` as distinct Java classes and all diagram connections/layout.

@@ -123,7 +123,7 @@ The semantic build identity is defined by IF-03. The current v1 wire fields are 
 :::{req} Current application status snapshot  
 :id: SI01-REQ-020  
 :status: R  
-:specifies: UC-001, UC-008  
+:specifies: UC-008  
 
 SI-01 shall provide a queryable current application status snapshot independently
 of diagnostic log output.
@@ -132,7 +132,7 @@ of diagnostic log output.
 :::{req} Application status content  
 :id: SI01-REQ-021  
 :status: R  
-:specifies: UC-001, UC-008, UC-020  
+:specifies: UC-008, UC-020  
 
 The current application status snapshot shall contain at least:
 
@@ -210,7 +210,7 @@ interface version or a separately specified migration contract.
 :::{req} Operational location and lifecycle  
 :id: SI01-REQ-040  
 :status: R  
-:specifies: UC-001, UC-002, UC-008, UC-009  
+:specifies: UC-002, UC-008, UC-009  
 
 An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
 When the command is accepted, SI-01 shall apply that LocationId and the
@@ -451,15 +451,15 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 
 | Requirement | Upstream authority | Interface/design allocation |
 | --- | --- | --- |
-| SI01-REQ-001/002 | UC-001; SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime |
-| SI01-REQ-003 | UC-001/014; SSSD software-item topology | IF-11 + SI-01 runtime composition |
+| SI01-REQ-001/002 | SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime |
+| SI01-REQ-003 | UC-014; SSSD software-item topology | IF-11 + SI-01 runtime composition |
 | SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
-| SI01-REQ-020/021/022 | UC-001/008/009; SSSD status/control allocation | Status service/model + IF-01/02/03 |
+| SI01-REQ-020/021/022 | UC-008/020; SSSD application-status allocation | Status service/model + IF-01/02/03 |
 | SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 event adapter |
 | SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040 | UC-001/002/008/009 | TimingNode + IF-03/IF-04 control/status |
+| SI01-REQ-040 | UC-002/008/009 | TimingNode + IF-03/IF-04 control/status |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |
@@ -470,7 +470,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 | SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
 | SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
-| SI01-REQ-053 | UC-001/003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
+| SI01-REQ-053 | UC-003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
 | SI01-REQ-055 | UC-004 | retry/recovery of antenna operation without process restart |
 
