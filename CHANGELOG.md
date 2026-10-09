@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Replace the TrackedProperty scheduling model in the Java design with passive SourceProperty/DerivedProperty state: SystemConductor now explicitly acquires initial TimingNode state in its first control run, later status events update source state directly, and the existing CooperativeTaskController remains the sole coalescing scheduler.
+
 - Recenter UC-001 on SI-01 application requirements for per-TimingNode current state, reconnect recovery and live state changes; IF-03/IF-04 now refine those shared semantics instead of linking directly to the use case.
 
 - Clarify UC-001 as the normal browser/IF-04 operator path, remove API/Desktop-GUI and generic SI-01 direct trace links from that use case, and complete IF-04 connect/reconnect/live-state requirements.
