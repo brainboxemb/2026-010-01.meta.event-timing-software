@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Improve Traceability Comparison navigation: add an accessible top-right swap icon for the Compared object `Make primary` action, and present use-case groups in operator-first order with `Normal operation` before system/backoffice and engineering groups.
+
 - Complete the use-case traceability audit: make UC-002/003/008/011/020 application-first, narrow UC-009 to explicit engineering-interface capabilities, and promote SI-01 requirements for previously unallocated ready-team, display, backoffice, simulation, stub, transport and provider-classification use cases.
 
 - Reconcile the SI-01 architecture/design documentation after the property and query-consistency refactors: describe event-triggered reconciliation consistently, distinguish CURRENT observation from ORDERED reads, remove obsolete tracked-property behaviour, and align SDD-01 with logical lanes on shared physical workers.
