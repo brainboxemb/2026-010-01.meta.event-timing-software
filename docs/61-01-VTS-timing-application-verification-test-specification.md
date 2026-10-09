@@ -232,7 +232,7 @@ executed for the Step-5 V06 server-side closeout.
 **Setup**
 
 - packaged SI-01 application with deterministic verification storage;
-- new Java 21/JavaFX 21 Engineering Desktop Client independently of SI-01;
+- SI-02 Engineering Desktop Client on Java 21/JavaFX 21, independently of SI-01;
 - public IF-03, Remote Shell and LoggingServer boundaries only;
 - one deterministic automatic registration.
 
@@ -271,10 +271,9 @@ executed for the Step-5 V06 server-side closeout.
 
 **Execution**
 
-This remains a manual running-system verification case. Execute it during
-Step-6 V01 after the new Engineering Desktop Client is available; do not mark
-it passed on the strength of Step-5 server/headless qualification. Repository-local
-checklists may mirror it but shall not redefine it.
+This is a Step-6 V01 manual running-system verification case executed with the packaged
+SI-02 Engineering Desktop Client. Headless verification does not substitute for this GUI
+evidence. Repository-local checklists may mirror it but shall not redefine it.
 
 :::
 
