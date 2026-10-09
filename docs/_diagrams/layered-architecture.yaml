@@ -457,6 +457,14 @@ nodes:
   kind: crosscutting
   notation: component
   layout: {x: 1185, y: 115, w: 220, h: 50}
+- id: simulation-runtime
+  object_id: SimulationRuntime
+  group: runtime-layer
+  label: "SimulationRuntime"
+  subtitle: "simulation composition entry"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1185, y: 175, w: 220, h: 50}
 - id: presentation-runtime
   object_id: PresentationRuntime
   group: runtime-layer
@@ -464,7 +472,7 @@ nodes:
   subtitle: "presentation adapters • lifecycle"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 190, w: 220, h: 50}
+  layout: {x: 1185, y: 235, w: 220, h: 50}
 - id: runtime-executors
   object_id: RuntimeExecutors
   group: runtime-layer
@@ -472,7 +480,7 @@ nodes:
   subtitle: "physical role workers"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 265, w: 220, h: 50}
+  layout: {x: 1185, y: 295, w: 220, h: 50}
 - id: runtime-time-sources
   object_id: RuntimeTimeSources
   group: runtime-layer
@@ -480,7 +488,7 @@ nodes:
   subtitle: "timing source composition"
   kind: crosscutting
   notation: component
-  layout: {x: 1185, y: 340, w: 220, h: 50}
+  layout: {x: 1185, y: 355, w: 220, h: 50}
 - id: application-configuration-runtime
   object_id: ApplicationConfiguration
   group: runtime-layer

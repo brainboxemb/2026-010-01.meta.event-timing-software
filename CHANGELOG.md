@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add `SimulationRuntime` to the Runtime architecture block and align the Java SDD on the `runtime.simulation` package containing `SimulationRuntime` and `SimulatedTagScenarioRunner`; unrelated architecture relationships remain unchanged.
+
 - Label the Application-level coordination role `Conductor` in the layered architecture diagram, matching the existing TimingSystem `Conductor` label; retain `ApplicationConductor` and `SystemConductor` as distinct Java classes and all diagram connections/layout.
 
 - Clarify Java naming in the SDD: `domain.system.SystemConductor` is the implementation class, while the TimingSystem component in the architecture diagram remains labeled `Conductor`; `ApplicationConductor` remains the application coordinator.

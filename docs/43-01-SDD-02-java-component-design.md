@@ -1019,7 +1019,7 @@ application core to provide the default JUL logging infrastructure and its confi
 :elaborates: TimingApplicationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler, Api
 
 Detailed Java composition/lifecycle design for TimingApplicationRuntime,
-PresentationRuntime and the built-in Console, RemoteShell and API adapters.
+SimulationRuntime, PresentationRuntime and the built-in Console, RemoteShell and API adapters.
 
 `timing-point-app` is the executable consumer of the application-core library.
 
@@ -1039,8 +1039,9 @@ io.github.brainboxemb.eventtiming/timingpoint/
     TimingApplicationRuntime.java
     RuntimeExecutors.java
     RuntimeTimeSources.java
-    simulator/
+    simulation/
       SimulationRuntime.java
+      SimulatedTagScenarioRunner.java
     config/
       Config.java
       Presentation.java
@@ -1131,7 +1132,7 @@ as `observations()` is not used for an `EventSource`. `TagObservation` remains t
 immutable event value and does not need an `AntennaId` field merely for routing because
 the configured source identity is already known at the subscription point.
 
-`runtime.simulator.SimulationRuntime` is an explicit simulator composition entry point.
+`runtime.simulation.SimulationRuntime` is an explicit simulator composition entry point.
 It selects simulated installations/mappings through the same `TimingApplicationRuntime.create(...)`
 path; it
 does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
@@ -1167,6 +1168,9 @@ timing-point-core.jar
     RuntimeTimeSources.java
     PresentationRuntime.java
     ShutdownSignal.java
+    simulation/
+      SimulationRuntime.java
+      SimulatedTagScenarioRunner.java
     configuration/
       ApplicationConfiguration.java
       TimingNodeConfiguration.java
