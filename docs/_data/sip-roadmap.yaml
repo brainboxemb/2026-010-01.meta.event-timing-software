@@ -141,7 +141,7 @@ steps:
 
   "5":
     estimate_project_days: 6
-    remaining_estimate_project_days: 3
+    completed_date: "2026-10-09"
     workstream: simulation
     docs:
       requirements: {level: working, scope: "simulated antenna input, lifecycle TimingData, registration admission and recovery"}
