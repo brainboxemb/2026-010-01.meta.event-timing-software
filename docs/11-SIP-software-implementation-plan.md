@@ -834,7 +834,7 @@ was needed.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: planned
+Status: active — D01/D02 complete; A01 waits for Step-5 V06
 
 ### Purpose
 
@@ -920,22 +920,41 @@ The former identities SI-02 and UC-008 are not reused.
 
 ### D02 — Engineering Client technology and packaging decision
 
-Select one coherent Engineering Client baseline for:
+D02 is complete. The selected Engineering Client baseline is:
 
-- Java/runtime level;
-- JavaFX/workbench toolkit;
-- HTTP/WebSocket client approach;
-- application/client-service boundary;
-- packaging/distribution.
+- **Java 21** runtime;
+- **JavaFX 21** desktop UI;
+- **BentoFX 0.16.0** workbench;
+- application-owned JavaFX CSS as the required styling layer, with Transit optional
+  rather than architecture-critical;
+- JDK `HttpClient` + JDK WebSocket and Jackson for IF-03 HTTP/JSON + live events;
+- Maven build;
+- self-contained Windows `jpackage` **app-image** as the first distribution target;
+- classpath/non-JPMS initially.
 
-Experiment 008 is evidence for this decision, not production code. Its current result
-prefers BentoFX over SnapFX for the workbench because the explicit workbench structure,
-smaller adapter burden and normal Maven Central dependency fit the Engineering Client
-better.
+Experiment 008 is retained evidence for the workbench decision. BentoFX is preferred to
+SnapFX because the explicit workbench structure, smaller corrective adapter burden and
+normal Maven Central dependency fit the Engineering Client better. Plain JavaFX remains a
+fallback if docking later ceases to add useful engineering value.
 
-The decision must also preserve a clean service boundary for later automation: future
-Lua or other embedded scripting should call the same client/application services as the
-GUI rather than driving JavaFX controls.
+No second .NET, Compose or desktop-web toolchain is introduced: the existing Java client,
+its public-interface services and Experiment 008 already qualify the required desktop
+behaviour, while another stack would duplicate protocol/client work without a demonstrated
+benefit.
+
+The existing JDK HTTP/WebSocket client approach remains because no current IF-03 gap
+requires another transport library.
+
+The first packaging step deliberately stops at a self-contained application image.
+Installer/update machinery and JPMS are later decisions driven by concrete deployment or
+maintainability needs rather than prerequisites for A01.
+
+D02 also fixes the service boundary for future automation: connection/session state,
+baseline synchronisation, live-event reconciliation, command execution and raw-message
+context belong below JavaFX/docking presentation. A connected system is an instance-scoped
+client context so later multi-system work does not require a new architecture. Future Lua
+or another embedded scripting adapter may call those same services; scripting itself is
+not a Step-6 implementation requirement.
 
 ### Result
 
