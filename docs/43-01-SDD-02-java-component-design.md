@@ -232,7 +232,8 @@ infra/
     AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
     ComponentLifecycleManager.java  application/system activation and rollback mechanics
   property/
-    TrackedProperty.java            generic tracked-value scheduling/change detection
+    SourceProperty.java             passive current value associated with one source object
+    DerivedProperty.java            passive current value calculated from source properties
   extension/
     ExtensionRegistry.java          typed provider discovery/selection
   configuration/
@@ -251,7 +252,7 @@ domain/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
     SystemConductor.java                first system coordinator; node lifecycle + inventory
-    TimingNodeStateProperty.java        per-node state tracking
+    PropertyRegistry.java               ordered per-node SourceProperty registration/lookup
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
   node/
@@ -567,16 +568,33 @@ InventoryTask
 ```
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
-`CooperativeTaskController` to reconcile the current states of its
-1..N TimingNodes. Status events merely wake the task; they do not execute
-inventory control on the emitting thread. Manager-wide inventory is needed
-while any node is OPEN, and not needed otherwise.
+`CooperativeTaskController` for its coalesced control behaviour. Per-node
+current state is represented by small passive `SourceProperty` values.
+`TimingNode.statusChangedEvent(Status)` is emitted after the authoritative
+TimingNode transition, so the synchronous callback updates the matching
+SourceProperty from `Status.state()`, wakes the existing control task and
+returns. It does not perform a nested TimingNode query and it does not execute
+inventory control on the emitting thread.
+
+A passive `DerivedProperty<Boolean>` represents the system-wide
+`inventoryRequired` fact calculated from all node SourceProperties. The
+Conductor recalculates that value in its control run and applies it to the
+AntennaManager. Manager-wide inventory is needed while any node is OPEN, and
+not needed otherwise. A DerivedProperty may depend on more than one
+SourceProperty; it owns no scheduling, queue, retry or lifecycle behaviour.
+
+The first control run has an explicit additional responsibility. After the
+TimingNodes are active and the system coordination lane is running, it reads
+the current state of every TimingNode and fills the SourceProperties before
+deriving or applying inventory state. With the current TimingNode boundary
+this initial acquisition may use `TimingNode.query(status)`; that query and
+any timeout are therefore visible Conductor behaviour rather than hidden
+inside property initialization. Later status changes use the authoritative
+event payload directly.
 
 The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
-requests from explicit retry attempts. Per-node state tracking may reuse the
-generic `TrackedProperty<T>`, but must be owned within the Domain/system
-boundary rather than importing Application-owned property types. The TimingSystem
-`Conductor` does not require a multiphase state machine for this rule.
+requests from explicit retry attempts. The TimingSystem `Conductor` does not
+require another property scheduler or a multiphase state machine for this rule.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
@@ -1091,8 +1109,15 @@ validated effective configuration
        -> AntennaManager.activate()
        -> domain.system.SystemConductor.activate()
             -> TimingNode(s).activate()
-            -> initial node-state reconciliation
+            -> start system coordination lane
+            -> wake first control run
   -> PresentationRuntime.activate()
+
+first system control run:
+  -> read current state of every active TimingNode
+  -> populate/update per-node SourceProperties
+  -> derive inventoryRequired from all source properties
+  -> apply inventory state to AntennaManager
 ```
 
 Runtime owns construction, wiring and physical worker lifetime. The
@@ -1113,7 +1138,14 @@ mechanics.
 The TimingSystem `Conductor` uses its own logical serial lane with
 `SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
 `ApplicationConductor` only orders lifecycle and does not need a coordination
-lane. Tag events and individual antenna commands do not pass through either
+lane. SystemConductor activation itself does not block on a hidden property
+initializer: after its child TimingNodes and coordination lane are active, its
+activation hook wakes the first control run. Component ACTIVE and "initial
+state reconciliation completed" are therefore distinct facts. Initial read
+failure is reported as a system control failure and is never silently treated
+as CLOSED.
+
+Tag events and individual antenna commands do not pass through either
 Conductor. Runtime wires each configured antenna observation directly to the
 TagProcessors named by that antenna's `timingNodes` mapping. Those targets must
 belong to the manager's referenced TimingSystem; one antenna may fan out to
@@ -1709,13 +1741,19 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode A/B/... state change
+TimingNode A/B/... statusChangedEvent(Status)
        |
        v
-domain.system.SystemConductor (serial/coalesced current-state read)
+update matching SourceProperty<State> from Status.state()
        |
-       +--> any node OPEN? yes -> manager-wide inventory enabled
-       |                   no  -> manager-wide inventory disabled
+       v
+wake domain.system.SystemConductor control task
+       |
+       v
+DerivedProperty<Boolean> inventoryRequired = any node OPEN
+       |
+       +--> true  -> manager-wide inventory enabled
+       |    false -> manager-wide inventory disabled
        v
 AntennaManager.setInventoryEnabled(...)
        |

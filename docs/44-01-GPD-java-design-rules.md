@@ -102,21 +102,25 @@ The same rule applies to recovery. Conductor may have requested
 enabled inventory without requiring Conductor to micromanage the recovery sequence.
 
 The same ownership rule also guides package placement. A reusable technical mechanism
-that knows nothing about SI-01 application concepts belongs under `infra`; the concrete
-binding that gives that mechanism application meaning belongs under `application`.
+that knows nothing about SI-01 concepts belongs under `infra`; domain-specific
+registration and behaviour stay with the owning Domain component.
 
 Example:
 
 ```text
-infra.property.TrackedProperty<T>
-        generic scheduling + change detection
+infra.property.SourceProperty<S, T>
+        passive current value associated with one source object
 
-application.property.TimingNodeStateProperty
-        binds TrackedProperty to TimingNode state semantics
+infra.property.DerivedProperty<T>
+        passive value recalculated from one or more source properties
+
+domain.system.SystemConductor
+        owns source acquisition, derived-state recalculation and behaviour
 ```
 
-Avoid placing the generic scheduler/change-detection implementation in Conductor or in the
-application package merely because the first consumer happens to be application code.
+A property is state, not a scheduler. It must not own a SerialExecutor, Future,
+queue admission, retry loop, coalescing controller or component lifecycle merely
+because its value can change asynchronously.
 
 ---
 
@@ -349,17 +353,18 @@ observability.
 
 **Rule**
 
-When a component only needs to know **what is true now**, read that truth from the
-authoritative owner state.
+When a component only needs to know **what is true now**, maintain or read one current
+representation of that truth. Do not queue historical state snapshots and replay them later
+as commands.
 
-Do not keep an extra derived boolean merely because it is convenient. If a task already
-knows whether it is running and the owned devices already expose their self-test state,
-derive manager readiness from those facts instead of maintaining a second
-`selfTestPassed` flag.
+If the authoritative owner emits an immutable post-change snapshot as part of the committed
+transition, a consumer may update its passive SourceProperty directly from that event and
+then wake its own control task. If no such snapshot exists, or an initial value is required
+after activation, make the authoritative read an explicit operation of the owning component.
 
-A state-change event may therefore mean only "something changed"; read the current
-authoritative state when handling it. Do not automatically treat the event snapshot as a
-command that must later be replayed.
+Derived current state may be represented by a passive DerivedProperty when that makes a
+real relationship clearer, for example `inventoryRequired = any node OPEN`. The owning
+component decides when it is recalculated; the property does not schedule itself.
 
 **Why**
 
@@ -371,34 +376,52 @@ For example:
 OPEN -> CLOSED -> OPEN
 ```
 
-If antenna behaviour only depends on the current TimingNode state, replaying all three
-snapshots creates unnecessary work and can briefly apply stale intent.
+If antenna behaviour only depends on current TimingNode state, replaying all three Status
+objects creates unnecessary work and can briefly apply stale intent. Updating the current
+source value immediately and coalescing only the later Conductor work preserves the final
+truth without a second property scheduler.
 
 **Example**
 
-Good:
+Good startup flow:
 
 ```text
-statusChangedEvent
+SystemConductor first control run
         |
         v
-TrackedProperty.signalChanged()
+TimingNode.query(status)
         |
         v
-TimingNode.query(status).state()
-        |
-        +-- unchanged --> no event
-        |
-        v
-changedEvent(newState)
+SourceProperty.update(status.state())
 ```
 
-If many source events arrive while one property refresh is already pending, they may be
-coalesced into one later refresh, provided a change cannot be lost.
+Good runtime flow:
+
+```text
+TimingNode.statusChangedEvent(Status)
+        |
+        v
+SourceProperty.update(Status.state())
+        |
+        v
+CooperativeTaskController.wake()
+        |
+        v
+DerivedProperty.recalculate()
+        |
+        v
+apply current inventory intent
+```
+
+The event callback only updates in-memory state and wakes the consumer; it does not wait on
+another lane. Repeated wakes may be coalesced because the later control run reads the current
+SourceProperties.
 
 **Avoid**
 
-Queueing every `Status` object and later executing each one as if it were a command.
+- queueing every `Status` object and later executing each one as if it were a command;
+- hiding an initial authoritative query inside a property initializer or Future;
+- giving a property its own executor/coalescing loop when the owning component already has one.
 
 Not every event should be coalesced. TimingData records, registrations and other history
 that must be preserved are different: there the individual event itself matters.
@@ -686,10 +709,12 @@ provider fails during a delayed transition.
 
 For Conductor:
 
-- many source status events while one property refresh is pending should not fill the queue;
-- a stale `Status` snapshot must not override the authoritative current TimingNode state;
-- unchanged property values must not emit `changedEvent`;
-- property admission overload must not throw back into TimingNode event delivery.
+- the first control run populates all SourceProperties only after TimingNodes are active;
+- a status event updates its SourceProperty without a nested TimingNode query;
+- rapid state changes converge to the final current SourceProperty values while control wakes coalesce;
+- a DerivedProperty that depends on multiple node properties derives the correct aggregate state;
+- an initial authoritative read failure is visible as a Conductor control failure, not hidden property initialization;
+- no queue/admission failure from downstream control work throws back through TimingNode event delivery.
 
 For AntennaManager:
 
