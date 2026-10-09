@@ -173,12 +173,15 @@
           escapeHtml(object.id) +
           '">Make primary</button>'
         : "";
-      const promoteTopAction = canPromote
+      const selectedSwap =
+        mode === "compare" && roleLabel === "Selected object";
+      const promoteTopAction = canPromote || selectedSwap
         ? '<button class="eng-detail__promote-top" type="button" ' +
-          'data-eng-promote-object-id="' +
-          escapeHtml(object.id) +
-          '" title="Make this object primary" ' +
-          'aria-label="Make this compared object primary">' +
+          (selectedSwap
+            ? "data-eng-selected-swap hidden "
+            : 'data-eng-promote-object-id="' + escapeHtml(object.id) + '" ') +
+          'title="Swap selected and compared objects" ' +
+          'aria-label="Swap selected and compared objects">' +
           '<span aria-hidden="true">⇄</span></button>'
         : "";
       return (
@@ -744,6 +747,20 @@
         });
       }
 
+      function updateSelectedSwapAction() {
+        const button = rootDetail
+          ? rootDetail.querySelector("[data-eng-selected-swap]")
+          : null;
+        if (!button) return;
+        const canSwap = Boolean(compareId && rootId && compareId !== rootId);
+        button.hidden = !canSwap;
+        if (canSwap) {
+          button.dataset.engPromoteObjectId = compareId;
+        } else {
+          button.removeAttribute("data-eng-promote-object-id");
+        }
+      }
+
       function updateUrl() {
         const url = new URL(window.location.href);
         if (rootId) {
@@ -822,6 +839,7 @@
           );
           compareDetail.scrollTop = 0;
         }
+        updateSelectedSwapAction();
         updateCompareSelection();
         if (updateHistory) updateUrl();
       }
@@ -845,6 +863,7 @@
         );
         rootDetail.scrollTop = 0;
         compareDetail.scrollTop = 0;
+        updateSelectedSwapAction();
         updateTreeSelection();
         updateCompareSelection();
         if (updateHistory) updateUrl();
