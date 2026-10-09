@@ -177,6 +177,8 @@ expected_uc_direct = {
         "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
         "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040",
         "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043", "SI01-REQ-044",
+        "SI02-REQ-001", "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004",
+        "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007", "SI02-REQ-008",
         "IF03-REQ-003", "IF03-REQ-012", "IF03-REQ-013",
     },
     "UC-010": {"SI01-REQ-063"},
@@ -231,15 +233,15 @@ if any(
 ):
     raise SystemExit("IF-04 requirement still directly specifies a use case")
 
-withdrawn_si02 = [
-    object_id for object_id in objects
-    if object_id.startswith("SI02-REQ-")
-]
-if withdrawn_si02:
-    raise SystemExit(
-        "withdrawn SI-02 requirements remain in engineering graph: "
-        + ", ".join(sorted(withdrawn_si02))
-    )
+si02_ids = [f"SI02-REQ-{number:03d}" for number in range(1, 9)]
+for object_id in si02_ids:
+    if object_id not in objects:
+        raise SystemExit(f"engineering graph missing SI-02 requirement {object_id}")
+si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
+    encoding="utf-8"
+)
+if "Use only supported public SI-01 boundaries" not in si02_page:
+    raise SystemExit("portal SI02-REQ-001 page is missing authored requirement content")
 if "IF03-REQ-001" not in objects:
     raise SystemExit("engineering graph missing IF-03 public-boundary requirement")
 if "UC-009" not in objects:
@@ -451,7 +453,7 @@ if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explor
     raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
-for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "IF03-REQ-001", "VC-ST1-001", "UC-001", "UC-009", "UC-014"):
+for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-REQ-001", "IF03-REQ-001", "VC-ST1-001", "UC-001", "UC-009", "UC-014"):
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (
