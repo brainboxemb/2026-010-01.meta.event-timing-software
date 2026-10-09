@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Reconcile the SI-01 architecture/design documentation after the property and query-consistency refactors: describe event-triggered reconciliation consistently, distinguish CURRENT observation from ORDERED reads, remove obsolete tracked-property behaviour, and align SDD-01 with logical lanes on shared physical workers.
+
 - Define explicit CURRENT versus ORDERED TimingNode query consistency: Status supports a safely published current snapshot or deliberate serial ordering, mutable LogBook reads remain ordered, SystemConductor reconciles from CURRENT status, and same-lane ordered reentrancy fails immediately.
 
 - Replace the TrackedProperty scheduling model in the Java design with passive SourceProperty/DerivedProperty state: SystemConductor owns explicit source-state reconciliation and derived behaviour, while CooperativeTaskController remains the sole coalescing scheduler.

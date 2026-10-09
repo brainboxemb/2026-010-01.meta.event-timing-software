@@ -321,10 +321,10 @@ Those files are not automatically the runtime source after reboot. For example,
 StageStartTimes can be sent again when the node is opened. Keeping its historical
 file is still valuable for later analysis.
 
-All state changes are ordered by the TimingNode worker. Small/infrequent
-analysis-store writes may execute on that worker. If measurements show that such
-a write delays registration unacceptably, the immutable snapshot may instead be
-handed to a bounded persistence executor.
+All state changes are ordered by the TimingNode serial lane. Small/infrequent
+analysis-store writes may execute during a turn on that lane. If measurements
+show that such a write delays registration unacceptably, the immutable snapshot
+may instead be handed to a bounded persistence executor.
 That optimization must not change TimingNode state ordering and must not
 introduce an unbounded hidden queue.
 
@@ -332,19 +332,25 @@ introduce an unbounded hidden queue.
 
 Consumers do not read mutable TimingNode-owned objects directly.
 
-A consistency-sensitive query enters the TimingNode serial lane and captures the
-state it needs at a defined point in the same ordering as state changes. If the
-query requires expensive calculation, only the short snapshot step runs on the
-lane; the calculation continues on the caller/query execution context after the
-snapshot has been returned.
+An ORDERED query enters the TimingNode serial lane and reads/captures state at a
+defined point in the same ordering as state changes. If that read requires expensive
+calculation, only the short ordered capture/traversal step runs on the lane; longer
+calculation continues outside it.
+
+A CURRENT query may instead read a safely published immutable representation of
+completed TimingNode state without entering the lane. CURRENT is therefore not a
+weaker implementation of ORDERED: it answers a different question and may legitimately
+precede work that has been accepted but has not completed yet.
 
 Conceptually:
 
 ```text
-query caller
-  -> TimingNode query
-       -> ordered serial lane
-       -> capture immutable/read-only state view
+CURRENT query
+  -> published immutable completed state
+
+ORDERED query
+  -> TimingNode serial lane
+       -> read/capture state after earlier accepted work
        -> return view/result
   -> optional long calculation outside lane
 ```
@@ -355,11 +361,11 @@ The exact representation and allocation strategy belong to SDD-02 and
 measurement evidence. A reusable internal buffer is acceptable only if callers cannot observe
 it being mutated/reused after the query returns.
 
-A query that is ordered before a new commit may legitimately see the earlier
-state; a query ordered after that commit sees the new state. A separately
-published immutable status/read snapshot may serve high-frequency readers,
-but it must have explicit freshness semantics and does not make the underlying
-mutable state globally readable.
+An ORDERED query before a new commit may legitimately see the earlier state;
+an ORDERED query after that commit sees the new state. A CURRENT status query
+returns the latest safely published completed state at the time of the read and
+does not wait for merely accepted work. Neither form makes the underlying mutable
+state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
@@ -420,14 +426,14 @@ Java queue, Future and worker mechanism.
 | --- | --- | --- |
 | presentation caller waiting for a state-dependent result | bounded TimingNode operation wait | read/mutate TimingNode-owned state directly |
 | device/callback ingress | short validation + bounded submission | wait for durable commit, run long domain work, read node state directly |
-| TimingNode serial worker | ordered domain operation; required local persistence; short snapshot capture | client rendering, slow network retry, long ranking calculation |
+| TimingNode serial-lane turn | ordered domain operation; required local persistence; short ordered read/capture | client rendering, slow network retry, long ranking calculation |
 | query caller/worker | long calculation on returned immutable view | retain a mutable internal buffer or bypass TimingNode ownership |
 | signalling/upstream worker | its own delivery/retry policy | mutate TimingNode state directly or block TimingNode commit |
 
-One dedicated worker per TimingNode is the current execution design. A multi-node
-runtime may share executor threads only if each TimingNode still processes at
-most one work item at a time, preserves FIFO order and retains the same
-caller-visible operation semantics.
+One logical serial lane per TimingNode is the current execution design. Physical
+worker threads may be shared across TimingNode lanes; the current Java baseline
+does so by default. Each node must still process at most one lane item at a time,
+preserve its FIFO ordering and retain the same caller-visible operation semantics.
 
 ## TimingData persistence and recovery
 

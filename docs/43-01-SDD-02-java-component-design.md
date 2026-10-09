@@ -568,13 +568,13 @@ InventoryTask
 ```
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
-`CooperativeTaskController` for its coalesced control behaviour. Per-node
+`CooperativeTaskController` for event-triggered reconciliation. Per-node
 current state is represented by small passive `SourceProperty` values.
-`TimingNode.statusChangedEvent(Status)` is emitted after the authoritative
-TimingNode transition, so the synchronous callback updates the matching
-SourceProperty from `Status.state()`, wakes the existing control task and
-returns. It does not perform a nested TimingNode query and it does not execute
-inventory control on the emitting thread.
+`TimingNode.statusChangedEvent(Status)` is emitted after an authoritative
+TimingNode transition. The synchronous callback validates the source, wakes the
+existing control task and returns; it does not update SourceProperties, query
+another lane or execute inventory control on the emitting thread. The later
+control run rereads CURRENT TimingNode status before deriving behaviour.
 
 A passive `DerivedProperty<Boolean>` represents the system-wide
 `inventoryRequired` fact calculated from all node SourceProperties. The
@@ -1157,8 +1157,8 @@ validated effective configuration
             -> wake first control run
   -> PresentationRuntime.activate()
 
-first system control run:
-  -> read current state of every active TimingNode
+system control run (the first run also establishes initial SourceProperty values):
+  -> read CURRENT status of every active TimingNode
   -> populate/update per-node SourceProperties
   -> derive inventoryRequired from all source properties
   -> apply inventory state to AntennaManager
@@ -1182,12 +1182,13 @@ mechanics.
 The TimingSystem `Conductor` uses its own logical serial lane with
 `SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
 `ApplicationConductor` only orders lifecycle and does not need a coordination
-lane. SystemConductor activation itself does not block on a hidden property
-initializer: after its child TimingNodes and coordination lane are active, its
-activation hook wakes the first control run. Component ACTIVE and "initial
-state reconciliation completed" are therefore distinct facts. Initial read
-failure is reported as a system control failure and is never silently treated
-as CLOSED.
+lane. SystemConductor activation itself does not block on property acquisition:
+after its child TimingNodes and coordination lane are active, its activation
+hook wakes the first normal reconciliation run. Component ACTIVE and "initial
+state reconciliation completed" are therefore distinct facts. If CURRENT state
+is unexpectedly unavailable, that is a system-control failure and is never
+silently interpreted as CLOSED; there is no cross-lane result timeout in this
+read path.
 
 Tag events and individual antenna commands do not pass through either
 Conductor. Runtime wires each configured antenna observation directly to the
@@ -1788,10 +1789,10 @@ SI01-REQ-053 uses one system-scoped inventory demand:
 TimingNode A/B/... statusChangedEvent(Status)
        |
        v
-update matching SourceProperty<State> from Status.state()
+wake domain.system.SystemConductor control task
        |
        v
-wake domain.system.SystemConductor control task
+read CURRENT Status for all nodes -> update SourceProperties
        |
        v
 DerivedProperty<Boolean> inventoryRequired = any node OPEN
@@ -3015,8 +3016,8 @@ for analysis.
 ### Simple typed events
 
 Local typed facts/notifications use the small `Event<T>` abstraction rather than a
-central event bus. Examples include decoded antenna observations, post-commit TimingData
-and tracked application-property changes. The reusable mechanism lives under
+central event bus. Examples include decoded antenna observations, post-commit TimingData,
+TimingNode status changes and configuration changes. The reusable mechanism lives under
 `platform.events` because it is a small JDK-only primitive rather than domain semantics,
 external I/O or concrete infrastructure.
 
@@ -3111,9 +3112,10 @@ back the commit. A consumer that needs reliable recovery uses authoritative
 persisted/LogBook state and its own recovery/delivery mechanism.
 
 Passive SourceProperty/DerivedProperty state uses ordinary owner-controlled updates; those
-objects do not own an event scheduler or source reread mechanism. When a source component
-already emits an authoritative immutable fact, its listener may update the SourceProperty
-directly and wake the owning control task.
+objects do not own an event scheduler or source reread mechanism. For current-state
+reconciliation, a source event may wake the owning control task, while the task itself
+rereads the authoritative CURRENT representation and updates SourceProperties before
+deriving behaviour.
 
 Use `onXxx(...)` for listener/handler methods, for example
 `onTimingNodeStatusChanged(Status status)`. Do not introduce a parallel callback
