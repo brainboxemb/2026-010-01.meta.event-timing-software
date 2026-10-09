@@ -44,29 +44,23 @@ nodes:
     group: field
     layout: {x: 260, y: 625, w: 280, h: 75}
 
-  - id: si02
-    label: "Desktop GUI Application (SI-02)\nIF-03 API client"
-    kind: client
-    group: clients
-    layout: {x: 805, y: 165, w: 350, h: 75}
-
   - id: web-operator
     label: "Browser / tablet operator\nIF-04 Web Interface"
     kind: client
     group: clients
-    layout: {x: 805, y: 280, w: 350, h: 75}
+    layout: {x: 805, y: 190, w: 350, h: 75}
 
   - id: test-client
     label: "Engineering / test client\nJavaFX • script • optional browser client"
     kind: client
     group: clients
-    layout: {x: 805, y: 395, w: 350, h: 75}
+    layout: {x: 805, y: 330, w: 350, h: 75}
 
   - id: display2
     label: "DisplayRev2Wifi / Smart Display V2\nsmart IP client • discovers SI-01 via mDNS"
     kind: external
     group: clients
-    layout: {x: 805, y: 510, w: 350, h: 85}
+    layout: {x: 805, y: 475, w: 350, h: 85}
 
   - id: network-note
     label: "Transport path may be direct / same-host / point-to-point\nor use LAN / Wi-Fi infrastructure. A router is not part of the logical interface."
@@ -99,35 +93,29 @@ edges:
     from_anchor: {side: bottom, position: 0.50}
     to_anchor: {side: top, position: 0.50}
 
-  - from: si02
-    to: si01
-    label: IF-03
-    from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.18}
-
   - from: web-operator
     to: si01
     label: IF-04
     route:
-      - {x: 735, y: 317.5}
+      - {x: 735, y: 227.5}
       - {x: 735, y: 218.0}
     from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.40}
+    to_anchor: {side: right, position: 0.35}
 
   - from: test-client
     to: si01
     label: IF-03
     route:
-      - {x: 720, y: 432.5}
+      - {x: 720, y: 367.5}
       - {x: 720, y: 238.0}
     from_anchor: {side: left, position: 0.50}
-    to_anchor: {side: right, position: 0.62}
+    to_anchor: {side: right, position: 0.60}
 
   - from: display2
     to: si01
     label: IF-09
     route:
-      - {x: 705, y: 552.5}
+      - {x: 705, y: 517.5}
       - {x: 705, y: 255.0}
     from_anchor: {side: left, position: 0.50}
     to_anchor: {side: right, position: 0.82}
