@@ -242,7 +242,7 @@ Build the first useful **Timing Point Application** (SI-01) on the development h
 
 - real timing/domain behaviour beyond the minimum needed for the application shell;
 - production timing hardware;
-- the planned Desktop GUI Application (SI-02).
+- major Engineering Desktop Client workbench restructuring beyond the initial JavaFX integration tool.
 
 ### Needs
 
@@ -329,7 +329,7 @@ application boundary.
 - multi-TimingNode operation;
 - backoffice transport or reference-data synchronisation;
 - production timing devices;
-- the product Desktop GUI Application.
+- the later Engineering Desktop Client workbench restructuring.
 
 ### Needs
 
@@ -1104,7 +1104,8 @@ runtime headroom, and whether deployment/restart can be made repeatable.
 
 ### Goal
 
-Run the representative SI-01/SI-02 software stack on the selected target platform.
+Run representative SI-01 on the selected target platform and operate/inspect it through
+the supported external client interfaces.
 
 ### Scope
 
@@ -1120,7 +1121,7 @@ Run the representative SI-01/SI-02 software stack on the selected target platfor
 - provide repeatable deploy/update/start/stop/restart commands or automation;
 - document clean-device setup from blank media through first successful SI-01 start,
   including network/remote-access prerequisites needed for development;
-- deploy and start SI-01 and connect through the public API and SI-02;
+- deploy and start SI-01 and connect through the public API from the Engineering Client;
 - repeat the representative Step-5 development-host characterization cases and relevant
   Step-7 workloads on the selected target;
 - record startup, memory, CPU, GC, thread/stack, storage and restart observations;
@@ -1132,7 +1133,7 @@ Run the representative SI-01/SI-02 software stack on the selected target platfor
 ### Needs
 
 - Step-8 platform decision and prototype hardware;
-- representative SI-01/SI-02 builds;
+- a representative SI-01 build and the Engineering Client used from a development/test workstation;
 - the repeatable software workloads established earlier.
 
 ### Result
@@ -1147,7 +1148,8 @@ Run the representative SI-01/SI-02 software stack on the selected target platfor
 
 - Start from the documented target image/provisioning baseline and bring up a clean target.
 - Deploy/start SI-01 as the documented service/runtime.
-- Connect SI-02 and run a representative simulated/reference-data workload.
+- Connect the Engineering Client through IF-03 and run a representative
+  simulated/reference-data workload.
 - Show target measurements, persistence survival and a clean service/system restart.
 
 ### Done
@@ -1208,7 +1210,8 @@ Refine the exact list from the Step-8 platform decision, including as required:
 ### Demo
 
 - Run a representative real-device registration/input flow.
-- Observe the resulting state/data through SI-02.
+- Observe the resulting state/data through supported public presentation paths,
+  including IF-04 Web and/or the Engineering Client where useful for diagnosis.
 - Disconnect or reset one device and demonstrate the supported recovery behaviour.
 
 ### Done
@@ -1230,8 +1233,8 @@ Combine the pieces only after their main failure modes have been tested separate
 
 The purpose is not to invent another architecture or add speculative hardening. It is to
 run a representative system long enough to expose integration, operational and recovery
-problems that only appear when target hardware, real devices, GUI and backoffice are used
-together.
+problems that only appear when target hardware, real devices, operator Web presentation,
+engineering diagnostics and backoffice are used together.
 
 ### Goal
 
@@ -1241,7 +1244,7 @@ into concrete follow-up work.
 ### Scope
 
 - selected target platform and real timing devices;
-- Desktop GUI Application;
+- IF-04 browser/operator presentation plus the Engineering Client for diagnostics where useful;
 - backoffice connection plus outage/reconnect behaviour;
 - persistence and restart/service recovery;
 - operational logging/diagnostics;
