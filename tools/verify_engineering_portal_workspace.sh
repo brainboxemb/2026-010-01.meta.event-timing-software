@@ -51,17 +51,17 @@ grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-w
 grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'class="eng-detail__promote-top"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'aria-label="Make this compared object primary"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'title="Make this object primary"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'aria-label="Swap selected and compared objects"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'title="Swap selected and compared objects"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 python - <<'PY'
 from pathlib import Path
 
 html = Path(
     "bld/engineering-portal/browser-workspace-IF05-REQ-007.html"
 ).read_text(encoding="utf-8")
-if html.count('data-eng-promote-object-id="SI01-REQ-045"') != 2:
+if html.count('data-eng-promote-object-id="SI01-REQ-045"') != 3:
     raise SystemExit(
-        "Compared object must expose both top icon and full Make primary action"
+        "Both panes must expose swap icons, with the original Make primary action"
     )
 labels = [
     "Normal operation",
@@ -384,6 +384,37 @@ window.addEventListener("load", () => {
       document.body.dataset.promoteTopInteraction = "missing";
     }
 
+    const selectedSwap = primaryPane && primaryPane.querySelector(
+      "[data-eng-selected-swap]"
+    );
+    const swapReady = selectedSwap && !selectedSwap.hidden &&
+      selectedSwap.dataset.engPromoteObjectId;
+    if (swapReady && primaryPane && comparePane) {
+      const beforeSelected = primaryPane.querySelector(".eng-detail__header > code").textContent.trim();
+      const beforeCompared = comparePane.querySelector(".eng-detail__header > code").textContent.trim();
+      selectedSwap.click();
+      const afterSelected = primaryPane.querySelector(".eng-detail__header > code").textContent.trim();
+      const afterCompared = comparePane.querySelector(".eng-detail__header > code").textContent.trim();
+      document.body.dataset.selectedSwapInteraction =
+        afterSelected === beforeCompared && afterCompared === beforeSelected
+          ? "passed" : "failed";
+    } else {
+      document.body.dataset.selectedSwapInteraction = "missing";
+    }
+    const comparedId = comparePane && comparePane.querySelector(".eng-detail__header > code");
+    const comparedLink = comparedId && root.querySelector(
+      '[data-compare-object-id="' + comparedId.textContent.trim() + '"]'
+    );
+    if (comparedLink) {
+      // Selecting a fresh primary object clears the comparison.
+      const other = root.querySelector('[data-workspace-root-id="IF05-REQ-007"]');
+      if (other) other.click();
+    }
+    const selectedWithoutComparison = primaryPane && primaryPane.querySelector("[data-eng-selected-swap]");
+    document.body.dataset.swapHiddenWithoutComparison =
+      selectedWithoutComparison && selectedWithoutComparison.hidden
+        ? "passed" : "failed";
+
     const splitter = root && root.querySelector(
       '[data-eng-resizer="tree-root"]'
     );
@@ -454,6 +485,8 @@ checks = {
     "pane-resize-interaction": "passed",
     "pane-resize-persisted": "passed",
     "promote-top-interaction": "passed",
+    "selected-swap-interaction": "passed",
+    "swap-hidden-without-comparison": "passed",
 }
 failures = []
 for name, expected in checks.items():

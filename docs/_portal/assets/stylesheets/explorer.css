@@ -493,6 +493,10 @@ body.eng-explorer-page .md-content__inner {
   cursor: pointer;
 }
 
+.eng-detail__promote-top[hidden] {
+  display: none;
+}
+
 .eng-detail__promote-top:hover,
 .eng-detail__promote-top:focus-visible {
   border-color: var(--md-accent-fg-color);
