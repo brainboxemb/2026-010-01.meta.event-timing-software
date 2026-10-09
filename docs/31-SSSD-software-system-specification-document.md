@@ -92,8 +92,8 @@ and architecture now share one document.
   backoffice session when the RFID input, TimingNode and local TimingData store needed
   for that registration are operational.
 - Normal operator interaction is provided through the SI-01-owned **IF-04 Web Interface**.
-- Engineering/test desktop clients use supported public interfaces such as IF-03 and do
-  not become another owner of SI-01 state.
+- The **Engineering Desktop Client (SI-02)** uses supported public interfaces such as
+  IF-03 and does not become another owner of SI-01 state.
 - Local timing/device operation shall not depend on a connected browser or engineering/test client.
 - External devices and the upstream system are explicit software-system boundaries.
 - Public/reference and private/proprietary implementations shall meet the same supported
@@ -109,8 +109,8 @@ The software-system architecture is driven by these system-level concerns:
 - local registration is the primary runtime function; presentation, diagnostics and
   backoffice delivery are not required for a local TimingData commit;
 - normal operator interaction uses the SI-01-owned IF-04 Web Interface;
-- engineering/test clients may use IF-03 and other supported public engineering
-  boundaries without becoming another product software item or owner of timing state;
+- the **Engineering Desktop Client (SI-02)** uses IF-03 and other supported public
+  engineering boundaries without becoming another owner of timing state;
 - local timing/device operation must not depend on a connected browser or engineering/test client;
 - external devices and upstream systems are explicit system interfaces rather than hidden implementation dependencies;
 - public reference/core implementation code and private/proprietary implementations must meet common supported contracts without private source leaking into public code;
@@ -125,16 +125,11 @@ Software-item identity is stated by the document and traceability metadata; the 
 | Software item | Name | Current status | Primary responsibility | Expected deployment |
 | --- | --- | --- | --- | --- |
 | **SI-01** | Timing Point Application | working specification | Local timing/registration runtime, device integration, state, status, persistence, operator Web presentation and upstream synchronisation | Raspberry Pi Zero/Zero W; Linux/Windows development/test/runtime |
+| **SI-02** | Engineering Desktop Client | working specification | Reusable engineering, commissioning and system-test desktop client for supported SI-01 public interfaces | Windows engineering/test workstation; other desktop hosts where qualified |
 
-The current architecture allocates no separate desktop-GUI product software item.
-The Engineering Client is development/integration tooling and may consume IF-03 and
-other supported engineering boundaries without becoming another product software
-item. Normal browser/tablet operator interaction is provided by the direct SI-01
-Web Interface allocated as IF-04.
-
-The former **SI-02 — Desktop GUI Application** allocation is withdrawn. Its numeric
-identity is retained only as historical documentation context and shall not be reused
-for a different software item.
+Normal browser/tablet operator interaction is provided by the direct SI-01 Web Interface
+allocated as IF-04. SI-02 serves engineering, integration, commissioning, diagnostics and
+system-test workflows rather than the normal operator workflow.
 
 Application profiles are deployment/composition templates of **the same SI-01 Timing Point Application**. A profile may select different default topology/capabilities, but it is not a separate software item and does not create different TimingNode/domain semantics. Concrete deployment profile definitions are outside this public system baseline until an explicit public requirement owns them.
 
@@ -155,15 +150,15 @@ Application profiles are deployment/composition templates of **the same SI-01 Ti
                      IF-03            Backend
                        |             integration
                        |
-              Engineering / test
-                   clients
+              SI-02 Engineering
+                Desktop Client
                        |
                        v
              field devices / local state
 ```
 
-Browser and engineering/test clients may disconnect without changing where timing state
-is kept: it remains in the **Timing Point Application** (SI-01).
+Browser sessions and SI-02 may disconnect without changing where timing state is kept:
+it remains in the **Timing Point Application** (SI-01).
 
 <a id="fig-sys-01"></a>
 ![Software items and principal system interfaces](../../../raw/prod/docs/assets/architecture/software-item-system-overview.svg)
@@ -177,13 +172,13 @@ A browser or tablet-class browser operates SI-01 directly through **IF-04 Web
 Interface**. This is the normal operator-facing path in the current architecture.
 The current architecture allocates one Web binding per configured TimingNode.
 
-### **Timing Point Application** (SI-01) ↔ Engineering/test clients
+### **Timing Point Application** (SI-01) ↔ **Engineering Desktop Client** (SI-02)
 
-Engineering and test clients use supported public boundaries such as **IF-03 API**.
-They may inspect status/history, initiate supported commands and exercise explicitly
-advertised engineering capabilities, but they do not access SI-01 process memory or
-private runtime state and they do not become another owner of timing/domain state.
-A direct, same-host, point-to-point or normal LAN/Wi-Fi IP path may carry IF-03.
+SI-02 uses supported public boundaries such as **IF-03 API**. It may inspect
+status/history, initiate supported commands and exercise explicitly advertised engineering
+capabilities, but it does not access SI-01 process memory or private runtime state and does
+not become another owner of timing/domain state. A direct, same-host, point-to-point or
+normal LAN/Wi-Fi IP path may carry IF-03.
 
 ### **Timing Point Application** (SI-01) ↔ backend
 
@@ -205,7 +200,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | --- | --- | --- | --- | --- |
 | **IF-01 Local Operator Console** | Operator ↔ SI-01 | local console/shell | Local version, status and operator commands | operator/application interface material |
 | **IF-02 Remote Shell** | Operator/service tool ↔ SI-01 | remote terminal/shell, technology TBD | Remote status and commands using shared semantics | ISD candidate |
-| **IF-03 API** | Engineering & test clients ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
+| **IF-03 API** | SI-02 / automated test tooling ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
 | **IF-04 Web Interface** | Operator/browser ↔ SI-01 | browser-facing HTTP + WebSocket; one binding per TimingNode | Browser-based TimingNode status and control | `32-04-ISD-web-interface.md` |
 | **IF-05 TimingData Interchange** | SI-01 / engineering & test tools / compatible data consumers | append-only file / record interchange | Canonical timing-record semantics, identity, ordering, versioning and reference encoding | `32-05-ISD-timingdata-interchange.md` + `33-05-IDD-timingdata-interchange.md` |
 | **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system ISD; proprietary wire/design details may remain private |
@@ -221,9 +216,9 @@ System-level ISDs own normative interface semantics. Software-item requirements 
 
 The following rules apply across software-item boundaries:
 
-- operator Web presentation and engineering clients should use shared application semantics rather than implement different business rules per interface;
+- operator Web presentation and SI-02 should use shared application semantics rather than implement different business rules per interface;
 - network clients read state from and send commands to the **Timing Point Application** (SI-01); timing state remains in that application;
-- loss of a browser/operator session or an engineering/test client must not by itself stop local operation of the **Timing Point Application** (SI-01);
+- loss of a browser/operator session or SI-02 must not by itself stop local operation of the **Timing Point Application** (SI-01);
 - IF-03, IF-04 and IF-09 shall not make a physical Wi-Fi router an architectural prerequisite where their selected transport only needs an available local/IP path;
 - development and automated integration verification may use loopback, same-host or direct IP connectivity while exercising the same system interface semantics;
 - interface versioning and compatibility must be explicit once interfaces become stable contracts;
@@ -251,7 +246,7 @@ Field host
     +-- IF-08 --> CAN devices / keypad / DisplayRev1Can
     +-- IF-05 --> canonical TimingData file/interchange
 
-Engineering/test clients
+SI-02 Engineering Desktop Client
   +-- IF-03 over available IP path --> SI-01
 
 Browser / tablet operator
@@ -321,10 +316,10 @@ The SSD for the **Timing Point Application** (SI-01) owns, among other things:
 - upstream transport implementation behind IF-06;
 - resource-budget implications of those choices.
 
-The Engineering Client is engineering-environment tooling rather than a product
-software item. Its architecture and UI baseline are owned by
-`50-SDE-03-development-client.md` while it conforms to the applicable public
-interfaces.
+The SSD for the **Engineering Desktop Client (SI-02)** is
+`41-02-SSD-gui-application-specification-document.md`. Its engineering environment and
+working UI/client-service baseline are elaborated by
+`50-SDE-03-development-client.md`.
 
 ## Architecture review model
 
