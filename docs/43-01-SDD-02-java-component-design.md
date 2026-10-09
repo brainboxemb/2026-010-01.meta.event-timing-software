@@ -3016,8 +3016,8 @@ for analysis.
 ### Simple typed events
 
 Local typed facts/notifications use the small `Event<T>` abstraction rather than a
-central event bus. Examples include decoded antenna observations, post-commit TimingData
-and tracked application-property changes. The reusable mechanism lives under
+central event bus. Examples include decoded antenna observations, post-commit TimingData,
+TimingNode status changes and configuration changes. The reusable mechanism lives under
 `platform.events` because it is a small JDK-only primitive rather than domain semantics,
 external I/O or concrete infrastructure.
 
