@@ -140,7 +140,7 @@ expected_refinements = {
 }
 actual_refinements = {
     (relation.get("from"), relation.get("to"))
-    for relation in portal_view["relations"]
+    for relation in graph["relations"]
     if relation.get("type") == "refines"
 }
 missing = expected_refinements - actual_refinements
@@ -152,7 +152,7 @@ for interface_id in ("IF04-REQ-001", "IF04-REQ-002", "IF04-REQ-006", "IF04-REQ-0
         relation.get("from") == interface_id
         and relation.get("to") == "UC-001"
         and relation.get("type") == "specifies"
-        for relation in portal_view["relations"]
+        for relation in graph["relations"]
     ):
         raise SystemExit("IF-04 still shortcuts application traceability: " + interface_id)
 
