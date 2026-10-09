@@ -90,7 +90,6 @@ reading order or implementation sequence.
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
 | UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
-| UC-008 | Operate SI-01 through the planned desktop GUI | Operator | View status/data and execute permitted commands through the API. |
 
 ### System, backoffice and recovery
 
@@ -169,8 +168,9 @@ IF-04 to a known registration system and show its current operational state.
 **Primary actor:** operator.
 
 UC-001 is the normal browser-operator path through **IF-04 — Web Interface**.
-Operation through the separate Desktop GUI Application (SI-02) belongs to
-UC-008; API/engineering-client operation through IF-03 belongs to UC-009.
+Engineering-client operation through IF-03 belongs to UC-009. There is no
+separate operator-facing desktop-GUI product path in the current system
+allocation.
 
 **Preconditions:**
 
@@ -379,32 +379,6 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 5. If the connection is lost, DisplayRev2Wifi is responsible for rediscovery/reconnect and can rebuild its local view from current SI-01 data.
 
 SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
-
-:::
-
-:::{uc} Operate SI-01 through a desktop GUI  
-:id: UC-008  
-
-**Goal:** operate/observe a timing application through the
-API.
-
-**Primary actor:** operator.
-
-**Main flow:**
-
-1. SI-02 connects through the system-defined application-control/status interface.
-2. It retrieves current application/instance/subsystem state.
-3. The operator performs permitted commands such as open/close/device recovery and later registration-related operations.
-4. SI-02 shows command outcome and live/stale/disconnected status explicitly.
-5. Timing state remains in SI-01 rather than being stored only in the GUI.
-6. After event-stream reconnect, the GUI rebuilds its view from current SI-01 state instead of presenting an old cache as live.
-
-**Alternative/failure flows:** an unknown or no-longer-present target, rejected
-lifecycle transition, unsupported command, lost connection with unknown command
-outcome, or stale cached state must all remain explicit to the operator.
-
-The Development Client may inspect the same public state semantics as engineering
-tooling, but it is not SI-02 and does not own SI-02 operator-interface requirements.
 
 :::
 
@@ -668,6 +642,14 @@ Concrete production encodings, private mapping tables and deployment-specific
 categories are outside this public use case.
 
 :::
+
+## Retired use-case identity
+
+**UC-008 — Operate SI-01 through a desktop GUI** is withdrawn and shall not be
+reused for another use case. The earlier allocation assumed a separate
+operator-facing desktop product in addition to IF-04. The current product
+direction uses IF-04 Web for normal operator interaction and UC-009 for the
+Engineering Desktop Client through IF-03.
 
 ## Cross-cutting alternative/failure scenarios
 

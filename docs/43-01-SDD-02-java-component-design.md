@@ -1556,8 +1556,9 @@ TimingData codec/provider reuse is now a real cross-executable requirement. This
 preserves the external-client boundary while allowing SI-01 and the Development
 Client to exercise the exact same public or proprietary TimingData translator.
 
-The Development Client remains development/test support rather than the
-SI-02 GUI, and its JavaFX choice does not select the SI-02 GUI technology.
+The Development Client remains development/test support rather than a product
+software item. Its desktop/runtime/workbench choices are owned by the
+Engineering Client environment and do not change SI-01 design authority.
 
 The shared Presentation-facing application boundary remains small:
 `PresentationGateway.version()` returns build identity,

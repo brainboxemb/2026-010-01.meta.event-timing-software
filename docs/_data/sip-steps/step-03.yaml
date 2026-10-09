@@ -82,7 +82,8 @@ activities:
     note: >-
       Implement IF-03 GET /api/v1/version and GET /api/v1/status, verify them
       over real HTTP, and provide a small independent JavaFX test client for
-      manual development-host inspection. The test client is not SI-02.
+      manual development-host inspection. The test client is engineering tooling,
+      not a separate product software item.
 
   - id: A07
     lane: application

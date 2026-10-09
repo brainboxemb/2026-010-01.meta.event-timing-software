@@ -40,8 +40,8 @@ use_cases = {
     for object_id, item in objects.items()
     if item.get("type") == "uc"
 }
-if len(use_cases) != 20:
-    raise SystemExit(f"expected 20 current system use cases, got {len(use_cases)}")
+if len(use_cases) != 19:
+    raise SystemExit(f"expected 19 current system use cases, got {len(use_cases)}")
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
     for token in ("**Goal:**", "**Main flow:**"):
@@ -111,9 +111,9 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (3)":
+if requirements["title"] != "Requirements (4)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = ["SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
+expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit(
         f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
@@ -124,7 +124,7 @@ if requirements["document_groups"]:
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Requirements (3)" not in uc_page:
+if "Requirements (4)" not in uc_page:
     raise SystemExit("UC-001 object page missing application-requirement heading")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
@@ -166,23 +166,18 @@ if "SI01-REQ-024" not in realizes["related_ids"]:
 # Keep every use case at the intended engineering level. The lists below are
 # deliberately exact so later interface/detail shortcuts cannot silently grow back.
 expected_uc_direct = {
-    "UC-001": {"SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"},
+    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"},
     "UC-002": {"SI01-REQ-024", "SI01-REQ-026", "SI01-REQ-040"},
     "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
     "UC-004": {"SI01-REQ-052", "SI01-REQ-055"},
     "UC-005": {"SI01-REQ-060"},
     "UC-006": {"SI01-REQ-061"},
     "UC-007": {"SI01-REQ-062"},
-    "UC-008": {
+    "UC-009": {
         "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
         "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040",
-        "SI02-REQ-001", "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004",
-        "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007", "SI02-REQ-008",
-    },
-    "UC-009": {
-        "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026",
-        "SI01-REQ-040", "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043",
-        "SI01-REQ-044", "IF03-REQ-003", "IF03-REQ-012", "IF03-REQ-013",
+        "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043", "SI01-REQ-044",
+        "IF03-REQ-003", "IF03-REQ-012", "IF03-REQ-013",
     },
     "UC-010": {"SI01-REQ-063"},
     "UC-011": {"SI01-REQ-042", "SI01-REQ-045", "SI01-REQ-064", "SI01-REQ-065"},
@@ -236,13 +231,24 @@ if any(
 ):
     raise SystemExit("IF-04 requirement still directly specifies a use case")
 
-if "SI02-REQ-001" not in objects:
-    raise SystemExit("engineering graph missing first SI-02 requirement")
-si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
+withdrawn_si02 = [
+    object_id for object_id in objects
+    if object_id.startswith("SI02-REQ-")
+]
+if withdrawn_si02:
+    raise SystemExit(
+        "withdrawn SI-02 requirements remain in engineering graph: "
+        + ", ".join(sorted(withdrawn_si02))
+    )
+if "IF03-REQ-001" not in objects:
+    raise SystemExit("engineering graph missing IF-03 public-boundary requirement")
+if "UC-009" not in objects:
+    raise SystemExit("engineering graph missing Engineering Client use case UC-009")
+engineering_page = (site / "objects" / "UC-009" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Use only the public SI-01 interface boundary" not in si02_page:
-    raise SystemExit("portal SI02-REQ-001 page is missing authored requirement content")
+if "Engineering Client connects to the registration system" not in engineering_page:
+    raise SystemExit("portal UC-009 page is missing Engineering Client narrative")
 if "DD-PresentationAccess" not in objects:
     raise SystemExit("engineering graph missing detailed-design object DD-PresentationAccess")
 presentation_design = objects["DD-PresentationAccess"]
@@ -445,12 +451,12 @@ if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explor
     raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
-for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-REQ-001", "VC-ST1-001", "UC-001", "UC-008", "UC-014"):
+for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "IF03-REQ-001", "VC-ST1-001", "UC-001", "UC-009", "UC-014"):
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
 for narrative in (
     "The browser-based Web client connects to the configured IF-04 Web binding.",
-    "SI-02 connects through the system-defined application-control/status interface.",
+    "The Engineering Client connects to the registration system through its public interfaces.",
     "Settings describe several independently addressed",
 ):
     if narrative not in search:

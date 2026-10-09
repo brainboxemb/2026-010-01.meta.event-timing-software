@@ -9,27 +9,28 @@ from generate_architecture_diagrams import Diagram, Edge, Node, render_drawio, r
 
 def software_item_overview() -> Diagram:
     nodes = [
-        Node("operator", "Operator", 610, 55, 220, 65, "external"),
-        Node("gui", "SI-02\\nDesktop GUI", 280, 175, 260, 85, "client"),
-        Node("web", "SI-03\\nWeb / iPad Operator", 900, 175, 270, 85, "client"),
-        Node("if03", "IF-03 Application Control & Status\\nHTTP/JSON + WebSocket", 505, 325, 440, 90, "interface"),
-        Node("timing", "SI-01 Headless Timing Application\\n1..N TimingNodes", 500, 490, 450, 100, "core"),
+        Node("operator", "Operator", 610, 45, 220, 65, "external"),
+        Node("browser", "Browser / tablet\nnormal operator interface", 280, 165, 280, 85, "client"),
+        Node("engineering", "Engineering / test clients\nJavaFX • scripts • automated tooling", 860, 165, 320, 85, "client"),
+        Node("if04", "IF-04 Web Interface\nHTTP + WebSocket", 250, 320, 330, 90, "interface"),
+        Node("if03", "IF-03 API\nHTTP/JSON + WebSocket", 850, 320, 330, 90, "interface"),
+        Node("timing", "SI-01 Timing Point Application\n1..N TimingNodes", 500, 490, 450, 100, "core"),
 
-        Node("state", "In-memory authoritative state\\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
+        Node("state", "In-memory authoritative state\nregistration • ready-team • reference data", 465, 690, 440, 95, "service"),
         Node("backup", "Simple file backup / restore", 120, 705, 270, 70, "adapter"),
         Node("outbox", "Upstream outbox / sync", 980, 705, 270, 70, "queue"),
 
-        Node("rfid", "IF-07 RFID subsystem\\nprivate production adapter possible", 55, 480, 330, 90, "external"),
-        Node("can", "IF-08 CAN bus\\nkeypad + DisplayRev1Can", 80, 850, 300, 85, "external"),
-        Node("v2", "IF-09 DisplayRev2Wifi\\nsmart client • mDNS + network data", 1010, 480, 330, 90, "external"),
-        Node("backoffice", "IF-06 Upstream system\\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
+        Node("rfid", "IF-07 RFID subsystem\nprivate production adapter possible", 55, 480, 330, 90, "external"),
+        Node("can", "IF-08 CAN bus\nkeypad + DisplayRev1Can", 80, 850, 300, 85, "external"),
+        Node("v2", "IF-09 DisplayRev2Wifi\nsmart client • mDNS + network data", 1010, 480, 330, 90, "external"),
+        Node("backoffice", "IF-06 Upstream system\nRabbitMQ intended", 1050, 850, 280, 85, "external"),
     ]
 
     edges = [
-        Edge("operator", "gui", "desktop HMI"),
-        Edge("operator", "web", "web HMI"),
-        Edge("gui", "if03"),
-        Edge("web", "if03"),
+        Edge("operator", "browser", "normal operation"),
+        Edge("browser", "if04"),
+        Edge("engineering", "if03"),
+        Edge("if04", "timing"),
         Edge("if03", "timing"),
         Edge("timing", "state"),
         Edge("state", "backup", "backup/restore"),
@@ -42,7 +43,7 @@ def software_item_overview() -> Diagram:
 
     return Diagram(
         "software-item-system-overview",
-        "Software items and principal system interfaces",
+        "Software item and principal system interfaces",
         1420,
         1000,
         nodes,

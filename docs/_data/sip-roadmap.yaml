@@ -29,7 +29,7 @@ terms:
   - term: SI-01
     meaning: Timing Point Application
   - term: SI-02
-    meaning: Planned Desktop GUI Application
+    meaning: Withdrawn former Desktop GUI Application allocation; historical identity only
   - term: TimingNode
     meaning: Logical timing unit with its own identity and state
   - term: ST-1
@@ -159,15 +159,15 @@ steps:
     remaining_estimate_project_days: 5
     workstream: client
     docs:
-      requirements: {level: working, scope: "first useful SI-02 behaviour"}
-      idd: {level: review, scope: "API consumed by SI-02"}
-      design: {level: outline, scope: "GUI technology and internal architecture decided when step starts"}
-      verification: {level: working, scope: "GUI connection/data/reconnect behaviour"}
+      requirements: {level: review, scope: "UC-009 and public IF-03 engineering behaviour"}
+      idd: {level: review, scope: "API consumed by Engineering Client"}
+      design: {level: working, scope: "Engineering Client service/workbench architecture and desktop technology"}
+      verification: {level: working, scope: "client connection/data/reconnect/workbench behaviour"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
-      - {name: 41-02-SSD, title: Desktop GUI specification, maturity: working, completeness: 60}
+      - {name: 50-SDE-03, title: Development Client engineering baseline, maturity: working, completeness: 80}
       - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 85}
-      - {name: 60-SVP, title: GUI verification direction, maturity: review, completeness: 75}
+      - {name: 60-SVP, title: Engineering-client verification direction, maturity: review, completeness: 75}
 
   "7":
     estimate_project_days: 7
