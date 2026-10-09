@@ -161,7 +161,7 @@ steps:
     docs:
       requirements: {level: review, scope: "UC-009 and public IF-03 engineering behaviour"}
       idd: {level: review, scope: "API consumed by Engineering Client"}
-      design: {level: working, scope: "Engineering Client service/workbench architecture and desktop technology"}
+      design: {level: working, scope: "Java 21 / JavaFX 21 / BentoFX client-service and packaging baseline selected"}
       verification: {level: working, scope: "client connection/data/reconnect/workbench behaviour"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
