@@ -916,14 +916,14 @@ identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01.
 
 A TimingNode is also the **active serialization and ownership boundary** for mutable per-node
-state. State-dependent commands and consistency-sensitive reads enter one bounded serial
-execution path and are processed in order. Code outside that boundary does not directly
-read or mutate the node's lifecycle/location state or the mutable contents of its contained
-`LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData` objects. Those objects remain
-passive and do not receive their own workers. A short operation on the node lane may publish
-an immutable snapshot/read view for longer work outside the lane. The LogBook keeps 0..N
-committed immutable `TimingData` values and does not own a second worker or second timing-record
-representation.
+state. State-dependent commands and reads that require exact ordering enter one bounded
+serial execution path and are processed in order. Current-state observation may instead use
+an immutable snapshot safely published by that owned path after completed transitions. Code
+outside the boundary does not directly read or mutate lifecycle/location state or the mutable
+contents of its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData`
+objects. Those objects remain passive and do not receive their own workers. The LogBook keeps
+0..N committed immutable `TimingData` values and does not own a second worker or second
+timing-record representation.
 
 Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
 The two roles share the same semantic concept but have distinct engineering
@@ -1841,7 +1841,7 @@ Working rules:
 - commands request state changes;
 - a state-dependent command may wait for the domain result produced when that command reaches the TimingNode's ordered execution path;
 - submission-only ingress is explicit: acceptance means only that bounded work was accepted for later processing;
-- queries do not become alternate owners of state; consistency-sensitive reads run on the TimingNode's ordered path or use an immutable snapshot published from that path;
+- queries do not become alternate owners of state; current observation may use an immutable published snapshot, while reads that require sequencing run on the TimingNode's ordered path;
 - events report facts/results that have occurred;
 - queue admission, domain result and caller wait timeout are different outcomes and shall not be represented as though they mean the same thing;
 - a caller timeout does not prove rejection or rollback of already accepted work; until state is queried or another result is observed, the final outcome is unknown to that caller;
@@ -1869,7 +1869,8 @@ Architecture rules:
 - code outside a TimingNode does not directly inspect or mutate that node's mutable state;
 - two state changes for the same TimingNode do not run over each other;
 - the TimingNode behaves as an active object: one bounded serial execution
-  boundary owns state-dependent command ordering and consistency-sensitive reads;
+  boundary owns state-dependent command ordering and ORDERED reads, and publishes
+  immutable current-state snapshots for CURRENT observation;
 - state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
 - the contained LogBook, NextUpTeams, StageStartTimes and EventData objects remain
   passive and do not each receive their own execution thread;
@@ -1883,7 +1884,7 @@ Architecture rules:
 
 The primary latency risk is therefore **producer backpressure**, not whether every TimingNode operation is asynchronous. Device/RFID/TagProcessor ingress must use the submission-only path and return after bounded-queue admission; it does not wait for persistence or a domain result. Presentation/application callers may use a result-bearing command path when they need that result.
 
-Short consistency-sensitive queries are allowed to occupy the TimingNode lane for a bounded period. The design does not require a copied snapshot as the default read mechanism. Read/query implementations may traverse contained state directly on the ordered lane, use a compact derived/indexed representation, or copy data only when measurement shows that the copy is the better trade-off. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
+ORDERED queries are allowed to occupy the TimingNode lane for a bounded period when exact sequencing with mutations is required. CURRENT queries may instead read a safely published immutable representation without entering that lane. Mutable LogBook traversal remains ordered. Read/query implementations may use direct bounded traversal, compact derived/indexed state or immutable snapshots according to the required consistency and measured cost. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
 
 Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
 
@@ -2006,8 +2007,11 @@ submission-only input
   request bounded admission for later processing
   admission is not the later domain result
 
-consistency-sensitive query
-  capture/read current TimingNode state on the ordered path
+current-state query
+  read a safely published immutable representation of completed state
+
+ordered query
+  read state on the TimingNode serial path after earlier accepted work
 
 event
   report an observation, fact, completion or failure that has occurred
@@ -2060,12 +2064,11 @@ socket, vendor-device and persistence implementations remain in I/O and report
 semantic status without leaking adapter classes into Domain.
 
 `SystemStatus` does not bypass TimingNode ownership to inspect node internals.
-A TimingNode supplies a semantic immutable status/result from its own ordered
+A TimingNode supplies semantic immutable status published from its owned ordered
 state boundary; SystemStatus may retain/aggregate that representation together
 with system/I/O health. An application-wide status response may therefore use
-published node-status snapshots, or obtain a consistency-sensitive node status
-through the normal TimingNode query operation when that stronger ordering is
-required.
+published CURRENT node status, or deliberately request an ORDERED node status
+when sequencing behind earlier accepted work is required.
 
 An application-facing status view may aggregate the 1..N TimingSystem statuses
 and application/runtime problems into one response; that aggregation does not
@@ -2575,7 +2578,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Java baseline | Java SE 8 is the current SI-01 baseline | architecture baseline; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
 | Build | Maven | accepted |
-| Concurrency | TimingNode is an active object with one bounded serial execution boundary; contained state objects stay passive; callbacks, long queries and slow delivery remain outside that worker | SDD-02 uses composition and keeps the executor implementation replaceable |
+| Concurrency | TimingNode is an active object with one bounded serial execution boundary for mutation/ORDERED reads plus safely published immutable CURRENT state; contained state objects stay passive; callbacks, long calculations and slow delivery remain outside that lane | SDD-02 uses composition and keeps the executor implementation replaceable |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
 | Time model | dedicated `TimingTimestamp`; raw `PlatformEnvironment.Clock`; Runtime-composed shared `TimeSource`; separate `MonotonicClock` | IF-05 fixes canonical external timestamp serialization; RuntimeTimeSources selects the timing source implementation/sharing scope; synchronization/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |

@@ -38,6 +38,9 @@ A few words occur repeatedly in the Java design:
 - **actual state** — what is currently true in the component or device;
 - **reconcile** — read the current authoritative state and do the work needed to make the
   owned state match what is required;
+- **event-triggered reconciliation** — use a change event as a wake signal, then reread
+  authoritative current state and derive/apply the required behaviour instead of replaying
+  the event payload as control history;
 - **serial lane** — a `SerialExecutor` or `SerialScheduledExecutor` ordering boundary.
   A lane is not automatically its own Java thread.
 
@@ -211,23 +214,18 @@ published the event and can accidentally propagate downstream problems back into
 
 **Example**
 
-For a tracked application property, the source event only invalidates the cached value:
+For SystemConductor, a TimingNode status event is only a short wake signal:
 
 ```java
 timingNode.statusChangedEvent()
         .subscribe(
-                ignored -> timingNodeStateProperty.signalChanged());
+                status -> systemConductor.onTimingNodeStatusChanged(timingNode, status));
 ```
 
-The property rereads the authoritative TimingNode state on its serial lane.
-
-When the tracked value really changes, the property uses the same project event mechanism
-as other components:
-
-```java
-timingNodeStateProperty.changedEvent()
-        .subscribe(this::onTimingNodeStateChanged);
-```
+The handler may validate source identity and wake the existing control task, then returns.
+The later control run reads `status` with CURRENT consistency, updates its SourceProperty,
+recalculates derived state and applies the resulting intent. It does not perform that
+reconciliation in the synchronous event callback.
 
 **Event and handler naming**
 
@@ -238,10 +236,8 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent()        EventSource: observable notification
-changedEvent()              generic tracked-property notification
-signalChanged()             command/invalidation: reread the source
-onTimingNodeStateChanged()  listener/handler method
+statusChangedEvent()          EventSource: observable post-fact notification
+onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
 
 An `onXxx(...)` method is a handler name, not a subscription API.
@@ -265,9 +261,9 @@ one listener may be stored directly, and only two or more listeners require an i
 array representation. Subscription order remains stable. Concurrent runtime
 `emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
-Initialization is also separate from events. A tracked property returns its first
-authoritative value from `initialize()`; that first value is not emitted as a
-`changedEvent`. Only a later real value change is an event.
+Initialization is also separate from events. SystemConductor activation wakes its first
+normal reconciliation run; that run obtains the first SourceProperty values from CURRENT
+TimingNode status. No synthetic status-change event is required to create initial state.
 
 **Avoid**
 
@@ -357,10 +353,10 @@ When a component only needs to know **what is true now**, maintain or read one c
 representation of that truth. Do not queue historical state snapshots and replay them later
 as commands.
 
-If the authoritative owner emits an immutable post-change snapshot as part of the committed
-transition, a consumer may update its passive SourceProperty directly from that event and
-then wake its own control task. If no such snapshot exists, or an initial value is required
-after activation, make the authoritative read an explicit operation of the owning component.
+If the authoritative owner emits a post-change event, a current-state controller may use
+that event only to wake a reconciliation run. The reconciliation then reads the owner's
+authoritative current representation explicitly. This keeps event history separate from
+current control state and makes initialization use the same path as later updates.
 
 Derived current state may be represented by a passive DerivedProperty when that makes a
 real relationship clearer, for example `inventoryRequired = any node OPEN`. The owning
@@ -377,9 +373,9 @@ OPEN -> CLOSED -> OPEN
 ```
 
 If antenna behaviour only depends on current TimingNode state, replaying all three Status
-objects creates unnecessary work and can briefly apply stale intent. Updating the current
-source value immediately and coalescing only the later Conductor work preserves the final
-truth without a second property scheduler.
+objects creates unnecessary work and can briefly apply stale intent. Coalescing the wake
+signals and letting the later Conductor run reread CURRENT state preserves the final truth
+without an event queue or second property scheduler.
 
 **Example**
 
@@ -418,9 +414,9 @@ DerivedProperty.recalculate()
 apply current inventory intent
 ```
 
-The event callback only updates in-memory state and wakes the consumer; it does not wait on
-another lane. Repeated wakes may be coalesced because the later control run reads the current
-SourceProperties.
+The event callback only validates/wakes the consumer; it does not update the SourceProperty,
+wait on another lane or perform device control. Repeated wakes may be coalesced because the
+later control run rereads CURRENT TimingNode status before deriving behaviour.
 
 Current immutable snapshots and ordered mutable reads are different consistency choices on
 the same typed query boundary. Use CURRENT when the query supports a safely published
@@ -724,11 +720,12 @@ provider fails during a delayed transition.
 For Conductor:
 
 - the first control run populates all SourceProperties only after TimingNodes are active;
-- a status event updates its SourceProperty without a nested TimingNode query;
+- a status event only wakes the control task and does not directly mutate SourceProperties;
+- every control run refreshes SourceProperties from CURRENT TimingNode status before deriving behaviour;
 - rapid state changes converge to the final current SourceProperty values while control wakes coalesce;
 - a DerivedProperty that depends on multiple node properties derives the correct aggregate state;
-- an initial authoritative read failure is visible as a Conductor control failure, not hidden property initialization;
-- no queue/admission failure from downstream control work throws back through TimingNode event delivery.
+- CURRENT-state unavailability is visible as a Conductor control failure and is never interpreted as CLOSED;
+- no downstream control failure throws back through TimingNode event delivery.
 
 For AntennaManager:
 
