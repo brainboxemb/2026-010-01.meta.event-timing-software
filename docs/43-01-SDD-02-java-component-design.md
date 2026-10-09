@@ -404,7 +404,7 @@ for reimplementing JDK executor internals.
 Detailed Java design for cooperative task runners/controllers and the
 TimingSystem-scoped coordination pattern used by `domain.system.SystemConductor`.
 
-The Java class is `SystemConductor` to distinguish it from `ApplicationConductor`; the architecture diagram retains the component label **Conductor** within each TimingSystem.
+Both coordinator components are labeled **Conductor** in the architecture diagram, each within its owning layer: Application and Domain/TimingSystem. Their Java implementations are `application.ApplicationConductor` and `domain.system.SystemConductor`, respectively.
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
