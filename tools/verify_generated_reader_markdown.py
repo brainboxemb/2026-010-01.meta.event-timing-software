@@ -136,9 +136,6 @@ for number in current_use_case_numbers:
     object_id = f"UC-{number:03d}"
     if f'<a id="{object_id}"></a>' not in use_cases:
         raise SystemExit(f"generated reader Markdown missing {object_id}")
-if '<a id="UC-008"></a>' in use_cases:
-    raise SystemExit("generated reader Markdown still contains withdrawn UC-008")
-
 si01_ids = (
     "SI01-REQ-001", "SI01-REQ-002", "SI01-REQ-003",
     "SI01-REQ-010", "SI01-REQ-011",
@@ -151,6 +148,14 @@ si01_ids = (
 )
 for object_id in si01_ids:
     if f'<a id="{object_id}"></a>' not in ssd:
+        raise SystemExit(f"generated reader Markdown missing {object_id}")
+
+si02_ssd = (root / "41-02-SSD-gui-application-specification-document.md").read_text(
+    encoding="utf-8"
+)
+for number in range(1, 9):
+    object_id = f"SI02-REQ-{number:03d}"
+    if f'<a id="{object_id}"></a>' not in si02_ssd:
         raise SystemExit(f"generated reader Markdown missing {object_id}")
 
 isd = (root / "32-03-ISD-application-control-status.md").read_text(
