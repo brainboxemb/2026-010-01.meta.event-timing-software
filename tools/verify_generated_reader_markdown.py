@@ -131,10 +131,13 @@ if "- **Elaborates:**" not in design_block:
 if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_block:
     raise SystemExit("generated reader Markdown missing inverse SSD architecture links")
 
-for number in range(1, 20):
+current_use_case_numbers = (*range(1, 8), *range(9, 21))
+for number in current_use_case_numbers:
     object_id = f"UC-{number:03d}"
     if f'<a id="{object_id}"></a>' not in use_cases:
         raise SystemExit(f"generated reader Markdown missing {object_id}")
+if '<a id="UC-008"></a>' in use_cases:
+    raise SystemExit("generated reader Markdown still contains withdrawn UC-008")
 
 si01_ids = (
     "SI01-REQ-001", "SI01-REQ-002", "SI01-REQ-003",
