@@ -583,14 +583,17 @@ AntennaManager. Manager-wide inventory is needed while any node is OPEN, and
 not needed otherwise. A DerivedProperty may depend on more than one
 SourceProperty; it owns no scheduling, queue, retry or lifecycle behaviour.
 
-The first control run has an explicit additional responsibility. After the
-TimingNodes are active and the system coordination lane is running, it reads
-the current state of every TimingNode and fills the SourceProperties before
-deriving or applying inventory state. With the current TimingNode boundary
-this initial acquisition may use `TimingNode.query(status)`; that query and
-any timeout are therefore visible Conductor behaviour rather than hidden
-inside property initialization. Later status changes use the authoritative
-event payload directly.
+Every Conductor control run synchronizes the per-node SourceProperties from a
+CURRENT status query before deriving or applying inventory state:
+
+```java
+node.query(TimingNodeQueries.status(), ReadConsistency.CURRENT);
+```
+
+CURRENT status reads use the safely published immutable TimingNode snapshot and
+therefore do not enter the TimingNode serial lane or have a result-bearing query
+timeout. Status events only wake the existing CooperativeTaskController; repeated
+events may coalesce because the later control run rereads current published state.
 
 The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
 requests from explicit retry attempts. The TimingSystem `Conductor` does not
@@ -699,6 +702,39 @@ lifecycle-only or partially configured production node. The only non-public cons
 seam exists for deterministic TimingNode execution-boundary tests and is documented as
 test-only in code.
 
+TimingNode publishes one immutable current `Status` snapshot as an explicit read model.
+The snapshot is unavailable before activation recovery completes. Activation clears previous
+readiness, performs recovery (including contained recovery failure -> operational `ERROR`),
+completes child activation and then publishes the first snapshot with safe cross-thread
+visibility. Deactivation makes CURRENT status unavailable; reactivation publishes a fresh
+snapshot after recovery.
+
+One typed query boundary exposes two explicit consistency modes:
+
+```text
+CURRENT
+  latest safely published completed snapshot; no lane admission/wait/timeout
+
+ORDERED
+  execute on the TimingNode serial lane after earlier accepted node work
+```
+
+The existing one-argument `query(query)` remains ORDERED. A caller chooses CURRENT only
+when the query definition supports it. Status supports CURRENT and ORDERED; TimingData
+count and bounded LogBook range/latest reads remain ORDERED only.
+
+State-changing commands still execute on the TimingNode serial lane. After a command
+completes its domain mutation, TimingNode builds and publishes the immutable after-Status
+before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
+status reader therefore observes only completed published transitions.
+
+The LogBook remains mutable TimingNode-owned state and does not become directly readable.
+A result-bearing ORDERED `invoke(...)` or `query(...)` from inside the same TimingNode
+serial lane must fail immediately as reentrant instead of queueing work behind itself and
+later timing out. CURRENT reads do not enter the lane. This protects synchronous LogBook
+visitors in particular; visitors remain bounded by their requested limit, short/non-blocking
+and must not re-enter the same TimingNode with ORDERED result-bearing work.
+
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
 :::
@@ -752,8 +788,15 @@ TimingNodeTypes.CommandAdmission admitted =
                         registrationId,
                         time));
 
-TimingNodeTypes.Status status =
-        node.query(TimingNodeQueries.status());
+TimingNodeTypes.Status currentStatus =
+        node.query(
+                TimingNodeQueries.status(),
+                TimingNodeQuery.ReadConsistency.CURRENT);
+
+TimingNodeTypes.Status orderedStatus =
+        node.query(
+                TimingNodeQueries.status(),
+                TimingNodeQuery.ReadConsistency.ORDERED);
 ```
 
 Presentation adapters use the node-scoped Application boundary:
@@ -778,13 +821,14 @@ the later domain result. RFID/TagProcessor-style ingress uses this form so a dev
 callback cannot be held up by persistence, LogBook work or another queued TimingNode
 operation.
 
-`query(query)` is the consistency-sensitive read path. Short reads run in the same
-ordering as commands. The ordering boundary is the required property; a copied
-LogBook snapshot is not. Query implementations should avoid routine list copies
-when direct bounded traversal on the node lane is cheaper, and may introduce
-compact derived/indexed state only when measurement justifies it. Typed
-command/query objects are local operation descriptions, not another component,
-central dispatcher or generic message bus.
+`query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
+published immutable read model without entering the node lane; ORDERED executes after
+earlier accepted node work on that lane. The one-argument `query(query)` preserves ORDERED
+semantics. Query definitions declare supported consistency modes, so mutable LogBook reads
+cannot accidentally be requested as CURRENT. Result-bearing same-lane ORDERED reentrancy is
+invalid and fails immediately rather than waiting for its own lane. Typed command/query
+objects are local operation descriptions, not another component, central dispatcher or
+generic message bus.
 
 The presentation-facing automatic-registration boundary is
 `applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
@@ -1192,7 +1236,7 @@ timing-point-core.jar
 
   io.github.brainboxemb.eventtiming.timingpoint.domain.system/
     SystemConductor.java
-    TimingNodeStateProperty.java
+    PropertyRegistry.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
@@ -2892,10 +2936,12 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-A high-frequency status/read path may use a worker-published immutable
-snapshot when measurement justifies it. Such a published snapshot is an
-explicit read model with known freshness semantics, not permission for callers
-to read TimingNode-owned mutable objects directly.
+TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
+snapshot because it is current state, not a mutable LogBook traversal. The same status query
+also supports ORDERED when a caller deliberately needs a read after earlier accepted node
+work. Publication occurs after activation recovery and completed command transitions, before
+the corresponding status event. This read model does not permit direct access to
+TimingNodeLogic or LogBook mutable state.
 
 ### Per-type stores
 
@@ -3064,13 +3110,13 @@ If listener notification fails after a TimingData record is committed, that does
 back the commit. A consumer that needs reliable recovery uses authoritative
 persisted/LogBook state and its own recovery/delivery mechanism.
 
-Tracked properties use the same event convention. A source event only calls
-`signalChanged()` to invalidate the cached value. After rereading the authoritative
-source, a real later value change is published through `changedEvent()`. The initial
-value is returned explicitly by `initialize()` and is not fabricated as a change event.
+Passive SourceProperty/DerivedProperty state uses ordinary owner-controlled updates; those
+objects do not own an event scheduler or source reread mechanism. When a source component
+already emits an authoritative immutable fact, its listener may update the SourceProperty
+directly and wake the owning control task.
 
 Use `onXxx(...)` for listener/handler methods, for example
-`onTimingNodeStateChanged(State state)`. Do not introduce a parallel callback
+`onTimingNodeStatusChanged(Status status)`. Do not introduce a parallel callback
 registration API such as `onChange(Consumer<T>)`, `addListener(...)` or
 `setCallback(...)` when `EventSource.subscribe(...)` expresses the notification.
 
@@ -3456,7 +3502,7 @@ Useful automated rules may include:
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
 - exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
-- concrete immutable TimingNode read-view representation and compact LogBook indexing required by the ranking/query implementation;
+- compact LogBook indexing required by future ranking/query implementation when measurement justifies it;
 - exact antenna automatic-recovery trigger, retry/backoff, retry-limit and terminal-failure policy;
 - exact external extension-JAR directory/layout and dependency-isolation policy;
 - private Maven artifact publication/consumption mechanism;
