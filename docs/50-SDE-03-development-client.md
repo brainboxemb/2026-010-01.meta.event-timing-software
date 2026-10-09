@@ -612,9 +612,10 @@ The Development Client remains independently testable:
 
 ## Development Client boundary
 
-The Development Client is the primary manual development/integration application for the
-public SI-01 boundaries described above. It does not become SI-02 and it does not gain
-private access to SI-01 runtime/domain state.
+The Development Client is the primary desktop development/integration application for
+the public SI-01 boundaries described above. It remains engineering tooling rather than
+a separate product software item and it does not gain private access to SI-01
+runtime/domain state.
 
 Its engineering responsibilities are:
 
