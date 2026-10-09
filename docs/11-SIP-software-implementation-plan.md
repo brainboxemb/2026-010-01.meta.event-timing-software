@@ -778,10 +778,8 @@ was needed.
 
 ### Result
 
-Step 5 closes on SI-01, black-box and development-host evidence. The additional
-manual real-GUI revoke/recovery run in the former Step-5 V06 was **not
-executed**; it moves to Step 6 V01 on the new Engineering Desktop Client. No
-client UI verification result is implied by this closure.
+Step 5 closes on SI-01, black-box and development-host evidence. GUI-specific
+revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
 
 - Simulated antenna observations reach the normal registration path.
 - Successful TimingNode OPEN/CLOSE transitions are represented in the normal committed
@@ -893,38 +891,28 @@ Desktop Client while preserving its public-interface-only boundary to SI-01.
 - stable IF-03 behaviour from Steps 3-5;
 - representative running SI-01 test data;
 - Experiment 008 JavaFX/BentoFX workbench evidence;
-- Step-5 SI-01/server revoke and persistence evidence complete; the outstanding
-  manual UI run is transferred to Step-6 V01, not a prerequisite for A01.
+- Step-5 SI-01/server revoke and persistence behaviour available as the system baseline;
+- VC-ST1-003 real-running-client GUI verification assigned to Step-6 V01.
 
-The Engineering Client replaces the old JavaFX UI before executing the remaining
-manual revoke/recovery qualification. Step-6 V01 shall retain the full
-VC-ST1-003 real-running-client scenario without substituting headless tests
-for actual GUI evidence.
+Step-6 V01 uses the Engineering Desktop Client itself for the complete GUI
+revoke/recovery scenario; headless tests do not substitute for that evidence.
 
 ### Activities
 
 | ID | Activity |
 | --- | --- |
-| `D01` | Former SI-02 Draft requirement slice and allocation review |
+| `D01` | Establish first SI-02 Engineering Client requirement slice |
 | `D02` | Select Engineering Client desktop stack, client boundary and packaging |
 | `A01` | Restructure the existing Engineering Client around the selected workbench/services |
 | `V01` | Verify Engineering Client connection, sync/reconnect and representative workbench behaviour |
 
-### D01 — Former SI-02 requirement slice and allocation review
+### D01 — SI-02 Engineering Client requirement baseline
 
-D01 originally promoted a first Draft requirement slice for a planned
-operator-facing SI-02 Desktop GUI. Review then established that this duplicated the
-actual product direction: normal operators use IF-04 Web, while the desktop application
-is an Engineering Client through IF-03.
-
-The former `SI02-REQ-001..008` Draft requirements are therefore withdrawn with that
-software-item allocation. Their useful technology-independent behaviours — public
-interfaces only, explicit connection/synchronisation state, connected identity,
-TimingNode status, stale state, reconnect rebuild, committed-history presentation and
-explicit command outcomes — remain useful Engineering Client design inputs through
-UC-009, IF-03 and SDE-03 rather than active product requirements.
-
-The former identities SI-02 and UC-008 are not reused.
+D01 establishes the first technology-independent SI-02 requirements in 41-02-SSD.
+The slice covers public-interface-only operation, target selection, explicit
+connection/synchronisation state, connected identity, TimingNode status, stale state,
+baseline/history rebuild, committed registration presentation and explicit command
+outcomes. These requirements trace to UC-009 and IF-03.
 
 ### D02 — Engineering Client technology and packaging decision
 
@@ -966,11 +954,10 @@ not a Step-6 implementation requirement.
 
 ### Result
 
-- The existing Development Client has a clear path to a maintainable Engineering Desktop
-  Client instead of being replaced by a duplicate operator product.
+- SI-02 is defined as the maintainable Engineering Desktop Client software item.
 - Normal operator interaction remains IF-04 Web.
-- The desktop client remains independent from SI-01 implementation classes/files and
-  keeps engineering behaviour behind public interfaces.
+- SI-02 remains independent from SI-01 implementation classes/files and keeps
+  engineering behaviour behind public interfaces.
 - Desktop technology, workbench and packaging choices are explicit and reviewable.
 
 ### Demo
@@ -980,7 +967,7 @@ not a Step-6 implementation requirement.
   technical LogBook and selected raw data.
 - Exercise one supported engineering command/simulation and inspect the result.
 - Disconnect/reconnect and rebuild the authoritative view.
-- Using the **new** Engineering Client, revoke through the trash action,
+- Using SI-02, revoke through the trash action,
   confirm immutable ADD plus new REV and interpreted DELETED, restart SI-01,
   recover unchanged source history and confirm recovered events are not replayed
   as new live events.
@@ -997,8 +984,8 @@ not a Step-6 implementation requirement.
 - representative views are composed through the selected workbench without depending on
   docking APIs themselves;
 - the selected desktop runtime/dependency/package path is reproducible;
-- no separate operator-desktop product or active SI-02 requirement set remains in the
-  software-system allocation.
+- SI-02 requirements and architecture remain aligned with UC-009 and the public IF-03
+  boundary without duplicating the normal IF-04 operator workflow.
 
 ---
 
