@@ -8,8 +8,8 @@ System interface: **IF-03 — API**
 ## Purpose
 
 This Interface Specification Document defines the **semantic contract** between the
-**Timing Point Application** (SI-01) and independent software clients such as the
-Engineering Client and automated integration tooling.
+**Timing Point Application** (SI-01), the **Engineering Desktop Client (SI-02)** and
+automated integration tooling.
 
 The **API** is the general programmable interface of SI-01 for remote clients,
 engineering tools and headless black-box/integration tests. Engineering-only
@@ -40,13 +40,13 @@ IF-03 is allocated by
 client/engineering intent described by the applicable system use cases, especially
 UC-009. Normal browser/operator interaction is allocated separately to IF-04.
 
-Applicable software-item design and engineering clients consume this interface contract.
-They shall not independently redefine IF-03 semantics.
+The affected software-item specifications and automated test tooling consume this interface
+contract. They shall not independently redefine IF-03 semantics.
 
 ## Parties
 
 ```text
-Engineering Client / automated test tooling
+SI-02 Engineering Desktop Client / automated test tooling
                          |
                          | IF-03 API
                          v
@@ -467,8 +467,8 @@ before relying on later live changes.
 :status: R  
 
 
-The IF-03 realization shall provide a machine-readable representation suitable for
-engineering clients and automated test tooling.
+The IF-03 realization shall provide a machine-readable representation suitable for SI-02
+and automated test tooling.
 :::
 
 :::{ifreq} Explicit failure outcome  

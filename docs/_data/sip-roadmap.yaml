@@ -29,7 +29,7 @@ terms:
   - term: SI-01
     meaning: Timing Point Application
   - term: SI-02
-    meaning: Withdrawn former Desktop GUI Application allocation; historical identity only
+    meaning: Engineering Desktop Client
   - term: TimingNode
     meaning: Logical timing unit with its own identity and state
   - term: ST-1
@@ -141,7 +141,7 @@ steps:
 
   "5":
     estimate_project_days: 6
-    remaining_estimate_project_days: 3
+    completed_date: "2026-10-09"
     workstream: simulation
     docs:
       requirements: {level: working, scope: "simulated antenna input, lifecycle TimingData, registration admission and recovery"}
@@ -159,13 +159,14 @@ steps:
     remaining_estimate_project_days: 5
     workstream: client
     docs:
-      requirements: {level: review, scope: "UC-009 and public IF-03 engineering behaviour"}
+      requirements: {level: review, scope: "SI-02 requirements from UC-009 and public IF-03 engineering behaviour"}
       idd: {level: review, scope: "API consumed by Engineering Client"}
-      design: {level: working, scope: "Engineering Client service/workbench architecture and desktop technology"}
+      design: {level: working, scope: "Java 21 / JavaFX 21 / BentoFX client-service and packaging baseline selected"}
       verification: {level: working, scope: "client connection/data/reconnect/workbench behaviour"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
-      - {name: 50-SDE-03, title: Development Client engineering baseline, maturity: working, completeness: 80}
+      - {name: 41-02-SSD, title: SI-02 Engineering Desktop Client specification, maturity: working, completeness: 45}
+      - {name: 50-SDE-03, title: Engineering Client development baseline, maturity: working, completeness: 80}
       - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 85}
       - {name: 60-SVP, title: Engineering-client verification direction, maturity: review, completeness: 75}
 

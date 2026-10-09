@@ -126,7 +126,7 @@ Expected examples:
 
 - local console returns the same application version/status model as other clients;
 - remote shell returns the same version/status semantics;
-- the Engineering Desktop Client consumes IF-03 across a real network boundary;
+- SI-02 Engineering Desktop Client consumes IF-03 across a real network boundary;
 - an optional simple web test client may consume IF-03 if it becomes useful;
 - backoffice semantic exchange through both socket-test and RabbitMQ adapters;
 - Display V2 mDNS discovery and subsequent data/session protocol;
@@ -143,7 +143,7 @@ Candidate scenarios:
 - SI-01 + test driver through the public application-control interface;
 - SI-01 + simple socket backoffice simulator;
 - SI-01 + RabbitMQ test broker with multiple configured source consumers/publishers;
-- SI-01 + Engineering Desktop Client over localhost;
+- SI-01 + SI-02 Engineering Desktop Client over localhost;
 - SI-01 on the selected target + an external IF-03 client;
 - stub RFID + real domain pipeline + local persistence;
 - CAN scanner + keypad + Display V1 stub/real hardware;
@@ -394,7 +394,7 @@ Possible compositions include:
 - selected target + socket simulator to isolate target runtime/network behaviour;
 - selected target + RabbitMQ broker on another host;
 - selected target + real RFID/CAN/display hardware;
-- Engineering Desktop Client against the real target application.
+- SI-02 Engineering Desktop Client against the real target application.
 
 ST-4 is generally slower/on-demand and can reuse test scenarios first proven at ST-1/ST-3.
 It starts only after the SIP target-platform decision and bring-up work have established a

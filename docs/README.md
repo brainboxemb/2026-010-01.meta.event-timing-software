@@ -57,9 +57,10 @@ Working context does not replace promoted requirements, interfaces or design.
 - [43-01-SDD-03](43-01-SDD-03-backoffice-transport-design.md)
 - [44-01-GPD — Java design rules](44-01-GPD-java-design-rules.md)
 
-### Withdrawn software-item allocations
+### SI-02 — Engineering Desktop Client
 
-- [Former SI-02 Desktop GUI specification record](41-02-SSD-gui-application-specification-document.md) — withdrawn; normal operator use is IF-04 Web and the desktop Engineering Client is owned as engineering tooling in [50-SDE-03](50-SDE-03-development-client.md).
+- [41-02-SSD — Engineering Desktop Client specification](41-02-SSD-gui-application-specification-document.md)
+- [50-SDE-03 — Engineering Client development/UI baseline](50-SDE-03-development-client.md)
 
 ## Generated views
 

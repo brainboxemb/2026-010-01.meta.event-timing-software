@@ -1,36 +1,11 @@
 step: 5
 
 planning_changes:
-  - date: '2026-10-07'
+  - date: '2026-10-09'
     change: >-
-      Added D08/A06/V07 for manual registration/precision and D09/A07/V08 for
-      simulated-tag profiles.
-  - date: '2026-10-07'
-    change: >-
-      Target-hardware evidence moved to Step 9; Step-5 V01 is the development-host baseline and releases A03.
-  - date: '2026-10-07'
-    change: >-
-      T01 completed through Java PR #327; V01 baseline characterization is next.
-  - date: '2026-10-06'
-    change: >-
-      A01 requalified on Java main; V04 provider bootstrap verified through PR
-      #302 with built-in reference providers and a synthetic external provider JAR.
-  - date: '2026-10-04'
-    change: >-
-      D05 runtime measurement design is complete; A01 remains active because the
-      antenna/tag-processing path is not yet wired into runtime composition.
-  - date: '2026-10-04'
-    change: >-
-      D01 reopened and decomposed into D04/D05 design gates plus T01 harness;
-      A01/A02 prototypes require requalification and V01 now precedes A03.
-  - date: '2026-10-04'
-    change: >-
-      D01 fixed the single-TimingNode runtime measurement baseline; A01 is now
-      the active implementation activity.
-  - date: '2026-10-04'
-    change: >-
-      Step 5 activated after Step-4 VC-ST1-003 closure; D01 is the first active
-      planning/design activity.
+      Step 5 is complete. GUI-specific revoke/recovery verification belongs to
+      Step 6 V01 and is executed with SI-02.
+
 activities:
   - id: D01
     lane: documentation
@@ -291,16 +266,14 @@ activities:
   - id: V06
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A05]
     note: >-
-      Server-side VC-ST1-006 is green through Java PR #332: ADD remains
-      immutable, accepted REV records append in source order, repeated
-      well-formed raw revoke is not business-deduplicated, malformed IF-03 input
-      is rejected before commit and restart preserves history. Remaining
-      qualification is the manual VC-ST1-003 Development Client run proving the
-      trash action, DELETED interpreted projection and restart/recovery in the
-      real JavaFX client.
+      SI-01 revoke/API/persistence is verified through Java PR #332 and
+      black-box VC-ST1-006: original ADD is immutable, accepted REV appends
+      in source order, malformed input is rejected before commit and restart
+      retains history. GUI revoke/DELETED/reconnect behaviour is verified by
+      Step 6 V01 using SI-02.
 
   - id: V07
     lane: verification

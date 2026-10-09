@@ -25,11 +25,10 @@ The project currently centres on the **Timing Point Application** (SI-01):
 Normal operator interaction is provided through the SI-01-owned **IF-04 Web
 Interface**.
 
-The existing JavaFX **Engineering Client** is the project's desktop development,
-integration and diagnostic application for public interfaces such as IF-03. It is
-engineering tooling rather than a second operator-facing product software item. Its
-desktop technology/workbench and packaging may evolve independently from the Java-8
-SI-01 runtime.
+The **Engineering Desktop Client (SI-02)** is the project's reusable desktop
+application for development, integration, commissioning, diagnostics and system testing.
+It uses supported public SI-01 interfaces such as IF-03 and has its own desktop
+runtime/workbench, packaging and verification baseline.
 
 ## Development approach
 
@@ -84,9 +83,8 @@ the target requires in deployment or runtime design.
 
 ### D — Engineering Desktop Client
 
-Mature the existing independent Engineering Client into a maintainable desktop
-workbench for API inspection, diagnostics, simulation and integration. Normal operator
-use remains the IF-04 Web path.
+Develop SI-02 as a maintainable desktop workbench for API inspection, diagnostics,
+simulation, commissioning and system testing. Normal operator use remains the IF-04 Web path.
 
 ### E — Timing/domain behaviour
 

@@ -379,7 +379,7 @@ application boundary.
 
 ## Step 5 — Simulated antenna input and runtime behaviour
 
-Status: active
+Status: completed
 
 ### Purpose
 
@@ -477,7 +477,7 @@ domain and persistence paths.
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
-| `V06` | Registration revoke/API/Development Client verification |
+| `V06` | Registration revoke/API/persistence verification (client UI evidence in Step 6 V01) |
 | `V07` | Manual registration, timestamp precision and Development Client projection verification |
 | `V08` | Simulated-tag profile and batch-driver verification |
 
@@ -778,6 +778,9 @@ was needed.
 
 ### Result
 
+Step 5 closes on SI-01, black-box and development-host evidence. GUI-specific
+revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
+
 - Simulated antenna observations reach the normal registration path.
 - Successful TimingNode OPEN/CLOSE transitions are represented in the normal committed
   TimingData source stream according to the Step-5 IF-05/IDD update.
@@ -798,8 +801,9 @@ was needed.
   time and show their MAN_REG AUTO/MAN classification.
 - Run a short simulated-tag batch and show one representative two-tag passage reaching
   one automatic registration through SimulatedAntenna and TagProcessor.
-- Revoke one registration and show ADD plus REV in the technical LogBook while the
-  interpreted registration remains visible as DELETED.
+- Revoke one registration through IF-03 and show durable ADD plus REV source
+  history. The DELETED interpretation in SI-02 is verified
+  separately in Step 6 V01.
 - Close the TimingNode and show the CLOSE record in the same source sequence.
 - Inspect the runtime counters, restart SI-01 and continue using the same simulated input
   configuration without sequence reuse.
@@ -834,7 +838,7 @@ was needed.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: planned
+Status: active
 
 ### Purpose
 
@@ -887,63 +891,73 @@ Desktop Client while preserving its public-interface-only boundary to SI-01.
 - stable IF-03 behaviour from Steps 3-5;
 - representative running SI-01 test data;
 - Experiment 008 JavaFX/BentoFX workbench evidence;
-- Step-5 V06 manual Development Client evidence closed before the major client
-  restructuring starts.
+- Step-5 SI-01/server revoke and persistence behaviour available as the system baseline;
+- VC-ST1-003 real-running-client GUI verification assigned to Step-6 V01.
 
-The technology/architecture decision may be completed while V06 is still open. V06
-closes the current Step-5 client behaviour before A01 changes its desktop structure.
+Step-6 V01 uses the Engineering Desktop Client itself for the complete GUI
+revoke/recovery scenario; headless tests do not substitute for that evidence.
 
 ### Activities
 
 | ID | Activity |
 | --- | --- |
-| `D01` | Former SI-02 Draft requirement slice and allocation review |
+| `D01` | Establish first SI-02 Engineering Client requirement slice |
 | `D02` | Select Engineering Client desktop stack, client boundary and packaging |
 | `A01` | Restructure the existing Engineering Client around the selected workbench/services |
 | `V01` | Verify Engineering Client connection, sync/reconnect and representative workbench behaviour |
 
-### D01 — Former SI-02 requirement slice and allocation review
+### D01 — SI-02 Engineering Client requirement baseline
 
-D01 originally promoted a first Draft requirement slice for a planned
-operator-facing SI-02 Desktop GUI. Review then established that this duplicated the
-actual product direction: normal operators use IF-04 Web, while the desktop application
-is an Engineering Client through IF-03.
-
-The former `SI02-REQ-001..008` Draft requirements are therefore withdrawn with that
-software-item allocation. Their useful technology-independent behaviours — public
-interfaces only, explicit connection/synchronisation state, connected identity,
-TimingNode status, stale state, reconnect rebuild, committed-history presentation and
-explicit command outcomes — remain useful Engineering Client design inputs through
-UC-009, IF-03 and SDE-03 rather than active product requirements.
-
-The former identities SI-02 and UC-008 are not reused.
+D01 establishes the first technology-independent SI-02 requirements in 41-02-SSD.
+The slice covers public-interface-only operation, target selection, explicit
+connection/synchronisation state, connected identity, TimingNode status, stale state,
+baseline/history rebuild, committed registration presentation and explicit command
+outcomes. These requirements trace to UC-009 and IF-03.
 
 ### D02 — Engineering Client technology and packaging decision
 
-Select one coherent Engineering Client baseline for:
+D02 is complete. The selected Engineering Client baseline is:
 
-- Java/runtime level;
-- JavaFX/workbench toolkit;
-- HTTP/WebSocket client approach;
-- application/client-service boundary;
-- packaging/distribution.
+- **Java 21** runtime;
+- **JavaFX 21** desktop UI;
+- **BentoFX 0.16.0** workbench;
+- application-owned JavaFX CSS as the required styling layer, with Transit optional
+  rather than architecture-critical;
+- JDK `HttpClient` + JDK WebSocket and Jackson for IF-03 HTTP/JSON + live events;
+- Maven build;
+- self-contained Windows `jpackage` **app-image** as the first distribution target;
+- classpath/non-JPMS initially.
 
-Experiment 008 is evidence for this decision, not production code. Its current result
-prefers BentoFX over SnapFX for the workbench because the explicit workbench structure,
-smaller adapter burden and normal Maven Central dependency fit the Engineering Client
-better.
+Experiment 008 is retained evidence for the workbench decision. BentoFX is preferred to
+SnapFX because the explicit workbench structure, smaller corrective adapter burden and
+normal Maven Central dependency fit the Engineering Client better. Plain JavaFX remains a
+fallback if docking later ceases to add useful engineering value.
 
-The decision must also preserve a clean service boundary for later automation: future
-Lua or other embedded scripting should call the same client/application services as the
-GUI rather than driving JavaFX controls.
+No second .NET, Compose or desktop-web toolchain is introduced: the existing Java client,
+its public-interface services and Experiment 008 already qualify the required desktop
+behaviour, while another stack would duplicate protocol/client work without a demonstrated
+benefit.
+
+The existing JDK HTTP/WebSocket client approach remains because no current IF-03 gap
+requires another transport library.
+
+The first packaging step deliberately stops at a self-contained application image.
+Installer/update machinery and JPMS are later decisions driven by concrete deployment or
+maintainability needs rather than prerequisites for A01.
+
+D02 also fixes the service boundary for future automation: connection/session state,
+baseline synchronisation, live-event reconciliation, command execution and raw-message
+context belong below JavaFX/docking presentation. A connected system is an instance-scoped
+client context so later multi-system work does not require a new architecture. Future Lua
+or another embedded scripting adapter may call those same services; scripting itself is
+not a Step-6 implementation requirement.
 
 ### Result
 
-- The existing Development Client has a clear path to a maintainable Engineering Desktop
-  Client instead of being replaced by a duplicate operator product.
+- SI-02 is defined as the maintainable Engineering Desktop Client software item.
 - Normal operator interaction remains IF-04 Web.
-- The desktop client remains independent from SI-01 implementation classes/files and
-  keeps engineering behaviour behind public interfaces.
+- SI-02 remains independent from SI-01 implementation classes/files and keeps
+  engineering behaviour behind public interfaces.
 - Desktop technology, workbench and packaging choices are explicit and reviewable.
 
 ### Demo
@@ -953,18 +967,25 @@ GUI rather than driving JavaFX controls.
   technical LogBook and selected raw data.
 - Exercise one supported engineering command/simulation and inspect the result.
 - Disconnect/reconnect and rebuild the authoritative view.
+- Using SI-02, revoke through the trash action,
+  confirm immutable ADD plus new REV and interpreted DELETED, restart SI-01,
+  recover unchanged source history and confirm recovered events are not replayed
+  as new live events.
 - Show Device Log / Client Log / Remote Shell independently where available.
 
 ### Done
 
 - the Engineering Client uses only supported public SI-01 boundaries for live operation;
 - connection/reconnect/stale-state behaviour retains useful automated coverage;
+- the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed
+  manual running-GUI evidence on SI-02, including log
+  independence and SYNCING before LIVE;
 - application/client services are not buried inside JavaFX event handlers;
 - representative views are composed through the selected workbench without depending on
   docking APIs themselves;
 - the selected desktop runtime/dependency/package path is reproducible;
-- no separate operator-desktop product or active SI-02 requirement set remains in the
-  software-system allocation.
+- SI-02 requirements and architecture remain aligned with UC-009 and the public IF-03
+  boundary without duplicating the normal IF-04 operator workflow.
 
 ---
 
