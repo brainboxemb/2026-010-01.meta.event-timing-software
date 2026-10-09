@@ -3,6 +3,11 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
+      Step 5 closed on SI-01/server evidence; defer the not-yet-run manual
+      VC-ST1-003 UI scenario to Step 6 V01 against the new Engineering Client.
+      Remove the old-client V06 gate and release A01 for implementation.
+  - date: '2026-10-09'
+    change: >-
       Select Java 21, JavaFX 21, BentoFX 0.16.0, JDK HTTP/WebSocket and
       jpackage app-image as the Engineering Client D02 baseline.
   - date: '2026-10-09'
@@ -41,13 +46,14 @@ activities:
   - id: A01
     lane: application
     kind: implementation
-    state: blocked
+    state: next
     depends_on: [D01, D02]
     note: >-
       Restructure the existing Development Client into the Engineering Desktop
-      Client around the selected client/application-service and workbench
-      boundaries only after Step-5 V06 manual evidence is closed. Live operation
-      remains public-interface-only and must not depend on SI-01 internals.
+      Client around the selected instance-scoped client/application services
+      and BentoFX workbench. Step-5 server behaviour is qualified; old-client
+      manual V06 is not a gate. Preserve the public IF-03 boundary and carry
+      the manual revoke/recovery scenario forward to Step-6 V01.
 
   - id: V01
     lane: verification
@@ -58,4 +64,9 @@ activities:
       Verify connection/status identity, stale/disconnected state, baseline
       rebuild after reconnect, representative workbench views and selected
       engineering controls using deterministic client tests plus a real SI-01
-      public-interface integration path.
+      public-interface integration path. Explicitly run the previously unexecuted
+      VC-ST1-003 manual GUI scenario on the new Engineering Client: trash
+      appends REV without rewriting ADD, interpreted row remains DELETED,
+      restart/reconnect rebuilds sequence/history without live replay,
+      SYNCING precedes LIVE, and Device/Client Logs remain independent.
+      Headless tests do not substitute for this UI evidence.
