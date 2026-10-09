@@ -78,6 +78,7 @@ the system instance being operated.
 :id: SI02-REQ-004  
 :status: D  
 :specifies: UC-008  
+:refines: SI01-REQ-024  
 :depends_on: IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017  
 
 For each TimingNode exposed through IF-03, SI-02 shall present its current
@@ -90,6 +91,7 @@ GUI-owned lifecycle model.
 :id: SI02-REQ-005  
 :status: D  
 :specifies: UC-008  
+:refines: SI01-REQ-025  
 :depends_on: IF03-REQ-006, IF03-REQ-021  
 
 When the live IF-03 connection is lost, SI-02 shall make clear that previously
@@ -101,6 +103,7 @@ present cached information as current live state.
 :id: SI02-REQ-006  
 :status: D  
 :specifies: UC-008  
+:refines: SI01-REQ-025  
 :depends_on: IF03-REQ-006, IF03-REQ-014, IF03-REQ-016  
 
 After initial connection or reconnect, SI-02 shall rebuild the current status and
@@ -114,6 +117,7 @@ same committed record twice.
 :id: SI02-REQ-007  
 :status: D  
 :specifies: UC-008  
+:refines: SI01-REQ-042  
 :depends_on: IF03-REQ-014, IF03-REQ-015  
 
 SI-02 shall be able to present committed registration history and later
@@ -124,7 +128,8 @@ uncommitted command/request result as if it were committed TimingData.
 :::{req} Execute lifecycle control with explicit outcome  
 :id: SI02-REQ-008  
 :status: D  
-:specifies: UC-002, UC-008  
+:specifies: UC-008  
+:refines: SI01-REQ-040, SI01-REQ-026  
 :depends_on: IF03-REQ-008, IF03-REQ-011  
 
 SI-02 shall support the IF-03 OPEN-at-location and CLOSE operations made

@@ -90,7 +90,7 @@ application without requiring operating-system-level forced process termination.
 :::{req} Configured TimingNode availability  
 :id: SI01-REQ-003  
 :status: R  
-:specifies: UC-014  
+:specifies: UC-014, UC-015  
 
 SI-01 shall support configuration of one or more `TimingNode` instances, each
 identified by a stable `TimingNodeId`.
@@ -173,7 +173,7 @@ delivery.
 :::{req} Current TimingNode operational state  
 :id: SI01-REQ-024  
 :status: R  
-:specifies: UC-001, UC-008, UC-009  
+:specifies: UC-001, UC-002, UC-008, UC-009, UC-020  
 
 For each configured TimingNode, SI-01 shall provide a queryable current
 operational state independently of presentation transport. That state shall
@@ -200,6 +200,19 @@ live.
 
 #### Application boundary and testability
 
+:::{req} Lifecycle command outcome  
+:id: SI01-REQ-026  
+:status: R  
+:specifies: UC-002, UC-008, UC-009  
+:depends_on: SI01-REQ-024, SI01-REQ-040  
+
+A lifecycle/location command accepted by SI-01 shall return an explicit semantic
+outcome: applied, rejected/invalid, unavailable, or outcome unknown when the
+request may have crossed a presentation boundary but current state cannot yet
+confirm its effect. Command outcome shall remain distinct from the subsequently
+observed TimingNode state.
+:::
+
 :::{req} Equivalent command/query semantics across transports  
 :id: SI01-REQ-030  
 :status: R  
@@ -212,6 +225,7 @@ semantics or failure semantics.
 :::{req} Externally testable executable  
 :id: SI01-REQ-031  
 :status: R  
+:specifies: UC-015, UC-016  
 
 SI-01 shall support system verification while running as a separate process
 through its public application interfaces, without requiring test-only mutation
@@ -459,6 +473,138 @@ attempt shall not be marked applied. A later demand shall not be rejected solely
 an earlier self-test or inventory attempt failed.
 :::
 
+#### Ready-team, display, backoffice and verification behaviour
+
+:::{req} Traceable ready-team registry  
+:id: SI01-REQ-060  
+:status: D  
+:specifies: UC-005  
+
+SI-01 shall maintain the current prepare-team registry separately from participant
+TimingData. Accepted add/remove actions from keypad or operator input shall pass
+through the normal controlled TimingNode state-change path and shall remain
+traceable as ready-team history.
+:::
+
+:::{req} Drive passive CAN display from current application state  
+:id: SI01-REQ-061  
+:status: D  
+:specifies: UC-006  
+:depends_on: SI01-REQ-060  
+
+For a configured passive CAN display, SI-01 shall derive the complete/current
+display state from authoritative application state and actively refresh the
+display after relevant state changes or device rediscovery. The passive display
+shall not be required to reconstruct domain history.
+:::
+
+:::{req} Provide synchronisable data to smart displays  
+:id: SI01-REQ-062  
+:status: D  
+:specifies: UC-007  
+
+SI-01 shall make the current timing, ready-team and reference data required by a
+configured smart display available through a network-facing application
+boundary. A connecting or reconnecting smart display shall be able to obtain a
+complete current snapshot before relying on later incremental changes; rendering
+state remains owned by the smart display.
+:::
+
+:::{req} Apply TimingNode-scoped reference data from backoffice  
+:id: SI01-REQ-063  
+:status: D  
+:specifies: UC-010  
+
+SI-01 shall accept decoded semantic reference-data updates from a configured
+backoffice boundary, resolve the addressed TimingNode, validate the update and
+apply it only to that TimingNode's owning reference state. Accepted/rejected
+outcome and enough freshness/health state to diagnose synchronisation shall be
+observable.
+:::
+
+:::{req} Transport-independent outbound backoffice synchronisation  
+:id: SI01-REQ-064  
+:status: D  
+:specifies: UC-011  
+:depends_on: SI01-REQ-042, SI01-REQ-045  
+
+SI-01 shall expose committed TimingNode-scoped outbound data to configured
+backoffice connectors through transport-independent semantic messages while
+preserving source identity and source ordering. Concrete connector routing shall
+not redefine TimingNode identity or registration semantics.
+:::
+
+:::{req} Preserve pending outbound work across backoffice outage  
+:id: SI01-REQ-065  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-064  
+
+Loss of a configured backoffice transport shall not discard locally committed
+outbound work. After transport recovery, SI-01 shall resume pending
+synchronisation without inventing or reusing committed source sequence identity.
+:::
+
+:::{req} Simulate complete multi-node behaviour through normal application paths  
+:id: SI01-REQ-066  
+:status: D  
+:specifies: UC-015  
+:depends_on: SI01-REQ-003, SI01-REQ-031  
+
+A simulation composition shall be able to host multiple TimingNodes, inject
+synthetic device behaviour through normal adapter boundaries and exercise the
+same TimingNode, persistence and backoffice paths as a production composition
+without introducing a second domain/application implementation.
+:::
+
+:::{req} Substitute controllable stubs through public contracts  
+:id: SI01-REQ-067  
+:status: D  
+:specifies: UC-016  
+:depends_on: SI01-REQ-031  
+
+External hardware and transport adapters used by SI-01 shall be replaceable in a
+test composition by controllable stubs that implement the same public contracts,
+so injected reads, discovery, disconnects, faults and recovery traverse normal
+application/domain paths.
+:::
+
+:::{req} Select alternative backoffice transport for loop testing  
+:id: SI01-REQ-068  
+:status: D  
+:specifies: UC-017  
+:depends_on: SI01-REQ-064  
+
+Backoffice transport shall be selectable through external
+configuration/composition. A lightweight real-process network transport shall be
+usable for loop/integration testing of TimingNode-scoped semantic messaging
+without requiring the production RabbitMQ connector.
+:::
+
+:::{req} Verify production-shaped RabbitMQ connector behaviour  
+:id: SI01-REQ-069  
+:status: D  
+:specifies: UC-018  
+:depends_on: SI01-REQ-064, SI01-REQ-065  
+
+The RabbitMQ backoffice connector shall support automated integration testing
+against a disposable broker for source-specific inbound/outbound routing,
+connection recovery, consumer restoration and resumed pending outbound delivery,
+without embedding production credentials or private topology in the public test
+fixture.
+:::
+
+:::{req} Preserve public provider semantic classification  
+:id: SI01-REQ-070  
+:status: D  
+:specifies: UC-019  
+
+When an input provider exposes a semantic classification as part of its public
+contract, SI-01 shall preserve that classification through application policy
+and normal TimingNode processing where required, while provider-private codes
+and mapping tables remain behind the provider boundary.
+:::
+
 ### Lifecycle interpretation
 
 The first registration baseline uses the following TimingNode lifecycle semantics:
@@ -482,11 +628,11 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | Requirement | Upstream authority | Interface/design allocation |
 | --- | --- | --- |
 | SI01-REQ-001/002 | SSSD deployment/operability allocation | IF-11 + SI-01 composition/runtime |
-| SI01-REQ-003 | UC-014; SSSD software-item topology | IF-11 + SI-01 runtime composition |
+| SI01-REQ-003 | UC-014/015; SSSD software-item topology | IF-11 + SI-01 runtime composition |
 | SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
 | SI01-REQ-020/021/022 | UC-008/020; SSSD application-status allocation | Status service/model + IF-01/02/03 |
-| SI01-REQ-023/024/025 | UC-001/008/009; shared presentation-state semantics | TimingNode current-state model + IF-03/IF-04 adapters |
-| SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary |
+| SI01-REQ-023/024/025/026 | UC-001/002/008/009/020; shared presentation-state and lifecycle-result semantics | TimingNode current-state model + presentation adapters |
+| SI01-REQ-030/031 | UC-008/009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
 | SI01-REQ-040 | UC-002/008/009 | TimingNode + IF-03/IF-04 control/status |
@@ -503,6 +649,16 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-053 | UC-003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
 | SI01-REQ-055 | UC-004 | retry/recovery of antenna operation without process restart |
+| SI01-REQ-060 | UC-005 | ready-team state/history + keypad/operator input |
+| SI01-REQ-061 | UC-006 | passive CAN display adapter |
+| SI01-REQ-062 | UC-007 | smart-display network boundary |
+| SI01-REQ-063 | UC-010 | backoffice reference-data ingress |
+| SI01-REQ-064/065 | UC-011/012 | transport-independent backoffice sync + outage recovery |
+| SI01-REQ-066 | UC-015 | simulation composition through production paths |
+| SI01-REQ-067 | UC-016 | public-contract test stubs |
+| SI01-REQ-068 | UC-017 | alternative network backoffice transport |
+| SI01-REQ-069 | UC-018 | RabbitMQ integration verification |
+| SI01-REQ-070 | UC-019 | provider semantic-classification boundary |
 
 ## Software-item architecture
 
