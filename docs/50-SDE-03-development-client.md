@@ -2,7 +2,7 @@
 
 Status: working engineering baseline
 
-Development tool: **Engineering Desktop Client**  
+Software item: **SI-02 — Engineering Desktop Client**  
 Implementation location: `test-client/` in `2026-010-02.java.timing-point-application`
 
 
@@ -19,10 +19,6 @@ It is deliberately **not**:
 - an owner of timing/domain state;
 - a shortcut that may mutate SI-01 internals directly.
 
-The former separate **Desktop GUI Application (SI-02)** product allocation has
-been withdrawn. The Development Client is therefore the project's desktop
-engineering application rather than a prototype for a second operator product.
-
 The current implementation is a standalone Java-17/JavaFX Maven project. It remains
 in the same implementation repository as SI-01 because its interface-inspection role
 currently evolves together with SI-01. Repository co-location does not make it part of
@@ -37,8 +33,9 @@ the SI-01 software item.
 
 ## Relationship to other documents
 
-This SDE document owns the Engineering Client architecture, desktop UI working baseline
-and documentation/screenshot workflow. Normal operator behaviour and public contracts
+This SDE document defines the Engineering Client development environment, desktop UI
+working baseline, client-service implementation direction and documentation/screenshot workflow.
+The software-item requirements and architecture authority is the SI-02 SSD (41-02). Normal operator behaviour and public contracts
 remain owned elsewhere:
 
 - IF-03 API semantics are owned by `32-03-ISD-application-control-status.md`;
@@ -48,10 +45,10 @@ remain owned elsewhere:
 - transport implementation belongs in the applicable SI-01 SDD;
 - the Development Client implementation README owns concrete build/run instructions.
 
-This document defines the Development Client UI/design baseline only. IF-03 routes,
+This document defines the SI-02 engineering/UI implementation baseline. IF-03 routes,
 payloads, capability semantics and failure codes remain authoritative in
-`32-03-ISD-application-control-status.md`; this UI must conform to that contract
-rather than redefine it.
+`32-03-ISD-application-control-status.md`; SI-02 conforms to that contract rather than
+redefining it.
 
 ## Product and operator boundary
 
@@ -122,11 +119,9 @@ Step 6 D02 selects the following target baseline for the Engineering Desktop Cli
 | Module model | classpath/non-JPMS initially |
 
 This is a target baseline, not a statement that the current implementation has already
-migrated. The existing `test-client` still uses Java 17 until Step 6 A01 performs the
-desktop restructuring. The former manual Step-5 V06 GUI check was not executed
-against that old client; its full revoke/recovery checklist is instead a Step-6
-V01 acceptance test against the new Java 21 Engineering Desktop Client.
-The SI-01/server portion of Step-5 V06 is already qualified.
+migrated. The existing `test-client` uses Java 17 until Step 6 A01 performs the
+Java 21 / JavaFX 21 desktop restructuring. Step 6 V01 then verifies the real SI-02
+revoke/recovery GUI behaviour against SI-01.
 
 ### Decision rationale
 
@@ -700,10 +695,9 @@ The Development Client remains independently testable:
 
 ## Development Client boundary
 
-The Development Client is the primary desktop development/integration application for
-the public SI-01 boundaries described above. It remains engineering tooling rather than
-a separate product software item and it does not gain private access to SI-01
-runtime/domain state.
+SI-02 is the primary desktop engineering, integration, commissioning and system-test
+application for the public SI-01 boundaries described above. Its software-item status does
+not grant private access to SI-01 runtime/domain state.
 
 Its engineering responsibilities are:
 
