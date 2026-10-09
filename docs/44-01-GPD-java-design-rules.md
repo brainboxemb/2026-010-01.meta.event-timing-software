@@ -386,10 +386,15 @@ truth without a second property scheduler.
 Good startup flow:
 
 ```text
+TimingNode.activate()
+        |
+        +--> recovery complete
+        +--> publish immutable currentStatus
+
 SystemConductor first control run
         |
         v
-TimingNode.query(status)
+TimingNode.currentStatus()
         |
         v
 SourceProperty.update(status.state())
@@ -417,10 +422,17 @@ The event callback only updates in-memory state and wakes the consumer; it does 
 another lane. Repeated wakes may be coalesced because the later control run reads the current
 SourceProperties.
 
+Current immutable snapshots and ordered mutable reads are different tools. A safely
+published `currentStatus()` may be read directly, while mutable LogBook traversal stays on
+the TimingNode lane. A result-bearing call made reentrantly from that same lane must fail
+immediately rather than queueing behind itself and appearing later as a timeout.
+
 **Avoid**
 
 - queueing every `Status` object and later executing each one as if it were a command;
-- hiding an initial authoritative query inside a property initializer or Future;
+- hiding an initial authoritative read inside a property initializer or Future;
+- forcing an immutable current-state snapshot through a serial lane solely because other reads are queries;
+- allowing same-lane result-bearing reentrancy to wait until timeout;
 - giving a property its own executor/coalescing loop when the owning component already has one.
 
 Not every event should be coalesced. TimingData records, registrations and other history

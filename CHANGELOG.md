@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define TimingNode current Status as a safely published immutable snapshot after activation recovery and completed state transitions; keep mutable LogBook reads serialized, make SystemConductor startup use currentStatus without a cross-lane timeout, and require same-lane result-bearing reentrancy to fail immediately.
+
 - Replace the TrackedProperty scheduling model in the Java design with passive SourceProperty/DerivedProperty state: SystemConductor now explicitly acquires initial TimingNode state in its first control run, later status events update source state directly, and the existing CooperativeTaskController remains the sole coalescing scheduler.
 
 - Recenter UC-001 on SI-01 application requirements for per-TimingNode current state, reconnect recovery and live state changes; IF-03/IF-04 now refine those shared semantics instead of linking directly to the use case.
