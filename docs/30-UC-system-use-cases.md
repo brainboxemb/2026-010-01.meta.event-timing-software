@@ -83,7 +83,7 @@ reading order or implementation sequence.
 
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-001 | Connect to a registration system | Operator | Connect to a known registration system and view its current operational state. |
+| UC-001 | Connect to a registration system | Operator | Connect through the browser Web interface to a known registration system and view its current operational state. |
 | UC-002 | Configure, open and close a registration point | Operator | Set the operational location, open registration, and close it again without changing location while open. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
@@ -163,37 +163,43 @@ problem through normal status interfaces.
 :::{uc} Connect to a registration system  
 :id: UC-001  
 
-**Goal:** allow an operator application to connect to a known registration
-system and show its current operational state.
+**Goal:** allow an operator using a browser-based Web client to connect through
+IF-04 to a known registration system and show its current operational state.
 
 **Primary actor:** operator.
 
+UC-001 is the normal browser-operator path through **IF-04 — Web Interface**.
+Operation through the separate Desktop GUI Application (SI-02) belongs to
+UC-008; API/engineering-client operation through IF-03 belongs to UC-009.
+
 **Preconditions:**
 
-- the registration system is running and reachable;
-- the operator application knows the address of the registration system.
+- the registration system is running and its IF-04 Web binding is reachable;
+- the operator/browser knows the address of that Web binding.
 
 **Main flow:**
 
-1. The operator application connects to the registration system.
-2. The application requests the current operational state.
-3. The application shows the system identity, current `LocationId` if configured, and whether the registration point is `OPEN` or `CLOSED`.
+1. The browser-based Web client connects to the configured IF-04 Web binding.
+2. The Web client retrieves the current operational state for that registration point.
+3. The Web client shows the connected registration-point identity, current
+   `LocationId` if configured, and whether the registration point is `OPEN` or
+   `CLOSED`.
 4. The operator can continue with the operations permitted for the reported state.
 
 The operator does not need to select or understand an internal `TimingNode`
-before using the registration system. The public state may expose the configured
-TimingNode identity so the connected source can be identified, but the domain
-structure remains an implementation/interface concern rather than an operator
-navigation concept.
+before using the registration system. IF-04 is already bound to one configured
+TimingNode; its public state may expose the TimingNode identity so the connected
+source can be identified, while the domain structure remains an
+implementation/interface concern rather than an operator navigation concept.
 
 **Alternative/failure flows:**
 
-- the registration system cannot be reached;
-- the connection is lost;
-- the current state cannot be retrieved.
+- the IF-04 Web binding cannot be reached;
+- the live Web connection is lost;
+- the current state cannot be retrieved or re-established after reconnect.
 
 **Observable result:** the operator can identify the connected registration
-system and see its current location and open/closed state.
+point and see its current location and open/closed state.
 
 :::
 

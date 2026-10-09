@@ -38,8 +38,8 @@ interface: **IF-04 — Web Interface**.
 
 IF-03 is allocated by
 `31-SSSD-software-system-specification-document.md` and implements the operator and
-engineering intent described by the applicable system use cases, especially UC-001,
-UC-002, UC-008 and UC-009.
+engineering intent described by the applicable system use cases, especially UC-002,
+UC-008 and UC-009.
 
 The affected software-item specifications consume this interface contract. They shall
 not independently redefine IF-03 semantics.
@@ -433,7 +433,7 @@ access is explicitly configured.
 :::{ifreq} Version query  
 :id: IF03-REQ-003  
 :status: R  
-:specifies: UC-001, UC-009  
+:specifies: UC-009  
 
 IF-03 shall provide IF03-OP-001.
 :::
@@ -441,7 +441,7 @@ IF-03 shall provide IF03-OP-001.
 :::{ifreq} Status query  
 :id: IF03-REQ-004  
 :status: R  
-:specifies: UC-001, UC-008, UC-009  
+:specifies: UC-008, UC-009  
 
 IF-03 shall provide IF03-OP-002.
 :::
@@ -457,7 +457,7 @@ IF-03 shall provide IF03-OP-003.
 :::{ifreq} Reconnect to current state  
 :id: IF03-REQ-006  
 :status: R  
-:specifies: UC-001, UC-009  
+:specifies: UC-009  
 
 A connecting or reconnecting client shall be able to establish complete current status
 before relying on later live changes.
@@ -502,7 +502,7 @@ operation or value semantics.
 :::{ifreq} TimingNode location and lifecycle control  
 :id: IF03-REQ-011  
 :status: R  
-:specifies: UC-001, UC-002, UC-009  
+:specifies: UC-002, UC-009  
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
 LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005

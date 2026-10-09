@@ -134,6 +134,16 @@ may expose only a general failed-request outcome.
 
 A successful state change is visible through subsequent IF-04 state observation.
 
+## IF04-OP-004 — Observe TimingNode state changes
+
+Delivers live state changes for the TimingNode associated with the Web binding.
+
+A Web client shall first establish a complete current-state baseline through
+IF04-OP-001. Live delivery is not required to replay changes that occurred while
+the client was disconnected. After loss and re-establishment of the live
+connection, the client shall obtain a fresh IF04-OP-001 baseline before treating
+later live changes as current.
+
 ## Command ordering
 
 Commands received through IF-04 may race with commands received through other
@@ -188,7 +198,7 @@ encoding belong to the IF-04 design/configuration layer rather than this ISD.
 :::{ifreq} Per-TimingNode Web binding  
 :id: IF04-REQ-001  
 :status: D  
-:specifies: UC-002  
+:specifies: UC-001, UC-002  
 
 IF-04 shall support one configured Web binding per TimingNode. The binding shall
 identify the TimingNode to which IF-04 operations apply without making the Web
@@ -250,9 +260,29 @@ and representation types while preserving the semantic operations, values,
 results and ordering defined by this ISD.
 :::
 
+:::{ifreq} Current-state baseline after connect or reconnect  
+:id: IF04-REQ-008  
+:status: D  
+:specifies: UC-001  
+
+On initial connection and after reconnect, IF-04 shall allow the Web client to
+establish the complete current state of the bound TimingNode through IF04-OP-001
+before treating later live changes as current.
+:::
+
+:::{ifreq} Live-state delivery and loss handling  
+:id: IF04-REQ-009  
+:status: D  
+:specifies: UC-001  
+
+IF-04 shall provide IF04-OP-004 for live state-change delivery. When that live
+connection is lost, a conforming Web client shall treat its previously displayed
+state as non-current until a fresh IF04-OP-001 baseline has been established.
+:::
+
 
 ## Open points
 
 - OPEN with a different LocationId while already OPEN;
-- concrete default Web transport and payload design;
+- concrete default Web transport and payload design, including the live-update representation;
 - compatibility-mapping mechanism for deployment-specific representation details.
