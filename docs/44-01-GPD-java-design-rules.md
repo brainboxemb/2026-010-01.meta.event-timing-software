@@ -223,7 +223,7 @@ timingNode.statusChangedEvent()
 ```
 
 The handler may validate source identity and wake the existing control task, then returns.
-The later control run reads `status` with CURRENT consistency, updates its SourceProperty,
+The later control run reads TimingNode status with CURRENT consistency, updates its SourceProperty,
 recalculates derived state and applies the resulting intent. It does not perform that
 reconciliation in the synchronous event callback.
 

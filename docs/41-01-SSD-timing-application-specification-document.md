@@ -909,6 +909,12 @@ associated `AntennaManager` directly: inventory is enabled while at least one
 TimingNode is OPEN and disabled when none is OPEN. The Conductor does not perform
 antenna power, self-test, initialization or multiplexing and does not route
 TagObservation events.
+
+Its control style is **event-triggered reconciliation**. A relevant state-change
+notification wakes the Conductor; the reconciliation reads authoritative current
+state, derives the required system intent and asks the owning device component to
+converge on that intent. The notification is a trigger, not a control-history item
+that must be replayed.
 :::
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
