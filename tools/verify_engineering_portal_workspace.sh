@@ -541,6 +541,36 @@ grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-0
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer-UC-001.html
 grep -q '?plain=1#L' bld/engineering-portal/browser-explorer-UC-001.html
 
+"$chrome" \
+  --headless \
+  --no-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --virtual-time-budget=2500 \
+  --dump-dom \
+  "http://127.0.0.1:8765/explorer/?object=UC-002" \
+  > bld/engineering-portal/browser-explorer-UC-002.html
+
+portal_has bld/engineering-portal/browser-explorer-UC-002.html 'Requirements (3)'
+for target in SI01-REQ-024 SI01-REQ-026 SI01-REQ-040; do
+  portal_has bld/engineering-portal/browser-explorer-UC-002.html "data-object-id=\"$target\""
+done
+portal_lacks bld/engineering-portal/browser-explorer-UC-002.html 'data-object-id="IF04-REQ-003"'
+portal_lacks bld/engineering-portal/browser-explorer-UC-002.html 'data-object-id="IF03-REQ-011"'
+
+"$chrome" \
+  --headless \
+  --no-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --virtual-time-budget=2500 \
+  --dump-dom \
+  "http://127.0.0.1:8765/explorer/?object=UC-005" \
+  > bld/engineering-portal/browser-explorer-UC-005.html
+
+portal_has bld/engineering-portal/browser-explorer-UC-005.html 'Requirements (1)'
+portal_has bld/engineering-portal/browser-explorer-UC-005.html 'data-object-id="SI01-REQ-060"'
+
 grep -q 'data-engineering-id="AntennaManager"' bld/engineering-portal/site/explorer/index.html
 grep -q 'aria-label="Open AntennaManager"' bld/engineering-portal/site/explorer/index.html
 

@@ -163,6 +163,79 @@ realizes = next(
 if "SI01-REQ-024" not in realizes["related_ids"]:
     raise SystemExit("TimingNode architecture does not realize SI01-REQ-024")
 
+# Keep every use case at the intended engineering level. The lists below are
+# deliberately exact so later interface/detail shortcuts cannot silently grow back.
+expected_uc_direct = {
+    "UC-001": {"SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"},
+    "UC-002": {"SI01-REQ-024", "SI01-REQ-026", "SI01-REQ-040"},
+    "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
+    "UC-004": {"SI01-REQ-052", "SI01-REQ-055"},
+    "UC-005": {"SI01-REQ-060"},
+    "UC-006": {"SI01-REQ-061"},
+    "UC-007": {"SI01-REQ-062"},
+    "UC-008": {
+        "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
+        "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040",
+        "SI02-REQ-001", "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004",
+        "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007", "SI02-REQ-008",
+    },
+    "UC-009": {
+        "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026",
+        "SI01-REQ-040", "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043",
+        "SI01-REQ-044", "IF03-REQ-003", "IF03-REQ-012", "IF03-REQ-013",
+    },
+    "UC-010": {"SI01-REQ-063"},
+    "UC-011": {"SI01-REQ-042", "SI01-REQ-045", "SI01-REQ-064", "SI01-REQ-065"},
+    "UC-012": {"SI01-REQ-046", "SI01-REQ-051", "SI01-REQ-065"},
+    "UC-013": {"SI01-REQ-047", "SI01-REQ-048"},
+    "UC-014": {"SI01-REQ-003"},
+    "UC-015": {"SI01-REQ-003", "SI01-REQ-031", "SI01-REQ-066"},
+    "UC-016": {"SI01-REQ-031", "SI01-REQ-067"},
+    "UC-017": {"SI01-REQ-068"},
+    "UC-018": {"SI01-REQ-069"},
+    "UC-019": {"SI01-REQ-070"},
+    "UC-020": {"SI01-REQ-021", "SI01-REQ-024", "SI01-REQ-049"},
+}
+actual_uc_direct = {
+    uc_id: {
+        relation.get("from")
+        for relation in graph["relations"]
+        if relation.get("type") == "specifies" and relation.get("to") == uc_id
+    }
+    for uc_id in expected_uc_direct
+}
+for uc_id, expected_ids in expected_uc_direct.items():
+    if actual_uc_direct[uc_id] != expected_ids:
+        raise SystemExit(
+            f"{uc_id} direct requirement set differs: "
+            f"expected {sorted(expected_ids)}, got {sorted(actual_uc_direct[uc_id])}"
+        )
+
+# IF-03 direct use-case links are now reserved for Engineering Client capabilities
+# that are themselves explicit actor-visible operations in UC-009.
+actual_if03_direct = {
+    (relation.get("from"), relation.get("to"))
+    for relation in graph["relations"]
+    if relation.get("type") == "specifies"
+    and str(relation.get("from", "")).startswith("IF03-REQ-")
+}
+expected_if03_direct = {
+    ("IF03-REQ-003", "UC-009"),
+    ("IF03-REQ-012", "UC-009"),
+    ("IF03-REQ-013", "UC-009"),
+}
+if actual_if03_direct != expected_if03_direct:
+    raise SystemExit(
+        f"unexpected direct IF-03/use-case links: {sorted(actual_if03_direct)}"
+    )
+
+if any(
+    relation.get("type") == "specifies"
+    and str(relation.get("from", "")).startswith("IF04-REQ-")
+    for relation in graph["relations"]
+):
+    raise SystemExit("IF-04 requirement still directly specifies a use case")
+
 if "SI02-REQ-001" not in objects:
     raise SystemExit("engineering graph missing first SI-02 requirement")
 si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
