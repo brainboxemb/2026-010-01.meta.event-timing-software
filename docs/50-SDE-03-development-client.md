@@ -14,10 +14,14 @@ Application** (SI-01).
 
 It is deliberately **not**:
 
-- the planned **Desktop GUI Application** (SI-02);
+- the normal field/operator interface; that role belongs to IF-04 Web;
 - part of the Java-8 SI-01 runtime;
 - an owner of timing/domain state;
 - a shortcut that may mutate SI-01 internals directly.
+
+The former separate **Desktop GUI Application (SI-02)** product allocation has
+been withdrawn. The Development Client is therefore the project's desktop
+engineering application rather than a prototype for a second operator product.
 
 The current implementation is a standalone Java-17/JavaFX Maven project. It remains
 in the same implementation repository as SI-01 because its interface-inspection role
@@ -29,16 +33,16 @@ the SI-01 software item.
 - **SDE** — Software Development Environment
 - **IF-03** — API interface
 - **SI-01** — Timing Point Application
-- **SI-02** — Desktop GUI Application
 
 
 ## Relationship to other documents
 
-This SDE document owns the development-tool architecture, UI working baseline and
-documentation/screenshot workflow. Product behaviour and public contracts remain owned
-elsewhere:
+This SDE document owns the Engineering Client architecture, desktop UI working baseline
+and documentation/screenshot workflow. Normal operator behaviour and public contracts
+remain owned elsewhere:
 
 - IF-03 API semantics are owned by `32-03-ISD-application-control-status.md`;
+- normal browser/operator behaviour is owned by UC-001/UC-002 and IF-04;
 - IF-06 backend/upstream semantics will be owned by the applicable system ISD;
 - SI-01 domain architecture remains owned by `41-01-SSD-timing-application-specification-document.md`;
 - transport implementation belongs in the applicable SI-01 SDD;
@@ -48,6 +52,25 @@ This document defines the Development Client UI/design baseline only. IF-03 rout
 payloads, capability semantics and failure codes remain authoritative in
 `32-03-ISD-application-control-status.md`; this UI must conform to that contract
 rather than redefine it.
+
+## Product and operator boundary
+
+The Engineering Client is intentionally a rich desktop engineering tool. It may expose
+raw protocol data, negative-path operations, simulation controls, Remote Shell, device
+logs, client logs and other diagnostics that are useful during development and
+commissioning.
+
+Normal field operators use the browser-facing IF-04 Web Interface. The project does not
+maintain a second restricted/safe desktop operator application merely to duplicate that
+path.
+
+This distinction is behavioural rather than an excuse to duplicate application
+semantics:
+
+- SI-01 remains authoritative for timing/domain state;
+- the Engineering Client uses supported public boundaries;
+- IF-04 and the Engineering Client may present different workflows for different users
+  while relying on the same underlying SI-01 semantics.
 
 ## Repository and runtime boundary
 
