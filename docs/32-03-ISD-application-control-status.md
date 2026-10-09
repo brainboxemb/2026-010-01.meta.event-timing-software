@@ -442,6 +442,7 @@ IF-03 shall provide IF03-OP-001.
 :id: IF03-REQ-004  
 :status: R  
 :specifies: UC-008, UC-009  
+:refines: SI01-REQ-024  
 
 IF-03 shall provide IF03-OP-002.
 :::
@@ -450,6 +451,7 @@ IF-03 shall provide IF03-OP-002.
 :id: IF03-REQ-005  
 :status: R  
 :specifies: UC-008, UC-009  
+:refines: SI01-REQ-023  
 
 IF-03 shall provide IF03-OP-003.
 :::
@@ -458,6 +460,7 @@ IF-03 shall provide IF03-OP-003.
 :id: IF03-REQ-006  
 :status: R  
 :specifies: UC-009  
+:refines: SI01-REQ-025  
 
 A connecting or reconnecting client shall be able to establish complete current status
 before relying on later live changes.

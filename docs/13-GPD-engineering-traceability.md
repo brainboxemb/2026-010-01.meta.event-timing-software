@@ -68,8 +68,9 @@ A representative trace has the following authored directions:
 
 ```text
 DD-TimingNodeExecution --elaborates--> TimingNode
-TimingNode --realizes--> SI01-REQ-020
-SI01-REQ-020 --specifies--> UC-001
+TimingNode --realizes--> SI01-REQ-024
+SI01-REQ-024 --specifies--> UC-001
+IF04-REQ-002 --refines--> SI01-REQ-024
 ```
 
 The chain can be followed from either end using generated backlinks.
@@ -116,9 +117,15 @@ never hand-edited.
 
 A direct link must make a specific, reviewable claim. Do not add an
 A→C shortcut simply because A→B→C already expresses the trace.
-Use ordinary Markdown links for incidental references. A high link
-count invites a review of the *meaning* and granularity, not a
-numerical cap.
+Where an application obligation and its interface-specific realization are
+separately specified, the application requirement normally `specifies` the
+use case and the interface requirement `refines` that application requirement.
+This keeps use-case traceability centred on application behaviour while making
+HTTP, WebSocket and API details reachable through the next graph step. Use a
+direct interface requirement → use-case link only when the interface obligation
+itself is actor-visible rather than a refinement of application semantics.
+Use ordinary Markdown links for incidental references. A high link count
+invites a review of the *meaning* and granularity, not a numerical cap.
 
 An architecture Need should represent a meaningful responsibility,
 not a single broad hub attached to otherwise unrelated designs.

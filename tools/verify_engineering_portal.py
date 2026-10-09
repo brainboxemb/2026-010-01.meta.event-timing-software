@@ -101,7 +101,8 @@ design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_
 if "This detailed design elaborates:" not in design_page:
     raise SystemExit("design details missing outgoing elaborates heading")
 
-# UC-001 is specifically the normal browser/IF-04 path.
+# UC-001 is the normal browser path, but its direct engineering obligations
+# are application-level SI-01 requirements. IF-03 and IF-04 refine them.
 uc = portal_view["objects"]["UC-001"]
 specification_sections = [
     section for section in uc["relation_groups"]
@@ -110,54 +111,57 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (5)":
+if requirements["title"] != "Requirements (3)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = [
-    "IF04-REQ-001",
-    "IF04-REQ-002",
-    "IF04-REQ-006",
-    "IF04-REQ-008",
-    "IF04-REQ-009",
-]
+expected = ["SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit(
-        f"UC-001 must link only to its IF-04 browser requirements: {requirements['related_ids']}"
+        f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
     )
 if requirements["document_groups"]:
-    raise SystemExit("single-source UC-001 requirements should remain a flat list")
-
-for forbidden in (
-    "IF03-REQ-003", "IF03-REQ-004", "IF03-REQ-006", "IF03-REQ-011",
-    "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-040",
-    "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004", "SI02-REQ-005",
-):
-    if forbidden in requirements["related_ids"]:
-        raise SystemExit("UC-001 still contains non-Web direct trace: " + forbidden)
+    raise SystemExit("single-source UC-001 application requirements should remain flat")
 
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "This use case is specified by:" in uc_page:
-    raise SystemExit("old reverse-grammar label found in UC-001 object page")
-if "Requirements (5)" not in uc_page:
-    raise SystemExit("UC-001 object page missing role-based heading")
-if 'class="eng-relation__source-heading"' in uc_page:
-    raise SystemExit("single-source UC-001 list should not need document subheadings")
-if 'class="eng-relation__document"' in uc_page or "<details" in uc_page:
-    raise SystemExit("UC-001 object page renders a collapsible relation instead of flat rows")
+if "Requirements (3)" not in uc_page:
+    raise SystemExit("UC-001 object page missing application-requirement heading")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
-        raise SystemExit("UC-001 object page missing visible link to " + target)
-if uc_page.count('class="eng-relation"') < 5:
-    raise SystemExit("UC-001 object page has fewer than five flat relation rows")
+        raise SystemExit("UC-001 object page missing visible application link to " + target)
 
-# Both small and large link sets use the same flat row presentation.
+expected_refinements = {
+    ("IF04-REQ-002", "SI01-REQ-024"),
+    ("IF04-REQ-008", "SI01-REQ-025"),
+    ("IF04-REQ-009", "SI01-REQ-023"),
+    ("IF03-REQ-004", "SI01-REQ-024"),
+    ("IF03-REQ-005", "SI01-REQ-023"),
+    ("IF03-REQ-006", "SI01-REQ-025"),
+}
+actual_refinements = {
+    (relation.get("from"), relation.get("to"))
+    for relation in graph["relations"]
+    if relation.get("type") == "refines"
+}
+missing = expected_refinements - actual_refinements
+if missing:
+    raise SystemExit(f"missing application/interface refinement links: {sorted(missing)}")
+
+for interface_id in ("IF04-REQ-001", "IF04-REQ-002", "IF04-REQ-006", "IF04-REQ-008", "IF04-REQ-009"):
+    if any(
+        relation.get("from") == interface_id
+        and relation.get("to") == "UC-001"
+        and relation.get("type") == "specifies"
+        for relation in graph["relations"]
+    ):
+        raise SystemExit("IF-04 still shortcuts application traceability: " + interface_id)
+
 timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
 realizes = next(
     group for group in timing_node_groups if group["type"] == "realizes"
 )
-if len(realizes["related_ids"]) != 3 or realizes["document_groups"]:
-    raise SystemExit("short architecture links differ from the flat relation contract")
+if "SI01-REQ-024" not in realizes["related_ids"]:
+    raise SystemExit("TimingNode architecture does not realize SI01-REQ-024")
 
 if "SI02-REQ-001" not in objects:
     raise SystemExit("engineering graph missing first SI-02 requirement")
