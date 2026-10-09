@@ -802,7 +802,7 @@ revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
 - Run a short simulated-tag batch and show one representative two-tag passage reaching
   one automatic registration through SimulatedAntenna and TagProcessor.
 - Revoke one registration through IF-03 and show durable ADD plus REV source
-  history. The DELETED interpretation in the new Engineering Client is verified
+  history. The DELETED interpretation in SI-02 is verified
   separately in Step 6 V01.
 - Close the TimingNode and show the CLOSE record in the same source sequence.
 - Inspect the runtime counters, restart SI-01 and continue using the same simulated input
@@ -978,7 +978,7 @@ not a Step-6 implementation requirement.
 - the Engineering Client uses only supported public SI-01 boundaries for live operation;
 - connection/reconnect/stale-state behaviour retains useful automated coverage;
 - the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed
-  manual running-GUI evidence on the new Engineering Client, including log
+  manual running-GUI evidence on SI-02, including log
   independence and SYNCING before LIVE;
 - application/client services are not buried inside JavaFX event handlers;
 - representative views are composed through the selected workbench without depending on
