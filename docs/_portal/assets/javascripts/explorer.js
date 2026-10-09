@@ -166,16 +166,28 @@
     }
 
     function objectPanel(object, roleLabel, mode) {
-      const promoteAction =
-        mode === "compare" && roleLabel === "Compared object"
-          ? '<button class="md-button" type="button" data-eng-promote-object-id="' +
-            escapeHtml(object.id) +
-            '">Make primary</button>'
-          : "";
+      const canPromote =
+        mode === "compare" && roleLabel === "Compared object";
+      const promoteAction = canPromote
+        ? '<button class="md-button" type="button" data-eng-promote-object-id="' +
+          escapeHtml(object.id) +
+          '">Make primary</button>'
+        : "";
+      const promoteTopAction = canPromote
+        ? '<button class="eng-detail__promote-top" type="button" ' +
+          'data-eng-promote-object-id="' +
+          escapeHtml(object.id) +
+          '" title="Make this object primary" ' +
+          'aria-label="Make this compared object primary">' +
+          '<span aria-hidden="true">⇄</span></button>'
+        : "";
       return (
         (roleLabel
-          ? '<div class="eng-detail__role">' +
+          ? '<div class="eng-detail__role-row">' +
+            '<div class="eng-detail__role">' +
             escapeHtml(roleLabel) +
+            "</div>" +
+            promoteTopAction +
             "</div>"
           : "") +
         '<div class="eng-detail__header">' +
@@ -404,6 +416,50 @@
         "[data-eng-tree-collapse-all]"
       );
       const resultCount = root.querySelector("[data-eng-tree-count]");
+
+      // Use cases are read operator-first. Keep this as a portal presentation
+      // rule rather than reordering the authored use-case document.
+      const topTreeGroups = Array.from(
+        root.querySelectorAll(".eng-tree-root > [data-eng-tree-group]")
+      );
+      const useCaseGroup = topTreeGroups.find((group) => {
+        const label = group.querySelector(
+          ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+        );
+        return (
+          label &&
+          label.textContent.trim() === "30-UC-system-use-cases"
+        );
+      });
+      if (useCaseGroup) {
+        const items = useCaseGroup.querySelector(
+          ":scope > .eng-tree-group__items"
+        );
+        if (items) {
+          const preferred = [
+            "Normal operation",
+            "System, backoffice and recovery",
+            "Engineering, simulation and verification"
+          ];
+          const groups = Array.from(
+            items.querySelectorAll(":scope > [data-eng-tree-group]")
+          );
+          const labelOf = (group) => {
+            const label = group.querySelector(
+              ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
+            );
+            return label ? label.textContent.trim() : "";
+          };
+          const ordered = preferred
+            .map((label) => groups.find((group) => labelOf(group) === label))
+            .filter(Boolean);
+          const remainder = groups.filter((group) => !ordered.includes(group));
+          [...ordered, ...remainder].forEach((group) =>
+            items.appendChild(group)
+          );
+        }
+      }
+
       const treeItems = Array.from(
         root.querySelectorAll("[data-workspace-root-id]")
       );

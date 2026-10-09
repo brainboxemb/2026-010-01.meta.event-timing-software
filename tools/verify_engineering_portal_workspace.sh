@@ -50,6 +50,34 @@ grep -q 'A committed TimingData record shall not be modified or renumbered' bld/
 grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'class="eng-detail__promote-top"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'aria-label="Make this compared object primary"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'title="Make this object primary"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+python - <<'PY'
+from pathlib import Path
+
+html = Path(
+    "bld/engineering-portal/browser-workspace-IF05-REQ-007.html"
+).read_text(encoding="utf-8")
+if html.count('data-eng-promote-object-id="SI01-REQ-045"') != 2:
+    raise SystemExit(
+        "Compared object must expose both top icon and full Make primary action"
+    )
+labels = [
+    "Normal operation",
+    "System, backoffice and recovery",
+    "Engineering, simulation and verification",
+]
+tokens = [
+    f'<span class="eng-tree-group__label">{label}</span>'
+    for label in labels
+]
+positions = [html.find(token) for token in tokens]
+if any(position < 0 for position in positions) or positions != sorted(positions):
+    raise SystemExit(
+        f"use-case group order is not operator-first: {list(zip(labels, positions))}"
+    )
+PY
 grep -q 'role="tree" data-eng-object-tree' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-tree-toggle' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'aria-expanded="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
@@ -316,6 +344,46 @@ window.addEventListener("load", () => {
       }
     }
 
+    const comparePane = root && root.querySelector(
+      "[data-eng-compare-detail]"
+    );
+    const primaryPane = root && root.querySelector(
+      "[data-eng-root-detail]"
+    );
+    const promoteTop = comparePane && comparePane.querySelector(
+      ".eng-detail__promote-top"
+    );
+    if (promoteTop && primaryPane && comparePane) {
+      const beforePrimary = primaryPane.querySelector(
+        ".eng-detail__header > code"
+      );
+      const beforeCompared = comparePane.querySelector(
+        ".eng-detail__header > code"
+      );
+      const beforePrimaryId = beforePrimary
+        ? beforePrimary.textContent.trim()
+        : "";
+      const beforeComparedId = beforeCompared
+        ? beforeCompared.textContent.trim()
+        : "";
+      promoteTop.click();
+      const afterPrimary = primaryPane.querySelector(
+        ".eng-detail__header > code"
+      );
+      const afterCompared = comparePane.querySelector(
+        ".eng-detail__header > code"
+      );
+      document.body.dataset.promoteTopInteraction =
+        afterPrimary &&
+        afterCompared &&
+        afterPrimary.textContent.trim() === beforeComparedId &&
+        afterCompared.textContent.trim() === beforePrimaryId
+          ? "passed"
+          : "failed";
+    } else {
+      document.body.dataset.promoteTopInteraction = "missing";
+    }
+
     const splitter = root && root.querySelector(
       '[data-eng-resizer="tree-root"]'
     );
@@ -385,6 +453,7 @@ checks = {
     "ssd-requirements-expansion": "passed",
     "pane-resize-interaction": "passed",
     "pane-resize-persisted": "passed",
+    "promote-top-interaction": "passed",
 }
 failures = []
 for name, expected in checks.items():

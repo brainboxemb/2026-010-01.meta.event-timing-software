@@ -459,13 +459,45 @@ body.eng-explorer-page .md-content__inner {
   border-radius: 0;
 }
 
-.eng-detail__role {
+.eng-detail__role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
   margin-bottom: 0.18rem;
+}
+
+.eng-detail__role {
   color: var(--md-default-fg-color--light);
   font-size: calc(0.66rem + 1px);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.eng-detail__promote-top {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0;
+  background: transparent;
+  color: var(--md-default-fg-color--light);
+  font: inherit;
+  font-size: calc(0.72rem + 1px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.eng-detail__promote-top:hover,
+.eng-detail__promote-top:focus-visible {
+  border-color: var(--md-accent-fg-color);
+  color: var(--md-accent-fg-color);
+  outline: none;
 }
 
 .eng-detail__header h2 {
