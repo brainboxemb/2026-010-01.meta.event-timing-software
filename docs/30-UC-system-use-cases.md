@@ -497,10 +497,10 @@ specified mapping rule, not accidental cross-instance sharing.
 :::{uc} Exercise the registration system through the Engineering Client  
 :id: UC-009  
 
-**Goal:** provide one engineering application for inspecting and exercising the
-public registration-system behaviour during development and integration.
+**Goal:** provide the SI-02 Engineering Desktop Client for inspecting and exercising
+public registration-system behaviour during development, integration, commissioning and system test.
 
-**Primary actor:** test/developer.
+**Primary actor:** developer, integration/commissioning engineer or system tester.
 
 **Preconditions:** the registration system exposes the relevant public interfaces,
 or the client can make their unavailability visible. Optional engineering controls
@@ -516,7 +516,7 @@ require an explicitly advertised **supported and enabled** capability.
 6. The registration system applies the same registration operation used after normal antenna/filtering acceptance and supplies its own source identity, active location and next source sequence.
 7. The client shows the command outcome separately from the resulting TimingData/history and live update.
 8. On disconnect the client marks cached information stale. After reconnect it rebuilds current state and registration data before treating subsequent updates as live.
-9. The Engineering Client remains engineering tooling and does not become another owner of registration/domain state.
+9. The Engineering Client is SI-02 and remains a client of SI-01; it does not become another owner of registration/domain state.
 
 **Alternative/failure flows:**
 
@@ -643,13 +643,6 @@ categories are outside this public use case.
 
 :::
 
-## Retired use-case identity
-
-**UC-008 — Operate SI-01 through a desktop GUI** is withdrawn and shall not be
-reused for another use case. The earlier allocation assumed a separate
-operator-facing desktop product in addition to IF-04. The current product
-direction uses IF-04 Web for normal operator interaction and UC-009 for the
-Engineering Desktop Client through IF-03.
 
 ## Cross-cutting alternative/failure scenarios
 
