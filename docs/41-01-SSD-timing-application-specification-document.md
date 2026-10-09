@@ -133,13 +133,14 @@ of diagnostic log output.
 :id: SI01-REQ-021  
 :status: R  
 :specifies: UC-008, UC-020  
+:depends_on: SI01-REQ-024  
 
 The current application status snapshot shall contain at least:
 
 - application/build identity;
 - current application state;
 - every configured `TimingNodeId`;
-- the current operational state of every configured TimingNode;
+- the current operational state of every configured TimingNode as defined by SI01-REQ-024;
 - for each contained TimingNode configuration/startup failure, the affected
   `TimingNodeId` and a machine-readable problem indication.
 :::
@@ -156,16 +157,46 @@ interface, those interfaces shall report the same semantic value for the same
 running application state. Transport-specific encoding may differ.
 :::
 
-:::{req} Status-change publication  
+:::{req} TimingNode operational state-change publication  
 :id: SI01-REQ-023  
 :status: R  
+:specifies: UC-001, UC-008, UC-009  
+:depends_on: SI01-REQ-024  
 
-When a value represented in the current application status snapshot changes,
-SI-01 shall publish corresponding status-change information through IF-03
-live-event delivery.
+When a value represented in a TimingNode's current operational state changes,
+SI-01 shall make the corresponding state change available to supported
+presentation interfaces that provide live-state delivery. The application owns
+the semantic change; an individual interface owns only its transport-specific
+delivery.
 :::
 
-On connection/reconnection the client shall be able to recover a complete current snapshot according to the IF-03 contract.
+:::{req} Current TimingNode operational state  
+:id: SI01-REQ-024  
+:status: R  
+:specifies: UC-001, UC-008, UC-009  
+
+For each configured TimingNode, SI-01 shall provide a queryable current
+operational state independently of presentation transport. That state shall
+contain at least:
+
+- the `TimingNodeId`;
+- the current operational `LocationId`, or no assigned location;
+- lifecycle state `CLOSED` or `OPEN`;
+- relevant explicit problem/error state.
+:::
+
+:::{req} Presentation current-state recovery  
+:id: SI01-REQ-025  
+:status: R  
+:specifies: UC-001, UC-008, UC-009  
+:depends_on: SI01-REQ-023, SI01-REQ-024  
+
+After initial connection or reconnection, SI-01 shall allow a presentation
+client to establish a complete current state before later live state changes are
+treated as current. If that baseline cannot be established, the presentation
+state shall remain explicitly non-current rather than presenting cached state as
+live.
+:::
 
 #### Application boundary and testability
 
@@ -215,8 +246,7 @@ interface version or a separately specified migration contract.
 An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
 When the command is accepted, SI-01 shall apply that LocationId and the
 CLOSED-to-OPEN transition as one operation. The active LocationId shall remain
-unchanged while the TimingNode is OPEN, and current status shall expose the
-TimingNode's LocationId and OPEN/CLOSED state.
+unchanged while the TimingNode is OPEN.
 :::
 
 :::{req} Accepted registration commit semantics  
@@ -455,7 +485,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-003 | UC-014; SSSD software-item topology | IF-11 + SI-01 runtime composition |
 | SI01-REQ-010/011 | UC-008/009; SSSD IF-03 allocation | IF-01/02/03; shared query boundary |
 | SI01-REQ-020/021/022 | UC-008/020; SSSD application-status allocation | Status service/model + IF-01/02/03 |
-| SI01-REQ-023 | UC-008/009; IF-03 live-event obligation | IF-03 event adapter |
+| SI01-REQ-023/024/025 | UC-001/008/009; shared presentation-state semantics | TimingNode current-state model + IF-03/IF-04 adapters |
 | SI01-REQ-030/031 | UC-008/009/014; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
@@ -1612,7 +1642,7 @@ inputs.
 
 :::{arch} TimingNode  
 :id: TimingNode  
-:realizes: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021  
+:realizes: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021, SI01-REQ-024  
 
 A `TimingNode` is the independently addressed
 operational/domain aggregate at one timing location. It
