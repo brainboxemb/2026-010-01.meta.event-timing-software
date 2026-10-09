@@ -51,7 +51,7 @@ grep -q 'data-compare-object-id="SI01-REQ-045"' bld/engineering-portal/browser-w
 grep -q 'Selected object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Compared object' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'class="eng-detail__promote-top"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'aria-label="Make this compared object primary"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'aria-label="Swap selected and compared objects"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'title="Swap selected and compared objects"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 python - <<'PY'
 from pathlib import Path
