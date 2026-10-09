@@ -22,14 +22,14 @@ The project currently centres on the **Timing Point Application** (SI-01):
 - Windows as the convenient development host;
 - Raspberry Pi Zero / Zero W as a target to run and verify on real hardware.
 
-A separate **Desktop GUI Application** (SI-02) is planned as a real API client.
-Its implementation technology has not yet been selected.
+Normal operator interaction is provided through the SI-01-owned **IF-04 Web
+Interface**.
 
-The current JavaFX application is **not SI-02**. It is an engineering tool for manual
-integration testing of the API.
-
-A small web client may also be useful later for exercising the API. That is
-currently a test-tool idea, not a separate product/software item.
+The existing JavaFX **Engineering Client** is the project's desktop development,
+integration and diagnostic application for public interfaces such as IF-03. It is
+engineering tooling rather than a second operator-facing product software item. Its
+desktop technology/workbench and packaging may evolve independently from the Java-8
+SI-01 runtime.
 
 ## Development approach
 
@@ -82,10 +82,11 @@ basic black-box testing.
 Run the representative application on the Pi Zero/Zero W and learn what, if anything,
 the target requires in deployment or runtime design.
 
-### D — Desktop GUI
+### D — Engineering Desktop Client
 
-Build SI-02 as a real independent client of the API. The GUI technology remains
-an open choice until this phase becomes active.
+Mature the existing independent Engineering Client into a maintainable desktop
+workbench for API inspection, diagnostics, simulation and integration. Normal operator
+use remains the IF-04 Web path.
 
 ### E — Timing/domain behaviour
 
@@ -117,8 +118,9 @@ These should remain questions until we have a reason to decide them:
 - exact Raspberry Pi/target OS, image and update approach;
 - exact Java runtime on the Pi target;
 - whether target measurements reveal any meaningful CPU/RAM/thread limitations;
-- technology and packaging for the real Desktop GUI Application (SI-02);
-- whether a small web Remote-API test client is useful in addition to the JavaFX tool;
+- final technology/workbench and packaging baseline for the Engineering Desktop Client;
+- whether any additional lightweight API test client is useful beyond the Engineering
+  Client and the normal IF-04 Web interface;
 - exact persistence format/strategy as domain state grows;
 - exact device and backoffice transports where not already fixed by external systems;
 - whether a separate integration host is worthwhile;
