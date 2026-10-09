@@ -29,7 +29,7 @@ terms:
   - term: SI-01
     meaning: Timing Point Application
   - term: SI-02
-    meaning: Planned Desktop GUI Application
+    meaning: Withdrawn former Desktop GUI Application allocation; historical identity only
   - term: TimingNode
     meaning: Logical timing unit with its own identity and state
   - term: ST-1
