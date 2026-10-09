@@ -123,7 +123,10 @@ Step 6 D02 selects the following target baseline for the Engineering Desktop Cli
 
 This is a target baseline, not a statement that the current implementation has already
 migrated. The existing `test-client` still uses Java 17 until Step 6 A01 performs the
-desktop restructuring after the Step-5 V06 manual baseline has closed.
+desktop restructuring. The former manual Step-5 V06 GUI check was not executed
+against that old client; its full revoke/recovery checklist is instead a Step-6
+V01 acceptance test against the new Java 21 Engineering Desktop Client.
+The SI-01/server portion of Step-5 V06 is already qualified.
 
 ### Decision rationale
 
