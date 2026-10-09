@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define deterministic IF-11 YAML template parameters: deployment constants such as `{ID}` resolve before effective configuration, TimingData paths may use contextual `{NodeId}` / `{SystemId}`, and the compact single-system convention becomes `SID-{ID}`.
+
 - Show the comparison swap icon in both Selected object and Compared object headers when a comparison is active; hide the selected-pane control when no comparison is loaded.
 
 - Improve Traceability Comparison navigation: add an accessible top-right swap icon for the Compared object `Make primary` action, and present use-case groups in operator-first order with `Normal operation` before system/backoffice and engineering groups.
