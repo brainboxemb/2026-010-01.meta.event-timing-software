@@ -583,13 +583,17 @@ AntennaManager. Manager-wide inventory is needed while any node is OPEN, and
 not needed otherwise. A DerivedProperty may depend on more than one
 SourceProperty; it owns no scheduling, queue, retry or lifecycle behaviour.
 
-The first control run has an explicit additional responsibility. After the
-TimingNodes are active and the system coordination lane is running, it reads
-each TimingNode's safely published immutable `currentStatus()` and fills the
-SourceProperties before deriving or applying inventory state. This initial
-current-state handoff does not enter the TimingNode serial lane and therefore
-has no result-bearing query timeout. Later status changes use the authoritative
-event payload directly.
+Every Conductor control run synchronizes the per-node SourceProperties from a
+CURRENT status query before deriving or applying inventory state:
+
+```java
+node.query(TimingNodeQueries.status(), ReadConsistency.CURRENT);
+```
+
+CURRENT status reads use the safely published immutable TimingNode snapshot and
+therefore do not enter the TimingNode serial lane or have a result-bearing query
+timeout. Status events only wake the existing CooperativeTaskController; repeated
+events may coalesce because the later control run rereads current published state.
 
 The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
 requests from explicit retry attempts. The TimingSystem `Conductor` does not
@@ -702,30 +706,34 @@ TimingNode publishes one immutable current `Status` snapshot as an explicit read
 The snapshot is unavailable before activation recovery completes. Activation clears previous
 readiness, performs recovery (including contained recovery failure -> operational `ERROR`),
 completes child activation and then publishes the first snapshot with safe cross-thread
-visibility. Deactivation does not reinterpret OPEN/CLOSED/ERROR; reactivation clears
-readiness while recovery runs and publishes a fresh snapshot on successful activation.
+visibility. Deactivation makes CURRENT status unavailable; reactivation publishes a fresh
+snapshot after recovery.
+
+One typed query boundary exposes two explicit consistency modes:
+
+```text
+CURRENT
+  latest safely published completed snapshot; no lane admission/wait/timeout
+
+ORDERED
+  execute on the TimingNode serial lane after earlier accepted node work
+```
+
+The existing one-argument `query(query)` remains ORDERED. A caller chooses CURRENT only
+when the query definition supports it. Status supports CURRENT and ORDERED; TimingData
+count and bounded LogBook range/latest reads remain ORDERED only.
 
 State-changing commands still execute on the TimingNode serial lane. After a command
-completes its domain mutation, TimingNode builds the immutable after-Status, publishes it
-as `currentStatus()`, and only then emits `statusChangedEvent(after)` when the effective
-status changed. The event payload and direct snapshot therefore describe completed
-transitions, and an event listener cannot observe an older published snapshot than the event
-it has just received.
-
-Read boundaries are selected by ownership/consistency need rather than by the word "query":
-
-| Read | Boundary |
-| --- | --- |
-| current Status | direct safely published immutable `currentStatus()` |
-| TimingData count | serialized TimingNode query |
-| bounded LogBook range | serialized TimingNode query |
-| bounded latest LogBook range | serialized TimingNode query |
+completes its domain mutation, TimingNode builds and publishes the immutable after-Status
+before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
+status reader therefore observes only completed published transitions.
 
 The LogBook remains mutable TimingNode-owned state and does not become directly readable.
-A result-bearing `invoke(...)` or `query(...)` from inside the same TimingNode serial lane
-must fail immediately as reentrant instead of queueing work behind itself and later timing
-out. This protects synchronous LogBook visitors in particular; visitors remain bounded by
-their requested limit, short/non-blocking and must not re-enter the same TimingNode.
+A result-bearing ORDERED `invoke(...)` or `query(...)` from inside the same TimingNode
+serial lane must fail immediately as reentrant instead of queueing work behind itself and
+later timing out. CURRENT reads do not enter the lane. This protects synchronous LogBook
+visitors in particular; visitors remain bounded by their requested limit, short/non-blocking
+and must not re-enter the same TimingNode with ORDERED result-bearing work.
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
@@ -780,8 +788,15 @@ TimingNodeTypes.CommandAdmission admitted =
                         registrationId,
                         time));
 
-TimingNodeTypes.Status status =
-        node.currentStatus();
+TimingNodeTypes.Status currentStatus =
+        node.query(
+                TimingNodeQueries.status(),
+                TimingNodeQuery.ReadConsistency.CURRENT);
+
+TimingNodeTypes.Status orderedStatus =
+        node.query(
+                TimingNodeQueries.status(),
+                TimingNodeQuery.ReadConsistency.ORDERED);
 ```
 
 Presentation adapters use the node-scoped Application boundary:
@@ -806,14 +821,14 @@ the later domain result. RFID/TagProcessor-style ingress uses this form so a dev
 callback cannot be held up by persistence, LogBook work or another queued TimingNode
 operation.
 
-`currentStatus()` is the non-blocking current-state path: it returns the latest safely
-published immutable snapshot after activation recovery and never submits work to the node
-lane. `query(query)` is reserved for consistency-sensitive reads that require node-lane
-ordering, currently the TimingData count and bounded LogBook traversal. Query
-implementations should avoid routine list copies when direct bounded traversal on the node
-lane is cheaper. Result-bearing same-lane reentrancy is invalid and fails immediately
-rather than waiting for its own lane. Typed command/query objects are local operation
-descriptions, not another component, central dispatcher or generic message bus.
+`query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
+published immutable read model without entering the node lane; ORDERED executes after
+earlier accepted node work on that lane. The one-argument `query(query)` preserves ORDERED
+semantics. Query definitions declare supported consistency modes, so mutable LogBook reads
+cannot accidentally be requested as CURRENT. Result-bearing same-lane ORDERED reentrancy is
+invalid and fails immediately rather than waiting for its own lane. Typed command/query
+objects are local operation descriptions, not another component, central dispatcher or
+generic message bus.
 
 The presentation-facing automatic-registration boundary is
 `applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
@@ -2921,11 +2936,12 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode Status uses a safely published immutable snapshot because it is current state,
-not a mutable LogBook traversal. Publication occurs after activation recovery and after each
-completed status-affecting command transition, before the corresponding status event.
-This explicit read model does not permit callers to read TimingNodeLogic or LogBook mutable
-state directly.
+TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
+snapshot because it is current state, not a mutable LogBook traversal. The same status query
+also supports ORDERED when a caller deliberately needs a read after earlier accepted node
+work. Publication occurs after activation recovery and completed command transitions, before
+the corresponding status event. This read model does not permit direct access to
+TimingNodeLogic or LogBook mutable state.
 
 ### Per-type stores
 

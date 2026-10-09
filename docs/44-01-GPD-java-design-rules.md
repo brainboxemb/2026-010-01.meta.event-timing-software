@@ -391,10 +391,10 @@ TimingNode.activate()
         +--> recovery complete
         +--> publish immutable currentStatus
 
-SystemConductor first control run
+SystemConductor control run
         |
         v
-TimingNode.currentStatus()
+TimingNode.query(status, CURRENT)
         |
         v
 SourceProperty.update(status.state())
@@ -406,10 +406,10 @@ Good runtime flow:
 TimingNode.statusChangedEvent(Status)
         |
         v
-SourceProperty.update(Status.state())
+CooperativeTaskController.wake()
         |
         v
-CooperativeTaskController.wake()
+query current Status + update SourceProperty
         |
         v
 DerivedProperty.recalculate()
@@ -422,16 +422,18 @@ The event callback only updates in-memory state and wakes the consumer; it does 
 another lane. Repeated wakes may be coalesced because the later control run reads the current
 SourceProperties.
 
-Current immutable snapshots and ordered mutable reads are different tools. A safely
-published `currentStatus()` may be read directly, while mutable LogBook traversal stays on
-the TimingNode lane. A result-bearing call made reentrantly from that same lane must fail
-immediately rather than queueing behind itself and appearing later as a timeout.
+Current immutable snapshots and ordered mutable reads are different consistency choices on
+the same typed query boundary. Use CURRENT when the query supports a safely published
+completed snapshot; use ORDERED when the read must be sequenced after earlier accepted node
+work. Mutable LogBook traversal remains ORDERED. A result-bearing ORDERED call made
+reentrantly from that same lane must fail immediately rather than queueing behind itself and
+appearing later as a timeout.
 
 **Avoid**
 
 - queueing every `Status` object and later executing each one as if it were a command;
 - hiding an initial authoritative read inside a property initializer or Future;
-- forcing an immutable current-state snapshot through a serial lane solely because other reads are queries;
+- forcing a CURRENT-capable immutable snapshot through the serial lane solely because other queries are ORDERED;
 - allowing same-lane result-bearing reentrancy to wait until timeout;
 - giving a property its own executor/coalescing loop when the owning component already has one.
 
