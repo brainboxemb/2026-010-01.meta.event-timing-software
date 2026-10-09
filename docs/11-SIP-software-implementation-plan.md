@@ -379,7 +379,7 @@ application boundary.
 
 ## Step 5 — Simulated antenna input and runtime behaviour
 
-Status: active
+Status: completed
 
 ### Purpose
 
@@ -477,7 +477,7 @@ domain and persistence paths.
 | `V03` | Restart and recovery with simulated input |
 | `V04` | Provider bootstrap verification |
 | `V05` | OPEN/CLOSE TimingData ordering, persistence and rejection verification |
-| `V06` | Registration revoke/API/Development Client verification |
+| `V06` | Registration revoke/API/persistence verification (client UI evidence in Step 6 V01) |
 | `V07` | Manual registration, timestamp precision and Development Client projection verification |
 | `V08` | Simulated-tag profile and batch-driver verification |
 
@@ -778,6 +778,11 @@ was needed.
 
 ### Result
 
+Step 5 closes on SI-01, black-box and development-host evidence. The additional
+manual real-GUI revoke/recovery run in the former Step-5 V06 was **not
+executed**; it moves to Step 6 V01 on the new Engineering Desktop Client. No
+client UI verification result is implied by this closure.
+
 - Simulated antenna observations reach the normal registration path.
 - Successful TimingNode OPEN/CLOSE transitions are represented in the normal committed
   TimingData source stream according to the Step-5 IF-05/IDD update.
@@ -798,8 +803,9 @@ was needed.
   time and show their MAN_REG AUTO/MAN classification.
 - Run a short simulated-tag batch and show one representative two-tag passage reaching
   one automatic registration through SimulatedAntenna and TagProcessor.
-- Revoke one registration and show ADD plus REV in the technical LogBook while the
-  interpreted registration remains visible as DELETED.
+- Revoke one registration through IF-03 and show durable ADD plus REV source
+  history. The DELETED interpretation in the new Engineering Client is verified
+  separately in Step 6 V01.
 - Close the TimingNode and show the CLOSE record in the same source sequence.
 - Inspect the runtime counters, restart SI-01 and continue using the same simulated input
   configuration without sequence reuse.
@@ -834,7 +840,7 @@ was needed.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: active — D01/D02 complete; A01 waits for Step-5 V06
+Status: active
 
 ### Purpose
 
@@ -887,11 +893,13 @@ Desktop Client while preserving its public-interface-only boundary to SI-01.
 - stable IF-03 behaviour from Steps 3-5;
 - representative running SI-01 test data;
 - Experiment 008 JavaFX/BentoFX workbench evidence;
-- Step-5 V06 manual Development Client evidence closed before the major client
-  restructuring starts.
+- Step-5 SI-01/server revoke and persistence evidence complete; the outstanding
+  manual UI run is transferred to Step-6 V01, not a prerequisite for A01.
 
-The technology/architecture decision may be completed while V06 is still open. V06
-closes the current Step-5 client behaviour before A01 changes its desktop structure.
+The Engineering Client replaces the old JavaFX UI before executing the remaining
+manual revoke/recovery qualification. Step-6 V01 shall retain the full
+VC-ST1-003 real-running-client scenario without substituting headless tests
+for actual GUI evidence.
 
 ### Activities
 
@@ -972,12 +980,19 @@ not a Step-6 implementation requirement.
   technical LogBook and selected raw data.
 - Exercise one supported engineering command/simulation and inspect the result.
 - Disconnect/reconnect and rebuild the authoritative view.
+- Using the **new** Engineering Client, revoke through the trash action,
+  confirm immutable ADD plus new REV and interpreted DELETED, restart SI-01,
+  recover unchanged source history and confirm recovered events are not replayed
+  as new live events.
 - Show Device Log / Client Log / Remote Shell independently where available.
 
 ### Done
 
 - the Engineering Client uses only supported public SI-01 boundaries for live operation;
 - connection/reconnect/stale-state behaviour retains useful automated coverage;
+- the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed
+  manual running-GUI evidence on the new Engineering Client, including log
+  independence and SYNCING before LIVE;
 - application/client services are not buried inside JavaFX event handlers;
 - representative views are composed through the selected workbench without depending on
   docking APIs themselves;
