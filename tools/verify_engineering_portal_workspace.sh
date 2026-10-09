@@ -511,20 +511,17 @@ grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
   > bld/engineering-portal/browser-explorer-UC-001.html
 
 grep -q '<code>UC-001</code>' bld/engineering-portal/browser-explorer-UC-001.html
-portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (13)'
-for heading in 'IF-03 — API (4)' 'IF-04 — Web Interface (2)' 'SI-01 — Timing Point Application (3)' 'SI-02 — Desktop GUI Application (4)'; do
-  portal_has bld/engineering-portal/browser-explorer-UC-001.html "$heading"
-done
-portal_has bld/engineering-portal/browser-explorer-UC-001.html 'eng-relation__source-heading'
-# All thirteen links appear as plain rows without opening any document group.
-for target in IF03-REQ-003 IF03-REQ-004 IF03-REQ-006 IF03-REQ-011 \
-  IF04-REQ-002 IF04-REQ-006 \
-  SI01-REQ-020 SI01-REQ-021 SI01-REQ-040 \
-  SI02-REQ-002 SI02-REQ-003 SI02-REQ-004 SI02-REQ-005; do
+portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (5)'
+for target in IF04-REQ-001 IF04-REQ-002 IF04-REQ-006 IF04-REQ-008 IF04-REQ-009; do
   portal_has bld/engineering-portal/browser-explorer-UC-001.html "data-object-id=\"$target\""
 done
+for forbidden in IF03-REQ-003 IF03-REQ-004 IF03-REQ-006 IF03-REQ-011 \
+  SI01-REQ-020 SI01-REQ-021 SI01-REQ-040 \
+  SI02-REQ-002 SI02-REQ-003 SI02-REQ-004 SI02-REQ-005; do
+  portal_lacks bld/engineering-portal/browser-explorer-UC-001.html "data-object-id=\"$forbidden\""
+done
+portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'eng-relation__source-heading'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'class="eng-relation__document"'
-portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'data-eng-relation-toggle'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case is specified by:'
 
 "$chrome" \
@@ -534,14 +531,13 @@ portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case 
   --disable-dev-shm-usage \
   --virtual-time-budget=2500 \
   --dump-dom \
-  "http://127.0.0.1:8765/workspace/?object=UC-001&compare=IF03-REQ-004" \
+  "http://127.0.0.1:8765/workspace/?object=UC-001&compare=IF04-REQ-002" \
   > bld/engineering-portal/browser-workspace-UC-001.html
 
-portal_has bld/engineering-portal/browser-workspace-UC-001.html 'Requirements (13)'
-for heading in 'IF-03 — API (4)' 'IF-04 — Web Interface (2)' 'SI-01 — Timing Point Application (3)' 'SI-02 — Desktop GUI Application (4)'; do
-  portal_has bld/engineering-portal/browser-workspace-UC-001.html "$heading"
-done
-portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="IF03-REQ-004"'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'Requirements (5)'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'data-compare-object-id="IF04-REQ-002"'
+portal_has bld/engineering-portal/browser-workspace-UC-001.html 'This interface requirement specifies:'
+portal_lacks bld/engineering-portal/browser-workspace-UC-001.html 'eng-relation__source-heading'
 portal_lacks bld/engineering-portal/browser-workspace-UC-001.html 'class="eng-relation__document"'
 
 grep -q 'Preconditions' bld/engineering-portal/browser-explorer-UC-001.html
