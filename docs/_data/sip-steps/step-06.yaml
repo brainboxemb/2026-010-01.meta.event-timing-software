@@ -3,8 +3,25 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
-      SI-02 Engineering Desktop Client baseline selected; A01 is next and V01
-      verifies the real GUI revoke/recovery scenario.
+      Classify the reusable Engineering Desktop Client as SI-02. Keep UC-009 as its
+      system use case, IF-03 as its primary SI-01 boundary and IF-04 Web as the
+      normal operator path; UC-008 remains outside the current baseline.
+  - date: '2026-10-09'
+    change: >-
+      Close Step 5 on SI-01/server evidence and assign the real GUI
+      revoke/DELETED/reconnect/recovery scenario to Step 6 V01, releasing A01.
+  - date: '2026-10-09'
+    change: >-
+      Select Java 21, JavaFX 21, BentoFX 0.16.0, JDK HTTP/WebSocket, Jackson,
+      Maven and a jpackage app-image as the Step-6 desktop baseline.
+  - date: '2026-10-09'
+    change: >-
+      Reframe Step 6 from an operator desktop GUI to an Engineering Desktop Client;
+      normal operator use remains IF-04 Web.
+  - date: '2026-10-07'
+    change: >-
+      Promote the first SI-02 Draft requirement slice before selecting GUI
+      technology; implementation remains gated on the then-current Step-5 V06 plan.
 
 activities:
   - id: D01

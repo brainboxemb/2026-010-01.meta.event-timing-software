@@ -444,6 +444,47 @@ def step_card_note(activity: dict) -> str:
     return concise(note, 30) if note else ""
 
 
+PLANNING_CHANGE_SECTION_MAX_ITEMS = 4
+PLANNING_CHANGE_SECTION_MAX_CHARS = 1200
+
+
+def planning_change_sections(changes: List[dict]) -> List[dict]:
+    """Split the planning log into pageable top-level board sections."""
+    sections: List[dict] = []
+    bullets: List[str] = []
+    chars = 0
+
+    def flush() -> None:
+        nonlocal bullets, chars
+        if not bullets:
+            return
+        sections.append(
+            {
+                "heading": (
+                    "PLANNING CHANGES"
+                    if not sections
+                    else "PLANNING CHANGES (CONT.)"
+                ),
+                "bullets": bullets,
+            }
+        )
+        bullets = []
+        chars = 0
+
+    for change in changes:
+        bullet = f"{change['date']} — {change['change']}"
+        if bullets and (
+            len(bullets) >= PLANNING_CHANGE_SECTION_MAX_ITEMS
+            or chars + len(bullet) > PLANNING_CHANGE_SECTION_MAX_CHARS
+        ):
+            flush()
+        bullets.append(bullet)
+        chars += len(bullet)
+
+    flush()
+    return sections
+
+
 def step_board_view(board: dict, step: Step) -> dict:
     state_tones = {
         "done": "success",
@@ -538,15 +579,7 @@ def step_board_view(board: dict, step: Step) -> dict:
 
     changes = board.get("planning_changes", [])
     if changes:
-        view["board"]["trailing_sections"] = [
-            {
-                "heading": "PLANNING CHANGES",
-                "bullets": [
-                    f"{change['date']} — {change['change']}"
-                    for change in changes
-                ],
-            }
-        ]
+        view["board"]["trailing_sections"] = planning_change_sections(changes)
 
     return view
 

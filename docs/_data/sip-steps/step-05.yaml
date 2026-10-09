@@ -3,8 +3,41 @@ step: 5
 planning_changes:
   - date: '2026-10-09'
     change: >-
-      Step 5 is complete. GUI-specific revoke/recovery verification belongs to
-      Step 6 V01 and is executed with SI-02.
+      Complete Step 5 on the proven SI-01/server verification baseline. V06 closes
+      on revoke/API/persistence evidence; GUI revoke/DELETED/reconnect/recovery
+      verification moves to Step 6 V01 using SI-02.
+  - date: '2026-10-07'
+    change: >-
+      Add D08/A06/V07 for normal manual-registration semantics and time precision,
+      and D09/A07/V08 for deterministic simulated-tag profiles and batch control.
+  - date: '2026-10-07'
+    change: >-
+      Move selected-target runtime evidence to Step 9. Step-5 V01 is the
+      development-host baseline and releases the A03 runtime design decision.
+  - date: '2026-10-07'
+    change: >-
+      Complete T01 through Java PR #327 and make V01 runtime baseline
+      characterization the next activity.
+  - date: '2026-10-06'
+    change: >-
+      Requalify A01 on Java main and complete V04 provider bootstrap verification
+      through PR #302 with built-in reference providers and an external provider JAR.
+  - date: '2026-10-04'
+    change: >-
+      Complete D05 runtime-measurement design while keeping A01 active until the
+      antenna/tag-processing path is wired into runtime composition.
+  - date: '2026-10-04'
+    change: >-
+      Reopen D01 and decompose the work into D04/D05 design gates plus T01 harness;
+      A01/A02 require requalification and V01 moves before A03.
+  - date: '2026-10-04'
+    change: >-
+      Fix the single-TimingNode runtime-measurement baseline in D01 and make A01
+      the active implementation activity.
+  - date: '2026-10-04'
+    change: >-
+      Activate Step 5 after Step-4 VC-ST1-003 closure with D01 as the first
+      planning/design activity.
 
 activities:
   - id: D01
