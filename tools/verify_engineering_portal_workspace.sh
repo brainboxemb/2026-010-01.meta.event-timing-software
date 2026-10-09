@@ -515,11 +515,9 @@ portal_has bld/engineering-portal/browser-explorer-UC-001.html 'Requirements (5)
 for target in IF04-REQ-001 IF04-REQ-002 IF04-REQ-006 IF04-REQ-008 IF04-REQ-009; do
   portal_has bld/engineering-portal/browser-explorer-UC-001.html "data-object-id=\"$target\""
 done
-for forbidden in IF03-REQ-003 IF03-REQ-004 IF03-REQ-006 IF03-REQ-011 \
-  SI01-REQ-020 SI01-REQ-021 SI01-REQ-040 \
-  SI02-REQ-002 SI02-REQ-003 SI02-REQ-004 SI02-REQ-005; do
-  portal_lacks bld/engineering-portal/browser-explorer-UC-001.html "data-object-id=\"$forbidden\""
-done
+# The left Explorer tree contains all engineering IDs; absence of non-Web
+# UC-001 relations is asserted from the generated relation model in
+# verify_engineering_portal.py rather than by scanning the entire browser DOM.
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'eng-relation__source-heading'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'class="eng-relation__document"'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case is specified by:'
