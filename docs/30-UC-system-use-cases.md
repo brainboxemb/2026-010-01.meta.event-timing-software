@@ -382,14 +382,6 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 
 :::
 
-## Retired use-case identity
-
-**UC-008 — Operate SI-01 through a desktop GUI** is withdrawn and shall not be
-reused for another use case. The earlier allocation assumed a separate
-operator-facing desktop product in addition to IF-04. The current product
-direction uses IF-04 Web for normal operator interaction and UC-009 for the
-Engineering Desktop Client through IF-03.
-
 ### System, backoffice and recovery
 
 :::{uc} Synchronise reference data from backoffice  
@@ -650,6 +642,14 @@ Concrete production encodings, private mapping tables and deployment-specific
 categories are outside this public use case.
 
 :::
+
+## Retired use-case identity
+
+**UC-008 — Operate SI-01 through a desktop GUI** is withdrawn and shall not be
+reused for another use case. The earlier allocation assumed a separate
+operator-facing desktop product in addition to IF-04. The current product
+direction uses IF-04 Web for normal operator interaction and UC-009 for the
+Engineering Desktop Client through IF-03.
 
 ## Cross-cutting alternative/failure scenarios
 
