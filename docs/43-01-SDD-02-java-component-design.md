@@ -1016,7 +1016,7 @@ application core to provide the default JUL logging infrastructure and its confi
 
 :::{design} Executable and presentation composition
 :id: DD-ExecutableComposition
-:elaborates: TimingApplicationRuntime, SimulationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler, Api
+:elaborates: TimingApplicationRuntime, PresentationRuntime, Console, RemoteShell, SharedTerminalHandler, Api
 
 Detailed Java composition/lifecycle design for TimingApplicationRuntime,
 SimulationRuntime, PresentationRuntime and the built-in Console, RemoteShell and API adapters.
