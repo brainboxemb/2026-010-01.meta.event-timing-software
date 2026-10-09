@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Withdraw the separate SI-02 operator-desktop product allocation: keep IF-04 Web as the normal operator interface, retain UC-009/50-SDE-03 as the Engineering Desktop Client authority through public IF-03 and diagnostic boundaries, retire the former UC-008/SI02-REQ-001..008 Draft slice without reusing those identities, and reframe Step 6 around evolving the existing Development Client into a maintainable engineering workbench.
+
 - Define deterministic IF-11 YAML template parameters: deployment constants such as `{ID}` resolve before effective configuration, TimingData paths may use contextual `{NodeId}` / `{SystemId}`, and the compact single-system convention becomes `SID-{ID}`.
 
 - Show the comparison swap icon in both Selected object and Compared object headers when a comparison is active; hide the selected-pane control when no comparison is loaded.
