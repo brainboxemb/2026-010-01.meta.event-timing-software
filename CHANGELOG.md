@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Preserve the complete SIP step planning-change log and paginate long change history across additional detail-board pages instead of truncating or rejecting it.
+
 - Close Step 5 on verified SI-01/server behaviour; transfer the not-yet-executed manual GUI revoke/DELETED/recovery scenario to Step 6 V01 on the new Engineering Desktop Client and unblock A01 without misreporting test evidence.
 
 - Complete Step 6 D02 for the Engineering Desktop Client: select Java 21, JavaFX 21, BentoFX 0.16.0, application-owned CSS, JDK HttpClient/WebSocket, Jackson and Maven, with a self-contained Windows jpackage app-image as the first packaging target; keep Transit optional, defer JPMS/installer/update machinery until concrete need, and preserve an instance-scoped client-service boundary for later multi-system and embedded scripting.
