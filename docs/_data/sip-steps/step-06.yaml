@@ -1,6 +1,11 @@
 step: 6
 
 planning_changes:
+  - date: '2026-10-09'
+    change: >-
+      Withdraw the separate SI-02 operator-desktop allocation. Normal operator use
+      remains IF-04 Web; Step 6 now matures the existing Engineering Desktop Client
+      through public engineering boundaries such as IF-03.
   - date: '2026-10-07'
     change: >-
       Promote the first SI-02 Draft requirements before selecting GUI technology; implementation still waits for Step-5 V06.
@@ -8,14 +13,14 @@ planning_changes:
 activities:
   - id: D01
     lane: documentation
-    kind: documentation
+    kind: decision
     state: done
     note: >-
-      Meta issue #577. Promote the first technology-independent SI-02 Draft
-      requirements for public IF-03 use, endpoint/connection state, connected
-      identity, TimingNode status, stale/disconnected presentation,
-      reconnect/history rebuild, committed registration presentation and
-      lifecycle control outcome handling.
+      The former first SI-02 Draft requirement slice was reviewed and then
+      superseded by the 2026-10-09 allocation correction. SI02-REQ-001..008 are
+      withdrawn with the separate operator-desktop product assumption; their useful
+      public-interface/connection/reconnect behaviours remain Engineering Client
+      design inputs through UC-009, IF-03 and SDE-03.
 
   - id: D02
     lane: application
@@ -23,10 +28,11 @@ activities:
     state: next
     depends_on: [D01]
     note: >-
-      Select the SI-02 GUI toolkit/runtime, HTTP/WebSocket client approach and
-      packaging/distribution model against the approved Draft requirement slice.
-      The existing JavaFX Development Client is evidence/tooling only and does
-      not preselect the product technology.
+      Select the Engineering Client Java/runtime, JavaFX/workbench,
+      HTTP/WebSocket client boundary and packaging baseline. Experiment 008 is
+      retained evidence and currently prefers BentoFX over SnapFX; future scripting
+      compatibility is an architecture constraint, not a Step-6 implementation
+      requirement.
 
   - id: A01
     lane: application
@@ -34,9 +40,10 @@ activities:
     state: blocked
     depends_on: [D01, D02]
     note: >-
-      Create the first independently buildable SI-02 skeleton and public IF-03
-      client boundary only after Step-5 V06 manual Development Client evidence is
-      closed. Normal operation must not depend on SI-01 internal classes/files.
+      Restructure the existing Development Client into the Engineering Desktop
+      Client around the selected client/application-service and workbench
+      boundaries only after Step-5 V06 manual evidence is closed. Live operation
+      remains public-interface-only and must not depend on SI-01 internals.
 
   - id: V01
     lane: verification
@@ -44,6 +51,7 @@ activities:
     state: planned
     depends_on: [A01]
     note: >-
-      Verify endpoint selection, connect/status identity, stale/disconnected
-      presentation and reconnect baseline rebuild using fake-client tests plus a
-      real SI-01 public-interface integration path.
+      Verify connection/status identity, stale/disconnected state, baseline
+      rebuild after reconnect, representative workbench views and selected
+      engineering controls using deterministic client tests plus a real SI-01
+      public-interface integration path.
