@@ -3,20 +3,8 @@ step: 6
 planning_changes:
   - date: '2026-10-09'
     change: >-
-      Step 5 closed on SI-01/server evidence; defer the not-yet-run manual
-      VC-ST1-003 UI scenario to Step 6 V01 against the new Engineering Client.
-      Remove the old-client V06 gate and release A01 for implementation.
-  - date: '2026-10-09'
-    change: >-
-      Select Java 21, JavaFX 21, BentoFX 0.16.0, JDK HTTP/WebSocket and
-      jpackage app-image as the Engineering Client D02 baseline.
-  - date: '2026-10-09'
-    change: >-
-      Withdraw SI-02 operator desktop; IF-04 remains the operator path and
-      Step 6 now matures the Engineering Client.
-  - date: '2026-10-07'
-    change: >-
-      Promote the first SI-02 Draft requirements before selecting GUI technology; implementation still waits for Step-5 V06.
+      SI-02 Engineering Desktop Client baseline selected; A01 is next and V01
+      verifies the real GUI revoke/recovery scenario.
 
 activities:
   - id: D01
@@ -24,11 +12,9 @@ activities:
     kind: decision
     state: done
     note: >-
-      The former first SI-02 Draft requirement slice was reviewed and then
-      superseded by the 2026-10-09 allocation correction. SI02-REQ-001..008 are
-      withdrawn with the separate operator-desktop product assumption; their useful
-      public-interface/connection/reconnect behaviours remain Engineering Client
-      design inputs through UC-009, IF-03 and SDE-03.
+      Establish SI02-REQ-001..008 as the first Draft Engineering Desktop Client
+      requirement slice, tracing technology-independent connection, synchronisation,
+      status/history and command-outcome behaviour to UC-009 and IF-03.
 
   - id: D02
     lane: application
@@ -49,11 +35,9 @@ activities:
     state: next
     depends_on: [D01, D02]
     note: >-
-      Restructure the existing Development Client into the Engineering Desktop
-      Client around the selected instance-scoped client/application services
-      and BentoFX workbench. Step-5 server behaviour is qualified; old-client
-      manual V06 is not a gate. Preserve the public IF-03 boundary and carry
-      the manual revoke/recovery scenario forward to Step-6 V01.
+      Restructure the existing JavaFX implementation into SI-02 around the selected
+      instance-scoped client/application services and BentoFX workbench. Preserve the
+      public IF-03 boundary and prepare the real application for V01 verification.
 
   - id: V01
     lane: verification
@@ -64,8 +48,8 @@ activities:
       Verify connection/status identity, stale/disconnected state, baseline
       rebuild after reconnect, representative workbench views and selected
       engineering controls using deterministic client tests plus a real SI-01
-      public-interface integration path. Explicitly run the previously unexecuted
-      VC-ST1-003 manual GUI scenario on the new Engineering Client: trash
+      public-interface integration path. Run the VC-ST1-003 real-GUI scenario on
+      SI-02: trash
       appends REV without rewriting ADD, interpreted row remains DELETED,
       restart/reconnect rebuilds sequence/history without live replay,
       SYNCING precedes LIVE, and Device/Client Logs remain independent.
