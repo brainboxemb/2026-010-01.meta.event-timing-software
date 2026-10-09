@@ -530,6 +530,15 @@ Application, Platform and Presentation runtime parts. Composition is behaviour
 of this runtime object, not a separate architectural component.
 :::
 
+:::{arch} SimulationRuntime  
+:id: SimulationRuntime  
+
+`SimulationRuntime` is the optional Runtime composition entry for simulated
+installations and scenarios. It selects simulation-specific inputs but reuses
+the same TimingApplicationRuntime, Application, Domain and I/O processing path;
+it is not a second application architecture.
+:::
+
 :::{arch} PresentationRuntime  
 :id: PresentationRuntime  
 
