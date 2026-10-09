@@ -254,7 +254,7 @@ domain/
     TimingNodeStateProperty.java        per-node state tracking
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
-  timing/
+  node/
     TimingNode.java
     TimingNodeId.java
     UpstreamMessagePort.java          TimingNode-level upstream messages
@@ -2310,7 +2310,7 @@ The component that performs the work owns the hot-path counter update:
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
-  TimingNode-admission counters for `domain.timing.processing` and exposes them through an
+  TimingNode-admission counters for `domain.node.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
 - `SerialScheduledExecutorMetrics` owns lane-local measurements such as accepted
   immediate work, scheduled registrations/cancellations, executed work, runtime failures
@@ -2329,7 +2329,7 @@ easier to display.
 The current one-TimingNode characterization uses one explicit Java reader:
 
 ```text
-domain/timing/processing/
+domain/node/processing/
   TagProcessingMetrics
     -> TagProcessingMetrics.Snapshot
 
