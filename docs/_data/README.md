@@ -34,7 +34,7 @@ The same convention is intended for later declarative architecture-diagram sourc
 
 `sip-roadmap.yaml` owns working planning metadata such as estimates, cadence and compact named-document indicators used by the overview roadmap.
 
-`docs/11-SIP-software-implementation-plan.md` owns each step activity ID and title. `sip-steps/step-NN.yaml` adds only the current planning state for those SIP-owned activities: lane, kind, state, dependencies, optional effort and compact card notes. A YAML activity ID that is not declared in the matching SIP step is rejected by the generator.
+`docs/11-SIP-software-implementation-plan.md` owns each step activity ID and title. `sip-steps/step-NN.yaml` adds the current planning state for those SIP-owned activities: lane, kind, state, dependencies, optional effort and compact card notes. Its `planning_changes` list is deliberately chronological planning history and should be appended to rather than rewritten into only the latest state. A YAML activity ID that is not declared in the matching SIP step is rejected by the generator.
 
 The Python generator parses YAML, validates it against JSON Schema, resolves layout and renders the generated outputs. Therefore changing a card position or page layout must not require changing the engineering activity itself.
 
