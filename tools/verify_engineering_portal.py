@@ -231,13 +231,24 @@ if any(
 ):
     raise SystemExit("IF-04 requirement still directly specifies a use case")
 
-if "SI02-REQ-001" not in objects:
-    raise SystemExit("engineering graph missing first SI-02 requirement")
-si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
+withdrawn_si02 = [
+    object_id for object_id in objects
+    if object_id.startswith("SI02-REQ-")
+]
+if withdrawn_si02:
+    raise SystemExit(
+        "withdrawn SI-02 requirements remain in engineering graph: "
+        + ", ".join(sorted(withdrawn_si02))
+    )
+if "IF03-REQ-001" not in objects:
+    raise SystemExit("engineering graph missing IF-03 public-boundary requirement")
+if "UC-009" not in objects:
+    raise SystemExit("engineering graph missing Engineering Client use case UC-009")
+engineering_page = (site / "objects" / "UC-009" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Use only the public SI-01 interface boundary" not in si02_page:
-    raise SystemExit("portal SI02-REQ-001 page is missing authored requirement content")
+if "Engineering Client connects to the registration system" not in engineering_page:
+    raise SystemExit("portal UC-009 page is missing Engineering Client narrative")
 if "DD-PresentationAccess" not in objects:
     raise SystemExit("engineering graph missing detailed-design object DD-PresentationAccess")
 presentation_design = objects["DD-PresentationAccess"]
