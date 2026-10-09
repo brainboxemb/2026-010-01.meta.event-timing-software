@@ -250,7 +250,7 @@ domain/
   system/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
-    Conductor.java                      first system coordinator; node lifecycle + inventory
+    SystemConductor.java                first system coordinator; node lifecycle + inventory
     TimingNodeStateProperty.java        per-node state tracking
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
@@ -402,7 +402,9 @@ for reimplementing JDK executor internals.
 :elaborates: SystemConductor, PlatformExecution, SerialTaskRunner, ScheduledTaskRunner, CooperativeTaskController
 
 Detailed Java design for cooperative task runners/controllers and the
-TimingSystem-scoped coordination pattern used by `domain.system.Conductor`.
+TimingSystem-scoped coordination pattern used by `domain.system.SystemConductor`.
+
+The Java class is `SystemConductor` to distinguish it from `ApplicationConductor`; the architecture diagram retains the component label **Conductor** within each TimingSystem.
 
 Some component operations consist of several ordered steps. Some of those steps only
 need to yield the owning serial lane; others must also wait for elapsed time. Running the
@@ -928,7 +930,7 @@ The normal dependency direction follows the layer order and is intentionally
 easy to read from imports. I/O code does not import Application or Domain merely
 to reverse a dependency. Domain may call an I/O component directly when the
 domain behaviour requires it. In the current design,
-`domain.system.Conductor` calls its associated `AntennaManager` directly for
+`domain.system.SystemConductor` calls its associated `AntennaManager` directly for
 manager-wide inventory control.
 
 For example:
@@ -1070,7 +1072,7 @@ assembled.
 The executable composition must remain readable as one linear construct-wire-start flow.
 The Runtime composition root constructs 1..N TimingSystem contexts from
 validated effective configuration. Each contains 1..N TimingNodes, one
-`domain.system.Conductor` and its associated I/O composition. The Java Runtime
+`domain.system.SystemConductor` and its associated I/O composition. The Java Runtime
 materializes the configured TimingSystems and TimingNodes directly; no
 placeholder `TimingSystem` domain class is required for composition.
 
@@ -1080,13 +1082,13 @@ validated effective configuration
   -> construct TimingNodes, AntennaManager and system Conductor
   -> construct one application.ApplicationConductor
   -> for each TimingSystem:
-       -> registerTimingSystem(AntennaManager, domain.system.Conductor)
+       -> registerTimingSystem(AntennaManager, domain.system.SystemConductor)
   -> wire node status signals to the system Conductor
   -> wire antenna observations directly to configured TagProcessors
   -> start physical workers
   -> application.ApplicationConductor.activate()
        -> AntennaManager.activate()
-       -> domain.system.Conductor.activate()
+       -> domain.system.SystemConductor.activate()
             -> TimingNode(s).activate()
             -> initial node-state reconciliation
   -> PresentationRuntime.activate()
@@ -1152,11 +1154,11 @@ timing-point-core.jar
       FixedConfiguration.java
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
-    Conductor.java
+    ApplicationConductor.java
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.domain.system/
-    Conductor.java
+    SystemConductor.java
     TimingNodeStateProperty.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
@@ -1208,7 +1210,7 @@ main()
        -> create RuntimeExecutors and RuntimeTimeSources
        -> create one TimeSource for the current timing context
        -> construct reusable application/domain/I/O objects
-       -> construct and wire each domain.system.Conductor
+       -> construct and wire each domain.system.SystemConductor
        -> construct application.ApplicationConductor for application lifecycle
        -> construct configured PresentationRuntime adapters
        -> return composed TimingApplicationRuntime
@@ -1216,7 +1218,7 @@ main()
        -> RuntimeExecutors.start()
        -> application.ApplicationConductor.activate()
             -> AntennaManager.activate()
-            -> domain.system.Conductor.activate()
+            -> domain.system.SystemConductor.activate()
                  -> TimingNode(s).activate()
                  -> initialize node-state tracking
        -> PresentationRuntime.activate()
@@ -1235,7 +1237,7 @@ implemented.
 
 Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
 
-The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.ApplicationConductor` owns application-component lifecycle order. Each `domain.system.Conductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.ApplicationConductor` owns application-component lifecycle order. Each `domain.system.SystemConductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
 
 :::
 
@@ -1549,7 +1551,7 @@ application.ApplicationConductor
       |
       +--> AntennaManager lifecycle
       |
-      +--> domain.system.Conductor lifecycle
+      +--> domain.system.SystemConductor lifecycle
               |
               +--> TimingNode lifecycle (1..N)
               |
@@ -1569,7 +1571,7 @@ application.ApplicationConductor
       +--> reusable AntennaShutdownTask
 ```
 
-`domain.system.Conductor` calls its associated `AntennaManager` directly.
+`domain.system.SystemConductor` calls its associated `AntennaManager` directly.
 It requests manager-wide inventory while any TimingNode in that system is OPEN.
 It does not issue device-mechanism commands such as power-on, initialize,
 power-cycle or antenna switching. `application.ApplicationConductor` owns the lifecycle
@@ -1706,7 +1708,7 @@ SI01-REQ-053 uses one system-scoped inventory demand:
 TimingNode A/B/... state change
        |
        v
-domain.system.Conductor (serial/coalesced current-state read)
+domain.system.SystemConductor (serial/coalesced current-state read)
        |
        +--> any node OPEN? yes -> manager-wide inventory enabled
        |                   no  -> manager-wide inventory disabled
@@ -3392,7 +3394,7 @@ Extraction is preferred over speculative libraries: keep package/responsibility 
 Useful automated rules may include:
 
 - presentation packages do not own or persist application state;
-- Domain does not depend on Presentation; Domain-to-I/O dependencies must be explicit design relationships, such as `domain.system.Conductor -> AntennaManager`;
+- Domain does not depend on Presentation; Domain-to-I/O dependencies must be explicit design relationships, such as `domain.system.SystemConductor -> AntennaManager`;
 - platform packages do not depend on event-timing application/domain behaviour;
 - wire/protocol classes stay with their presentation or I/O capability;
 - semantic contracts are not moved into transport packages merely because transport code uses them;
