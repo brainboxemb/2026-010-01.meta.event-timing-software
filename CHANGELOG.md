@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define concise, list-based IF-11 topology syntax for TimingSystems and TimingNodes with explicit IDs. Remove arbitrary mapping keys from examples; the application only accepts the list form.
+
+
 - Align ST-1 VTS example RegistrationIds with shared test-data convention (`RT-A-NNNN`) and explicitly distinguish normal-registration prefix from TimingNode ID; IF-03 cases do not claim TagId or TeamId mapping coverage.
 
 
