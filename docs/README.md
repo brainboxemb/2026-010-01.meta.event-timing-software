@@ -22,6 +22,7 @@ Detailed numbering and document-family rules are owned by
 | SI-01 specification/architecture | [41-01-SSD](41-01-SSD-timing-application-specification-document.md) |
 | SI-01 detailed design | [43-01-SDD-01](43-01-SDD-01-data-and-display-design.md), [43-01-SDD-02](43-01-SDD-02-java-component-design.md), [43-01-SDD-03](43-01-SDD-03-backoffice-transport-design.md) |
 | SI-01 Java design/review rules | [44-01-GPD](44-01-GPD-java-design-rules.md) |
+| SI-02 desktop UI, interaction and threading rules | [44-02-GPD](44-02-GPD-engineering-client-design-rules.md) |
 | Development environment/tooling | [50-SDE-01](50-SDE-01-software-development-environment.md), [50-SDE-02](50-SDE-02-java-build-test-toolchain.md), [50-SDE-03](50-SDE-03-development-client.md), [50-SDE-04](50-SDE-04-runtime-characterization.md) |
 | Verification | [60-SVP](60-SVP-software-verification-plan.md) and [61-01-VTS](61-01-VTS-timing-application-verification-test-specification.md) |
 | User guidance | [70-01-SUM](70-01-SUM-headless-timing-application.md) |
@@ -61,6 +62,7 @@ Working context does not replace promoted requirements, interfaces or design.
 
 - [41-02-SSD — Engineering Desktop Client specification](41-02-SSD-gui-application-specification-document.md)
 - [50-SDE-03 — Engineering Client development/UI baseline](50-SDE-03-development-client.md)
+- [44-02-GPD — Engineering Client design rules](44-02-GPD-engineering-client-design-rules.md)
 
 ## Generated views
 
