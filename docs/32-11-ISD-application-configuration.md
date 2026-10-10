@@ -62,7 +62,7 @@ parameters:
 timingSystems:
   - systemId: "{ID}"
     timingNodes:
-      - systemId: "{ID}"
+      - nodeId: "{ID}"
 ```
 
 Rules:
@@ -73,7 +73,7 @@ Rules:
   expressions, execute code, load includes or introduce recursive inheritance;
 - unknown or unresolved parameter references are configuration errors;
 - topology uses ordered `timingSystems` and `timingNodes` YAML lists;
-  each entry declares its identity with the contextual `id` field,
+  each entry declares identity with `systemId` or `nodeId`,
   not by a deployment-local mapping key;
 - `{NodeId}` and `{SystemId}` are reserved contextual placeholders. They are resolved only
   where the owning field defines that context, currently TimingData storage paths;
@@ -195,7 +195,7 @@ timingSystems:
     timingDataProvider: reference
     upstreamProtocolProvider: reference
     timingNodes:
-      - systemId: "{ID}"
+      - nodeId: "{ID}"
         tagProcessing:
           quietTimeoutMillis: 250
           maxBurstDurationMillis: 1000
@@ -210,11 +210,11 @@ The same structure naturally represents multiple systems and nodes:
 timingSystems:
   - systemId: 9
     timingNodes:
-      - systemId: A
-      - systemId: B
+      - nodeId: A
+      - nodeId: B
   - systemId: C
     timingNodes:
-      - systemId: C
+      - nodeId: C
 ```
 
 Within `timingSystems`, the `systemId` field identifies its TimingSystem;
@@ -334,7 +334,7 @@ io
 ```
 
 `AntennaManager` is an optional I/O capability per TimingSystem. The
-`antennaManagers` mapping makes that ownership explicit: each binding contains
+`antennaManagers` list makes that ownership explicit: each binding contains
 one `systemId` reference, without requiring an artificial name such as `primary`. A TimingSystem may have zero or one manager binding. When present the
 manager owns 1..N antennas and accepts one shared inventory demand: enabled while
 any TimingNode of that system is OPEN, otherwise disabled. Internal multiplex
