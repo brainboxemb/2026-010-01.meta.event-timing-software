@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align ST-1 VTS example RegistrationIds with shared test-data convention (`RT-A-NNNN`) and explicitly distinguish normal-registration prefix from TimingNode ID; IF-03 cases do not claim TagId or TeamId mapping coverage.
+
+
 - Restore convenient Engineering Portal tree navigation: opening a document unfolds intermediate headings that only contain more headings (including SI-01 functional and technical requirement groups), while leaving requirement-bearing categories collapsed until selected; add browser regression verification for one-click access to categories.
 
 - Present all VTS verification cases with GitHub-readable MyST/Sphinx-Needs option headers (`:id:` and `:verifies:`), instead of YAML-style separators that Markdown misrenders as headings; align the VTS template and dynamic reader verification.
