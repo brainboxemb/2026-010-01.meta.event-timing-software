@@ -60,11 +60,9 @@ parameters:
   ID: A
 
 timingSystems:
-  primary:
-    timingSystemId: SID-{ID}
+  - timingSystemId: SID-{ID}
     timingNodes:
-      primary:
-        timingNodeId: "{ID}"
+      - timingNodeId: "{ID}"
 ```
 
 Rules:
@@ -74,8 +72,9 @@ Rules:
 - parameter substitution is deterministic text replacement only: it does not evaluate
   expressions, execute code, load includes or introduce recursive inheritance;
 - unknown or unresolved parameter references are configuration errors;
-- mapping keys are not templated; deployment-local keys such as `primary` remain ordinary
-  YAML structure and are not identities;
+- topology uses ordered `timingSystems` and `timingNodes` YAML lists;
+  each entry is identified only by its explicit `timingSystemId` or `timingNodeId`,
+  not by a deployment-local mapping key;
 - `{NodeId}` and `{SystemId}` are reserved contextual placeholders. They are resolved only
   where the owning field defines that context, currently TimingData storage paths;
 - after substitution, the normal field-specific IF-11 validation rules still apply.
@@ -186,14 +185,12 @@ parameters:
   ID: A
 
 timingSystems:
-  primary:
-    timingSystemId: SID-{ID}
+  - timingSystemId: SID-{ID}
     eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
     timingNodes:
-      primary:
-        timingNodeId: "{ID}"
+      - timingNodeId: "{ID}"
         tagProcessing:
           quietTimeoutMillis: 250
           maxBurstDurationMillis: 1000
@@ -202,8 +199,24 @@ timingSystems:
           observationQueueCapacity: 256
 ```
 
+The same structure naturally represents multiple systems and nodes:
+
+```yaml
+timingSystems:
+  - timingSystemId: SID-A
+    timingNodes:
+      - timingNodeId: A
+      - timingNodeId: B
+  - timingSystemId: SID-B
+    timingNodes:
+      - timingNodeId: C
+```
+
 Rules:
 
+- `timingSystems` and each nested `timingNodes` are non-empty YAML lists;
+  their elements are YAML objects with explicit identity fields;
+  mapping-based topology collections are not part of the IF-11 syntax;
 - `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
 - `TimingNodeId` identifies the logical TimingNode, is exactly one character `A`..`Z` or `1`..`9`, and remains application-wide unique;
