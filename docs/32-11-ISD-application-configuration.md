@@ -60,7 +60,7 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: SID-{ID}
+  - timingSystemId: "{ID}"
     timingNodes:
       - timingNodeId: "{ID}"
 ```
@@ -79,8 +79,8 @@ Rules:
   where the owning field defines that context, currently TimingData storage paths;
 - after substitution, the normal field-specific IF-11 validation rules still apply.
 
-For the common single-system/single-node form, `ID: A`, `timingNodeId: "{ID}"` and
-`timingSystemId: SID-{ID}` produce the compact local identities `A` and `SID-A`.
+For a single-system/single-node configuration, `ID: A` makes both
+`timingNodeId: "{ID}"` and `timingSystemId: "{ID}"` resolve to `A`.
 Multi-system deployments may define separate parameters or explicit IDs as needed.
 
 ## Effective configuration model
@@ -185,7 +185,7 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: SID-{ID}
+  - timingSystemId: "{ID}"
     eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
@@ -203,11 +203,11 @@ The same structure naturally represents multiple systems and nodes:
 
 ```yaml
 timingSystems:
-  - timingSystemId: SID-A
+  - timingSystemId: 9
     timingNodes:
       - timingNodeId: A
       - timingNodeId: B
-  - timingSystemId: SID-B
+  - timingSystemId: C
     timingNodes:
       - timingNodeId: C
 ```
@@ -217,6 +217,13 @@ Rules:
 - `timingSystems` and each nested `timingNodes` are non-empty YAML lists;
   their elements are YAML objects with explicit identity fields;
   mapping-based topology collections are not part of the IF-11 syntax;
+- `TimingSystemId` is one character `A`..`Z` or `1`..`9` and unique among
+  all TimingSystems hosted by the application;
+- a TimingSystem with **one TimingNode** uses exactly the **same ID** as that node
+  (system `A` contains node `A`, system `B` contains node `B`);
+- a TimingSystem with **multiple TimingNodes** uses a **different** ID that does
+  not equal any TimingNode ID in the application (for now, system `9`
+  containing nodes `A` and `B`); no `SID-` prefix is used;
 - `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
 - `TimingNodeId` identifies the logical TimingNode, is exactly one character `A`..`Z` or `1`..`9`, and remains application-wide unique;
@@ -286,7 +293,7 @@ io
   devices
     antennaManagers
       system-one-antennas
-        timingSystemId: system-one
+        timingSystemId: 9
         antennas
           1
             provider: simulated
@@ -747,7 +754,9 @@ Validation includes, where applicable:
 - unknown or unresolved `{Parameter}` references;
 - unresolved contextual `{NodeId}` / `{SystemId}` references outside fields that own
   those contexts;
-- missing/invalid or duplicate internal `TimingSystemId` values;
+- missing/invalid, non-compact, or duplicate internal `TimingSystemId` values;
+- one-node TimingSystems with IDs different from their TimingNodeId;
+- multi-node TimingSystems with IDs matching any configured TimingNodeId;
 - TimingSystems without at least one configured TimingNode;
 - duplicate application-wide `TimingNodeId` values;
 - a configured TimingNode `LocationId` that violates an explicitly defined compatibility rule of the selected application profile;

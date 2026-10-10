@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Use compact IF-11 TimingSystem IDs: singleton systems use the TimingNode ID, multi-node systems use a distinct one-character ID (`9` for A/B). Update the authoritative configuration rules and ST-1 verification topology examples; remove SID-prefixed examples.
+
+
 - Make direct IF-03 automatic registration simulation `time` optional (omission uses the addressed node's composed TimeSource); record compact AUTO_REG audit provenance `tagSrc`/`timeSrc` in default IF-05 v1 JSONL without invalidating earlier records. Align VTS and interface designs.
 
 
