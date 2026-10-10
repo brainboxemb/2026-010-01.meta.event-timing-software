@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Assemble the selected native MyST/Sphinx-Needs sources in a temporary
+# Sphinx tree and build the Needs JSON + reader HTML for traceability.
+# Input: authored docs and rendered architecture assets under bld/docs.
+# Output: bld/sphinx-needs. Does not change source documents.
 set -euo pipefail
 
 rm -rf bld/sphinx-needs

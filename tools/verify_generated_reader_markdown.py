@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Verify generated human-reader Markdown from Sphinx-Needs output."""
+"""Verify that the generated reader Markdown preserves authored Need content.
+
+This checks rendering behaviour (metadata, body order, links, status labels)
+using a few representative objects. Object inventories/relations are *not*
+specified here: their authority is the source Needs and the normalized graph,
+which validate_engineering_coverage.py checks separately.
+Input: bld/docs/documents and, for dynamic ID checks, authored docs/*.md.
+"""
 
 from pathlib import Path
 
@@ -70,7 +77,7 @@ uc_start = use_cases.index('<a id="UC-001"></a>')
 uc_end = use_cases.index('<a id="UC-002"></a>', uc_start)
 uc_block = use_cases[uc_start:uc_end]
 uc_order = (
-    uc_block.index("**UC-001 — Open a registration point**"),
+    uc_block.index("**UC-001 —"),
     uc_block.index("**Preconditions:**"),
     uc_block.index("**Main flow:**"),
     uc_block.index("**Alternative/failure flows:**"),
@@ -131,49 +138,38 @@ if "- **Elaborates:**" not in design_block:
 if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_block:
     raise SystemExit("generated reader Markdown missing inverse SSD architecture links")
 
-current_use_case_numbers = (*range(1, 8), *range(9, 25))
-for number in current_use_case_numbers:
-    object_id = f"UC-{number:03d}"
-    if f'<a id="{object_id}"></a>' not in use_cases:
-        raise SystemExit(f"generated reader Markdown missing {object_id}")
-si01_ids = (
-    "SI01-REQ-001", "SI01-REQ-002", "SI01-REQ-003",
-    "SI01-REQ-010", "SI01-REQ-011",
-    "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
-    "SI01-REQ-030", "SI01-REQ-031", "SI01-REQ-032", "SI01-REQ-033",
-    "SI01-REQ-040", "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043",
-    "SI01-REQ-044", "SI01-REQ-045", "SI01-REQ-046", "SI01-REQ-047",
-    "SI01-REQ-048", "SI01-REQ-049", "SI01-REQ-050", "SI01-REQ-051",
-    "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054", "SI01-REQ-055",
-)
-for object_id in si01_ids:
-    if f'<a id="{object_id}"></a>' not in ssd:
-        raise SystemExit(f"generated reader Markdown missing {object_id}")
+# Verify all current source Need IDs survived reader generation. Unlike a
+# hard-coded range/list, this automatically tracks future UC/REQ additions.
+import re
 
-si02_ssd = (root / "41-02-SSD-gui-application-specification-document.md").read_text(
-    encoding="utf-8"
-)
-for number in range(1, 9):
-    object_id = f"SI02-REQ-{number:03d}"
-    if f'<a id="{object_id}"></a>' not in si02_ssd:
-        raise SystemExit(f"generated reader Markdown missing {object_id}")
+sources = {
+    "30-UC-system-use-cases.md": "uc",
+    "41-01-SSD-timing-application-specification-document.md": "req",
+    "41-02-SSD-gui-application-specification-document.md": "req",
+    "32-03-ISD-application-control-status.md": "ifreq",
+    "32-05-ISD-timingdata-interchange.md": "ifreq",
+}
+for filename, need_type in sources.items():
+    authored = (Path("docs") / filename).read_text(encoding="utf-8")
+    output = (root / filename).read_text(encoding="utf-8")
+    source_ids = set(
+        re.findall(
+            rf"(?m)^:::\\{{{need_type}\\}}[^\\n]*\\n:id: ([A-Za-z0-9_-]+)",
+            authored,
+        )
+    )
+    if not source_ids:
+        raise SystemExit(f"no authored {need_type} objects in {filename}")
+    missing = sorted(
+        need_id
+        for need_id in source_ids
+        if f'<a id="{need_id}"></a>' not in output
+    )
+    if missing:
+        raise SystemExit(f"reader Markdown lost source Needs from {filename}: {missing}")
 
-isd = (root / "32-03-ISD-application-control-status.md").read_text(
-    encoding="utf-8"
-)
-for number in range(1, 17):
-    object_id = f"IF03-REQ-{number:03d}"
-    if f'<a id="{object_id}"></a>' not in isd:
-        raise SystemExit(f"generated reader Markdown missing {object_id}")
-
-timingdata_isd = (root / "32-05-ISD-timingdata-interchange.md").read_text(
-    encoding="utf-8"
-)
-for number in range(1, 8):
-    object_id = f"IF05-REQ-{number:03d}"
-    if f'<a id="{object_id}"></a>' not in timingdata_isd:
-        raise SystemExit(f"generated reader Markdown missing {object_id}")
-
+isd = (root / "32-03-ISD-application-control-status.md").read_text(encoding="utf-8")
+timingdata_isd = (root / "32-05-ISD-timingdata-interchange.md").read_text(encoding="utf-8")
 if "- **Status:** Draft" not in timingdata_isd:
     raise SystemExit("generated reader Markdown does not expand D to Draft")
 if "- **Status:** Review" not in isd:

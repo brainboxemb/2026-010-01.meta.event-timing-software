@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
-"""Verify the generated Engineering Portal structure and provenance.
+"""Verify that the built Engineering Portal faithfully presents engineering data.
 
-The workflow supplies SOURCE_REVISION. The verifier intentionally reads the
-same generated files and applies the same assertions that previously lived
-inline in docs-build.yml.
+Purpose: test the *transformation* from source Needs/normalized graph to portal
+objects, relationships, navigation, provenance and search. It is not a second
+requirements baseline: IDs, UC counts, chapter titles and complete relation
+sets are owned by the source documents. Coverage of those sources against the
+Needs export/graph belongs to validate_engineering_coverage.py.
+
+A few named objects below are deliberate end-to-end examples, not an inventory
+of every required UC or SI-01 requirement. Browser interactions are exercised
+separately by verify_engineering_portal_workspace.sh.
+
+Inputs: bld/engineering-graph.json, generated bld/engineering-portal, sources.
+Environment: SOURCE_REVISION, set by CI to the revision being built.
 """
 
 import json
@@ -41,59 +50,32 @@ use_cases = {
     for object_id, item in objects.items()
     if item.get("type") == "uc"
 }
-if len(use_cases) != 23:
-    raise SystemExit(f"expected 23 current system use cases, got {len(use_cases)}")
+if not use_cases:
+    raise SystemExit("engineering graph contains no use cases")
 
-# Keep MyST headers legible in GitHub's raw Markdown preview. Each opening
-# title, ID and status source line must end in two literal spaces.
+# The source-formatting rule is project-wide, not a per-UC fixture list.
 uc_source = Path("docs/30-UC-system-use-cases.md").read_text(encoding="utf-8")
 uc_headers = re.findall(
-    r"(?m)^(:::\{uc\}[^\n]*\n:id: UC-\d+[^\n]*\n:status: [DRA][^\n]*)\n",
+    r"(?m)^(:::\\{uc\\}[^\\n]*\\n:id: UC-\\d+[^\\n]*\\n:status: [DRA][^\\n]*)\\n",
     uc_source,
 )
 if len(uc_headers) != len(use_cases):
-    raise SystemExit("not every use case has a readable ID/status header")
+    raise SystemExit("use-case source header count differs from generated objects")
 for uc_header in uc_headers:
     if any(not line.endswith("  ") for line in uc_header.splitlines()):
         raise SystemExit("use-case header must have two trailing spaces per line")
-# The SI-01 SSD is written in actor-first functional groups, followed by
-# technical constraints, independently of historical requirement numbering.
+
+# The only prescribed SSD order is functional capabilities before technical
+# constraints and architecture. Individual requirement numbers/groups are free
+# to evolve in the source; IDs and traceability are checked downstream.
 si01_source = Path("docs/41-01-SSD-timing-application-specification-document.md").read_text(
     encoding="utf-8"
 )
-fun = si01_source.index("### Functional requirements")
-tech = si01_source.index("### Technical requirements", fun)
-architecture = si01_source.index("## Software-item architecture", tech)
-if not (fun < tech < architecture):
-    raise SystemExit("SI-01 functional/technical requirement order is incorrect")
-functional_source = si01_source[fun:tech]
-technical_source = si01_source[tech:architecture]
-first_req = re.search(r"(?m)^:id: (SI01-REQ-\d+)", functional_source)
-if first_req is None or first_req.group(1) != "SI01-REQ-040":
-    raise SystemExit("SI-01 functional requirements must start with UC-001 OPEN")
-si01_req_ids = re.findall(r"(?m)^:id: (SI01-REQ-\d+)", si01_source[:architecture])
-if len(si01_req_ids) != 47 or len(set(si01_req_ids)) != 47:
-    raise SystemExit("SI-01 source requirements missing or duplicated")
-for req_id, uc_id in (
-    ("SI01-REQ-040", "UC-001"),
-    ("SI01-REQ-072", "UC-002"),
-    ("SI01-REQ-073", "UC-001"),
-    ("SI01-REQ-074", "UC-001"),
-    ("SI01-REQ-071", "UC-021"),
-):
-    source_req = re.search(
-        rf"(?s):::\{{req\}} [^\n]+\n:id: {req_id}[^\n]*\n.*?\n:::",
-        si01_source[:architecture],
-    )
-    if source_req is None or uc_id not in source_req.group(0):
-        raise SystemExit(f"{req_id} missing expected use-case link {uc_id}")
-for heading in ("Registration operation", "Participant registration",
-                "Ready teams and displays", "Registration cabinet and backoffice",
-                "Errors and recovery", "Development, engineering and system testing"):
-    if f"#### {heading}" not in functional_source:
-        raise SystemExit("SI-01 functional requirement group missing: " + heading)
-if "SI01-REQ-001" not in technical_source:
-    raise SystemExit("external configuration must be in technical requirements")
+fun = si01_source.find("### Functional requirements")
+tech = si01_source.find("### Technical requirements")
+architecture = si01_source.find("## Software-item architecture")
+if not (0 <= fun < tech < architecture):
+    raise SystemExit("SI-01 requirements must precede architecture, functional before technical")
 
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
@@ -141,7 +123,7 @@ timing_node_page = (site / "objects" / "TimingNode" / "index.html").read_text(
 )
 for heading in (
     "This architecture element realizes:",
-    "Detailed designs (2)",
+    "Detailed designs",
 ):
     if heading not in timing_node_page:
         raise SystemExit("object details missing semantic heading: " + heading)
@@ -154,147 +136,56 @@ design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_
 if "This detailed design elaborates:" not in design_page:
     raise SystemExit("design details missing outgoing elaborates heading")
 
-# UC-001 opens the registration point from the iPad. Its direct obligations
-# remain application-level SI-01 requirements, including the OPEN operation.
-# UC-002 closes it. IF-03 and IF-04 refine the application requirements.
-uc = portal_view["objects"]["UC-001"]
-specification_sections = [
-    section for section in uc["relation_groups"]
-    if section["type"] == "specifies" and section["direction"] == "incoming"
-]
-if len(specification_sections) != 1:
-    raise SystemExit("UC-001 missing a unique incoming requirement section")
-requirements = specification_sections[0]
-if requirements["title"] != "Requirements (8)":
-    raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040", "SI01-REQ-073", "SI01-REQ-074"]
-if sorted(requirements["related_ids"]) != sorted(expected):
-    raise SystemExit(
-        f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
-    )
-if requirements["document_groups"]:
-    raise SystemExit("single-source UC-001 application requirements should remain flat")
-
-uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
-    encoding="utf-8"
+# One representative UC-to-software-to-interface route tests that links remain
+# navigable. Do not list every UC and requirement here: source links are
+# authoritative, and validate_engineering_coverage checks completeness.
+sample_uc = "UC-001"
+sample_req = "SI01-REQ-040"
+sample_interface = "IF04-REQ-003"
+sample_relations = (
+    ("specifies", sample_req, sample_uc),
+    ("refines", sample_interface, sample_req),
+    ("realizes", "TimingNode", "SI01-REQ-024"),
 )
-if "Requirements (8)" not in uc_page:
-    raise SystemExit("UC-001 object page missing application-requirement heading")
-for target in expected:
-    if f'href="../{target}/"' not in uc_page:
-        raise SystemExit("UC-001 object page missing visible application link to " + target)
-
-expected_refinements = {
-    ("IF04-REQ-002", "SI01-REQ-024"),
-    ("IF04-REQ-008", "SI01-REQ-025"),
-    ("IF04-REQ-009", "SI01-REQ-023"),
-    ("IF03-REQ-004", "SI01-REQ-024"),
-    ("IF03-REQ-005", "SI01-REQ-023"),
-    ("IF03-REQ-006", "SI01-REQ-025"),
-}
-actual_refinements = {
-    (relation.get("from"), relation.get("to"))
-    for relation in graph["relations"]
-    if relation.get("type") == "refines"
-}
-missing = expected_refinements - actual_refinements
-if missing:
-    raise SystemExit(f"missing application/interface refinement links: {sorted(missing)}")
-
-for interface_id in ("IF04-REQ-001", "IF04-REQ-002", "IF04-REQ-006", "IF04-REQ-008", "IF04-REQ-009"):
-    if any(
-        relation.get("from") == interface_id
-        and relation.get("to") == "UC-001"
-        and relation.get("type") == "specifies"
-        for relation in graph["relations"]
+for relation_type, source_id, target_id in sample_relations:
+    if not any(
+        r.get("type") == relation_type
+        and r.get("from") == source_id
+        and r.get("to") == target_id
+        for r in graph["relations"]
     ):
-        raise SystemExit("IF-04 still shortcuts application traceability: " + interface_id)
-
-timing_node_groups = portal_view["objects"]["TimingNode"]["relation_groups"]
-realizes = next(
-    group for group in timing_node_groups if group["type"] == "realizes"
-)
-if "SI01-REQ-024" not in realizes["related_ids"]:
-    raise SystemExit("TimingNode architecture does not realize SI01-REQ-024")
-
-# Keep every use case at the intended engineering level. The lists below are
-# deliberately exact so later interface/detail shortcuts cannot silently grow back.
-expected_uc_direct = {
-    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040", "SI01-REQ-073", "SI01-REQ-074"},
-    "UC-002": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-072", "SI01-REQ-073"},
-    "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
-    "UC-021": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-071"},
-    "UC-022": {"SI02-REQ-004", "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007"},
-    "UC-023": {"SI02-REQ-008"},
-    "UC-024": {"SI01-REQ-066", "SI01-REQ-067"},
-    "UC-004": {"SI01-REQ-052", "SI01-REQ-055"},
-    "UC-005": {"SI01-REQ-060"},
-    "UC-006": {"SI01-REQ-061"},
-    "UC-007": {"SI01-REQ-062"},
-    "UC-009": {
-        "SI01-REQ-020", "SI01-REQ-021", "SI01-REQ-022", "SI01-REQ-023",
-        "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040",
-        "SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-043", "SI01-REQ-044",
-        "SI02-REQ-001", "SI02-REQ-002", "SI02-REQ-003", "SI02-REQ-004",
-        "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007", "SI02-REQ-008",
-        "IF03-REQ-003", "IF03-REQ-012", "IF03-REQ-013",
-    },
-    "UC-010": {"SI01-REQ-063"},
-    "UC-011": {"SI01-REQ-042", "SI01-REQ-045", "SI01-REQ-064", "SI01-REQ-065"},
-    "UC-012": {"SI01-REQ-046", "SI01-REQ-051", "SI01-REQ-065"},
-    "UC-013": {"SI01-REQ-047", "SI01-REQ-048"},
-    "UC-014": {"SI01-REQ-003"},
-    "UC-015": {"SI01-REQ-003", "SI01-REQ-031", "SI01-REQ-066"},
-    "UC-016": {"SI01-REQ-031", "SI01-REQ-067"},
-    "UC-017": {"SI01-REQ-068"},
-    "UC-018": {"SI01-REQ-069"},
-    "UC-019": {"SI01-REQ-070"},
-    "UC-020": {"SI01-REQ-021", "SI01-REQ-024", "SI01-REQ-049"},
-}
-actual_uc_direct = {
-    uc_id: {
-        relation.get("from")
-        for relation in graph["relations"]
-        if relation.get("type") == "specifies" and relation.get("to") == uc_id
-    }
-    for uc_id in expected_uc_direct
-}
-for uc_id, expected_ids in expected_uc_direct.items():
-    if actual_uc_direct[uc_id] != expected_ids:
         raise SystemExit(
-            f"{uc_id} direct requirement set differs: "
-            f"expected {sorted(expected_ids)}, got {sorted(actual_uc_direct[uc_id])}"
+            f"sample traceability path missing {source_id} --{relation_type}--> {target_id}"
         )
 
-# IF-03 direct use-case links are now reserved for Engineering Client capabilities
-# that are themselves explicit actor-visible operations in UC-009.
-actual_if03_direct = {
-    (relation.get("from"), relation.get("to"))
-    for relation in graph["relations"]
-    if relation.get("type") == "specifies"
-    and str(relation.get("from", "")).startswith("IF03-REQ-")
-}
-expected_if03_direct = {
-    ("IF03-REQ-003", "UC-009"),
-    ("IF03-REQ-012", "UC-009"),
-    ("IF03-REQ-013", "UC-009"),
-}
-if actual_if03_direct != expected_if03_direct:
-    raise SystemExit(
-        f"unexpected direct IF-03/use-case links: {sorted(actual_if03_direct)}"
-    )
+# Check portal relation groups against the actual graph for *every* object,
+# without maintaining a second hand-authored list of expected relationships.
+for object_id, view_object in portal_view["objects"].items():
+    displayed = {
+        (group["type"], group["direction"], other)
+        for group in view_object["relation_groups"]
+        for other in group["related_ids"]
+    }
+    from_graph = set()
+    for rel in graph["relations"]:
+        rel_type = rel["type"]
+        if rel.get("from") == object_id:
+            from_graph.add((rel_type, "outgoing", rel["to"]))
+        if rel.get("to") == object_id:
+            from_graph.add((rel_type, "incoming", rel["from"]))
+    if displayed != from_graph:
+        raise SystemExit(f"{object_id}: portal relations diverge from normalized graph")
 
-if any(
-    relation.get("type") == "specifies"
-    and str(relation.get("from", "")).startswith("IF04-REQ-")
-    for relation in graph["relations"]
-):
-    raise SystemExit("IF-04 requirement still directly specifies a use case")
+uc_page = (site / "objects" / sample_uc / "index.html").read_text(encoding="utf-8")
+if f'href="../{sample_req}/"' not in uc_page:
+    raise SystemExit("UC sample page does not link to its software requirement")
+req_page = (site / "objects" / sample_req / "index.html").read_text(encoding="utf-8")
+if f'href="../{sample_interface}/"' not in req_page:
+    raise SystemExit("requirement sample page does not link to its interface refinement")
 
-si02_ids = [f"SI02-REQ-{number:03d}" for number in range(1, 9)]
-for object_id in si02_ids:
-    if object_id not in objects:
-        raise SystemExit(f"engineering graph missing SI-02 requirement {object_id}")
+# A single SI-02 example checks the client family is included in the portal.
+if "SI02-REQ-001" not in objects:
+    raise SystemExit("engineering graph missing the SI-02 sample requirement")
 si02_page = (site / "objects" / "SI02-REQ-001" / "index.html").read_text(
     encoding="utf-8"
 )
@@ -334,16 +225,13 @@ if not any(
     raise SystemExit(
         "engineering graph missing DD-PresentationAccess -> PresentationGateway elaborates relation"
     )
-expected_tool_eng_docs = {
-    "ref": "v0.10.0",
-    "sha": "417feac3b9f8b277a544337968087d97b8204a3d",
-}
-if provenance["tool_eng_docs"] != expected_tool_eng_docs:
-    raise SystemExit(
-        "portal tool provenance mismatch: "
-        f"actual={provenance['tool_eng_docs']!r} "
-        f"expected={expected_tool_eng_docs!r}"
-    )
+# The build records the tool revision it actually used. Version pinning is
+# verified by the CI bootstrap, not copied into a second list here.
+tool_provenance = provenance.get("tool_eng_docs")
+if not isinstance(tool_provenance, dict) or not all(
+    tool_provenance.get(field) for field in ("ref", "sha")
+):
+    raise SystemExit("portal missing tool.eng-docs revision provenance")
 
 required_diagram_ids = {
     object_id
@@ -513,25 +401,11 @@ if "grid-template-columns: minmax(0, 3fr) 4px minmax(18rem, 1fr);" not in explor
     raise SystemExit("Engineering Explorer layout lost the resizer column")
 
 search = (site / "search/search_index.json").read_text(encoding="utf-8")
-for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-REQ-001", "IF03-REQ-001", "VC-ST1-001", "UC-001", "UC-009", "UC-014"):
-    if object_id not in search:
-        raise SystemExit(f"portal search index missing {object_id}")
-# These probes follow user-visible use-case actions rather than the
-# implementation interface names previously embedded in the UC narratives.
-for narrative in (
-    "The operator opens a Web browser on the iPad and enters the IP address of the registration cabinet.",
-    "The registration cabinet stops accepting new registrations.",
-    "The operator selects the manual registration action in the iPad interface.",
-    "The Engineering Client connects to the registration system through its public interfaces.",
-    "An engineer configures multiple virtual registration points",
-    "The engineer examines the recorded registration history",
-    "The tester selects the intended registration point",
-    "The tester selects a participant and runs a supported simulated RFID passage",
-):
-    if narrative not in search:
-        raise SystemExit(
-            f"portal search index missing use-case narrative: {narrative}"
-        )
+# Representative identifiers from different engineering families are sufficient
+# to catch a broken search index; its full contents follow the source graph.
+for sample in (sample_uc, sample_req, sample_interface, "TimingNode", "SI02-REQ-001"):
+    if sample not in search:
+        raise SystemExit(f"portal search index missing sample object {sample}")
 
 if not (site / "index.html").is_file():
     raise SystemExit("portal landing page missing")

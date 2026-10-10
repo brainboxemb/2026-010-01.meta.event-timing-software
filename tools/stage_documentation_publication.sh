@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Stage the validated, generated documentation and traceability evidence for
+# publication on the PR preview or production docs branch.
+# Input: bld/docs, bld/sphinx-needs and bld/engineering-portal, already built.
+# Output: RUNNER_TEMP/software-docs-publication; never edits authored docs.
 set -euo pipefail
 
 : "${SOURCE_REVISION:?SOURCE_REVISION must be set}"

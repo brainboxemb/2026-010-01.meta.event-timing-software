@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Validate that every stable project engineering object is in Needs and the normalized graph."""
+"""Check completeness of engineering objects from authored documents to graph.
+
+This is the authority for whole-project object *coverage*: discover source
+Needs and diagram IDs, then compare them to native Needs JSON and normalized
+graph. Portal rendering and browser interactions are verified separately.
+No hand-maintained lists of current UC or REQ identifiers are needed.
+"""
 
 from __future__ import annotations
 

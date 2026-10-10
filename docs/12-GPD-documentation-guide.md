@@ -110,6 +110,31 @@ Keep its other applicable relations (`:refines:`, `:depends_on:`) instead.
 Use a separate requirement for a genuinely distinct missing obligation rather
 than inserting unrelated obligations into an existing requirement.
 
+## Verification scripts and engineering data ownership
+
+Engineering verification checks the **transformation of authored content**, not a
+second hand-maintained set of product requirements. Use source documents and
+their Sphinx-Needs objects as the authority for IDs, counts and relationships.
+
+- `validate_engineering_coverage.py` compares authored engineering objects
+  with the native Needs export and normalized graph.
+- `verify_engineering_portal.py` checks that the graph appears correctly in
+  generated portal object pages, links, provenance and search.
+- `verify_engineering_portal_workspace.sh` runs a few representative browser
+  interactions (navigation, object comparison and pane controls).
+- `verify_generated_reader_markdown.py` checks that generated reader documents
+  preserve Needs prose and metadata, with complete source-ID coverage.
+
+Tests may deliberately pick **a few named objects** as stable end-to-end examples.
+Do not copy the entire current use-case catalogue, requirement inventory, exact
+link sets or current chapter labels into a test. Derive these from source/graph
+or test a structural invariant instead. Published artifact filenames and
+deliberate interface contract fixtures may still be explicit when required.
+
+Each script begins with its purpose, inputs and expected output/evidence where
+those are not obvious from its name. Avoid duplicating the same rules across
+several scripts.
+
 ## Document categories and numbering
 
 The numeric prefix groups documents by engineering role. It helps navigation but does

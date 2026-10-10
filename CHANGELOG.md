@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Reduce duplicated requirements administration in Engineering Portal verification: validate graph-to-portal relations dynamically, keep a few intentional end-to-end fixtures, derive UC/source-object inventories, and describe script responsibility across the documentation toolchain. Run documentation CI when verifier scripts change.
+
+
 - Organize SI-01 SSD requirements by functional operator behaviour then technical constraints, preserving all existing IDs; add UC-traceable close, operator-session independence and blocking-error OPEN requirements plus Web local-network and committed-history obligations.
 
 
