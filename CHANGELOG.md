@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align physical registration-system use cases with the iPad operator flow: separate opening and closing, handle an already-open cabinet and software errors, give each use case a draft status, and distinguish system scenarios from software interface allocations.
+
 - Complete Step 6 A01 through Java PR #402: SI-02 now implements the Java 21 / JavaFX 21 / BentoFX workbench, instance-scoped connected-system context and CI-verified Windows jpackage app-image; advance Step 6 to V01 without claiming manual GUI verification.
 
 - Preserve the complete SIP step planning-change log and paginate long change history across additional detail-board pages instead of truncating or rejecting it.
