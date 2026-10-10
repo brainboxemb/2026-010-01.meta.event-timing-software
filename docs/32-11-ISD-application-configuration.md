@@ -79,8 +79,8 @@ Rules:
   where the owning field defines that context, currently TimingData storage paths;
 - after substitution, the normal field-specific IF-11 validation rules still apply.
 
-For the common single-system/single-node form, `ID: A`, `timingNodeId: "{ID}"` and
-`timingSystemId: "{ID}"` produce the compact local identities `A` and `A`.
+For a single-system/single-node configuration, `ID: A` makes both
+`timingNodeId: "{ID}"` and `timingSystemId: "{ID}"` resolve to `A`.
 Multi-system deployments may define separate parameters or explicit IDs as needed.
 
 ## Effective configuration model
