@@ -263,7 +263,7 @@ For each configured TimingNode, SI-01 shall provide a queryable current
 operational state independently of presentation transport. That state shall
 contain at least:
 
-- the `TimingNodeId`;
+- the `NodeId`;
 - the current operational `LocationId`, or no assigned location;
 - lifecycle state `CLOSED` or `OPEN`;
 - relevant explicit problem/error state.
@@ -288,10 +288,10 @@ The current application status snapshot shall contain at least:
 
 - application/build identity;
 - current application state;
-- every configured `TimingNodeId`;
+- every configured `NodeId`;
 - the current operational state of every configured TimingNode as defined by SI01-REQ-024;
 - for each contained TimingNode configuration/startup failure, the affected
-  `TimingNodeId` and a machine-readable problem indication.
+  `NodeId` and a machine-readable problem indication.
 :::
 
 The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
@@ -590,10 +590,10 @@ application without requiring operating-system-level forced process termination.
 :specifies: UC-014, UC-015  
 
 SI-01 shall support configuration of one or more `TimingNode` instances, each
-identified by a stable `TimingNodeId`.
+identified by a stable `NodeId`.
 :::
 
-IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
+IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `SystemId` internal and `NodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
 
 #### Build and version identity
 
@@ -851,7 +851,7 @@ Application
   +-- Conductor                 application lifecycle / activation order
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId        internal composition/simulation identity
+        +-- SystemId        internal composition/simulation identity
         +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
@@ -859,7 +859,7 @@ Application
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
-              +-- TimingNodeId   functional upstream/timing-data identity
+              +-- NodeId   functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
@@ -1083,9 +1083,9 @@ do not introduce messages merely to preserve a layer diagram.
 upstream system at application scope. **Upstream** describes that external
 system relationship, not the direction of an individual message; the exchange is
 bidirectional. The upstream wire contract does not need to expose
-`TimingSystemId`. Each configured upstream protocol/gateway context belongs
+`SystemId`. Each configured upstream protocol/gateway context belongs
 internally to one `TimingSystem`; node-scoped messages are routed functionally
-by `TimingNodeId` to that system's addressed TimingNode. Protocol-level
+by `NodeId` to that system's addressed TimingNode. Protocol-level
 messages such as ping/heartbeat can be handled by
 `TimingSystem`/`UpstreamProtocol` without involving a TimingNode.
 
@@ -1101,7 +1101,7 @@ one parent/child tree:
 
 ```text
 TimingSystem (1..N per Application)
-  TimingSystemId              internal only
+  SystemId              internal only
   Conductor                   first system coordinator; TimingNodes + inventory
   SystemStatus                complete current system overview
   UpstreamMessagePort         system-level upstream messages
@@ -1110,7 +1110,7 @@ TimingSystem (1..N per Application)
     synchronisation / reconciliation
     ping / pong and other protocol messages
   1..N TimingNode
-    TimingNodeId              functional protocol/data identity
+    NodeId              functional protocol/data identity
     LocationId
     State
     UpstreamMessagePort       TimingNode-level upstream messages
@@ -1129,7 +1129,7 @@ TimingData
   factory / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `TimingSystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `TimingSystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
@@ -1151,7 +1151,7 @@ that must be replayed.
 :::
 
 `TimingNode` is the per-location domain aggregate inside one `TimingSystem`. It owns its
-identity (`TimingNodeId` and `LocationId`), lifecycle/state and the per-node
+identity (`NodeId` and `LocationId`), lifecycle/state and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01.
 
 A TimingNode is also the **active serialization and ownership boundary** for mutable per-node
@@ -1182,7 +1182,7 @@ lifecycle or cross-aggregate target resolution.
 
 The TimingNode-level `UpstreamMessagePort` receives and emits node-scoped
 operations after `UpstreamMessageRouter` has resolved the owning TimingSystem
-and target `TimingNodeId`. It does not own transport connections or
+and target `NodeId`. It does not own transport connections or
 cross-aggregate target resolution.
 :::
 
@@ -1864,7 +1864,7 @@ One **Timing Point Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
 simulation contexts. Each TimingSystem owns a complete
 `SystemStatus` overview, a system-level
-`UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. Its internal `TimingSystemId` is not
+`UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. Its internal `SystemId` is not
 assumed to be part of the upstream wire contract.
 :::
 
@@ -1888,7 +1888,7 @@ operational/domain aggregate at one timing location. It
 belongs to exactly one `TimingSystem` and is the active
 serialization boundary for that node's mutable state.
 Its contained state objects are passive; the upstream and
-TimingData contracts remain centred on `TimingNodeId`.
+TimingData contracts remain centred on `NodeId`.
 :::
 
 
@@ -1932,7 +1932,7 @@ Application
   +-- Conductor                 application lifecycle / activation order
   |
   +-- 1..N TimingSystem
-        +-- TimingSystemId        internal composition/simulation identity
+        +-- SystemId        internal composition/simulation identity
         +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
@@ -1940,7 +1940,7 @@ Application
         |     +-- heartbeat / ping
         |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
-              +-- TimingNodeId   functional upstream/timing-data identity
+              +-- NodeId   functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort
@@ -1957,7 +1957,7 @@ Shared Domain contract:
   +-- TimingData
 ```
 
-`ApplicationId` identifies the running Timing Point Application instance. `TimingSystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `TimingNodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationId` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
+`ApplicationId` identifies the running Timing Point Application instance. `SystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `NodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationId` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
 
 <a id="fig-si01-02"></a>
 ![SI-01 software/domain decomposition](../../../raw/prod/docs/assets/architecture/timing-node-software-decomposition.svg)
@@ -2009,7 +2009,7 @@ Application
 
 Devices
     +-- Antenna (0..N)
-    |     +-- each Antenna -> 1..N TimingNodeId
+    |     +-- each Antenna -> 1..N NodeId
     +-- Rev1CanDisplay
     +-- Keypad
     +-- Beeper
@@ -2027,29 +2027,29 @@ Messaging
 
 UpstreamMessageRouter
     +-- system-level message -> TimingSystem.UpstreamMessagePort
-    +-- TimingNodeId -> TimingNode.UpstreamMessagePort
-    +-- TimingSystemId remains internal composition context
+    +-- NodeId -> TimingNode.UpstreamMessagePort
+    +-- SystemId remains internal composition context
 ```
 
 <a id="fig-si01-03"></a>
 ![TimingNode, hardware and upstream-system messaging routing](../../../raw/prod/docs/assets/architecture/timing-node-routing-mapping.svg)
 *Figure SI01-03 — TimingNode, hardware and upstream-system messaging routing.*
 
-`TimingNodeId` is the stable identity of a `TimingNode`, uses exactly one character `A`..`Z` or `1`..`9`, and scopes its sequence, persistence and synchronisation semantics. `LocationId` is a separate namespace. `AntennaId` is also separate and uses one digit `1`..`9`.
+`NodeId` is the stable identity of a `TimingNode`, uses exactly one character `A`..`Z` or `1`..`9`, and scopes its sequence, persistence and synchronisation semantics. `LocationId` is a separate namespace. `AntennaId` is also separate and uses one digit `1`..`9`.
 
-Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own TimingNodeId-scoped sequence/state while the original `AntennaId` remains available as context.
+Configured antenna mappings associate each `AntennaId` with one or more TimingNodes. Fan-out is explicit: if one antenna feeds two TimingNodes, each target TimingNode processes the observation through its own serialized state boundary and keeps its own NodeId-scoped sequence/state while the original `AntennaId` remains available as context.
 
 CAN and smart-network controllers are not alternate presentation layers. They are
 I/O/device-network responsibilities. A keypad, beeper or display may interact with or present information
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `TimingNodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `TimingSystemId` field is required.
+`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `NodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `SystemId` field is required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
 semantics. A connector-specific external name or routing key may participate in
-boundary mapping, but it does not replace the stable functional `TimingNodeId`.
-Internal `TimingSystemId` is local composition context rather than a new
+boundary mapping, but it does not replace the stable functional `NodeId`.
+Internal `SystemId` is local composition context rather than a new
 upstream routing identity. One gateway may use multiple connectors and one
 TimingNode may exchange messages through more than one connector via the gateway,
 router and its bidirectional port. `RabbitMqConnector` represents the
@@ -2057,7 +2057,7 @@ production-shaped transport; `DebugConnector` provides an engineering/debug
 transport to an external desktop/debug tool while preserving the same gateway
 and protocol boundary.
 
-`ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `TimingNodeId`.
+`ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `NodeId`.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. The Java baseline shares physical execution workers by functional role while each TimingNode keeps its own bounded serial command lane and node-local TagProcessor state. Logging infrastructure, HTTP server infrastructure, connector infrastructure, configuration loading and network monitoring may likewise be shared where their semantics remain isolated.
 
@@ -2417,16 +2417,16 @@ ApplicationConfig
 The identity boundaries are deliberate:
 
 - the application owns a stable `ApplicationId`;
-- the application composes 1..N internal `TimingSystem` contexts, each with an internal `TimingSystemId`;
+- the application composes 1..N internal `TimingSystem` contexts, each with an internal `SystemId`;
 - each TimingSystem owns 1..N TimingNodes;
-- a `TimingNode` owns its stable functional `TimingNodeId` and configured `LocationId`;
-- `TimingSystemId` is local composition/simulation identity and is not added to TimingData/upstream addressing;
+- a `TimingNode` owns its stable functional `NodeId` and configured `LocationId`;
+- `SystemId` is local composition/simulation identity and is not added to TimingData/upstream addressing;
 - the high-level I/O model separates Devices from Device Networks;
 - Devices names the functional device endpoints/concepts, including antennas, keypads, beepers, passive CAN devices and smart network devices;
-- the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `TimingNodeId` targets;
+- the application may compose 0..N configured antennas; each antenna has its own `AntennaId` and may map to 1..N `NodeId` targets;
 - Device Networks contains `CanNetworkController` for the actively managed CAN network and `NetworkDeviceService` for bidirectional network-device communication;
 - when upstream messaging is configured for a TimingSystem, its protocol/gateway context uses 1..N connectors; multiple hosted TimingSystems keep those semantic contexts separate;
-- connector-specific external names/routing identities do not replace `TimingNodeId`;
+- connector-specific external names/routing identities do not replace `NodeId`;
 - presentation endpoints reference TimingNodes explicitly; an HTTP port, tablet or shell binding is not a property of the TimingNode domain object.
 
 Deployment composition is intentionally small and default-driven:
@@ -2532,7 +2532,7 @@ they do not become owners of TimingData fields or upstream protocol semantics.
 `UpstreamMessageRouter` owns application-level target resolution after semantic
 protocol decoding. A system-level operation is delivered through the owning
 `TimingSystem.UpstreamMessagePort`; a TimingNode-targeted operation is resolved
-by `TimingNodeId`, submitted through that TimingNode's serial boundary and
+by `NodeId`, submitted through that TimingNode's serial boundary and
 enters/leaves through `TimingNode.UpstreamMessagePort`. Protocol-level
 operations such as heartbeat/status and synchronisation control therefore do
 not need to be forced through a TimingNode.
@@ -2551,7 +2551,7 @@ external upstream system
                                v
                       UpstreamMessageRouter
                          |              |
-                         v              +--> TimingNodeId
+                         v              +--> NodeId
                    TimingSystem                |
               UpstreamMessagePort              v
                status / ping              TimingNode
@@ -2563,7 +2563,7 @@ connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
 Public protocol semantics and TimingData compatibility remain owned by Domain.
 
-`TimingSystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that belong to the configured TimingSystem use its `UpstreamMessagePort` and `UpstreamProtocol`/`SystemStatus`; they do not need to be forced through a TimingNode.
+`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that belong to the configured TimingSystem use its `UpstreamMessagePort` and `UpstreamProtocol`/`SystemStatus`; they do not need to be forced through a TimingNode.
 
 #### RFID
 
