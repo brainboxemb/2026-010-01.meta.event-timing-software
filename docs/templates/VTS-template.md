@@ -48,16 +48,17 @@ that identity where practical.
 
 ## <Profile> — <Profile name>
 
-```{vc} <Case title>
----
-id: VC-<profile>-<number>
-verifies: <requirement/interface IDs>
----
-```
+<!-- Each of the three Need-header lines below ends with two spaces.
+     Keep the body *inside* the directive for Sphinx-Needs traceability and
+     readable GitHub source rendering. Do not use YAML --- option delimiters. -->
+
+:::{vc} <Case title>  
+:id: VC-<profile>-<number>  
+:verifies: <requirement/interface IDs>  
 
 **Purpose**
 
-<!-- What this case proves. -->
+<!-- What this case proves; also name the interface exercised by the test. -->
 
 **Setup**
 
@@ -71,6 +72,8 @@ verifies: <requirement/interface IDs>
 **Expected result**
 
 <!-- Observable pass criteria. -->
+
+:::
 
 ## Open verification-case questions
 
