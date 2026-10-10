@@ -308,7 +308,7 @@ visual/interaction and async presentation review guidance.
 
 Normal Registrations displays interpreted TeamID/time in local time; the
 LogBook contains committed source records and their raw context. A blank
-terminal row is **presentation-only** follow-latest state: selecting it follows
+trailing table row is **presentation-only** follow-latest state: selecting it follows
 new records; inspecting older records pauses automatic follow.
 
 Direct auto-registration is an IF-03 injection of an already accepted

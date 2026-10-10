@@ -270,7 +270,7 @@ client-side HTTP submission as a committed TimingData entry.
 
 ### UI-15 — Bound queued UI work and preserve inspection
 
-**Rule:** Keep UI dispatch per burst bounded where data semantics allow it.
+**Rule:** Bound work per FX pulse where data semantics allow it.
 Batch display-only log append work, avoid redundant scheduled scroll/focus
 operations, and preserve the viewport when the user reviews history.
 Never batch by silently discarding committed TimingData.
