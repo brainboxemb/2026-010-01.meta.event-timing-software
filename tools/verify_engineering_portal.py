@@ -40,8 +40,8 @@ use_cases = {
     for object_id, item in objects.items()
     if item.get("type") == "uc"
 }
-if len(use_cases) != 19:
-    raise SystemExit(f"expected 19 current system use cases, got {len(use_cases)}")
+if len(use_cases) != 20:
+    raise SystemExit(f"expected 20 current system use cases, got {len(use_cases)}")
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
     for token in ("**Goal:**", "**Main flow:**"):
@@ -170,6 +170,7 @@ expected_uc_direct = {
     "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040"},
     "UC-002": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026"},
     "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
+    "UC-021": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-071"},
     "UC-004": {"SI01-REQ-052", "SI01-REQ-055"},
     "UC-005": {"SI01-REQ-060"},
     "UC-006": {"SI01-REQ-061"},
@@ -462,6 +463,7 @@ for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-R
 for narrative in (
     "The operator opens a Web browser on the iPad and enters the IP address of the registration cabinet.",
     "The registration cabinet stops accepting new registrations.",
+    "The operator selects the manual registration action in the iPad interface.",
     "The Engineering Client connects to the registration system through its public interfaces.",
     "An engineer configures multiple virtual registration points",
 ):

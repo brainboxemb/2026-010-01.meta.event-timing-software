@@ -266,7 +266,7 @@ unchanged while the TimingNode is OPEN.
 :::{req} Accepted registration commit semantics  
 :id: SI01-REQ-041  
 :status: R  
-:specifies: UC-003, UC-009  
+:specifies: UC-003, UC-009, UC-021  
 
 For an already-accepted registration, SI-01 shall commit TimingData using the
 supplied supported registration action, resolved `RegistrationId` and accepted
@@ -278,11 +278,25 @@ and shall reject actions whose TimingData semantics are not defined.
 :::{req} Committed registration observability  
 :id: SI01-REQ-042  
 :status: R  
-:specifies: UC-003, UC-009, UC-011  
+:specifies: UC-003, UC-009, UC-011, UC-021  
 
 SI-01 shall make committed registration TimingData observable through current
 history and live post-commit notification without exposing uncommitted records
 as committed state.
+:::
+
+:::{req} Operator manual registration
+:id: SI01-REQ-071
+:status: D
+:specifies: UC-021
+:depends_on: SI01-REQ-041, SI01-REQ-042
+
+For an OPEN TimingNode, SI-01 shall accept a normal manual registration with a
+resolved RegistrationId, effective registration time and client-selected
+AUTO/MAN time-source classification. SI-01 shall preserve that effective time,
+use the currently active location and commit a manual-registration ADD through
+the normal registration path. A closed TimingNode or invalid input shall not
+produce a successful registration.
 :::
 
 :::{req} Gate development auto-registration by capability  
@@ -324,7 +338,7 @@ preserve the applicable IF-05 semantic values.
 :::{req} Write TimingData before commit completion  
 :id: SI01-REQ-046  
 :status: D  
-:specifies: UC-003, UC-012  
+:specifies: UC-003, UC-012, UC-021  
 
 SI-01 shall successfully write one complete TimingData record to the configured
 local TimingData store before completing that TimingData commit. Only after

@@ -85,6 +85,7 @@ reading order or implementation sequence.
 | UC-001 | Open a registration point | Operator | Use an iPad browser to reach a registration cabinet and open registration for a selected location. |
 | UC-002 | Close a registration point | Operator | Stop accepting new registrations at an open registration point. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
+| UC-021 | Manually register a participant using an iPad | Operator | Enter a participant registration through the iPad browser without an RFID observation. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
 | UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
@@ -281,6 +282,49 @@ for the location that is currently open.
 **Observable result:** one accepted participant observation produces one committed
 registration associated with the source and location that were active at the
 time of acceptance.
+
+:::
+
+:::{uc} Manually register a participant using an iPad
+:id: UC-021
+:status: D
+
+**Goal:** allow an operator to record a participant's registration manually
+using the iPad when an RFID observation is not available or not used.
+
+**Primary actor:** operator.
+
+**Preconditions:**
+
+- the iPad is connected to the registration cabinet over the local network;
+- the operator has opened the cabinet's Web interface;
+- registration is `OPEN` for a location and the current location is visible.
+
+**Main flow:**
+
+1. The operator selects the manual registration action in the iPad interface.
+2. The operator enters the participant's registration number.
+3. The operator uses the time selected by the iPad or enters/corrects the registration time.
+4. The operator confirms the manual registration.
+5. The cabinet checks the input and records the participant, registration time and active location.
+6. The interface confirms the result and shows the new registration in the history.
+
+**Alternative/failure flows:**
+
+- **Invalid participant or time:** the cabinet rejects the entry and shows the
+  reason; no successful registration is reported.
+- **Registration closed:** manual registration is unavailable or rejected when the
+  cabinet is `CLOSED`.
+- **Software errors:** the cabinet shows relevant detected errors; a failure
+  preventing registration blocks the operation.
+- **Saving fails:** the cabinet reports failure and does not show an unrecorded
+  entry as a successful registration.
+- **Connection lost / uncertain outcome:** the operator checks the current
+  history after reconnecting before attempting the registration again, to avoid
+  unintentionally registering the same action twice.
+
+**Postcondition:** on success, the manual registration is retained for the
+active location and is visible with its recorded time.
 
 :::
 

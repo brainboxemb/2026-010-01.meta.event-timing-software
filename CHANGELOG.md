@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add Draft UC-021 for manual participant registration from the iPad browser; allocate shared manual-registration behaviour to SI-01 and the Web interface without treating the Web controls as implemented.
+
 - Keep engineering-portal narrative/search assertions and SI-01 requirement traceability aligned with the revised UC-001 OPEN and UC-002 CLOSE scenarios.
 
 - Align physical registration-system use cases with the iPad operator flow: separate opening and closing, handle an already-open cabinet and software errors, give each use case a draft status, and distinguish system scenarios from software interface allocations.

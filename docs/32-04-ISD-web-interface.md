@@ -37,7 +37,8 @@ IF-04 is allocated by
 The first baseline is driven mainly by:
 
 - UC-001 — open a registration point from an iPad Web browser, including connecting to an already-open cabinet;
-- UC-002 — close a registration point.
+- UC-002 — close a registration point;
+- UC-021 — manually register a participant through the iPad browser.
 
 ## Parties
 
@@ -143,6 +144,25 @@ IF04-OP-001. Live delivery is not required to replay changes that occurred while
 the client was disconnected. After loss and re-establishment of the live
 connection, the client shall obtain a fresh IF04-OP-001 baseline before treating
 later live changes as current.
+
+## IF04-OP-005 — Add manual registration
+
+The operator can add a manual participant registration while the bound
+registration point is OPEN.
+
+Inputs:
+
+- participant RegistrationId;
+- effective registration time, selected by the client or entered/edited by the operator;
+- whether the client selected the time (`AUTO`) or the operator entered/edited it (`MAN`).
+
+The registration uses the active location of the bound registration point.
+The supplied effective time is preserved. On success the committed manual
+registration is available in registration history. Invalid input, CLOSED state,
+failed persistence or outcome-unknown conditions must not be shown as success.
+
+This specifies the required Web-interface behaviour; a concrete iPad Web
+realization and its controls are designed separately.
 
 ## Command ordering
 
@@ -280,6 +300,16 @@ connection is lost, a conforming Web client shall treat its previously displayed
 state as non-current until a fresh IF04-OP-001 baseline has been established.
 :::
 
+
+:::{ifreq} Manual registration through Web interface
+:id: IF04-REQ-010
+:status: D
+:refines: SI01-REQ-071
+
+IF-04 shall expose IF04-OP-005 for normal operator manual registration through
+the Web client. The input shall preserve the effective registration time and
+AUTO/MAN client time-selection semantics of the shared application operation.
+:::
 
 ## Open points
 

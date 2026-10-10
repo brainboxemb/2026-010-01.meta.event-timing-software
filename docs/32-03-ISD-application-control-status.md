@@ -618,6 +618,7 @@ ADD record.
 :::{ifreq} Manual registration add  
 :id: IF03-REQ-023  
 :status: D  
+:refines: SI01-REQ-071  
 
 
 IF-03 shall provide IF03-OP-012 as a normal node-scoped manual-registration ADD
