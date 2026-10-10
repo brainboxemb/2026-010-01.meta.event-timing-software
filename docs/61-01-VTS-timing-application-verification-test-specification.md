@@ -398,6 +398,98 @@ part of this test profile.
 
 :::
 
+:::{vc} Verify two TimingNodes in one TimingSystem with separate LogBooks  
+:id: VC-ST1-007  
+:verifies: SI01-REQ-003, SI01-REQ-041, SI01-REQ-042, SI01-REQ-046, SI01-REQ-047, IF03-REQ-011, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009  
+
+**Executable test**
+
+`system-test/.../VcSt1_007Test.java`
+
+**Purpose**
+
+Verify through **IF-03 HTTP** that one packaged SI-01 process with one
+TimingSystem (`SID-9`) can independently operate two TimingNodes (`A`
+and `B`) and persist their committed TimingData in **two different physical
+LogBook files**, resolved from the `{NodeId}` path template.
+
+**Setup**
+
+- one TimingSystem `SID-9` containing TimingNodes `A` and `B`;
+- `io.storage.timingData.path: node-{NodeId}-logbook.jsonl`;
+- empty separate test/evidence directory, independent black-box test driver.
+
+**Procedure**
+
+1. Start the packaged application and query IF-03 status: both nodes exist,
+   initially `CLOSED`.
+2. Open node A at LocationId 24, add one automatic registration and close A.
+   Query A's LogBook: ordered OPEN, ADD, CLOSE at sequences 1..3.
+3. Before operating node B, query its LogBook: it remains empty.
+4. Open node B at LocationId 25, add a different automatic registration and
+   close B. Query B's LogBook: its own sequences independently start at 1..3.
+5. Stop SI-01 cleanly. Check that exactly the expected two distinct nonempty
+   files exist, named for nodes A and B. Each file contains only its own
+   NodeId, location and registration, with no records from the other node.
+6. Restart SI-01 using the same configuration and files. Query both LogBooks
+   through IF-03 and verify the separate three-record histories are recovered.
+
+**Expected result**
+
+- two independently addressed TimingNodes operate inside one TimingSystem;
+- each node maintains its own sequence beginning at 1, without cross-node
+  registrations or lifecycle records;
+- two physically different LogBooks exist and survive restart, with no
+  duplicated or lost records.
+
+:::
+
+:::{vc} Verify two TimingSystems with one TimingNode each and separate LogBooks  
+:id: VC-ST1-008  
+:verifies: SI01-REQ-003, SI01-REQ-041, SI01-REQ-042, SI01-REQ-046, SI01-REQ-047, IF03-REQ-011, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009  
+
+**Executable test**
+
+`system-test/.../VcSt1_008Test.java`
+
+**Purpose**
+
+Verify through **IF-03 HTTP** that one packaged SI-01 process can compose
+two independent TimingSystems (`SID-A` and `SID-B`), each containing one
+TimingNode (A and B respectively), and persist committed TimingData in
+**two different physical LogBook files**. The storage path resolves both
+`{SystemId}` and `{NodeId}` in this configuration.
+
+**Setup**
+
+- TimingSystem `SID-A` with TimingNode `A`;
+- TimingSystem `SID-B` with TimingNode `B`;
+- `io.storage.timingData.path: system-{SystemId}-node-{NodeId}-logbook.jsonl`;
+- empty separate test/evidence directory, independent black-box test driver.
+
+**Procedure**
+
+1. Start the packaged application and query IF-03 status: nodes A and B
+   exist and are initially `CLOSED`.
+2. Open A at LocationId 24, add one automatic registration and close A.
+   Verify B's LogBook remains empty.
+3. Open B at LocationId 25, add another registration and close B.
+   Independently query each LogBook; each has OPEN, ADD, CLOSE at sequences 1..3.
+4. Stop SI-01 cleanly and check both physical files. Their paths include the
+   correct TimingSystemId/TimingNodeId pair and each file contains only records
+   belonging to its own node.
+5. Restart the same two-system configuration and verify both separate
+   LogBook histories recover unchanged through IF-03.
+
+**Expected result**
+
+- both TimingSystems run in one SI-01 process with correct node addressing;
+- each TimingNode retains an independent ordered TimingData stream;
+- two physical LogBook files are created, isolated and recover independently;
+- neither system's records appear in the other system's LogBook.
+
+:::
+
 ## Evidence
 
 A VTS case defines what must be exercised and observed; it does not say that a
