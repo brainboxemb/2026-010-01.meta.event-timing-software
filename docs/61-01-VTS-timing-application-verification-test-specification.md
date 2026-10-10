@@ -409,13 +409,13 @@ part of this test profile.
 **Purpose**
 
 Verify through **IF-03 HTTP** that one packaged SI-01 process with one
-TimingSystem (`SID-9`) can independently operate two TimingNodes (`A`
+TimingSystem (`9`) can independently operate two TimingNodes (`A`
 and `B`) and persist their committed TimingData in **two different physical
 LogBook files**, resolved from the `{NodeId}` path template.
 
 **Setup**
 
-- one TimingSystem `SID-9` containing TimingNodes `A` and `B`;
+- one TimingSystem `9` containing TimingNodes `A` and `B`;
 - `io.storage.timingData.path: node-{NodeId}-logbook.jsonl`;
 - empty separate test/evidence directory, independent black-box test driver.
 
@@ -458,15 +458,15 @@ LogBook files**, resolved from the `{NodeId}` path template.
 **Purpose**
 
 Verify through **IF-03 HTTP** that one packaged SI-01 process can compose
-two independent TimingSystems (`SID-A` and `SID-B`), each containing one
+two independent TimingSystems (`A` and `B`), each containing one
 TimingNode (A and B respectively), and persist committed TimingData in
 **two different physical LogBook files**. The storage path resolves both
 `{SystemId}` and `{NodeId}` in this configuration.
 
 **Setup**
 
-- TimingSystem `SID-A` with TimingNode `A`;
-- TimingSystem `SID-B` with TimingNode `B`;
+- TimingSystem `A` with TimingNode `A`;
+- TimingSystem `B` with TimingNode `B`;
 - `io.storage.timingData.path: system-{SystemId}-node-{NodeId}-logbook.jsonl`;
 - empty separate test/evidence directory, independent black-box test driver.
 
