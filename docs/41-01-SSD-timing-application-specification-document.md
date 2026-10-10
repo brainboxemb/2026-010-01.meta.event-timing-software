@@ -333,7 +333,7 @@ updates as a live view. Duplicate TimingData observed through history plus live
 delivery shall be identifiable by Node ID together with sequence number.
 :::
 
-#### Ready teams and displays
+#### Ready teams
 
 :::{req} Traceable ready-team registry  
 :id: SI01-REQ-060  
@@ -345,6 +345,8 @@ TimingData. Accepted add/remove actions from keypad or operator input shall pass
 through the normal controlled TimingNode state-change path and shall remain
 traceable as ready-team history.
 :::
+
+#### Display control
 
 :::{req} Drive passive CAN display from current application state  
 :id: SI01-REQ-061  
