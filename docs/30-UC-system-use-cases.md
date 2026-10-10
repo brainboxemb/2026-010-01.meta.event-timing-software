@@ -300,15 +300,11 @@ time of acceptance.
 
 **Main flow:**
 
-1. SI-01 reports the result of the startup self-test and later antenna operations.
-2. A later inventory demand occurs because a mapped TimingNode becomes OPEN or an
-   operator/API explicitly requests another inventory/start attempt.
-3. SI-01 starts a new preparation and inventory attempt even if an earlier self-test or
-   inventory attempt failed.
-4. SI-01 powers, initializes and starts the antenna as required by its configuration and
-   provider.
-5. If the attempt succeeds, inventory runs normally.
-6. Existing committed TimingData and other configured antennas remain unchanged.
+1. The registration cabinet reports that one RFID antenna is unavailable or has failed.
+2. Registration is opened or the operator requests another start attempt.
+3. The cabinet retries starting the affected antenna even if an earlier attempt failed.
+4. On success, RFID registration is available again.
+5. Previously recorded registrations and any unaffected antennas remain available.
 
 **Alternative / failure flows:**
 
@@ -335,11 +331,10 @@ antenna. A later inventory demand can start another attempt without restarting S
 
 **Main flow:**
 
-1. A team-number add/remove action enters through a normal input adapter.
-2. SI-01 routes the command to the applicable TimingNode.
-3. `NextUpTeams` records the traceable add/remove mutation and updates its current set.
-4. Display state is rebuilt/updated from the current prepare-team state.
-5. Operator/status clients can observe the resulting state.
+1. An operator enters or removes a team number using the keypad or another supported operator control.
+2. The registration system updates its list of teams preparing next.
+3. The change becomes visible on connected displays and operator views.
+4. The system keeps the history needed to trace changes.
 
 Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
 
@@ -355,11 +350,10 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 **Main flow:**
 
-1. `CanNetworkController` discovers and monitors the configured CAN devices.
-2. SI-01 derives a current `DisplayModel` from application state.
-3. DisplayRev1Can-specific handling translates that model into CAN/device commands.
-4. On state change or CAN-device rediscovery, SI-01 actively refreshes the display as required.
-5. The passive display itself does not own ready-team/domain state.
+1. The registration cabinet is connected to the passive display.
+2. When the list of teams preparing changes, the cabinet updates the display.
+3. After a display reset or reconnection, the current information is shown again.
+4. The display continues showing the current information supplied by the cabinet.
 
 :::
 
@@ -373,13 +367,10 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 **Main flow:**
 
-1. `WifiNetworkController` starts the configured local data service and advertises that service through mDNS.
-2. DisplayRev2Wifi discovers the advertised SI-01 service and initiates the connection.
-3. SI-01 provides current timing/status/reference data through the selected network interface.
-4. DisplayRev2Wifi owns its local rendering and synchronisation state and consumes the data it needs.
-5. If the connection is lost, DisplayRev2Wifi is responsible for rediscovery/reconnect and can rebuild its local view from current SI-01 data.
-
-SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`. Exact mDNS service naming and the application protocol carried by the connection remain interface-design decisions.
+1. The smart display finds the available registration-system service on the network.
+2. The display connects and receives the information needed to show current status and reference data.
+3. The display presents the information using its own user interface.
+4. After a network interruption, the display reconnects and refreshes its current information.
 
 :::
 
@@ -395,12 +386,11 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 
 **Main flow:**
 
-1. Source-aware inbound backoffice communication receives a reference-data update.
-2. The transport adapter translates private/wire representation into public semantic data.
-3. SI-01 validates and applies the update.
-4. Start times and participant/team/tag reference data are applied to their owning domain state (`StageStartTimes` and `RaceData`) for the addressed TimingNode, without silently updating another target.
-5. SI-01 makes accepted/rejected update outcomes and current reference state observable through the public semantics required by the slice.
-6. Backup/restore state is updated according to later persistence policy; status exposes freshness/health where required.
+1. Backoffice sends updated start times or participant reference information to a registration point.
+2. The registration system checks the update and whether it applies to that registration point.
+3. A valid update becomes available for local registration and operator views.
+4. The system reports when an update cannot be accepted.
+5. Accepted information remains available during a later connection interruption.
 
 **Alternative/failure flows:** unknown target, invalid or conflicting reference
 update, or unavailable upstream transport. Message submission alone must not
@@ -418,19 +408,10 @@ be presented as proof that the target's reference state changed.
 
 **Main flow:**
 
-1. A committed TimingData record contains the source `TimingNodeId`, the `LocationId` active when that record was accepted, and its source sequence identity.
-2. A corresponding outbound item becomes pending in the outbox/synchronisation state when that capability is implemented.
-3. `UpstreamProtocol` represents the semantic message and `UpstreamGateway` carries it through the configured connector.
-4. A production connector such as RabbitMQ may later map that semantic message to its transport.
-5. Successful acknowledgement/reconciliation advances pending state according to the final protocol.
-6. Source ordering and gap detection remain possible at higher levels.
-
-**First-registration slice:** D03 defines the identity and outbound semantic
-representation needed for committed registration TimingData. The exact
-`TimingNodeId`/`LocationId` wire types and validation belong to the
-TimingData/ISD contract. Real RabbitMQ delivery, durable outbox/restart,
-acknowledgement/reconciliation and inbound reference-data simulation are later
-increments.
+1. The registration cabinet records participant registrations with their registration-point identity, location and order.
+2. The cabinet sends records to backoffice in the correct order.
+3. Backoffice receives the registrations and confirms receipt as supported.
+4. After an interruption, the cabinet resumes delivery without duplicating or losing registrations.
 
 :::
 
@@ -444,11 +425,10 @@ increments.
 
 **Main flow:**
 
-1. SI-01 detects loss of internet/broker/backoffice connectivity and exposes the appropriate status layer.
-2. Local device operation, registration and calculations continue where required local configuration/reference data is available.
-3. New committed source records remain locally durable.
-4. Outbound items remain pending.
-5. After transport recovery, synchronisation resumes without inventing/reusing committed sequence numbers.
+1. The registration cabinet loses communication with backoffice and reports the connection problem.
+2. The operator continues local registration using the information already available.
+3. The cabinet retains the registrations made while disconnected.
+4. When connectivity returns, the cabinet sends the pending registrations without losing or reordering them.
 
 :::
 
@@ -462,12 +442,11 @@ increments.
 
 **Main flow:**
 
-1. SI-01 starts and loads configuration.
-2. Source-specific registration files and sequence state are restored/validated.
-3. Ready-team/reference/other recoverable state is restored according to the design.
-4. The runtime reconstructs configured TimingNodes and configured hardware/data-source adapters.
-5. Status reports restore health/errors before normal operation is presented as healthy.
-6. Backoffice/outbox recovery resumes independently from local startup.
+1. The registration cabinet restarts after shutdown or power interruption.
+2. The cabinet restores previously recorded registrations, current location and required operating state.
+3. The cabinet reports any information that could not be restored safely.
+4. The operator sees whether the registration point is ready or needs attention.
+5. Pending backoffice synchronisation can resume after connectivity is restored.
 
 :::
 
@@ -483,13 +462,11 @@ while preserving independent lifecycle, state and
 
 **Main flow:**
 
-1. Settings describe several independently addressed `TimingNode` objects and their location/timing node identity mappings.
-2. Each instance receives its own logical serialized state boundary.
-3. Deployment configuration routes each producer/asset/antenna origin to one or more applicable `TimingNodeId` targets without making those hardware objects children of the `TimingNode` software model.
-4. Runtime-wide infrastructure may be shared without sharing mutable instance state.
-5. Public interfaces can address each instance explicitly.
-6. An engineering query, change or synthetic upstream input for one TimingNode
-   identifies its target and does not accidentally change another node's state.
+1. An engineer configures multiple virtual registration points for one test setup.
+2. Each registration point can be identified and operated independently.
+3. Recorded registrations and operational state remain associated with the correct point.
+4. An action addressed to one point does not change a different point.
+5. The engineer can inspect each point separately.
 
 **Observable result:** two synthetic TimingNodes have separately inspectable
 lifecycle, reference/next-up state and independently ordered TimingData. Any
@@ -553,11 +530,10 @@ upstream/reference-data simulation is deferred to a later increment.
 
 **Main flow:**
 
-1. A synthetic configuration creates enough TimingNodes and configured producer/timing node identity mappings to represent the required test scale.
-2. Stub devices inject observations/faults through normal adapter boundaries.
-3. SI-01 follows the same queues, `TimingNodeId`-scoped sequences, persistence and backoffice-port paths as production composition.
-4. A backoffice simulator or broker fixture observes all source streams.
-5. Tests validate isolation, ordering, recovery and status across the simulated field.
+1. A system tester sets up a simulated field with multiple registration points and devices.
+2. The test equipment simulates participant observations, equipment faults and communication interruptions.
+3. The simulated registration points operate independently and send results to a backoffice test system.
+4. The tester checks the recorded results, ordering, isolation, recovery and visible status.
 
 :::
 
@@ -571,10 +547,10 @@ upstream/reference-data simulation is deferred to a later increment.
 
 **Main flow:**
 
-1. Composition selects stub adapters through normal public contracts.
-2. Test control injects reads, device discovery, disconnects, failures or recoveries through the adapter surface.
-3. The application processes those events through normal queues/domain handlers.
-4. Tests observe behaviour only through supported state/interfaces/evidence points.
+1. A tester starts the registration system with simulated devices in place of physical devices.
+2. The tester simulates participant observations, connection losses, faults or recovery.
+3. The registration system responds as it would to equivalent real-device events.
+4. The tester observes the results using the normal available system controls and outputs.
 
 :::
 
@@ -588,14 +564,11 @@ upstream/reference-data simulation is deferred to a later increment.
 
 **Main flow:**
 
-1. SI-01 is configured with a simple socket-based `BackofficeTransportPort` implementation.
-2. A simulator connects over a real TCP/socket boundary.
-3. Generic public `BackofficeEnvelope` messages are framed with explicit `TimingNodeId` context.
-4. Several `TimingNodeId`-scoped streams can share the connection.
-5. Disconnect/reconnect and malformed-message behaviour can be injected cheaply.
-6. SI-01's domain/outbox/stream behaviour remains identical to the RabbitMQ composition.
-
-This use case is intentionally protocol-neutral and does not reproduce private production RabbitMQ message schemas.
+1. A tester connects a backoffice simulator to a registration cabinet over an independent network connection.
+2. The simulator exchanges registrations and reference updates with the cabinet.
+3. Several registration points can be tested in the same setup.
+4. The tester interrupts and restores communication and checks that registration data stays correct.
+5. The test can be conducted without the production message broker.
 
 :::
 
@@ -609,14 +582,11 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 
 **Main flow:**
 
-1. A Docker/Compose test environment starts a RabbitMQ broker with synthetic topology/credentials.
-2. SI-01 establishes the configured broker connection(s).
-3. Each configured `TimingNodeId`-scoped inbound stream establishes its applicable queue consumer/channel.
-4. Outbound messages use `TimingNodeId`-specific routing configuration.
-5. Tests exercise inbound/outbound behaviour and `TimingNodeId` isolation.
-6. The broker is stopped/restarted to exercise reconnect, consumer restoration and pending-outbox resume.
-
-Production names, source IDs, schemas and credentials remain outside the public fixture.
+1. A system tester runs a disposable message broker for a representative backoffice connection.
+2. The registration system exchanges test data with backoffice through the broker.
+3. The tester verifies that data reaches the correct registration point and remains identifiable.
+4. The broker is interrupted and restarted.
+5. The tester checks reconnection and delivery of registrations recorded during the outage.
 
 :::
 
