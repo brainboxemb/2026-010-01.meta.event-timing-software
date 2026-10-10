@@ -83,13 +83,8 @@ objects or depend on product implementation classes to obtain the pass/fail
 result.
 
 :::{vc} Query and resynchronise first-executable status  
----
-id: VC-ST1-001
-verifies: >-
-  SI01-REQ-001, SI01-REQ-002, SI01-REQ-003, SI01-REQ-010,
-  SI01-REQ-020, SI01-REQ-021, SI01-REQ-031,
-  IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006
----
+:id: VC-ST1-001  
+:verifies: SI01-REQ-001, SI01-REQ-002, SI01-REQ-003, SI01-REQ-010, SI01-REQ-020, SI01-REQ-021, SI01-REQ-031, IF03-REQ-003, IF03-REQ-004, IF03-REQ-005, IF03-REQ-006  
 
 **Executable test**
 
@@ -138,13 +133,8 @@ observable through a supported black-box state-changing operation.
 :::
 
 :::{vc} Control and observe first committed registration  
----
-id: VC-ST1-002
-verifies: >-
-  SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-047,
-  IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015,
-  IF05-REQ-003, IF05-REQ-008, IF05-REQ-009
----
+:id: VC-ST1-002  
+:verifies: SI01-REQ-040, SI01-REQ-041, SI01-REQ-042, SI01-REQ-043, SI01-REQ-047, IF03-REQ-011, IF03-REQ-012, IF03-REQ-013, IF03-REQ-014, IF03-REQ-015, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009  
 
 **Executable test**
 
@@ -218,12 +208,8 @@ storage recovery remains component-level persistence/codec verification.
 :::
 
 :::{vc} Engineering Client reconnect/resynchronisation integration  
----
-id: VC-ST1-003
-verifies: >-
-  SI01-REQ-044, IF03-REQ-016, IF03-REQ-022,
-  IF05-REQ-006, IF05-REQ-007, IF05-REQ-008
----
+:id: VC-ST1-003  
+:verifies: SI01-REQ-044, IF03-REQ-016, IF03-REQ-022, IF05-REQ-006, IF05-REQ-007, IF05-REQ-008  
 
 **Purpose**
 
@@ -283,11 +269,8 @@ evidence. Repository-local checklists may mirror it but shall not redefine it.
 :::
 
 :::{vc} Contain TimingData recovery failure and keep diagnostics available  
----
-id: VC-ST1-004
-verifies: >-
-  SI01-REQ-048, IF03-REQ-004, IF03-REQ-006, IF03-REQ-008, IF03-REQ-017
----
+:id: VC-ST1-004  
+:verifies: SI01-REQ-048, IF03-REQ-004, IF03-REQ-006, IF03-REQ-008, IF03-REQ-017  
 
 **Executable test**
 
@@ -322,12 +305,8 @@ TimingNode while application-level diagnostic interfaces remain available.
 :::
 
 :::{vc} Verify lifecycle TimingData source ordering and recovery  
----
-id: VC-ST1-005
-verifies: >-
-  IF03-REQ-011, IF03-REQ-014, IF03-REQ-015,
-  IF05-REQ-002, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009, IF05-REQ-010
----
+:id: VC-ST1-005  
+:verifies: IF03-REQ-011, IF03-REQ-014, IF03-REQ-015, IF05-REQ-002, IF05-REQ-003, IF05-REQ-008, IF05-REQ-009, IF05-REQ-010  
 
 **Executable test**
 
@@ -366,12 +345,8 @@ sequence.
 :::
 
 :::{vc} Verify append-only registration revoke bookkeeping  
----
-id: VC-ST1-006
-verifies: >-
-  IF03-REQ-008, IF03-REQ-014, IF03-REQ-015, IF03-REQ-022,
-  IF05-REQ-002, IF05-REQ-003, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007
----
+:id: VC-ST1-006  
+:verifies: IF03-REQ-008, IF03-REQ-014, IF03-REQ-015, IF03-REQ-022, IF05-REQ-002, IF05-REQ-003, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007  
 
 **Executable test**
 

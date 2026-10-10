@@ -88,6 +88,11 @@ Apply this formatting to all Need types, including `uc`, `req`,
 `ifreq`, `arch`, `design` and `vc`. The metadata options retain their
 normal MyST/Sphinx-Needs meaning.
 
+For verification cases, use the same `:id:` and `:verifies:` option format.
+Do not wrap the options in YAML-style `---` delimiters: unprocessed Markdown
+then interprets those delimiters as headings and makes the verification-case
+header hard to read on GitHub. Keep the case narrative inside the directive.
+
 ### Requirement organization in SSDs
 
 Group a software-item SSD's requirements first by **functional behaviour**,

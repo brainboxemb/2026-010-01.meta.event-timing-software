@@ -142,12 +142,29 @@ if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_
 # hard-coded range/list, this automatically tracks future UC/REQ additions.
 import re
 
+# Check the same project-wide readable Need header format for VTS cases.
+# The test discovers cases from source instead of duplicating a list of VC IDs.
+vts_source = Path(
+    "docs/61-01-VTS-timing-application-verification-test-specification.md"
+).read_text(encoding="utf-8")
+vc_headers = re.findall(
+    r"(?m)^(:::\{vc\}[^\n]*\n:id: VC-[^\n]*\n:verifies:[^\n]*)\n",
+    vts_source,
+)
+vts_case_count = len(re.findall(r"(?m)^:::\{vc\}", vts_source))
+if not vc_headers or len(vc_headers) != vts_case_count:
+    raise SystemExit("VTS cases must use :id: and :verifies: Need options")
+for vc_header in vc_headers:
+    if any(not line.endswith("  ") for line in vc_header.splitlines()):
+        raise SystemExit("VTS Need header lines must end with two spaces")
+
 sources = {
     "30-UC-system-use-cases.md": "uc",
     "41-01-SSD-timing-application-specification-document.md": "req",
     "41-02-SSD-gui-application-specification-document.md": "req",
     "32-03-ISD-application-control-status.md": "ifreq",
     "32-05-ISD-timingdata-interchange.md": "ifreq",
+    "61-01-VTS-timing-application-verification-test-specification.md": "vc",
 }
 for filename, need_type in sources.items():
     authored = (Path("docs") / filename).read_text(encoding="utf-8")
