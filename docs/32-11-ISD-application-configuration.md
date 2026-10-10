@@ -60,9 +60,9 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: "{ID}"
+  - id: "{ID}"
     timingNodes:
-      - timingNodeId: "{ID}"
+      - id: "{ID}"
 ```
 
 Rules:
@@ -73,19 +73,23 @@ Rules:
   expressions, execute code, load includes or introduce recursive inheritance;
 - unknown or unresolved parameter references are configuration errors;
 - topology uses ordered `timingSystems` and `timingNodes` YAML lists;
-  each entry is identified only by its explicit `timingSystemId` or `timingNodeId`,
+  each entry declares its identity with the contextual `id` field,
   not by a deployment-local mapping key;
 - `{NodeId}` and `{SystemId}` are reserved contextual placeholders. They are resolved only
   where the owning field defines that context, currently TimingData storage paths;
 - after substitution, the normal field-specific IF-11 validation rules still apply.
 
 For a single-system/single-node configuration, `ID: A` makes both
-`timingNodeId: "{ID}"` and `timingSystemId: "{ID}"` resolve to `A`.
+`timingSystems[].id: "{ID}"` and `timingNodes[].id: "{ID}"` resolve to `A`.
 Multi-system deployments may define separate parameters or explicit IDs as needed.
 
 ## Effective configuration model
 
 The logical **effective** configuration root is:
+
+The outline below names the *typed model concepts* (`timingSystemId` and
+`timingNodeId`); the source YAML uses the shorter `id` declaration keys.
+
 
 ```text
 ApplicationConfig
@@ -185,12 +189,12 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: "{ID}"
+  - id: "{ID}"
     eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
     timingNodes:
-      - timingNodeId: "{ID}"
+      - id: "{ID}"
         tagProcessing:
           quietTimeoutMillis: 250
           maxBurstDurationMillis: 1000
@@ -203,14 +207,21 @@ The same structure naturally represents multiple systems and nodes:
 
 ```yaml
 timingSystems:
-  - timingSystemId: 9
+  - id: 9
     timingNodes:
-      - timingNodeId: A
-      - timingNodeId: B
-  - timingSystemId: C
+      - id: A
+      - id: B
+  - id: C
     timingNodes:
-      - timingNodeId: C
+      - id: C
 ```
+
+In the topology declarations, `id` means **TimingSystemId** within a
+`timingSystems` entry and **TimingNodeId** within a `timingNodes` entry.
+This changes only the YAML field names, not the typed runtime identities.
+References from other sections remain explicit: for example
+`io.devices.antennaManagers.*.timingSystemId` and
+`io.storage.timingData.nodes.*.timingNodeId`.
 
 Rules:
 

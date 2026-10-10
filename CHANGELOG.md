@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Simplify IF-11 topology YAML by naming both the TimingSystem and TimingNode declaration field `id`, while retaining explicit `timingSystemId` and `timingNodeId` in reference bindings; remove old verbose syntax from examples without adding compatibility aliases.
+
+
 - Use compact IF-11 TimingSystem IDs: singleton systems use the TimingNode ID, multi-node systems use a distinct one-character ID (`9` for A/B). Update the authoritative configuration rules and ST-1 verification topology examples; remove SID-prefixed examples.
 
 
