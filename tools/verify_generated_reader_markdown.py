@@ -70,7 +70,7 @@ uc_start = use_cases.index('<a id="UC-001"></a>')
 uc_end = use_cases.index('<a id="UC-002"></a>', uc_start)
 uc_block = use_cases[uc_start:uc_end]
 uc_order = (
-    uc_block.index("**UC-001 — Connect to a registration system**"),
+    uc_block.index("**UC-001 — Open a registration point**"),
     uc_block.index("**Preconditions:**"),
     uc_block.index("**Main flow:**"),
     uc_block.index("**Alternative/failure flows:**"),
@@ -131,7 +131,7 @@ if "- **Elaborates:**" not in design_block:
 if "PresentationGateway" not in design_block or "TimingNodeProxy" not in design_block:
     raise SystemExit("generated reader Markdown missing inverse SSD architecture links")
 
-current_use_case_numbers = (*range(1, 8), *range(9, 21))
+current_use_case_numbers = (*range(1, 8), *range(9, 25))
 for number in current_use_case_numbers:
     object_id = f"UC-{number:03d}"
     if f'<a id="{object_id}"></a>' not in use_cases:

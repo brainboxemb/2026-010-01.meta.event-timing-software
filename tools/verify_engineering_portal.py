@@ -8,6 +8,7 @@ inline in docs-build.yml.
 
 import json
 import os
+import re
 from pathlib import Path
 
 root = Path("bld/engineering-portal")
@@ -40,8 +41,21 @@ use_cases = {
     for object_id, item in objects.items()
     if item.get("type") == "uc"
 }
-if len(use_cases) != 19:
-    raise SystemExit(f"expected 19 current system use cases, got {len(use_cases)}")
+if len(use_cases) != 23:
+    raise SystemExit(f"expected 23 current system use cases, got {len(use_cases)}")
+
+# Keep MyST headers legible in GitHub's raw Markdown preview. Each opening
+# title, ID and status source line must end in two literal spaces.
+uc_source = Path("docs/30-UC-system-use-cases.md").read_text(encoding="utf-8")
+uc_headers = re.findall(
+    r"(?m)^(:::\{uc\}[^\n]*\n:id: UC-\d+[^\n]*\n:status: [DRA][^\n]*)\n",
+    uc_source,
+)
+if len(uc_headers) != len(use_cases):
+    raise SystemExit("not every use case has a readable ID/status header")
+for uc_header in uc_headers:
+    if any(not line.endswith("  ") for line in uc_header.splitlines()):
+        raise SystemExit("use-case header must have two trailing spaces per line")
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
     for token in ("**Goal:**", "**Main flow:**"):
@@ -101,8 +115,9 @@ design_page = (site / "objects" / "DD-TimingNodeExecution" / "index.html").read_
 if "This detailed design elaborates:" not in design_page:
     raise SystemExit("design details missing outgoing elaborates heading")
 
-# UC-001 is the normal browser path, but its direct engineering obligations
-# are application-level SI-01 requirements. IF-03 and IF-04 refine them.
+# UC-001 opens the registration point from the iPad. Its direct obligations
+# remain application-level SI-01 requirements, including the OPEN operation.
+# UC-002 closes it. IF-03 and IF-04 refine the application requirements.
 uc = portal_view["objects"]["UC-001"]
 specification_sections = [
     section for section in uc["relation_groups"]
@@ -111,9 +126,9 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (4)":
+if requirements["title"] != "Requirements (6)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"]
+expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040"]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit(
         f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
@@ -124,7 +139,7 @@ if requirements["document_groups"]:
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Requirements (4)" not in uc_page:
+if "Requirements (6)" not in uc_page:
     raise SystemExit("UC-001 object page missing application-requirement heading")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
@@ -166,9 +181,13 @@ if "SI01-REQ-024" not in realizes["related_ids"]:
 # Keep every use case at the intended engineering level. The lists below are
 # deliberately exact so later interface/detail shortcuts cannot silently grow back.
 expected_uc_direct = {
-    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025"},
-    "UC-002": {"SI01-REQ-024", "SI01-REQ-026", "SI01-REQ-040"},
+    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040"},
+    "UC-002": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026"},
     "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
+    "UC-021": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-071"},
+    "UC-022": {"SI02-REQ-004", "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007"},
+    "UC-023": {"SI02-REQ-008"},
+    "UC-024": {"SI01-REQ-066", "SI01-REQ-067"},
     "UC-004": {"SI01-REQ-052", "SI01-REQ-055"},
     "UC-005": {"SI01-REQ-060"},
     "UC-006": {"SI01-REQ-061"},
@@ -390,7 +409,9 @@ if '32-05-ISD-timingdata-interchange' not in workspace:
     raise SystemExit("traceability object tree lost source-document grouping")
 for section_label in (
     "Normal operation",
-    "System, backoffice and recovery",
+    "Registration cabinet ↔ backoffice",
+    "Errors and recovery",
+    "Development, engineering and system testing",
     "Status",
     "Registration operation",
 ):
@@ -456,10 +477,17 @@ search = (site / "search/search_index.json").read_text(encoding="utf-8")
 for object_id in ("TimingNode", "DD-PresentationAccess", "SI01-REQ-020", "SI02-REQ-001", "IF03-REQ-001", "VC-ST1-001", "UC-001", "UC-009", "UC-014"):
     if object_id not in search:
         raise SystemExit(f"portal search index missing {object_id}")
+# These probes follow user-visible use-case actions rather than the
+# implementation interface names previously embedded in the UC narratives.
 for narrative in (
-    "The browser-based Web client connects to the configured IF-04 Web binding.",
+    "The operator opens a Web browser on the iPad and enters the IP address of the registration cabinet.",
+    "The registration cabinet stops accepting new registrations.",
+    "The operator selects the manual registration action in the iPad interface.",
     "The Engineering Client connects to the registration system through its public interfaces.",
-    "Settings describe several independently addressed",
+    "An engineer configures multiple virtual registration points",
+    "The engineer examines the recorded registration history",
+    "The tester selects the intended registration point",
+    "The tester selects a participant and runs a supported simulated RFID passage",
 ):
     if narrative not in search:
         raise SystemExit(

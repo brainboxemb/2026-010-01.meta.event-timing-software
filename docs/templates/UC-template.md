@@ -4,11 +4,12 @@ Status: working draft / non-authoritative
 
 ## Purpose
 
-This document captures system-level operational use cases that explain how actors use
-the software system.
+This document captures system-level use cases describing how people, devices and
+external systems use the complete system in its physical operating environment.
 
-Use cases describe **desired externally meaningful behaviour and goals**, not
-implementation details.
+Use cases describe actor goals and observable behaviour. Physical equipment and
+network conditions may be specified when essential to the scenario; software-item
+allocations, IF numbers and internal design belong downstream.
 
 <!-- Add any document-specific scope/public-private statement here. -->
 
@@ -22,8 +23,8 @@ implementation details.
 ## Relationship to other documents
 
 System use cases are part of the software-system specification/design family. They
-express behaviour of the **software system as a whole** before that behaviour is
-decomposed across software items.
+express behaviour of the **whole operational system** before the software
+responsibilities are allocated in the SSSD.
 
 Relevant parent-system/external inputs are registered in the external-input register.
 Together with the domain baseline they can shape these system use cases and the SSSD.
@@ -67,6 +68,7 @@ Each use case should contain enough of the following to make the behaviour unamb
 
 ```text
 ID
+Status (D — Draft, R — Review, A — Approved)
 Name / goal
 Primary actor(s)
 Supporting actor(s)
@@ -75,9 +77,24 @@ Trigger
 Main flow
 Alternative / failure flows
 Postconditions / observable result
-Relevant interfaces
-Derived requirements
-Verification references
+Relevant physical equipment / operating environment, where important
+```
+
+Each use case is a Sphinx-Needs `uc` entry with an explicit `:status:`.
+Use D while editing, R when ready for review, and A only after acceptance.
+Keep numbered software interfaces and internal implementation details out of UCs.
+
+Use two trailing spaces after the directive opening line, `:id:` and
+`:status:` so the raw GitHub Markdown shows each on its own line.
+See the source-formatting rule in the Documentation Guide.
+
+```markdown
+:::{uc} Example registration use case  
+:id: UC-001  
+:status: D  
+
+**Goal:** Describe the operator goal.
+:::
 ```
 
 ## Use-case catalogue

@@ -6,6 +6,14 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Organize the UC catalogue and detailed scenarios into distinct normal-operation, backoffice integration, error/recovery and engineering/development groups; keep all existing IDs and place UC-020 in recovery instead of interrupting the catalogue. Add draft engineering scenarios UC-022–024 and enforce visible two-space MyST Need-header line breaks in the GPD/template.
+
+- Add Draft UC-021 for manual participant registration from the iPad browser; allocate shared manual-registration behaviour to SI-01 and the Web interface without treating the Web controls as implemented.
+
+- Keep engineering-portal narrative/search assertions and SI-01 requirement traceability aligned with the revised UC-001 OPEN and UC-002 CLOSE scenarios.
+
+- Align physical registration-system use cases with the iPad operator flow: separate opening and closing, handle an already-open cabinet and software errors, give each use case a draft status, and distinguish system scenarios from software interface allocations.
+
 - Complete Step 6 A01 through Java PR #402: SI-02 now implements the Java 21 / JavaFX 21 / BentoFX workbench, instance-scoped connected-system context and CI-verified Windows jpackage app-image; advance Step 6 to V01 without claiming manual GUI verification.
 
 - Preserve the complete SIP step planning-change log and paginate long change history across additional detail-board pages instead of truncating or rejecting it.

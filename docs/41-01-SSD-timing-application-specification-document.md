@@ -150,7 +150,7 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 :::{req} Equivalent status semantics across interfaces  
 :id: SI01-REQ-022  
 :status: R  
-:specifies: UC-001, UC-009  
+:specifies: UC-001, UC-002, UC-009  
 
 For each application-status value exposed by more than one supported SI-01
 interface, those interfaces shall report the same semantic value for the same
@@ -160,7 +160,7 @@ running application state. Transport-specific encoding may differ.
 :::{req} TimingNode operational state-change publication  
 :id: SI01-REQ-023  
 :status: R  
-:specifies: UC-001, UC-009  
+:specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-024  
 
 When a value represented in a TimingNode's current operational state changes,
@@ -188,7 +188,7 @@ contain at least:
 :::{req} Presentation current-state recovery  
 :id: SI01-REQ-025  
 :status: R  
-:specifies: UC-001, UC-009  
+:specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-023, SI01-REQ-024  
 
 After initial connection or reconnection, SI-01 shall allow a presentation
@@ -203,7 +203,7 @@ live.
 :::{req} Lifecycle command outcome  
 :id: SI01-REQ-026  
 :status: R  
-:specifies: UC-002, UC-009  
+:specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-024, SI01-REQ-040  
 
 A lifecycle/location command accepted by SI-01 shall return an explicit semantic
@@ -255,7 +255,7 @@ interface version or a separately specified migration contract.
 :::{req} Operational location and lifecycle  
 :id: SI01-REQ-040  
 :status: R  
-:specifies: UC-002, UC-009  
+:specifies: UC-001, UC-009  
 
 An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
 When the command is accepted, SI-01 shall apply that LocationId and the
@@ -266,7 +266,7 @@ unchanged while the TimingNode is OPEN.
 :::{req} Accepted registration commit semantics  
 :id: SI01-REQ-041  
 :status: R  
-:specifies: UC-003, UC-009  
+:specifies: UC-003, UC-009, UC-021  
 
 For an already-accepted registration, SI-01 shall commit TimingData using the
 supplied supported registration action, resolved `RegistrationId` and accepted
@@ -278,11 +278,25 @@ and shall reject actions whose TimingData semantics are not defined.
 :::{req} Committed registration observability  
 :id: SI01-REQ-042  
 :status: R  
-:specifies: UC-003, UC-009, UC-011  
+:specifies: UC-003, UC-009, UC-011, UC-021  
 
 SI-01 shall make committed registration TimingData observable through current
 history and live post-commit notification without exposing uncommitted records
 as committed state.
+:::
+
+:::{req} Operator manual registration
+:id: SI01-REQ-071
+:status: D
+:specifies: UC-021
+:depends_on: SI01-REQ-041, SI01-REQ-042
+
+For an OPEN TimingNode, SI-01 shall accept a normal manual registration with a
+resolved RegistrationId, effective registration time and client-selected
+AUTO/MAN time-source classification. SI-01 shall preserve that effective time,
+use the currently active location and commit a manual-registration ADD through
+the normal registration path. A closed TimingNode or invalid input shall not
+produce a successful registration.
 :::
 
 :::{req} Gate development auto-registration by capability  
@@ -324,7 +338,7 @@ preserve the applicable IF-05 semantic values.
 :::{req} Write TimingData before commit completion  
 :id: SI01-REQ-046  
 :status: D  
-:specifies: UC-003, UC-012  
+:specifies: UC-003, UC-012, UC-021  
 
 SI-01 shall successfully write one complete TimingData record to the configured
 local TimingData store before completing that TimingData commit. Only after
@@ -548,7 +562,7 @@ synchronisation without inventing or reusing committed source sequence identity.
 :::{req} Simulate complete multi-node behaviour through normal application paths  
 :id: SI01-REQ-066  
 :status: D  
-:specifies: UC-015  
+:specifies: UC-015, UC-024  
 :depends_on: SI01-REQ-003, SI01-REQ-031  
 
 A simulation composition shall be able to host multiple TimingNodes, inject
@@ -560,7 +574,7 @@ without introducing a second domain/application implementation.
 :::{req} Substitute controllable stubs through public contracts  
 :id: SI01-REQ-067  
 :status: D  
-:specifies: UC-016  
+:specifies: UC-016, UC-024  
 :depends_on: SI01-REQ-031  
 
 External hardware and transport adapters used by SI-01 shall be replaceable in a
@@ -635,7 +649,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-030/031 | UC-009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040 | UC-002/009 | TimingNode + IF-03/IF-04 control/status |
+| SI01-REQ-040 | UC-001/009 | TimingNode + IF-03/IF-04 control/status |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |

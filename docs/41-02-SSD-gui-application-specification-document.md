@@ -86,7 +86,7 @@ application/version identity provided through IF-03.
 :::{req} Present current TimingNode operational status
 :id: SI02-REQ-004
 :status: D
-:specifies: UC-009
+:specifies: UC-009, UC-022
 :refines: SI01-REQ-024
 :depends_on: IF03-REQ-004, IF03-REQ-005, IF03-REQ-011, IF03-REQ-017
 
@@ -99,7 +99,7 @@ SI-02-owned lifecycle model.
 :::{req} Mark disconnected cached state as stale
 :id: SI02-REQ-005
 :status: D
-:specifies: UC-009
+:specifies: UC-009, UC-022
 :refines: SI01-REQ-025
 :depends_on: IF03-REQ-006, IF03-REQ-021
 
@@ -111,7 +111,7 @@ information as current live state.
 :::{req} Rebuild baseline before declaring the view live
 :id: SI02-REQ-006
 :status: D
-:specifies: UC-009
+:specifies: UC-009, UC-022
 :refines: SI01-REQ-025
 :depends_on: IF03-REQ-006, IF03-REQ-014, IF03-REQ-016
 
@@ -124,7 +124,7 @@ source identity to avoid presenting the same committed record twice.
 :::{req} Present committed registration history and live updates
 :id: SI02-REQ-007
 :status: D
-:specifies: UC-009
+:specifies: UC-009, UC-022
 :refines: SI01-REQ-042
 :depends_on: IF03-REQ-014, IF03-REQ-015
 
@@ -136,7 +136,7 @@ result as committed TimingData.
 :::{req} Execute engineering controls with explicit outcome
 :id: SI02-REQ-008
 :status: D
-:specifies: UC-009
+:specifies: UC-009, UC-023
 :refines: SI01-REQ-040, SI01-REQ-026
 :depends_on: IF03-REQ-008, IF03-REQ-011
 
