@@ -20,7 +20,7 @@ existing family when a template already exists.
 | SDP | Software Development Plan | project-wide development strategy |
 | SIP | Software Implementation Plan | implementation steps, roadmap and exit evidence |
 | EXT | External Inputs | register of parent/external sources that constrain this software system |
-| UC | Use Case | externally meaningful behaviour and goals |
+| UC | Use Case | externally meaningful behaviour and goals for the physical/operational system |
 | SSSD | Software System Specification Document | software-system requirements and architecture |
 | ISD | Interface Specification Document | system-owned interface requirements and semantics |
 | IDD | Interface Design Description | optional concrete design/representation of an ISD |
@@ -199,6 +199,11 @@ directly constrain the SSSD or an affected software-item specification when its
 allocation is already explicit.
 
 The families have these normal roles:
+
+- **system UC** describes what actors do with the whole operational system, including
+  physical equipment and connectivity where relevant; it does not allocate numbered
+  software interfaces or software items. Each UC has maturity status D, R or A.
+
 
 - **GPD** records project/support guidance when no more specific established document type fits. It is not part of the product-definition chain. A software-item-scoped GPD in family `44` may derive reusable implementation/review guidance from architecture and detailed design, but does not override those authorities.
 - **SSSD** owns software-system requirements, software-item allocation, system-owned
