@@ -154,7 +154,7 @@ for filename, need_type in sources.items():
     output = (root / filename).read_text(encoding="utf-8")
     source_ids = set(
         re.findall(
-            rf"(?m)^:::\\{{{need_type}\\}}[^\\n]*\\n:id: ([A-Za-z0-9_-]+)",
+            rf"(?m)^:::\{{{need_type}\}}[^\n]*\n:id: ([A-Za-z0-9_-]+)",
             authored,
         )
     )
