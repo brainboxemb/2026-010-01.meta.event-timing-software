@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the event-timing engineering portal from the normalized graph."""
+"""Build the Engineering Portal pages and per-object views from a normalized graph.
+
+Input: graph/diagram assets plus exact authored Need source definitions.
+Output: generated MkDocs Markdown, navigable object pages, search and provenance.
+It presents authored objects; it is not an independent requirements register.
+"""
 
 from __future__ import annotations
 

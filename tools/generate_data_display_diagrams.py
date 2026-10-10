@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate data, traceability and display-behaviour architecture views."""
+"""Render the authored data/display flow views to SVG and draw.io formats.
+
+Reuses the legacy diagram renderer; this is a document asset producer, not a
+source of system requirements or runtime behaviour.
+"""
 
 from pathlib import Path
 import argparse

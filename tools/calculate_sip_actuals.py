@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Calculate the SIP actual-effort planning snapshot from GitHub PR commits."""
+"""Calculate SIP actual-effort snapshots from merged GitHub PR commit activity.
+
+Reads repository PR history and the project-owned SIP roadmap/step associations.
+Updates the planning snapshot only; it never defines requirements or alters
+project source milestones. Run with --help for input/output options.
+"""
 
 from __future__ import annotations
 

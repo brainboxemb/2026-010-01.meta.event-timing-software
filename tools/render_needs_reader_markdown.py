@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Render MyST/Sphinx-Needs directives as reader-friendly generated Markdown."""
+"""Convert authored MyST/Sphinx-Needs blocks to human-readable Markdown.
+
+Uses the native Needs export for metadata, statuses and graph relationships,
+preserving authored Need prose while hiding directives in published reader docs.
+Only generated outputs are changed, never the source specification.
+"""
 
 from __future__ import annotations
 

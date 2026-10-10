@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Verify assembled documentation output and retained producer evidence.
-#
-# SOURCE_REVISION is supplied by CI or by the local caller.
+# Verify that the assembled publication contains the required output families
+# (documents, diagrams, graph, planning) and evidence for its source revision.
+# Fixed filenames here are published artifact paths, not duplicated UC/REQ
+# inventories. SOURCE_REVISION comes from CI or the local caller.
 set -euo pipefail
 test -f bld/engineering-graph.json
 test -f bld/engineering-graph-review.md
