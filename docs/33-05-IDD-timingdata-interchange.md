@@ -66,6 +66,8 @@ The reference design uses:
 | time | By record type | `time` |
 | Registration ID | By record type | `regId` |
 | code | By record type | `code` |
+| automatic registration origin | Optional, AUTO_REG only | `tagSrc` |
+| automatic effective-time origin | Optional, AUTO_REG only | `timeSrc` |
 | record creation time metadata | Optional | `recTime` |
 
 The stable IF-05 record key `(Node ID, sequence number)` is represented by
@@ -93,6 +95,29 @@ code    = [REV]
 same regId
 same time
 ```
+
+### Automatic registration audit provenance
+
+For new default-profile `AUTO_REG` records, two short **optional** metadata
+members identify the originating path and effective-time provenance:
+
+| Member | Values | Meaning |
+| --- | --- | --- |
+| `tagSrc` | `API`, `ANT` | Direct engineering API, or antenna observation path (including a simulated antenna) |
+| `timeSrc` | `API`, `NODE`, `OBS` | Explicit API timestamp, node's composed TimeSource, or observation-carried timestamp |
+
+`API` with `NODE` describes a direct simulation that omitted `time`;
+`API` with `API` describes an explicit API time; `ANT` with `OBS`
+describes registration after an antenna observation. These are provenance
+codes, **not** physical TagIds or an indication that the antenna was real
+rather than simulated.
+
+Both values are emitted together when provenance is known. Either both
+must be present or both absent in a v1 record. Older v1 records without
+these members remain valid and their provenance is unknown. The pair must
+not appear in MAN_REG or NODE_INFO records. For AUTO_REG REV, metadata
+describes the API revoke action; the effective `time` still refers to
+the original registration as required by IF-05.
 
 ### MAN_REG
 
@@ -178,6 +203,8 @@ Known members use the following JSON types and validation rules.
 | `time` | string | By record type | required for `AUTO_REG`, `MAN_REG` and `NODE_INFO`; canonical UTC centisecond timestamp |
 | `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; absent for lifecycle records |
 | `code` | array of strings | By record type | required for registration and `NODE_INFO` records |
+| `tagSrc` | string | Optional, AUTO_REG only | `API` or `ANT`; accompanies `timeSrc` |
+| `timeSrc` | string | Optional, AUTO_REG only | `API`, `NODE` or `OBS`; accompanies `tagSrc` |
 | `recTime` | string | Optional | canonical UTC millisecond record-creation timestamp when emitted |
 
 Canonical writer member order:
@@ -191,6 +218,8 @@ recType
 time
 regId
 code
+tagSrc    # when known, AUTO_REG only
+timeSrc   # when known, AUTO_REG only
 recTime   # when present
 ```
 
@@ -198,7 +227,10 @@ Validation rules:
 
 - every `Always` member is present and non-null;
 - every `By record type` member required by the selected `recType` is present and non-null;
-- `Optional` members such as `recTime` may be omitted;
+- `Optional` members such as `recTime` may be omitted; on AUTO_REG, `tagSrc`
+  and `timeSrc` must occur together if either occurs;
+- `tagSrc`/`timeSrc` must be absent on MAN_REG and NODE_INFO records;
+  unknown provenance code values are invalid;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
 - the v1 `AUTO_REG` mapping accepts exactly `["ADD"]` or `["REV"]`;
 - the v1 `MAN_REG` mapping accepts exactly one action (`ADD` or `REV`) plus exactly one of `AUTO` or `MAN`;
@@ -277,7 +309,7 @@ does not have to use `.jsonl`.
 Automatic registration:
 
 ```json
-{"v":1,"nodeId":"Test","seqNr":1,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00.00Z","regId":"N0001","code":["ADD"],"recTime":"2026-10-02T10:57:43.444Z"}
+{"v":1,"nodeId":"A","seqNr":1,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00.00Z","regId":"RT-A-0001","code":["ADD"],"tagSrc":"API","timeSrc":"API","recTime":"2026-10-02T10:57:43.444Z"}
 ```
 
 Manual registration using client-selected time:
@@ -299,9 +331,10 @@ Revoke examples:
 {"v":1,"nodeId":"Test","seqNr":5,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N0003","code":["REV","MAN"],"recTime":"2026-10-02T11:05:14.000Z"}
 ```
 
-The Registration IDs above are synthetic test/example data. Four numeric digits
-are used so examples remain convenient for later test sets containing up to
-2000 teams; IF-05 does not impose that display convention on Registration ID.
+The Registration IDs above are synthetic test/example data; IF-05 does not
+impose their display convention. Historical examples without `tagSrc` and
+`timeSrc` remain valid v1 records. A current direct simulation that
+omitted API `time` would instead use `"tagSrc":"API","timeSrc":"NODE"`.
 
 
 TimingNode lifecycle examples:

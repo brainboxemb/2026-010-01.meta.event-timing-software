@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make direct IF-03 automatic registration simulation `time` optional (omission uses the addressed node's composed TimeSource); record compact AUTO_REG audit provenance `tagSrc`/`timeSrc` in default IF-05 v1 JSONL without invalidating earlier records. Align VTS and interface designs.
+
+
 - Define concise, list-based IF-11 topology syntax for TimingSystems and TimingNodes with explicit IDs. Remove arbitrary mapping keys from examples; the application only accepts the list form.
 
 

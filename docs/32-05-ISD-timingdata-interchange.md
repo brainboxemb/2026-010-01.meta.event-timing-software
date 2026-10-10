@@ -178,7 +178,16 @@ IF-05 defines registration semantics for:
 
 A registration record carries a **Registration ID** and **time**.
 These values are specific to registration records; they are not common
-TimingData-envelope values.
+TimingData-envelope values. The effective `time` remains required in every
+committed registration, including when the caller of a direct simulation omitted
+it and SI-01 supplied the node time.
+
+For automatic registrations, an implementation may retain compact audit
+provenance identifying whether the registration came from a direct API request
+or an antenna observation and whether the effective time came from the caller,
+the node TimeSource or that observation. The reference v1 fields are specified
+in the IDD; legacy records without provenance retain unknown origin rather than
+inventing a source during recovery.
 
 For a manual registration, the time-source classification describes how the
 presentation client obtained the effective registration time. `AUTO` means the
