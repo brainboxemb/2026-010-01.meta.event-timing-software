@@ -362,7 +362,7 @@ TimingNode/LogBook do not infer an already-deleted business state.
 
 1. Start with empty TimingData storage and OPEN LocationId 24, producing
    lifecycle sequence 1.
-2. Commit automatic registration `N0005` at a deterministic time; verify
+2. Commit automatic registration `RT-A-0006` at a deterministic time; verify
    `AUTO_REG / ADD` sequence 2.
 3. POST IF03-OP-011 using the original record family, LocationId,
    RegistrationId and time.
@@ -423,11 +423,10 @@ LogBook files**, resolved from the `{NodeId}` path template.
 
 1. Start the packaged application and query IF-03 status: both nodes exist,
    initially `CLOSED`.
-2. Open node A at LocationId 24, add one automatic registration and close A.
+2. Open node A at LocationId 24, add `RT-A-0001` and close A.
    Query A's LogBook: ordered OPEN, ADD, CLOSE at sequences 1..3.
 3. Before operating node B, query its LogBook: it remains empty.
-4. Open node B at LocationId 25, add a different automatic registration and
-   close B. Query B's LogBook: its own sequences independently start at 1..3.
+4. Open node B at LocationId 25, add `RT-A-0002` and close B. Query B's LogBook: its own sequences independently start at 1..3.
 5. Stop SI-01 cleanly. Check that exactly the expected two distinct nonempty
    files exist, named for nodes A and B. Each file contains only its own
    NodeId, location and registration, with no records from the other node.
@@ -471,9 +470,9 @@ TimingNode (A and B respectively), and persist committed TimingData in
 
 1. Start the packaged application and query IF-03 status: nodes A and B
    exist and are initially `CLOSED`.
-2. Open A at LocationId 24, add one automatic registration and close A.
+2. Open A at LocationId 24, add `RT-A-0001` and close A.
    Verify B's LogBook remains empty.
-3. Open B at LocationId 25, add another registration and close B.
+3. Open B at LocationId 25, add `RT-A-0002` and close B.
    Independently query each LogBook; each has OPEN, ADD, CLOSE at sequences 1..3.
 4. Stop SI-01 cleanly and check both physical files. Their paths include the
    correct TimingSystemId/TimingNodeId pair and each file contains only records
@@ -489,6 +488,13 @@ TimingNode (A and B respectively), and persist committed TimingData in
 - neither system's records appear in the other system's LogBook.
 
 :::
+
+**Test-data scope for VC-ST1-007/008**
+
+Here `RT-A-0001` and `RT-A-0002` are **normal RegistrationIds**;
+the `A` in `RT-A` is not the TimingNode identifier. These cases inject the
+RegistrationIds directly through IF-03. They do not verify the separate RFID
+tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
 ## Evidence
 
