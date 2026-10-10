@@ -60,9 +60,9 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: "{ID}"
+  - systemId: "{ID}"
     timingNodes:
-      - timingNodeId: "{ID}"
+      - nodeId: "{ID}"
 ```
 
 Rules:
@@ -73,39 +73,44 @@ Rules:
   expressions, execute code, load includes or introduce recursive inheritance;
 - unknown or unresolved parameter references are configuration errors;
 - topology uses ordered `timingSystems` and `timingNodes` YAML lists;
-  each entry is identified only by its explicit `timingSystemId` or `timingNodeId`,
+  each entry declares identity with `systemId` or `nodeId`,
   not by a deployment-local mapping key;
 - `{NodeId}` and `{SystemId}` are reserved contextual placeholders. They are resolved only
   where the owning field defines that context, currently TimingData storage paths;
 - after substitution, the normal field-specific IF-11 validation rules still apply.
 
 For a single-system/single-node configuration, `ID: A` makes both
-`timingNodeId: "{ID}"` and `timingSystemId: "{ID}"` resolve to `A`.
+`timingSystems[].id: "{ID}"` and `timingNodes[].id: "{ID}"` resolve to `A`.
 Multi-system deployments may define separate parameters or explicit IDs as needed.
 
 ## Effective configuration model
 
 The logical **effective** configuration root is:
 
+The outline uses the architectural **SystemId** and **NodeId** concepts.
+In YAML, their corresponding declaration and reference fields are `systemId` and
+`nodeId`.
+
+
 ```text
 ApplicationConfig
 ├── applicationId
 ├── timingSystems
 │   └── <timingSystem>
-│       ├── timingSystemId
+│       ├── SystemId
 │       ├── eventDataProvider
 │       ├── timingDataProvider
 │       ├── upstreamProtocolProvider
 │       └── timingNodes
 │           └── <timingNode>
-│               ├── timingNodeId
+│               ├── NodeId
 │               ├── locationId
 │               └── tagProcessing
 ├── io
 │   ├── devices
 │   │   └── antennaManagers
-│   │       └── <managerBinding>
-│   │           ├── timingSystemId
+│   │       └── <manager entry>
+│   │           ├── SystemId reference
 │   │           ├── antennas
 │   │           └── inventoryGroup (optional)
 │   ├── deviceNetworks
@@ -119,7 +124,7 @@ ApplicationConfig
 │           ├── path (single-TimingNode shorthand)
 │           └── nodes (multi-TimingNode mapping)
 │               └── <storageBinding>
-│                   ├── timingNodeId
+│                   ├── nodeId
 │                   └── path
 ├── presentation
 ├── logging
@@ -157,11 +162,11 @@ are composed when that capability is used.
 ### Application identity
 
 `ApplicationId` identifies the configured Timing Point Application instance.
-It is a separate identity/type from `TimingNodeId`.
+It is a separate identity/type from `NodeId`.
 
 For the current single-TimingNode deployment style, the intended starting
 convention is to configure the same string value for `ApplicationId` and the
-single `TimingNodeId`. This equality is a deployment convention, not identity
+single `NodeId`. This equality is a deployment convention, not identity
 aliasing: multi-TimingNode deployments may use one application id with several
 different TimingNode ids.
 
@@ -175,7 +180,7 @@ applicationId: timing-node-01
 
 The application composes 1..N internal `TimingSystem` contexts. Each
 TimingSystem owns 1..N TimingNodes plus its own system-status/upstream-protocol
-state. `TimingSystemId` is a local composition/simulation identity and is not
+state. `SystemId` is a local composition/simulation identity and is not
 part of the upstream functional addressing contract.
 
 Representative source:
@@ -185,12 +190,12 @@ parameters:
   ID: A
 
 timingSystems:
-  - timingSystemId: "{ID}"
+  - systemId: "{ID}"
     eventDataProvider: reference
     timingDataProvider: reference
     upstreamProtocolProvider: reference
     timingNodes:
-      - timingNodeId: "{ID}"
+      - nodeId: "{ID}"
         tagProcessing:
           quietTimeoutMillis: 250
           maxBurstDurationMillis: 1000
@@ -203,31 +208,37 @@ The same structure naturally represents multiple systems and nodes:
 
 ```yaml
 timingSystems:
-  - timingSystemId: 9
+  - systemId: 9
     timingNodes:
-      - timingNodeId: A
-      - timingNodeId: B
-  - timingSystemId: C
+      - nodeId: A
+      - nodeId: B
+  - systemId: C
     timingNodes:
-      - timingNodeId: C
+      - nodeId: C
 ```
+
+Within `timingSystems`, the `systemId` field identifies its TimingSystem;
+within `timingNodes`, `nodeId` identifies the TimingNode. This is explicit,
+compact, and consistent with the architectural **SystemId** and **NodeId**
+concepts. I/O and presentation references to those objects also use
+`systemId` and `nodeId` respectively.
 
 Rules:
 
 - `timingSystems` and each nested `timingNodes` are non-empty YAML lists;
   their elements are YAML objects with explicit identity fields;
   mapping-based topology collections are not part of the IF-11 syntax;
-- `TimingSystemId` is one character `A`..`Z` or `1`..`9` and unique among
+- `SystemId` is one character `A`..`Z` or `1`..`9` and unique among
   all TimingSystems hosted by the application;
 - a TimingSystem with **one TimingNode** uses exactly the **same ID** as that node
   (system `A` contains node `A`, system `B` contains node `B`);
 - a TimingSystem with **multiple TimingNodes** uses a **different** ID that does
   not equal any TimingNode ID in the application (for now, system `9`
   containing nodes `A` and `B`); no `SID-` prefix is used;
-- `TimingSystemId` distinguishes hosted/simulated TimingSystem contexts locally;
+- `SystemId` distinguishes hosted/simulated TimingSystem contexts locally;
 - each TimingSystem contains 1..N TimingNodes;
-- `TimingNodeId` identifies the logical TimingNode, is exactly one character `A`..`Z` or `1`..`9`, and remains application-wide unique;
-- `LocationId` identifies the configured physical/event location and is not derived from `TimingNodeId`;
+- `NodeId` identifies the logical TimingNode, is exactly one character `A`..`Z` or `1`..`9`, and remains application-wide unique;
+- `LocationId` identifies the configured physical/event location and is not derived from `NodeId`;
 - each configured `LocationId` must satisfy any compatibility constraint of the selected built-in application profile;
 - presentation transport settings such as HTTP ports do not belong to the TimingNode;
 - the internal TimingSystem grouping does not add a TimingSystem identifier to TimingData or upstream wire messages.
@@ -291,18 +302,17 @@ Representative device configuration direction:
 ```text
 io
   devices
-    antennaManagers
-      system-one-antennas
-        timingSystemId: 9
-        antennas
-          1
+    antennaManagers (list)
+      - systemId: 9
+        antennas (list)
+          - id: 1
             provider: simulated
             type: rfid
             timingNodes: [A, B]
             power
               controlRef: antenna-power-1
               stabilizationMillis: 1000
-          2
+          - id: 2
             provider: simulated
             type: rfid
             timingNodes: [B]
@@ -324,21 +334,20 @@ io
 ```
 
 `AntennaManager` is an optional I/O capability per TimingSystem. The
-`antennaManagers` mapping makes that ownership explicit: each binding contains
-one `timingSystemId` reference, and the binding key itself is deployment-local
-only. A TimingSystem may have zero or one manager binding. When present the
+`antennaManagers` list makes that ownership explicit: each binding contains
+one `systemId` reference, without requiring an artificial name such as `primary`. A TimingSystem may have zero or one manager binding. When present the
 manager owns 1..N antennas and accepts one shared inventory demand: enabled while
 any TimingNode of that system is OPEN, otherwise disabled. Internal multiplex
 rotation is distinct from future individual antenna-control features.
 
 `AntennaId` is exactly one digit `1`..`9` and is distinct from
-`TimingNodeId`. One antenna may intentionally map to 1..N TimingNodes within
+`NodeId`. One antenna may intentionally map to 1..N TimingNodes within
 the manager's referenced TimingSystem; this fan-out does not merge their state
 or sequence streams.
 
 Antenna installation fields have these semantics:
 
-- `timingSystemId` on the manager binding must reference one configured
+- `systemId` on the manager binding must reference one configured
   TimingSystem and may occur only once across manager bindings;
 - `timingNodes` routes antenna observations to one or more TimingNodes that
   belong to that same TimingSystem; this mapping does not imply independently
@@ -449,7 +458,7 @@ to the upstream protocol merely for routing. `UpstreamGateway` owns the
 external transport/session boundary. The associated Domain `UpstreamProtocol`
 handles system-level protocol semantics such as ping/synchronisation, while
 `UpstreamMessageRouter` resolves TimingNode-targeted messages by
-`TimingNodeId` to the corresponding bidirectional `UpstreamMessagePort`.
+`NodeId` to the corresponding bidirectional `UpstreamMessagePort`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or a
 socket session. It does not own Domain/TimingNode selection or message
@@ -483,15 +492,15 @@ io:
     timingData:
       nodes:
         node-a:
-          timingNodeId: A
+          nodeId: A
           path: data/node_A_logbook.jsonl
         node-b:
-          timingNodeId: B
+          nodeId: B
           path: data/node_B_logbook.jsonl
 ```
 
 The key below `nodes` is a deployment-local binding name only.
-`timingNodeId` is the real application-wide TimingNode reference. The storage
+`nodeId` is the real application-wide TimingNode reference. The storage
 binding does not become part of TimingNode domain state.
 
 Rules:
@@ -507,7 +516,7 @@ Rules:
 - `path` and `nodes` are mutually exclusive;
 - every configured TimingNode using the reference file store must resolve to
   exactly one storage binding;
-- every `nodes.*.timingNodeId` must reference a configured TimingNode and may
+- every `nodes.*.nodeId` must reference a configured TimingNode and may
   occur only once in the storage mapping;
 - two bindings must not resolve to the same normalized filesystem path;
 - a path may be relative to the application working directory or absolute;
@@ -519,11 +528,11 @@ Rules:
   operational work;
 - public examples use generic local paths and do not disclose deployment paths;
 - the reference/example filename convention is
-  `node-<TimingNodeId>-logbook.jsonl`, for example
+  `node-<NodeId>-logbook.jsonl`, for example
   `node-A-logbook.jsonl`; the configured path remains authoritative.
 
-Because `TimingNodeId` is application-wide unique, the same storage mapping
-works for one or multiple TimingSystems without adding `TimingSystemId` to the
+Because `NodeId` is application-wide unique, the same storage mapping
+works for one or multiple TimingSystems without adding `SystemId` to the
 persistence binding.
 
 The storage path does not contain a LocationId or RegistrationId policy. Those
@@ -540,7 +549,7 @@ presentation
   web
     endpoints (1 per TimingNode)
       web-timing-node-01
-        timingNodeId: A
+        nodeId: A
         bindAddress
         port
       ...
@@ -551,7 +560,7 @@ presentation
 ```
 
 The intended Web topology has exactly one configured Web binding for each
-configured TimingNode. Each binding references a `TimingNodeId` and owns its
+configured TimingNode. Each binding references a `NodeId` and owns its
 own bind address/port; a multi-TimingNode process therefore exposes 1..N Web
 ports. Those listener settings remain Presentation configuration and do not
 become fields of the TimingNode domain object.
@@ -754,11 +763,11 @@ Validation includes, where applicable:
 - unknown or unresolved `{Parameter}` references;
 - unresolved contextual `{NodeId}` / `{SystemId}` references outside fields that own
   those contexts;
-- missing/invalid, non-compact, or duplicate internal `TimingSystemId` values;
-- one-node TimingSystems with IDs different from their TimingNodeId;
-- multi-node TimingSystems with IDs matching any configured TimingNodeId;
+- missing/invalid, non-compact, or duplicate internal `SystemId` values;
+- one-node TimingSystems with IDs different from their NodeId;
+- multi-node TimingSystems with IDs matching any configured NodeId;
 - TimingSystems without at least one configured TimingNode;
-- duplicate application-wide `TimingNodeId` values;
+- duplicate application-wide `NodeId` values;
 - a configured TimingNode `LocationId` that violates an explicitly defined compatibility rule of the selected application profile;
 - references to unknown TimingSystems or TimingNodes;
 - AntennaManager bindings that reference an unknown TimingSystem;
@@ -785,7 +794,7 @@ Validation includes, where applicable:
   TimingNode, or a multi-node path template whose expansion is not unique;
 - simultaneous use of `io.storage.timingData.path` and
   `io.storage.timingData.nodes`;
-- missing, duplicate or unknown `timingNodeId` references in
+- missing, duplicate or unknown `nodeId` references in
   `io.storage.timingData.nodes`;
 - duplicate normalized TimingData file paths across node storage bindings.
 

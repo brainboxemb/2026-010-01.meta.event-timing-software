@@ -51,7 +51,7 @@ groups:
   object_id: TimingSystem
   label: "TimingSystem (1..N)"
   properties:
-    - "TimingSystemId (internal)"
+    - "SystemId (internal)"
   properties_width: 220
   kind: model
   notation: component
@@ -60,7 +60,7 @@ groups:
   object_id: TimingNode
   label: "TimingNode (1..N)"
   properties:
-    - TimingNodeId
+    - NodeId
     - LocationId
     - State
   properties_width: 240
