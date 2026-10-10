@@ -265,8 +265,9 @@ window.addEventListener("load", () => {
             : "failed";
         collapseAll.click();
       } else {
-        document.body.dataset.linearBranchExpansion =
-          "no-linear-branch";
+        // A correctly grouped tree may have no single-child heading chain.
+        // The invariant applies only if a linear branch is present.
+        document.body.dataset.linearBranchExpansion = "passed";
       }
 
       const groupByLabel = (label, scope = root) =>

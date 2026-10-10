@@ -79,7 +79,7 @@ do not need an artificial use-case link when their authority is a software
 configuration, interface or platform constraint.
 #### Registration operation
 
-:::{req} Operational location and lifecycle  
+:::{req} Open registration point at a location  
 :id: SI01-REQ-040  
 :status: R  
 :specifies: UC-001, UC-009  
@@ -100,9 +100,10 @@ For an OPEN TimingNode, SI-01 shall provide a CLOSE operation that stops the
 acceptance of new participant registrations and changes its lifecycle to
 `CLOSED` in the same ordered operation. SI-01 shall not report a successful
 close transition unless the required lifecycle record is committed successfully.
-Previously committed registrations shall remain unchanged. A close request
-that cannot be applied shall have an explicit non-success or outcome-unknown
-result rather than being presented as `CLOSED` without confirmation.
+Previously committed registrations shall remain unchanged. Detected
+problems that still permit a safe controlled CLOSE shall not block the operation.
+A close request that cannot be applied shall have an explicit non-success or
+outcome-unknown result rather than being presented as `CLOSED` without confirmation.
 :::
 
 :::{req} Reject opening when operational errors are blocking  
