@@ -4,9 +4,9 @@ Status: working draft / non-authoritative
 
 ## Purpose
 
-This document captures system-level operational use cases that explain how operators, devices, external systems and test tooling use the event-timing software system.
+This document captures use cases for the registration system as a whole: operators, registration cabinets, connected devices, external systems and engineering/test equipment.
 
-Use cases describe **desired externally meaningful behaviour and goals**, not implementation details.
+Use cases describe actor goals and externally observable system behaviour. Relevant physical equipment and network assumptions belong here; software-item allocation, interface IDs, protocol design and internal classes belong downstream in the SSSD, ISDs and SSDs.
 
 The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.
 
@@ -20,7 +20,7 @@ The public repository uses generic/synthetic identities. Real deployment asset n
 
 ## Relationship to other documents
 
-System use cases are part of the software-system specification/design family. They express behaviour of the **software system as a whole** before that behaviour is decomposed across software items.
+System use cases describe the **registration system and its environment**, including relevant physical interaction and connectivity. The SSSD then specifies the software-system responsibilities and allocates software items and interfaces.
 
 Relevant parent-system/external inputs are registered in `20-EXT-external-system-inputs.md`. Together with the domain baseline they can shape these system use cases and the SSSD.
 
@@ -58,6 +58,7 @@ Each use case should eventually contain:
 
 ```text
 ID
+Status (D — Draft, R — Review, A — Approved)
 Name / goal
 Primary actor(s)
 Supporting actor(s)
@@ -66,12 +67,10 @@ Trigger
 Main flow
 Alternative / failure flows
 Postconditions / observable result
-Relevant interfaces
-Derived requirements (later)
-Verification references (later)
+Relevant physical equipment / operating environment, where important
 ```
 
-The current catalogue starts lightweight and can be expanded as requirements are promoted.
+The current catalogue starts lightweight and can be expanded as behaviour is reviewed. Each use case carries its own maturity status; this is separate from the document status. A use case does not assign software IF numbers, software items or requirements.
 
 ## Use-case catalogue
 
@@ -83,8 +82,8 @@ reading order or implementation sequence.
 
 | ID | Name | Primary actor | Goal |
 | --- | --- | --- | --- |
-| UC-001 | Connect to a registration system | Operator | Connect through the browser Web interface to a known registration system and view its current operational state. |
-| UC-002 | Configure, open and close a registration point | Operator | Set the operational location, open registration, and close it again without changing location while open. |
+| UC-001 | Open a registration point | Operator | Use an iPad browser to reach a registration cabinet and open registration for a selected location. |
+| UC-002 | Close a registration point | Operator | Stop accepting new registrations at an open registration point. |
 | UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
 | UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
 | UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
@@ -104,6 +103,7 @@ reading order or implementation sequence.
 
 :::{uc} Diagnose degraded TimingNode startup  
 :id: UC-020  
+:status: D
 
 **Goal:** keep SI-01 reachable and diagnosable when one configured TimingNode cannot
 complete local state recovery.
@@ -159,96 +159,94 @@ problem through normal status interfaces.
 
 ### Normal operation
 
-:::{uc} Connect to a registration system  
-:id: UC-001  
+:::{uc} Open a registration point
+:id: UC-001
+:status: D
 
-**Goal:** allow an operator using a browser-based Web client to connect through
-IF-04 to a known registration system and show its current operational state.
+**Goal:** allow the operator to open a registration cabinet for participant
+registration at a chosen location.
 
 **Primary actor:** operator.
 
-UC-001 is the normal browser-operator path through **IF-04 — Web Interface**.
-Engineering-client operation through IF-03 belongs to UC-009. There is no
-separate operator-facing desktop-GUI product path in the current system
-allocation.
-
 **Preconditions:**
 
-- the registration system is running and its IF-04 Web binding is reachable;
-- the operator/browser knows the address of that Web binding.
+- the registration cabinet is powered on;
+- the iPad is connected to the same local network as the registration cabinet;
+- the operator knows the registration cabinet's IP address.
 
 **Main flow:**
 
-1. The browser-based Web client connects to the configured IF-04 Web binding.
-2. The Web client retrieves the current operational state for that registration point.
-3. The Web client shows the connected registration-point identity, current
-   `LocationId` if configured, and whether the registration point is `OPEN` or
-   `CLOSED`.
-4. The operator can continue with the operations permitted for the reported state.
-
-The operator does not need to select or understand an internal `TimingNode`
-before using the registration system. IF-04 is already bound to one configured
-TimingNode; its public state may expose the TimingNode identity so the connected
-source can be identified, while the domain structure remains an
-implementation/interface concern rather than an operator navigation concept.
+1. The operator opens a Web browser on the iPad and enters the IP address of the registration cabinet.
+2. The cabinet presents the operator interface and its current registration state.
+3. The operator sees that registration is `CLOSED`.
+4. The operator enters the location at which participants will be registered.
+5. The operator selects **Open**.
+6. The registration cabinet accepts the location and opens registration for that location.
+7. The interface confirms `OPEN` and shows the active location.
 
 **Alternative/failure flows:**
 
-- the IF-04 Web binding cannot be reached;
-- the live Web connection is lost;
-- the current state cannot be retrieved or re-established after reconnect.
+- **Already open:** the operator connects to a cabinet that is already `OPEN`.
+  The interface shows the existing location and `OPEN` state. Connecting does not
+  change either; the operator can continue existing registration or close it (UC-002).
+- **Cabinet unreachable:** the operator cannot load the interface and cannot
+  confirm the current state.
+- **Invalid location:** the cabinet rejects the requested location and remains
+  `CLOSED`.
+- **Software errors:** the cabinet software has detected errors. The operator
+  sees the relevant errors and current state; opening is refused when an error
+  prevents safe operation.
+- **Open not confirmed or connection lost:** the operator does not assume
+  registration is open until the resulting state can be confirmed. Reconnecting
+  must show the cabinet's actual current state.
 
-**Observable result:** the operator can identify the connected registration
-point and see its current location and open/closed state.
+**Postcondition:** if opening succeeds, registration is `OPEN` for the selected
+location. Closing the browser or losing the iPad connection does not itself
+close registration.
 
 :::
 
-:::{uc} Configure, open and close a registration point  
-:id: UC-002  
+:::{uc} Close a registration point
+:id: UC-002
+:status: D
 
-**Goal:** let an operator prepare a registration point for one location, open it
-for registrations, and close it again.
+**Goal:** allow the operator to close an open registration point so no new
+participant registrations are accepted.
 
 **Primary actor:** operator.
 
 **Preconditions:**
 
-- the operator is connected through the normal browser/IF-04 path established by UC-001;
-- the current registration state is available.
+- the operator can reach the registration cabinet through the iPad Web browser;
+- registration is `OPEN`.
 
 **Main flow:**
 
-1. While the registration point is `CLOSED`, the operator selects the operational `LocationId` for the next open.
-2. The operator requests `OPEN` for that selected location as one operation.
-3. The registration system validates the requested location and other required open conditions.
-4. When accepted, the registration system applies the LocationId and changes the registration point to `OPEN` as one ordered operation.
-5. The application shows the registration point as `OPEN` with that location.
-6. Registrations may now be accepted for that location.
-7. The operator requests `CLOSE`.
-8. The application shows the registration point as `CLOSED`.
-9. The last selected location may remain visible after close; another location can be selected for a later OPEN request.
-
-The operational location is fixed while registration is `OPEN`. A normal operator
-OPEN action therefore carries the intended LocationId instead of depending on a
-separately ordered location command immediately before OPEN.
-
-Whether open/close actions are themselves represented in TimingData or sent
-upstream is a later interface/protocol decision.
+1. The operator sees the cabinet's current location and `OPEN` state.
+2. The operator selects **Close**.
+3. The registration cabinet stops accepting new registrations.
+4. The interface confirms `CLOSED`.
 
 **Alternative/failure flows:**
 
-- `OPEN` is requested with an invalid operational location;
-- a location change is requested while registration is `OPEN`;
-- another required open condition is not satisfied;
-- the command cannot be completed or its resulting state cannot be confirmed.
+- **Software errors:** the cabinet reports detected errors and its current
+  state. An error that prevents opening need not prevent safe closing.
+- **Close unavailable or unsuccessful:** the interface reports the failure and
+  must not falsely claim that the cabinet is `CLOSED`.
+- **Connection lost or outcome unknown:** the operator reconnects to establish
+  the current cabinet state rather than assuming the close succeeded.
+- **Already closed:** the operator sees `CLOSED`; there is no open
+  registration to close.
 
-**Observable result:** the browser presentation shows the selected location and
-the resulting `OPEN` or `CLOSED` state explicitly.
+**Postcondition:** when closing succeeds, the cabinet is `CLOSED` and
+previously accepted registrations remain retained. Disconnecting the iPad
+does not itself change the cabinet state.
 
 :::
 
 :::{uc} Register a participant through RFID  
 :id: UC-003  
+:status: D
 
 **Goal:** turn an accepted participant observation into one traceable registration
 for the location that is currently open.
@@ -263,13 +261,13 @@ for the location that is currently open.
 **Main flow:**
 
 1. The RFID subsystem observes a participant tag and captures the observation time.
-2. Tag interpretation and observation filtering determine whether the observation represents an accepted participant registration.
-3. An accepted semantic registration is submitted to the registration point.
-4. The registration system captures its own source identity and the active `LocationId`.
-5. It assigns the next source sequence and creates the committed TimingData registration.
+2. The registration equipment checks whether the tag observation is a valid participant registration.
+3. An accepted observation is registered at the open registration point.
+4. The registration system associates the registration with its identity and current location.
+5. The registration system records the registration and its observation time.
 6. The registration retains the active location and accepted observation time even if the registration point is later closed or configured for another location.
-7. The committed registration becomes available in registration history/current state and as a live update where supported.
-8. Outbound synchronisation may consume the committed registration independently when that capability is implemented.
+7. The registration becomes visible in the registration history.
+8. The registration remains available for later synchronisation with backoffice.
 
 
 **Alternative/failure flows:**
@@ -288,11 +286,11 @@ time of acceptance.
 
 :::{uc} Recover or reinitialise RFID equipment  
 :id: UC-004  
+:status: D
 
-**Goal:** start a new RFID antenna operation after startup self-test, initialization,
-inventory or protocol failure without restarting SI-01 or changing committed timing data.
+**Goal:** restore RFID registration after equipment startup or an antenna failure without restarting the registration cabinet or losing recorded registrations.
 
-**Primary actor:** operator / system.
+**Primary actor:** operator / registration system.
 
 **Preconditions:**
 
@@ -329,6 +327,7 @@ antenna. A later inventory demand can start another attempt without restarting S
 
 :::{uc} Manage ready teams through keypad/operator input  
 :id: UC-005  
+:status: D
 
 **Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
 
@@ -348,10 +347,11 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 :::{uc} Drive a passive CAN display from current system state  
 :id: UC-006  
+:status: D
 
-**Goal:** ensure the passive DisplayRev1Can shows the current ready-team/display model.
+**Goal:** show the current teams preparing on the passive display.
 
-**Primary actor:** SI-01.
+**Primary actor:** registration system.
 
 **Main flow:**
 
@@ -365,8 +365,9 @@ Any `NextUpTeams` change history required by the promoted requirements is separa
 
 :::{uc} Provide data to a smart network display  
 :id: UC-007  
+:status: D
 
-**Goal:** expose current timing/status/reference data so a smart display can render and synchronise itself without SI-01 owning its presentation logic.
+**Goal:** let a smart network display show up-to-date registration and reference information.
 
 **Primary actor:** smart display.
 
@@ -386,6 +387,7 @@ SI-01 does not drive DisplayRev2Wifi through the passive-display `DisplayModel`.
 
 :::{uc} Synchronise reference data from backoffice  
 :id: UC-010  
+:status: D
 
 **Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
 
@@ -408,8 +410,9 @@ be presented as proof that the target's reference state changed.
 
 :::{uc} Synchronise TimingNodeId-scoped data to backoffice  
 :id: UC-011  
+:status: D
 
-**Goal:** deliver committed ordered source streams without coupling domain logic to one transport technology.
+**Goal:** send recorded registrations to backoffice in their correct source order and resume after interruptions.
 
 **Primary actors:** SI-01 and backoffice.
 
@@ -433,8 +436,9 @@ increments.
 
 :::{uc} Continue local operation during backoffice outage  
 :id: UC-012  
+:status: D
 
-**Goal:** preserve required local timing functionality and traceability while external connectivity is unavailable.
+**Goal:** allow registration to continue locally when the backoffice connection is unavailable, without losing accepted registrations.
 
 **Primary actor:** operator / SI-01.
 
@@ -450,8 +454,9 @@ increments.
 
 :::{uc} Restart and restore local state  
 :id: UC-013  
+:status: D
 
-**Goal:** recover a coherent timing application after restart/power interruption.
+**Goal:** restore safe registration cabinet operation and previously recorded registrations after restart or power interruption.
 
 **Primary actor:** platform/operator.
 
@@ -468,6 +473,7 @@ increments.
 
 :::{uc} Run multiple TimingNodes in one process  
 :id: UC-014  
+:status: D
 
 **Goal:** host multiple independently addressed TimingNodes
 while preserving independent lifecycle, state and
@@ -496,6 +502,7 @@ specified mapping rule, not accidental cross-instance sharing.
 
 :::{uc} Exercise the registration system through the Engineering Client  
 :id: UC-009  
+:status: D
 
 **Goal:** provide the SI-02 Engineering Desktop Client for inspecting and exercising
 public registration-system behaviour during development, integration, commissioning and system test.
@@ -538,6 +545,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Simulate a complete field toward backoffice  
 :id: UC-015  
+:status: D
 
 **Goal:** exercise realistic multi-TimingNode/multi-source behaviour from one test application.
 
@@ -555,6 +563,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Replace real devices with controllable stubs  
 :id: UC-016  
+:status: D
 
 **Goal:** make hardware-dependent application behaviour testable without duplicating business logic.
 
@@ -571,6 +580,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Use an alternative backoffice transport for loop testing  
 :id: UC-017  
+:status: D
 
 **Goal:** test real process/network communication and `TimingNodeId`-scoped stream routing without RabbitMQ.
 
@@ -591,6 +601,7 @@ This use case is intentionally protocol-neutral and does not reproduce private p
 
 :::{uc} Verify production-shaped messaging through RabbitMQ  
 :id: UC-018  
+:status: D
 
 **Goal:** verify broker/client lifecycle and source-specific messaging using a real disposable broker.
 
@@ -611,6 +622,7 @@ Production names, source IDs, schemas and credentials remain outside the public 
 
 :::{uc} Handle provider-specific input classification  
 :id: UC-019  
+:status: D
 
 **Goal:** preserve a provider-declared semantic input classification when the
 public application contract needs distinct processing, without publishing
