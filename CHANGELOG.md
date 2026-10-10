@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Restore convenient Engineering Portal tree navigation: opening a document unfolds intermediate headings that only contain more headings (including SI-01 functional and technical requirement groups), while leaving requirement-bearing categories collapsed until selected; add browser regression verification for one-click access to categories.
+
 - Present all VTS verification cases with GitHub-readable MyST/Sphinx-Needs option headers (`:id:` and `:verifies:`), instead of YAML-style separators that Markdown misrenders as headings; align the VTS template and dynamic reader verification.
 
 - Reduce duplicated requirements administration in Engineering Portal verification: validate graph-to-portal relations dynamically, keep a few intentional end-to-end fixtures, derive UC/source-object inventories, and describe script responsibility across the documentation toolchain. Run documentation CI when verifier scripts change.

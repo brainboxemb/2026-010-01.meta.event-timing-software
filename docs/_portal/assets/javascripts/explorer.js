@@ -658,35 +658,26 @@
         return { groups, leaves };
       }
 
-      function expandLinearBranch(group) {
-        let current = group;
-        while (current) {
-          setGroupExpanded(current, true);
-          const children = directVisibleTreeChildren(current);
-          if (children.leaves.length || children.groups.length !== 1) {
-            break;
-          }
-          current = children.groups[0];
-        }
-      }
-
+      // Auto-open headings that merely organize more headings. Stop at a
+      // meaningful choice (a group containing actual object leaves), so
+      // opening a deep SSD does not require 3-4 clicks just to reach its
+      // functional/technical categories, nor dump every requirement at once.
+      // A single-child chain is also unfolded to its first available leaves.
       function expandUsefulBranches(group) {
         if (!group) return;
         setGroupExpanded(group, true);
 
         const children = directVisibleTreeChildren(group);
-        if (!children.leaves.length && children.groups.length === 1) {
-          expandLinearBranch(children.groups[0]);
+        if (children.leaves.length) return;
+
+        if (children.groups.length === 1) {
+          expandUsefulBranches(children.groups[0]);
           return;
         }
-
         children.groups.forEach((child) => {
-          const childChildren = directVisibleTreeChildren(child);
-          if (
-            !childChildren.leaves.length &&
-            childChildren.groups.length === 1
-          ) {
-            expandLinearBranch(child);
+          const nested = directVisibleTreeChildren(child);
+          if (nested.groups.length && !nested.leaves.length) {
+            expandUsefulBranches(child);
           }
         });
       }
