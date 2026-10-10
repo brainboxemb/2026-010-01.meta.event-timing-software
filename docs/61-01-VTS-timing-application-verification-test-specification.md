@@ -152,10 +152,15 @@ verifies: >-
 
 **Purpose**
 
-Verify the first public registration slice through a real SI-01 process while
-remaining correct for the current append-only TimingData stream: lifecycle
-OPEN/CLOSE records, one automatic registration, committed LogBook/history and
-live post-commit observation.
+Verify the first public registration slice of a real SI-01 process through
+**IF-03 — Application control and status**. The independent test driver uses
+IF-03 commands and queries (HTTP) and observes IF-03 live events (WebSocket)
+to verify lifecycle OPEN/CLOSE records, one automatic registration, committed
+LogBook/history and live post-commit observation.
+
+The test also checks the relevant **IF-05 TimingData record semantics** through
+the records exposed by IF-03 and their persistence across restart. It does not
+exercise the operator's IF-04 Web interface.
 
 The second process run verifies restart recovery. Invalid/corrupt/incomplete
 storage recovery remains component-level persistence/codec verification.
