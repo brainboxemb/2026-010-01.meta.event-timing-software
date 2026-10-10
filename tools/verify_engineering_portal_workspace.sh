@@ -311,19 +311,40 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const firstExecutable = groupByLabel(
-          "SI-01 application requirements",
+        const authoredRequirements = groupByLabel(
+          "SI-01 requirements",
           requirements || root
         );
-        const usefulChoices = firstExecutable
-          ? directChildren(firstExecutable).groups
-              .map((group) => {
-                const label = group.querySelector(
+        const expandIfNeeded = (group) => {
+          if (group && !group.classList.contains("is-expanded")) {
+            const toggle = group.querySelector(
+              ":scope > [data-eng-tree-toggle]"
+            );
+            if (toggle) toggle.click();
+          }
+        };
+        const childGroupLabels = (group) =>
+          group
+            ? directChildren(group).groups.map((child) => {
+                const label = child.querySelector(
                   ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
                 );
                 return label ? label.textContent.trim() : "";
               })
-          : [];
+            : [];
+
+        expandIfNeeded(authoredRequirements);
+        const topRequirementLabels = childGroupLabels(authoredRequirements);
+        const functional = groupByLabel(
+          "Functional requirements", authoredRequirements || root
+        );
+        const technical = groupByLabel(
+          "Technical requirements", authoredRequirements || root
+        );
+        expandIfNeeded(functional);
+        expandIfNeeded(technical);
+        const functionalLabels = childGroupLabels(functional);
+        const technicalLabels = childGroupLabels(technical);
 
         document.body.dataset.ssdRequirementsExpansion =
           ssd.classList.contains("is-expanded") &&
@@ -331,13 +352,20 @@ window.addEventListener("load", () => {
           architecture &&
           requirements &&
           requirements.classList.contains("is-expanded") &&
-          firstExecutable &&
-          firstExecutable.classList.contains("is-expanded") &&
-          usefulChoices.includes("Process lifecycle and configuration") &&
-          usefulChoices.includes("Build and version identity") &&
-          usefulChoices.includes("Status") &&
-          usefulChoices.includes("Application boundary and testability") &&
-          usefulChoices.includes("Registration operation")
+          authoredRequirements &&
+          authoredRequirements.classList.contains("is-expanded") &&
+          topRequirementLabels.indexOf("Functional requirements") >= 0 &&
+          topRequirementLabels.indexOf("Technical requirements") >
+            topRequirementLabels.indexOf("Functional requirements") &&
+          functional &&
+          functional.classList.contains("is-expanded") &&
+          functionalLabels[0] === "Registration operation" &&
+          functionalLabels.includes("Participant registration") &&
+          functionalLabels.includes("Errors and recovery") &&
+          technical &&
+          technical.classList.contains("is-expanded") &&
+          technicalLabels.includes("Application process and configuration") &&
+          technicalLabels.includes("Build and version identity")
             ? "passed"
             : "failed";
         collapseAll.click();
