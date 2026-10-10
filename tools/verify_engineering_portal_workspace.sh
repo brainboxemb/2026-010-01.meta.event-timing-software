@@ -320,14 +320,9 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const expandIfNeeded = (group) => {
-          if (group && !group.classList.contains("is-expanded")) {
-            const toggle = group.querySelector(
-              ":scope > [data-eng-tree-toggle]"
-            );
-            if (toggle) toggle.click();
-          }
-        };
+        // Clicking the SSD once must expose the meaningful requirement
+        // categories; do not manually expand the intermediate headings here,
+        // or the test would conceal a usability regression.
         const childGroupLabels = (group) =>
           group
             ? directChildren(group).groups.map((child) => {
@@ -338,7 +333,6 @@ window.addEventListener("load", () => {
               })
             : [];
 
-        expandIfNeeded(requirements);
         const topRequirementLabels = childGroupLabels(requirements);
         const functional = groupByLabel(
           "Functional requirements", requirements || root
@@ -346,12 +340,30 @@ window.addEventListener("load", () => {
         const technical = groupByLabel(
           "Technical requirements", requirements || root
         );
-        expandIfNeeded(functional);
-        expandIfNeeded(technical);
         const functionalLabels = childGroupLabels(functional);
         const technicalLabels = childGroupLabels(technical);
 
+        // A leaf-bearing category is a deliberate choice: it should not be
+        // auto-expanded along with structural headings.
+        const firstFunctionalCategory =
+          functional && directChildren(functional).groups[0];
+        const categoryWasCollapsed =
+          firstFunctionalCategory &&
+          !firstFunctionalCategory.classList.contains("is-expanded");
+        if (firstFunctionalCategory) {
+          const toggle = firstFunctionalCategory.querySelector(
+            ":scope > [data-eng-tree-toggle]"
+          );
+          if (toggle) toggle.click();
+        }
+        const categoryManuallyExpanded =
+          firstFunctionalCategory &&
+          firstFunctionalCategory.classList.contains("is-expanded") &&
+          directChildren(firstFunctionalCategory).leaves.length > 0;
+
         document.body.dataset.ssdRequirementsExpansion =
+          categoryWasCollapsed &&
+          categoryManuallyExpanded &&
           ssd.classList.contains("is-expanded") &&
           topLabels.includes("Software-item requirements") &&
           architecture &&
