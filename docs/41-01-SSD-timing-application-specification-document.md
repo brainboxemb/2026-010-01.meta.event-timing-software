@@ -68,7 +68,7 @@ SI01-REQ-<number>
 
 Requirement identifiers in this document remain stable. Add new requirements under new identifiers; do not renumber existing requirements solely for document neatness.
 
-### SI-01 requirements
+### Functional requirements
 
 The functional requirements are grouped by externally observable registration
 system behaviour, starting with the operator's OPEN and CLOSE operations.
@@ -77,9 +77,6 @@ Grouping is for navigation only: the stable requirement IDs and their authored
 Need relationships define identity and traceability. Technical requirements
 do not need an artificial use-case link when their authority is a software
 configuration, interface or platform constraint.
-
-### Functional requirements
-
 #### Registration operation
 
 :::{req} Operational location and lifecycle  

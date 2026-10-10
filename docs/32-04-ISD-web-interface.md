@@ -313,10 +313,10 @@ state as non-current until a fresh IF04-OP-001 baseline has been established.
 :::
 
 
-:::{ifreq} Manual registration through Web interface
-:id: IF04-REQ-010
-:status: D
-:refines: SI01-REQ-071
+:::{ifreq} Manual registration through Web interface  
+:id: IF04-REQ-010  
+:status: D  
+:refines: SI01-REQ-071  
 
 IF-04 shall expose IF04-OP-005 for normal operator manual registration through
 the Web client. The input shall preserve the effective registration time and

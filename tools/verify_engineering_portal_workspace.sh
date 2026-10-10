@@ -311,10 +311,6 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const authoredRequirements = groupByLabel(
-          "SI-01 requirements",
-          requirements || root
-        );
         const expandIfNeeded = (group) => {
           if (group && !group.classList.contains("is-expanded")) {
             const toggle = group.querySelector(
@@ -333,13 +329,13 @@ window.addEventListener("load", () => {
               })
             : [];
 
-        expandIfNeeded(authoredRequirements);
-        const topRequirementLabels = childGroupLabels(authoredRequirements);
+        expandIfNeeded(requirements);
+        const topRequirementLabels = childGroupLabels(requirements);
         const functional = groupByLabel(
-          "Functional requirements", authoredRequirements || root
+          "Functional requirements", requirements || root
         );
         const technical = groupByLabel(
-          "Technical requirements", authoredRequirements || root
+          "Technical requirements", requirements || root
         );
         expandIfNeeded(functional);
         expandIfNeeded(technical);
@@ -352,8 +348,7 @@ window.addEventListener("load", () => {
           architecture &&
           requirements &&
           requirements.classList.contains("is-expanded") &&
-          authoredRequirements &&
-          authoredRequirements.classList.contains("is-expanded") &&
+          requirements &&
           topRequirementLabels.indexOf("Functional requirements") >= 0 &&
           topRequirementLabels.indexOf("Technical requirements") >
             topRequirementLabels.indexOf("Functional requirements") &&
