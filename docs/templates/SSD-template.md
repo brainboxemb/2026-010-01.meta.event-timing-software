@@ -42,7 +42,24 @@ algorithms in focused SDDs unless a choice is itself an architectural constraint
 
 ## Software-item requirements
 
-<!-- Add requirements with stable IDs and explicit maturity status. -->
+Requirement IDs are stable and need not follow document reading order. Group
+requirements by actor-visible function first; follow with technical constraints.
+Use normal Markdown headings rather than an extra Need classification.
+
+### Functional requirements
+
+#### <Operational capability or use-case group>
+
+<!-- Start with the software item's primary user-visible function. Link each
+     applicable requirement to its operational UC through :specifies:. -->
+
+### Technical requirements
+
+#### <Cross-cutting technical concern>
+
+<!-- Configuration, process, persistence, compatibility and other software
+     constraints may derive from SSSD/ISDs without an artificial UC link.
+     Keep original requirement IDs when reorganizing requirements. -->
 
 ## Software-item architecture
 

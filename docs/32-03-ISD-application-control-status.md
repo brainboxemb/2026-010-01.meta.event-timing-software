@@ -501,7 +501,7 @@ operation or value semantics.
 :::{ifreq} TimingNode location and lifecycle control  
 :id: IF03-REQ-011  
 :status: R  
-:refines: SI01-REQ-040  
+:refines: SI01-REQ-040, SI01-REQ-072  
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
 LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005

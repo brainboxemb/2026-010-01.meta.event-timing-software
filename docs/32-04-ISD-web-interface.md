@@ -129,9 +129,10 @@ Requests the TimingNode associated with the Web binding to change to CLOSED.
 
 When the TimingNode is OPEN and CLOSE is accepted, the resulting state is `CLOSED`.
 
-A CLOSE request while the TimingNode is already CLOSED is rejected. The semantic
-reason may remain available inside SI-01, while a concrete compatibility mapping
-may expose only a general failed-request outcome.
+A CLOSE request while the TimingNode is already CLOSED has the explicit
+`ALREADY_CLOSED` outcome and does not create a lifecycle transition or a new
+lifecycle record. This matches the normal application-level close semantics
+shared with other presentation interfaces.
 
 A successful state change is visible through subsequent IF-04 state observation.
 
@@ -163,6 +164,17 @@ failed persistence or outcome-unknown conditions must not be shown as success.
 
 This specifies the required Web-interface behaviour; a concrete iPad Web
 realization and its controls are designed separately.
+
+## IF04-OP-006 — Read committed registration history
+
+Returns the committed registration history of the registration point associated
+with the Web binding. A Web client can use this history to show confirmed
+registrations and, after reconnecting, determine whether a prior manual
+registration request with an uncertain outcome was committed before attempting
+another registration.
+
+The returned registration data is the authoritative history owned by SI-01;
+the browser must not treat a submitted request alone as a committed record.
 
 ## Command ordering
 
@@ -246,7 +258,7 @@ selection plus the CLOSED-to-OPEN transition as one ordered TimingNode operation
 :::{ifreq} Close operation  
 :id: IF04-REQ-004  
 :status: D  
-:refines: SI01-REQ-040  
+:refines: SI01-REQ-072  
 
 IF-04 shall provide an explicit CLOSE operation for the bound TimingNode.
 :::
@@ -254,7 +266,7 @@ IF-04 shall provide an explicit CLOSE operation for the bound TimingNode.
 :::{ifreq} Shared TimingNode semantics  
 :id: IF04-REQ-005  
 :status: D  
-:refines: SI01-REQ-040  
+:refines: SI01-REQ-040, SI01-REQ-072  
 
 IF-04 shall use SI-01 TimingNode application/domain semantics rather than own a
 separate lifecycle or LocationId state model.
@@ -301,14 +313,35 @@ state as non-current until a fresh IF04-OP-001 baseline has been established.
 :::
 
 
-:::{ifreq} Manual registration through Web interface
-:id: IF04-REQ-010
-:status: D
-:refines: SI01-REQ-071
+:::{ifreq} Manual registration through Web interface  
+:id: IF04-REQ-010  
+:status: D  
+:refines: SI01-REQ-071  
 
 IF-04 shall expose IF04-OP-005 for normal operator manual registration through
 the Web client. The input shall preserve the effective registration time and
 AUTO/MAN client time-selection semantics of the shared application operation.
+:::
+
+:::{ifreq} Local-network browser access  
+:id: IF04-REQ-011  
+:status: D  
+
+When an IF-04 Web binding is configured for local-network operation, a browser
+on the same reachable local network shall be able to address that binding using
+the registration cabinet's configured IP endpoint, without requiring the operator
+to select an internal TimingNode separately.
+:::
+
+:::{ifreq} Query committed registration history  
+:id: IF04-REQ-012  
+:status: D  
+:refines: SI01-REQ-042  
+
+IF-04 shall provide IF04-OP-006 to retrieve committed registration history
+for the bound registration point. The Web client shall be able to use this
+history to confirm previously recorded manual registrations after reconnecting,
+including when the result of a submitted command was unknown.
 :::
 
 ## Open points

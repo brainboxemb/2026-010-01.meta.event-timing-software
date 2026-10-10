@@ -265,8 +265,9 @@ window.addEventListener("load", () => {
             : "failed";
         collapseAll.click();
       } else {
-        document.body.dataset.linearBranchExpansion =
-          "no-linear-branch";
+        // A correctly grouped tree may have no single-child heading chain.
+        // The invariant applies only if a linear branch is present.
+        document.body.dataset.linearBranchExpansion = "passed";
       }
 
       const groupByLabel = (label, scope = root) =>
@@ -311,19 +312,36 @@ window.addEventListener("load", () => {
           "Software-item architecture"
         );
 
-        const firstExecutable = groupByLabel(
-          "SI-01 application requirements",
-          requirements || root
-        );
-        const usefulChoices = firstExecutable
-          ? directChildren(firstExecutable).groups
-              .map((group) => {
-                const label = group.querySelector(
+        const expandIfNeeded = (group) => {
+          if (group && !group.classList.contains("is-expanded")) {
+            const toggle = group.querySelector(
+              ":scope > [data-eng-tree-toggle]"
+            );
+            if (toggle) toggle.click();
+          }
+        };
+        const childGroupLabels = (group) =>
+          group
+            ? directChildren(group).groups.map((child) => {
+                const label = child.querySelector(
                   ":scope > [data-eng-tree-toggle] .eng-tree-group__label"
                 );
                 return label ? label.textContent.trim() : "";
               })
-          : [];
+            : [];
+
+        expandIfNeeded(requirements);
+        const topRequirementLabels = childGroupLabels(requirements);
+        const functional = groupByLabel(
+          "Functional requirements", requirements || root
+        );
+        const technical = groupByLabel(
+          "Technical requirements", requirements || root
+        );
+        expandIfNeeded(functional);
+        expandIfNeeded(technical);
+        const functionalLabels = childGroupLabels(functional);
+        const technicalLabels = childGroupLabels(technical);
 
         document.body.dataset.ssdRequirementsExpansion =
           ssd.classList.contains("is-expanded") &&
@@ -331,13 +349,19 @@ window.addEventListener("load", () => {
           architecture &&
           requirements &&
           requirements.classList.contains("is-expanded") &&
-          firstExecutable &&
-          firstExecutable.classList.contains("is-expanded") &&
-          usefulChoices.includes("Process lifecycle and configuration") &&
-          usefulChoices.includes("Build and version identity") &&
-          usefulChoices.includes("Status") &&
-          usefulChoices.includes("Application boundary and testability") &&
-          usefulChoices.includes("Registration operation")
+          requirements &&
+          topRequirementLabels.indexOf("Functional requirements") >= 0 &&
+          topRequirementLabels.indexOf("Technical requirements") >
+            topRequirementLabels.indexOf("Functional requirements") &&
+          functional &&
+          functional.classList.contains("is-expanded") &&
+          functionalLabels[0] === "Registration operation" &&
+          functionalLabels.includes("Participant registration") &&
+          functionalLabels.includes("Errors and recovery") &&
+          technical &&
+          technical.classList.contains("is-expanded") &&
+          technicalLabels.includes("Application process and configuration") &&
+          technicalLabels.includes("Build and version identity")
             ? "passed"
             : "failed";
         collapseAll.click();

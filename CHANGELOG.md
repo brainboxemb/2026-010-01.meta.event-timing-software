@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Organize SI-01 SSD requirements by functional operator behaviour then technical constraints, preserving all existing IDs; add UC-traceable close, operator-session independence and blocking-error OPEN requirements plus Web local-network and committed-history obligations.
+
+
 - Organize the UC catalogue and detailed scenarios into distinct normal-operation, backoffice integration, error/recovery and engineering/development groups; keep all existing IDs and place UC-020 in recovery instead of interrupting the catalogue. Add draft engineering scenarios UC-022–024 and enforce visible two-space MyST Need-header line breaks in the GPD/template.
 
 - Add Draft UC-021 for manual participant registration from the iPad browser; allocate shared manual-registration behaviour to SI-01 and the Web interface without treating the Web controls as implemented.
