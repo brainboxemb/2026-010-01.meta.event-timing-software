@@ -8,6 +8,7 @@ inline in docs-build.yml.
 
 import json
 import os
+import re
 from pathlib import Path
 
 root = Path("bld/engineering-portal")
@@ -42,6 +43,19 @@ use_cases = {
 }
 if len(use_cases) != 23:
     raise SystemExit(f"expected 23 current system use cases, got {len(use_cases)}")
+
+# Keep MyST headers legible in GitHub's raw Markdown preview. Each opening
+# title, ID and status source line must end in two literal spaces.
+uc_source = Path("docs/30-UC-system-use-cases.md").read_text(encoding="utf-8")
+uc_headers = re.findall(
+    r"(?m)^(:::\{uc\}[^\n]*\n:id: UC-\d+[^\n]*\n:status: [DRA][^\n]*)\n",
+    uc_source,
+)
+if len(uc_headers) != len(use_cases):
+    raise SystemExit("not every use case has a readable ID/status header")
+for uc_header in uc_headers:
+    if any(not line.endswith("  ") for line in uc_header.splitlines()):
+        raise SystemExit("use-case header must have two trailing spaces per line")
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
     for token in ("**Goal:**", "**Main flow:**"):

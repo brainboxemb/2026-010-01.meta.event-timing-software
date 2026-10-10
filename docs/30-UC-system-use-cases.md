@@ -454,10 +454,11 @@ antenna. A later inventory demand can start another attempt without restarting S
 **Main flow:**
 
 1. The registration cabinet restarts after shutdown or power interruption.
-2. The cabinet restores previously recorded registrations, current location and required operating state.
-3. The cabinet reports any information that could not be restored safely.
-4. The operator sees whether the registration point is ready or needs attention.
-5. Pending backoffice synchronisation can resume after connectivity is restored.
+2. The cabinet restores previously recorded registrations and their ordering.
+3. The cabinet does not assume registration is still OPEN or reuse the prior location.
+4. The cabinet reports any information that could not be restored safely.
+5. The operator sees whether the registration point is available and, when ready, may select a location and open it again (UC-001).
+6. Pending backoffice synchronisation can resume after connectivity is restored.
 
 :::
 

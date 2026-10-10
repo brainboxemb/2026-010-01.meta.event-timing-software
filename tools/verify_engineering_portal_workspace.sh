@@ -65,8 +65,9 @@ if html.count('data-eng-promote-object-id="SI01-REQ-045"') != 3:
     )
 labels = [
     "Normal operation",
-    "System, backoffice and recovery",
-    "Engineering, simulation and verification",
+    "Registration cabinet ↔ backoffice",
+    "Errors and recovery",
+    "Development, engineering and system testing",
 ]
 tokens = [
     f'<span class="eng-tree-group__label">{label}</span>'
@@ -90,7 +91,9 @@ grep -q 'data-workspace-root-id="IF05-REQ-007"' bld/engineering-portal/browser-w
 grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q '32-05-ISD-timingdata-interchange' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Normal operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
-grep -q 'System, backoffice and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Registration cabinet ↔ backoffice' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Errors and recovery' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
+grep -q 'Development, engineering and system testing' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'Registration operation' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="tree-root"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
 grep -q 'data-eng-resizer="root-compare"' bld/engineering-portal/browser-workspace-IF05-REQ-007.html
