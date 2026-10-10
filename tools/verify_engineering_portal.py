@@ -56,7 +56,7 @@ if not use_cases:
 # The source-formatting rule is project-wide, not a per-UC fixture list.
 uc_source = Path("docs/30-UC-system-use-cases.md").read_text(encoding="utf-8")
 uc_headers = re.findall(
-    r"(?m)^(:::\\{uc\\}[^\\n]*\\n:id: UC-\\d+[^\\n]*\\n:status: [DRA][^\\n]*)\\n",
+    r"(?m)^(:::\{uc\}[^\n]*\n:id: UC-\d+[^\n]*\n:status: [DRA][^\n]*)\n",
     uc_source,
 )
 if len(uc_headers) != len(use_cases):
