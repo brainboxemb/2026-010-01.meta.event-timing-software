@@ -562,7 +562,7 @@ synchronisation without inventing or reusing committed source sequence identity.
 :::{req} Simulate complete multi-node behaviour through normal application paths  
 :id: SI01-REQ-066  
 :status: D  
-:specifies: UC-015  
+:specifies: UC-015, UC-024  
 :depends_on: SI01-REQ-003, SI01-REQ-031  
 
 A simulation composition shall be able to host multiple TimingNodes, inject
@@ -574,7 +574,7 @@ without introducing a second domain/application implementation.
 :::{req} Substitute controllable stubs through public contracts  
 :id: SI01-REQ-067  
 :status: D  
-:specifies: UC-016  
+:specifies: UC-016, UC-024  
 :depends_on: SI01-REQ-031  
 
 External hardware and transport adapters used by SI-01 shall be replaceable in a

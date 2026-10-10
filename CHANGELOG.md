@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Organize the UC catalogue and detailed scenarios into distinct normal-operation, backoffice integration, error/recovery and engineering/development groups; keep all existing IDs and place UC-020 in recovery instead of interrupting the catalogue. Add draft engineering scenarios UC-022–024 and enforce visible two-space MyST Need-header line breaks in the GPD/template.
+
 - Add Draft UC-021 for manual participant registration from the iPad browser; allocate shared manual-registration behaviour to SI-01 and the Web interface without treating the Web controls as implemented.
 
 - Keep engineering-portal narrative/search assertions and SI-01 requirement traceability aligned with the revised UC-001 OPEN and UC-002 CLOSE scenarios.

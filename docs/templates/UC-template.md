@@ -84,6 +84,19 @@ Each use case is a Sphinx-Needs `uc` entry with an explicit `:status:`.
 Use D while editing, R when ready for review, and A only after acceptance.
 Keep numbered software interfaces and internal implementation details out of UCs.
 
+Use two trailing spaces after the directive opening line, `:id:` and
+`:status:` so the raw GitHub Markdown shows each on its own line.
+See the source-formatting rule in the Documentation Guide.
+
+```markdown
+:::{uc} Example registration use case  
+:id: UC-001  
+:status: D  
+
+**Goal:** Describe the operator goal.
+:::
+```
+
 ## Use-case catalogue
 
 <!-- Add the document-specific catalogue and detailed use cases here. -->

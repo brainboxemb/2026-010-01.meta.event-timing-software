@@ -65,6 +65,29 @@ Important abbreviations belong under **Terms and abbreviations**, directly after
 
 Available templates are listed in `docs/templates/README.md`.
 
+### Source formatting for Sphinx-Needs directives
+
+When writing a Sphinx-Needs directive in Markdown, put the title and each header
+option on its **own source line**, and finish each such line with **two literal
+trailing spaces**. This keeps the title, ID and status on separate visual lines
+when viewing the unprocessed Markdown in GitHub. Add a blank line before the
+body. Do not collapse the header into one rendered paragraph.
+
+For example (each of the first three lines ends with two spaces):
+
+```markdown
+:::{uc} Close a registration point  
+:id: UC-002  
+:status: D  
+
+**Goal:** Close an open registration point.
+:::
+```
+
+Apply this formatting to all Need types, including `uc`, `req`,
+`ifreq`, `arch`, `design` and `vc`. The metadata options retain their
+normal MyST/Sphinx-Needs meaning.
+
 ## Document categories and numbering
 
 The numeric prefix groups documents by engineering role. It helps navigation but does

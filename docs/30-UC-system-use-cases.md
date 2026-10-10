@@ -74,95 +74,60 @@ The current catalogue starts lightweight and can be expanded as behaviour is rev
 
 ## Use-case catalogue
 
-The catalogue is grouped by operational purpose for readability. Use-case IDs
-remain stable traceability identifiers; their numeric order does not define the
-reading order or implementation sequence.
+Use cases are grouped by their **operational purpose**, not by their ID number.
+The catalogue is the overview; detailed scenarios follow in the same group order.
+Existing IDs remain stable and are not renumbered when a use case moves group.
 
 ### Normal operation
 
-| ID | Name | Primary actor | Goal |
-| --- | --- | --- | --- |
-| UC-001 | Open a registration point | Operator | Use an iPad browser to reach a registration cabinet and open registration for a selected location. |
-| UC-002 | Close a registration point | Operator | Stop accepting new registrations at an open registration point. |
-| UC-003 | Register a participant through RFID | RFID subsystem | Turn valid filtered/decrypted RFID observations into traceable source-specific registration records. |
-| UC-021 | Manually register a participant using an iPad | Operator | Enter a participant registration through the iPad browser without an RFID observation. |
-| UC-004 | Recover or reinitialise RFID equipment | Operator / system | Restore an RFID device after startup, heartbeat or protocol failure without losing committed timing state. |
-| UC-005 | Manage teams to prepare through keypad/operator input | Operator / keypad | Add or remove team numbers from the next-up team state and preserve the change history. |
-| UC-006 | Drive a passive CAN display from current system state | Timing application | Keep DisplayRev1Can aligned with the current ready-team/display model. |
-| UC-007 | Synchronise a smart display | Smart display | Connect to the advertised service and receive current/synchronised display data while SI-01 remains the source of that state. |
+| ID | Status | Name | Primary actor | Goal |
+| --- | --- | --- | --- | --- |
+| UC-001 | D | Open a registration point | Operator | Open registration on the cabinet for a chosen location using an iPad. |
+| UC-002 | D | Close a registration point | Operator | Close an open registration point using the iPad. |
+| UC-003 | D | Register a participant through RFID | RFID subsystem | Record an accepted participant passage observed by the RFID system. |
+| UC-021 | D | Manually register a participant using an iPad | Operator | Register a participant manually from the iPad browser. |
+| UC-005 | D | Manage ready teams through keypad/operator input | Operator / keypad | Update the teams preparing next and show the result. |
+| UC-006 | D | Drive a passive CAN display from current system state | Registration system | Show current prepare-team information on a passive display. |
+| UC-007 | D | Provide data to a smart network display | Smart display | Connect and keep a smart network display up to date. |
 
-### System, backoffice and recovery
+### Registration cabinet ↔ backoffice
 
-| ID | Name | Primary actor | Goal |
-| --- | --- | --- | --- |
-| UC-010 | Synchronise reference data from backoffice | Backoffice | Deliver start times, participant/reference mappings and other required reference data for local use. |
-| UC-011 | Synchronise `TimingNodeId`-scoped data to backoffice | Timing application / backoffice | Deliver committed source streams while preserving source identity, ordering and recoverability. |
-| UC-012 | Continue local operation during backoffice outage | Operator / timing application | Continue required local timing behaviour while external synchronisation is unavailable, retaining data for later recovery. |
-| UC-013 | Restart and restore local state | Operator / platform | Restore source sequences, registration state, ready-team/reference state and status after process/device restart. |
-| UC-014 | Run multiple TimingNodes in one process | Test/operator tooling | Run several independently addressed TimingNodes and source streams in one SI-01 process. |
-| UC-020 | Diagnose degraded TimingNode startup | Operator / platform | Keep the application diagnosable when one TimingNode cannot restore its local state. |
+| ID | Status | Name | Primary actor | Goal |
+| --- | --- | --- | --- | --- |
+| UC-010 | D | Synchronise reference data from backoffice | Backoffice | Supply reference data to registration cabinets. |
+| UC-011 | D | Synchronise TimingNodeId-scoped data to backoffice | Registration cabinet / backoffice | Deliver recorded registrations to backoffice without losing their source order. |
 
-:::{uc} Diagnose degraded TimingNode startup  
-:id: UC-020  
-:status: D
+### Errors and recovery
 
-**Goal:** keep SI-01 reachable and diagnosable when one configured TimingNode cannot
-complete local state recovery.
+| ID | Status | Name | Primary actor | Goal |
+| --- | --- | --- | --- | --- |
+| UC-004 | D | Recover or reinitialise RFID equipment | Operator / registration system | Restore RFID operation after an equipment failure. |
+| UC-012 | D | Continue local operation during backoffice outage | Operator | Continue registering when backoffice is unreachable. |
+| UC-013 | D | Restart and restore local state | Operator / platform | Recover recorded registrations after a cabinet restart. |
+| UC-020 | D | Diagnose degraded TimingNode startup | Operator / platform | Identify and contain an error that prevents registration-point startup. |
 
-**Primary actor:** operator / platform.
+### Development, engineering and system testing
 
-**Preconditions:**
+| ID | Status | Name | Primary actor | Goal |
+| --- | --- | --- | --- | --- |
+| UC-009 | D | Exercise the registration system through the Engineering Client | Engineer / tester | Connect and exercise the registration system using the Engineering Client. |
+| UC-022 | D | Inspect registration state and history with the Engineering Client | Engineer / developer | Inspect operational state, errors and registration history. |
+| UC-023 | D | Exercise registration controls with the Engineering Client | Developer / system tester | Exercise registration controls and observe results. |
+| UC-024 | D | Simulate participant passage and device failure for verification | Developer / system tester | Simulate RFID passages, equipment errors and recovery. |
+| UC-014 | D | Run multiple TimingNodes in one process | Engineer / tester | Operate multiple independent registration points for testing. |
+| UC-015 | D | Simulate a complete field toward backoffice | System tester | Simulate a complete field with backoffice. |
+| UC-016 | D | Replace real devices with controllable stubs | System tester | Replace physical devices with controllable test devices. |
+| UC-017 | D | Use an alternative backoffice transport for loop testing | System tester | Exchange backoffice data with a simulator across a network connection. |
+| UC-018 | D | Verify production-shaped messaging through RabbitMQ | System tester | Verify registration and recovery using a disposable message broker. |
+| UC-019 | D | Handle provider-specific input classification | Input subsystem / operator | Preserve valid provider-supplied input classification. |
 
-- application-level configuration is valid enough to construct the runtime and
-  diagnostic presentation interfaces;
-- one configured TimingNode encounters a contained startup/recovery failure.
-
-**Main flow:**
-
-1. SI-01 starts and validates application-level configuration.
-2. A TimingNode detects that its recoverable local state cannot be restored safely,
-   for example because persisted TimingData belongs to another TimingNodeId.
-3. SI-01 keeps that TimingNode out of normal operation and marks it `ERROR`.
-4. The application continues starting/running its diagnostic presentation interfaces.
-5. Status identifies the affected TimingNode and exposes a machine-readable problem
-   plus a human-readable diagnostic summary.
-6. The operator can query status through the supported local/remote interfaces and
-   determine why the TimingNode did not become operational.
-7. Normal state-changing and registration operations for the errored TimingNode are
-   rejected explicitly.
-8. In a multi-TimingNode composition, independently healthy TimingNodes remain
-   available unless an application-wide failure prevents safe operation.
-9. The application can still be shut down through the supported controlled path.
-
-**Alternative/failure flows:**
-
-- invalid application-wide configuration or failure of mandatory application-wide
-  infrastructure may still prevent the process from providing diagnostic interfaces;
-- a later recovery/reinitialisation mechanism may move the TimingNode out of `ERROR`,
-  but that mechanism is outside this initial containment use case.
-
-**Observable result:** a node-local recovery problem does not turn into an opaque
-process crash; the running application exposes the failed TimingNode and its diagnostic
-problem through normal status interfaces.
-
-:::
-
-### Engineering, simulation and verification
-
-| ID | Name | Primary actor | Goal |
-| --- | --- | --- | --- |
-| UC-009 | Exercise the registration system through the Engineering Client | Test/developer | Inspect and exercise supported public behaviour without becoming another source of domain state. |
-| UC-015 | Simulate a complete field toward backoffice | Test tooling | Exercise normal multi-TimingNode/source behaviour without real production hardware or private deployment identities. |
-| UC-016 | Replace real devices with controllable stubs | Test tooling | Drive normal application paths with simulated RFID/CAN/display/backoffice components and fault injection. |
-| UC-017 | Use an alternative backoffice transport for loop testing | Test tooling / simulator | Exercise source-aware backoffice semantics across a real socket/process boundary without requiring RabbitMQ. |
-| UC-018 | Verify production-shaped messaging through RabbitMQ | Test tooling / backoffice adapter | Exercise source-specific consumers/publishing, broker recovery and outbox behaviour against a real disposable broker. |
-| UC-019 | Handle provider-specific input classification | Input subsystem / operator | Preserve a provider-declared semantic input classification when public processing policy needs it, without exposing provider-private encoding details. |
+## Detailed use cases
 
 ### Normal operation
 
-:::{uc} Open a registration point
-:id: UC-001
-:status: D
+:::{uc} Open a registration point  
+:id: UC-001  
+:status: D  
 
 **Goal:** allow the operator to open a registration cabinet for participant
 registration at a chosen location.
@@ -207,9 +172,9 @@ close registration.
 
 :::
 
-:::{uc} Close a registration point
-:id: UC-002
-:status: D
+:::{uc} Close a registration point  
+:id: UC-002  
+:status: D  
 
 **Goal:** allow the operator to close an open registration point so no new
 participant registrations are accepted.
@@ -247,7 +212,7 @@ does not itself change the cabinet state.
 
 :::{uc} Register a participant through RFID  
 :id: UC-003  
-:status: D
+:status: D  
 
 **Goal:** turn an accepted participant observation into one traceable registration
 for the location that is currently open.
@@ -285,9 +250,9 @@ time of acceptance.
 
 :::
 
-:::{uc} Manually register a participant using an iPad
-:id: UC-021
-:status: D
+:::{uc} Manually register a participant using an iPad  
+:id: UC-021  
+:status: D  
 
 **Goal:** allow an operator to record a participant's registration manually
 using the iPad when an RFID observation is not available or not used.
@@ -328,9 +293,105 @@ active location and is visible with its recorded time.
 
 :::
 
+:::{uc} Manage ready teams through keypad/operator input  
+:id: UC-005  
+:status: D  
+
+**Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
+
+**Primary actor:** keypad or operator client.
+
+**Main flow:**
+
+1. An operator enters or removes a team number using the keypad or another supported operator control.
+2. The registration system updates its list of teams preparing next.
+3. The change becomes visible on connected displays and operator views.
+4. The system keeps the history needed to trace changes.
+
+Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
+
+:::
+
+:::{uc} Drive a passive CAN display from current system state  
+:id: UC-006  
+:status: D  
+
+**Goal:** show the current teams preparing on the passive display.
+
+**Primary actor:** registration system.
+
+**Main flow:**
+
+1. The registration cabinet is connected to the passive display.
+2. When the list of teams preparing changes, the cabinet updates the display.
+3. After a display reset or reconnection, the current information is shown again.
+4. The display continues showing the current information supplied by the cabinet.
+
+:::
+
+:::{uc} Provide data to a smart network display  
+:id: UC-007  
+:status: D  
+
+**Goal:** let a smart network display show up-to-date registration and reference information.
+
+**Primary actor:** smart display.
+
+**Main flow:**
+
+1. The smart display finds the available registration-system service on the network.
+2. The display connects and receives the information needed to show current status and reference data.
+3. The display presents the information using its own user interface.
+4. After a network interruption, the display reconnects and refreshes its current information.
+
+:::
+
+### Registration cabinet ↔ backoffice
+
+:::{uc} Synchronise reference data from backoffice  
+:id: UC-010  
+:status: D  
+
+**Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
+
+**Primary actor:** backoffice.
+
+**Main flow:**
+
+1. Backoffice sends updated start times or participant reference information to a registration point.
+2. The registration system checks the update and whether it applies to that registration point.
+3. A valid update becomes available for local registration and operator views.
+4. The system reports when an update cannot be accepted.
+5. Accepted information remains available during a later connection interruption.
+
+**Alternative/failure flows:** unknown target, invalid or conflicting reference
+update, or unavailable upstream transport. Message submission alone must not
+be presented as proof that the target's reference state changed.
+
+:::
+
+:::{uc} Synchronise TimingNodeId-scoped data to backoffice  
+:id: UC-011  
+:status: D  
+
+**Goal:** send recorded registrations to backoffice in their correct source order and resume after interruptions.
+
+**Primary actors:** SI-01 and backoffice.
+
+**Main flow:**
+
+1. The registration cabinet records participant registrations with their registration-point identity, location and order.
+2. The cabinet sends records to backoffice in the correct order.
+3. Backoffice receives the registrations and confirms receipt as supported.
+4. After an interruption, the cabinet resumes delivery without duplicating or losing registrations.
+
+:::
+
+### Errors and recovery
+
 :::{uc} Recover or reinitialise RFID equipment  
 :id: UC-004  
-:status: D
+:status: D  
 
 **Goal:** restore RFID registration after equipment startup or an antenna failure without restarting the registration cabinet or losing recorded registrations.
 
@@ -365,103 +426,9 @@ antenna. A later inventory demand can start another attempt without restarting S
 
 :::
 
-:::{uc} Manage ready teams through keypad/operator input  
-:id: UC-005  
-:status: D
-
-**Goal:** maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.
-
-**Primary actor:** keypad or operator client.
-
-**Main flow:**
-
-1. An operator enters or removes a team number using the keypad or another supported operator control.
-2. The registration system updates its list of teams preparing next.
-3. The change becomes visible on connected displays and operator views.
-4. The system keeps the history needed to trace changes.
-
-Any `NextUpTeams` change history required by the promoted requirements is separate from participant/timing `TimingData` streams.
-
-:::
-
-:::{uc} Drive a passive CAN display from current system state  
-:id: UC-006  
-:status: D
-
-**Goal:** show the current teams preparing on the passive display.
-
-**Primary actor:** registration system.
-
-**Main flow:**
-
-1. The registration cabinet is connected to the passive display.
-2. When the list of teams preparing changes, the cabinet updates the display.
-3. After a display reset or reconnection, the current information is shown again.
-4. The display continues showing the current information supplied by the cabinet.
-
-:::
-
-:::{uc} Provide data to a smart network display  
-:id: UC-007  
-:status: D
-
-**Goal:** let a smart network display show up-to-date registration and reference information.
-
-**Primary actor:** smart display.
-
-**Main flow:**
-
-1. The smart display finds the available registration-system service on the network.
-2. The display connects and receives the information needed to show current status and reference data.
-3. The display presents the information using its own user interface.
-4. After a network interruption, the display reconnects and refreshes its current information.
-
-:::
-
-### System, backoffice and recovery
-
-:::{uc} Synchronise reference data from backoffice  
-:id: UC-010  
-:status: D
-
-**Goal:** make required reference data available locally even when later backoffice connectivity is interrupted.
-
-**Primary actor:** backoffice.
-
-**Main flow:**
-
-1. Backoffice sends updated start times or participant reference information to a registration point.
-2. The registration system checks the update and whether it applies to that registration point.
-3. A valid update becomes available for local registration and operator views.
-4. The system reports when an update cannot be accepted.
-5. Accepted information remains available during a later connection interruption.
-
-**Alternative/failure flows:** unknown target, invalid or conflicting reference
-update, or unavailable upstream transport. Message submission alone must not
-be presented as proof that the target's reference state changed.
-
-:::
-
-:::{uc} Synchronise TimingNodeId-scoped data to backoffice  
-:id: UC-011  
-:status: D
-
-**Goal:** send recorded registrations to backoffice in their correct source order and resume after interruptions.
-
-**Primary actors:** SI-01 and backoffice.
-
-**Main flow:**
-
-1. The registration cabinet records participant registrations with their registration-point identity, location and order.
-2. The cabinet sends records to backoffice in the correct order.
-3. Backoffice receives the registrations and confirms receipt as supported.
-4. After an interruption, the cabinet resumes delivery without duplicating or losing registrations.
-
-:::
-
 :::{uc} Continue local operation during backoffice outage  
 :id: UC-012  
-:status: D
+:status: D  
 
 **Goal:** allow registration to continue locally when the backoffice connection is unavailable, without losing accepted registrations.
 
@@ -478,7 +445,7 @@ be presented as proof that the target's reference state changed.
 
 :::{uc} Restart and restore local state  
 :id: UC-013  
-:status: D
+:status: D  
 
 **Goal:** restore safe registration cabinet operation and previously recorded registrations after restart or power interruption.
 
@@ -494,36 +461,56 @@ be presented as proof that the target's reference state changed.
 
 :::
 
-:::{uc} Run multiple TimingNodes in one process  
-:id: UC-014  
-:status: D
+:::{uc} Diagnose degraded TimingNode startup  
+:id: UC-020  
+:status: D  
 
-**Goal:** host multiple independently addressed TimingNodes
-while preserving independent lifecycle, state and
-`TimingNodeId`-scoped streams.
+**Goal:** keep SI-01 reachable and diagnosable when one configured TimingNode cannot
+complete local state recovery.
 
-**Primary actor:** configuration/test/operator tooling.
+**Primary actor:** operator / platform.
+
+**Preconditions:**
+
+- application-level configuration is valid enough to construct the runtime and
+  diagnostic presentation interfaces;
+- one configured TimingNode encounters a contained startup/recovery failure.
 
 **Main flow:**
 
-1. An engineer configures multiple virtual registration points for one test setup.
-2. Each registration point can be identified and operated independently.
-3. Recorded registrations and operational state remain associated with the correct point.
-4. An action addressed to one point does not change a different point.
-5. The engineer can inspect each point separately.
+1. SI-01 starts and validates application-level configuration.
+2. A TimingNode detects that its recoverable local state cannot be restored safely,
+   for example because persisted TimingData belongs to another TimingNodeId.
+3. SI-01 keeps that TimingNode out of normal operation and marks it `ERROR`.
+4. The application continues starting/running its diagnostic presentation interfaces.
+5. Status identifies the affected TimingNode and exposes a machine-readable problem
+   plus a human-readable diagnostic summary.
+6. The operator can query status through the supported local/remote interfaces and
+   determine why the TimingNode did not become operational.
+7. Normal state-changing and registration operations for the errored TimingNode are
+   rejected explicitly.
+8. In a multi-TimingNode composition, independently healthy TimingNodes remain
+   available unless an application-wide failure prevents safe operation.
+9. The application can still be shut down through the supported controlled path.
 
-**Observable result:** two synthetic TimingNodes have separately inspectable
-lifecycle, reference/next-up state and independently ordered TimingData. Any
-intentional fan-out from one observation to several streams is a separately
-specified mapping rule, not accidental cross-instance sharing.
+**Alternative/failure flows:**
+
+- invalid application-wide configuration or failure of mandatory application-wide
+  infrastructure may still prevent the process from providing diagnostic interfaces;
+- a later recovery/reinitialisation mechanism may move the TimingNode out of `ERROR`,
+  but that mechanism is outside this initial containment use case.
+
+**Observable result:** a node-local recovery problem does not turn into an opaque
+process crash; the running application exposes the failed TimingNode and its diagnostic
+problem through normal status interfaces.
 
 :::
 
-### Engineering, simulation and verification
+### Development, engineering and system testing
 
 :::{uc} Exercise the registration system through the Engineering Client  
 :id: UC-009  
-:status: D
+:status: D  
 
 **Goal:** provide the SI-02 Engineering Desktop Client for inspecting and exercising
 public registration-system behaviour during development, integration, commissioning and system test.
@@ -564,9 +551,133 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::
 
+:::{uc} Inspect registration state and history with the Engineering Client  
+:id: UC-022  
+:status: D  
+
+**Goal:** let an engineer inspect the operational state and recorded registrations of a running registration cabinet without changing its registration state.
+
+**Primary actor:** engineer or developer.
+
+**Preconditions:**
+
+- the Engineering Client is available on a workstation;
+- the workstation can reach the registration cabinet over the configured network;
+- the engineer knows which cabinet to inspect.
+
+**Main flow:**
+
+1. The engineer selects the registration cabinet in the Engineering Client and connects.
+2. The client shows which cabinet is connected and whether its information is current.
+3. The engineer inspects the registration point's location, OPEN/CLOSED state and reported errors.
+4. The engineer examines the recorded registration history and newly arriving registrations.
+5. The engineer can distinguish previously recorded registrations from newly received ones.
+
+**Alternative/failure flows:**
+
+- the cabinet is unreachable or rejects the connection;
+- the connection is lost and previously displayed data is marked not current;
+- after reconnecting, the client retrieves current status and relevant history before showing a live view.
+
+**Postcondition:** the engineer understands the reported state and registration history without changing the cabinet's operation.
+
+:::
+
+:::{uc} Exercise registration controls with the Engineering Client  
+:id: UC-023  
+:status: D  
+
+**Goal:** let a developer or tester exercise registration-point controls and inspect their results without using an iPad.
+
+**Primary actor:** developer, integration engineer or system tester.
+
+**Preconditions:**
+
+- the Engineering Client is connected to the intended registration cabinet;
+- the necessary engineering controls are available;
+- test operation is permitted for the selected cabinet.
+
+**Main flow:**
+
+1. The tester selects the intended registration point and inspects its current state.
+2. When the point is CLOSED, the tester selects a location and requests Open.
+3. The client reports whether the request succeeded and shows the resulting OPEN state and location.
+4. The tester submits a supported test registration and inspects its committed history entry.
+5. The tester requests Close and checks the resulting CLOSED state.
+6. The tester checks the observed outcomes against the expected registration behaviour.
+
+**Alternative/failure flows:**
+
+- required controls are unsupported, unavailable or disabled;
+- a request is rejected because the location or current operating state is invalid;
+- the selected registration point is not the intended test target;
+- after an uncertain command outcome or connection loss, the tester reconnects and observes current state/history before retrying.
+
+**Postcondition:** the tester can demonstrate and inspect the registration sequence without relying on a browser-based operator session.
+
+:::
+
+:::{uc} Simulate participant passage and device failure for verification  
+:id: UC-024  
+:status: D  
+
+**Goal:** let a tester exercise realistic participant passages and equipment interruptions without needing physical RFID tags and devices.
+
+**Primary actor:** developer or system tester.
+
+**Preconditions:**
+
+- a test registration cabinet is configured with supported simulation equipment;
+- the selected registration point can be opened for test registration.
+
+**Main flow:**
+
+1. The tester opens the selected registration point for a test location.
+2. The tester selects a participant and runs a supported simulated RFID passage.
+3. The registration system processes the simulated observation through its normal registration behaviour.
+4. The tester checks the resulting registration and recorded time using the Engineering Client.
+5. The tester simulates a device interruption or error and observes how the registration system reports it.
+6. The tester restores the simulated device and checks whether subsequent observations can be accepted.
+
+**Alternative/failure flows:**
+
+- the selected simulation capability is unavailable;
+- the registration point is CLOSED or reports an error preventing acceptance;
+- the simulated passage is filtered or rejected and no successful registration is reported;
+- the device cannot recover and its failure remains visible.
+
+**Postcondition:** the tester can assess registration and recovery behaviour using observable results rather than internal implementation state.
+
+:::
+
+:::{uc} Run multiple TimingNodes in one process  
+:id: UC-014  
+:status: D  
+
+**Goal:** host multiple independently addressed TimingNodes
+while preserving independent lifecycle, state and
+`TimingNodeId`-scoped streams.
+
+**Primary actor:** configuration/test/operator tooling.
+
+**Main flow:**
+
+1. An engineer configures multiple virtual registration points for one test setup.
+2. Each registration point can be identified and operated independently.
+3. Recorded registrations and operational state remain associated with the correct point.
+4. An action addressed to one point does not change a different point.
+5. The engineer can inspect each point separately.
+
+**Observable result:** two synthetic TimingNodes have separately inspectable
+lifecycle, reference/next-up state and independently ordered TimingData. Any
+intentional fan-out from one observation to several streams is a separately
+specified mapping rule, not accidental cross-instance sharing.
+
+:::
+
 :::{uc} Simulate a complete field toward backoffice  
 :id: UC-015  
-:status: D
+:status: D  
 
 **Goal:** exercise realistic multi-TimingNode/multi-source behaviour from one test application.
 
@@ -583,7 +694,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Replace real devices with controllable stubs  
 :id: UC-016  
-:status: D
+:status: D  
 
 **Goal:** make hardware-dependent application behaviour testable without duplicating business logic.
 
@@ -600,7 +711,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Use an alternative backoffice transport for loop testing  
 :id: UC-017  
-:status: D
+:status: D  
 
 **Goal:** test real process/network communication and `TimingNodeId`-scoped stream routing without RabbitMQ.
 
@@ -618,7 +729,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Verify production-shaped messaging through RabbitMQ  
 :id: UC-018  
-:status: D
+:status: D  
 
 **Goal:** verify broker/client lifecycle and source-specific messaging using a real disposable broker.
 
@@ -636,7 +747,7 @@ upstream/reference-data simulation is deferred to a later increment.
 
 :::{uc} Handle provider-specific input classification  
 :id: UC-019  
-:status: D
+:status: D  
 
 **Goal:** preserve a provider-declared semantic input classification when the
 public application contract needs distinct processing, without publishing
@@ -668,7 +779,6 @@ Concrete production encodings, private mapping tables and deployment-specific
 categories are outside this public use case.
 
 :::
-
 
 ## Cross-cutting alternative/failure scenarios
 
