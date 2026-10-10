@@ -1,0 +1,773 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Derived engineering navigation and traceability portal">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DD-CooperativeExecution — Cooperative execution and TimingSystem coordination - Event Timing Engineering Portal</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/explorer.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dd-cooperativeexecution-cooperative-execution-and-timingsystem-coordination" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-header__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Event Timing Engineering Portal
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DD-CooperativeExecution — Cooperative execution and TimingSystem coordination
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-nav__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Event Timing Engineering Portal
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Portal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../book/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Book
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workspace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../engineering-client-ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering Client UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Objects
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Objects
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering object index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#this-detailed-design-elaborates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        This detailed design elaborates:
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dd-cooperativeexecution-cooperative-execution-and-timingsystem-coordination">DD-CooperativeExecution — Cooperative execution and TimingSystem coordination</h1>
+<p><strong>Type:</strong> Detailed Design<br />
+<strong>Comparison workspace:</strong> <a href="../../workspace/?object=DD-CooperativeExecution">open object comparison workspace</a><br />
+<strong>Source definition:</strong> <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/f8182beec8d5634e7f288e74166744a594d38614/docs/43-01-SDD-02-java-component-design.md?plain=1#L401">open authored source</a><br />
+<strong>Engineering Explorer:</strong> <a href="../../explorer/?object=DD-CooperativeExecution">open with architecture context</a></p>
+<p>This is a <strong>derived portal page</strong>. Engineering meaning is maintained in the authored Need, not in this generated presentation.</p>
+<h2 id="definition">Definition</h2>
+<p>Detailed Java design for cooperative task runners/controllers and the
+TimingSystem-scoped coordination pattern used by <code>domain.system.SystemConductor</code>.</p>
+<p>Both coordinator components are labeled <strong>Conductor</strong> in the architecture diagram, each within its owning layer: Application and Domain/TimingSystem. Their Java implementations are <code>application.ApplicationConductor</code> and <code>domain.system.SystemConductor</code>, respectively.</p>
+<p>Some component operations consist of several ordered steps. Some of those steps only
+need to yield the owning serial lane; others must also wait for elapsed time. Running the
+complete operation in one executor callback would either monopolise the lane or require
+blocking sleeps. Spreading the same control flow over ad-hoc callbacks or
+<code>CompletableFuture</code> chains would instead make the component's state machine implicit and
+duplicate wake/coalescing, cancellation and failure mechanics.</p>
+<p>The Java design therefore uses a small <strong>cooperative task</strong> model on top of the existing
+serial lanes. The component/task remains the owner of its state machine. Platform execution
+code owns only admission and continuation:</p>
+<pre><code class="language-text">                    CooperativeTask
+                          |
+                          | runStep()
+                          v
+                       TaskStep
+                    /      |      \
+                 AGAIN   AFTER(t)  DONE
+                   |        |        |
+                   |        |        +--&gt; run complete
+                   |        |
+                   |        +--&gt; scheduled continuation
+                   |
+                   +--&gt; re-admit at back of serial lane
+</code></pre>
+<p>A cooperative task is a small state machine. One call executes one logical step and returns
+a <code>TaskStep</code> describing what should happen next:</p>
+<pre><code class="language-java">interface CooperativeTask {
+    TaskStep runStep();
+}
+
+TaskStep.again();
+TaskStep.after(Duration delay);
+TaskStep.done();
+</code></pre>
+<p><code>AGAIN</code> is a deliberate yield point. It does <strong>not</strong> call the task recursively and does
+not execute the next state in the same callback. The runner re-admits the task at the back
+of the same bounded serial queue so already admitted work gets an opportunity to run first.</p>
+<p><code>AFTER(delay)</code> additionally needs scheduled execution. It releases the physical worker and
+represents the wait only as a timer registration before the next task step is admitted.
+Multi-step tasks must therefore not use <code>Thread.sleep()</code> to model stabilization, retry
+waits or other deliberate delays.</p>
+<p>Two runner forms realize the same task contract:</p>
+<pre><code class="language-text">SerialExecutor
+    |
+    +-- SerialTaskRunner
+            AGAIN / DONE
+
+SerialScheduledExecutor
+    |
+    +-- ScheduledTaskRunner
+            AGAIN / AFTER(delay) / DONE
+</code></pre>
+<p>A component must not receive a scheduled lane merely because it uses the cooperative task
+model. If the state machine only needs short serial turns, <code>SerialTaskRunner</code> uses the
+component's existing <code>SerialExecutor</code>. <code>ScheduledTaskRunner</code> is reserved for operations
+that actually need delayed continuation or its bounded result/timeout support.</p>
+<p>For long-lived component control state machines, external events and child-task completion
+signals are treated as <strong>wake-ups</strong>, not as places to execute transition logic.
+<code>CooperativeTaskController</code> owns only the generic scheduling facts:</p>
+<pre><code class="language-text">event/request/completion
+        |
+        v
+      wake()
+        |
+        +-- no run active ----&gt; start one cooperative run
+        |
+        +-- run active -------&gt; remember one pending wake
+
+run completes
+        |
+        +-- wake pending -----&gt; start one fresh current-state run
+        |
+        +-- otherwise --------&gt; idle
+</code></pre>
+<p>Any number of wake-ups while one run is active therefore coalesce into one later pass. The
+component's <code>runStep()</code> reads current state again; it does not replay stale
+event payloads. Scheduling state such as "run active" and "wake pending" is kept out of the
+component's application/device state.</p>
+<p>The responsibilities are deliberately separated:</p>
+<pre><code class="language-text">CooperativeTask
+  component/operation-specific state machine
+  application/domain/device decisions
+  no executor ownership
+
+TaskStep
+  next execution decision only:
+  AGAIN / AFTER(delay) / DONE
+
+CooperativeTaskController
+  wake/coalescing lifecycle for a long-lived state machine
+  no application/domain/device decisions
+
+SerialTaskRunner
+  cooperative turns on an existing SerialExecutor
+  no elapsed-time scheduling
+
+ScheduledTaskRunner
+  cooperative turns on an existing SerialScheduledExecutor
+  delayed continuation
+  bounded result waiting/cancellation/failure mapping
+
+SerialExecutor / SerialScheduledExecutor
+  bounded ordered logical lane
+  queue/admission mechanics
+
+Runtime
+  physical worker creation, role assignment and lifecycle
+</code></pre>
+<p>A single task step should be short and bounded where the underlying API permits that. A
+blocking provider call may still occupy the worker for the duration of that call; the
+cooperative model does not pretend that a synchronous provider API is asynchronous. If a
+provider exposes explicit start/poll or start/completion semantics, those belong in
+separate task states so the lane can be released between them.</p>
+<p>The first concrete consumer is antenna control. <code>AntennaManager</code> is itself a cooperative
+control state machine. Startup self-test and inventory work are child tasks. External
+inventory requests and child-task completions only wake the manager; manager
+<code>runStep()</code> decides the next transition from current state. The generic controller owns
+wake coalescing rather than <code>AntennaManager</code> maintaining local
+<code>stateMachineRunning/stateMachineWakePending</code> flags.</p>
+<p><code>InventoryTask</code> drives the requested inventory state to the applied device state and owns
+power preparation, direct-antenna start/stop and multiplex rotation. A representative enable path is:</p>
+<pre><code class="language-text">InventoryTask
+  POWER_ON
+      |
+      +-- AFTER(powerStabilization)
+      v
+  INITIALIZE
+      |
+      +-- AGAIN
+      v
+  START_DIRECT / START_GROUP
+      |
+      +-- AFTER(inventoryInterval) when multiplexing
+      v
+  SWITCH / DONE
+</code></pre>
+<p>Each TimingSystem <code>Conductor</code> uses <code>SerialTaskRunner</code> and
+<code>CooperativeTaskController</code> for event-triggered reconciliation. Per-node
+current state is represented by small passive <code>SourceProperty</code> values.
+<code>TimingNode.statusChangedEvent(Status)</code> is emitted after an authoritative
+TimingNode transition. The synchronous callback validates the source, wakes the
+existing control task and returns; it does not update SourceProperties, query
+another lane or execute inventory control on the emitting thread. The later
+control run rereads CURRENT TimingNode status before deriving behaviour.</p>
+<p>A passive <code>DerivedProperty&lt;Boolean&gt;</code> represents the system-wide
+<code>inventoryRequired</code> fact calculated from all node SourceProperties. The
+Conductor recalculates that value in its control run and applies it to the
+AntennaManager. Manager-wide inventory is needed while any node is OPEN, and
+not needed otherwise. A DerivedProperty may depend on more than one
+SourceProperty; it owns no scheduling, queue, retry or lifecycle behaviour.</p>
+<p>Every Conductor control run synchronizes the per-node SourceProperties from a
+CURRENT status query before deriving or applying inventory state:</p>
+<pre><code class="language-java">node.query(TimingNodeQueries.status(), ReadConsistency.CURRENT);
+</code></pre>
+<p>CURRENT status reads use the safely published immutable TimingNode snapshot and
+therefore do not enter the TimingNode serial lane or have a result-bearing query
+timeout. Status events only wake the existing CooperativeTaskController; repeated
+events may coalesce because the later control run rereads current published state.</p>
+<p>The manager's <code>Setting&lt;Boolean&gt;</code> distinguishes idempotent unchanged-state
+requests from explicit retry attempts. The TimingSystem <code>Conductor</code> does not
+require another property scheduler or a multiphase state machine for this rule.</p>
+<p>The cooperative model is deliberately optional. A component that only needs one short
+ordered action continues to submit that action directly to its serial lane. TimingNode and
+TagProcessor are not wrapped in a cooperative state-machine abstraction merely for
+uniformity. Introduce the model when it makes ownership, sequencing or elapsed-time waits
+clearer.</p>
+<p>A concrete antenna/provider implementation may itself use the same cooperative-task pattern
+when its protocol requires multiple commands, waits, retries or readiness checks. That
+device state machine remains inside the antenna implementation rather than being copied into
+<code>AntennaManager</code>. A device-specific logical lane may be backed by the same Runtime-owned
+shared I/O worker when ordering/isolation requires a separate lane without another physical
+thread. Parent/manager code must observe such child work asynchronously; it must never block
+a shared worker waiting for work that still needs that worker (or the same serial lane) to
+run.</p>
+<p>This cooperative model is an implementation technique for the SSD requirement to use
+component-local ordered execution with a small, measurement-driven number of physical
+workers. It does not change component ownership or add parallel execution within one serial
+lane.</p>
+<h2 id="this-detailed-design-elaborates">This detailed design elaborates:</h2>
+<p><a class="eng-relation" href="../CooperativeTaskController/"><span class="eng-relation__object">CooperativeTaskController — CooperativeTaskController</span></a>
+<a class="eng-relation" href="../PlatformExecution/"><span class="eng-relation__object">PlatformExecution — PlatformExecution</span></a>
+<a class="eng-relation" href="../ScheduledTaskRunner/"><span class="eng-relation__object">ScheduledTaskRunner — ScheduledTaskRunner</span></a>
+<a class="eng-relation" href="../SerialTaskRunner/"><span class="eng-relation__object">SerialTaskRunner — SerialTaskRunner</span></a>
+<a class="eng-relation" href="../SystemConductor/"><span class="eng-relation__object">SystemConductor — TimingSystem Conductor</span></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.path", "navigation.sections", "navigation.top", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/explorer.js"></script>
+      
+    
+  </body>
+</html>

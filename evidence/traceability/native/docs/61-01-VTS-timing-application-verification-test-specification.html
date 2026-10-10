@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Timing Application Verification Test Specification (VTS) &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="TimingData Interchange Interface Design Description (IDD)" href="33-05-IDD-timingdata-interchange.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="timing-application-verification-test-specification-vts">
+<h1>Timing Application Verification Test Specification (VTS)<a class="headerlink" href="#timing-application-verification-test-specification-vts" title="Link to this heading">¶</a></h1>
+<p>Status: working / review baseline</p>
+<p>Software item: <strong>SI-01 — Timing Point Application</strong></p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This document specifies the concrete verification cases used to test SI-01.
+It is downstream from product requirements, interface contracts and detailed
+design. It does not create product behaviour.</p>
+<p>The document roles are deliberately separate:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">60-SVP-software-verification-plan.md</span></code> defines verification strategy, levels,
+ST profiles, environments and evidence rules;</p></li>
+<li><p>this VTS defines stable <code class="docutils literal notranslate"><span class="pre">VC-...</span></code> cases: purpose, setup, procedure and expected
+result;</p></li>
+<li><p>executable tests implement these cases in the implementation repository;</p></li>
+<li><p>generated/retained verification evidence records what revision was executed,
+PASS/FAIL and the produced logs/artifacts.</p></li>
+</ul>
+<p>Current execution status is therefore <strong>not</strong> maintained in this document.</p>
+</section>
+<section id="terms-and-abbreviations">
+<h2>Terms and abbreviations<a class="headerlink" href="#terms-and-abbreviations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>VTS</strong> — Verification Test Specification</p></li>
+<li><p><strong>VC</strong> — Verification Case</p></li>
+<li><p><strong>SVP</strong> — Software Verification Plan</p></li>
+<li><p><strong>SI</strong> — Software Item</p></li>
+<li><p><strong>ST</strong> — System Test profile</p></li>
+</ul>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>The cases below verify accepted behaviour from:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">41-01-SSD-timing-application-specification-document.md</span></code>;</p></li>
+<li><p>applicable system-owned ISDs, especially
+<code class="docutils literal notranslate"><span class="pre">32-03-ISD-application-control-status.md</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">60-SVP-software-verification-plan.md</span></code> for the ST profile and evidence model.</p></li>
+</ul>
+<p>The VTS may reference SDDs to understand test setup, but an SDD or VTS does not
+become upstream product authority by being referenced here.</p>
+</section>
+<section id="case-identifier-convention">
+<h2>Case identifier convention<a class="headerlink" href="#case-identifier-convention" title="Link to this heading">¶</a></h2>
+<p>Verification cases use:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>VC-&lt;profile&gt;-&lt;number&gt;
+</pre></div>
+</div>
+<p>For example <code class="docutils literal notranslate"><span class="pre">VC-ST1-002</span></code> is case 002 in the ST-1 application-behaviour
+profile.</p>
+<p>Executable Java system-test classes use the same case identity in a
+Java-identifier-safe form:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>VC-ST1-001  -&gt;  VcSt1_001Test
+VC-ST1-002  -&gt;  VcSt1_002Test
+VC-ST1-004  -&gt;  VcSt1_004Test
+VC-ST1-005  -&gt;  VcSt1_005Test
+VC-ST1-006  -&gt;  VcSt1_006Test
+</pre></div>
+</div>
+<p>The case ID is authoritative. The Java class name preserves that ID so the
+mapping remains obvious in source trees and Surefire reports; descriptive
+behaviour belongs in the VTS case title and test method name rather than in a
+long generic class name.</p>
+<p>Within a profile, each verification case is represented directly by its <code class="docutils literal notranslate"><span class="pre">{vc}</span></code>
+object. The need owns the stable VC ID, descriptive title and traceability identity;
+do not add a second Markdown heading for the same case.</p>
+</section>
+<section id="st-1-application-behaviour">
+<h2>ST-1 — Application behaviour<a class="headerlink" href="#st-1-application-behaviour" title="Link to this heading">¶</a></h2>
+<p>ST-1 runs the packaged SI-01 application as a separate process and drives it
+through public interfaces. The test driver must not mutate internal product Java
+objects or depend on product implementation classes to obtain the pass/fail
+result.</p>
+<div class="need_container docutils container" id="SNCB-1650a40f">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-001">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Query and resynchronise first-executable status</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-001" title="VC-ST1-001">VC-ST1-001</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-003" title="VC-ST1-001">IF03-REQ-003</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-004" title="VC-ST1-001">IF03-REQ-004</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-005" title="VC-ST1-001">IF03-REQ-005</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-006" title="VC-ST1-001">IF03-REQ-006</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-001" title="VC-ST1-001">SI01-REQ-001</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-002" title="VC-ST1-001">SI01-REQ-002</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-003" title="VC-ST1-001">SI01-REQ-003</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-010" title="VC-ST1-001">SI01-REQ-010</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-020" title="VC-ST1-001">SI01-REQ-020</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-021" title="VC-ST1-001">SI01-REQ-021</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-031" title="VC-ST1-001">SI01-REQ-031</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_001Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify that the packaged application can start from external configuration,
+expose its build/status state through IF-03, resynchronise a WebSocket client
+after reconnect and shut down through the supported controlled path.</p>
+<p><strong>Setup</strong></p>
+<ul class="simple">
+<li><p>packaged SI-01 application JAR;</p></li>
+<li><p>synthetic configuration with at least one TimingNode;</p></li>
+<li><p>loopback HTTP, WebSocket and controlled-shutdown endpoints;</p></li>
+<li><p>independent black-box test driver.</p></li>
+</ul>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start SI-01 as a separate process with the synthetic configuration.</p></li>
+<li><p>Wait for the configured IF-03 HTTP endpoint to become available.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v1/version</span></code> and verify the required build/version identity.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v1/status</span></code> and verify the configured TimingNode is present
+with its current state.</p></li>
+<li><p>Connect to <code class="docutils literal notranslate"><span class="pre">/api/v1/events</span></code> and verify the first application message is a
+complete <code class="docutils literal notranslate"><span class="pre">STATUS_SNAPSHOT</span></code>.</p></li>
+<li><p>Disconnect the WebSocket client.</p></li>
+<li><p>Reconnect and verify a new complete <code class="docutils literal notranslate"><span class="pre">STATUS_SNAPSHOT</span></code> is received before
+later live events are relied upon.</p></li>
+<li><p>Query status again and verify it is semantically consistent with the latest
+snapshot.</p></li>
+<li><p>Shut SI-01 down through the supported controlled-shutdown path.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>version and status are available through the running packaged application;</p></li>
+<li><p>connect/reconnect starts from a complete current status snapshot;</p></li>
+<li><p>the latest status query and reconnect snapshot describe the same current
+TimingNode state;</p></li>
+<li><p>the process exits cleanly without forced termination.</p></li>
+</ul>
+<p>Adapter/component tests may cover additional event-path details that are not yet
+observable through a supported black-box state-changing operation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-e3994100">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-002">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Control and observe first committed registration</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-002" title="VC-ST1-002">VC-ST1-002</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-011" title="VC-ST1-002">IF03-REQ-011</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-012" title="VC-ST1-002">IF03-REQ-012</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-013" title="VC-ST1-002">IF03-REQ-013</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-014" title="VC-ST1-002">IF03-REQ-014</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-015" title="VC-ST1-002">IF03-REQ-015</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-003" title="VC-ST1-002">IF05-REQ-003</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-008" title="VC-ST1-002">IF05-REQ-008</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-009" title="VC-ST1-002">IF05-REQ-009</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-040" title="VC-ST1-002">SI01-REQ-040</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="VC-ST1-002">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="VC-ST1-002">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-043" title="VC-ST1-002">SI01-REQ-043</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-047" title="VC-ST1-002">SI01-REQ-047</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_002Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify the first public registration slice of a real SI-01 process through
+<strong>IF-03 — Application control and status</strong>. The independent test driver uses
+IF-03 commands and queries (HTTP) and observes IF-03 live events (WebSocket)
+to verify lifecycle OPEN/CLOSE records, one automatic registration, committed
+LogBook/history and live post-commit observation.</p>
+<p>The test also checks the relevant <strong>IF-05 TimingData record semantics</strong> through
+the records exposed by IF-03 and their persistence across restart. It does not
+exercise the operator’s IF-04 Web interface.</p>
+<p>The second process run verifies restart recovery. Invalid/corrupt/incomplete
+storage recovery remains component-level persistence/codec verification.</p>
+<p><strong>Setup</strong></p>
+<ul class="simple">
+<li><p>packaged SI-01 application JAR;</p></li>
+<li><p>deterministic synthetic TimingNode configuration;</p></li>
+<li><p>direct registration simulation supported and enabled;</p></li>
+<li><p>persistent TimingData file shared by the two process runs;</p></li>
+<li><p>independent IF-03 black-box test driver.</p></li>
+</ul>
+<p><strong>Procedure — run 1</strong></p>
+<ol class="arabic simple">
+<li><p>Start SI-01 and verify the TimingNode is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code> with no current LocationId.</p></li>
+<li><p>Request <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> with LocationId <code class="docutils literal notranslate"><span class="pre">24</span></code>.</p></li>
+<li><p>Verify <code class="docutils literal notranslate"><span class="pre">TIMING_DATA_COMMITTED</span></code> first exposes sequence 1 as
+<code class="docutils literal notranslate"><span class="pre">NODE_INFO</span></code>, LocationId 24, code <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>; then verify the successful
+<code class="docutils literal notranslate"><span class="pre">STATUS_CHANGED</span></code> reports <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> at LocationId 24.</p></li>
+<li><p>Submit one node-addressed dev auto-reg request with deterministic
+RegistrationId and time. Verify the response returns sequence 2.</p></li>
+<li><p>Verify one <code class="docutils literal notranslate"><span class="pre">TIMING_DATA_COMMITTED</span></code> event exposes sequence 2 as
+<code class="docutils literal notranslate"><span class="pre">AUTO_REG</span></code> with code <code class="docutils literal notranslate"><span class="pre">ADD</span></code>, the supplied RegistrationId/time and
+LocationId 24.</p></li>
+<li><p>Query LogBook metadata/range and verify source order is sequence 1 OPEN,
+sequence 2 registration.</p></li>
+<li><p>Request <code class="docutils literal notranslate"><span class="pre">CLOSE</span></code>. Verify sequence 3 is committed first as
+<code class="docutils literal notranslate"><span class="pre">NODE_INFO</span></code> / <code class="docutils literal notranslate"><span class="pre">CLOSE</span></code> with LocationId 24, followed by successful
+<code class="docutils literal notranslate"><span class="pre">STATUS_CHANGED</span></code> to <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p>Reconnect the WebSocket client. Verify the new session starts from current
+<code class="docutils literal notranslate"><span class="pre">STATUS_SNAPSHOT</span></code>, LogBook sequences 1..3 remain queryable and recovered
+history is not emitted again as new <code class="docutils literal notranslate"><span class="pre">TIMING_DATA_COMMITTED</span></code> events.</p></li>
+<li><p>Shut the first process down through the controlled path.</p></li>
+</ol>
+<p><strong>Procedure — run 2 restart recovery</strong></p>
+<ol class="arabic simple">
+<li><p>Start a second SI-01 process with the same TimingData persistence file.</p></li>
+<li><p>Verify operational state starts <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code> with no current LocationId.</p></li>
+<li><p>Verify LogBook contains the original three committed records, in sequence:
+OPEN, registration ADD, CLOSE.</p></li>
+<li><p>Verify a new WebSocket session begins with <code class="docutils literal notranslate"><span class="pre">STATUS_SNAPSHOT</span></code> and does not
+replay those records as new commit events.</p></li>
+<li><p>Shut the second process down.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>lifecycle and registration records share one contiguous NodeId-scoped sequence;</p></li>
+<li><p>OPEN/CLOSE records reach the committed-data visibility point before the
+corresponding successful status change;</p></li>
+<li><p>the registration remains committed between its surrounding lifecycle records;</p></li>
+<li><p>reconnect/restart exposes committed history without replaying it as new live
+commits;</p></li>
+<li><p>operational OPEN/CLOSED state is not restored merely from historical records.</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-e4e0db5c">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-003">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Engineering Client reconnect/resynchronisation integration</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-003" title="VC-ST1-003">VC-ST1-003</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-016" title="VC-ST1-003">IF03-REQ-016</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-022" title="VC-ST1-003">IF03-REQ-022</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-006" title="VC-ST1-003">IF05-REQ-006</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-007" title="VC-ST1-003">IF05-REQ-007</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-008" title="VC-ST1-003">IF05-REQ-008</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-044" title="VC-ST1-003">SI01-REQ-044</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Purpose</strong></p>
+<p>Verify through the real JavaFX Engineering Desktop Client that it can drive
+and interpret the public TimingNode lifecycle/registration stream, append a
+registration REV through the trash action and rebuild current status plus
+bounded TimingData history after reconnect/restart without private SI-01
+state. This manual case is now a Step-6 V01 acceptance scenario; it was not
+executed for the Step-5 V06 server-side closeout.</p>
+<p><strong>Setup</strong></p>
+<ul class="simple">
+<li><p>packaged SI-01 application with deterministic verification storage;</p></li>
+<li><p>SI-02 Engineering Desktop Client on Java 21/JavaFX 21, independently of SI-01;</p></li>
+<li><p>public IF-03, Remote Shell and LoggingServer boundaries only;</p></li>
+<li><p>one deterministic automatic registration.</p></li>
+</ul>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start SI-01 with empty verification storage and start the Engineering Client.</p></li>
+<li><p>Apply/check the target, connect Events and verify the Timing view reaches
+LIVE only after status/capabilities/LogBook baseline synchronisation.</p></li>
+<li><p>OPEN LocationId 24. Verify technical LogBook sequence 1 is
+<code class="docutils literal notranslate"><span class="pre">NODE_INFO</span> <span class="pre">/</span> <span class="pre">OPEN</span></code>.</p></li>
+<li><p>Commit deterministic auto-reg <code class="docutils literal notranslate"><span class="pre">RT-A-0001</span></code>. Verify the interpreted
+Registrations view shows one non-deleted AUTO row and technical LogBook
+sequence 2 is <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span> <span class="pre">/</span> <span class="pre">ADD</span></code>.</p></li>
+<li><p>Verify the trash action is enabled for that interpreted row. Activate it.</p></li>
+<li><p>Verify sequence 3 is appended as <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span> <span class="pre">/</span> <span class="pre">REV</span></code> with the same
+RegistrationId, original registration time and LocationId; sequence 2 remains
+unchanged in the technical LogBook.</p></li>
+<li><p>Verify the interpreted row remains present and is displayed as <code class="docutils literal notranslate"><span class="pre">DELETED</span></code>
+instead of disappearing.</p></li>
+<li><p>CLOSE the TimingNode and verify sequence 4 is <code class="docutils literal notranslate"><span class="pre">NODE_INFO</span> <span class="pre">/</span> <span class="pre">CLOSE</span></code>.</p></li>
+<li><p>Stop SI-01, preserve the verification TimingData file, restart and reconnect
+Events.</p></li>
+<li><p>Verify status starts CLOSED/no-location, technical history restores
+sequences 1..4, the interpreted registration is still DELETED and recovered
+records are not presented as new live commits.</p></li>
+<li><p>Verify Device Log and Client Log remain independent and shut down cleanly.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>the Engineering Client interprets lifecycle records separately from
+registration rows;</p></li>
+<li><p>trash invokes append-only public revoke rather than destructive deletion;</p></li>
+<li><p>ADD and REV remain independently visible in technical history;</p></li>
+<li><p>the interpreted row folds ADD/REV to DELETED in the client/business view;</p></li>
+<li><p>reconnect/restart rebuilds the same interpretation from committed history.</p></li>
+</ul>
+<p><strong>Execution</strong></p>
+<p>This is a Step-6 V01 manual running-system verification case executed with the packaged
+SI-02 Engineering Desktop Client. Headless verification does not substitute for this GUI
+evidence. Repository-local checklists may mirror it but shall not redefine it.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-0b87b22f">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-004">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Contain TimingData recovery failure and keep diagnostics available</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-004" title="VC-ST1-004">VC-ST1-004</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-004" title="VC-ST1-004">IF03-REQ-004</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-006" title="VC-ST1-004">IF03-REQ-006</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-008" title="VC-ST1-004">IF03-REQ-008</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-017" title="VC-ST1-004">IF03-REQ-017</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-048" title="VC-ST1-004">SI01-REQ-048</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_004Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify that a TimingData recovery failure is contained to the affected
+TimingNode while application-level diagnostic interfaces remain available.</p>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Prepare a syntactically valid persisted TimingData record owned by a
+different NodeId than the configured TimingNode.</p></li>
+<li><p>Start SI-01 and verify the process remains running.</p></li>
+<li><p>Query IF-03 status and verify the affected node is <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> with
+<code class="docutils literal notranslate"><span class="pre">TIMING_DATA_RECOVERY_FAILED</span></code>.</p></li>
+<li><p>Query the Remote Shell status and verify the same contained problem.</p></li>
+<li><p>Attempt OPEN and verify an explicit failure response rather than normal
+acceptance.</p></li>
+<li><p>Connect/reconnect IF-03 events and verify each session starts with an ERROR
+status snapshot that retains the problem.</p></li>
+<li><p>Shut down through the supported control path.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>invalid recovered ownership does not terminate SI-01;</p></li>
+<li><p>the affected TimingNode remains contained in ERROR;</p></li>
+<li><p>HTTP, WebSocket and Remote Shell diagnostics remain usable;</p></li>
+<li><p>normal state-changing work is rejected explicitly.</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-866123a1">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-005">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Verify lifecycle TimingData source ordering and recovery</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-005" title="VC-ST1-005">VC-ST1-005</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-011" title="VC-ST1-005">IF03-REQ-011</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-014" title="VC-ST1-005">IF03-REQ-014</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-015" title="VC-ST1-005">IF03-REQ-015</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-002" title="VC-ST1-005">IF05-REQ-002</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-003" title="VC-ST1-005">IF05-REQ-003</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-008" title="VC-ST1-005">IF05-REQ-008</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-009" title="VC-ST1-005">IF05-REQ-009</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-010" title="VC-ST1-005">IF05-REQ-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_005Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify V05 through public interfaces: lifecycle records use the normal source
+sequence with registrations, idempotent lifecycle requests create no record,
+restart recovers history and the next successful transition continues the
+sequence.</p>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start with empty TimingData storage and connect IF-03 events.</p></li>
+<li><p>OPEN LocationId 24 and verify sequence 1 is <code class="docutils literal notranslate"><span class="pre">NODE_INFO</span> <span class="pre">/</span> <span class="pre">OPEN</span></code>.</p></li>
+<li><p>Repeat OPEN while already OPEN. Verify <code class="docutils literal notranslate"><span class="pre">ALREADY_OPEN</span></code>, no new committed
+lifecycle event and LogBook count remains 1.</p></li>
+<li><p>Commit one deterministic auto registration and verify sequence 2.</p></li>
+<li><p>CLOSE and verify sequence 3 is <code class="docutils literal notranslate"><span class="pre">NODE_INFO</span> <span class="pre">/</span> <span class="pre">CLOSE</span></code>.</p></li>
+<li><p>Repeat CLOSE. Verify <code class="docutils literal notranslate"><span class="pre">ALREADY_CLOSED</span></code>, no new commit and count remains 3.</p></li>
+<li><p>Shut down and restart against the same persistence file.</p></li>
+<li><p>Verify sequences 1..3 recover in exact source order and are not replayed live.</p></li>
+<li><p>OPEN LocationId 25 and verify the newly committed OPEN record is sequence 4,
+proving sequence continuity after recovery.</p></li>
+<li><p>Shut down cleanly.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>actual CLOSED-&gt;OPEN and OPEN-&gt;CLOSED transitions each create exactly one
+lifecycle TimingData record;</p></li>
+<li><p>no-op/already-in-state lifecycle calls create none;</p></li>
+<li><p>registrations and lifecycle records share one contiguous sequence;</p></li>
+<li><p>restart preserves committed order and the next record continues it.</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-b653a612">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-006">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Verify append-only registration revoke bookkeeping</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-006" title="VC-ST1-006">VC-ST1-006</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-008" title="VC-ST1-006">IF03-REQ-008</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-014" title="VC-ST1-006">IF03-REQ-014</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-015" title="VC-ST1-006">IF03-REQ-015</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-022" title="VC-ST1-006">IF03-REQ-022</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-002" title="VC-ST1-006">IF05-REQ-002</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-003" title="VC-ST1-006">IF05-REQ-003</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-005" title="VC-ST1-006">IF05-REQ-005</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-006" title="VC-ST1-006">IF05-REQ-006</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-007" title="VC-ST1-006">IF05-REQ-007</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_006Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify V06 server-side revoke semantics through public IF-03 while preserving
+the bookkeeping/business boundary: REV appends history and never rewrites ADD;
+TimingNode/LogBook do not infer an already-deleted business state.</p>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start with empty TimingData storage and OPEN LocationId 24, producing
+lifecycle sequence 1.</p></li>
+<li><p>Commit automatic registration <code class="docutils literal notranslate"><span class="pre">RT-A-0006</span></code> at a deterministic time; verify
+<code class="docutils literal notranslate"><span class="pre">AUTO_REG</span> <span class="pre">/</span> <span class="pre">ADD</span></code> sequence 2.</p></li>
+<li><p>POST IF03-OP-011 using the original record family, LocationId,
+RegistrationId and time.</p></li>
+<li><p>Verify response sequence 3 and one committed <code class="docutils literal notranslate"><span class="pre">AUTO_REG</span> <span class="pre">/</span> <span class="pre">REV</span></code> record with
+the same LocationId, RegistrationId and original time.</p></li>
+<li><p>Query LogBook and verify the original sequence-2 ADD is unchanged and both
+records are present.</p></li>
+<li><p>Deliberately submit the same well-formed revoke again. Verify bookkeeping
+does not silently fold/deduplicate business state: another REV is appended as
+sequence 4.</p></li>
+<li><p>Submit a structurally invalid MAN_REG revoke without required AUTO/MAN
+time-source classification. Verify an explicit 400-class failure and no new
+TimingData record.</p></li>
+<li><p>Restart SI-01 using the same persistence file. Verify sequences 1..4 recover
+unchanged and are not replayed as new live events.</p></li>
+<li><p>Shut down cleanly.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>each accepted revoke is a new immutable REV record;</p></li>
+<li><p>ADD remains untouched;</p></li>
+<li><p>REV repeats the original registration identity values;</p></li>
+<li><p>raw bookkeeping does not decide whether a registration is already deleted;</p></li>
+<li><p>malformed interface input is rejected before commit;</p></li>
+<li><p>restart preserves the append-only history.</p></li>
+</ul>
+<p><strong>Scope note</strong></p>
+<p>The black-box flow uses AUTO_REG because the current public engineering add
+stimulus is automatic-registration only. MAN_REG <code class="docutils literal notranslate"><span class="pre">REV,AUTO</span></code> / <code class="docutils literal notranslate"><span class="pre">REV,MAN</span></code>
+mapping is verified at codec/domain level until a public manual-add stimulus is
+part of this test profile.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-e4d7f98f">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-007">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Verify two TimingNodes in one TimingSystem with separate LogBooks</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-007" title="VC-ST1-007">VC-ST1-007</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-011" title="VC-ST1-007">IF03-REQ-011</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-013" title="VC-ST1-007">IF03-REQ-013</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-014" title="VC-ST1-007">IF03-REQ-014</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-015" title="VC-ST1-007">IF03-REQ-015</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-003" title="VC-ST1-007">IF05-REQ-003</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-008" title="VC-ST1-007">IF05-REQ-008</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-009" title="VC-ST1-007">IF05-REQ-009</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-003" title="VC-ST1-007">SI01-REQ-003</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="VC-ST1-007">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="VC-ST1-007">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-046" title="VC-ST1-007">SI01-REQ-046</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-047" title="VC-ST1-007">SI01-REQ-047</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_007Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify through <strong>IF-03 HTTP</strong> that one packaged SI-01 process with one
+TimingSystem (<code class="docutils literal notranslate"><span class="pre">9</span></code>) can independently operate two TimingNodes (<code class="docutils literal notranslate"><span class="pre">A</span></code>
+and <code class="docutils literal notranslate"><span class="pre">B</span></code>) and persist their committed TimingData in <strong>two different physical
+LogBook files</strong>, resolved from the <code class="docutils literal notranslate"><span class="pre">{NodeId}</span></code> path template.</p>
+<p><strong>Setup</strong></p>
+<ul class="simple">
+<li><p>one TimingSystem <code class="docutils literal notranslate"><span class="pre">9</span></code> containing TimingNodes <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">io.storage.timingData.path:</span> <span class="pre">node-{NodeId}-logbook.jsonl</span></code>;</p></li>
+<li><p>empty separate test/evidence directory, independent black-box test driver.</p></li>
+</ul>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start the packaged application and query IF-03 status: both nodes exist,
+initially <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p>Open node A at LocationId 24, add <code class="docutils literal notranslate"><span class="pre">RT-A-0001</span></code> <strong>without API time</strong>
+and close A.
+Query A’s LogBook: ordered OPEN, ADD, CLOSE at sequences 1..3.</p></li>
+<li><p>Before operating node B, query its LogBook: it remains empty.</p></li>
+<li><p>Open node B at LocationId 25, add <code class="docutils literal notranslate"><span class="pre">RT-A-0002</span></code> <strong>without API time</strong>
+and close B. Query B’s LogBook: its own sequences independently start at 1..3.</p></li>
+<li><p>Stop SI-01 cleanly. Check that exactly the expected two distinct nonempty
+files exist, named for nodes A and B. Each file contains only its own
+NodeId, location and registration, with no records from the other node.</p></li>
+<li><p>Restart SI-01 using the same configuration and files. Query both LogBooks
+through IF-03 and verify the separate three-record histories are recovered.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>two independently addressed TimingNodes operate inside one TimingSystem;</p></li>
+<li><p>each node maintains its own sequence beginning at 1, without cross-node
+registrations or lifecycle records;</p></li>
+<li><p>two physically different LogBooks exist and survive restart, with no
+duplicated or lost records;</p></li>
+<li><p>simulated ADD records use the node’s TimeSource and retain
+<code class="docutils literal notranslate"><span class="pre">tagSrc=API</span></code> / <code class="docutils literal notranslate"><span class="pre">timeSrc=NODE</span></code> after recovery.</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-c177adc1">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_vc docutils align-default" id="VC-ST1-008">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Verification Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Verify two TimingSystems with one TimingNode each and separate LogBooks</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#VC-ST1-008" title="VC-ST1-008">VC-ST1-008</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span></span></span></div>
+<div class="line"><span><div class="line">verifies: <span class="verifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-011" title="VC-ST1-008">IF03-REQ-011</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-013" title="VC-ST1-008">IF03-REQ-013</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-014" title="VC-ST1-008">IF03-REQ-014</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-015" title="VC-ST1-008">IF03-REQ-015</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-003" title="VC-ST1-008">IF05-REQ-003</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-008" title="VC-ST1-008">IF05-REQ-008</a>, <a class="reference internal" href="32-05-ISD-timingdata-interchange.html#IF05-REQ-009" title="VC-ST1-008">IF05-REQ-009</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-003" title="VC-ST1-008">SI01-REQ-003</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="VC-ST1-008">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="VC-ST1-008">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-046" title="VC-ST1-008">SI01-REQ-046</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-047" title="VC-ST1-008">SI01-REQ-047</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Executable test</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">system-test/.../VcSt1_008Test.java</span></code></p>
+<p><strong>Purpose</strong></p>
+<p>Verify through <strong>IF-03 HTTP</strong> that one packaged SI-01 process can compose
+two independent TimingSystems (<code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>), each containing one
+TimingNode (A and B respectively), and persist committed TimingData in
+<strong>two different physical LogBook files</strong>. The storage path resolves both
+<code class="docutils literal notranslate"><span class="pre">{SystemId}</span></code> and <code class="docutils literal notranslate"><span class="pre">{NodeId}</span></code> in this configuration.</p>
+<p><strong>Setup</strong></p>
+<ul class="simple">
+<li><p>TimingSystem <code class="docutils literal notranslate"><span class="pre">A</span></code> with TimingNode <code class="docutils literal notranslate"><span class="pre">A</span></code>;</p></li>
+<li><p>TimingSystem <code class="docutils literal notranslate"><span class="pre">B</span></code> with TimingNode <code class="docutils literal notranslate"><span class="pre">B</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">io.storage.timingData.path:</span> <span class="pre">system-{SystemId}-node-{NodeId}-logbook.jsonl</span></code>;</p></li>
+<li><p>empty separate test/evidence directory, independent black-box test driver.</p></li>
+</ul>
+<p><strong>Procedure</strong></p>
+<ol class="arabic simple">
+<li><p>Start the packaged application and query IF-03 status: nodes A and B
+exist and are initially <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p>Open A at LocationId 24, add <code class="docutils literal notranslate"><span class="pre">RT-A-0001</span></code> <strong>without API time</strong>
+and close A.
+Verify B’s LogBook remains empty.</p></li>
+<li><p>Open B at LocationId 25, add <code class="docutils literal notranslate"><span class="pre">RT-A-0002</span></code> <strong>without API time</strong>
+and close B.
+Independently query each LogBook; each has OPEN, ADD, CLOSE at sequences 1..3.</p></li>
+<li><p>Stop SI-01 cleanly and check both physical files. Their paths include the
+correct TimingSystemId/TimingNodeId pair and each file contains only records
+belonging to its own node.</p></li>
+<li><p>Restart the same two-system configuration and verify both separate
+LogBook histories recover unchanged through IF-03.</p></li>
+</ol>
+<p><strong>Expected result</strong></p>
+<ul class="simple">
+<li><p>both TimingSystems run in one SI-01 process with correct node addressing;</p></li>
+<li><p>each TimingNode retains an independent ordered TimingData stream;</p></li>
+<li><p>two physical LogBook files are created, isolated and recover independently;</p></li>
+<li><p>neither system’s records appear in the other system’s LogBook;</p></li>
+<li><p>simulated ADD records use each owning system’s composed TimeSource and
+retain <code class="docutils literal notranslate"><span class="pre">tagSrc=API</span></code> / <code class="docutils literal notranslate"><span class="pre">timeSrc=NODE</span></code> after recovery.</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Test-data scope for VC-ST1-007/008</strong></p>
+<p>Here <code class="docutils literal notranslate"><span class="pre">RT-A-0001</span></code> and <code class="docutils literal notranslate"><span class="pre">RT-A-0002</span></code> are <strong>normal RegistrationIds</strong>;
+the <code class="docutils literal notranslate"><span class="pre">A</span></code> in <code class="docutils literal notranslate"><span class="pre">RT-A</span></code> is not the TimingNode identifier. These cases inject the
+RegistrationIds directly through IF-03. They do not verify the separate RFID
+tag-pair mapping (<code class="docutils literal notranslate"><span class="pre">TT-A-NNNN-1/-2</span></code>) or TeamId lookup.</p>
+</section>
+<section id="evidence">
+<h2>Evidence<a class="headerlink" href="#evidence" title="Link to this heading">¶</a></h2>
+<p>A VTS case defines what must be exercised and observed; it does not say that a
+particular revision has passed.</p>
+<p>Retained evidence should identify at least:</p>
+<ul class="simple">
+<li><p>verification-case ID;</p></li>
+<li><p>tested source/build revision;</p></li>
+<li><p>PASS/FAIL;</p></li>
+<li><p>executable test report;</p></li>
+<li><p>captured process output where useful;</p></li>
+<li><p>produced persistence/log artifacts required to support the result.</p></li>
+</ul>
+<p>The implementation repository and CI publication own those run-specific
+artifacts.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="30-UC-system-use-cases.html">System use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html">Engineering Desktop Client Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="43-01-SDD-02-java-component-design.html">Java component, package and artifact detailed design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-04-ISD-web-interface.html">Web Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33-05-IDD-timingdata-interchange.html">TimingData Interchange Interface Design Description (IDD)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Timing Application Verification Test Specification (VTS)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terms-and-abbreviations">Terms and abbreviations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#case-identifier-convention">Case identifier convention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#st-1-application-behaviour">ST-1 — Application behaviour</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evidence">Evidence</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="33-05-IDD-timingdata-interchange.html" title="previous chapter">TimingData Interchange Interface Design Description (IDD)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/61-01-VTS-timing-application-verification-test-specification.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

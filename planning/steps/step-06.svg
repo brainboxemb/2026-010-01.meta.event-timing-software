@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="594mm" viewBox="0 0 595.28 1683.78">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="16.00" y="16.00" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="28.00" y="32.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14.00" font-weight="bold" fill="#2f3337">6</text>
+<text x="50.00" y="32.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="16.00" font-weight="bold" fill="#2f3337">Engineering Desktop Client</text>
+<text x="16.00" y="52.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">ACTIVE | TOTAL: orig ~4d · forecast ~1d | PROGRESS: spent ~0d · rem ~1d | forecast end 12 Oct 2026</text>
+<text x="16.00" y="68.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">GOAL</text>
+<line x1="49.11" y1="65.75" x2="579.28" y2="65.75" stroke="#d9dde1" stroke-width="1"/>
+<text x="16.00" y="85.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Evolve the existing JavaFX Development Client into the project&#x27;s full Engineering Desktop Client while preserving its</text>
+<text x="16.00" y="95.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">public-interface-only boundary to SI-01.</text>
+<text x="16.00" y="112.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">RESULT</text>
+<line x1="58.00" y1="109.75" x2="293.64" y2="109.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="125.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">SI-02 is defined as the maintainable Engineering Desktop</text>
+<text x="26.00" y="139.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Client software item.</text>
+<circle cx="19.00" cy="148.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Normal operator interaction remains IF-04 Web.</text>
+<circle cx="19.00" cy="161.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">SI-02 remains independent from SI-01 implementation</text>
+<text x="26.00" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">classes/files and keeps</text>
+<circle cx="19.00" cy="184.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="188.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">The Java 21 / BentoFX workbench and Windows app-image path</text>
+<text x="26.00" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">are implemented and</text>
+<text x="301.64" y="112.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">END DEMO</text>
+<line x1="354.75" y1="109.75" x2="579.28" y2="109.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="304.64" cy="125.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Start the Engineering Client and connect it to a running</text>
+<text x="311.64" y="139.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">SI-01.</text>
+<circle cx="304.64" cy="148.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Show connection/synchronisation state, current TimingNode</text>
+<text x="311.64" y="162.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">status, registrations,</text>
+<circle cx="304.64" cy="171.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Exercise one supported engineering command/simulation and</text>
+<text x="311.64" y="185.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">inspect the result.</text>
+<circle cx="304.64" cy="194.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Disconnect/reconnect and rebuild the authoritative view.</text>
+<circle cx="304.64" cy="207.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="211.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Using SI-02, revoke through the trash action,</text>
+<circle cx="304.64" cy="220.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="224.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Show Device Log / Client Log / Remote Shell independently</text>
+<text x="311.64" y="234.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">where available.</text>
+<text x="16.00" y="254.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION</text>
+<line x1="97.10" y1="251.75" x2="579.28" y2="251.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="263.75" width="50.50" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="41.25" y="274.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">30-UC R-85</text>
+<rect x="72.50" y="263.75" width="65.90" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="105.45" y="274.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">41-02-SSD W-45</text>
+<rect x="144.40" y="263.75" width="65.90" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="177.35" y="274.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">50-SDE-03 W-80</text>
+<rect x="216.30" y="263.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="249.25" y="274.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">32-03-IDD R-85</text>
+<rect x="288.20" y="263.75" width="54.35" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="315.38" y="274.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">60-SVP R-75</text>
+<text x="16.00" y="297.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION / DECISIONS</text>
+<line x1="147.78" y1="294.75" x2="579.28" y2="294.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="307.75" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="322.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D01</text>
+<rect x="163.03" y="312.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="323.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="345.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Establish first SI-02</text>
+<text x="24.00" y="357.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering Client</text>
+<text x="24.00" y="369.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">requirement slice</text>
+<text x="24.00" y="383.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Establish SI02-REQ-001..008...</text>
+<text x="16.00" y="410.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">APPLICATION / PRODUCT</text>
+<line x1="126.45" y1="407.12" x2="579.28" y2="407.12" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="420.12" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="435.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D02</text>
+<text x="44.84" y="435.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="163.03" y="425.12" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="435.93" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="457.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Select Engineering Client</text>
+<text x="24.00" y="469.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">desktop stack, client</text>
+<text x="24.00" y="481.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">boundary and packaging</text>
+<text x="24.00" y="495.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Select Java 21, JavaFX 21,...</text>
+<rect x="206.43" y="420.12" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="435.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A01</text>
+<text x="235.26" y="435.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 D02</text>
+<rect x="353.45" y="425.12" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="435.93" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="457.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Restructure the existing</text>
+<text x="214.43" y="469.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering Client around the</text>
+<text x="214.43" y="481.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">selected workbench/services</text>
+<text x="214.43" y="495.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java issue...</text>
+<text x="16.00" y="522.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">VERIFICATION / TEST</text>
+<line x1="109.57" y1="519.50" x2="579.28" y2="519.50" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="532.50" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="547.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V01</text>
+<text x="44.45" y="547.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A01</text>
+<rect x="163.03" y="537.50" width="27.40" height="15.00" rx="7" fill="#fff4d6" stroke="#a77a19"/>
+<text x="176.73" y="548.30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">NEXT</text>
+<text x="24.00" y="570.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Verify Engineering Client</text>
+<text x="24.00" y="581.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">connection, sync/reconnect</text>
+<text x="24.00" y="593.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">and representative workbench</text>
+<text x="24.00" y="605.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">behaviour</text>
+<text x="24.00" y="620.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Verify connection/status...</text>
+<text x="16.00" y="646.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES</text>
+<line x1="110.00" y1="643.75" x2="579.28" y2="643.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="659.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="663.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Complete A01 through Java PR #402: SI-02 now runs on Java 21 / JavaFX 21 with BentoFX, an instance-scoped system</text>
+<text x="26.00" y="673.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">context, real dockable panes and a CI-verified Windows jpackage app-image. V01 is next; with only that running-system</text>
+<text x="26.00" y="683.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">verification remaining, the Step-6 remainder is re-estimated at 1 project day.</text>
+<circle cx="19.00" cy="692.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="696.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Classify the reusable Engineering Desktop Client as SI-02. Keep UC-009 as its system use case, IF-03 as its primary</text>
+<text x="26.00" y="706.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">SI-01 boundary and IF-04 Web as the normal operator path; UC-008 remains outside the current baseline.</text>
+<circle cx="19.00" cy="715.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="719.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Close Step 5 on SI-01/server evidence and assign the real GUI revoke/DELETED/reconnect/recovery scenario to Step 6</text>
+<text x="26.00" y="729.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">V01, releasing A01.</text>
+<circle cx="19.00" cy="738.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="742.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Select Java 21, JavaFX 21, BentoFX 0.16.0, JDK HTTP/WebSocket, Jackson, Maven and a jpackage app-image as the</text>
+<text x="26.00" y="752.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Step-6 desktop baseline.</text>
+<line x1="16.00" y1="841.89" x2="579.28" y2="841.89" stroke="#d9dde1" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="579.28" y="851.89" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">PAGE 2</text>
+<text x="16.00" y="865.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="862.89" x2="579.28" y2="862.89" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="878.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="882.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Reframe Step 6 from an operator desktop GUI to an Engineering Desktop Client; normal operator use remains IF-04</text>
+<text x="26.00" y="892.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Web.</text>
+<circle cx="19.00" cy="901.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="905.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-07 — Promote the first SI-02 Draft requirement slice before selecting GUI technology; implementation remains gated on</text>
+<text x="26.00" y="915.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">the then-current Step-5 V06 plan.</text>
+</svg>

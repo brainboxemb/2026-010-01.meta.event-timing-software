@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1380" height="820" viewBox="0 0 1380 820">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+</marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="30" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold">RFID reader lifecycle and recovery direction</text>
+<line x1="220.0" y1="220.0" x2="280.0" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="480.0" y1="220.0" x2="540.0" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="780.0" y1="220.0" x2="850.0" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1030.0" y1="220.0" x2="1100.0" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1100.0" y1="220.0" x2="220.0" y2="220.0" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="404.1" y1="260.0" x2="494.4" y2="410.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="626.9" y1="275.0" x2="545.6" y2="410.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="931.4" y1="260.0" x2="899.1" y2="410.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="848.9" y1="495.0" x2="723.3" y2="625.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="549.6" y1="495.0" x2="640.2" y2="625.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="673.4" y1="625.0" x2="661.8" y2="275.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<line x1="615.1" y1="625.0" x2="177.9" y2="260.0" stroke="#555" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="40" y="180" width="180" height="80" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="130.0" y="211.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">OFF</text>
+<text x="130.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">default</text>
+<rect x="280" y="180" width="200" height="80" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="380.0" y="220.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">POWERING_ON</text>
+<rect x="540" y="165" width="240" height="110" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="660.0" y="211.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">INITIALISING</text>
+<text x="660.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">boot + protocol setup</text>
+<rect x="850" y="180" width="180" height="80" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="940.0" y="220.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">READY</text>
+<rect x="1100" y="180" width="210" height="80" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1205.0" y="220.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">POWERING_OFF</text>
+<rect x="740" y="410" width="300" height="85" rx="8" ry="8" fill="#d0e0e3" stroke="#6c8ebf" stroke-width="2"/>
+<text x="890.0" y="452.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">DEGRADED / UNRESPONSIVE</text>
+<rect x="420" y="410" width="200" height="85" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="520.0" y="452.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">ERROR</text>
+<rect x="465" y="625" width="420" height="100" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="675.0" y="666.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">RECOVERING / REINITIALISE</text>
+<text x="675.0" y="685.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14">reconnect -&gt; reset -&gt; power cycle policy TBD</text>
+</svg>

@@ -1,0 +1,359 @@
+roadmap:
+  title: Software Implementation Planning — roadmap
+  subtitle: 'TOTAL: orig ~59d · forecast ~55.5d  |  PROGRESS: spent ~15.5d · rem ~40d  |  ~1d/week
+    · +25% reserve'
+  items:
+  - id: '1'
+    marker: '1'
+    title: Architecture baseline
+    state:
+      label: DONE
+      tone: success
+    meta:
+    - 12 Sep 2026
+    - 'TOTAL: orig ~1d · total ~0.7d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - First software architecture baseline.
+      - TimingNode and application ownership are clear.
+      - Implementation can start deliberately.
+    - heading: DEMO
+      bullets:
+      - Walk through the architecture diagrams.
+      - Explain TimingNode and application ownership.
+      - Show where the first executable fits.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 10-SDP R-55
+      tone: warning
+    - label: 11-SIP R-60
+      tone: warning
+    - label: 30-UC O-25
+      tone: muted
+    - label: 31-SSSD W-45
+      tone: active
+    - label: 60-SVP W-30
+      tone: active
+  - id: '2'
+    marker: '2'
+    title: Application core repository skeleton
+    state:
+      label: DONE
+      tone: success
+    meta:
+    - 13 Sep 2026
+    - 'TOTAL: orig ~6d · total ~1.8d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - Application-core and runnable application artifacts.
+      - Clean Linux and Windows build/test.
+      - Traceable build identity and lifecycle.
+    - heading: DEMO
+      bullets:
+      - Build from a clean checkout.
+      - Produce both artifacts.
+      - Start, identify and stop the application.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC W-40
+      tone: active
+    - label: 50-SDE-02 A-100
+      tone: success
+    - label: 41-01-SSD R-25
+      tone: warning
+    - label: 43-01-SDD-02 W-55
+      tone: active
+    - label: 32-03-IDD R-45
+      tone: warning
+    - label: 60-SVP W-35
+      tone: active
+  - id: '3'
+    marker: '3'
+    title: Application and API foundation
+    state:
+      label: DONE
+      tone: success
+    meta:
+    - 29 Sep 2026
+    - 'TOTAL: orig ~3d · total ~8.2d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - SI-01 runs from external configuration.
+      - Public interfaces share application semantics.
+      - Black-box testing is repeatable.
+    - heading: DEMO
+      bullets:
+      - Start SI-01 from configuration.
+      - Inspect version/status through public interfaces.
+      - Inspect IF-03 with the JavaFX test client.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC W-55
+      tone: active
+    - label: 41-01-SSD R-35
+      tone: warning
+    - label: 32-03-IDD R-65
+      tone: warning
+    - label: 32-11-IDD R-55
+      tone: warning
+    - label: 60-SVP W-45
+      tone: active
+  - id: '4'
+    marker: '4'
+    title: First registration-system slice
+    state:
+      label: DONE
+      tone: success
+    meta:
+    - 04 Oct 2026
+    - 'TOTAL: orig ~6d · total ~5.1d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - One TimingNode owns a durable, ordered registration stream.
+      - The same registration behaviour is available through the public API and Development
+        Client.
+      - Restart rebuilds local registration history without inventing new records.
+    - heading: DEMO
+      bullets:
+      - Open the TimingNode with a LocationId and submit one accepted registration.
+      - Observe the committed record in history and as a live update.
+      - Close, restart and confirm that the committed history is recovered.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 03-DOM W-80
+      tone: active
+    - label: 30-UC R-70
+      tone: warning
+    - label: 41-01-SSD R-55
+      tone: warning
+    - label: 32-03-IDD R-70
+      tone: warning
+    - label: 60-SVP W-60
+      tone: active
+  - id: '5'
+    marker: '5'
+    title: Simulated antenna input and runtime behaviour
+    state:
+      label: DONE
+      tone: success
+    meta:
+    - 09 Oct 2026
+    - 'TOTAL: orig ~6d · total ~0d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - Simulated antenna observations reach the normal registration path.
+      - Normal manual-registration ADD is available through IF-03 with client-supplied
+      - Restart/recovery works with the same simulated input path used by automated
+        tests.
+    - heading: DEMO
+      bullets:
+      - Open one TimingNode and show the committed OPEN TimingData record.
+      - Run a short simulated-tag batch and show one representative two-tag passage
+        reaching
+      - Inspect the runtime counters, restart SI-01 and continue using the same simulated
+        input
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC R-80
+      tone: warning
+    - label: 41-01-SSD R-70
+      tone: warning
+    - label: 32-03-IDD R-80
+      tone: warning
+    - label: 60-SVP R-70
+      tone: warning
+  - id: '6'
+    marker: '6'
+    title: Engineering Desktop Client
+    state:
+      label: ACTIVE
+      tone: active
+    meta:
+    - end 12 Oct 2026
+    - 'TOTAL: orig ~4d · forecast ~1d'
+    - 'PROGRESS: spent ~0d · rem ~1d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - SI-02 is defined as the maintainable Engineering Desktop Client software item.
+      - SI-02 remains independent from SI-01 implementation classes/files and keeps
+      - The Java 21 / BentoFX workbench and Windows app-image path are implemented
+        and
+    - heading: DEMO
+      bullets:
+      - Start the Engineering Client and connect it to a running SI-01.
+      - Disconnect/reconnect and rebuild the authoritative view.
+      - Show Device Log / Client Log / Remote Shell independently where available.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC R-85
+      tone: warning
+    - label: 41-02-SSD W-45
+      tone: active
+    - label: 50-SDE-03 W-80
+      tone: active
+    - label: 32-03-IDD R-85
+      tone: warning
+    - label: 60-SVP R-75
+      tone: warning
+  - id: '7'
+    marker: '7'
+    title: Backoffice and multi-node integration
+    state:
+      label: PLANNED
+      tone: muted
+    meta:
+    - end 04 Jan 2027
+    - 'TOTAL: orig ~7d · forecast ~9d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - Multiple TimingNodes keep independent state and ordered data streams.
+      - Reference data can be received and used for local derived timing and TeamID
+      - Local registration continues through a backoffice outage and synchronisation
+        can resume.
+    - heading: DEMO
+      bullets:
+      - Start a small multi-node SI-01 test setup and load reference/start-time data.
+      - Feed simulated registrations and inspect node-specific derived timing and
+        outbound data.
+      - Interrupt the backoffice service, continue local work, reconnect and reconcile.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC R-90
+      tone: warning
+    - label: 41-01-SSD R-85
+      tone: warning
+    - label: 43-01-SDD-03 W-60
+      tone: active
+    - label: 60-SVP R-85
+      tone: warning
+  - id: '8'
+    marker: '8'
+    title: Target platform decision
+    state:
+      label: PLANNED
+      tone: muted
+    meta:
+    - end 01 Feb 2027
+    - 'TOTAL: orig ~4d · forecast ~4d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - One target-platform direction is selected with its main risks understood.
+      - Required prototype hardware and any custom-board need are explicit.
+      - Step 9 can start without reopening the basic platform choice.
+    - heading: DEMO
+      bullets:
+      - Compare the credible platform options against the known software/device needs.
+      - Show the selected hardware block diagram.
+      - Show the prototype parts/cost path and remaining platform risks.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 10-SDP R-75
+      tone: warning
+    - label: 11-SIP R-80
+      tone: warning
+    - label: 50-SDE-01 W-60
+      tone: active
+    - label: 60-SVP R-85
+      tone: warning
+  - id: '9'
+    marker: '9'
+    title: Target bring-up and deployment proof
+    state:
+      label: PLANNED
+      tone: muted
+    meta:
+    - end 12 Apr 2027
+    - 'TOTAL: orig ~4d · forecast ~8d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - A blank/clean selected target can be provisioned repeatably from documented
+        inputs.
+      - Target resource limits are based on measurements rather than desktop assumptions.
+      - The image/provisioning, deployment/start/restart and recovery paths are known
+        before
+    - heading: DEMO
+      bullets:
+      - Start from the documented target image/provisioning baseline and bring up
+        a clean target.
+      - Connect the Engineering Client through IF-03 and run a representative
+      - Show target measurements, persistence survival and a clean service/system
+        restart.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 50-SDE-01 R-75
+      tone: warning
+    - label: 60-SVP R-88
+      tone: warning
+    - label: 70-01-SUM W-55
+      tone: active
+  - id: '10'
+    marker: '10'
+    title: Real timing-device integration
+    state:
+      label: PLANNED
+      tone: muted
+    meta:
+    - end 12 Jul 2027
+    - 'TOTAL: orig ~10d · forecast ~10d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - Real devices feed the same application/domain paths already proven with simulation.
+      - Device health and recovery are observable.
+      - Simulated tests remain usable as the fast regression baseline.
+    - heading: DEMO
+      bullets:
+      - Run a representative real-device registration/input flow.
+      - Observe the resulting state/data through supported public presentation paths,
+      - Disconnect or reset one device and demonstrate the supported recovery behaviour.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC R-95
+      tone: warning
+    - label: 41-01-SSD R-95
+      tone: warning
+    - label: 60-SVP R-95
+      tone: warning
+    - label: 70-01-SUM W-70
+      tone: active
+  - id: '11'
+    marker: '11'
+    title: Integrated system and field proof
+    state:
+      label: PLANNED
+      tone: muted
+    meta:
+    - end 20 Sep 2027
+    - 'TOTAL: orig ~8d · forecast ~8d'
+    sections:
+    - heading: RESULT
+      bullets:
+      - The representative integrated setup can run and recover from selected failures.
+      - Operators can observe the important system state through normal interfaces.
+      - Remaining hardening work is based on field/integration evidence.
+    - heading: DEMO
+      bullets:
+      - Run a representative timing session from input through GUI/backoffice.
+      - Interrupt one external dependency or device.
+      - Recover and finish the session without losing committed timing history.
+    badge_heading: DOCUMENT STATUS
+    badges:
+    - label: 30-UC A-95
+      tone: success
+    - label: 41-01-SSD A-95
+      tone: success
+    - label: 60-SVP A-95
+      tone: success
+    - label: 70-01-SUM A-90
+      tone: success
+    - label: 11-SIP R-95
+      tone: warning

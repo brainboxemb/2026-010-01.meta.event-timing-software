@@ -1,0 +1,316 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="891mm" viewBox="0 0 595.28 2525.67">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="16.00" y="16.00" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="28.00" y="32.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14.00" font-weight="bold" fill="#2f3337">5</text>
+<text x="50.00" y="32.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="16.00" font-weight="bold" fill="#2f3337">Simulated antenna input and runtime behaviour</text>
+<text x="16.00" y="52.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">DONE | TOTAL: orig ~6d · total ~0d | completed 09 Oct 2026</text>
+<text x="16.00" y="68.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">GOAL</text>
+<line x1="49.11" y1="65.75" x2="579.28" y2="65.75" stroke="#d9dde1" stroke-width="1"/>
+<text x="16.00" y="85.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Process repeatable simulated antenna input through one TimingNode using normal runtime, domain and persistence paths.</text>
+<text x="16.00" y="102.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">RESULT</text>
+<line x1="58.00" y1="99.75" x2="293.64" y2="99.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="115.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="119.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Simulated antenna observations reach the normal registration</text>
+<text x="26.00" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">path.</text>
+<circle cx="19.00" cy="138.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="142.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Successful TimingNode OPEN/CLOSE transitions are represented</text>
+<text x="26.00" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">in the normal committed</text>
+<circle cx="19.00" cy="161.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Registration revoke appends REV through the same committed</text>
+<text x="26.00" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">source stream and leaves the</text>
+<circle cx="19.00" cy="184.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="188.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Normal manual-registration ADD is available through IF-03</text>
+<text x="26.00" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">with client-supplied</text>
+<circle cx="19.00" cy="207.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="211.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Simulated-tag profiles drive the normal antenna path rather</text>
+<text x="26.00" y="221.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">than direct registration.</text>
+<circle cx="19.00" cy="230.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="234.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Sustained input can be measured without bypassing TimingNode</text>
+<text x="26.00" y="244.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">ownership.</text>
+<circle cx="19.00" cy="253.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="257.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Restart/recovery works with the same simulated input path</text>
+<text x="26.00" y="267.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">used by automated tests.</text>
+<text x="301.64" y="102.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">END DEMO</text>
+<line x1="354.75" y1="99.75" x2="579.28" y2="99.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="304.64" cy="115.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="119.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Open one TimingNode and show the committed OPEN TimingData</text>
+<text x="311.64" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">record.</text>
+<circle cx="304.64" cy="138.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="142.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Feed repeatable tag observations through SimulatedAntenna and</text>
+<text x="311.64" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">show which observations</text>
+<circle cx="304.64" cy="161.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Add manual registrations using both client-selected current</text>
+<text x="311.64" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">time and operator-entered</text>
+<circle cx="304.64" cy="184.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="188.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Run a short simulated-tag batch and show one representative</text>
+<text x="311.64" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">two-tag passage reaching</text>
+<circle cx="304.64" cy="207.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="211.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Revoke one registration through IF-03 and show durable ADD</text>
+<text x="311.64" y="221.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">plus REV source</text>
+<circle cx="304.64" cy="230.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="234.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Close the TimingNode and show the CLOSE record in the same</text>
+<text x="311.64" y="244.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">source sequence.</text>
+<circle cx="304.64" cy="253.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="257.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Inspect the runtime counters, restart SI-01 and continue</text>
+<text x="311.64" y="267.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">using the same simulated input</text>
+<text x="16.00" y="287.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION</text>
+<line x1="97.10" y1="284.75" x2="579.28" y2="284.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="296.75" width="50.50" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="41.25" y="307.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">30-UC R-80</text>
+<rect x="72.50" y="296.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="105.45" y="307.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">41-01-SSD R-70</text>
+<rect x="144.40" y="296.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="177.35" y="307.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">32-03-IDD R-80</text>
+<rect x="216.30" y="296.75" width="54.35" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="243.48" y="307.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">60-SVP R-70</text>
+<text x="16.00" y="330.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">TOOLING / ENGINEERING ENVIRONMENT</text>
+<line x1="186.46" y1="327.75" x2="579.28" y2="327.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="340.75" width="182.43" height="73.50" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="355.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">T01</text>
+<text x="44.06" y="355.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="163.03" y="345.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="356.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="378.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Runtime-characterization</text>
+<text x="24.00" y="390.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">harness and evidence tooling</text>
+<text x="24.00" y="404.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java PR...</text>
+<text x="16.00" y="431.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION / DECISIONS</text>
+<line x1="147.78" y1="428.25" x2="579.28" y2="428.25" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="441.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="456.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D01</text>
+<rect x="163.03" y="446.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="457.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="478.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Runtime execution and</text>
+<text x="24.00" y="490.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">measurement plan</text>
+<text x="24.00" y="505.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Define measurement questions,...</text>
+<rect x="206.43" y="441.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="456.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D02</text>
+<rect x="353.45" y="446.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="457.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="478.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define OPEN/CLOSE TimingData</text>
+<text x="214.43" y="490.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">semantics and reference</text>
+<text x="214.43" y="502.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">mapping</text>
+<text x="214.43" y="516.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Defines successful CLOSED-OPEN...</text>
+<rect x="396.85" y="441.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="456.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D03</text>
+<rect x="543.88" y="446.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="457.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="478.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define registration revoke</text>
+<text x="404.85" y="490.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">semantics and public contract</text>
+<text x="404.85" y="505.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Defines append-only...</text>
+<rect x="16.00" y="534.62" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="549.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D04</text>
+<text x="44.84" y="549.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="163.03" y="539.62" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="550.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="572.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Review simulated</text>
+<text x="24.00" y="584.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">antenna/input architecture</text>
+<text x="24.00" y="598.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Review the simulated...</text>
+<rect x="206.43" y="534.62" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="549.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D05</text>
+<text x="235.26" y="549.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="353.45" y="539.62" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="550.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="572.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define internal</text>
+<text x="214.43" y="584.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">runtime-observability</text>
+<text x="214.43" y="595.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">architecture</text>
+<text x="214.43" y="610.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Define the internal...</text>
+<rect x="396.85" y="534.62" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="549.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D06</text>
+<rect x="543.88" y="539.62" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="550.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="572.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Link SSD architecture Needs</text>
+<text x="404.85" y="584.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">to detailed SDD design</text>
+<text x="404.85" y="598.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through meta issue...</text>
+<rect x="16.00" y="628.00" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="643.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D07</text>
+<rect x="163.03" y="633.00" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="643.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="665.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Clarify Presentation external</text>
+<text x="24.00" y="677.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">ports in architecture diagram</text>
+<text x="24.00" y="691.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through meta issue...</text>
+<rect x="206.43" y="628.00" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="643.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D08</text>
+<rect x="353.45" y="633.00" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="643.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="665.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define manual-registration</text>
+<text x="214.43" y="677.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">API and timestamp precision</text>
+<text x="214.43" y="691.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Define normal IF-03...</text>
+<rect x="396.85" y="628.00" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="643.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D09</text>
+<text x="425.69" y="643.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D04</text>
+<rect x="543.88" y="633.00" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="643.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="665.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define simulation layers,</text>
+<text x="404.85" y="677.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">simulated tags and profile</text>
+<text x="404.85" y="689.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">control</text>
+<text x="404.85" y="703.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Distinguish direct accepted-re...</text>
+<line x1="16.00" y1="841.89" x2="579.28" y2="841.89" stroke="#d9dde1" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="579.28" y="851.89" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">PAGE 2</text>
+<text x="16.00" y="865.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">APPLICATION / PRODUCT</text>
+<line x1="126.45" y1="862.89" x2="579.28" y2="862.89" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="875.89" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A01</text>
+<text x="44.84" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D04</text>
+<rect x="163.03" y="880.89" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Qualify/implement simulated</text>
+<text x="24.00" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">antenna and tag-processing</text>
+<text x="24.00" y="937.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">path</text>
+<text x="24.00" y="951.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Requalified the simulated-inpu...</text>
+<rect x="206.43" y="875.89" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A02</text>
+<text x="235.26" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D05 A01</text>
+<rect x="353.45" y="880.89" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Qualify/implement runtime</text>
+<text x="214.43" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">markers and counters</text>
+<text x="214.43" y="939.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Requalified and corrected on...</text>
+<rect x="396.85" y="875.89" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A03</text>
+<text x="425.69" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after V01</text>
+<rect x="543.88" y="880.89" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Measurement-driven</text>
+<text x="404.85" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">allocation/data-access</text>
+<text x="404.85" y="937.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">decision</text>
+<text x="404.85" y="951.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">V01 development-host evidence...</text>
+<rect x="16.00" y="969.26" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A04</text>
+<text x="44.84" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D02</text>
+<rect x="163.03" y="974.26" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="985.06" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="1006.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Commit OPEN/CLOSE through the</text>
+<text x="24.00" y="1018.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">normal TimingData path</text>
+<text x="24.00" y="1033.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Commit successful TimingNode...</text>
+<rect x="206.43" y="969.26" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A05</text>
+<text x="235.26" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D03</text>
+<rect x="353.45" y="974.26" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="985.06" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="1006.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Commit registration revoke</text>
+<text x="214.43" y="1018.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">through the normal TimingData</text>
+<text x="214.43" y="1030.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">path</text>
+<text x="214.43" y="1044.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Add the public node-scoped...</text>
+<rect x="396.85" y="969.26" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A06</text>
+<text x="425.69" y="984.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D08</text>
+<rect x="543.88" y="974.26" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="985.06" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="1006.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement manual-registration</text>
+<text x="404.85" y="1018.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">API, precision policy and</text>
+<text x="404.85" y="1030.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Development Client controls</text>
+<text x="404.85" y="1044.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java issue...</text>
+<rect x="16.00" y="1062.64" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="1077.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A07</text>
+<text x="44.84" y="1077.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D09</text>
+<rect x="163.03" y="1067.64" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="1078.44" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="1100.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement simulated-tag</text>
+<text x="24.00" y="1112.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">profiles and Development</text>
+<text x="24.00" y="1123.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Client batch simulation</text>
+<text x="24.00" y="1138.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java issue...</text>
+<text x="16.00" y="1165.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">VERIFICATION / TEST</text>
+<line x1="109.57" y1="1162.01" x2="579.28" y2="1162.01" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="1175.01" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V01</text>
+<text x="44.45" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 D04 D05 T01 A01 A02</text>
+<rect x="163.03" y="1180.01" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="1190.81" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="1212.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Single-node baseline</text>
+<text x="24.00" y="1224.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">load/burst characterization</text>
+<text x="24.00" y="1238.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Development-host baseline is...</text>
+<rect x="206.43" y="1175.01" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V02</text>
+<text x="234.88" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A03</text>
+<rect x="353.45" y="1180.01" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="1190.81" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="1212.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Sustained tag-observation</text>
+<text x="214.43" y="1224.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">load and stalled-downstream</text>
+<text x="214.43" y="1236.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">fairness/backpressure</text>
+<text x="214.43" y="1250.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java issue...</text>
+<rect x="396.85" y="1175.01" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V03</text>
+<text x="425.30" y="1190.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A01</text>
+<rect x="543.88" y="1180.01" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="1190.81" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="1212.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Restart and recovery with</text>
+<text x="404.85" y="1224.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">simulated input</text>
+<text x="404.85" y="1238.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java PR...</text>
+<rect x="16.00" y="1268.39" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V04</text>
+<text x="44.45" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A01</text>
+<rect x="163.03" y="1273.39" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="1284.19" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="1305.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Provider bootstrap</text>
+<text x="24.00" y="1317.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">verification</text>
+<text x="24.00" y="1332.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Verified built-in EventDataPro...</text>
+<rect x="206.43" y="1268.39" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V05</text>
+<text x="234.88" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A04</text>
+<rect x="353.45" y="1273.39" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="1284.19" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="1305.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">OPEN/CLOSE TimingData</text>
+<text x="214.43" y="1317.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">ordering, persistence and</text>
+<text x="214.43" y="1329.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">rejection verification</text>
+<text x="214.43" y="1344.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java PR...</text>
+<rect x="396.85" y="1268.39" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V06</text>
+<text x="425.30" y="1283.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A05</text>
+<rect x="543.88" y="1273.39" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="1284.19" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="1305.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Registration</text>
+<text x="404.85" y="1317.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">revoke/API/persistence</text>
+<text x="404.85" y="1329.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">verification (client UI</text>
+<text x="404.85" y="1341.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">evidence in Step 6 V01)</text>
+<text x="404.85" y="1355.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">SI-01 revoke/API/persistence...</text>
+<rect x="16.00" y="1373.64" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="1388.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V07</text>
+<text x="44.45" y="1388.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A06</text>
+<rect x="163.03" y="1378.64" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="1389.44" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="1411.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Manual registration,</text>
+<text x="24.00" y="1423.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">timestamp precision and</text>
+<text x="24.00" y="1434.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Development Client projection</text>
+<text x="24.00" y="1446.76" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">verification</text>
+<text x="24.00" y="1461.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed with the automated...</text>
+<rect x="206.43" y="1373.64" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="1388.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V08</text>
+<text x="234.88" y="1388.64" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A07</text>
+<rect x="353.45" y="1378.64" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="1389.44" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="1411.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Simulated-tag profile and</text>
+<text x="214.43" y="1423.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">batch-driver verification</text>
+<text x="214.43" y="1437.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Completed through Java issue...</text>
+<text x="16.00" y="1487.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES</text>
+<line x1="110.00" y1="1484.89" x2="579.28" y2="1484.89" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1500.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1504.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-09 — Complete Step 5 on the proven SI-01/server verification baseline. V06 closes on revoke/API/persistence evidence;</text>
+<text x="26.00" y="1514.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">GUI revoke/DELETED/reconnect/recovery verification moves to Step 6 V01 using SI-02.</text>
+<circle cx="19.00" cy="1523.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1527.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-07 — Add D08/A06/V07 for normal manual-registration semantics and time precision, and D09/A07/V08 for deterministic</text>
+<text x="26.00" y="1537.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">simulated-tag profiles and batch control.</text>
+<circle cx="19.00" cy="1546.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1550.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-07 — Move selected-target runtime evidence to Step 9. Step-5 V01 is the development-host baseline and releases the A03</text>
+<text x="26.00" y="1560.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">runtime design decision.</text>
+<circle cx="19.00" cy="1569.79" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1573.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-07 — Complete T01 through Java PR #327 and make V01 runtime baseline characterization the next activity.</text>
+<line x1="16.00" y1="1683.78" x2="579.28" y2="1683.78" stroke="#d9dde1" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="579.28" y="1693.78" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">PAGE 3</text>
+<text x="16.00" y="1707.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1704.78" x2="579.28" y2="1704.78" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1720.68" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1724.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-06 — Requalify A01 on Java main and complete V04 provider bootstrap verification through PR #302 with built-in reference</text>
+<text x="26.00" y="1734.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">providers and an external provider JAR.</text>
+<circle cx="19.00" cy="1743.68" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1747.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-04 — Complete D05 runtime-measurement design while keeping A01 active until the antenna/tag-processing path is wired</text>
+<text x="26.00" y="1757.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">into runtime composition.</text>
+<circle cx="19.00" cy="1766.68" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1770.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-04 — Reopen D01 and decompose the work into D04/D05 design gates plus T01 harness; A01/A02 require requalification and</text>
+<text x="26.00" y="1780.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">V01 moves before A03.</text>
+<circle cx="19.00" cy="1789.68" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1793.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-04 — Fix the single-TimingNode runtime-measurement baseline in D01 and make A01 the active implementation activity.</text>
+<text x="16.00" y="1813.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1810.78" x2="579.28" y2="1810.78" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1826.68" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1830.78" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-04 — Activate Step 5 after Step-4 VC-ST1-003 closure with D01 as the first planning/design activity.</text>
+</svg>

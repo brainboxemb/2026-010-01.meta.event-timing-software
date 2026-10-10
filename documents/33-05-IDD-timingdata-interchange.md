@@ -1,0 +1,394 @@
+<!-- Generated review/output copy. Edit the source document, not this copy. -->
+
+# TimingData Interchange Interface Design Description (IDD)
+
+Status: draft
+
+Representation: **default/reference v1**
+
+System interface: **IF-05 — TimingData Interchange**
+
+
+
+## Purpose
+
+This Interface Design Description defines the **default/reference v1
+representation** of IF-05 TimingData.
+
+The ISD owns the normative TimingData semantics and requirements. This IDD
+defines their concrete JSON record and JSON Lines representation.
+
+This document deliberately does not define Java classes, factories, providers,
+threads, queues or storage implementation classes.
+
+## Terms and abbreviations
+
+- **IDD** — Interface Design Description
+- **ISD** — Interface Specification Document
+- **IF** — system interface
+- **JSONL** — JSON Lines
+- **TimingData** — committed interchange record model
+
+
+## Relationship to other documents
+
+This IDD implements the default/reference representation of
+`32-05-ISD-timingdata-interchange.md`. The ISD remains the semantic IF-05 contract;
+this document defines its JSON/JSON Lines representation. Software-item design,
+reference codecs/stores and compatible consumers use this design without redefining
+IF-05 semantics.
+
+## Design overview
+
+The reference design uses:
+
+- one compact JSON object per TimingData record;
+- one complete JSON object per JSON Lines record;
+- one Node ID source stream per file;
+- monotonically increasing `seqNr`;
+- explicit record type in `recType`;
+- compact semantic codes in `code`;
+- absolute UTC timestamp text;
+- per-record integer representation version `v`.
+
+<a id="fig-if05-01"></a>
+![TimingData v1 interchange model](../assets/architecture/timingdata-interchange-model.svg)
+
+*Figure IF05-01 — IF-05 semantics mapped to v1 JSON and JSON Lines.*
+
+## Semantic-to-JSON mapping
+
+| Semantic value | Presence | v1 JSON member |
+| --- | --- | --- |
+| representation version | Always | `v` |
+| Node ID | Always | `nodeId` |
+| sequence number | Always | `seqNr` |
+| Location ID | Always | `locId` |
+| record type | Always | `recType` |
+| time | By record type | `time` |
+| Registration ID | By record type | `regId` |
+| code | By record type | `code` |
+| automatic registration origin | Optional, AUTO_REG only | `tagSrc` |
+| automatic effective-time origin | Optional, AUTO_REG only | `timeSrc` |
+| record creation time metadata | Optional | `recTime` |
+
+The stable IF-05 record key `(Node ID, sequence number)` is represented by
+`(nodeId, seqNr)`.
+
+## Registration record mapping
+
+### AUTO_REG
+
+Automatic registration add:
+
+```text
+recType = AUTO_REG
+code    = [ADD]
+```
+
+The record type already carries the automatic-registration meaning, so `AUTO`
+is not repeated in `code`.
+
+Revoke mapping:
+
+```text
+recType = AUTO_REG
+code    = [REV]
+same regId
+same time
+```
+
+### Automatic registration audit provenance
+
+For new default-profile `AUTO_REG` records, two short **optional** metadata
+members identify the originating path and effective-time provenance:
+
+| Member | Values | Meaning |
+| --- | --- | --- |
+| `tagSrc` | `API`, `ANT` | Direct engineering API, or antenna observation path (including a simulated antenna) |
+| `timeSrc` | `API`, `NODE`, `OBS` | Explicit API timestamp, node's composed TimeSource, or observation-carried timestamp |
+
+`API` with `NODE` describes a direct simulation that omitted `time`;
+`API` with `API` describes an explicit API time; `ANT` with `OBS`
+describes registration after an antenna observation. These are provenance
+codes, **not** physical TagIds or an indication that the antenna was real
+rather than simulated.
+
+Both values are emitted together when provenance is known. Either both
+must be present or both absent in a v1 record. Older v1 records without
+these members remain valid and their provenance is unknown. The pair must
+not appear in MAN_REG or NODE_INFO records. For AUTO_REG REV, metadata
+describes the API revoke action; the effective `time` still refers to
+the original registration as required by IF-05.
+
+### MAN_REG
+
+Manual registration using client-selected time:
+
+```text
+recType = MAN_REG
+code    = [ADD, AUTO]
+```
+
+Manual registration using operator-entered time:
+
+```text
+recType = MAN_REG
+code    = [ADD, MAN]
+```
+
+Revoke mappings:
+
+```text
+[ADD, AUTO] -> [REV, AUTO]
+[ADD, MAN]  -> [REV, MAN]
+```
+
+Canonical writer output places the action (`ADD` or `REV`) first.
+Array order is not semantic to a reader; the valid code combination is.
+Duplicate, contradictory or unknown codes for a known record type are invalid.
+
+A revoke record repeats the original `locId`, `regId` and `time`, receives
+a new `seqNr` and `recTime`, and never rewrites the original record. The
+registration reference remains `regId + time`; repeated `locId` is record context. A `MAN_REG`
+revoke also repeats the original `AUTO` or `MAN` subcode. Revoke does not
+carry a sequence reference to the original ADD record.
+
+## TimingNode lifecycle record mapping
+
+The v1 reference representation uses one generic node-information
+record type and carries the concrete lifecycle action in `code`:
+
+```text
+CLOSED -> OPEN
+recType = NODE_INFO
+code    = [OPEN]
+time    = effective transition instant
+locId   = location becoming active
+```
+
+```text
+OPEN -> CLOSED
+recType = NODE_INFO
+code    = [CLOSE]
+time    = effective transition instant
+locId   = location active immediately before close
+```
+
+`NODE_INFO` lifecycle records do not carry `regId`. The `OPEN` or
+`CLOSE` code contains the lifecycle meaning. `recTime`, when emitted,
+remains optional record-creation metadata and does not replace lifecycle
+`time`.
+
+An idempotent/already-in-state lifecycle command or a command that fails before
+commit produces no lifecycle JSON record.
+
+## V1 record matrix
+
+| Record type | Meaning | Required type-specific data | `code` |
+| --- | --- | --- | --- |
+| `AUTO_REG` | automatic registration | `regId`, `time` | `["ADD"]` or `["REV"]` |
+| `MAN_REG` | manual registration | `regId`, `time` | `["ADD","AUTO"]`, `["ADD","MAN"]`, `["REV","AUTO"]` or `["REV","MAN"]` |
+| `NODE_INFO` | TimingNode lifecycle information | `time` | `["OPEN"]` or `["CLOSE"]` |
+
+## V1 JSON contract
+
+Known members use the following JSON types and validation rules.
+
+| Member | JSON type | Presence | v1 design rule |
+| --- | --- | --- | --- |
+| `v` | integer | Always | exactly `1` for the v1 format |
+| `nodeId` | string | Always | non-empty Node ID |
+| `seqNr` | integer | Always | `1..9007199254740991`; plain decimal; v1 reference-design limit |
+| `locId` | integer | Always | positive Location ID representation |
+| `recType` | string | Always | identifies the concrete v1 record type |
+| `time` | string | By record type | required for `AUTO_REG`, `MAN_REG` and `NODE_INFO`; canonical UTC centisecond timestamp |
+| `regId` | string | By record type | required for `AUTO_REG` and `MAN_REG`; absent for lifecycle records |
+| `code` | array of strings | By record type | required for registration and `NODE_INFO` records |
+| `tagSrc` | string | Optional, AUTO_REG only | `API` or `ANT`; accompanies `timeSrc` |
+| `timeSrc` | string | Optional, AUTO_REG only | `API`, `NODE` or `OBS`; accompanies `tagSrc` |
+| `recTime` | string | Optional | canonical UTC millisecond record-creation timestamp when emitted |
+
+Canonical writer member order:
+
+```text
+v
+nodeId
+seqNr
+locId
+recType
+time
+regId
+code
+tagSrc    # when known, AUTO_REG only
+timeSrc   # when known, AUTO_REG only
+recTime   # when present
+```
+
+Validation rules:
+
+- every `Always` member is present and non-null;
+- every `By record type` member required by the selected `recType` is present and non-null;
+- `Optional` members such as `recTime` may be omitted; on AUTO_REG, `tagSrc`
+  and `timeSrc` must occur together if either occurs;
+- `tagSrc`/`timeSrc` must be absent on MAN_REG and NODE_INFO records;
+  unknown provenance code values are invalid;
+- `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
+- the v1 `AUTO_REG` mapping accepts exactly `["ADD"]` or `["REV"]`;
+- the v1 `MAN_REG` mapping accepts exactly one action (`ADD` or `REV`) plus exactly one of `AUTO` or `MAN`;
+- `NODE_INFO` requires `time`, shall not contain `regId`, and accepts exactly one lifecycle code: `OPEN` or `CLOSE`;
+- readers may accept a valid registration `code` combination in another array order;
+- canonical writer output always emits action first;
+- `seqNr` remains authoritative source order; no chronological ordering is
+  inferred from `time` or `recTime`.
+
+## Timestamp encoding
+
+The v1 representation uses absolute UTC timestamps with field-specific fixed
+precision.
+
+| Member | Canonical form | Precision |
+| --- | --- | --- |
+| `time` | `YYYY-MM-DDTHH:mm:ss.SSZ` | centisecond, 10 ms |
+| `recTime` | `YYYY-MM-DDTHH:mm:ss.SSSZ` | millisecond, 1 ms |
+
+Rules:
+
+- the literal `Z` represents UTC;
+- `time` contains exactly two fractional digits;
+- `recTime`, when present, contains exactly three fractional digits;
+- trailing fractional zeroes are retained;
+- offsets such as `+02:00`, implicit local time and timezone names are not
+  canonical v1 values;
+- a registration REV repeats the original registration `time` value;
+- `recTime` is record-creation metadata and is not a durable-commit marker.
+
+Examples:
+
+```text
+time    = 2026-10-01T12:00:00.00Z
+time    = 2026-10-01T12:00:00.90Z
+time    = 2026-10-01T12:00:00.25Z
+recTime = 2026-10-02T10:57:43.444Z
+recTime = 2026-10-02T10:57:45.100Z
+```
+
+A conforming v1 writer emits the canonical forms above. Broader input tolerance
+for migration or recovery does not change the canonical v1 representation.
+
+## JSON Lines file design
+
+The default/reference v1 representation uses UTF-8 JSON Lines (`.jsonl`) and
+contains records from exactly one `nodeId` source stream.
+
+Rules:
+
+- encoding is UTF-8 without BOM;
+- there is no file header, footer or comment syntax;
+- `v` is carried by every record;
+- one complete TimingData JSON object is written per physical line;
+- all records in one file use the same `nodeId`;
+- canonical writer line ending is **LF** (`0x0A`);
+- a reader may accept **CRLF** (`0x0D 0x0A`);
+- a line terminator completes the record boundary;
+- valid JSON bytes at EOF without LF/CRLF are an incomplete trailing record and
+  are not committed;
+- blank lines are invalid input;
+- every complete line is independently JSON-decodable;
+- canonical writer output is compact single-line JSON;
+- insignificant JSON whitespace and member ordering are not semantic to readers;
+- committed records are append-only and are not rewritten;
+- valid complete records before an incomplete trailing line remain readable;
+- recovery/import validates Node ID and sequence ordering and reports gaps,
+  duplicates or regressions explicitly.
+
+The exact filename, directory mapping, rotation/retention policy and filesystem
+durability primitive are outside IF-05. A different TimingData representation
+does not have to use `.jsonl`.
+
+## Reference JSON examples
+
+Automatic registration:
+
+```json
+{"v":1,"nodeId":"A","seqNr":1,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00.00Z","regId":"RT-A-0001","code":["ADD"],"tagSrc":"API","timeSrc":"API","recTime":"2026-10-02T10:57:43.444Z"}
+```
+
+Manual registration using client-selected time:
+
+```json
+{"v":1,"nodeId":"Test","seqNr":2,"locId":24,"recType":"MAN_REG","time":"2026-10-01T12:00:05.00Z","regId":"N0002","code":["ADD","AUTO"],"recTime":"2026-10-02T10:57:45.100Z"}
+```
+
+Manual registration using operator-entered time:
+
+```json
+{"v":1,"nodeId":"Test","seqNr":3,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N0003","code":["ADD","MAN"],"recTime":"2026-10-02T10:57:46.000Z"}
+```
+
+Revoke examples:
+
+```json
+{"v":1,"nodeId":"Test","seqNr":4,"locId":24,"recType":"AUTO_REG","time":"2026-10-01T12:00:00.00Z","regId":"N0001","code":["REV"],"recTime":"2026-10-02T11:05:12.123Z"}
+{"v":1,"nodeId":"Test","seqNr":5,"locId":24,"recType":"MAN_REG","time":"2026-10-01T11:59:58.25Z","regId":"N0003","code":["REV","MAN"],"recTime":"2026-10-02T11:05:14.000Z"}
+```
+
+The Registration IDs above are synthetic test/example data; IF-05 does not
+impose their display convention. Historical examples without `tagSrc` and
+`timeSrc` remain valid v1 records. A current direct simulation that
+omitted API `time` would instead use `"tagSrc":"API","timeSrc":"NODE"`.
+
+
+TimingNode lifecycle examples:
+
+```json
+{"v":1,"nodeId":"A","seqNr":6,"locId":24,"recType":"NODE_INFO","time":"2026-10-02T11:10:00.12Z","code":["OPEN"],"recTime":"2026-10-02T11:10:00.123Z"}
+{"v":1,"nodeId":"A","seqNr":7,"locId":24,"recType":"NODE_INFO","time":"2026-10-02T12:05:30.25Z","code":["CLOSE"],"recTime":"2026-10-02T12:05:30.251Z"}
+```
+
+The examples show only successful state transitions. `ALREADY_OPEN`,
+`ALREADY_CLOSED`, rejected and failed lifecycle commands do not produce a
+reference record.
+
+## Compatibility and versioning
+
+The integer `v` member identifies the representation version. This document
+defines `v = 1`.
+
+A v1 writer:
+
+- emits `v = 1`;
+- emits only members defined by this representation;
+- emits canonical member values and timestamp forms defined by this IDD.
+
+A v1 reader:
+
+- validates required known members and their value constraints;
+- may ignore additional JSON members when all required known members remain
+  valid;
+- reports an unknown `recType` as unsupported rather than reinterpreting it;
+- treats malformed JSON, missing required fields, invalid field types or values,
+  invalid `code` combinations and sequence violations as invalid records;
+- treats an unsupported `v` as a representation-version compatibility failure.
+
+Raw unsupported records may be retained or exported, but they are not decoded
+using another representation version's semantics.
+
+## ISD requirement realization
+
+| ISD requirement | v1 design realization |
+| --- | --- |
+| IF05-REQ-001 | `nodeId`, `seqNr`, `locId` and `recType` form the common JSON envelope |
+| IF05-REQ-002 | Node ID + `seqNr` identify a record when streams are combined |
+| IF05-REQ-003 | `seqNr` starts at 1 and advances contiguously per Node ID source stream |
+| IF05-REQ-004 | `recType` distinguishes `AUTO_REG` and `MAN_REG` |
+| IF05-REQ-005 | registration records carry `regId` and `time` |
+| IF05-REQ-006 | `code[]` represents ADD/REV while revoke repeats `regId` + `time` in a new record |
+| IF05-REQ-007 | JSON Lines persistence is append-only; an existing committed record is not rewritten |
+| IF05-REQ-008 | `NODE_INFO` with `OPEN`/`CLOSE` code represents successful lifecycle transitions in the normal source stream |
+| IF05-REQ-009 | `NODE_INFO` lifecycle records carry transition `locId`, `time` and `OPEN`/`CLOSE` code while omitting `regId` |
+| IF05-REQ-010 | no lifecycle JSON record is written for no-op/already/rejected/failed transitions |
+
+JSON Lines completion rules, unknown-member handling, integer `v`, the v1
+`seqNr` limit and optional `recTime` are concrete representation-design
+choices. They are intentionally not additional IF-05 requirements.

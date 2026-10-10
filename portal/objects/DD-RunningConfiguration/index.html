@@ -1,0 +1,797 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Derived engineering navigation and traceability portal">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DD-RunningConfiguration — Running configuration model - Event Timing Engineering Portal</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/explorer.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dd-runningconfiguration-running-configuration-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-header__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Event Timing Engineering Portal
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DD-RunningConfiguration — Running configuration model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-nav__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Event Timing Engineering Portal
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Portal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../book/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Book
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workspace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../engineering-client-ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering Client UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Objects
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Objects
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering object index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#this-detailed-design-elaborates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        This detailed design elaborates:
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dd-runningconfiguration-running-configuration-model">DD-RunningConfiguration — Running configuration model</h1>
+<p><strong>Type:</strong> Detailed Design<br />
+<strong>Comparison workspace:</strong> <a href="../../workspace/?object=DD-RunningConfiguration">open object comparison workspace</a><br />
+<strong>Source definition:</strong> <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/f8182beec8d5634e7f288e74166744a594d38614/docs/43-01-SDD-02-java-component-design.md?plain=1#L1327">open authored source</a><br />
+<strong>Engineering Explorer:</strong> <a href="../../explorer/?object=DD-RunningConfiguration">open with architecture context</a></p>
+<p>This is a <strong>derived portal page</strong>. Engineering meaning is maintained in the authored Need, not in this generated presentation.</p>
+<h2 id="definition">Definition</h2>
+<p>Detailed design for ApplicationConfiguration, reusable typed Configuration
+values and presentation-facing ConfigurationControl use-cases.</p>
+<p>The configuration design has three deliberately separate ownership levels:</p>
+<pre><code class="language-text">Infrastructure
+  typed configuration-value mechanics
+
+Runtime
+  concrete ApplicationConfiguration tree for this executable
+
+Application
+  query/update use-cases over that tree
+</code></pre>
+<p>Infrastructure provides the reusable value contracts. They contain no knowledge of
+TimingNode, TagProcessor, YAML paths or API routes:</p>
+<pre><code class="language-java">interface ReadOnlyConfiguration&lt;T&gt; {
+    T startupValue();
+    T currentValue();
+    boolean overridden();
+    EventSource&lt;ConfigurationChange&lt;T&gt;&gt; changes();
+}
+
+interface DynamicConfiguration&lt;T&gt; extends ReadOnlyConfiguration&lt;T&gt; {
+    ConfigurationUpdateResult override(T value);
+    ConfigurationUpdateResult clearOverride();
+}
+</code></pre>
+<p>A successful update replaces one immutable typed value atomically and emits one
+typed <code>ConfigurationChange&lt;T&gt;</code>. Validation happens before replacement. <code>NO_CHANGE</code>
+does not emit a change. <code>INVALID</code> and <code>RESTART_REQUIRED</code> leave the current value
+unchanged.</p>
+<p>Runtime owns <code>ApplicationConfiguration</code> and its concrete branches such as
+<code>TimingNodeConfiguration</code>. This is the authoritative configuration tree of the
+currently composed process. It is not a generic key/value map and it is not the
+external IF-11/YAML DTO.</p>
+<p>IF-11 TimingData storage is resolved during Runtime configuration/composition.
+The single-TimingNode <code>io.storage.timingData.path</code> shorthand expands to one
+node binding; the multi-node <code>io.storage.timingData.nodes</code> form resolves each
+application-wide <code>NodeId</code> to exactly one validated filesystem path before
+TimingNode persistence is constructed. Runtime passes the resolved target to the
+existing persistence implementation; this does not introduce a generic storage
+registry or make storage part of TimingNode domain state.</p>
+<p>Application owns <code>ConfigurationControl</code>: the use-case boundary for querying current
+configuration and requesting runtime changes. Runtime composition supplies the
+node-scoped <code>DynamicConfiguration&lt;TagProcessingPolicy&gt;</code> views when constructing this
+control; Presentation never receives those Infrastructure objects or the concrete
+<code>ApplicationConfiguration</code> tree directly.</p>
+<p><code>ConfigurationControl</code> returns Presentation-safe startup/current policy projections,
+runtime-mutability metadata and semantic <code>APPLIED</code>, <code>NO_CHANGE</code>, <code>INVALID</code> or
+<code>RESTART_REQUIRED</code> update outcomes. Partial TagProcessing SET requests are serialized
+by this control and are built from the current effective policy, so omitted fields retain
+the value from the preceding accepted update rather than reverting to startup defaults.
+An applied change emits one post-fact application <code>Change</code> event; no-change, invalid
+and restart-required requests do not emit that event.</p>
+<p>Normal components receive only the narrow Infrastructure read-only view they need.
+For TagProcessor that value is immutable <code>TagProcessingPolicy</code>. A runtime update
+that changes <code>observationQueueCapacity</code> is rejected atomically as
+<code>RESTART_REQUIRED</code>; the dynamic duration/cadence subset is not partially applied.
+TagProcessor reads <code>currentValue()</code> when making policy decisions. Its change
+subscription is used only for mechanics that need explicit re-registration, such
+as replacing the fixed-delay housekeeping cadence.</p>
+<p>Runtime composition creates the concrete configuration tree from compiled component
+defaults plus resolved IF-11 startup overrides. Clearing a runtime override restores
+the resolved startup value; restart reconstructs the tree from those startup sources.</p>
+<p>The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. <code>runtime.config.YamlLoader</code> maps external YAML into <code>runtime.config.Config</code>; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.</p>
+<p>The resolver responsibility must remain data/composition oriented:</p>
+<ul>
+<li>application profiles are data/default templates, not Java subclasses;</li>
+<li>do not introduce profile-specific Application subclasses or a
+  profile-specific domain hierarchy;</li>
+<li>profile defaults may select topology/cardinality and capability defaults;</li>
+<li>platform defaults may select environment-specific values;</li>
+<li>operating-mode defaults may replace real providers with simulated providers;</li>
+<li>explicit IF-11 deployment values have highest non-secret precedence;</li>
+<li><code>runtime.TimingApplicationRuntime.create(...)</code> consumes only the resolved/validated runtime <code>Config</code> and contains no profile-name switches.</li>
+</ul>
+<p>SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
+remains independent of SnakeYAML APIs and another input adapter may construct the
+same typed effective runtime <code>Config</code> without YAML.</p>
+<p>Build-identity interpretation is reusable for the same reason. The application core owns
+<code>BuildIdentity</code> and <code>EmbeddedBuildIdentityLoader</code>. The concrete executable still owns
+the filtered <code>event-timing-build.properties</code> resource and build-time provenance injection,
+because those values identify that executable artifact. The core loader only interprets
+the classpath resource and has no dependency on <code>app.Main</code> or another app class.</p>
+<p>The implemented presentation structure is:</p>
+<pre><code class="language-text">presentation/
+  interfaces/
+    console/
+      LocalConsole
+    shell/
+      RemoteShellServer
+    api/
+      HttpEndpoint
+      WebSocketEndpoint
+      WebSocketOutboundDelivery
+      MessageWriter
+  common/
+    terminal/
+      TerminalSession
+</code></pre>
+<p>Console and remote shell are separate presentation interfaces. They share the
+line-oriented command parsing and text presentation in
+<code>presentation.common.terminal.TerminalSession</code>; both call the same
+<code>PresentationGateway</code> application boundary and shutdown callback. The current shared
+terminal command baseline is:</p>
+<pre><code class="language-text">help
+version
+status
+node [id]
+open &lt;locationId&gt;
+close
+auto-reg &lt;registrationId&gt; &lt;time&gt;
+config
+config tag-processing set &lt;field=value&gt;...
+config tag-processing clear
+log
+log T|D|I|W|E
+quit
+exit
+</code></pre>
+<p>These are Presentation commands, not a second Domain/Application semantic contract.
+Each terminal session has one selected TimingNode. <code>node [id]</code> shows or changes
+that selection; <code>open</code>, <code>close</code> and <code>auto-reg</code> delegate to the selected
+<code>TimingNodeProxy</code>. Configuration
+commands delegate to <code>ConfigurationControl</code>. <code>log</code> reads/changes the temporary
+global log level through <code>LoggingLevelControl</code>; the single-letter forms map to
+TRACE, DEBUG, INFO, WARN and ERROR. LocalConsole and RemoteShell therefore
+cannot drift into separate implementations of node or configuration behaviour.</p>
+<p>Console, Remote Shell and API are baseline Timing Point Application capabilities.
+Application profiles do not add/remove or redefine their command/status semantics.
+Concrete network listener bindings remain deployment configuration, so a listener
+may still be explicitly left unbound/disabled without creating another profile.</p>
+<p>The functional <strong>API</strong> currently contains:</p>
+<pre><code class="language-text">HttpEndpoint
+  +-- GET  /api/v1/version
+  +-- GET  /api/v1/status
+  +-- GET  /api/v1/configuration
+  +-- POST /api/v1/node/{nodeId}/configuration/tag-processing
+                    |
+                    +--&gt; PresentationGateway
+                           +--&gt; TimingNodeProxy
+                           +--&gt; ConfigurationControl
+
+WebSocketEndpoint
+  +-- WS /api/v1/events
+  +-- STATUS_SNAPSHOT on connect/reconnect
+  +-- STATUS_CHANGED only for real status changes
+  +-- TIMING_DATA_COMMITTED after committed TimingData
+  +-- CONFIGURATION_CHANGED only after an applied runtime configuration change
+</code></pre>
+<p><code>MessageWriter</code> owns the IF-03 wire/JSON representation shared by the Remote
+API HTTP and WebSocket transports. It is not application/control logic and therefore
+does not live in the application layer or in global presentation common code.</p>
+<p>The local class names deliberately omit the <code>Api</code> prefix because the enclosing <code>presentation.interfaces.api</code> package already supplies that functional context. <code>Endpoint</code> is used rather than <code>Server</code> for the transport-facing classes; in particular, <code>HttpServer</code> is avoided because the implementation uses <code>com.sun.net.httpserver.HttpServer</code> internally.</p>
+<p>The WebSocket transport uses <code>Java-WebSocket 1.6.0</code> in the reusable
+application core and keeps the JDK HTTP transport unchanged rather than replacing
+both transports with a larger combined stack.</p>
+<p><code>WebSocketOutboundDelivery</code> owns only per-client transport backlog bookkeeping.
+<code>WebSocketEndpoint</code> still owns connection/event semantics. The delivery helper does not
+buffer event values itself: it counts sends while the Java-WebSocket connection still
+reports buffered data. After 32 such sends without an observed full drain, it refuses the
+next event and requests close code 1013. This bounds application-driven growth of the
+library's otherwise unbounded outbound queue without blocking, retrying or moving
+backpressure onto TimingNode. Reconnect recovery uses <code>STATUS_SNAPSHOT</code> plus LogBook queries.</p>
+<p><code>WebSocketEndpoint</code> keeps the complete current TimingNode status needed for
+<code>STATUS_SNAPSHOT</code> and <code>STATUS_CHANGED</code>. When Presentation starts, it reads
+the current status of every composed <code>TimingNodeProxy</code> once and stores the
+result by <code>NodeId</code>. A later node-status event replaces only that node's cached
+entry and broadcasts the complete cached status. The event callback does not
+query TimingNodes, so it does not wait on another TimingNode serial lane.</p>
+<p>A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 <code>presentation.web</code> package.</p>
+<p>Manual inspection is provided by an independent development tool:</p>
+<pre><code class="language-text">test-client/
+  TestClientApplication      plain Java launcher
+          |
+          v
+  TestClientFxApplication    JavaFX development view
+          |
+          +-- ApiClient          HTTP/JSON client
+          +-- ApiEventClient       Java 17 WebSocket client
+          +-- RemoteShellClient          A05 raw TCP shell client
+          |
+          v
+        SI-01
+</code></pre>
+<p><code>test-client/</code> is a standalone Java-17 application and does not depend on
+<code>timing-point-core</code> or <code>timing-point-app</code> implementation code. It may,
+however, depend on the separately reusable <code>event-timing-data</code> artifact because
+TimingData codec/provider reuse is now a real cross-executable requirement. This
+preserves the external-client boundary while allowing SI-01 and the Development
+Client to exercise the exact same public or proprietary TimingData translator.</p>
+<p>The Development Client remains development/test support rather than a product
+software item. Its desktop/runtime/workbench choices are owned by the
+Engineering Client environment and do not change SI-01 design authority.</p>
+<p>The shared Presentation-facing application boundary remains small:
+<code>PresentationGateway.version()</code> returns build identity,
+<code>PresentationGateway.timingNode(nodeId)</code> resolves one node-scoped
+<code>TimingNodeProxy</code>, <code>PresentationGateway.timingNodes()</code> exposes the composed
+proxy set for application-wide status/event wiring, and
+<code>PresentationGateway.configuration()</code> returns the application-owned
+<code>ConfigurationControl</code>. A simulation-capable engineering composition may additionally
+provide the optional Application-layer <code>SimulationControl</code>; normal production
+composition does not gain a simulated-device dependency merely because IF-03 can expose
+engineering operations. The proxy obtains current node status through the TimingNode
+query/ownership boundary; the configuration control operates on Runtime-supplied typed
+configuration views. Presentation adapters therefore do not read node-owned fields or
+the concrete Runtime configuration tree directly.</p>
+<h2 id="this-detailed-design-elaborates">This detailed design elaborates:</h2>
+<p><a class="eng-relation" href="../ApplicationConfiguration/"><span class="eng-relation__object">ApplicationConfiguration — Application configuration</span></a>
+<a class="eng-relation" href="../Configuration/"><span class="eng-relation__object">Configuration — Typed configuration values</span></a>
+<a class="eng-relation" href="../ConfigurationControl/"><span class="eng-relation__object">ConfigurationControl — Configuration control</span></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.path", "navigation.sections", "navigation.top", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/explorer.js"></script>
+      
+    
+  </body>
+</html>

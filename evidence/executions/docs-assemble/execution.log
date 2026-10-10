@@ -1,0 +1,13 @@
+Documentation capability: docs.assemble
+action=assemble
+source_revision=f8182beec8d5634e7f288e74166744a594d38614
+owner_revision=f8182beec8d5634e7f288e74166744a594d38614
+tool_eng_docs_sha=417feac3b9f8b277a544337968087d97b8204a3d
+
+> eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-publication.yml --producer event-timing-software.architecture-publication --source-revision 62abd0c958301b055351c148c0518f4fef18e35c --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+
+> eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-raw.yml --producer event-timing-software.architecture-raw --source-revision 62abd0c958301b055351c148c0518f4fef18e35c --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+
+> eng-docs manifest --source bld/docs-producers/planning --out bld/docs-producers/planning/assets.yml --producer event-timing-software.planning --source-revision c24f6f2021a6162d0ac1e0bbd5dfd2b3d5925f47 --lifecycle docs --relationship producer-source
+
+> eng-docs assemble --root . --config docs/assembly.yml --out bld/docs --source-repository brainboxemb/2026-010-01.meta.event-timing-software --source-revision f8182beec8d5634e7f288e74166744a594d38614

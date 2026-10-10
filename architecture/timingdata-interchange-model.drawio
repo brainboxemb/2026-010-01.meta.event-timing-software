@@ -1,0 +1,34 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="timingdata-interchange-model" name="Figure IF05-01 — TimingData semantics to development-v1 JSON Lines">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group-semantics" value="32-05-ISD semantic contract" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="380" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="group-json" value="33-05-IDD development-v1 JSON record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#82b366;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="450" y="85" width="380" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="group-framing" value="33-05-IDD JSON Lines framing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff0ee;strokeColor=#b85450;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="870" y="85" width="380" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="semantic-record" value="TimingData record&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• Always — Node ID&lt;br&gt;• Always — sequence number&lt;br&gt;• Always — Location ID&lt;br&gt;• Always — record type&lt;br&gt;• By type — Registration ID&lt;br&gt;• By type — time&lt;br&gt;• By type — code&lt;br&gt;• Node ID + sequence identify record&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="135" width="330" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="json-record" value="Compact JSON object&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• Always — v&lt;br&gt;• Always — nodeId&lt;br&gt;• Always — seqNr&lt;br&gt;• Always — locId&lt;br&gt;• Always — recType&lt;br&gt;• By type — time / regId / code&lt;br&gt;• Optional — recTime&lt;br&gt;• fixed canonical writer order&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="475" y="135" width="330" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="jsonl-stream" value="JSON Lines source stream&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• one nodeId per file&lt;br&gt;• one complete JSON record per line&lt;br&gt;• UTF-8&lt;br&gt;• LF canonical / CRLF accepted&lt;br&gt;• append-only&lt;br&gt;• incomplete trailing line not committed&lt;br&gt;• sequence validated during recovery&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f4cccc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="895" y="135" width="330" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="reference mapping" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="semantic-record" target="json-record">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="one record per line" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="json-record" target="jsonl-stream">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

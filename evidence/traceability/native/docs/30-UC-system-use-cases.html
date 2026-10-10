@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>System use cases &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Timing Application Specification Document (SSD)" href="41-01-SSD-timing-application-specification-document.html" />
+    <link rel="prev" title="Migration 013 engineering traceability" href="../index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="system-use-cases">
+<h1>System use cases<a class="headerlink" href="#system-use-cases" title="Link to this heading">¶</a></h1>
+<p>Status: working draft / non-authoritative</p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This document captures use cases for the registration system as a whole: operators, registration cabinets, connected devices, external systems and engineering/test equipment.</p>
+<p>Use cases describe actor goals and externally observable system behaviour. Relevant physical equipment and network assumptions belong here; software-item allocation, interface IDs, protocol design and internal classes belong downstream in the SSSD, ISDs and SSDs.</p>
+<p>The public repository uses generic/synthetic identities. Real deployment asset names, external data-source IDs, broker topology and proprietary protocol details remain outside this repository.</p>
+</section>
+<section id="terms-and-abbreviations">
+<h2>Terms and abbreviations<a class="headerlink" href="#terms-and-abbreviations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>UC</strong> — Use Case</p></li>
+<li><p><strong>SSSD</strong> — Software System Specification Document</p></li>
+<li><p><strong>ISD</strong> — Interface Specification Document</p></li>
+<li><p><strong>SI</strong> — Software Item</p></li>
+</ul>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>System use cases describe the <strong>registration system and its environment</strong>, including relevant physical interaction and connectivity. The SSSD then specifies the software-system responsibilities and allocates software items and interfaces.</p>
+<p>Relevant parent-system/external inputs are registered in <code class="docutils literal notranslate"><span class="pre">20-EXT-external-system-inputs.md</span></code>. Together with the domain baseline they can shape these system use cases and the SSSD.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>03 Domain baseline -----------+
+                                 |
+20-EXT External/parent inputs ----+--&gt; 30-UC System use cases
+                                              |
+                                              v
+                                         31-SSSD
+                                              |
+                                  allocates items/interfaces
+                                              |
+                              +---------------+---------------+
+                              |                               |
+                              v                               v
+                    32-&lt;IF&gt; system ISDs             optional software-item UC
+                              |                               |
+                              +---------------+---------------+
+                                              |
+                                              v
+                                         41-&lt;SI&gt;-SSD
+                                              |
+                                              v
+                                         43-&lt;SI&gt;-SDD
+</pre></div>
+</div>
+<p>A software-item use case is optional. It is appropriate when a system use case has been allocated across software items and describing one item’s actor/goal behaviour separately makes the subsequent SSD clearer. It should reference the originating system use case and must not merely copy it.</p>
+<p>A use case is not a test case. One use case may be realised by several requirements and verified by several unit, interface, system, fault-injection and hardware tests.</p>
+</section>
+<section id="use-case-format">
+<h2>Use-case format<a class="headerlink" href="#use-case-format" title="Link to this heading">¶</a></h2>
+<p>Each use case should eventually contain:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ID
+Status (D — Draft, R — Review, A — Approved)
+Name / goal
+Primary actor(s)
+Supporting actor(s)
+Preconditions
+Trigger
+Main flow
+Alternative / failure flows
+Postconditions / observable result
+Relevant physical equipment / operating environment, where important
+</pre></div>
+</div>
+<p>The current catalogue starts lightweight and can be expanded as behaviour is reviewed. Each use case carries its own maturity status; this is separate from the document status. A use case does not assign software IF numbers, software items or requirements.</p>
+</section>
+<section id="use-case-catalogue">
+<h2>Use-case catalogue<a class="headerlink" href="#use-case-catalogue" title="Link to this heading">¶</a></h2>
+<p>Use cases are grouped by their <strong>operational purpose</strong>, not by their ID number.
+The catalogue is the overview; detailed scenarios follow in the same group order.
+Existing IDs remain stable and are not renumbered when a use case moves group.</p>
+<section id="normal-operation">
+<h3>Normal operation<a class="headerlink" href="#normal-operation" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Primary actor</p></th>
+<th class="head"><p>Goal</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>UC-001</p></td>
+<td><p>D</p></td>
+<td><p>Open a registration point</p></td>
+<td><p>Operator</p></td>
+<td><p>Open registration on the cabinet for a chosen location using an iPad.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-002</p></td>
+<td><p>D</p></td>
+<td><p>Close a registration point</p></td>
+<td><p>Operator</p></td>
+<td><p>Close an open registration point using the iPad.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-003</p></td>
+<td><p>D</p></td>
+<td><p>Register a participant through RFID</p></td>
+<td><p>RFID subsystem</p></td>
+<td><p>Record an accepted participant passage observed by the RFID system.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-021</p></td>
+<td><p>D</p></td>
+<td><p>Manually register a participant using an iPad</p></td>
+<td><p>Operator</p></td>
+<td><p>Register a participant manually from the iPad browser.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-005</p></td>
+<td><p>D</p></td>
+<td><p>Manage ready teams through keypad/operator input</p></td>
+<td><p>Operator / keypad</p></td>
+<td><p>Update the teams preparing next and show the result.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-006</p></td>
+<td><p>D</p></td>
+<td><p>Drive a passive CAN display from current system state</p></td>
+<td><p>Registration system</p></td>
+<td><p>Show current prepare-team information on a passive display.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-007</p></td>
+<td><p>D</p></td>
+<td><p>Provide data to a smart network display</p></td>
+<td><p>Smart display</p></td>
+<td><p>Connect and keep a smart network display up to date.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="registration-cabinet-backoffice">
+<h3>Registration cabinet ↔ backoffice<a class="headerlink" href="#registration-cabinet-backoffice" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Primary actor</p></th>
+<th class="head"><p>Goal</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>UC-010</p></td>
+<td><p>D</p></td>
+<td><p>Synchronise reference data from backoffice</p></td>
+<td><p>Backoffice</p></td>
+<td><p>Supply reference data to registration cabinets.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-011</p></td>
+<td><p>D</p></td>
+<td><p>Synchronise TimingNodeId-scoped data to backoffice</p></td>
+<td><p>Registration cabinet / backoffice</p></td>
+<td><p>Deliver recorded registrations to backoffice without losing their source order.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="errors-and-recovery">
+<h3>Errors and recovery<a class="headerlink" href="#errors-and-recovery" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Primary actor</p></th>
+<th class="head"><p>Goal</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>UC-004</p></td>
+<td><p>D</p></td>
+<td><p>Recover or reinitialise RFID equipment</p></td>
+<td><p>Operator / registration system</p></td>
+<td><p>Restore RFID operation after an equipment failure.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-012</p></td>
+<td><p>D</p></td>
+<td><p>Continue local operation during backoffice outage</p></td>
+<td><p>Operator</p></td>
+<td><p>Continue registering when backoffice is unreachable.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-013</p></td>
+<td><p>D</p></td>
+<td><p>Restart and restore local state</p></td>
+<td><p>Operator / platform</p></td>
+<td><p>Recover recorded registrations after a cabinet restart.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-020</p></td>
+<td><p>D</p></td>
+<td><p>Diagnose degraded TimingNode startup</p></td>
+<td><p>Operator / platform</p></td>
+<td><p>Identify and contain an error that prevents registration-point startup.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="development-engineering-and-system-testing">
+<h3>Development, engineering and system testing<a class="headerlink" href="#development-engineering-and-system-testing" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Primary actor</p></th>
+<th class="head"><p>Goal</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>UC-009</p></td>
+<td><p>D</p></td>
+<td><p>Exercise the registration system through the Engineering Client</p></td>
+<td><p>Engineer / tester</p></td>
+<td><p>Connect and exercise the registration system using the Engineering Client.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-022</p></td>
+<td><p>D</p></td>
+<td><p>Inspect registration state and history with the Engineering Client</p></td>
+<td><p>Engineer / developer</p></td>
+<td><p>Inspect operational state, errors and registration history.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-023</p></td>
+<td><p>D</p></td>
+<td><p>Exercise registration controls with the Engineering Client</p></td>
+<td><p>Developer / system tester</p></td>
+<td><p>Exercise registration controls and observe results.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-024</p></td>
+<td><p>D</p></td>
+<td><p>Simulate participant passage and device failure for verification</p></td>
+<td><p>Developer / system tester</p></td>
+<td><p>Simulate RFID passages, equipment errors and recovery.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-014</p></td>
+<td><p>D</p></td>
+<td><p>Run multiple TimingNodes in one process</p></td>
+<td><p>Engineer / tester</p></td>
+<td><p>Operate multiple independent registration points for testing.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-015</p></td>
+<td><p>D</p></td>
+<td><p>Simulate a complete field toward backoffice</p></td>
+<td><p>System tester</p></td>
+<td><p>Simulate a complete field with backoffice.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-016</p></td>
+<td><p>D</p></td>
+<td><p>Replace real devices with controllable stubs</p></td>
+<td><p>System tester</p></td>
+<td><p>Replace physical devices with controllable test devices.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-017</p></td>
+<td><p>D</p></td>
+<td><p>Use an alternative backoffice transport for loop testing</p></td>
+<td><p>System tester</p></td>
+<td><p>Exchange backoffice data with a simulator across a network connection.</p></td>
+</tr>
+<tr class="row-even"><td><p>UC-018</p></td>
+<td><p>D</p></td>
+<td><p>Verify production-shaped messaging through RabbitMQ</p></td>
+<td><p>System tester</p></td>
+<td><p>Verify registration and recovery using a disposable message broker.</p></td>
+</tr>
+<tr class="row-odd"><td><p>UC-019</p></td>
+<td><p>D</p></td>
+<td><p>Handle provider-specific input classification</p></td>
+<td><p>Input subsystem / operator</p></td>
+<td><p>Preserve valid provider-supplied input classification.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="detailed-use-cases">
+<h2>Detailed use cases<a class="headerlink" href="#detailed-use-cases" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>Normal operation<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<div class="need_container docutils container" id="SNCB-85be14e4">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-001">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Open a registration point</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-001" title="UC-001">UC-001</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-022" title="UC-001">SI01-REQ-022</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-023" title="UC-001">SI01-REQ-023</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-024" title="UC-001">SI01-REQ-024</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-025" title="UC-001">SI01-REQ-025</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-026" title="UC-001">SI01-REQ-026</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-040" title="UC-001">SI01-REQ-040</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-073" title="UC-001">SI01-REQ-073</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-074" title="UC-001">SI01-REQ-074</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> allow the operator to open a registration cabinet for participant
+registration at a chosen location.</p>
+<p><strong>Primary actor:</strong> operator.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the registration cabinet is powered on;</p></li>
+<li><p>the iPad is connected to the same local network as the registration cabinet;</p></li>
+<li><p>the operator knows the registration cabinet’s IP address.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The operator opens a Web browser on the iPad and enters the IP address of the registration cabinet.</p></li>
+<li><p>The cabinet presents the operator interface and its current registration state.</p></li>
+<li><p>The operator sees that registration is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p>The operator enters the location at which participants will be registered.</p></li>
+<li><p>The operator selects <strong>Open</strong>.</p></li>
+<li><p>The registration cabinet accepts the location and opens registration for that location.</p></li>
+<li><p>The interface confirms <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> and shows the active location.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p><strong>Already open:</strong> the operator connects to a cabinet that is already <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>.
+The interface shows the existing location and <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> state. Connecting does not
+change either; the operator can continue existing registration or close it (UC-002).</p></li>
+<li><p><strong>Cabinet unreachable:</strong> the operator cannot load the interface and cannot
+confirm the current state.</p></li>
+<li><p><strong>Invalid location:</strong> the cabinet rejects the requested location and remains
+<code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p><strong>Software errors:</strong> the cabinet software has detected errors. The operator
+sees the relevant errors and current state; opening is refused when an error
+prevents safe operation.</p></li>
+<li><p><strong>Open not confirmed or connection lost:</strong> the operator does not assume
+registration is open until the resulting state can be confirmed. Reconnecting
+must show the cabinet’s actual current state.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> if opening succeeds, registration is <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> for the selected
+location. Closing the browser or losing the iPad connection does not itself
+close registration.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-fb7ecc6a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-002">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Close a registration point</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-002" title="UC-002">UC-002</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-022" title="UC-002">SI01-REQ-022</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-023" title="UC-002">SI01-REQ-023</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-024" title="UC-002">SI01-REQ-024</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-025" title="UC-002">SI01-REQ-025</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-026" title="UC-002">SI01-REQ-026</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-072" title="UC-002">SI01-REQ-072</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-073" title="UC-002">SI01-REQ-073</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> allow the operator to close an open registration point so no new
+participant registrations are accepted.</p>
+<p><strong>Primary actor:</strong> operator.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the operator can reach the registration cabinet through the iPad Web browser;</p></li>
+<li><p>registration is <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The operator sees the cabinet’s current location and <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> state.</p></li>
+<li><p>The operator selects <strong>Close</strong>.</p></li>
+<li><p>The registration cabinet stops accepting new registrations.</p></li>
+<li><p>The interface confirms <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p><strong>Software errors:</strong> the cabinet reports detected errors and its current
+state. An error that prevents opening need not prevent safe closing.</p></li>
+<li><p><strong>Close unavailable or unsuccessful:</strong> the interface reports the failure and
+must not falsely claim that the cabinet is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p><strong>Connection lost or outcome unknown:</strong> the operator reconnects to establish
+the current cabinet state rather than assuming the close succeeded.</p></li>
+<li><p><strong>Already closed:</strong> the operator sees <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>; there is no open
+registration to close.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> when closing succeeds, the cabinet is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code> and
+previously accepted registrations remain retained. Disconnecting the iPad
+does not itself change the cabinet state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-c9922be4">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-003">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Register a participant through RFID</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-003" title="UC-003">UC-003</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="UC-003">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="UC-003">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-046" title="UC-003">SI01-REQ-046</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-050" title="UC-003">SI01-REQ-050</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-051" title="UC-003">SI01-REQ-051</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-052" title="UC-003">SI01-REQ-052</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-053" title="UC-003">SI01-REQ-053</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-054" title="UC-003">SI01-REQ-054</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> turn an accepted participant observation into one traceable registration
+for the location that is currently open.</p>
+<p><strong>Primary actor:</strong> RFID subsystem.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>registration is <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>;</p></li>
+<li><p>a valid operational location is active.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The RFID subsystem observes a participant tag and captures the observation time.</p></li>
+<li><p>The registration equipment checks whether the tag observation is a valid participant registration.</p></li>
+<li><p>An accepted observation is registered at the open registration point.</p></li>
+<li><p>The registration system associates the registration with its identity and current location.</p></li>
+<li><p>The registration system records the registration and its observation time.</p></li>
+<li><p>The registration retains the active location and accepted observation time even if the registration point is later closed or configured for another location.</p></li>
+<li><p>The registration becomes visible in the registration history.</p></li>
+<li><p>The registration remains available for later synchronisation with backoffice.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>the observation is invalid or not accepted by filtering;</p></li>
+<li><p>an accepted-registration request arrives while registration is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>;</p></li>
+<li><p>the semantic participant identity is invalid;</p></li>
+<li><p>the registration cannot be committed;</p></li>
+<li><p>outbound/backoffice synchronisation is unavailable after local commit.</p></li>
+</ul>
+<p><strong>Observable result:</strong> one accepted participant observation produces one committed
+registration associated with the source and location that were active at the
+time of acceptance.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-5bd6d599">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-021">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Manually register a participant using an iPad</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-021" title="UC-021">UC-021</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="UC-021">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="UC-021">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-046" title="UC-021">SI01-REQ-046</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-071" title="UC-021">SI01-REQ-071</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> allow an operator to record a participant’s registration manually
+using the iPad when an RFID observation is not available or not used.</p>
+<p><strong>Primary actor:</strong> operator.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the iPad is connected to the registration cabinet over the local network;</p></li>
+<li><p>the operator has opened the cabinet’s Web interface;</p></li>
+<li><p>registration is <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> for a location and the current location is visible.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The operator selects the manual registration action in the iPad interface.</p></li>
+<li><p>The operator enters the participant’s registration number.</p></li>
+<li><p>The operator uses the time selected by the iPad or enters/corrects the registration time.</p></li>
+<li><p>The operator confirms the manual registration.</p></li>
+<li><p>The cabinet checks the input and records the participant, registration time and active location.</p></li>
+<li><p>The interface confirms the result and shows the new registration in the history.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p><strong>Invalid participant or time:</strong> the cabinet rejects the entry and shows the
+reason; no successful registration is reported.</p></li>
+<li><p><strong>Registration closed:</strong> manual registration is unavailable or rejected when the
+cabinet is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>.</p></li>
+<li><p><strong>Software errors:</strong> the cabinet shows relevant detected errors; a failure
+preventing registration blocks the operation.</p></li>
+<li><p><strong>Saving fails:</strong> the cabinet reports failure and does not show an unrecorded
+entry as a successful registration.</p></li>
+<li><p><strong>Connection lost / uncertain outcome:</strong> the operator checks the current
+history after reconnecting before attempting the registration again, to avoid
+unintentionally registering the same action twice.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> on success, the manual registration is retained for the
+active location and is visible with its recorded time.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-fa7645cd">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-005">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Manage ready teams through keypad/operator input</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-005" title="UC-005">UC-005</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-060" title="UC-005">SI01-REQ-060</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> maintain the current list of teams that must prepare at the timing node/exchange point while keeping keypad/operator add/remove history traceable.</p>
+<p><strong>Primary actor:</strong> keypad or operator client.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>An operator enters or removes a team number using the keypad or another supported operator control.</p></li>
+<li><p>The registration system updates its list of teams preparing next.</p></li>
+<li><p>The change becomes visible on connected displays and operator views.</p></li>
+<li><p>The system keeps the history needed to trace changes.</p></li>
+</ol>
+<p>Any <code class="docutils literal notranslate"><span class="pre">NextUpTeams</span></code> change history required by the promoted requirements is separate from participant/timing <code class="docutils literal notranslate"><span class="pre">TimingData</span></code> streams.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-21fe9904">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-006">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Drive a passive CAN display from current system state</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-006" title="UC-006">UC-006</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-061" title="UC-006">SI01-REQ-061</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> show the current teams preparing on the passive display.</p>
+<p><strong>Primary actor:</strong> registration system.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The registration cabinet is connected to the passive display.</p></li>
+<li><p>When the list of teams preparing changes, the cabinet updates the display.</p></li>
+<li><p>After a display reset or reconnection, the current information is shown again.</p></li>
+<li><p>The display continues showing the current information supplied by the cabinet.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-8c77f29b">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-007">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Provide data to a smart network display</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-007" title="UC-007">UC-007</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-062" title="UC-007">SI01-REQ-062</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> let a smart network display show up-to-date registration and reference information.</p>
+<p><strong>Primary actor:</strong> smart display.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The smart display finds the available registration-system service on the network.</p></li>
+<li><p>The display connects and receives the information needed to show current status and reference data.</p></li>
+<li><p>The display presents the information using its own user interface.</p></li>
+<li><p>After a network interruption, the display reconnects and refreshes its current information.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id2">
+<h3>Registration cabinet ↔ backoffice<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<div class="need_container docutils container" id="SNCB-e9c522c4">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-010">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Synchronise reference data from backoffice</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-010" title="UC-010">UC-010</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-063" title="UC-010">SI01-REQ-063</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> make required reference data available locally even when later backoffice connectivity is interrupted.</p>
+<p><strong>Primary actor:</strong> backoffice.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>Backoffice sends updated start times or participant reference information to a registration point.</p></li>
+<li><p>The registration system checks the update and whether it applies to that registration point.</p></li>
+<li><p>A valid update becomes available for local registration and operator views.</p></li>
+<li><p>The system reports when an update cannot be accepted.</p></li>
+<li><p>Accepted information remains available during a later connection interruption.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong> unknown target, invalid or conflicting reference
+update, or unavailable upstream transport. Message submission alone must not
+be presented as proof that the target’s reference state changed.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-72a6cc56">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-011">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Synchronise TimingNodeId-scoped data to backoffice</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-011" title="UC-011">UC-011</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="UC-011">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-045" title="UC-011">SI01-REQ-045</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-064" title="UC-011">SI01-REQ-064</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-065" title="UC-011">SI01-REQ-065</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> send recorded registrations to backoffice in their correct source order and resume after interruptions.</p>
+<p><strong>Primary actors:</strong> SI-01 and backoffice.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The registration cabinet records participant registrations with their registration-point identity, location and order.</p></li>
+<li><p>The cabinet sends records to backoffice in the correct order.</p></li>
+<li><p>Backoffice receives the registrations and confirms receipt as supported.</p></li>
+<li><p>After an interruption, the cabinet resumes delivery without duplicating or losing registrations.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id3">
+<h3>Errors and recovery<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<div class="need_container docutils container" id="SNCB-50b4c314">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-004">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Recover or reinitialise RFID equipment</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-004" title="UC-004">UC-004</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-052" title="UC-004">SI01-REQ-052</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-055" title="UC-004">SI01-REQ-055</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> restore RFID registration after equipment startup or an antenna failure without restarting the registration cabinet or losing recorded registrations.</p>
+<p><strong>Primary actor:</strong> operator / registration system.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>SI-01 is running and the configured antenna is still part of the active composition;</p></li>
+<li><p>the antenna may have failed an earlier self-test or runtime operation;</p></li>
+<li><p>committed TimingData is independent from antenna control state.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The registration cabinet reports that one RFID antenna is unavailable or has failed.</p></li>
+<li><p>Registration is opened or the operator requests another start attempt.</p></li>
+<li><p>The cabinet retries starting the affected antenna even if an earlier attempt failed.</p></li>
+<li><p>On success, RFID registration is available again.</p></li>
+<li><p>Previously recorded registrations and any unaffected antennas remain available.</p></li>
+</ol>
+<p><strong>Alternative / failure flows:</strong></p>
+<ul class="simple">
+<li><p>if the new attempt fails, SI-01 records that failed attempt and leaves the antenna in a
+state from which a later explicit request can try again;</p></li>
+<li><p>SI-01 does not automatically loop retries solely because an attempt failed;</p></li>
+<li><p>repeated failures of one antenna do not prevent independent configured antennas from
+being operated or retried;</p></li>
+<li><p>invalid configuration or a deliberately disabled capability may reject the request
+because there is no valid antenna operation to perform.</p></li>
+</ul>
+<p><strong>Observable result:</strong> a failed antenna operation does not permanently disable the
+antenna. A later inventory demand can start another attempt without restarting SI-01.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-fe39ef64">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-012">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Continue local operation during backoffice outage</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-012" title="UC-012">UC-012</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-046" title="UC-012">SI01-REQ-046</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-051" title="UC-012">SI01-REQ-051</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-065" title="UC-012">SI01-REQ-065</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> allow registration to continue locally when the backoffice connection is unavailable, without losing accepted registrations.</p>
+<p><strong>Primary actor:</strong> operator / SI-01.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The registration cabinet loses communication with backoffice and reports the connection problem.</p></li>
+<li><p>The operator continues local registration using the information already available.</p></li>
+<li><p>The cabinet retains the registrations made while disconnected.</p></li>
+<li><p>When connectivity returns, the cabinet sends the pending registrations without losing or reordering them.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-8b803e12">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-013">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Restart and restore local state</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-013" title="UC-013">UC-013</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-047" title="UC-013">SI01-REQ-047</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-048" title="UC-013">SI01-REQ-048</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> restore safe registration cabinet operation and previously recorded registrations after restart or power interruption.</p>
+<p><strong>Primary actor:</strong> platform/operator.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The registration cabinet restarts after shutdown or power interruption.</p></li>
+<li><p>The cabinet restores previously recorded registrations and their ordering.</p></li>
+<li><p>The cabinet does not assume registration is still OPEN or reuse the prior location.</p></li>
+<li><p>The cabinet reports any information that could not be restored safely.</p></li>
+<li><p>The operator sees whether the registration point is available and, when ready, may select a location and open it again (UC-001).</p></li>
+<li><p>Pending backoffice synchronisation can resume after connectivity is restored.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-918dcb0a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-020">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Diagnose degraded TimingNode startup</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-020" title="UC-020">UC-020</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-021" title="UC-020">SI01-REQ-021</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-024" title="UC-020">SI01-REQ-024</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-049" title="UC-020">SI01-REQ-049</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> keep SI-01 reachable and diagnosable when one configured TimingNode cannot
+complete local state recovery.</p>
+<p><strong>Primary actor:</strong> operator / platform.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>application-level configuration is valid enough to construct the runtime and
+diagnostic presentation interfaces;</p></li>
+<li><p>one configured TimingNode encounters a contained startup/recovery failure.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>SI-01 starts and validates application-level configuration.</p></li>
+<li><p>A TimingNode detects that its recoverable local state cannot be restored safely,
+for example because persisted TimingData belongs to another TimingNodeId.</p></li>
+<li><p>SI-01 keeps that TimingNode out of normal operation and marks it <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>.</p></li>
+<li><p>The application continues starting/running its diagnostic presentation interfaces.</p></li>
+<li><p>Status identifies the affected TimingNode and exposes a machine-readable problem
+plus a human-readable diagnostic summary.</p></li>
+<li><p>The operator can query status through the supported local/remote interfaces and
+determine why the TimingNode did not become operational.</p></li>
+<li><p>Normal state-changing and registration operations for the errored TimingNode are
+rejected explicitly.</p></li>
+<li><p>In a multi-TimingNode composition, independently healthy TimingNodes remain
+available unless an application-wide failure prevents safe operation.</p></li>
+<li><p>The application can still be shut down through the supported controlled path.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>invalid application-wide configuration or failure of mandatory application-wide
+infrastructure may still prevent the process from providing diagnostic interfaces;</p></li>
+<li><p>a later recovery/reinitialisation mechanism may move the TimingNode out of <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>,
+but that mechanism is outside this initial containment use case.</p></li>
+</ul>
+<p><strong>Observable result:</strong> a node-local recovery problem does not turn into an opaque
+process crash; the running application exposes the failed TimingNode and its diagnostic
+problem through normal status interfaces.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id4">
+<h3>Development, engineering and system testing<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<div class="need_container docutils container" id="SNCB-3ceea46a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-009">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Exercise the registration system through the Engineering Client</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-009" title="UC-009">UC-009</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-003" title="UC-009">IF03-REQ-003</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-012" title="UC-009">IF03-REQ-012</a>, <a class="reference internal" href="32-03-ISD-application-control-status.html#IF03-REQ-013" title="UC-009">IF03-REQ-013</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-020" title="UC-009">SI01-REQ-020</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-021" title="UC-009">SI01-REQ-021</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-022" title="UC-009">SI01-REQ-022</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-023" title="UC-009">SI01-REQ-023</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-024" title="UC-009">SI01-REQ-024</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-025" title="UC-009">SI01-REQ-025</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-026" title="UC-009">SI01-REQ-026</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-040" title="UC-009">SI01-REQ-040</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-041" title="UC-009">SI01-REQ-041</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-042" title="UC-009">SI01-REQ-042</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-043" title="UC-009">SI01-REQ-043</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-044" title="UC-009">SI01-REQ-044</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-001" title="UC-009">SI02-REQ-001</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-002" title="UC-009">SI02-REQ-002</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-003" title="UC-009">SI02-REQ-003</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-004" title="UC-009">SI02-REQ-004</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-005" title="UC-009">SI02-REQ-005</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-006" title="UC-009">SI02-REQ-006</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-007" title="UC-009">SI02-REQ-007</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-008" title="UC-009">SI02-REQ-008</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> provide the SI-02 Engineering Desktop Client for inspecting and exercising
+public registration-system behaviour during development, integration, commissioning and system test.</p>
+<p><strong>Primary actor:</strong> developer, integration/commissioning engineer or system tester.</p>
+<p><strong>Preconditions:</strong> the registration system exposes the relevant public interfaces,
+or the client can make their unavailability visible. Optional engineering controls
+require an explicitly advertised <strong>supported and enabled</strong> capability.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The Engineering Client connects to the registration system through its public interfaces.</p></li>
+<li><p>It shows build/version identity, connection state, the configured source identity, current <code class="docutils literal notranslate"><span class="pre">LocationId</span></code> if any, and <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>/<code class="docutils literal notranslate"><span class="pre">CLOSED</span></code> state.</p></li>
+<li><p>While registration is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>, the developer may set or change the operational location through the public command boundary.</p></li>
+<li><p>The developer may request <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> and <code class="docutils literal notranslate"><span class="pre">CLOSE</span></code>; invalid lifecycle/location combinations remain explicit.</p></li>
+<li><p>When direct-registration simulation is supported and enabled, the developer may submit an already-accepted semantic participant registration, with a deterministic observation time when supported.</p></li>
+<li><p>The registration system applies the same registration operation used after normal antenna/filtering acceptance and supplies its own source identity, active location and next source sequence.</p></li>
+<li><p>The client shows the command outcome separately from the resulting TimingData/history and live update.</p></li>
+<li><p>On disconnect the client marks cached information stale. After reconnect it rebuilds current state and registration data before treating subsequent updates as live.</p></li>
+<li><p>The Engineering Client is SI-02 and remains a client of SI-01; it does not become another owner of registration/domain state.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>a required public interface is unavailable or the live update connection is lost;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OPEN</span></code> is requested without a valid location;</p></li>
+<li><p>a location change is requested while registration is <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>;</p></li>
+<li><p>direct registration is requested while registration is <code class="docutils literal notranslate"><span class="pre">CLOSED</span></code>;</p></li>
+<li><p>the engineering capability is unsupported/disabled or semantic input is invalid;</p></li>
+<li><p>a command was submitted but its resulting state cannot yet be confirmed after connection loss.</p></li>
+</ul>
+<p><strong>Observable result:</strong> the Engineering Client can demonstrate
+<code class="docutils literal notranslate"><span class="pre">location</span> <span class="pre">-&gt;</span> <span class="pre">open</span> <span class="pre">-&gt;</span> <span class="pre">accepted</span> <span class="pre">registration</span> <span class="pre">-&gt;</span> <span class="pre">observable</span> <span class="pre">TimingData</span> <span class="pre">-&gt;</span> <span class="pre">close</span></code>
+through public boundaries without RFID hardware, filtering or a real backoffice.</p>
+<p>A separate lightweight browser test client is not part of this slice. Broader
+upstream/reference-data simulation is deferred to a later increment.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-367d1fcc">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-022">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Inspect registration state and history with the Engineering Client</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-022" title="UC-022">UC-022</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-004" title="UC-022">SI02-REQ-004</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-005" title="UC-022">SI02-REQ-005</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-006" title="UC-022">SI02-REQ-006</a>, <a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-007" title="UC-022">SI02-REQ-007</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> let an engineer inspect the operational state and recorded registrations of a running registration cabinet without changing its registration state.</p>
+<p><strong>Primary actor:</strong> engineer or developer.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the Engineering Client is available on a workstation;</p></li>
+<li><p>the workstation can reach the registration cabinet over the configured network;</p></li>
+<li><p>the engineer knows which cabinet to inspect.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The engineer selects the registration cabinet in the Engineering Client and connects.</p></li>
+<li><p>The client shows which cabinet is connected and whether its information is current.</p></li>
+<li><p>The engineer inspects the registration point’s location, OPEN/CLOSED state and reported errors.</p></li>
+<li><p>The engineer examines the recorded registration history and newly arriving registrations.</p></li>
+<li><p>The engineer can distinguish previously recorded registrations from newly received ones.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>the cabinet is unreachable or rejects the connection;</p></li>
+<li><p>the connection is lost and previously displayed data is marked not current;</p></li>
+<li><p>after reconnecting, the client retrieves current status and relevant history before showing a live view.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> the engineer understands the reported state and registration history without changing the cabinet’s operation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-a14fc855">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-023">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Exercise registration controls with the Engineering Client</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-023" title="UC-023">UC-023</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html#SI02-REQ-008" title="UC-023">SI02-REQ-008</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> let a developer or tester exercise registration-point controls and inspect their results without using an iPad.</p>
+<p><strong>Primary actor:</strong> developer, integration engineer or system tester.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the Engineering Client is connected to the intended registration cabinet;</p></li>
+<li><p>the necessary engineering controls are available;</p></li>
+<li><p>test operation is permitted for the selected cabinet.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The tester selects the intended registration point and inspects its current state.</p></li>
+<li><p>When the point is CLOSED, the tester selects a location and requests Open.</p></li>
+<li><p>The client reports whether the request succeeded and shows the resulting OPEN state and location.</p></li>
+<li><p>The tester submits a supported test registration and inspects its committed history entry.</p></li>
+<li><p>The tester requests Close and checks the resulting CLOSED state.</p></li>
+<li><p>The tester checks the observed outcomes against the expected registration behaviour.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>required controls are unsupported, unavailable or disabled;</p></li>
+<li><p>a request is rejected because the location or current operating state is invalid;</p></li>
+<li><p>the selected registration point is not the intended test target;</p></li>
+<li><p>after an uncertain command outcome or connection loss, the tester reconnects and observes current state/history before retrying.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> the tester can demonstrate and inspect the registration sequence without relying on a browser-based operator session.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-cfb77a14">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-024">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Simulate participant passage and device failure for verification</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-024" title="UC-024">UC-024</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-066" title="UC-024">SI01-REQ-066</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-067" title="UC-024">SI01-REQ-067</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> let a tester exercise realistic participant passages and equipment interruptions without needing physical RFID tags and devices.</p>
+<p><strong>Primary actor:</strong> developer or system tester.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>a test registration cabinet is configured with supported simulation equipment;</p></li>
+<li><p>the selected registration point can be opened for test registration.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The tester opens the selected registration point for a test location.</p></li>
+<li><p>The tester selects a participant and runs a supported simulated RFID passage.</p></li>
+<li><p>The registration system processes the simulated observation through its normal registration behaviour.</p></li>
+<li><p>The tester checks the resulting registration and recorded time using the Engineering Client.</p></li>
+<li><p>The tester simulates a device interruption or error and observes how the registration system reports it.</p></li>
+<li><p>The tester restores the simulated device and checks whether subsequent observations can be accepted.</p></li>
+</ol>
+<p><strong>Alternative/failure flows:</strong></p>
+<ul class="simple">
+<li><p>the selected simulation capability is unavailable;</p></li>
+<li><p>the registration point is CLOSED or reports an error preventing acceptance;</p></li>
+<li><p>the simulated passage is filtered or rejected and no successful registration is reported;</p></li>
+<li><p>the device cannot recover and its failure remains visible.</p></li>
+</ul>
+<p><strong>Postcondition:</strong> the tester can assess registration and recovery behaviour using observable results rather than internal implementation state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-41d55350">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-014">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Run multiple TimingNodes in one process</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-014" title="UC-014">UC-014</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-003" title="UC-014">SI01-REQ-003</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> host multiple independently addressed TimingNodes
+while preserving independent lifecycle, state and
+<code class="docutils literal notranslate"><span class="pre">TimingNodeId</span></code>-scoped streams.</p>
+<p><strong>Primary actor:</strong> configuration/test/operator tooling.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>An engineer configures multiple virtual registration points for one test setup.</p></li>
+<li><p>Each registration point can be identified and operated independently.</p></li>
+<li><p>Recorded registrations and operational state remain associated with the correct point.</p></li>
+<li><p>An action addressed to one point does not change a different point.</p></li>
+<li><p>The engineer can inspect each point separately.</p></li>
+</ol>
+<p><strong>Observable result:</strong> two synthetic TimingNodes have separately inspectable
+lifecycle, reference/next-up state and independently ordered TimingData. Any
+intentional fan-out from one observation to several streams is a separately
+specified mapping rule, not accidental cross-instance sharing.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-13c00bc6">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-015">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Simulate a complete field toward backoffice</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-015" title="UC-015">UC-015</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-003" title="UC-015">SI01-REQ-003</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-031" title="UC-015">SI01-REQ-031</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-066" title="UC-015">SI01-REQ-066</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> exercise realistic multi-TimingNode/multi-source behaviour from one test application.</p>
+<p><strong>Primary actor:</strong> automated/system test tooling.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>A system tester sets up a simulated field with multiple registration points and devices.</p></li>
+<li><p>The test equipment simulates participant observations, equipment faults and communication interruptions.</p></li>
+<li><p>The simulated registration points operate independently and send results to a backoffice test system.</p></li>
+<li><p>The tester checks the recorded results, ordering, isolation, recovery and visible status.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-4e8e7701">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-016">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Replace real devices with controllable stubs</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-016" title="UC-016">UC-016</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-031" title="UC-016">SI01-REQ-031</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-067" title="UC-016">SI01-REQ-067</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> make hardware-dependent application behaviour testable without duplicating business logic.</p>
+<p><strong>Primary actor:</strong> test tooling.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>A tester starts the registration system with simulated devices in place of physical devices.</p></li>
+<li><p>The tester simulates participant observations, connection losses, faults or recovery.</p></li>
+<li><p>The registration system responds as it would to equivalent real-device events.</p></li>
+<li><p>The tester observes the results using the normal available system controls and outputs.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-186f25a6">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-017">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Use an alternative backoffice transport for loop testing</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-017" title="UC-017">UC-017</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-068" title="UC-017">SI01-REQ-068</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> test real process/network communication and <code class="docutils literal notranslate"><span class="pre">TimingNodeId</span></code>-scoped stream routing without RabbitMQ.</p>
+<p><strong>Primary actors:</strong> backoffice simulator and test tooling.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>A tester connects a backoffice simulator to a registration cabinet over an independent network connection.</p></li>
+<li><p>The simulator exchanges registrations and reference updates with the cabinet.</p></li>
+<li><p>Several registration points can be tested in the same setup.</p></li>
+<li><p>The tester interrupts and restores communication and checks that registration data stays correct.</p></li>
+<li><p>The test can be conducted without the production message broker.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-a8916e6b">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-018">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Verify production-shaped messaging through RabbitMQ</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-018" title="UC-018">UC-018</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-069" title="UC-018">SI01-REQ-069</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> verify broker/client lifecycle and source-specific messaging using a real disposable broker.</p>
+<p><strong>Primary actors:</strong> automated test tooling and SI-01 RabbitMQ adapter.</p>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>A system tester runs a disposable message broker for a representative backoffice connection.</p></li>
+<li><p>The registration system exchanges test data with backoffice through the broker.</p></li>
+<li><p>The tester verifies that data reaches the correct registration point and remains identifiable.</p></li>
+<li><p>The broker is interrupted and restarted.</p></li>
+<li><p>The tester checks reconnection and delivery of registrations recorded during the outage.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-79bd75a7">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_uc docutils align-default" id="UC-019">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Use Case</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Handle provider-specific input classification</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#UC-019" title="UC-019">UC-019</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">specified by: <span class="specifies"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-070" title="UC-019">SI01-REQ-070</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p><strong>Goal:</strong> preserve a provider-declared semantic input classification when the
+public application contract needs distinct processing, without publishing
+provider-private source encoding or mapping rules.</p>
+<p><strong>Primary actors:</strong> input subsystem and operator.</p>
+<p><strong>Preconditions:</strong></p>
+<ul class="simple">
+<li><p>the selected provider has decoded the private/source representation;</p></li>
+<li><p>any semantic classification exposed to the application is part of that
+provider’s public contract.</p></li>
+</ul>
+<p><strong>Main flow:</strong></p>
+<ol class="arabic simple">
+<li><p>The input adapter receives a decoded semantic observation from the selected provider.</p></li>
+<li><p>Provider-private codes remain behind the provider boundary.</p></li>
+<li><p>SI-01 preserves any public semantic classification required by application policy.</p></li>
+<li><p>The normal TimingNode path validates and processes the resulting semantic input.</p></li>
+<li><p>Any committed TimingData record uses only the public canonical TimingData fields.</p></li>
+</ol>
+<p><strong>Behaviour still to define:</strong></p>
+<ul class="simple">
+<li><p>which provider-declared semantic classifications, if any, require distinct public application behaviour;</p></li>
+<li><p>which lifecycle/configuration policies apply to such classifications;</p></li>
+<li><p>what operator-visible diagnostics are required.</p></li>
+</ul>
+<p>Concrete production encodings, private mapping tables and deployment-specific
+categories are outside this public use case.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="cross-cutting-alternative-failure-scenarios">
+<h2>Cross-cutting alternative/failure scenarios<a class="headerlink" href="#cross-cutting-alternative-failure-scenarios" title="Link to this heading">¶</a></h2>
+<p>The following scenarios should be associated with applicable use cases rather than becoming isolated implementation details:</p>
+<ul class="simple">
+<li><p>RFID power/boot/heartbeat failure;</p></li>
+<li><p>invalid/decryption/filtering failure;</p></li>
+<li><p>missing/stale reference data;</p></li>
+<li><p>source-specific input rejected by the selected provider/policy;</p></li>
+<li><p>CAN device disappearance;</p></li>
+<li><p>passive display reset/reconnect;</p></li>
+<li><p>smart-display reconnect;</p></li>
+<li><p>local LAN versus internet versus backoffice loss;</p></li>
+<li><p>source persistence/backup failure;</p></li>
+<li><p>process restart after committed events;</p></li>
+<li><p>source sequence continuity/gap detection;</p></li>
+<li><p>operating-system wall-clock correction forwards or backwards while observations are being captured;</p></li>
+<li><p>local daylight-saving-time transition or other local-time ambiguity;</p></li>
+<li><p>queue pressure/backpressure;</p></li>
+<li><p>GUI/test-client disconnect/stale state;</p></li>
+<li><p>socket transport disconnect/reconnect;</p></li>
+<li><p>RabbitMQ broker/channel/consumer recovery.</p></li>
+</ul>
+</section>
+<section id="traceability-direction">
+<h2>Traceability direction<a class="headerlink" href="#traceability-direction" title="Link to this heading">¶</a></h2>
+<p>When requirements are promoted, prefer explicit references such as:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>UC-003
+  -&gt; SYS-REG-xxx
+  -&gt; ISD-... where external behaviour applies
+  -&gt; SI01-REQ-...
+  -&gt; SDD registration/RFID/`TimingNodeId`-routing elements
+  -&gt; VC-... / ST-1, ST-2, ST-3, HIL evidence
+</pre></div>
+</div>
+<p>This allows one operational goal to remain visible even when implementation responsibilities are distributed over several software items/components.</p>
+</section>
+<section id="open-use-case-questions">
+<h2>Open use-case questions<a class="headerlink" href="#open-use-case-questions" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Which use cases are required during normal operation versus maintenance/service-only operation?</p></li>
+<li><p>What exact preconditions are required before a TimingNode may be opened?</p></li>
+<li><p>Which subsystem failures should block <code class="docutils literal notranslate"><span class="pre">OPEN</span></code>, and which should only mark the instance degraded?</p></li>
+<li><p>Which operational events besides <code class="docutils literal notranslate"><span class="pre">OPEN</span></code> must become registration-stream records?</p></li>
+<li><p>What operator roles/authorisation distinctions will exist for local, desktop and web clients?</p></li>
+<li><p>Which reference-data updates are automatically accepted versus requiring operator acknowledgement?</p></li>
+<li><p>What exact local behaviour is required if reference data is stale but backoffice is unavailable?</p></li>
+<li><p>Which configured mapping cases can intentionally create records in multiple virtual/<code class="docutils literal notranslate"><span class="pre">TimingNodeId</span></code>-scoped streams from one accepted RFID event?</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">System use cases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terms-and-abbreviations">Terms and abbreviations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-case-format">Use-case format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-case-catalogue">Use-case catalogue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#detailed-use-cases">Detailed use cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cross-cutting-alternative-failure-scenarios">Cross-cutting alternative/failure scenarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#traceability-direction">Traceability direction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-use-case-questions">Open use-case questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html">Engineering Desktop Client Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="43-01-SDD-02-java-component-design.html">Java component, package and artifact detailed design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-04-ISD-web-interface.html">Web Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33-05-IDD-timingdata-interchange.html">TimingData Interchange Interface Design Description (IDD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html">Timing Application Verification Test Specification (VTS)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../index.html" title="previous chapter">Migration 013 engineering traceability</a></li>
+      <li>Next: <a href="41-01-SSD-timing-application-specification-document.html" title="next chapter">Timing Application Specification Document (SSD)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/30-UC-system-use-cases.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

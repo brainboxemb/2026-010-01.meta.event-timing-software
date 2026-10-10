@@ -1,0 +1,73 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="engineering-client-api-first" name="Figure SDE03-05 — API-first Development Client workbench">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="shell" value="&lt;b&gt;Development Client&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="30" y="80" width="1300" height="845" as="geometry" />
+        </mxCell>
+        <mxCell id="target" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;Target&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;127.0.0.1  |  editable host/IP&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="55" y="118" width="265" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="api-connection" value="API :8081&lt;br&gt;CHECK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#5b8f5a;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="335" y="121" width="145" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="events-connection" value="Events :eventPort&lt;br&gt;CONNECTED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#5b8f5a;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="490" y="121" width="165" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="terminal-connection" value="Terminal :shellPort&lt;br&gt;CONNECT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f4;strokeColor=#5f6368;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="665" y="121" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="device-log-connection" value="Device log :logPort&lt;br&gt;CONNECT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f4;strokeColor=#5f6368;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="835" y="121" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="apply-target" value="Apply target" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f4;strokeColor=#5f6368;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="1020" y="121" width="135" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="client-log-indicator" value="Client log&lt;br&gt;ACTIVE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#5b8f5a;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=50;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-status">
+          <mxGeometry x="1165" y="121" width="135" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="tabs" value="&lt;b&gt;API&lt;/b&gt; &amp;nbsp; | &amp;nbsp; Events &amp;nbsp; | &amp;nbsp; Device Log &amp;nbsp; | &amp;nbsp; Client Log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=middle;align=center;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-tabs">
+          <mxGeometry x="55" y="180" width="1245" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-view-state" value="Timing view&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;LIVE  |  Node A  |  State OPEN  |  Location 24  |  Sync view&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#5b8f5a;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=50;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-status">
+          <mxGeometry x="55" y="232" width="1245" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="input-tabs" value="&lt;b&gt;TimingNode&lt;/b&gt; &amp;nbsp; | &amp;nbsp; Registration &amp;nbsp; | &amp;nbsp; Simulation &amp;nbsp; | &amp;nbsp; Terminal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=middle;align=center;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-tabs">
+          <mxGeometry x="55" y="292" width="615" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="location" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;LocationId&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;24&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="80" y="350" width="150" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="open" value="Open&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;send request&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f4;strokeColor=#5f6368;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="245" y="359" width="90" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="close" value="Close&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;send request&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f4;strokeColor=#5f6368;fontFamily=Helvetica;fontSize=14;rounded=1;arcSize=18;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1" data-notation="wireframe-button">
+          <mxGeometry x="345" y="359" width="90" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="last-operation" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;Last API operation&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;seq 1&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="80" y="420" width="555" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="api-summary" value="&lt;b&gt;API / application identity&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;application  |  version  |  API version  |  Version  |  Status&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="685" y="292" width="615" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="interpreted" value="&lt;b&gt;Registrations&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;Interpreted view — Time | Type | TeamID | Code | action&lt;/span&gt;&lt;br&gt;Time        | Type | TeamID | Code |&lt;br&gt;12:00:00.25 | AUTO | 0001   |      | [trash]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-table">
+          <mxGeometry x="685" y="376" width="615" height="171" as="geometry" />
+        </mxCell>
+        <mxCell id="device-log" value="&lt;b&gt;Device Log&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;Live SI-01 diagnostics&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="55" y="565" width="615" height="142" as="geometry" />
+        </mxCell>
+        <mxCell id="client-log" value="&lt;b&gt;Client Log&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;Development Client diagnostics&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-panel">
+          <mxGeometry x="55" y="719" width="615" height="142" as="geometry" />
+        </mxCell>
+        <mxCell id="history" value="&lt;b&gt;LogBook / committed TimingData&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;Immutable technical/audit view; raw canonical profile values&lt;/span&gt;&lt;br&gt;Seq | Type     | Code | Location | Registration | Effective&lt;br&gt;1   | AUTO_REG | ADD  | 24       | RT-A-0001    | 2026-10-01T10:00:00.25Z" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=8;spacingLeft=8;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-table">
+          <mxGeometry x="685" y="565" width="615" height="296" as="geometry" />
+        </mxCell>
+        <mxCell id="raw-response" value="&lt;div style=&quot;text-align:left;font-size:12px&quot;&gt;Raw response / selected record&lt;/div&gt;&lt;div style=&quot;text-align:left;margin:7px 6px 0 6px;padding:5px;border:1px solid #777777;background:#ffffff&quot;&gt;Collapsed by default; complete API JSON remains available for diagnosis.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;rounded=0;verticalAlign=top;align=left;spacingTop=5;spacingLeft=6;fontStyle=0;" vertex="1" parent="1" data-notation="wireframe-input">
+          <mxGeometry x="55" y="875" width="1245" height="36" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

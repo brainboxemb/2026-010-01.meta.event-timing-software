@@ -1,0 +1,40 @@
+roadmap:
+  title: Software Implementation Planning — overview
+  subtitle: Planning basis, reading guide and roadmap logic
+  items:
+  - id: plan
+    title: Planning basis
+    sections:
+    - heading: PLAN
+      bullets:
+      - 'TOTAL: orig ~59d · forecast ~55.5d'
+      - 'PROGRESS: spent ~15.5d · rem ~40d'
+      - 'Activity snapshot: ~124.1h through 2 Oct 2026'
+      - 'Cadence: ~1d/week'
+      - 'Reserve: +25%'
+  - id: guide
+    title: How to read the roadmap
+    sections:
+    - heading: READING GUIDE
+      bullets:
+      - RESULT is the capability the step is intended to leave behind.
+      - DEMO is the practical end demonstration for the step.
+      - Document status shows expected maturity of supporting engineering documents.
+    - heading: ROADMAP LOGIC
+      bullets:
+      - Steps 1–3 establish the engineering and application shell.
+      - Steps 4–7 add local registration, simulated input, the operator GUI and backoffice
+        integration.
+      - Steps 8–11 move to the target, real devices and an integrated field proof.
+  - id: terms
+    title: Terms
+    sections:
+    - heading: TERMS
+      bullets:
+      - SI-01 — Timing Point Application
+      - SI-02 — Engineering Desktop Client
+      - TimingNode — Logical timing unit with its own identity and state
+      - ST-1 — Application black-box test profile
+      - OTS — Off-the-shelf hardware
+      - O/W/R/A — Document maturity — Outline / Working / Review / Accepted
+      - R-60 — Review maturity; about 60% of expected document scope
