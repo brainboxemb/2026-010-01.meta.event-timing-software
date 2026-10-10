@@ -270,12 +270,26 @@ Request:
 
 ```json
 {
-  "id": "N0001",
-  "time": "2026-10-01T12:00:00.000000000Z"
+  "id": "RT-A-0001"
 }
 ```
 
 The body `id` is the resolved public RegistrationId. It is not a tag value.
+
+`time` is optional. If absent, the addressed TimingNode captures the effective
+time using its TimingSystem's composed `TimeSource` **during command execution**.
+For deterministic verification or replay, the client may instead provide:
+
+```json
+{
+  "id": "RT-A-0001",
+  "time": "2026-10-01T12:00:00Z"
+}
+```
+
+The direct API path is recorded with short provenance `tagSrc: API`; the
+effective time is recorded as `timeSrc: NODE` (implicit) or `timeSrc: API`
+(explicit). These are LogBook metadata values and do not replace `time`.
 
 Successful response:
 
@@ -289,8 +303,8 @@ The operation is available only when
 `DIRECT_REGISTRATION_SIMULATION` is supported and enabled.
 
 This development operation represents the automatic-registration `ADD` action.
-The presentation-facing application boundary receives that action together with
-`registrationId` and `time`. It starts **after** antenna/tag interpretation and
+The presentation-facing application boundary receives the action together with
+`registrationId` and optional `time`. It starts **after** antenna/tag interpretation and
 therefore does not exercise SimulatedAntenna, AntennaManager or TagProcessor.
 Registration REV uses IF03-OP-011 and is not inferred from this ADD-only
 engineering request.

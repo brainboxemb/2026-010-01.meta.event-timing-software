@@ -208,15 +208,22 @@ Inputs:
 - addressed `TimingNodeId`;
 - automatic-registration action;
 - resolved `RegistrationId`;
-- accepted `time`.
+- optional accepted `time` (explicit effective timestamp for replay).
 
 The current engineering capability supports action `ADD`. Registration revoke is a
 normal node-scoped operation defined separately by IF03-OP-011; it is not routed through
 this engineering-only simulation endpoint.
 
+If `time` is omitted, the owning TimingNode captures the effective registration
+time from its TimingSystem's composed `TimeSource` when processing the command,
+not from the presentation adapter clock. With an explicit `time`, that
+timestamp is preserved as the effective registration time. The two modes are
+distinguished in the LogBook audit metadata.
+
 SI-01 supplies its own source identity, active LocationId, next source sequence and any
 other TimingNode-owned commit context. The operation uses the same accepted-registration
-path used after normal input interpretation/filtering.
+commit path used after normal input interpretation/filtering. A real antenna
+observation retains its observation time rather than substituting the node clock.
 
 The operation is available only when its advertised capability is enabled.
 
@@ -525,8 +532,11 @@ engineering commands are supported and enabled.
 :refines: SI01-REQ-041  
 
 When its advertised capability is enabled, IF-03 shall provide IF03-OP-007 using an
-explicit supported automatic-registration action, resolved RegistrationId and accepted
-time while leaving TimingNode-owned commit context inside SI-01.
+explicit supported automatic-registration action and resolved RegistrationId,
+with optional effective time. If time is omitted, the addressed TimingNode shall
+use its composed TimeSource when executing the registration command; if supplied,
+the accepted time shall be used unchanged except for the profile's published
+timestamp precision. TimingNode-owned commit context remains inside SI-01.
 :::
 
 :::{ifreq} Committed LogBook query  

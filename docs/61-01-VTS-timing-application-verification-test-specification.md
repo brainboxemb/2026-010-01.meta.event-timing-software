@@ -423,10 +423,12 @@ LogBook files**, resolved from the `{NodeId}` path template.
 
 1. Start the packaged application and query IF-03 status: both nodes exist,
    initially `CLOSED`.
-2. Open node A at LocationId 24, add `RT-A-0001` and close A.
+2. Open node A at LocationId 24, add `RT-A-0001` **without API time**
+   and close A.
    Query A's LogBook: ordered OPEN, ADD, CLOSE at sequences 1..3.
 3. Before operating node B, query its LogBook: it remains empty.
-4. Open node B at LocationId 25, add `RT-A-0002` and close B. Query B's LogBook: its own sequences independently start at 1..3.
+4. Open node B at LocationId 25, add `RT-A-0002` **without API time**
+   and close B. Query B's LogBook: its own sequences independently start at 1..3.
 5. Stop SI-01 cleanly. Check that exactly the expected two distinct nonempty
    files exist, named for nodes A and B. Each file contains only its own
    NodeId, location and registration, with no records from the other node.
@@ -439,7 +441,9 @@ LogBook files**, resolved from the `{NodeId}` path template.
 - each node maintains its own sequence beginning at 1, without cross-node
   registrations or lifecycle records;
 - two physically different LogBooks exist and survive restart, with no
-  duplicated or lost records.
+  duplicated or lost records;
+- simulated ADD records use the node's TimeSource and retain
+  `tagSrc=API` / `timeSrc=NODE` after recovery.
 
 :::
 
@@ -470,9 +474,11 @@ TimingNode (A and B respectively), and persist committed TimingData in
 
 1. Start the packaged application and query IF-03 status: nodes A and B
    exist and are initially `CLOSED`.
-2. Open A at LocationId 24, add `RT-A-0001` and close A.
+2. Open A at LocationId 24, add `RT-A-0001` **without API time**
+   and close A.
    Verify B's LogBook remains empty.
-3. Open B at LocationId 25, add `RT-A-0002` and close B.
+3. Open B at LocationId 25, add `RT-A-0002` **without API time**
+   and close B.
    Independently query each LogBook; each has OPEN, ADD, CLOSE at sequences 1..3.
 4. Stop SI-01 cleanly and check both physical files. Their paths include the
    correct TimingSystemId/TimingNodeId pair and each file contains only records
@@ -485,7 +491,9 @@ TimingNode (A and B respectively), and persist committed TimingData in
 - both TimingSystems run in one SI-01 process with correct node addressing;
 - each TimingNode retains an independent ordered TimingData stream;
 - two physical LogBook files are created, isolated and recover independently;
-- neither system's records appear in the other system's LogBook.
+- neither system's records appear in the other system's LogBook;
+- simulated ADD records use each owning system's composed TimeSource and
+  retain `tagSrc=API` / `timeSrc=NODE` after recovery.
 
 :::
 

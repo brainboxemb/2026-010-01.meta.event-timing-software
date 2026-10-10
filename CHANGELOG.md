@@ -6,6 +6,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make IF-03 direct automatic-registration simulation `time` optional (omission uses the addressed node's composed TimeSource); record compact AUTO_REG audit provenance `tagSrc`/`timeSrc` in default IF-05 v1 JSONL, without invalidating older records lacking the optional pair. Align VTS and interface designs.
+
+
 - Align ST-1 VTS example RegistrationIds with shared test-data convention (`RT-A-NNNN`) and explicitly distinguish normal-registration prefix from TimingNode ID; IF-03 cases do not claim TagId or TeamId mapping coverage.
 
 
