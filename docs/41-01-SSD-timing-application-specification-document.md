@@ -68,57 +68,208 @@ SI01-REQ-<number>
 
 Requirement identifiers in this document remain stable. Add new requirements under new identifiers; do not renumber existing requirements solely for document neatness.
 
-### SI-01 application requirements
+### SI-01 requirements
 
-#### Process lifecycle and configuration
+The functional requirements are grouped by externally observable registration
+system behaviour, starting with the operator's OPEN and CLOSE operations.
+Technical requirements follow and state cross-cutting software constraints.
+Grouping is for navigation only: the stable requirement IDs and their authored
+Need relationships define identity and traceability. Technical requirements
+do not need an artificial use-case link when their authority is a software
+configuration, interface or platform constraint.
 
-:::{req} Start from external configuration  
-:id: SI01-REQ-001  
+### Functional requirements
+
+#### Registration operation
+
+:::{req} Operational location and lifecycle  
+:id: SI01-REQ-040  
 :status: R  
+:specifies: UC-001, UC-009  
 
-SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
+An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
+When the command is accepted, SI-01 shall apply that LocationId and the
+CLOSED-to-OPEN transition as one operation. The active LocationId shall remain
+unchanged while the TimingNode is OPEN.
 :::
 
-:::{req} Clean process shutdown  
-:id: SI01-REQ-002  
-:status: R  
+:::{req} Close registration point  
+:id: SI01-REQ-072  
+:status: D  
+:specifies: UC-002  
+:depends_on: SI01-REQ-024, SI01-REQ-046  
 
-SI-01 shall provide a controlled shutdown operation that can terminate the running
-application without requiring operating-system-level forced process termination.
+For an OPEN TimingNode, SI-01 shall provide a CLOSE operation that stops the
+acceptance of new participant registrations and changes its lifecycle to
+`CLOSED` in the same ordered operation. SI-01 shall not report a successful
+close transition unless the required lifecycle record is committed successfully.
+Previously committed registrations shall remain unchanged. A close request
+that cannot be applied shall have an explicit non-success or outcome-unknown
+result rather than being presented as `CLOSED` without confirmation.
 :::
 
-:::{req} Configured TimingNode availability  
-:id: SI01-REQ-003  
-:status: R  
-:specifies: UC-014, UC-015  
+:::{req} Reject opening when operational errors are blocking  
+:id: SI01-REQ-074  
+:status: D  
+:specifies: UC-001  
+:depends_on: SI01-REQ-024, SI01-REQ-049, SI01-REQ-052  
 
-SI-01 shall support configuration of one or more `TimingNode` instances, each
-identified by a stable `TimingNodeId`.
+When a detected operational error prevents safe registration at the selected
+registration point, SI-01 shall reject an OPEN request and make the relevant
+problem and resulting state observable. A non-blocking problem may be reported
+without rejecting OPEN; the distinction shall follow the registration-point
+operational policy rather than treating every diagnostic warning as blocking.
+An unsuccessful OPEN shall not be reported as an OPEN transition.
 :::
 
-IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
+:::{req} Registration lifecycle independent of operator sessions  
+:id: SI01-REQ-073  
+:status: D  
+:specifies: UC-001, UC-002  
+:depends_on: SI01-REQ-024  
 
-#### Build and version identity
-
-:::{req} Single application build identity  
-:id: SI01-REQ-010  
-:status: R  
-
-A running SI-01 process shall expose one build/version identity that identifies
-the application artifact being executed.
+Connecting, disconnecting or reconnecting an operator Web client shall not by
+itself open, close, or change the active location of a registration point.
+SI-01 shall retain the authoritative lifecycle state independently of the
+browser session and expose the actual current state after reconnection.
 :::
 
-:::{req} Consistent identity across interfaces  
-:id: SI01-REQ-011  
+:::{req} Lifecycle command outcome  
+:id: SI01-REQ-026  
 :status: R  
+:specifies: UC-001, UC-002, UC-009  
+:depends_on: SI01-REQ-024, SI01-REQ-040  
 
-Every supported SI-01 interface that exposes build/version identity shall report
-the same build identity for the same running process.
+A lifecycle/location command accepted by SI-01 shall return an explicit semantic
+outcome: applied, rejected/invalid, unavailable, or outcome unknown when the
+request may have crossed a presentation boundary but current state cannot yet
+confirm its effect. Command outcome shall remain distinct from the subsequently
+observed TimingNode state.
 :::
 
-The semantic build identity is defined by IF-03. The current v1 wire fields are defined by `33-03-IDD-api-http-websocket.md`.
+#### Participant registration
 
-#### Status
+:::{req} Accepted registration commit semantics  
+:id: SI01-REQ-041  
+:status: R  
+:specifies: UC-003, UC-009, UC-021  
+
+For an already-accepted registration, SI-01 shall commit TimingData using the
+supplied supported registration action, resolved `RegistrationId` and accepted
+`time`, together with the TimingNode's source identity, active `LocationId` and
+next committed sequence. For automatic registration SI-01 shall support `ADD`
+and shall reject actions whose TimingData semantics are not defined.
+:::
+
+:::{req} Operator manual registration  
+:id: SI01-REQ-071  
+:status: D  
+:specifies: UC-021  
+:depends_on: SI01-REQ-041, SI01-REQ-042  
+
+For an OPEN TimingNode, SI-01 shall accept a normal manual registration with a
+resolved RegistrationId, effective registration time and client-selected
+AUTO/MAN time-source classification. SI-01 shall preserve that effective time,
+use the currently active location and commit a manual-registration ADD through
+the normal registration path. A closed TimingNode or invalid input shall not
+produce a successful registration.
+:::
+
+:::{req} Committed registration observability  
+:id: SI01-REQ-042  
+:status: R  
+:specifies: UC-003, UC-009, UC-011, UC-021  
+
+SI-01 shall make committed registration TimingData observable through current
+history and live post-commit notification without exposing uncommitted records
+as committed state.
+:::
+
+:::{req} Use maximum-RSSI tag observation for registration  
+:id: SI01-REQ-050  
+:status: D  
+:specifies: UC-003  
+
+SI-01 shall use the tag observation with the maximum RSSI as the registration observation
+and shall finalize that selection after a configured timeout without a new observation.
+:::
+
+For this requirement, the registration time is the original timestamp of the selected
+observation. The timeout closes the observation group; it does not replace the selected
+maximum-RSSI observation with the last observation. A maximum group duration, equal-RSSI
+tie handling and implementation scheduling belong to the detailed design.
+
+This requirement does not introduce a minimum-RSSI rejection threshold.
+
+:::{req} Keep local registration independent from presentation, logging and backoffice delivery  
+:id: SI01-REQ-051  
+:status: D  
+:specifies: UC-003, UC-012  
+
+SI-01 shall not require presentation clients, diagnostic logging or backoffice
+delivery for a local RFID registration to be accepted and committed. Failure or
+unavailability of those functions shall not by itself stop an operational TimingNode
+from accepting and committing local registrations.
+:::
+
+:::{req} Couple antenna operation to assigned TimingNode lifecycle  
+:id: SI01-REQ-053  
+:status: D  
+:specifies: UC-003  
+
+Within each TimingSystem, SI-01 shall request inventory from its AntennaManager
+while at least one of that system's TimingNodes is OPEN. It shall request inventory
+to stop when none is OPEN. The manager applies this shared demand to its entire
+antenna set, including internal multiplexing, power preparation and power-down.
+A prior diagnostic self-test FAIL or inventory failure shall not suppress a
+later new attempt.
+
+Antenna-to-TimingNode observation routing remains separate from this
+manager-wide inventory control. Individual antenna start/stop/cycle commands
+are not part of the current interface.
+:::
+
+:::{req} Multiplex mutually exclusive antenna inventory  
+:id: SI01-REQ-054  
+:status: D  
+:specifies: UC-003  
+
+For antennas configured in the same inventory mutual-exclusion group, SI-01 shall
+keep at most one group member inventorying at a time and shall rotate attempts using
+the configured inventory interval.
+
+If one member fails to prepare or start inventory, SI-01 shall record that failed
+attempt and may continue with another group member. The failed member shall remain
+eligible for a later explicit inventory attempt.
+:::
+
+:::{req} Preserve public provider semantic classification  
+:id: SI01-REQ-070  
+:status: D  
+:specifies: UC-019  
+
+When an input provider exposes a semantic classification as part of its public
+contract, SI-01 shall preserve that classification through application policy
+and normal TimingNode processing where required, while provider-private codes
+and mapping tables remain behind the provider boundary.
+:::
+
+#### Operational status and client continuity
+
+:::{req} Current TimingNode operational state  
+:id: SI01-REQ-024  
+:status: R  
+:specifies: UC-001, UC-002, UC-009, UC-020  
+
+For each configured TimingNode, SI-01 shall provide a queryable current
+operational state independently of presentation transport. That state shall
+contain at least:
+
+- the `TimingNodeId`;
+- the current operational `LocationId`, or no assigned location;
+- lifecycle state `CLOSED` or `OPEN`;
+- relevant explicit problem/error state.
+:::
 
 :::{req} Current application status snapshot  
 :id: SI01-REQ-020  
@@ -147,16 +298,6 @@ The current application status snapshot shall contain at least:
 
 The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
 
-:::{req} Equivalent status semantics across interfaces  
-:id: SI01-REQ-022  
-:status: R  
-:specifies: UC-001, UC-002, UC-009  
-
-For each application-status value exposed by more than one supported SI-01
-interface, those interfaces shall report the same semantic value for the same
-running application state. Transport-specific encoding may differ.
-:::
-
 :::{req} TimingNode operational state-change publication  
 :id: SI01-REQ-023  
 :status: R  
@@ -168,21 +309,6 @@ SI-01 shall make the corresponding state change available to supported
 presentation interfaces that provide live-state delivery. The application owns
 the semantic change; an individual interface owns only its transport-specific
 delivery.
-:::
-
-:::{req} Current TimingNode operational state  
-:id: SI01-REQ-024  
-:status: R  
-:specifies: UC-001, UC-002, UC-009, UC-020  
-
-For each configured TimingNode, SI-01 shall provide a queryable current
-operational state independently of presentation transport. That state shall
-contain at least:
-
-- the `TimingNodeId`;
-- the current operational `LocationId`, or no assigned location;
-- lifecycle state `CLOSED` or `OPEN`;
-- relevant explicit problem/error state.
 :::
 
 :::{req} Presentation current-state recovery  
@@ -198,120 +324,6 @@ state shall remain explicitly non-current rather than presenting cached state as
 live.
 :::
 
-#### Application boundary and testability
-
-:::{req} Lifecycle command outcome  
-:id: SI01-REQ-026  
-:status: R  
-:specifies: UC-001, UC-002, UC-009  
-:depends_on: SI01-REQ-024, SI01-REQ-040  
-
-A lifecycle/location command accepted by SI-01 shall return an explicit semantic
-outcome: applied, rejected/invalid, unavailable, or outcome unknown when the
-request may have crossed a presentation boundary but current state cannot yet
-confirm its effect. Command outcome shall remain distinct from the subsequently
-observed TimingNode state.
-:::
-
-:::{req} Equivalent command/query semantics across transports  
-:id: SI01-REQ-030  
-:status: R  
-
-For an SI-01 command or query exposed through more than one transport, the
-transport used shall not change its defined preconditions, effects, result
-semantics or failure semantics.
-:::
-
-:::{req} Externally testable executable  
-:id: SI01-REQ-031  
-:status: R  
-:specifies: UC-015, UC-016  
-
-SI-01 shall support system verification while running as a separate process
-through its public application interfaces, without requiring test-only mutation
-of internal application or domain state.
-:::
-
-:::{req} Safe default network exposure  
-:id: SI01-REQ-032  
-:status: R  
-
-Each IF-03 listener shall bind only to loopback interfaces by default. Binding
-an IF-03 listener to a non-loopback interface shall require explicit
-configuration.
-:::
-
-:::{req} Compatible IF-03 evolution  
-:id: SI01-REQ-033  
-:status: R  
-
-Compatible IF-03 additions shall preserve the meaning of existing operations and
-values. A change that breaks existing IF-03 semantics shall use a new major
-interface version or a separately specified migration contract.
-:::
-
-#### Registration operation
-
-:::{req} Operational location and lifecycle  
-:id: SI01-REQ-040  
-:status: R  
-:specifies: UC-001, UC-009  
-
-An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
-When the command is accepted, SI-01 shall apply that LocationId and the
-CLOSED-to-OPEN transition as one operation. The active LocationId shall remain
-unchanged while the TimingNode is OPEN.
-:::
-
-:::{req} Accepted registration commit semantics  
-:id: SI01-REQ-041  
-:status: R  
-:specifies: UC-003, UC-009, UC-021  
-
-For an already-accepted registration, SI-01 shall commit TimingData using the
-supplied supported registration action, resolved `RegistrationId` and accepted
-`time`, together with the TimingNode's source identity, active `LocationId` and
-next committed sequence. For automatic registration SI-01 shall support `ADD`
-and shall reject actions whose TimingData semantics are not defined.
-:::
-
-:::{req} Committed registration observability  
-:id: SI01-REQ-042  
-:status: R  
-:specifies: UC-003, UC-009, UC-011, UC-021  
-
-SI-01 shall make committed registration TimingData observable through current
-history and live post-commit notification without exposing uncommitted records
-as committed state.
-:::
-
-:::{req} Operator manual registration
-:id: SI01-REQ-071
-:status: D
-:specifies: UC-021
-:depends_on: SI01-REQ-041, SI01-REQ-042
-
-For an OPEN TimingNode, SI-01 shall accept a normal manual registration with a
-resolved RegistrationId, effective registration time and client-selected
-AUTO/MAN time-source classification. SI-01 shall preserve that effective time,
-use the currently active location and commit a manual-registration ADD through
-the normal registration path. A closed TimingNode or invalid input shall not
-produce a successful registration.
-:::
-
-:::{req} Gate development auto-registration by capability  
-:id: SI01-REQ-043  
-:status: R  
-:specifies: UC-009  
-
-The development auto-registration control shall be usable only when SI-01
-advertises the corresponding engineering capability as both supported and
-enabled. The control shall inject an already-accepted automatic registration at
-the registration boundary after antenna/tag processing. A client using this
-control shall not supply final TimingData, source sequence, active `LocationId`
-or source identity.
-:::
-
 :::{req} Reconnect rebuild before live presentation  
 :id: SI01-REQ-044  
 :status: R  
@@ -323,30 +335,112 @@ updates as a live view. Duplicate TimingData observed through history plus live
 delivery shall be identifiable by Node ID together with sequence number.
 :::
 
-:::{req} Reference TimingData representation support  
-:id: SI01-REQ-045  
-:status: D  
-:specifies: UC-011  
-:depends_on: IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007  
+#### Ready teams and displays
 
-SI-01 shall support the reference TimingData representation defined by
-`33-05-IDD-timingdata-interchange.md` for local persistence and engineering
-interchange. For every supported record type, encoding and decoding shall
-preserve the applicable IF-05 semantic values.
+:::{req} Traceable ready-team registry  
+:id: SI01-REQ-060  
+:status: D  
+:specifies: UC-005  
+
+SI-01 shall maintain the current prepare-team registry separately from participant
+TimingData. Accepted add/remove actions from keypad or operator input shall pass
+through the normal controlled TimingNode state-change path and shall remain
+traceable as ready-team history.
 :::
 
-:::{req} Write TimingData before commit completion  
-:id: SI01-REQ-046  
+:::{req} Drive passive CAN display from current application state  
+:id: SI01-REQ-061  
 :status: D  
-:specifies: UC-003, UC-012, UC-021  
+:specifies: UC-006  
+:depends_on: SI01-REQ-060  
 
-SI-01 shall successfully write one complete TimingData record to the configured
-local TimingData store before completing that TimingData commit. Only after
-that write succeeds may SI-01 add the record to committed LogBook state,
-publish a committed live event or report the commit as successful.
+For a configured passive CAN display, SI-01 shall derive the complete/current
+display state from authoritative application state and actively refresh the
+display after relevant state changes or device rediscovery. The passive display
+shall not be required to reconstruct domain history.
+:::
 
-If the write fails or remains incomplete, the commit shall fail and the record
-shall not be treated as committed.
+:::{req} Provide synchronisable data to smart displays  
+:id: SI01-REQ-062  
+:status: D  
+:specifies: UC-007  
+
+SI-01 shall make the current timing, ready-team and reference data required by a
+configured smart display available through a network-facing application
+boundary. A connecting or reconnecting smart display shall be able to obtain a
+complete current snapshot before relying on later incremental changes; rendering
+state remains owned by the smart display.
+:::
+
+#### Registration cabinet and backoffice
+
+:::{req} Apply TimingNode-scoped reference data from backoffice  
+:id: SI01-REQ-063  
+:status: D  
+:specifies: UC-010  
+
+SI-01 shall accept decoded semantic reference-data updates from a configured
+backoffice boundary, resolve the addressed TimingNode, validate the update and
+apply it only to that TimingNode's owning reference state. Accepted/rejected
+outcome and enough freshness/health state to diagnose synchronisation shall be
+observable.
+:::
+
+:::{req} Transport-independent outbound backoffice synchronisation  
+:id: SI01-REQ-064  
+:status: D  
+:specifies: UC-011  
+:depends_on: SI01-REQ-042, SI01-REQ-045  
+
+SI-01 shall expose committed TimingNode-scoped outbound data to configured
+backoffice connectors through transport-independent semantic messages while
+preserving source identity and source ordering. Concrete connector routing shall
+not redefine TimingNode identity or registration semantics.
+:::
+
+:::{req} Preserve pending outbound work across backoffice outage  
+:id: SI01-REQ-065  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-064  
+
+Loss of a configured backoffice transport shall not discard locally committed
+outbound work. After transport recovery, SI-01 shall resume pending
+synchronisation without inventing or reusing committed source sequence identity.
+:::
+
+#### Errors and recovery
+
+:::{req} Contain and expose antenna startup and runtime failure  
+:id: SI01-REQ-052  
+:status: D  
+:specifies: UC-003, UC-004  
+
+At application startup SI-01 shall attempt one self-test for every configured antenna.
+The PASS/FAIL result is diagnostic information only. A FAIL shall not by itself prevent
+a later initialization or inventory attempt for that antenna.
+
+Failure of one antenna operation shall not prevent independent operation or later
+attempts of other configured antennas. The latest failed operation shall remain visible
+in antenna status until a later attempt updates that status.
+:::
+
+:::{req} Allow antenna recovery without process restart  
+:id: SI01-REQ-055  
+:status: D  
+:specifies: UC-004  
+
+After a self-test, initialization or inventory attempt fails, SI-01 shall allow a
+later inventory demand to start a new preparation and inventory attempt without
+requiring SI-01 process restart.
+
+A later inventory demand is created at least when:
+- a mapped TimingNode changes from not requiring inventory to OPEN; or
+- an operator/API operation explicitly requests another inventory/start attempt.
+
+SI-01 shall not automatically loop retries solely because an attempt failed. A failed
+attempt shall not be marked applied. A later demand shall not be rejected solely because
+an earlier self-test or inventory attempt failed.
 :::
 
 :::{req} Restore committed TimingData after restart  
@@ -397,166 +491,29 @@ For the affected TimingNode, SI-01 shall:
 - expose the contained failure through the current application status snapshot.
 :::
 
-:::{req} Use maximum-RSSI tag observation for registration  
-:id: SI01-REQ-050  
-:status: D  
-:specifies: UC-003  
+#### Development, engineering and system testing
 
-SI-01 shall use the tag observation with the maximum RSSI as the registration observation
-and shall finalize that selection after a configured timeout without a new observation.
+:::{req} Gate development auto-registration by capability  
+:id: SI01-REQ-043  
+:status: R  
+:specifies: UC-009  
+
+The development auto-registration control shall be usable only when SI-01
+advertises the corresponding engineering capability as both supported and
+enabled. The control shall inject an already-accepted automatic registration at
+the registration boundary after antenna/tag processing. A client using this
+control shall not supply final TimingData, source sequence, active `LocationId`
+or source identity.
 :::
 
-For this requirement, the registration time is the original timestamp of the selected
-observation. The timeout closes the observation group; it does not replace the selected
-maximum-RSSI observation with the last observation. A maximum group duration, equal-RSSI
-tie handling and implementation scheduling belong to the detailed design.
+:::{req} Externally testable executable  
+:id: SI01-REQ-031  
+:status: R  
+:specifies: UC-015, UC-016  
 
-This requirement does not introduce a minimum-RSSI rejection threshold.
-
-:::{req} Keep local registration independent from presentation, logging and backoffice delivery  
-:id: SI01-REQ-051  
-:status: D  
-:specifies: UC-003, UC-012  
-
-SI-01 shall not require presentation clients, diagnostic logging or backoffice
-delivery for a local RFID registration to be accepted and committed. Failure or
-unavailability of those functions shall not by itself stop an operational TimingNode
-from accepting and committing local registrations.
-:::
-
-:::{req} Contain and expose antenna startup and runtime failure  
-:id: SI01-REQ-052  
-:status: D  
-:specifies: UC-003, UC-004  
-
-At application startup SI-01 shall attempt one self-test for every configured antenna.
-The PASS/FAIL result is diagnostic information only. A FAIL shall not by itself prevent
-a later initialization or inventory attempt for that antenna.
-
-Failure of one antenna operation shall not prevent independent operation or later
-attempts of other configured antennas. The latest failed operation shall remain visible
-in antenna status until a later attempt updates that status.
-:::
-
-:::{req} Couple antenna operation to assigned TimingNode lifecycle  
-:id: SI01-REQ-053  
-:status: D  
-:specifies: UC-003  
-
-Within each TimingSystem, SI-01 shall request inventory from its AntennaManager
-while at least one of that system's TimingNodes is OPEN. It shall request inventory
-to stop when none is OPEN. The manager applies this shared demand to its entire
-antenna set, including internal multiplexing, power preparation and power-down.
-A prior diagnostic self-test FAIL or inventory failure shall not suppress a
-later new attempt.
-
-Antenna-to-TimingNode observation routing remains separate from this
-manager-wide inventory control. Individual antenna start/stop/cycle commands
-are not part of the current interface.
-:::
-
-:::{req} Multiplex mutually exclusive antenna inventory  
-:id: SI01-REQ-054  
-:status: D  
-:specifies: UC-003  
-
-For antennas configured in the same inventory mutual-exclusion group, SI-01 shall
-keep at most one group member inventorying at a time and shall rotate attempts using
-the configured inventory interval.
-
-If one member fails to prepare or start inventory, SI-01 shall record that failed
-attempt and may continue with another group member. The failed member shall remain
-eligible for a later explicit inventory attempt.
-:::
-
-:::{req} Allow antenna recovery without process restart  
-:id: SI01-REQ-055  
-:status: D  
-:specifies: UC-004  
-
-After a self-test, initialization or inventory attempt fails, SI-01 shall allow a
-later inventory demand to start a new preparation and inventory attempt without
-requiring SI-01 process restart.
-
-A later inventory demand is created at least when:
-- a mapped TimingNode changes from not requiring inventory to OPEN; or
-- an operator/API operation explicitly requests another inventory/start attempt.
-
-SI-01 shall not automatically loop retries solely because an attempt failed. A failed
-attempt shall not be marked applied. A later demand shall not be rejected solely because
-an earlier self-test or inventory attempt failed.
-:::
-
-#### Ready-team, display, backoffice and verification behaviour
-
-:::{req} Traceable ready-team registry  
-:id: SI01-REQ-060  
-:status: D  
-:specifies: UC-005  
-
-SI-01 shall maintain the current prepare-team registry separately from participant
-TimingData. Accepted add/remove actions from keypad or operator input shall pass
-through the normal controlled TimingNode state-change path and shall remain
-traceable as ready-team history.
-:::
-
-:::{req} Drive passive CAN display from current application state  
-:id: SI01-REQ-061  
-:status: D  
-:specifies: UC-006  
-:depends_on: SI01-REQ-060  
-
-For a configured passive CAN display, SI-01 shall derive the complete/current
-display state from authoritative application state and actively refresh the
-display after relevant state changes or device rediscovery. The passive display
-shall not be required to reconstruct domain history.
-:::
-
-:::{req} Provide synchronisable data to smart displays  
-:id: SI01-REQ-062  
-:status: D  
-:specifies: UC-007  
-
-SI-01 shall make the current timing, ready-team and reference data required by a
-configured smart display available through a network-facing application
-boundary. A connecting or reconnecting smart display shall be able to obtain a
-complete current snapshot before relying on later incremental changes; rendering
-state remains owned by the smart display.
-:::
-
-:::{req} Apply TimingNode-scoped reference data from backoffice  
-:id: SI01-REQ-063  
-:status: D  
-:specifies: UC-010  
-
-SI-01 shall accept decoded semantic reference-data updates from a configured
-backoffice boundary, resolve the addressed TimingNode, validate the update and
-apply it only to that TimingNode's owning reference state. Accepted/rejected
-outcome and enough freshness/health state to diagnose synchronisation shall be
-observable.
-:::
-
-:::{req} Transport-independent outbound backoffice synchronisation  
-:id: SI01-REQ-064  
-:status: D  
-:specifies: UC-011  
-:depends_on: SI01-REQ-042, SI01-REQ-045  
-
-SI-01 shall expose committed TimingNode-scoped outbound data to configured
-backoffice connectors through transport-independent semantic messages while
-preserving source identity and source ordering. Concrete connector routing shall
-not redefine TimingNode identity or registration semantics.
-:::
-
-:::{req} Preserve pending outbound work across backoffice outage  
-:id: SI01-REQ-065  
-:status: D  
-:specifies: UC-011, UC-012  
-:depends_on: SI01-REQ-064  
-
-Loss of a configured backoffice transport shall not discard locally committed
-outbound work. After transport recovery, SI-01 shall resume pending
-synchronisation without inventing or reusing committed source sequence identity.
+SI-01 shall support system verification while running as a separate process
+through its public application interfaces, without requiring test-only mutation
+of internal application or domain state.
 :::
 
 :::{req} Simulate complete multi-node behaviour through normal application paths  
@@ -608,15 +565,121 @@ without embedding production credentials or private topology in the public test
 fixture.
 :::
 
-:::{req} Preserve public provider semantic classification  
-:id: SI01-REQ-070  
-:status: D  
-:specifies: UC-019  
+### Technical requirements
 
-When an input provider exposes a semantic classification as part of its public
-contract, SI-01 shall preserve that classification through application policy
-and normal TimingNode processing where required, while provider-private codes
-and mapping tables remain behind the provider boundary.
+#### Application process and configuration
+
+:::{req} Start from external configuration  
+:id: SI01-REQ-001  
+:status: R  
+
+SI-01 shall start using externally supplied configuration rather than requiring production/deployment values to be compiled into application code. The deployment/configuration contract is defined by IF-11.
+:::
+
+:::{req} Clean process shutdown  
+:id: SI01-REQ-002  
+:status: R  
+
+SI-01 shall provide a controlled shutdown operation that can terminate the running
+application without requiring operating-system-level forced process termination.
+:::
+
+:::{req} Configured TimingNode availability  
+:id: SI01-REQ-003  
+:status: R  
+:specifies: UC-014, UC-015  
+
+SI-01 shall support configuration of one or more `TimingNode` instances, each
+identified by a stable `TimingNodeId`.
+:::
+
+IF-11 defines the internal TimingSystem/TimingNode configuration hierarchy and how a configured TimingNode is referenced from presentation and I/O configuration while keeping `TimingSystemId` internal and `TimingNodeId`, antenna identity and location identity distinct. Detailed operational RFID behaviour is owned by its functional requirements and device/input design rather than by the configuration contract.
+
+#### Build and version identity
+
+:::{req} Single application build identity  
+:id: SI01-REQ-010  
+:status: R  
+
+A running SI-01 process shall expose one build/version identity that identifies
+the application artifact being executed.
+:::
+
+:::{req} Consistent identity across interfaces  
+:id: SI01-REQ-011  
+:status: R  
+
+Every supported SI-01 interface that exposes build/version identity shall report
+the same build identity for the same running process.
+:::
+
+The semantic build identity is defined by IF-03. The current v1 wire fields are defined by `33-03-IDD-api-http-websocket.md`.
+
+#### Persistence and data integrity
+
+:::{req} Reference TimingData representation support  
+:id: SI01-REQ-045  
+:status: D  
+:specifies: UC-011  
+:depends_on: IF05-REQ-001, IF05-REQ-002, IF05-REQ-003, IF05-REQ-004, IF05-REQ-005, IF05-REQ-006, IF05-REQ-007  
+
+SI-01 shall support the reference TimingData representation defined by
+`33-05-IDD-timingdata-interchange.md` for local persistence and engineering
+interchange. For every supported record type, encoding and decoding shall
+preserve the applicable IF-05 semantic values.
+:::
+
+:::{req} Write TimingData before commit completion  
+:id: SI01-REQ-046  
+:status: D  
+:specifies: UC-003, UC-012, UC-021  
+
+SI-01 shall successfully write one complete TimingData record to the configured
+local TimingData store before completing that TimingData commit. Only after
+that write succeeds may SI-01 add the record to committed LogBook state,
+publish a committed live event or report the commit as successful.
+
+If the write fails or remains incomplete, the commit shall fail and the record
+shall not be treated as committed.
+:::
+
+#### Transport semantics, network exposure and compatibility
+
+:::{req} Equivalent status semantics across interfaces  
+:id: SI01-REQ-022  
+:status: R  
+:specifies: UC-001, UC-002, UC-009  
+
+For each application-status value exposed by more than one supported SI-01
+interface, those interfaces shall report the same semantic value for the same
+running application state. Transport-specific encoding may differ.
+:::
+
+:::{req} Equivalent command/query semantics across transports  
+:id: SI01-REQ-030  
+:status: R  
+
+For an SI-01 command or query exposed through more than one transport, the
+transport used shall not change its defined preconditions, effects, result
+semantics or failure semantics.
+:::
+
+:::{req} Safe default network exposure  
+:id: SI01-REQ-032  
+:status: R  
+
+Each IF-03 listener shall bind only to loopback interfaces by default. Binding
+an IF-03 listener to a non-loopback interface shall require explicit
+configuration.
+:::
+
+:::{req} Compatible IF-03 evolution  
+:id: SI01-REQ-033  
+:status: R  
+
+Compatible IF-03 additions shall preserve the meaning of existing operations and
+values. A change that breaks existing IF-03 semantics shall use a new major
+interface version or a separately specified migration contract.
 :::
 
 ### Lifecycle interpretation
@@ -649,7 +712,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-030/031 | UC-009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040 | UC-001/009 | TimingNode + IF-03/IF-04 control/status |
+| SI01-REQ-040/072/073/074 | UC-001/002/009 | OPEN/CLOSE state transitions, session independence and blocking-error policy |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |

@@ -56,6 +56,45 @@ if len(uc_headers) != len(use_cases):
 for uc_header in uc_headers:
     if any(not line.endswith("  ") for line in uc_header.splitlines()):
         raise SystemExit("use-case header must have two trailing spaces per line")
+# The SI-01 SSD is written in actor-first functional groups, followed by
+# technical constraints, independently of historical requirement numbering.
+si01_source = Path("docs/41-01-SSD-timing-application-specification-document.md").read_text(
+    encoding="utf-8"
+)
+fun = si01_source.index("### Functional requirements")
+tech = si01_source.index("### Technical requirements", fun)
+architecture = si01_source.index("## Software-item architecture", tech)
+if not (fun < tech < architecture):
+    raise SystemExit("SI-01 functional/technical requirement order is incorrect")
+functional_source = si01_source[fun:tech]
+technical_source = si01_source[tech:architecture]
+first_req = re.search(r"(?m)^:id: (SI01-REQ-\d+)", functional_source)
+if first_req is None or first_req.group(1) != "SI01-REQ-040":
+    raise SystemExit("SI-01 functional requirements must start with UC-001 OPEN")
+si01_req_ids = re.findall(r"(?m)^:id: (SI01-REQ-\d+)", si01_source[:architecture])
+if len(si01_req_ids) != 47 or len(set(si01_req_ids)) != 47:
+    raise SystemExit("SI-01 source requirements missing or duplicated")
+for req_id, uc_id in (
+    ("SI01-REQ-040", "UC-001"),
+    ("SI01-REQ-072", "UC-002"),
+    ("SI01-REQ-073", "UC-001"),
+    ("SI01-REQ-074", "UC-001"),
+    ("SI01-REQ-071", "UC-021"),
+):
+    source_req = re.search(
+        rf"(?s):::\{{req\}} [^\n]+\n:id: {req_id}[^\n]*\n.*?\n:::",
+        si01_source[:architecture],
+    )
+    if source_req is None or uc_id not in source_req.group(0):
+        raise SystemExit(f"{req_id} missing expected use-case link {uc_id}")
+for heading in ("Registration operation", "Participant registration",
+                "Ready teams and displays", "Registration cabinet and backoffice",
+                "Errors and recovery", "Development, engineering and system testing"):
+    if f"#### {heading}" not in functional_source:
+        raise SystemExit("SI-01 functional requirement group missing: " + heading)
+if "SI01-REQ-001" not in technical_source:
+    raise SystemExit("external configuration must be in technical requirements")
+
 for object_id, item in sorted(use_cases.items()):
     content = item.get("content", "")
     for token in ("**Goal:**", "**Main flow:**"):
@@ -126,9 +165,9 @@ specification_sections = [
 if len(specification_sections) != 1:
     raise SystemExit("UC-001 missing a unique incoming requirement section")
 requirements = specification_sections[0]
-if requirements["title"] != "Requirements (6)":
+if requirements["title"] != "Requirements (8)":
     raise SystemExit("UC-001 wrong incoming role/count: " + requirements["title"])
-expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040"]
+expected = ["SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040", "SI01-REQ-073", "SI01-REQ-074"]
 if sorted(requirements["related_ids"]) != sorted(expected):
     raise SystemExit(
         f"UC-001 must link to SI-01 application requirements only: {requirements['related_ids']}"
@@ -139,7 +178,7 @@ if requirements["document_groups"]:
 uc_page = (site / "objects" / "UC-001" / "index.html").read_text(
     encoding="utf-8"
 )
-if "Requirements (6)" not in uc_page:
+if "Requirements (8)" not in uc_page:
     raise SystemExit("UC-001 object page missing application-requirement heading")
 for target in expected:
     if f'href="../{target}/"' not in uc_page:
@@ -181,8 +220,8 @@ if "SI01-REQ-024" not in realizes["related_ids"]:
 # Keep every use case at the intended engineering level. The lists below are
 # deliberately exact so later interface/detail shortcuts cannot silently grow back.
 expected_uc_direct = {
-    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040"},
-    "UC-002": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026"},
+    "UC-001": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-040", "SI01-REQ-073", "SI01-REQ-074"},
+    "UC-002": {"SI01-REQ-022", "SI01-REQ-023", "SI01-REQ-024", "SI01-REQ-025", "SI01-REQ-026", "SI01-REQ-072", "SI01-REQ-073"},
     "UC-003": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-050", "SI01-REQ-051", "SI01-REQ-052", "SI01-REQ-053", "SI01-REQ-054"},
     "UC-021": {"SI01-REQ-041", "SI01-REQ-042", "SI01-REQ-046", "SI01-REQ-071"},
     "UC-022": {"SI02-REQ-004", "SI02-REQ-005", "SI02-REQ-006", "SI02-REQ-007"},

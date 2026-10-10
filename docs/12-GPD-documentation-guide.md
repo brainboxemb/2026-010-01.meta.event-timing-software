@@ -88,6 +88,28 @@ Apply this formatting to all Need types, including `uc`, `req`,
 `ifreq`, `arch`, `design` and `vc`. The metadata options retain their
 normal MyST/Sphinx-Needs meaning.
 
+### Requirement organization in SSDs
+
+Group a software-item SSD's requirements first by **functional behaviour**,
+preferably aligned with the operational use-case groups, and then by
+**technical / cross-cutting constraints** such as configuration, deployment,
+data integrity and interface compatibility. Use ordinary Markdown section
+headings so the authored structure is also visible in the source document and
+the Engineering Portal. A separate Sphinx-Needs classification or tags are not
+required merely to organize the requirements.
+
+Begin with the most recognizable application function rather than the order
+in which requirements were implemented or assigned identifiers. Requirement
+IDs are stable traceability keys, **not** the reading order: do not renumber
+existing Need objects when restructuring the document.
+
+Use `:specifies: UC-...` where a requirement actually supports a use-case
+goal. A technical requirement driven by configuration, a software-system
+constraint or an interface contract need not be forced into an unrelated UC.
+Keep its other applicable relations (`:refines:`, `:depends_on:`) instead.
+Use a separate requirement for a genuinely distinct missing obligation rather
+than inserting unrelated obligations into an existing requirement.
+
 ## Document categories and numbering
 
 The numeric prefix groups documents by engineering role. It helps navigation but does
