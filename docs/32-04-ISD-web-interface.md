@@ -36,8 +36,8 @@ IF-04 is allocated by
 
 The first baseline is driven mainly by:
 
-- UC-001 — connect to a registration system;
-- UC-002 — configure, open and close a registration point.
+- UC-001 — open a registration point from an iPad Web browser, including connecting to an already-open cabinet;
+- UC-002 — close a registration point.
 
 ## Parties
 
