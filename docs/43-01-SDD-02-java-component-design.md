@@ -1091,6 +1091,12 @@ The baseline queue capacity is 4096 records. Queue capacity and flush interval a
 IF-11 syntax prematurely. These values are implementation baselines and may later be made
 deployment-configurable if runtime characterization justifies it.
 
+Local-console prompt redraw is also owned by the existing `tp-inf-logging` writer.
+`ConsolePromptCoordinator` is passive: console formatting records a 150 ms quiet-period
+deadline, and the logging writer shortens its bounded poll wait when that deadline is due.
+There is no dedicated prompt scheduler/thread. Repeated log records simply move the deadline
+forward, so one prompt is redrawn after the burst becomes quiet.
+
 The optional `LoggingServer` remains separate. Its JUL handler performs only bounded
 in-memory admission; socket writes already execute on its own
 `tp-inf-live-log-writer` thread. It is therefore not routed through the retained
@@ -2587,7 +2593,6 @@ Examples:
 ```text
 tp-main
 tp-pl-console
-tp-pl-prompt
 tp-pl-remote-shell
 tp-dl-node-worker
 tp-dl-tagproc-worker
@@ -2600,6 +2605,19 @@ tp-inf-live-log-writer
 
 JDK and third-party threads keep their own names, for example an HTTP dispatcher or
 WebSocket library worker. Do not rename those merely to make a thread dump visually uniform.
+
+The long-lived executable caller is explicitly named `tp-main` again at the
+ApplicationLauncher runtime boundary immediately before activation/wait. This is deliberate:
+IDE/Maven launchers may initially assign a generated `Main.main()` thread name, but
+application-owned runtime diagnostics should use the compact project name while SI-01 is
+running.
+
+The two remaining project-owned Presentation threads are intentional blocking-I/O waits:
+`tp-pl-console` blocks on local terminal input and `tp-pl-remote-shell` blocks on
+`ServerSocket.accept()` / the active remote shell session. They are not combined onto one
+worker because either endpoint could then head-of-line block the other. In the Java 8
+baseline, two mostly-idle blocking threads are simpler and safer than introducing a selector/
+NIO state machine solely to reduce visible thread count.
 
 Physical worker names describe the shared executor role, not one logical object that happens
 to submit work. A `TimingNodeId` therefore does **not** appear in the TimingNode or
