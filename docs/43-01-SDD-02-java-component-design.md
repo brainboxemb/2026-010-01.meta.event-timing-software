@@ -131,6 +131,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     storage/
   infra/
     configuration/
+    setting/
     logging/
     loggingserver/
   runtime/
@@ -163,7 +164,7 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
-- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and configuration/extension adapters;
+- reserve `infra` for concrete cross-cutting support such as `BuildIdentity`, logging, diagnostics, configuration, shared Setting mechanics and extension adapters;
 - reserve `runtime` for concrete application composition, the running application container and lifecycle;
 - use `io` for external hardware, messaging and storage adapters.
 
@@ -231,9 +232,8 @@ infra/
   lifecycle/
     AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
     ComponentLifecycleManager.java  application/system activation and rollback mechanics
-  property/
-    SourceProperty.java             passive current value associated with one source object
-    DerivedProperty.java            passive current value calculated from source properties
+  setting/
+    Setting.java                   passive requested/applied tracking (manager-owned)
   extension/
     ExtensionRegistry.java          typed provider discovery/selection
   configuration/
@@ -252,7 +252,6 @@ domain/
     TimingSystem.java                   parent aggregate for 1..N TimingNodes
     TimingSystemId.java                 internal composition/simulation identity
     SystemConductor.java                first system coordinator; node lifecycle + inventory
-    PropertyRegistry.java               ordered per-node SourceProperty registration/lookup
     SystemStatus.java                   complete current TimingSystem overview
     UpstreamMessagePort.java            system-level upstream messages
   node/
@@ -568,36 +567,32 @@ InventoryTask
 ```
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
-`CooperativeTaskController` for event-triggered reconciliation. Per-node
-current state is represented by small passive `SourceProperty` values.
-`TimingNode.statusChangedEvent(Status)` is emitted after an authoritative
-TimingNode transition. The synchronous callback validates the source, wakes the
-existing control task and returns; it does not update SourceProperties, query
-another lane or execute inventory control on the emitting thread. The later
-control run rereads CURRENT TimingNode status before deriving behaviour.
-
-A passive `DerivedProperty<Boolean>` represents the system-wide
-`inventoryRequired` fact calculated from all node SourceProperties. The
-Conductor recalculates that value in its control run and applies it to the
-AntennaManager. Manager-wide inventory is needed while any node is OPEN, and
-not needed otherwise. A DerivedProperty may depend on more than one
-SourceProperty; it owns no scheduling, queue, retry or lifecycle behaviour.
-
-Every Conductor control run synchronizes the per-node SourceProperties from a
-CURRENT status query before deriving or applying inventory state:
+`CooperativeTaskController` for event-triggered reconciliation.
+`TimingNode.statusChangedEvent(Status)` only wakes the existing control task.
+The later run reads each TimingNode's published CURRENT status. It computes
+`inventoryEnabled = any node OPEN` as a local boolean and publishes the
+desired result directly to the shared `AntennaSettings`; no cached
+`SourceProperty` or `DerivedProperty` is needed.
 
 ```java
-node.query(TimingNodeQueries.status(), ReadConsistency.CURRENT);
+antennaSettings.update(edit -> {
+    edit.inventoryEnabled(inventoryRequired);
+});
 ```
 
-CURRENT status reads use the safely published immutable TimingNode snapshot and
-therefore do not enter the TimingNode serial lane or have a result-bearing query
-timeout. Status events only wake the existing CooperativeTaskController; repeated
-events may coalesce because the later control run rereads current published state.
+The edit lambda runs synchronously under the settings transaction boundary.
+It changes an unpublished candidate; after successful completion all desired
+values commit together. An unchanged update emits no event; a failed edit
+publishes nothing. The editor must not escape the callback. A settings change
+event is emitted after publication, outside the lock, and only wakes
+AntennaManager's existing control task. `update()` does **not** wait for
+hardware. AntennaManager compares requested and applied inventory, controls
+the devices asynchronously and records applied state only after success.
+Retry and recovery belong to AntennaManager, not the settings editor.
 
-The manager's `Setting<Boolean>` distinguishes idempotent unchanged-state
-requests from explicit retry attempts. The TimingSystem `Conductor` does not
-require another property scheduler or a multiphase state machine for this rule.
+`CURRENT` status uses a safely published immutable TimingNode snapshot
+and requires no result-bearing cross-lane query timeout. The first control
+run after activation reads the same current snapshots as later wake runs.
 
 The cooperative model is deliberately optional. A component that only needs one short
 ordered action continues to submit that action directly to its serial lane. TimingNode and
@@ -992,8 +987,8 @@ The normal dependency direction follows the layer order and is intentionally
 easy to read from imports. I/O code does not import Application or Domain merely
 to reverse a dependency. Domain may call an I/O component directly when the
 domain behaviour requires it. In the current design,
-`domain.system.SystemConductor` calls its associated `AntennaManager` directly for
-manager-wide inventory control.
+`domain.system.SystemConductor` updates shared `AntennaSettings` without depending on
+`AntennaManager`. Runtime wires the settings object to both components.
 
 For example:
 
@@ -1157,11 +1152,11 @@ validated effective configuration
             -> wake first control run
   -> PresentationRuntime.activate()
 
-system control run (the first run also establishes initial SourceProperty values):
-  -> read CURRENT status of every active TimingNode
-  -> populate/update per-node SourceProperties
-  -> derive inventoryRequired from all source properties
-  -> apply inventory state to AntennaManager
+system control run:
+  -> read CURRENT status of every TimingNode
+  -> calculate whether any node is OPEN
+  -> atomically publish desired inventory through AntennaSettings
+  -> AntennaManager wakes and reconciles hardware asynchronously
 ```
 
 Runtime owns construction, wiring and physical worker lifetime. The
@@ -1171,8 +1166,11 @@ TimingSystem with it before activation; the class does not assume one
 TimingSystem. The TimingSystem `Conductor` owns the lifecycle
 of its TimingNodes and the system-level inventory decision.
 
-The TimingSystem `Conductor` holds the associated `AntennaManager` directly.
-There is no separate inventory-control interface. Runtime resolves the IF-11
+The TimingSystem `Conductor` holds the associated antenna-specific
+`AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
+Infrastructure / cross-cutting; the component-specific `AntennaSettings`
+belongs beside the antenna manager in I/O. The settings object is shared
+control state, not an inventory-control interface. Runtime resolves the IF-11
 `io.devices.antennaManagers` binding by `timingSystemId`; at most one manager
 is composed for each TimingSystem. It may read manager status or request
 manager-wide inventory as system behaviour requires; the manager still owns
@@ -1653,8 +1651,8 @@ application.ApplicationConductor
       +--> reusable AntennaShutdownTask
 ```
 
-`domain.system.SystemConductor` calls its associated `AntennaManager` directly.
-It requests manager-wide inventory while any TimingNode in that system is OPEN.
+`domain.system.SystemConductor` publishes desired inventory through a shared
+`AntennaSettings` while any TimingNode in that system is OPEN.
 It does not issue device-mechanism commands such as power-on, initialize,
 power-cycle or antenna switching. `application.ApplicationConductor` owns the lifecycle
 ordering between the AntennaManager and the system Conductor.
@@ -1666,7 +1664,12 @@ directly. The physical multi-step sequences live in those task classes under `ma
 The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
 second task-facing antenna interface.
 
-The manager uses a small `Setting<Boolean>` for inventory intent:
+The generic `Setting<T>` belongs to cross-cutting `infra.setting`, alongside
+`infra.configuration`. The reusable Setting tracks desired versus applied
+values without knowing any device or Conductor. The antenna-specific
+`AntennaSettings` belongs with I/O antenna management and wraps one
+`Setting<Boolean>` for inventory intent. The Conductor only sees this
+shared settings object, which Runtime composes once for each TimingSystem:
 
 ```text
 requestedValue
@@ -1793,21 +1796,22 @@ TimingNode A/B/... statusChangedEvent(Status)
 wake domain.system.SystemConductor control task
        |
        v
-read CURRENT Status for all nodes -> update SourceProperties
+read CURRENT Status for all nodes
        |
        v
-DerivedProperty<Boolean> inventoryRequired = any node OPEN
+inventoryRequired = any node OPEN
        |
-       +--> true  -> manager-wide inventory enabled
-       |    false -> manager-wide inventory disabled
        v
-AntennaManager.setInventoryEnabled(...)
+AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
+       |
+       v
+AntennaManager wakes and reconciles desired versus applied state
        |
        v
 InventoryTask -> managed antennas / optional power
 ```
 
-`setInventoryEnabled(boolean)` is idempotent for unchanged state.
+An unchanged `AntennaSettings.update(...)` publishes no new change.
 Explicit `requestEnableInventory()` / `requestDisableInventory()`
 calls are separate retry attempts. AntennaManager owns all physical
 mechanics: self-test, power, initialization, multiplexing and shutdown.
@@ -3112,11 +3116,11 @@ If listener notification fails after a TimingData record is committed, that does
 back the commit. A consumer that needs reliable recovery uses authoritative
 persisted/LogBook state and its own recovery/delivery mechanism.
 
-Passive SourceProperty/DerivedProperty state uses ordinary owner-controlled updates; those
-objects do not own an event scheduler or source reread mechanism. For current-state
-reconciliation, a source event may wake the owning control task, while the task itself
-rereads the authoritative CURRENT representation and updates SourceProperties before
-deriving behaviour.
+State events may wake the owning control task. The task rereads CURRENT state
+and computes its desired outcome directly. For inventory, it publishes through
+`AntennaSettings.update(...)`, and the AntennaManager reconciles that desired
+value to applied device state on its own lane. Passive `Setting<T>` owns no
+executor or source reread mechanism.
 
 Use `onXxx(...)` for listener/handler methods, for example
 `onTimingNodeStatusChanged(Status status)`. Do not introduce a parallel callback

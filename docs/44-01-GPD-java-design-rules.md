@@ -50,15 +50,16 @@ Example:
 TimingNode state is OPEN
         |
         v
-Conductor calls:
-requestEnableInventory()
+Conductor publishes:
+AntennaSettings.update(...)
         |
         v
-AntennaManager decides how:
+AntennaManager reconciles:
 power -> initialize -> inventory
 ```
 
-The Conductor owns the application decision. The AntennaManager owns the device sequence.
+The Conductor owns the application decision and publishes desired state. The
+AntennaManager owns the device sequence.
 
 ## Design rules
 
@@ -82,13 +83,13 @@ classes harder to change.
 Good:
 
 ```java
-antennaManager.requestEnableInventory();
+antennaSettings.update(edit -> edit.inventoryEnabled(true));
 ```
 
-The Conductor explicitly requests inventory enable. AntennaManager may then power the
-antenna, wait for stabilization, initialize it and start inventory. When the TimingNode
-state becomes CLOSED or ERROR, Conductor explicitly calls
-`requestDisableInventory()`.
+The Conductor publishes desired inventory enable. AntennaManager may then power the
+antenna, wait for stabilization, initialize it and start inventory. When all TimingNodes
+are CLOSED or ERROR, the Conductor publishes `inventoryEnabled(false)` in the
+same shared Settings object.
 
 **Avoid**
 
@@ -100,9 +101,9 @@ antennaManager.startInventory();
 
 from Conductor. This makes Conductor responsible for AntennaManager internals.
 
-The same rule applies to recovery. Conductor may have requested
-`requestEnableInventory()`; AntennaManager owns any device recovery needed to restore
-enabled inventory without requiring Conductor to micromanage the recovery sequence.
+The same rule applies to recovery. After the Conductor publishes desired
+inventory state, AntennaManager owns recovery needed to restore it without
+requiring the Conductor to micromanage hardware.
 
 The same ownership rule also guides package placement. A reusable technical mechanism
 that knows nothing about SI-01 concepts belongs under `infra`; domain-specific
@@ -111,17 +112,20 @@ registration and behaviour stay with the owning Domain component.
 Example:
 
 ```text
-infra.property.SourceProperty<S, T>
-        passive current value associated with one source object
-
-infra.property.DerivedProperty<T>
-        passive value recalculated from one or more source properties
-
 domain.system.SystemConductor
-        owns source acquisition, derived-state recalculation and behaviour
+        reads current TimingNode status and calculates desired inventory
+
+infra.setting.Setting<T>
+        passive desired/applied tracking, reused across components
+
+io.devices.antenna.manager.AntennaSettings
+        antenna-specific shared desired-state transaction
+
+io.devices.antenna.manager.AntennaManager
+        owns applied state, physical transitions and recovery
 ```
 
-A property is state, not a scheduler. It must not own a SerialExecutor, Future,
+A Setting is state, not a scheduler. It must not own a SerialExecutor, Future,
 queue admission, retry loop, coalescing controller or component lifecycle merely
 because its value can change asynchronously.
 
@@ -223,8 +227,8 @@ timingNode.statusChangedEvent()
 ```
 
 The handler may validate source identity and wake the existing control task, then returns.
-The later control run reads TimingNode status with CURRENT consistency, updates its SourceProperty,
-recalculates derived state and applies the resulting intent. It does not perform that
+The later control run reads TimingNode status with CURRENT consistency and updates
+shared AntennaSettings, which wakes the manager to reconcile asynchronously. It does not perform that
 reconciliation in the synchronous event callback.
 
 **Event and handler naming**
@@ -262,8 +266,8 @@ array representation. Subscription order remains stable. Concurrent runtime
 `emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
 Initialization is also separate from events. SystemConductor activation wakes its first
-normal reconciliation run; that run obtains the first SourceProperty values from CURRENT
-TimingNode status. No synthetic status-change event is required to create initial state.
+normal reconciliation run; that run reads CURRENT TimingNode status and publishes
+the desired AntennaSettings state. No synthetic status-change event is required.
 
 **Avoid**
 
@@ -358,9 +362,9 @@ that event only to wake a reconciliation run. The reconciliation then reads the 
 authoritative current representation explicitly. This keeps event history separate from
 current control state and makes initialization use the same path as later updates.
 
-Derived current state may be represented by a passive DerivedProperty when that makes a
-real relationship clearer, for example `inventoryRequired = any node OPEN`. The owning
-component decides when it is recalculated; the property does not schedule itself.
+Calculate intermediate decisions locally. If the result is already the desired state of
+another component, publish it directly to that component's shared settings rather than
+copying it into a DerivedProperty first.
 
 **Why**
 
@@ -393,7 +397,7 @@ SystemConductor control run
 TimingNode.query(status, CURRENT)
         |
         v
-SourceProperty.update(status.state())
+derive inventoryRequired = any TimingNode OPEN
 ```
 
 Good runtime flow:
@@ -405,16 +409,16 @@ TimingNode.statusChangedEvent(Status)
 CooperativeTaskController.wake()
         |
         v
-query current Status + update SourceProperty
+query current Status + derive inventoryRequired
         |
         v
-DerivedProperty.recalculate()
+AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
         |
         v
 apply current inventory intent
 ```
 
-The event callback only validates/wakes the consumer; it does not update the SourceProperty,
+The event callback only validates/wakes the consumer; it does not modify Settings,
 wait on another lane or perform device control. Repeated wakes may be coalesced because the
 later control run rereads CURRENT TimingNode status before deriving behaviour.
 
@@ -719,11 +723,11 @@ provider fails during a delayed transition.
 
 For Conductor:
 
-- the first control run populates all SourceProperties only after TimingNodes are active;
-- a status event only wakes the control task and does not directly mutate SourceProperties;
-- every control run refreshes SourceProperties from CURRENT TimingNode status before deriving behaviour;
-- rapid state changes converge to the final current SourceProperty values while control wakes coalesce;
-- a DerivedProperty that depends on multiple node properties derives the correct aggregate state;
+- the first control run reads CURRENT TimingNode status after the nodes are active;
+- a status event only wakes the control task and does not publish Settings itself;
+- every control run reads CURRENT TimingNode status before deriving desired inventory;
+- rapid state changes converge to the final desired inventory while control wakes coalesce;
+- one OPEN node among several nodes keeps shared inventory desired state enabled;
 - CURRENT-state unavailability is visible as a Conductor control failure and is never interpreted as CLOSED;
 - no downstream control failure throws back through TimingNode event delivery.
 

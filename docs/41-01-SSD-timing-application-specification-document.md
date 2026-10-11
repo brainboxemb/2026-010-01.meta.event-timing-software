@@ -1807,7 +1807,7 @@ which components receive the same instance.
 The right-hand side of the layered view separates two technical responsibilities:
 
 - **Runtime** — `TimingApplicationRuntime` as the top-level composition/lifecycle owner, its child `PresentationRuntime`, Runtime-owned physical execution resources and the concrete running configuration tree;
-- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration mechanics, configuration mapping and extension discovery.
+- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration and settings mechanics, configuration mapping and extension discovery.
 
 :::{arch} Application configuration  
 :id: ApplicationConfiguration  
@@ -1825,6 +1825,19 @@ own external YAML parsing or presentation-facing control use-cases.
 typed startup/current values, validated runtime override state and post-change
 notification. These mechanics contain no knowledge of TimingNode, TagProcessor,
 IF-11 paths or IF-03 routes.
+:::
+
+:::{arch} Shared settings
+:id: Settings
+
+Settings is a reusable Infrastructure / cross-cutting mechanism for desired
+versus applied state. A component-specific settings object can publish related
+desired values as one atomic update. Publishing does not wait for physical
+device operations. The owning component performs reconciliation and reports
+the applied outcome; the Settings mechanism owns no executor or lifecycle.
+For antenna inventory, one AntennaSettings object is shared by the SystemConductor
+and the AntennaManager. The generic Setting<T> mechanism belongs to Infrastructure
+while the antenna-specific settings type belongs beside AntennaManager in I/O.
 :::
 
 #### Cross-cutting concerns
@@ -2823,6 +2836,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |
 | Logging | SLF4J API in reusable application core; default executable provider `slf4j-jdk14` / `java.util.logging` | handlers/retention remain configuration and operational concerns |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution; YAML/SnakeYAML is the default Java input realization | profile/platform/mode resolution is architecturally defined but not yet fully implemented |
+| Settings | Cross-cutting passive desired/applied Setting mechanics; component-specific shared settings support atomic desired-state updates | Conductor derives desired state from CURRENT node status; antenna hardware reconciliation belongs to AntennaManager |
 | Persistence | Domain-owned TimingDataPersistence over generic lower-layer storage; file/database mechanisms do not import Domain/Application types | ordering and visibility in SDD-01; Java storage/persistence split in SDD-02; record contract in IF-05 |
 | API HTTP | JDK `HttpServer` for IF-03 request/response | selected transport; belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | selected transport; Java 8+, pure Java/NIO and existing SLF4J boundary; keep the HTTP transport separate |
