@@ -2606,11 +2606,14 @@ tp-inf-live-log-writer
 JDK and third-party threads keep their own names, for example an HTTP dispatcher or
 WebSocket library worker. Do not rename those merely to make a thread dump visually uniform.
 
-The long-lived executable caller is explicitly named `tp-main` again at the
-ApplicationLauncher runtime boundary immediately before activation/wait. This is deliberate:
-IDE/Maven launchers may initially assign a generated `Main.main()` thread name, but
-application-owned runtime diagnostics should use the compact project name while SI-01 is
-running.
+Maven `exec:java` creates its own bootstrap thread and names it from the configured
+main class (for example `io.github...Main.main()`). `Main.main()` therefore does not use
+that launcher-owned thread as the long-lived SI-01 runtime thread. It starts one
+application-owned, non-daemon `tp-main` thread and returns, allowing the Maven bootstrap
+thread to terminate. Packaged `java -jar` startup uses the same handoff so runtime thread
+identity does not depend on the launcher. ApplicationLauncher still reasserts `tp-main`
+at the activation/wait boundary as a defensive invariant. This handoff does not add a
+second long-lived application thread; it replaces the temporary launcher/bootstrap thread.
 
 The two remaining project-owned Presentation threads are intentional blocking-I/O waits:
 `tp-pl-console` blocks on local terminal input and `tp-pl-remote-shell` blocks on
