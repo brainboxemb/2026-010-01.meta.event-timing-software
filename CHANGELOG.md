@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Document SI-02 NetBeans Run/Debug as a separate Java 21-capable child JVM via Maven `exec:exec`, with runtime classpath, Windows long-classpath handling and NetBeans JDWP child-process debugging; Maven/JGit/ForkJoin threads remain outside the Engineering Client runtime.
+
 - Document the separate-JVM NetBeans launch model: SI-01 Run/Debug uses Maven `exec:exec`, the Maven/JGit/ForkJoin threads stay in the build-tool process, and the child application JVM uses its real `tp-main` thread with NetBeans JDWP child-process debugging.
 
 - Remove the dedicated Presentation prompt thread from the design: local prompt quiet-period redraw is serviced by `tp-inf-logging`; document why local console and remote shell remain separate blocking-I/O threads.

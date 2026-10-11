@@ -125,6 +125,21 @@ through the BentoFX workbench. Linux CI verifies the standalone client and Windo
 builds the self-contained `jpackage` app-image. Step 6 V01 verifies the real SI-02
 revoke/recovery GUI behaviour against SI-01.
 
+### Development launch boundary
+
+The checked-in NetBeans Run/Debug actions execute SI-02 in a **separate child JVM**
+through Maven `exec:exec`. They do not use Maven's in-process `exec:java` goal.
+The child executable is resolved from `${java.home}/bin/java`, so the Engineering
+Client uses the same Java 21-capable JDK that successfully builds its `release=21`
+code. The action supplies the runtime Maven classpath and enables long-classpath
+handling for Windows.
+
+Debug launch attaches NetBeans to that child JVM through its JDWP listener/address.
+Maven, JGit and ForkJoin build-tool threads therefore belong to the Maven process and
+are not part of the SI-02 runtime thread model. This development launch separation does
+not change the production/distribution model: the Windows `jpackage` app-image remains
+the deployment baseline.
+
 ### Decision rationale
 
 The decision deliberately builds on qualified project evidence rather than introducing a
