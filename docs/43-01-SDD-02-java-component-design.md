@@ -698,11 +698,15 @@ seam exists for deterministic TimingNode execution-boundary tests and is documen
 test-only in code.
 
 TimingNode publishes one immutable current `Status` snapshot as an explicit read model.
-The snapshot is unavailable before activation recovery completes. Activation clears previous
-readiness, performs recovery (including contained recovery failure -> operational `ERROR`),
-completes child activation and then publishes the first snapshot with safe cross-thread
-visibility. Deactivation makes CURRENT status unavailable; reactivation publishes a fresh
-snapshot after recovery.
+The snapshot is unavailable while initial recovery is still pending. `activate()` clears
+the previous published snapshot, starts the node execution lane, admits recovery as the
+first ordered TimingNode task, starts its owned child lane(s) and returns without waiting
+for persistence I/O. The recovery task performs TimingData load, LogBook rebuild and
+contained recovery-failure handling on the TimingNode lane, then publishes the first
+immutable Status snapshot with safe cross-thread visibility. That first publication also
+emits the existing status event so externally composed current-state consumers can wake
+and reread CURRENT. Deactivation makes CURRENT status unavailable; reactivation queues a
+fresh recovery task and later publishes a fresh snapshot.
 
 One typed query boundary exposes two explicit consistency modes:
 
@@ -1148,12 +1152,23 @@ validated effective configuration
        -> AntennaManager.activate()
        -> domain.system.SystemConductor.activate()
             -> TimingNode(s).activate()
+                 -> start node lane
+                 -> queue initial recovery as first ordered node task
+                 -> start owned child lane(s)
+                 -> return without waiting for recovery
             -> start system coordination lane
             -> wake first control run
   -> PresentationRuntime.activate()
 
+TimingNode initial recovery task:
+  -> read/validate persisted TimingData on the TimingNode lane
+  -> rebuild LogBook / recovered mutable node state
+  -> publish first CURRENT Status
+  -> emit statusChangedEvent as a wake signal
+
 system control run:
   -> read CURRENT status of every TimingNode
+  -> if any node is not ready yet: publish no partial inventory decision and return
   -> calculate whether any node is OPEN
   -> atomically publish desired inventory through AntennaSettings
   -> AntennaManager wakes and reconciles hardware asynchronously
@@ -1180,13 +1195,14 @@ mechanics.
 The TimingSystem `Conductor` uses its own logical serial lane with
 `SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
 `ApplicationConductor` only orders lifecycle and does not need a coordination
-lane. SystemConductor activation itself does not block on property acquisition:
-after its child TimingNodes and coordination lane are active, its activation
-hook wakes the first normal reconciliation run. Component ACTIVE and "initial
-state reconciliation completed" are therefore distinct facts. If CURRENT state
-is unexpectedly unavailable, that is a system-control failure and is never
-silently interpreted as CLOSED; there is no cross-lane result timeout in this
-read path.
+lane. TimingNode and SystemConductor activation establish execution context and
+return without waiting for initial state acquisition. The Conductor's activation
+hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
+is still unavailable because its first recovery task has not published yet is
+treated as **not ready**, not as CLOSED and not as a control failure; the Conductor
+publishes no partial inventory decision. The TimingNode's first status publication
+then wakes a later reconciliation. Once a node has published current state,
+unexpected CURRENT failure remains an explicit fault rather than a guessed value.
 
 Tag events and individual antenna commands do not pass through either
 Conductor. Runtime wires each configured antenna observation directly to the
@@ -2535,7 +2551,9 @@ Threads owned by the JDK or external libraries keep their own names.
 ### Thread priority and execution roles
 
 The execution design keeps latency-sensitive work on separate **role workers**, while
-each configured node retains its own logical serial lane:
+each configured node retains its own logical serial lane. Initial TimingData recovery is
+a deliberate first node-lane task because it reconstructs node-owned mutable state; this
+does **not** imply one physical filesystem worker per node:
 
 ```text
 shared TagProcessor role worker
@@ -2938,15 +2956,20 @@ The important guarantees are:
 - each consistency-sensitive read has a defined place in the same ordering as
   state changes;
 - no external consumer retains a mutable collection owned by TimingNode;
-- long or blocking I/O work does not execute on the TimingNode lane;
+- normal runtime blocking I/O is not introduced casually on the TimingNode lane;
+- initial persistence recovery is the explicit exception: it is the first ordered
+  node task because it rebuilds TimingNode-owned state before later commands;
+- Runtime may still serialize those logical node recoveries on one shared physical
+  TimingNode worker rather than creating parallel filesystem workers;
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
 TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
 snapshot because it is current state, not a mutable LogBook traversal. The same status query
 also supports ORDERED when a caller deliberately needs a read after earlier accepted node
-work. Publication occurs after activation recovery and completed command transitions, before
-the corresponding status event. This read model does not permit direct access to
+work. The first publication occurs when the asynchronous initial recovery task completes;
+later publications occur after completed command transitions. In both cases the snapshot is
+published before the corresponding status event. This read model does not permit direct access to
 TimingNodeLogic or LogBook mutable state.
 
 ### Per-type stores
