@@ -1671,8 +1671,6 @@ values without knowing any device or Conductor. The antenna-specific
 `Setting<Boolean>` for inventory intent. The Conductor only sees this
 shared settings object, which Runtime composes once for each TimingSystem:
 
-
-
 ```text
 requestedValue
 appliedValue

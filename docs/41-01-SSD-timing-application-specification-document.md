@@ -1807,7 +1807,7 @@ which components receive the same instance.
 The right-hand side of the layered view separates two technical responsibilities:
 
 - **Runtime** — `TimingApplicationRuntime` as the top-level composition/lifecycle owner, its child `PresentationRuntime`, Runtime-owned physical execution resources and the concrete running configuration tree;
-- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration mechanics, configuration mapping and extension discovery.
+- **Infrastructure / cross-cutting** — supporting technical facilities such as logging, diagnostics, build identity, typed configuration and settings mechanics, configuration mapping and extension discovery.
 
 :::{arch} Application configuration  
 :id: ApplicationConfiguration  
@@ -1825,6 +1825,19 @@ own external YAML parsing or presentation-facing control use-cases.
 typed startup/current values, validated runtime override state and post-change
 notification. These mechanics contain no knowledge of TimingNode, TagProcessor,
 IF-11 paths or IF-03 routes.
+:::
+
+:::{arch} Shared settings
+:id: Settings
+
+Settings is a reusable Infrastructure / cross-cutting mechanism for desired
+versus applied state. A component-specific settings object can publish related
+desired values as one atomic update. Publishing does not wait for physical
+device operations. The owning component performs reconciliation and reports
+the applied outcome; the Settings mechanism owns no executor or lifecycle.
+For antenna inventory, one AntennaSettings object is shared by the SystemConductor
+and the AntennaManager. The generic Setting<T> mechanism belongs to Infrastructure
+while the antenna-specific settings type belongs beside AntennaManager in I/O.
 :::
 
 #### Cross-cutting concerns

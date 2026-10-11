@@ -58,7 +58,8 @@ AntennaManager reconciles:
 power -> initialize -> inventory
 ```
 
-The Conductor owns the application decision. The AntennaManager owns the device sequence.
+The Conductor owns the application decision and publishes desired state. The
+AntennaManager owns the device sequence.
 
 ## Design rules
 
