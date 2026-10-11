@@ -588,33 +588,30 @@ A queue-full counter tells us that overload occurred, but not which control deci
 being attempted at that moment. A log tells the story, but should not be used as the
 authoritative current status.
 
-**Example**
+**Level intent**
 
-A useful diagnostic sequence could be:
+Use levels consistently across components:
 
-```text
-INFO  TimingNode TN-01 state changed CLOSED -> OPEN
-INFO  TimingNode TN-01 state OPEN -> enable antenna inventory
-INFO  Antenna ANT1 inventory started
-WARN  Antenna ANT1 provider failed
-INFO  Antenna ANT1 recovery started
-INFO  Antenna ANT1 inventory restored
-```
-
-For a high-rate path such as tag observations, do **not** write an INFO log for every
-observation. Use counters/metrics and log only meaningful transitions or failures.
-
-Typical intent:
-
-| Level | Use |
+| Level | Generic use |
 | --- | --- |
-| DEBUG | detailed control/reconcile information useful during diagnosis |
-| INFO | meaningful lifecycle and operational transitions |
-| WARN | degraded operation, rejected work, recoverable failure |
-| ERROR | component can no longer fulfil its role |
+| TRACE | high-rate/raw technical facts that are useful only for deep tracing |
+| DEBUG | internal decisions, filtering, reconciliation and detailed diagnostic flow |
+| INFO | meaningful operational facts, lifecycle transitions and completed business/commit boundaries |
+| WARN | recoverable anomaly, rejected/degraded work or automatic repair that deserves attention |
+| ERROR | failure that prevents a component from reliably fulfilling its role |
 
-A useful log line normally includes the relevant stable identity, such as
-`TimingNodeId` or `AntennaId`, and the cause/reason when something failed.
+Do **not** promote every high-rate observation to INFO. Normal INFO output must remain
+readable as an operational narrative.
+
+Log at the component that owns the fact, and log the fact only after it is true. For
+example, a successful write/commit message belongs after the complete commit boundary;
+a request or attempt must not be phrased as if success already happened. When a separate
+design defines a domain-specific logging matrix, follow that matrix instead of scattering
+level choices through implementations.
+
+A useful log line normally includes the relevant stable identity and the cause/reason
+when something failed. Logging remains diagnostic history; it is not authoritative
+current state, a metric store or a substitute for durable domain persistence.
 
 ---
 
