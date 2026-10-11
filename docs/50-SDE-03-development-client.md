@@ -343,6 +343,22 @@ on application startup or merely because a file was dropped. The
 [44-02 design rule UI-17](44-02-GPD-engineering-client-design-rules.md)
 governs maintenance of the facade, safety checks and presentation behavior.
 
+### Engineering scripts
+
+The **Scripts** tab is a local SI-02 facility. It uses embedded LuaJ from
+the Engineering Client module only. A script is opened or dropped, edited,
+and explicitly started by an engineer. Run and Stop control one client
+worker and the selected TimingNode context.
+
+`timing.batch{count,from,to,order,seed,intervalMs,profile}` generates
+repeatable linear or seeded random registration IDs and sends each through
+the existing public IF-03 simulated-registration endpoint.
+`timing.simulate(registrationId,profile)`, `timing.sleep(milliseconds)`
+and `timing.log(text)` provide individual operations and timing/output.
+The command path is intentionally separate from SI-01's direct auto-reg
+injection. A dropped file never starts on its own. The client script
+facade is specified further in [UI-17](44-02-GPD-engineering-client-design-rules.md).
+
 ## Capability-driven engineering controls
 
 The Development Client must not assume that engineering simulation controls are available
