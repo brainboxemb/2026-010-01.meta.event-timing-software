@@ -1049,6 +1049,53 @@ timing-point-app.jar
   -> independently starts/stops optional LoggingServer
 ```
 
+Execution model:
+
+```text
+Domain / Application / I/O publisher thread
+        |
+        | SLF4J -> JUL LogRecord
+        | snapshot + non-blocking offer
+        v
+bounded AsyncLogHandler queue
+        |
+        | one Infrastructure-owned writer
+        v
+tp-inf-logging
+   +--> ConsoleHandler
+   +--> TimestampedFileLogHandler
+              |
+              +--> BufferedOutputStream
+              +--> periodic/batched flush
+```
+
+The default executable therefore never performs normal console or retained-file I/O on a
+TimingNode, TagProcessor, AntennaManager or Application coordination lane. Publisher-side
+work is limited to level filtering, creating/snapshotting the log record and bounded queue
+admission. Formatting and sink I/O happen on one daemon logging writer thread.
+
+The queue is deliberately bounded. Normal publication never waits for queue space. When it
+is full, lower-severity records may be discarded; an incoming WARN/ERROR may replace one
+queued lower-severity record. Dropped records are counted and the writer emits a warning
+summary when it can deliver again. Diagnostic loss is preferable to applying hidden timing
+backpressure.
+
+Accepted records preserve queue order. The retained file sink remains buffered and does not
+flush after every record. The logging writer flushes delegates periodically (baseline
+250 ms), immediately after WARN/ERROR, and during shutdown. File rotation also flushes/closes
+the old generation. `Logging.close()` removes new publication, drains all records already
+accepted by the queue, flushes delegates and only then closes the retained file.
+
+The baseline queue capacity is 4096 records. Queue capacity and flush interval are owned by
+`LoggingConfig`; the current executable uses the component defaults rather than adding
+IF-11 syntax prematurely. These values are implementation baselines and may later be made
+deployment-configurable if runtime characterization justifies it.
+
+The optional `LoggingServer` remains separate. Its JUL handler performs only bounded
+in-memory admission; socket writes already execute on its own
+`tp-inf-live-log-writer` thread. It is therefore not routed through the retained
+console/file writer and a slow engineering client cannot block ordinary log publishers.
+
 Working rules:
 
 - application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
@@ -1062,6 +1109,9 @@ Working rules:
 - the core artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
 - `Logging` is the primary runtime logging infrastructure component and owns backend setup, console/file handler composition, record formatting and the current global-level control;
 - `LoggingServer` is the separate externally reachable live-diagnostics component; it owns the live JUL handler plus logging-specific socket/protocol boundary, delegates temporary level changes to `Logging`, and is not a Presentation/IF-03 endpoint;
+- normal default console and retained-file output is dispatched through one bounded `AsyncLogHandler`; do not introduce per-component logging threads;
+- the retained file handler is a sink owned by the logging writer and must remain buffered between writer flushes; it must not flush on every application record;
+- queue overload is diagnostic loss, not control backpressure; the writer reports dropped-record summaries and prioritizes WARN/ERROR over queued lower-severity records when possible;
 - the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
 - Raspberry Pi startup must not assume that wall-clock time is already network-synchronised: the clock may repeat or move backwards across restarts, so retained log creation must use non-overwriting create semantics, add a collision suffix when necessary, and protect the active log from retention decisions regardless of timestamp ordering;
 - retained text records use the compact operator-facing form `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`; exception stack traces follow the record line when present;

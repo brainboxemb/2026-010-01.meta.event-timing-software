@@ -609,6 +609,13 @@ a request or attempt must not be phrased as if success already happened. When a 
 design defines a domain-specific logging matrix, follow that matrix instead of scattering
 level choices through implementations.
 
+Logging I/O must not become hidden application backpressure. When normal logging writes
+to potentially blocking sinks such as console, files or network transports, Infrastructure
+must isolate that I/O from Domain/Application execution with bounded non-blocking handoff.
+Overload may lose diagnostic records, but must not stall a timing/control lane. The detailed
+queue, writer and flush mechanics belong to the logging component design rather than to
+individual business components.
+
 A useful log line normally includes the relevant stable identity and the cause/reason
 when something failed. Logging remains diagnostic history; it is not authoritative
 current state, a metric store or a substitute for durable domain persistence.
