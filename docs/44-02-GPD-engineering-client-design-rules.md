@@ -300,6 +300,30 @@ use a small named Windows acceptance path below.
 **Avoid:** Calling a visual issue done solely because Maven tests are green,
 or storing transient acceptance notes in stable design rules.
 
+### UI-17 — Scripts operate on the public engineering facade
+
+**Rule:** SI-02 may execute explicitly started client-side Lua scripts on its own
+worker lane. Expose a small documented facade of engineering operations over
+the existing public IF-03 boundaries. Do not add a Lua interpreter, a batch
+command grammar or application-internal Java object access to SI-01.
+
+**Why:** A scripted batch is a repeatable engineering test procedure, not a
+new TimingNode domain command or operator feature. Keeping the interpreter
+in SI-02 avoids mixing UI/scripting concerns into timing and antenna code.
+
+**Example:** A Scripts tab loads/drops an editable `.lua`, waits for **Run**,
+then uses `timing.batch{count=10,order="random",seed=42,...}` or
+`timing.simulate("RT-A-0001","normal")` to submit public IF-03 simulation
+requests for the selected LIVE TimingNode. GUI and script batches may not
+run concurrently; **Stop**, node change and disconnection stop further
+submissions. The UI shows progress without blocking JavaFX.
+
+**Avoid:** Exposing raw Java objects or arbitrary Java process/file execution,
+automatically running a dropped file, issuing direct internal AntennaManager
+calls, or treating a simulation request as a committed LogBook registration.
+Scripts remain **trusted operator-selected local code**, not a security
+boundary suitable for untrusted workloads.
+
 ## Windows acceptance path
 
 Use the current packaged **main** app image, note Windows scaling and test:

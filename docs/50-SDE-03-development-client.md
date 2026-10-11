@@ -317,6 +317,32 @@ exercise the antenna observation path separately. Device Log receives source
 `LoggingServer` messages, Terminal is an independently connected shell,
 and Client Log remains local and usable while SI-01 is offline.
 
+### Client-side automation with Lua
+
+The Engineering Client includes a **Scripts** tab alongside **Simulation**.
+A human engineer may load/drop/edit a local `.lua` file and explicitly Run
+or Stop it. LuaJ is packaged only in the `test-client` module. Scripts do not
+run in SI-01 and do not use the Timing Application command shell.
+
+The script boundary is a small `timing` facade exposing
+`batch{count,from,to,order,seed,intervalMs,profile}`,
+`simulate(registrationId,profile)`, `sleep(ms)` and `log(message)`.
+These actions reuse the existing simulation plan and public IF-03 simulation
+endpoint. Simulated antenna observations remain different from the IF-03
+direct auto-registration injection path. One selected TimingNode and target
+are captured at Run; a node change, loss of LIVE/simulation capability or
+disconnection invalidates the run. The interpreter operates on a dedicated
+background worker, reports results via FX dispatch and provides a stop request
+checked between commands and Lua instruction batches. Already accepted
+requests cannot be rolled back.
+
+The client does not expose Java reflection, Java bridge, process/file loaders
+or arbitrary platform globals into Lua. Local scripts are **trusted engineering
+inputs**, not a hardened sandbox for remote/untrusted Lua. No script starts
+on application startup or merely because a file was dropped. The
+[44-02 design rule UI-17](44-02-GPD-engineering-client-design-rules.md)
+governs maintenance of the facade, safety checks and presentation behavior.
+
 ## Capability-driven engineering controls
 
 The Development Client must not assume that engineering simulation controls are available
