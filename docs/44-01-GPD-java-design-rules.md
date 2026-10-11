@@ -251,13 +251,29 @@ An `onXxx(...)` method is a handler name, not a subscription API.
 particular composition currently has one subscriber. When a relationship is semantically
 a direct action to one owned component, use a normal method call instead of an event.
 
-Event wiring is completed during Runtime composition before activation. `subscribe(...)`
-is therefore a composition-time operation; runtime operation is emit-only and the baseline
-`EventSource<T>` exposes no `unsubscribe(...)`.
+Cross-component event wiring is completed during Runtime composition before
+activation. `subscribe(...)` is therefore a composition-time operation; runtime
+operation is emit-only and the baseline `EventSource<T>` exposes no `unsubscribe(...)`.
+
+**Make externally wired relationships discoverable in both places:**
+- The receiving component's class Javadoc must state which externally supplied
+  event(s) invoke its handler and name or link to the composition owner that
+  installs the subscription.
+- The composition code must comment the purpose of non-obvious event links,
+  including whether the handler consumes the event payload or only wakes a
+  task that rereads CURRENT state.
+- Internal completion-event subscriptions between helpers owned by one component
+  may stay inside that component; do not move every local listener to Runtime.
+
+For example, `SystemConductor` documents that `TimingSystemComposer` connects
+`TimingNode.statusChangedEvent()` to `onTimingNodeStatusChanged(...)`. The
+Composer installs the subscription and explains that it is a wake signal, not
+a queued command or a second copy of node state. A developer inspecting either
+class can locate the other half of the relationship.
 
 A component's `activate()`, `deactivate()`, `start()` or `close()` changes component
-or transport behaviour, not the application event graph. Do not hide subscribe/unsubscribe
-wiring inside those lifecycle methods.
+or transport behaviour, not the application event graph. Do not hide
+cross-component subscribe/unsubscribe wiring inside those lifecycle methods.
 
 The `Event<T>` implementation may optimize the common 0/1-subscriber case internally.
 That optimization remains invisible to callers: zero listeners need no listener container,
@@ -1020,6 +1036,14 @@ expressions.
 At an asynchronous boundary, prefer a named method reference and move the admission step
 into that method. The call site should read as the architecture reads.
 
+A lambda that executes **synchronously**, such as an atomic
+`AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
+Keep a short lambda where it makes the transaction visible, but explain the
+non-obvious contract at the call site or in the immediately referenced API:
+the edit is staged, `update()` commits desired state before returning, and
+hardware application still happens asynchronously. Do not let the lambda
+syntax hide when state becomes visible or which component performs the work.
+
 **Why**
 
 Nested lambdas compress multiple execution contexts into punctuation. The code may be
@@ -1237,7 +1261,8 @@ For Java component changes, a reviewer can use this short check:
 6. **Failure direction** — Can a downstream operational problem leak into its producer?
 7. **Async ownership** — Does lifecycle sequencing remain with its real owner?
 8. **Observability** — Can status, metrics and logs explain what happened afterwards?
-9. **Comments** — Are the non-obvious ownership/threading/reasoning points documented?
+9. **Comments** — Are non-obvious ownership, externally wired event subscriptions,
+   transaction/lambda semantics and threading decisions discoverable at the relevant code?
 10. **Language** — Are names and messages clear English using established terminology?
 11. **Control flow** — Are early returns guards, while normal equivalent paths remain explicit?
 12. **Object lifecycle** — Are recurring stateful helpers owned/reused with explicit reset semantics?
