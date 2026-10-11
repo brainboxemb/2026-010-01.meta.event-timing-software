@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the logging strategy in two layers: DR-09 owns generic TRACE/DEBUG/INFO/WARN/ERROR semantics and owner/commit-boundary rules, while SDD-01 defines the concrete TimingData/LogBook recovery, tag-passage, commit, query and failure logging matrix.
+
 - Clarify TimingNode lifecycle versus startup recovery: activate starts execution context and queues recovery on the node lane; CURRENT readiness and Conductor reconciliation occur after the first recovery task, without requiring parallel filesystem workers.
 
 - Document shared transactional Settings as an Infrastructure/cross-cutting concept alongside Configuration, with SI-01 architecture diagram and Java component/design-rule alignment.

@@ -1020,7 +1020,9 @@ and selected external libraries.
 :elaborates: Logging, LoggingServer
 
 Detailed Java design for reusable Logging ownership, retained/live sinks,
-LoggingServer and runtime logging-level control.
+LoggingServer and runtime logging-level control. Generic level intent is defined
+by Java design rule DR-09; domain-specific TimingData/LogBook event-to-level
+choices are defined in SDD-01 rather than repeated in this infrastructure section.
 
 Logging follows the same library-versus-executable composition boundary.
 

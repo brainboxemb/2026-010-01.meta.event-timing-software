@@ -513,6 +513,47 @@ Implementation points to verify on the target Pi:
 
 We do not need a database just to solve these cases.
 
+### Operational TimingData and LogBook logging
+
+TimingData/LogBook logging is part of this detailed design because the useful
+level depends on the domain commit and recovery semantics above. The generic
+level meanings remain defined by Java design rule DR-09.
+
+The normal INFO stream is intended to reconstruct meaningful timing operation
+without becoming a raw RFID trace. In particular, a durable TimingData commit is
+logged only after both persistence append and LogBook visibility have succeeded.
+
+| Event/fact | Level | Design intent |
+| --- | --- | --- |
+| TimingData recovery starts | INFO | show node startup/recovery progress |
+| TimingData recovery completes | INFO | include TimingNodeId, recovered record count and tail-repair flag |
+| incomplete final record tail repaired | WARN | recovery succeeded, but evidence of an interrupted previous write deserves attention |
+| one tag passage/semantic automatic-registration candidate selected | INFO | include RegistrationId plus selected TagId/RSSI/time; this is one passage decision, not every raw observation |
+| successful TimingData commit | INFO | emit only after durable append + LogBook add; include node, sequence, type and relevant registration/location/time provenance |
+| raw TagObservation | TRACE | potentially high rate; never normal INFO |
+| unmapped TagId / duplicate suppression / filter decision | DEBUG | useful for diagnosis without polluting normal operation logs |
+| ordinary LogBook range/latest/count query | no INFO | query traffic is not an operational state transition; DEBUG only when diagnosis specifically needs it |
+| recoverable queue/admission or automatic-repair anomaly | WARN | operation is degraded/rejected but component may continue |
+| TimingData recovery or persistence failure that makes the node unreliable | ERROR | node cannot safely continue its TimingData role |
+
+Two distinct INFO facts may therefore appear for the automatic RFID path:
+
+```text
+Tag passage selected
+    -> TimingNode registration command
+    -> durable TimingData append
+    -> LogBook.add
+TimingData committed
+```
+
+The first proves that the passage/filter produced a semantic registration
+candidate. The second proves that the resulting record crossed the durable
+commit/LogBook visibility boundary. They must not be collapsed into one premature
+"written" message.
+
+The LogBook and TimingData file remain authoritative. Logs are a human-readable
+operational narrative and must not be replayed as recovery state.
+
 ### Startup flow
 
 Lifecycle activation and recovery are deliberately separate:
