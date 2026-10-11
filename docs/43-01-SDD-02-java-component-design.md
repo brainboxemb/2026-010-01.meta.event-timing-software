@@ -2577,23 +2577,29 @@ SerialExecutor / SerialScheduledExecutor logical-lane realization.
 Project-owned SI-01 runtime threads use the diagnostic name form
 `tp-<owner>-<role>[-<qualifier>]`. The prefix makes Timing Point Application threads easy
 to separate from JDK, Maven/JGit and third-party library threads in a debugger, profiler or
-thread dump. The owner abbreviations used by the current runtime are `prl` (Presentation),
-`dml` (Domain), `io` (shared device/network I/O executor), `inf` (Infrastructure) and
-`run` (Runtime/composition).
+thread dump. The compact owner abbreviations used by the current runtime are `pl`
+(Presentation layer), `dl` (Domain layer), `io` (shared device/network I/O executor)
+and `inf` (Infrastructure). The executable entry thread uses the special compact name
+`tp-main` rather than a layer prefix.
 
 Examples:
 
 ```text
-tp-prl-console
-tp-prl-api-http
-tp-prl-remote-shell
+tp-main
+tp-pl-console
+tp-pl-prompt
+tp-pl-remote-shell
+tp-dl-node-worker
+tp-dl-tagproc-worker
+tp-dl-system-worker
+tp-io-shared-worker
+tp-inf-logging
 tp-inf-live-log
 tp-inf-live-log-writer
-tp-run-shutdown
-tp-io-shared-<index>
-tp-dml-node-worker
-tp-dml-tagproc-worker
 ```
+
+JDK and third-party threads keep their own names, for example an HTTP dispatcher or
+WebSocket library worker. Do not rename those merely to make a thread dump visually uniform.
 
 Physical worker names describe the shared executor role, not one logical object that happens
 to submit work. A `TimingNodeId` therefore does **not** appear in the TimingNode or
@@ -2800,7 +2806,7 @@ Runtime TimingNode role executor
   ThreadPoolExecutor
     corePoolSize = 1
     maximumPoolSize = 1
-    physical thread = tp-dml-node-worker
+    physical thread = tp-dl-node-worker
 
 TimingNode A SerialExecutor lane
   bounded ArrayBlockingQueue

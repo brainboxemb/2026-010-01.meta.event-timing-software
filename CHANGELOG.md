@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Shorten project-owned thread naming prefixes in SDD-02: use `dl` for Domain and `pl` for Presentation, name the SystemConductor worker `tp-dl-system-worker`, document `tp-main`, and leave JDK/third-party thread names unchanged.
+
 - Define bounded asynchronous logging execution: default console/file sinks run on one Infrastructure writer thread, publishers use non-blocking queue admission, retained files flush in batches, and logging overload drops/diagnoses records instead of blocking timing lanes.
 
 - Define the logging strategy in two layers: DR-09 owns generic TRACE/DEBUG/INFO/WARN/ERROR semantics and owner/commit-boundary rules, while SDD-01 defines the concrete TimingData/LogBook recovery, tag-passage, commit, query and failure logging matrix.
