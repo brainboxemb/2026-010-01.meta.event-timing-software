@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Document the owned `tp-main` bootstrap handoff: Maven `exec:java` may create a generated `<mainClass>.main()` bootstrap thread, while SI-01 runs on its own non-daemon `tp-main` thread after the launcher thread returns.
+
 - Remove the dedicated Presentation prompt thread from the design: local prompt quiet-period redraw is serviced by `tp-inf-logging`; document why local console and remote shell remain separate blocking-I/O threads and reassert `tp-main` at the long-lived runtime boundary.
 
 - Shorten project-owned thread naming prefixes in SDD-02: use `dl` for Domain and `pl` for Presentation, name the SystemConductor worker `tp-dl-system-worker`, document `tp-main`, and leave JDK/third-party thread names unchanged.
