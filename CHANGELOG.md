@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Clarify SI-02 UI-06: a selected dock tab must remain visibly distinct from the raised tab strip with the neutral surface fill; only the active/focused leaf adds the restrained accent.
+- Define explicit BentoFX tab affordance for SI-02: the strip has its own surface, every tab has a raised fill and quiet separator, selected tabs use #dbeaf9, and only the active/focused leaf adds the restrained accent.
 
 - Document SI-02 NetBeans Run/Debug as a separate Java 21-capable child JVM via Maven `exec:exec`, with runtime classpath, Windows long-classpath handling and NetBeans JDWP child-process debugging; Maven/JGit/ForkJoin threads remain outside the Engineering Client runtime.
 
