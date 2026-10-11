@@ -451,13 +451,19 @@ no committed records       -> nextSequence = 1
 last committed sequence N  -> nextSequence = N + 1
 ```
 
-At startup:
+At startup, each TimingNode performs this recovery as its **first ordered
+TimingNode-lane task**, after `activate()` has started the lane and returned:
 
 - read complete IF-05 records in order;
 - check that the file belongs to one TimingNode;
 - check that the committed sequence increases without duplicates or unexpected gaps;
 - ignore/remove only a half-written final record that has no complete line ending;
+- rebuild the node-owned LogBook/state before publishing CURRENT status;
 - never reuse a committed `(TimingNodeId, SequenceNumber)`.
+
+The lane ownership is about ordering and single-writer semantics, not physical
+parallelism. Multiple TimingNode lanes may share one physical TimingNode worker,
+so startup file reads may intentionally execute one at a time.
 
 A half-written **last** record after power loss is recoverable: truncate back to
 the last complete record and continue from there.
@@ -509,35 +515,51 @@ We do not need a database just to solve these cases.
 
 ### Startup flow
 
-The first startup flow is intentionally straightforward:
+Lifecycle activation and recovery are deliberately separate:
 
 ```text
 start process
    |
    v
-load configuration
+load configuration / compose components
    |
    v
-open TimingData file for each configured TimingNode
+TimingNode.activate()
    |
-   v
-read and validate complete IF-05 records
+   +--> start node serial lane
+   +--> admit recovery as first ordered node task
+   +--> start owned child lane(s)
+   +--> return; other components may continue activation
+   |
+   +------------------------------+
+                                  |
+TimingNode serial lane            | other application startup may continue
+   |                              |
+   v                              v
+read and validate complete    other nodes / interfaces / devices activate
+IF-05 records
    |
    +--> half-written final line: truncate to last complete record + report
    |
-   +--> corrupt complete record / duplicate / gap: recovery error, do not append
+   +--> corrupt complete record / duplicate / gap: recovery error state
    |
    v
 nextSequence = last committed sequence + 1
    |
    v
-rebuild LogBook
+rebuild LogBook / recovered node state
    |
    v
-load other saved/reference state
+publish first CURRENT Status
    |
    v
-start interfaces/devices
+wake current-state consumers
+```
+
+The recovery task is ordered before later TimingNode commands. Presentation or
+coordination components may already be active while recovery is running; until
+the first Status is published they must represent the node as not ready rather
+than guessing CLOSED.
    |
    v
 connect/synchronise upstream when available

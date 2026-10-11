@@ -138,6 +138,12 @@ because its value can change asynchronously.
 A constructor creates and validates an object. Runtime behaviour starts through an
 explicit operation such as `activate()`, `requestEnableInventory()` or `requestDisableInventory()`.
 
+For an active component, `activate()` primarily establishes lifecycle/execution context.
+If the component owns a serial lane and startup requires potentially blocking recovery or
+state reconstruction, start the lane, admit that work to the owning lane and return rather
+than performing or awaiting the work on the caller thread. Readiness is a separate fact
+from lifecycle activation.
+
 **Why**
 
 Object composition remains predictable. Creating an object should not unexpectedly start a
@@ -240,7 +246,7 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent()          EventSource: observable post-fact notification
+statusChangedEvent()          EventSource: first available Status + later effective changes
 onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
 
@@ -373,8 +379,8 @@ When a component only needs to know **what is true now**, maintain or read one c
 representation of that truth. Do not queue historical state snapshots and replay them later
 as commands.
 
-If the authoritative owner emits a post-change event, a current-state controller may use
-that event only to wake a reconciliation run. The reconciliation then reads the owner's
+If the authoritative owner emits a first-availability or post-change event, a current-state
+controller may use that event only to wake a reconciliation run. The reconciliation then reads the owner's
 authoritative current representation explicitly. This keeps event history separate from
 current control state and makes initialization use the same path as later updates.
 
@@ -404,10 +410,21 @@ Good startup flow:
 ```text
 TimingNode.activate()
         |
-        +--> recovery complete
+        +--> start TimingNode lane
+        +--> admit recovery as first node task
+        +--> return
+
+TimingNode lane
+        |
+        +--> read/validate persisted TimingData
+        +--> rebuild node-owned state
         +--> publish immutable currentStatus
+        +--> statusChangedEvent() wake
 
 SystemConductor control run
+        |
+        +--> CURRENT unavailable while recovery pending
+        |       -> publish no partial decision; return
         |
         v
 TimingNode.query(status, CURRENT)
@@ -739,12 +756,18 @@ provider fails during a delayed transition.
 
 For Conductor:
 
-- the first control run reads CURRENT TimingNode status after the nodes are active;
+- `TimingNode.activate()` returns while blocked recovery is still running on the
+  TimingNode lane;
+- the first recovery task publishes CURRENT status only after recovered mutable
+  state is complete;
+- the first Conductor run may observe startup UNAVAILABLE and then publishes no
+  partial Settings decision;
+- the initial status event wakes a later reconciliation after recovery completes;
 - a status event only wakes the control task and does not publish Settings itself;
-- every control run reads CURRENT TimingNode status before deriving desired inventory;
+- every ready-state control run reads CURRENT TimingNode status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
 - one OPEN node among several nodes keeps shared inventory desired state enabled;
-- CURRENT-state unavailability is visible as a Conductor control failure and is never interpreted as CLOSED;
+- CURRENT-state failure after readiness is explicit and is never interpreted as CLOSED;
 - no downstream control failure throws back through TimingNode event delivery.
 
 For AntennaManager:

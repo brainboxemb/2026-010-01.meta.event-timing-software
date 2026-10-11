@@ -128,7 +128,9 @@ Response shape:
 ```
 
 `locationId` is `null` when no operational location is assigned. `state` is
-`CLOSED`, `OPEN` or `ERROR`.
+`CLOSED`, `OPEN` or `ERROR`. During initial TimingNode recovery no authoritative
+CURRENT status exists yet. `GET /api/v1/status` then returns the normal `503`
+`UNAVAILABLE` mapping rather than inventing a CLOSED or partial node state.
 
 Problem entries use:
 
@@ -674,8 +676,12 @@ configuration branch and contains its resulting current view:
 The event is post-fact and is emitted only for an `APPLIED` configuration
 change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 
-After connection SI-01 sends `STATUS_SNAPSHOT` before the client relies on subsequent
-change events.
+WebSocket listener startup does not wait for TimingNode recovery. After connection
+SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
+change events. If one or more TimingNodes have not published their initial CURRENT
+status yet, SI-01 closes that connection with code **1013 (Try Again Later)** and
+reason `TimingNode status not ready`; the client reconnects and obtains the complete
+snapshot once recovery has published current state.
 
 ### Slow-client / outbound backlog policy
 
@@ -735,7 +741,7 @@ Current status mapping:
 | `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
 | `409` | domain conflict such as `NODE_NOT_OPEN`, or semantic `RESTART_REQUIRED` for a valid configuration update |
-| `503` | `BUSY`, `UNAVAILABLE`, `INTERRUPTED`, expected operation failure |
+| `503` | `BUSY`, `UNAVAILABLE` (including initial TimingNode recovery not ready), `INTERRUPTED`, expected operation failure |
 | `504` | `OUTCOME_UNKNOWN` |
 | `500` | unexpected internal interface failure |
 
