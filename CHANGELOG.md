@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Remove the dedicated Presentation prompt thread from the design: local prompt quiet-period redraw is serviced by `tp-inf-logging`; document why local console and remote shell remain separate blocking-I/O threads and reassert `tp-main` at the long-lived runtime boundary.
+
 - Shorten project-owned thread naming prefixes in SDD-02: use `dl` for Domain and `pl` for Presentation, name the SystemConductor worker `tp-dl-system-worker`, document `tp-main`, and leave JDK/third-party thread names unchanged.
 
 - Define bounded asynchronous logging execution: default console/file sinks run on one Infrastructure writer thread, publishers use non-blocking queue admission, retained files flush in batches, and logging overload drops/diagnoses records instead of blocking timing lanes.
