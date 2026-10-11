@@ -77,11 +77,12 @@ reuse semantic looked-up color names rather than new hex values in every selecto
 
 | Role | Token / current baseline |
 | --- | --- |
-| Main surface | `-si02-surface` = `#f7f7f7` |
-| Raised/tab header | `-si02-raised` = `#eeeeee` |
-| Border | `-si02-border` = `#cfcfcf` |
+| Main surface / tab strip | `-si02-surface` = `#f7f7f7` |
+| Unselected raised tab/header | `-si02-raised` = `#eeeeee` |
+| Selected tab fill | `-si02-selected-bg` = `#dbeaf9` |
+| Border / tab separator | `-si02-border` = `#cfcfcf` |
 | Text | `-si02-text` = `#202020` |
-| Selection/focus | `-si02-accent` = `#0078d7` |
+| Active/focus accent | `-si02-accent` = `#0078d7` |
 | Connected | `-si02-ok-bg` = `#e9f6ed`, border `#5aa273` |
 | Busy / partially connected | `-si02-warning-bg` = `#fff4da`, border `#d6a34a` |
 | Fault | `-si02-error-bg` = `#fcecec`, border `#c97474` |
@@ -128,18 +129,21 @@ through CSS, or recreating framework docking with a second layout registry.
 
 ### UI-06 — Selected and focused are different
 
-**Rule:** Each dock region may have a selected tab. A selected tab must remain
-visibly distinct from the surrounding raised tab strip using the neutral surface fill.
-Only the region containing keyboard focus should add the active focus accent. Data
-updates never request keyboard focus unless the operator requested it.
+**Rule:** A BentoFX header row must first read as a **tab strip** even before
+selection is considered. Give the strip its own surface and each tab its own raised
+fill plus a subtle separator/border. Each dock region may then have one selected tab,
+using the dedicated selected-tab fill. Only the region containing keyboard focus should
+add the active focus accent. Data updates never request keyboard focus unless the
+operator requested it.
 
-**Why:** A registration can refresh Registrations and LogBook without pretending
-that Device Log or Terminal was focused or manually selected. "Neutral selected" does
-not mean "visually identical to the unselected tab strip"; selection and active focus
-are separate visual states.
+**Why:** Adjacent text labels are not sufficient tab affordance. The operator must be
+able to see immediately that TimingNode, API, Registration, Simulation and Scripts are
+switchable peer views. Selection and active focus are separate visual states: a selected
+tab remains visibly selected in an inactive leaf, while the active leaf adds the accent.
 
-**Example:** Style `.header:selected` with the normal surface token against the
-raised/tab-header token; style the selected header in the active leaf with a clear,
+**Example:** Style the tab strip with the main surface, every `.header` with the
+raised tab fill plus a quiet separator, `.header:selected` with
+`-si02-selected-bg`, and only the selected header in the active leaf with the
 restrained accent underline.
 
 **Avoid:** Calling `requestFocus()` in an HTTP/WebSocket completion handler
