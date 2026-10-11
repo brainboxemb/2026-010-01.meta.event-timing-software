@@ -2606,14 +2606,17 @@ tp-inf-live-log-writer
 JDK and third-party threads keep their own names, for example an HTTP dispatcher or
 WebSocket library worker. Do not rename those merely to make a thread dump visually uniform.
 
-Maven `exec:java` creates its own bootstrap thread and names it from the configured
-main class (for example `io.github...Main.main()`). `Main.main()` therefore does not use
-that launcher-owned thread as the long-lived SI-01 runtime thread. It starts one
-application-owned, non-daemon `tp-main` thread and returns, allowing the Maven bootstrap
-thread to terminate. Packaged `java -jar` startup uses the same handoff so runtime thread
-identity does not depend on the launcher. ApplicationLauncher still reasserts `tp-main`
-at the activation/wait boundary as a defensive invariant. This handoff does not add a
-second long-lived application thread; it replaces the temporary launcher/bootstrap thread.
+NetBeans development Run/Debug starts SI-01 in a **separate JVM** through Maven
+`exec:exec`, not the in-process `exec:java` goal. The Maven process may therefore own
+its own `main`, ForkJoinPool, JGit and other build-tool threads, but those are not part of
+the Timing Point Application JVM or its runtime thread model.
+
+The child JVM is launched with the application runtime classpath and the configured IF-11
+application file. Debug launch adds the NetBeans JDWP listener address to that child JVM.
+On Windows the exec action enables long-classpath handling. The application uses its normal
+JVM entry point; `Main.main()` names that actual JVM main thread `tp-main`. Packaged
+`java -jar` startup follows the same application code path without any IDE-specific
+thread handoff or launcher workaround.
 
 The two remaining project-owned Presentation threads are intentional blocking-I/O waits:
 `tp-pl-console` blocks on local terminal input and `tp-pl-remote-shell` blocks on
