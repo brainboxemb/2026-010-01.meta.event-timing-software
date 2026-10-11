@@ -128,15 +128,19 @@ through CSS, or recreating framework docking with a second layout registry.
 
 ### UI-06 — Selected and focused are different
 
-**Rule:** Each dock region may have a selected tab. Only the region containing
-keyboard focus should have the active focus accent. Data updates never request
-keyboard focus unless the operator requested it.
+**Rule:** Each dock region may have a selected tab. A selected tab must remain
+visibly distinct from the surrounding raised tab strip using the neutral surface fill.
+Only the region containing keyboard focus should add the active focus accent. Data
+updates never request keyboard focus unless the operator requested it.
 
 **Why:** A registration can refresh Registrations and LogBook without pretending
-that Device Log or Terminal was focused or manually selected.
+that Device Log or Terminal was focused or manually selected. "Neutral selected" does
+not mean "visually identical to the unselected tab strip"; selection and active focus
+are separate visual states.
 
-**Example:** Style `.header:selected` neutrally; style focused active headers
-with a clear, restrained accent.
+**Example:** Style `.header:selected` with the normal surface token against the
+raised/tab-header token; style the selected header in the active leaf with a clear,
+restrained accent underline.
 
 **Avoid:** Calling `requestFocus()` in an HTTP/WebSocket completion handler
 or coloring every selected tab like the focused pane.
