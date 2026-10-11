@@ -568,7 +568,9 @@ InventoryTask
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
 `CooperativeTaskController` for event-triggered reconciliation.
-`TimingNode.statusChangedEvent(Status)` only wakes the existing control task.
+`TimingNode.statusChangedEvent(Status)` is emitted for the first post-recovery Status
+publication and for later effective Status changes. For SystemConductor it only wakes
+the existing control task.
 The later run reads each TimingNode's published CURRENT status. It computes
 `inventoryEnabled = any node OPEN` as a local boolean and publishes the
 desired result directly to the shared `AntennaSettings`; no cached

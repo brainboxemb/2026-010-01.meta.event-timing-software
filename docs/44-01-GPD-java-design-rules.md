@@ -246,7 +246,7 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent()          EventSource: observable post-fact notification
+statusChangedEvent()          EventSource: first available Status + later effective changes
 onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
 
@@ -379,8 +379,8 @@ When a component only needs to know **what is true now**, maintain or read one c
 representation of that truth. Do not queue historical state snapshots and replay them later
 as commands.
 
-If the authoritative owner emits a post-change event, a current-state controller may use
-that event only to wake a reconciliation run. The reconciliation then reads the owner's
+If the authoritative owner emits a first-availability or post-change event, a current-state
+controller may use that event only to wake a reconciliation run. The reconciliation then reads the owner's
 authoritative current representation explicitly. This keeps event history separate from
 current control state and makes initialization use the same path as later updates.
 
