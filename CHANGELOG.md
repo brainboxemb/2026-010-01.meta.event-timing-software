@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify SI-02 UI-06: a selected dock tab must remain visibly distinct from the raised tab strip with the neutral surface fill; only the active/focused leaf adds the restrained accent.
+
 - Document SI-02 NetBeans Run/Debug as a separate Java 21-capable child JVM via Maven `exec:exec`, with runtime classpath, Windows long-classpath handling and NetBeans JDWP child-process debugging; Maven/JGit/ForkJoin threads remain outside the Engineering Client runtime.
 
 - Document the separate-JVM NetBeans launch model: SI-01 Run/Debug uses Maven `exec:exec`, the Maven/JGit/ForkJoin threads stay in the build-tool process, and the child application JVM uses its real `tp-main` thread with NetBeans JDWP child-process debugging.
