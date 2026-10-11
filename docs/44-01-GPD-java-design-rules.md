@@ -50,11 +50,11 @@ Example:
 TimingNode state is OPEN
         |
         v
-Conductor calls:
-requestEnableInventory()
+Conductor publishes:
+AntennaSettings.update(...)
         |
         v
-AntennaManager decides how:
+AntennaManager reconciles:
 power -> initialize -> inventory
 ```
 
@@ -86,9 +86,9 @@ antennaSettings.update(edit -> edit.inventoryEnabled(true));
 ```
 
 The Conductor publishes desired inventory enable. AntennaManager may then power the
-antenna, wait for stabilization, initialize it and start inventory. When the TimingNode
-state becomes CLOSED or ERROR, Conductor explicitly calls
-`requestDisableInventory()`.
+antenna, wait for stabilization, initialize it and start inventory. When all TimingNodes
+are CLOSED or ERROR, the Conductor publishes `inventoryEnabled(false)` in the
+same shared Settings object.
 
 **Avoid**
 
@@ -100,9 +100,9 @@ antennaManager.startInventory();
 
 from Conductor. This makes Conductor responsible for AntennaManager internals.
 
-The same rule applies to recovery. Conductor may have requested
-the desired inventory setting; AntennaManager owns any device recovery needed to restore
-enabled inventory without requiring Conductor to micromanage the recovery sequence.
+The same rule applies to recovery. After the Conductor publishes desired
+inventory state, AntennaManager owns recovery needed to restore it without
+requiring the Conductor to micromanage hardware.
 
 The same ownership rule also guides package placement. A reusable technical mechanism
 that knows nothing about SI-01 concepts belongs under `infra`; domain-specific
@@ -114,14 +114,17 @@ Example:
 domain.system.SystemConductor
         reads current TimingNode status and calculates desired inventory
 
+infra.setting.Setting<T>
+        passive desired/applied tracking, reused across components
+
 io.devices.antenna.manager.AntennaSettings
-        shared desired-state transaction with one change notification
+        antenna-specific shared desired-state transaction
 
 io.devices.antenna.manager.AntennaManager
         owns applied state, physical transitions and recovery
 ```
 
-A property is state, not a scheduler. It must not own a SerialExecutor, Future,
+A Setting is state, not a scheduler. It must not own a SerialExecutor, Future,
 queue admission, retry loop, coalescing controller or component lifecycle merely
 because its value can change asynchronously.
 
@@ -262,8 +265,8 @@ array representation. Subscription order remains stable. Concurrent runtime
 `emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
 Initialization is also separate from events. SystemConductor activation wakes its first
-normal reconciliation run; that run obtains the first SourceProperty values from CURRENT
-TimingNode status. No synthetic status-change event is required to create initial state.
+normal reconciliation run; that run reads CURRENT TimingNode status and publishes
+the desired AntennaSettings state. No synthetic status-change event is required.
 
 **Avoid**
 

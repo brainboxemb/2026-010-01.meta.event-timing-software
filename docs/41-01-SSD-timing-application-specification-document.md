@@ -2823,6 +2823,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |
 | Logging | SLF4J API in reusable application core; default executable provider `slf4j-jdk14` / `java.util.logging` | handlers/retention remain configuration and operational concerns |
 | Configuration | IF-11 effective `ApplicationConfig`: base + platform + optional profile + secret resolution; YAML/SnakeYAML is the default Java input realization | profile/platform/mode resolution is architecturally defined but not yet fully implemented |
+| Settings | Cross-cutting passive desired/applied Setting mechanics; component-specific shared settings support atomic desired-state updates | Conductor derives desired state from CURRENT node status; antenna hardware reconciliation belongs to AntennaManager |
 | Persistence | Domain-owned TimingDataPersistence over generic lower-layer storage; file/database mechanisms do not import Domain/Application types | ordering and visibility in SDD-01; Java storage/persistence split in SDD-02; record contract in IF-05 |
 | API HTTP | JDK `HttpServer` for IF-03 request/response | selected transport; belongs to the API functional interface |
 | API WebSocket | `org.java-websocket:Java-WebSocket:1.6.0` on a dedicated configured listener | selected transport; Java 8+, pure Java/NIO and existing SLF4J boundary; keep the HTTP transport separate |

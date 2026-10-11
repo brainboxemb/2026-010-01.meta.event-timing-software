@@ -526,6 +526,14 @@ nodes:
   kind: crosscutting
   notation: component
   layout: {x: 1185, y: 870, w: 220, h: 50}
+- id: settings-infra
+  object_id: Settings
+  group: crosscutting-layer
+  label: "Settings"
+  subtitle: "desired • applied • atomic update"
+  kind: crosscutting
+  notation: component
+  layout: {x: 1185, y: 940, w: 220, h: 50}
 edges:
 - from: logging-server
   to: logging-infra

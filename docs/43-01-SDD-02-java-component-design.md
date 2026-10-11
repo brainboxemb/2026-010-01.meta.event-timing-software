@@ -131,6 +131,7 @@ io.github.brainboxemb.eventtiming/timingpoint/
     storage/
   infra/
     configuration/
+    setting/
     logging/
     loggingserver/
   runtime/
@@ -163,7 +164,7 @@ Use these rules:
   than introducing generic `helper`, `model` or single-type `identity`
   subpackages;
 - reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
-- reserve `infra` for concrete cross-cutting technical support such as `BuildIdentity`, logging, diagnostics and configuration/extension adapters;
+- reserve `infra` for concrete cross-cutting support such as `BuildIdentity`, logging, diagnostics, configuration, shared Setting mechanics and extension adapters;
 - reserve `runtime` for concrete application composition, the running application container and lifecycle;
 - use `io` for external hardware, messaging and storage adapters.
 
@@ -231,8 +232,8 @@ infra/
   lifecycle/
     AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
     ComponentLifecycleManager.java  application/system activation and rollback mechanics
-  property/
-    (no cached per-node property or derived inventory state; CURRENT node status is read directly)
+  setting/
+    Setting.java                   passive requested/applied tracking (manager-owned)
   extension/
     ExtensionRegistry.java          typed provider discovery/selection
   configuration/
@@ -1165,9 +1166,11 @@ TimingSystem with it before activation; the class does not assume one
 TimingSystem. The TimingSystem `Conductor` owns the lifecycle
 of its TimingNodes and the system-level inventory decision.
 
-The TimingSystem `Conductor` holds the associated `AntennaSettings`, not
-`AntennaManager`. The settings object is the shared control state, not an
-inventory-control interface. Runtime resolves the IF-11
+The TimingSystem `Conductor` holds the associated antenna-specific
+`AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
+Infrastructure / cross-cutting; the component-specific `AntennaSettings`
+belongs beside the antenna manager in I/O. The settings object is shared
+control state, not an inventory-control interface. Runtime resolves the IF-11
 `io.devices.antennaManagers` binding by `timingSystemId`; at most one manager
 is composed for each TimingSystem. It may read manager status or request
 manager-wide inventory as system behaviour requires; the manager still owns
@@ -1661,7 +1664,14 @@ directly. The physical multi-step sequences live in those task classes under `ma
 The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
 second task-facing antenna interface.
 
-The manager uses a shared `AntennaSettings` backed by a small `Setting<Boolean>` for inventory intent:
+The generic `Setting<T>` belongs to cross-cutting `infra.setting`, alongside
+`infra.configuration`. The reusable Setting tracks desired versus applied
+values without knowing any device or Conductor. The antenna-specific
+`AntennaSettings` belongs with I/O antenna management and wraps one
+`Setting<Boolean>` for inventory intent. The Conductor only sees this
+shared settings object, which Runtime composes once for each TimingSystem:
+
+
 
 ```text
 requestedValue
@@ -3108,11 +3118,11 @@ If listener notification fails after a TimingData record is committed, that does
 back the commit. A consumer that needs reliable recovery uses authoritative
 persisted/LogBook state and its own recovery/delivery mechanism.
 
-Passive SourceProperty/DerivedProperty state uses ordinary owner-controlled updates; those
-objects do not own an event scheduler or source reread mechanism. For current-state
-reconciliation, a source event may wake the owning control task, while the task itself
-rereads the authoritative CURRENT representation and updates SourceProperties before
-deriving behaviour.
+State events may wake the owning control task. The task rereads CURRENT state
+and computes its desired outcome directly. For inventory, it publishes through
+`AntennaSettings.update(...)`, and the AntennaManager reconciles that desired
+value to applied device state on its own lane. Passive `Setting<T>` owns no
+executor or source reread mechanism.
 
 Use `onXxx(...)` for listener/handler methods, for example
 `onTimingNodeStatusChanged(Status status)`. Do not introduce a parallel callback

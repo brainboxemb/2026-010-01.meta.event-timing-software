@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Document shared transactional Settings as an Infrastructure/cross-cutting concept alongside Configuration, with SI-01 architecture diagram and Java component/design-rule alignment.
+
 - Standardize SystemId and NodeId across IF-11 and the SI-01 architectural model; YAML uses `systemId` / `nodeId` declarations and references, with list-based `antennaManagers` and `antennas` (no artificial `primary` entry).
 
 
