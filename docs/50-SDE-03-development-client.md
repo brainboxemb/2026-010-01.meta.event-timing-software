@@ -140,6 +140,35 @@ are not part of the SI-02 runtime thread model. This development launch separati
 not change the production/distribution model: the Windows `jpackage` app-image remains
 the deployment baseline.
 
+### NetBeans Maven repository indexing
+
+The NetBeans Maven repository index is an **IDE convenience cache**, not part of
+the project build or Maven dependency-resolution contract. The project does not
+require a complete local Maven Central index to build, test, run or debug SI-01
+or SI-02. Maven continues to resolve declared dependencies from the configured
+repositories when IDE repository indexing is disabled.
+
+For this development environment the preferred setting is therefore:
+
+```text
+Tools > Options > Java > Maven > Indexing
+    repository indexing: disabled
+```
+
+The wording can vary slightly between NetBeans releases; the Maven output window
+can also provide a settings action that opens the same Maven options panel.
+
+Disabling the index may reduce IDE-only artifact search/completion over the full
+remote repository. Already declared project dependencies, the local Maven
+repository and ordinary Maven builds remain usable.
+
+A message such as **"Unpacking index for Central Repository"** refers to the
+NetBeans copy of the Maven Central metadata index; it does not mean the complete
+Maven Central artifact repository is being downloaded. A full index rebuild can
+occur after an IDE upgrade or cache replacement. If it appears repeatedly in
+normal day-to-day use, verify that repository indexing has not been re-enabled
+before treating the behaviour as a project or Maven build problem.
+
 ### Decision rationale
 
 The decision deliberately builds on qualified project evidence rather than introducing a
