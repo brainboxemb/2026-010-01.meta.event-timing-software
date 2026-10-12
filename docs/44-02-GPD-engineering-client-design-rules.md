@@ -330,24 +330,8 @@ submissions. The UI shows progress without blocking JavaFX.
 automatically running a dropped file, issuing direct internal AntennaManager
 calls, or treating a simulation request as a committed LogBook registration.
 Scripts remain **trusted operator-selected local code**, not a security
-boundary suitable for untrusted workloads.
-
-### UI-17 — Script the Engineering Client through a small public API
-
-**Rule:** SI-02 may execute local Lua scripts when the engineer explicitly
-selects Run. Script actions use the existing IF-03 simulation interface;
-SI-01 remains unchanged.
-
-**Why:** Repeatable engineering batches belong to a test client, not to
-the time-registration domain.
-
-**Example:** The Scripts tab accepts a `.lua` file, runs it on a worker
-and exposes `timing.batch`, `timing.simulate`, `timing.sleep` and
-`timing.log`. A disconnect, node change or Stop interrupts future work.
-Scripts and the GUI simulator do not run batches simultaneously.
-
-**Avoid:** Starting a dropped script automatically, bypassing IF-03, adding
-scripting to SI-01 or exposing the application's internal Java objects.
+boundary suitable for untrusted workloads. The supported Lua interface is
+specified in `42-02-SID-lua-scripting-api.md`.
 
 ## Windows acceptance path
 
