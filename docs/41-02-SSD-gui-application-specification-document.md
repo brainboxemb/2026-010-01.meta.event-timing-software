@@ -40,7 +40,7 @@ It may be used:
 - by developers while building SI-01 and its integrations;
 - by engineers during commissioning and diagnostics;
 - by system testers as the real desktop client in running-system verification;
-- later by scripted engineering workflows through the same client/application services.
+- by repeatable scripted engineering workflows through the same client/application services.
 
 SI-02 does not own TimingNode or TimingData domain state. SI-01 remains
 authoritative and SI-02 uses supported external interfaces.
@@ -147,6 +147,33 @@ the outcome can be confirmed, SI-02 shall keep that outcome visibly unknown
 until resynchronisation establishes current state.
 :::
 
+:::{req} Display connected IF-03 engineering capabilities
+:id: SI02-REQ-009
+:status: D
+:specifies: UC-009
+:depends_on: IF03-REQ-012
+
+After the IF-03 baseline synchronises, SI-02 shall present the capability
+identities and their authoritative `supported` and `enabled` values from the
+connected SI-01, including unrecognised IDs. Before retrieval or after connection
+loss, the display shall distinguish unknown/stale capability state from an
+explicitly disabled capability. UI controls may depend on capabilities but shall
+not replace the diagnostic list.
+:::
+
+:::{req} Support explicit client-side Lua engineering scripts
+:id: SI02-REQ-010
+:status: D
+:specifies: UC-009
+:depends_on: IF03-REQ-012, IF03-REQ-024
+
+SI-02 shall execute explicitly started local Lua scripts through a documented,
+limited client-facing engineering API. Client-local operations shall not depend
+on SI-01's optional simulation capability; simulated-tag requests shall only
+execute when SI-01 advertises their enabled IF-03 capability. Stopping a script
+shall prevent future submissions but cannot reverse accepted server requests.
+:::
+
 ## Software-item architecture
 
 The principal boundary is:
@@ -154,7 +181,7 @@ The principal boundary is:
 ```text
 JavaFX / BentoFX views ----+
                            |
-future scripting ----------+--> SI-02 client/application services --> IF-03 --> SI-01
+Lua scripting -------------+--> SI-02 client/application services --> IF-03 --> SI-01
                            |
 tests / fakes -------------+
 ```
