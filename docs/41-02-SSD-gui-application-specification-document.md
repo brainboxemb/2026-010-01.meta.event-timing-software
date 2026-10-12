@@ -216,8 +216,14 @@ SI-02 shall support:
 Step 6 V01 uses the real SI-02 for the revoke/DELETED/restart/reconnect GUI
 scenario. Headless verification does not replace that UI evidence.
 
-## Future scripting
+## Client-side Lua scripting
 
-Later embedded scripting may drive the same SI-02 client/application services
-as the GUI. Scripts shall not need to automate JavaFX controls. Scripting is a
-separate later capability.
+SI-02 provides an embedded, explicitly invoked Lua engineering interface through
+the same client/application service layer used by the GUI. The current documented
+facade provides client-local output/waits and capability-gated IF-03 simulated-tag
+requests. Script execution shall not depend on JavaFX control automation and shall
+not add Lua or internal Java access to SI-01.
+
+The supported function signatures, preconditions, cancellation and security
+limitations are defined in `42-02-SID-lua-scripting-api.md`. Extended multi-system
+control and state assertions are future extensions, not current functions.
