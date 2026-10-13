@@ -523,13 +523,17 @@ false delivery-order dependency.
 :status: D  
 :depends_on: SI01-REQ-077, SI01-REQ-079, SI01-REQ-042  
 
-StageTiming shall derive elapsed stage-timing information from committed TimingData,
-the resolved TeamId and the current StageStartTimes state. A RaceData change may
-change the derived StageTiming result but shall not alter, remove, renumber or
-recommit the underlying TimingData. When TeamId or stage start data
-is unavailable, SI-01 shall expose the result as unresolved/incomplete rather
-than inventing a value. Ranking/grouping policy is a separate read-side concern
-and shall not be inferred without an explicit rule.
+StageTiming shall expose the current derived list of team stage times and their
+ranking from committed TimingData, resolved TeamId values and current
+StageStartTimes state. The ranking shall order resolved teams by ascending elapsed
+stage time; equal elapsed times share the same rank. A RaceData change may change
+the derived StageTiming view but shall not alter, remove, renumber or recommit the
+underlying TimingData.
+
+Registrations for which TeamId or stage-start data cannot currently be resolved
+shall not receive an invented elapsed time or ranking position. Such incomplete
+input may be exposed separately for diagnostics, but it is not a separate
+StageTiming result/status hierarchy.
 :::
 
 :::{req} Maintain upstream PING request/answer lifecycle  
@@ -1036,8 +1040,7 @@ Application
               |     +-- StageStartTimes
               |     +-- UniqueTeamRegistrations
               +-- timing
-              |     +-- StageTimingCalculator
-              |     +-- StageTiming result data
+              |     +-- StageTiming
               +-- LogBook
                     +-- 0..N TimingData
 
@@ -1287,8 +1290,7 @@ TimingSystem (1..N per Application)
       StageStartTimes
       UniqueTeamRegistrations
     timing
-      StageTimingCalculator
-      StageTiming result data
+      StageTiming
     LogBook
       0..N TimingData
     uses / produces TimingData
@@ -1370,10 +1372,9 @@ boundary: `TeamAssignments`, `StageStartTimes` and
 :::{arch} TimingNode Timing
 :id: TimingNodeTiming
 
-`TimingNodeTiming` groups read-side timing interpretation. It contains
-`StageTimingCalculator` plus immutable `StageTiming` result data and status.
-It derives results from committed TimingData and current node data without
-becoming another writer.
+`TimingNodeTiming` groups read-side timing interpretation. Its StageTiming capability
+exposes the current list of resolved elapsed times and ranking derived from committed
+TimingData and current node data, without becoming another writer.
 :::
 
 :::{arch} TagProcessor  
@@ -1435,13 +1436,16 @@ separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::{arch} StageTiming  
 :id: StageTiming  
 
-`StageTiming` is a derived/read-side domain capability. It resolves TeamId using
-stable EventData first and TimingNode TeamAssignments only as fallback, then combines
-the accepted committed TimingData effective time with that TeamId's current
-StageStartTimes definition. It derives elapsed stage-timing results without becoming
-another writer and without changing TimingData or live race state. Missing TeamId/start
-data yields an unresolved result. Ranking/grouping may consume StageTiming later, but
-StageTiming itself does not invent that policy.
+`StageTiming` is the TimingNode read-side capability for current elapsed stage
+times and ranking. It resolves TeamId using stable EventData first and TimingNode
+TeamAssignments only as fallback, combines committed registrations with the current
+StageStartTimes definitions, and exposes a ranked list of resolved team times. It is
+not another writer and never changes TimingData or live race state.
+
+The public StageTiming model is therefore the list/ranking view itself. Per-record
+calculation details and incomplete-input handling are implementation details and shall
+not appear as separate architecture components such as a public calculator/result/error
+hierarchy.
 
 For a time-only start definition, StageTiming uses the configured event/race
 time zone and the established rollover rule: resolve the most recent valid
@@ -2177,8 +2181,7 @@ Application
               |     +-- StageStartTimes
               |     +-- UniqueTeamRegistrations
               +-- timing
-              |     +-- StageTimingCalculator
-              |     +-- StageTiming result data
+              |     +-- StageTiming
               +-- LogBook
                     +-- 0..N TimingData
 
