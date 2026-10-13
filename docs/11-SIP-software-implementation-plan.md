@@ -986,8 +986,11 @@ backoffice test environment while preserving local operation during outages.
 - derive StageTiming from explicit local/reference inputs;
 - expose committed TimingNode-scoped outbound data through transport-independent semantics;
 - retain pending outbound work across upstream outage and resume/reconcile after recovery;
-- use a lightweight real network/socket transport for ST-2 before broker-specific work;
-- qualify RabbitMQ with a disposable broker only after semantic/reconciliation rules are stable;
+- add a **local Backend Simulator inside SI-02** as an engineering fixture for ST-2;
+- keep that simulator behind the real backend transport/interface boundary rather than allowing direct SI-01 calls;
+- use the simulator to inject reference/start-time data, inspect outbound TimingData, control acknowledgement and force disconnect/reconnect/error cases;
+- qualify the production-shaped RabbitMQ connector only after semantic/reconciliation rules are stable;
+- use a hosted RabbitMQ service such as CloudAMQP for the external ST-3 integration run, with credentials supplied outside the repository;
 - keep private production message schemas, credentials and topology outside the public core.
 
 ### Not in this step
@@ -1005,7 +1008,8 @@ backoffice test environment while preserving local operation during outages.
 - a promoted IF-06 semantic contract;
 - synthetic/public RaceData and StageStartTimes fixtures;
 - existing multi-topology black-box fixtures;
-- disposable socket/RabbitMQ integration infrastructure where the selected verification needs it.
+- SI-02 as the host for the local Backend Simulator;
+- an external RabbitMQ test instance (initially CloudAMQP is a suitable candidate) and secret-managed credentials for ST-3.
 
 ### Activities
 
@@ -1014,16 +1018,16 @@ backoffice test environment while preserving local operation during outages.
 | `D01` | Promote IF-06 backend semantic contract |
 | `D02` | Define reference-data, TeamID and StageTiming ownership/semantics |
 | `D03` | Define outbound pending-work and reconciliation semantics |
-| `D04` | Align backoffice transport SDD and ST-2/ST-3 verification topology |
+| `D04` | Align backoffice transport SDD plus SI-02 Backend Simulator / hosted RabbitMQ verification topology |
 | `A01` | Adopt and qualify the existing multi-node composition baseline |
 | `V01` | Requalify multi-node addressing, isolation, persistence and recovery |
 | `A02` | Implement node-scoped reference-data ingress and TeamID interpretation |
 | `A03` | Implement StageTiming using the promoted reference-data model |
 | `A04` | Implement transport-independent outbound sync/outbox/reconciliation |
-| `A05` | Implement lightweight socket backoffice transport for ST-2 |
-| `V02` | Verify reference-data, derived timing and socket outage/reconnect flow |
-| `A06` | Implement/qualify RabbitMQ connector against the same semantic boundary |
-| `V03` | Verify production-shaped RabbitMQ routing and recovery with a disposable broker |
+| `A05` | Implement local Backend Simulator in SI-02 over the real backend transport boundary |
+| `V02` | Verify reference-data, derived timing, acknowledgement and outage/reconnect through the local Backend Simulator |
+| `A06` | Implement/qualify RabbitMQ connector and external hosted-broker test profile |
+| `V03` | Verify production-shaped RabbitMQ routing/recovery against CloudAMQP or equivalent hosted RabbitMQ |
 
 ### Planning order
 
@@ -1037,10 +1041,17 @@ exercise one system with nodes A/B and two systems with one node each, including
 LogBooks and restart recovery. That evidence reduces multi-node implementation risk but
 does not prove backoffice/reference-data behaviour.
 
-ST-2 socket work precedes RabbitMQ so routing/reconciliation can be debugged across a real
-process/network boundary without broker-specific failure modes. RabbitMQ is then a
-production-shaped adapter qualification rather than the place where application semantics
-are invented.
+ST-2 uses a **Backend Simulator hosted by SI-02**. Integration into the Engineering
+Client is a tooling/UI convenience only: the simulator must still communicate with SI-01
+through the real backend interface/transport boundary, so it cannot call SI-01 internals
+or reuse IF-03 client services as a shortcut. This gives engineering one local place to
+edit RaceData/StageStartTimes, inspect outbound messages and deliberately trigger
+acknowledgement, disconnect and recovery cases.
+
+After that local semantic flow is stable, ST-3 qualifies the RabbitMQ adapter against a
+real external broker. A managed service such as **CloudAMQP** is a suitable first hosted
+test environment. Hosted-broker credentials/configuration stay outside source control,
+and external broker availability is not made a mandatory fast-CI dependency.
 
 ### Result
 
@@ -1056,9 +1067,9 @@ are invented.
 - Start a multi-node SI-01 test composition.
 - Load synthetic RaceData and StageStartTimes for the addressed nodes.
 - Feed simulated registrations and inspect TeamID/StageTiming results per node.
-- Exchange committed data with the socket backoffice simulator.
-- Interrupt the upstream connection, continue local registrations, reconnect and reconcile.
-- Repeat the transport-specific recovery subset with a disposable RabbitMQ broker.
+- Use the SI-02 Backend Simulator to send RaceData/StageStartTimes and inspect committed outbound data.
+- Force acknowledgement delay/disconnect, continue local registrations, reconnect and reconcile.
+- Repeat the transport-specific recovery subset against a hosted RabbitMQ instance such as CloudAMQP.
 
 ### Done
 
@@ -1068,7 +1079,7 @@ are invented.
 - reference-data application and StageTiming have explicit ownership and repeatable tests;
 - committed outbound source identity/order survive outage and reconciliation;
 - local registration remains independent from backoffice transport availability;
-- ST-2 socket disconnect/reconnect and ST-3 RabbitMQ broker recovery are repeatable;
+- ST-2 through the SI-02 Backend Simulator and ST-3 against a real hosted RabbitMQ broker are repeatable;
 - private production topology/protocol details remain outside the public baseline.
 
 ---
