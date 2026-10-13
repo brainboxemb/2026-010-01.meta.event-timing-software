@@ -182,7 +182,7 @@ contain this compatible v1 branch:
     {
       "id": "engineering",
       "type": "engineering-api",
-      "state": "PENDING",
+      "state": "CONNECTED",
       "nodes": [
         {
           "nodeId": "A",
@@ -225,14 +225,20 @@ Current response shape:
       "id": "TAG_SCENARIO_SIMULATION",
       "supported": true,
       "enabled": true
+    },
+    {
+      "id": "ENGINEERING_BACKOFFICE",
+      "supported": true,
+      "enabled": true
     }
   ]
 }
 ```
 
 `TAG_SCENARIO_SIMULATION` is enabled only for a composition that provides the
-simulated-tag control and a SimulatedAntenna source. Unknown capability IDs are
-compatible additions.
+simulated-tag control and a SimulatedAntenna source. `ENGINEERING_BACKOFFICE`
+is enabled only when the Engineering API backoffice connector is configured.
+Unknown capability IDs are compatible additions.
 
 ## IF03-OP-005 — Open at a location
 
