@@ -14,7 +14,7 @@ transport-independent message model used to exchange:
 
 - committed TimingData;
 - node-scoped reference data;
-- synchronisation/reconciliation information;
+- data synchronization information;
 - backend/link status information.
 
 UpstreamData is deliberately a small semantic layer around existing data models.
@@ -38,7 +38,7 @@ Java classes, provider discovery or private deployment protocol details.
 - **Backend** — external race/event backend system
 - **TimingData** — committed timing record model defined by IF-05
 - **UpstreamData** — transport-independent semantic message exchanged through IF-06
-- **reference data** — backend-owned or backend-synchronised race/event data used by SI-01
+- **reference data** — backend-owned or backend-synchronized race/event data used by SI-01
 
 ## Relationship to other documents
 
@@ -85,10 +85,10 @@ The current semantic families are:
 | --- | --- | --- |
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
-| Synchronisation / reconciliation | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Status | bidirectional | expose backend/source synchronisation and connector health relevant to integration |
+| Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
+| Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
-The exact type-specific reference-data and reconciliation payloads are refined by
+The exact type-specific reference-data and synchronization payloads are refined by
 Step-7 design activities D02 and D03. Their eventual representation must remain
 compatible with the common requirements in this ISD.
 
@@ -122,12 +122,12 @@ Reference-data semantics shall define at least:
 Concrete dataset fields and update/snapshot rules are owned by the applicable
 Step-7 semantic design and shall not be inferred from a transport encoding.
 
-### Synchronisation and reconciliation
+### Data synchronization
 
-Synchronisation is metadata around semantic source state. It is not a second
+Synchronization is metadata around semantic source state. It is not a second
 TimingData stream.
 
-Reconciliation may refer to TimingData source progress, reference-data freshness
+Synchronization may refer to TimingData source progress, reference-data freshness
 or pending outbound work, but shall preserve the source identities owned by those
 data models.
 
@@ -143,7 +143,7 @@ Operations use stable semantic identifiers independent from transport.
 | --- | --- | --- |
 | `IF06-OP-01 DELIVER_TIMING_DATA` | SI-01 -> Backend | deliver committed TimingData without changing IF-05 identity/order |
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
-| `IF06-OP-03 RECONCILE` | bidirectional | exchange synchronisation/reconciliation state |
+| `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
 
 These identifiers describe semantic interaction. A concrete transport may map them
@@ -162,7 +162,7 @@ Required behaviour:
 
 - preserve each record's IF-05 semantic values and record key;
 - preserve source ordering;
-- permit retransmission for reconciliation;
+- permit retransmission for synchronization;
 - never imply that transport delivery rewrites local committed data.
 
 ### IF06-OP-02 APPLY_REFERENCE_DATA
@@ -183,7 +183,7 @@ Outcome:
 
 The detailed RaceData and StageStartTimes payload semantics are refined separately.
 
-### IF06-OP-03 RECONCILE
+### IF06-OP-03 SYNC
 
 This operation exchanges enough semantic state to determine whether either side has
 pending or missing integration work.
@@ -199,7 +199,7 @@ Detailed acknowledgement and retry policy remains a D03 design decision.
 Integration status may expose:
 
 - connector/backend availability;
-- source/node synchronisation state;
+- source/node synchronization state;
 - pending outbound work;
 - last accepted/rejected reference-data update;
 - last successful inbound/outbound semantic exchange.
@@ -218,7 +218,7 @@ Stable semantic failure categories include:
 - unsupported representation/version;
 - backend/transport unavailable;
 - delivery outcome unknown;
-- reconciliation incomplete.
+- synchronization incomplete.
 
 Transport failure is not equivalent to failure of the local TimingData commit that
 produced outbound work.
@@ -264,97 +264,97 @@ shall not be reinterpreted as another message family.
 
 ## IF-06 requirements
 
-:::{ifreq} Transport-independent UpstreamData semantics
-:id: IF06-REQ-001
-:status: D
+:::{ifreq} Transport-independent UpstreamData semantics  
+:id: IF06-REQ-001  
+:status: D  
 
 IF-06 shall define backend integration in terms of transport-independent UpstreamData
 rather than RabbitMQ-, HTTP-, WebSocket- or deployment-specific wire messages.
 :::
 
-:::{ifreq} Preserve TimingData semantics
-:id: IF06-REQ-002
-:status: D
+:::{ifreq} Preserve TimingData semantics  
+:id: IF06-REQ-002  
+:status: D  
 
 When UpstreamData carries TimingData, it shall preserve every applicable IF-05 semantic
 value, including Node ID, sequence number and record-type values, without renumbering or
 rewriting the committed TimingData record.
 :::
 
-:::{ifreq} Keep transport identity separate from TimingData identity
-:id: IF06-REQ-003
-:status: D
+:::{ifreq} Keep transport identity separate from TimingData identity  
+:id: IF06-REQ-003  
+:status: D  
 
 Transport, delivery, batch or session identifiers shall not replace the IF-05
 TimingData record key or source sequence.
 :::
 
-:::{ifreq} Support node-scoped reference data
-:id: IF06-REQ-004
-:status: D
+:::{ifreq} Support node-scoped reference data  
+:id: IF06-REQ-004  
+:status: D  
 
 IF-06 shall support backend-to-SI-01 reference-data updates with explicit semantic scope,
 dataset/type and sufficient freshness/version information for SI-01 to determine whether
 the update can be applied.
 :::
 
-:::{ifreq} Explicit reference-data outcome
-:id: IF06-REQ-005
-:status: D
+:::{ifreq} Explicit reference-data outcome  
+:id: IF06-REQ-005  
+:status: D  
 
 A reference-data update shall have an observable accepted/applied or rejected/not-applied
-outcome with enough semantic reason/status information for synchronisation diagnosis.
+outcome with enough semantic reason/status information for synchronization diagnosis.
 :::
 
-:::{ifreq} Reconciliation preserves source identity
-:id: IF06-REQ-006
-:status: D
+:::{ifreq} Synchronization preserves source identity  
+:id: IF06-REQ-006  
+:status: D  
 
-Synchronisation and reconciliation shall preserve the authoritative identities/order of
-the data being reconciled and shall not create a second source sequence for committed
+Data synchronization shall preserve the authoritative identities/order of
+the data being synchronized and shall not create a second source sequence for committed
 TimingData.
 :::
 
-:::{ifreq} Local TimingData commit independent from backend delivery
-:id: IF06-REQ-007
-:status: D
+:::{ifreq} Local TimingData commit independent from backend delivery  
+:id: IF06-REQ-007  
+:status: D  
 
 Backend transport/session unavailability shall not by itself invalidate or roll back an
-already successful local TimingData commit. Pending backend delivery/reconciliation shall
+already successful local TimingData commit. Pending backend synchronization shall
 remain separately representable.
 :::
 
-:::{ifreq} Public default JSON representation
-:id: IF06-REQ-008
-:status: D
+:::{ifreq} Public default JSON representation  
+:id: IF06-REQ-008  
+:status: D  
 
 The public/reference implementation shall provide a versioned JSON representation of
 UpstreamData suitable for development, engineering and integration verification.
 :::
 
-:::{ifreq} Alternative representation support
-:id: IF06-REQ-009
-:status: D
+:::{ifreq} Alternative representation support  
+:id: IF06-REQ-009  
+:status: D  
 
 A deployment may provide an alternative UpstreamData representation behind the supported
 representation/codec boundary without requiring the public application/domain model to
 depend on deployment-specific wire-format classes or private source.
 :::
 
-:::{ifreq} Connector transport independence
-:id: IF06-REQ-010
-:status: D
+:::{ifreq} Connector transport independence  
+:id: IF06-REQ-010  
+:status: D  
 
 The same applicable UpstreamData semantics shall be usable through different configured
 backend connectors/transports. Selecting another transport shall not redefine TimingData,
-reference-data or reconciliation semantics.
+reference-data or synchronization semantics.
 :::
 
 ## Open points
 
 - Exact RaceData semantic fields and snapshot/update rules (Step-7 D02).
 - Exact StageStartTimes semantic fields and correction/freshness rules (Step-7 D02).
-- Acknowledgement, retry, duplicate/idempotency and pending-work reconciliation rules
+- Acknowledgement, retry, duplicate/idempotency and pending-sync rules
   (Step-7 D03).
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.

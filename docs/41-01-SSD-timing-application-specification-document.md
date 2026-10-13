@@ -1126,7 +1126,7 @@ Shared Domain contracts
     configured concrete profile
     factory / codec / compatibility
   UpstreamData
-    TimingData + reference data + reconciliation/status
+    TimingData + reference data + synchronization/status
     configured representation / codec / compatibility
 ```
 
@@ -1267,7 +1267,7 @@ normal domain users remain unaware of provider discovery mechanics.
 `UpstreamData` is a shared Domain capability alongside `EventData` and
 `TimingData`. It realises the semantic message model of IF-06 and is a small layer
 above/around existing data models: it may carry canonical `TimingData` and also
-reference-data, reconciliation and status messages needed by upstream integration.
+reference-data, synchronization and status messages needed by upstream integration.
 It does not create another TimingData identity or sequence.
 
 An `UpstreamDataProvider` supplies one coherent concrete representation/codec
@@ -1513,7 +1513,7 @@ delivery/session mechanics and transport-specific addressing.
 
 The semantic `UpstreamData` model remains in Domain. Messaging transports an
 encoded UpstreamData representation without interpreting `TimingData` fields or
-reimplementing reconciliation/reference-data rules; after UpstreamData decoding,
+reimplementing synchronization/reference-data rules; after UpstreamData decoding,
 `UpstreamMessageRouter` owns application-level target resolution.
 :::
 
@@ -1936,7 +1936,7 @@ integration code consume that contract without redefining it.
 :id: UpstreamData  
 
 `UpstreamData` is the shared Domain capability that realises IF-06 inside SI-01.
-It may carry canonical TimingData plus reference-data, reconciliation and status
+It may carry canonical TimingData plus reference-data, synchronization and status
 messages. Its representation/codec boundary is independent from connector transport;
 the public/reference representation is JSON-oriented.
 :::
@@ -2249,7 +2249,7 @@ This is an explicit architecture risk because timing software can produce plausi
 | --- | --- | --- |
 | daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` for events; resolve time-only race/start definitions through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
-| clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or reconciliation disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
+| clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or synchronization disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
 
 Daylight-saving time by itself does **not** change UTC/absolute time; the ambiguity appears when a local civil time is treated as if it were an absolute timestamp. Conversely, using an absolute `TimingTimestamp` does not make the operating-system clock monotonic: a wall-clock correction can still cause newly captured absolute timestamps to move backwards.
@@ -2548,7 +2548,7 @@ The **external device and network topology is owned by the SSSD**, because RFID/
 Upstream messaging is a semantic system boundary, not a RabbitMQ API.
 `UpstreamData` in Domain defines the transport-independent semantic messages exchanged
 through IF-06. It may carry canonical `TimingData` and also reference-data,
-reconciliation and status messages. TimingData identity/order remains owned by IF-05.
+synchronization and status messages. TimingData identity/order remains owned by IF-05.
 
 `UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry an
 encoded UpstreamData representation and own transport/session resources; they do not

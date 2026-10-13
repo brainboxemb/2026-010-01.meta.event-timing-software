@@ -219,8 +219,8 @@ Lua scripting -------------+--> client/application services --> public SI-01 int
 tests / fakes -------------+
 ```
 
-Connection/session lifecycle, baseline synchronisation, live-event buffering and
-reconciliation, command execution, raw-message context and target/system state belong in
+Connection/session lifecycle, baseline synchronization, live-event buffering and
+state synchronization, command execution, raw-message context and target/system state belong in
 client/application services rather than JavaFX event handlers or docking objects.
 
 A connected timing system is modelled as an **instance-scoped client context**, not as
@@ -335,7 +335,7 @@ A freshly started client does not connect automatically. While Events are
 disconnected or a baseline is being reconstructed, the Timing view is
 NOT SYNCED, SYNCING or STALE and controls that depend on reliable source
 state stay disabled. Initial baseline and overlapping committed live
-records are reconciled by stable identity before presenting **LIVE**.
+records are merged by stable identity before presenting **LIVE**.
 The client does not manufacture SI-01 TimingData from an HTTP command outcome.
 
 UI handlers initiate operations through client/application services.
@@ -401,7 +401,7 @@ selection is seedable so a run can be repeated. **Stop** prevents later scenario
 it does not undo a scenario already accepted by SI-01.
 
 Backend/UpstreamData simulation remains a separate capability for inbound reference-data
-and outbound timing/reconciliation behaviour.
+and outbound timing/synchronization behaviour.
 
 ## Existing web-application compatibility
 

@@ -24,15 +24,19 @@ documents:
   - {id: web-interface, source: docs/32-04-ISD-web-interface.md}
   - {id: timingdata-interchange, source: docs/32-05-ISD-timingdata-interchange.md}
   - {id: timingdata-interchange-design, source: docs/33-05-IDD-timingdata-interchange.md}
+  - {id: backend-integration, source: docs/32-06-ISD-backend-integration.md}
+  - {id: upstreamdata-json-design, source: docs/33-06-IDD-upstreamdata-json.md}
   - {id: application-configuration, source: docs/32-11-ISD-application-configuration.md}
   - {id: timing-application-specification, source: docs/41-01-SSD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/41-02-SSD-gui-application-specification-document.md}
   - {id: data-display-design, source: docs/43-01-SDD-01-data-and-display-design.md}
   - {id: java-component-design, source: docs/43-01-SDD-02-java-component-design.md}
   - {id: backoffice-transport-design, source: docs/43-01-SDD-03-backoffice-transport-design.md}
+  - {id: lua-scripting-design, source: docs/43-02-SDD-01-lua-scripting-design.md}
   - {id: software-verification-plan, source: docs/60-SVP-software-verification-plan.md}
   - {id: timing-application-verification-test-specification, source: docs/61-01-VTS-timing-application-verification-test-specification.md}
   - {id: timing-application-user-manual, source: docs/70-01-SUM-headless-timing-application.md}
+  - {id: engineering-client-user-manual, source: docs/70-02-SUM-engineering-client.md}
 
 indexes:
   - output: documents/README.md
@@ -58,6 +62,8 @@ indexes:
           - {document: web-interface}
           - {document: timingdata-interchange}
           - {document: timingdata-interchange-design}
+          - {document: backend-integration}
+          - {document: upstreamdata-json-design}
           - {document: application-configuration}
       - title: Software-item specifications
         items:
@@ -68,6 +74,7 @@ indexes:
           - {document: data-display-design}
           - {document: java-component-design}
           - {document: backoffice-transport-design}
+          - {document: lua-scripting-design}
       - title: Development environment / engineering
         items:
           - {document: software-development-environment}
@@ -81,6 +88,7 @@ indexes:
       - title: User / operational documentation
         items:
           - {document: timing-application-user-manual}
+          - {document: engineering-client-user-manual}
       - title: Combined documents
         items:
           - {label: Complete software engineering document set, target: ./software-document-set.md}
@@ -109,11 +117,14 @@ books:
       - web-interface
       - timingdata-interchange
       - timingdata-interchange-design
+      - backend-integration
+      - upstreamdata-json-design
       - application-configuration
       - timing-application-specification
       - data-display-design
       - java-component-design
       - gui-application-specification
+      - lua-scripting-design
 
   - output: documents/software-document-set.md
     title: Software engineering document set
@@ -130,12 +141,15 @@ books:
       - web-interface
       - timingdata-interchange
       - timingdata-interchange-design
+      - backend-integration
+      - upstreamdata-json-design
       - application-configuration
       - timing-application-specification
       - gui-application-specification
       - java-component-design
       - data-display-design
       - backoffice-transport-design
+      - lua-scripting-design
       - software-development-environment
       - java-build-test-toolchain
       - development-client
@@ -143,3 +157,4 @@ books:
       - software-verification-plan
       - timing-application-verification-test-specification
       - timing-application-user-manual
+      - engineering-client-user-manual

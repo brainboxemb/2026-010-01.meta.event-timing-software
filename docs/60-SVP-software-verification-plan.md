@@ -592,6 +592,6 @@ The exact traceability tooling is still open. The VTS owns stable case definitio
 - long-running/soak-test duration and acceptance criteria;
 - timestamp precision/clock-synchronisation verification method;
 - RFID filtering verification data sets;
-- RabbitMQ production acknowledgement/reconciliation verification approach;
+- RabbitMQ production acknowledgement/data-synchronization verification approach;
 - how proprietary interface/protocol verification evidence is referenced without exposing private details in public repositories;
 - release-level regression criteria.
