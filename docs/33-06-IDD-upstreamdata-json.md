@@ -137,6 +137,11 @@ Matching PONG:
 }
 ```
 
+The message `type` distinguishes request (`PING`) from answer (`PONG`), while
+`purpose` independently distinguishes scheduled heartbeat from explicit manual check.
+These are separate concerns; the legacy answer marker and heartbeat marker are not
+copied into the public JSON representation.
+
 `purpose` is mandatory in the default JSON mapping, and PONG preserves the PING
 purpose. `HEARTBEAT` denotes an automatically scheduled check; `MANUAL` denotes
 an explicitly initiated one. A manual exchange does not reset the periodic heartbeat.
