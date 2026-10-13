@@ -78,7 +78,7 @@ nodes:
 
   - id: domain-worker
     label: "Runtime-owned shared ExecutorService\nbacks Data + Task SerialExecutor lanes"
-    kind: thread
+    kind: service
     group: runtime
     layout: {x: 1350, y: 260, w: 315, h: 100}
   - id: upstream-stream
