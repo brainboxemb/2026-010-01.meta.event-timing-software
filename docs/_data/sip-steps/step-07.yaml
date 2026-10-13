@@ -3,6 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete D03 synchronization semantics. TimingData sync uses the highest contiguous
+      IF-05 sequence known per NodeId; transport delivery acknowledgement is not semantic
+      acknowledgement. Pending work is rebuilt from LogBook plus per-target backend
+      progress, retransmission is idempotent by TimingData record identity, and fresh
+      SYNC state is exchanged after connect/reconnect. Reference revisions are advertised
+      through SYNC but reference payloads remain REFERENCE_DATA.
+  - date: '2026-10-13'
+    change: >-
       Complete D02 reference-data semantics. EventData remains stable profile identity;
       RaceData supplies live node-scoped RegistrationId-to-TeamId assignments only where
       EventData has no stable TeamId; StageStartTimes is a revisioned TeamId-to-start
@@ -55,17 +63,19 @@ activities:
   - id: D03
     lane: documentation
     kind: decision
-    state: next
+    state: done
     depends_on: [D01]
     note: >-
-      Define pending outbound work and synchronization semantics: acknowledgement,
-      retry, duplicate/idempotency handling, sequence preservation, recovery after
-      outage and the status needed to diagnose incomplete synchronization.
+      TimingData synchronization uses cumulative contiguous IF-05 sequence progress
+      per NodeId. Backend progress is the semantic acknowledgement boundary; transport
+      acknowledgement does not clear pending work. LogBook remains the replay payload
+      source, per-target progress derives pending work, retransmission is idempotent by
+      record identity, and reconnect requires fresh SYNC state.
 
   - id: D04
     lane: documentation
     kind: decision
-    state: planned
+    state: next
     depends_on: [D01, D03]
     note: >-
       Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
