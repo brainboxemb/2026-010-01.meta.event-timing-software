@@ -119,12 +119,12 @@ request and answer. The `data` object has one required field and two optional fi
 
 | Member | Values | Meaning |
 | --- | --- | --- |
-| `action` | `REQUEST`, `ANSWER` (required) | initiates a check or answers one |
+| `op` | `REQUEST`, `ANSWER` (required) | initiates a check or answers one |
 | `mode` | `HEARTBEAT` (optional) | marks a scheduled heartbeat; absence means a manual/explicit check |
 | `pingId` | string (optional) | reference correlation token for a specific exchange |
 
 PING is system/upstream-scoped and does not require `nodeId`. A receiver of
-`action = REQUEST` issues one `action = ANSWER`. The answer preserves the
+`op = REQUEST` issues one `op = ANSWER`. The answer preserves the
 request's optional `mode`: if absent in the request, it is absent in the
 answer. Neither party shall answer an ANSWER. A REQUEST may originate from
 SI-01 or from the backend.
@@ -136,7 +136,7 @@ Heartbeat REQUEST:
   "v": 1,
   "type": "PING",
   "data": {
-    "action": "REQUEST",
+    "op": "REQUEST",
     "mode": "HEARTBEAT"
   }
 }
@@ -149,7 +149,7 @@ Heartbeat ANSWER:
   "v": 1,
   "type": "PING",
   "data": {
-    "action": "ANSWER",
+    "op": "ANSWER",
     "mode": "HEARTBEAT"
   }
 }
@@ -162,7 +162,7 @@ Manual REQUEST (no `mode`):
   "v": 1,
   "type": "PING",
   "data": {
-    "action": "REQUEST"
+    "op": "REQUEST"
   }
 }
 ```
@@ -174,7 +174,7 @@ Manual ANSWER:
   "v": 1,
   "type": "PING",
   "data": {
-    "action": "ANSWER"
+    "op": "ANSWER"
   }
 }
 ```
@@ -305,7 +305,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING carries required action REQUEST/ANSWER and optional mode HEARTBEAT (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
+| IF06-REQ-011/012/013 | PING carries required op REQUEST/ANSWER and optional mode HEARTBEAT (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
 
 ## Open design points
 
