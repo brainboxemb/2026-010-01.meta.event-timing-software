@@ -17,7 +17,9 @@ cp docs/43-01-SDD-02-java-component-design.md bld/sphinx-needs/source/docs/
 cp docs/32-03-ISD-application-control-status.md bld/sphinx-needs/source/docs/
 cp docs/32-04-ISD-web-interface.md bld/sphinx-needs/source/docs/
 cp docs/32-05-ISD-timingdata-interchange.md bld/sphinx-needs/source/docs/
+cp docs/32-06-ISD-backend-integration.md bld/sphinx-needs/source/docs/
 cp docs/33-05-IDD-timingdata-interchange.md bld/sphinx-needs/source/docs/
+cp docs/33-06-IDD-upstreamdata-json.md bld/sphinx-needs/source/docs/
 cp docs/61-01-VTS-timing-application-verification-test-specification.md bld/sphinx-needs/source/docs/
 cp docs/_diagrams/layered-architecture.yaml bld/sphinx-needs/diagrams/
 cp -L bld/docs/assets/architecture/*.svg bld/sphinx-needs/source/docs/architecture-assets/
@@ -49,7 +51,9 @@ docs/43-01-SDD-02-java-component-design
 docs/32-03-ISD-application-control-status
 docs/32-04-ISD-web-interface
 docs/32-05-ISD-timingdata-interchange
+docs/32-06-ISD-backend-integration
 docs/33-05-IDD-timingdata-interchange
+docs/33-06-IDD-upstreamdata-json
 docs/61-01-VTS-timing-application-verification-test-specification
 ~~~
 EOF
