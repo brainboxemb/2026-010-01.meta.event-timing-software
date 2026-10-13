@@ -387,8 +387,8 @@ nodes:
           items:
             - label: RabbitMqConnector
               object_id: RabbitMqConnector
-            - label: DebugConnector
-              object_id: DebugConnector
+            - label: EngineeringApiConnector
+              object_id: EngineeringApiConnector
   kind: integration
   notation: packaging-component
   layout: {x: 535, y: 1098, w: 260, h: 120}
