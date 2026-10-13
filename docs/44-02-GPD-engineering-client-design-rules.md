@@ -331,7 +331,7 @@ automatically running a dropped file, issuing direct internal AntennaManager
 calls, or treating a simulation request as a committed LogBook registration.
 Scripts remain **trusted operator-selected local code**, not a security
 boundary suitable for untrusted workloads. The supported Lua interface is
-specified in `42-02-SID-lua-scripting-api.md`.
+specified in `43-02-SDD-01-lua-scripting-design.md`.
 
 ## Windows acceptance path
 

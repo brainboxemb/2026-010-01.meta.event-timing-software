@@ -252,5 +252,5 @@ requests. Script execution shall not depend on JavaFX control automation and sha
 not add Lua or internal Java access to SI-01.
 
 The supported function signatures, preconditions, cancellation and security
-limitations are defined in `42-02-SID-lua-scripting-api.md`. Extended multi-system
+limitations are defined in `43-02-SDD-01-lua-scripting-design.md`. Extended multi-system
 control and state assertions are future extensions, not current functions.
