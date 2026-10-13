@@ -26,7 +26,7 @@ Detailed numbering and document-family rules are owned by
 | SI-02 desktop UI, interaction and threading rules | [44-02-GPD](44-02-GPD-engineering-client-design-rules.md) |
 | Development environment/tooling | [50-SDE-01](50-SDE-01-software-development-environment.md), [50-SDE-02](50-SDE-02-java-build-test-toolchain.md), [50-SDE-03](50-SDE-03-development-client.md), [50-SDE-04](50-SDE-04-runtime-characterization.md) |
 | Verification | [60-SVP](60-SVP-software-verification-plan.md) and [61-01-VTS](61-01-VTS-timing-application-verification-test-specification.md) |
-| User guidance | [70-01-SUM](70-01-SUM-headless-timing-application.md) |
+| User guidance | [70-01-SUM](70-01-SUM-headless-timing-application.md), [70-02-SUM](70-02-SUM-engineering-client.md) |
 | Documentation rules | [12-GPD](12-GPD-documentation-guide.md) |
 | Engineering traceability model and Sphinx-Needs integration | [13-GPD](13-GPD-engineering-traceability.md) |
 | Unresolved ideas | [00-brainstorm](00-brainstorm.md) |
@@ -65,6 +65,7 @@ Working context does not replace promoted requirements, interfaces or design.
 - [43-02-SDD-01 — Lua scripting design](43-02-SDD-01-lua-scripting-design.md)
 - [50-SDE-03 — Engineering Client development/UI baseline](50-SDE-03-development-client.md)
 - [44-02-GPD — Engineering Client design rules](44-02-GPD-engineering-client-design-rules.md)
+- [70-02-SUM — Engineering Client user manual](70-02-SUM-engineering-client.md)
 
 ## Generated views
 
