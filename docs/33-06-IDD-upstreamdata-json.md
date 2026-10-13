@@ -54,6 +54,7 @@ The current public v1 design reserves these semantic families:
 - `TIMING_DATA`;
 - `REFERENCE_DATA`;
 - `SYNC`;
+- `PING`;
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -100,6 +101,23 @@ defined only after Step-7 D02 promotes their semantic contract.
 
 The envelope and type are reserved in v1. Exact progress/acknowledgement members are
 defined only after Step-7 D03 promotes synchronization semantics.
+
+### PING
+
+PING is a system/upstream-scoped message and therefore does not require `nodeId`.
+The public/default v1 representation is intentionally minimal:
+
+```json
+{
+  "v": 1,
+  "type": "PING",
+  "data": {}
+}
+```
+
+A PING carries no TimingData record and does not consume TimingData sequence identity.
+Its lifecycle/timing semantics are defined by IF06-REQ-011/012. The public/reference
+representation does not define a PONG message.
 
 ### STATUS
 
@@ -209,6 +227,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
+| IF06-REQ-011/012 | PING is a dedicated system-scoped message with no TimingData identity |
 
 ## Open design points
 
