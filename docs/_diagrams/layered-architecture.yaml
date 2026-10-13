@@ -583,15 +583,15 @@ edges:
     - {x: 20, y: 1018}
     - {x: 176, y: 1018}
 
-- from: messaging-io
-  to: upstream-message-port
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
+- from: upstream-message-port
+  to: messaging-io
+  from_anchor: {side: bottom, position: 0.50}
+  to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 665, y: 1048}
-    - {x: 862, y: 1048}
-    - {x: 862, y: 928}
     - {x: 940, y: 928}
+    - {x: 862, y: 928}
+    - {x: 862, y: 1048}
+    - {x: 665, y: 1048}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
