@@ -23,9 +23,6 @@ TimingApplication
         +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
-        +-- UpstreamProtocol
-        |     +-- heartbeat / ping
-        |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
@@ -155,8 +152,8 @@ Shared Domain contract:
 
 The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`. Its `Conductor` is the first system-level coordinator: it owns the lifecycle of that system's 1..N `TimingNode` aggregates and derives one shared inventory demand from their states. It calls the associated `AntennaManager` directly to enable or disable inventory. TagObservation routing remains a separate Runtime connection; individual antenna controls are not implied.
 
-Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component, system-level
-`UpstreamMessagePort`, `UpstreamProtocol` context and heartbeat/ping semantics. `SystemStatus` is the
+Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component and
+system-level `UpstreamMessagePort`. `SystemStatus` is the
 complete current operational overview of that TimingSystem, not a single health
 flag. It may include its TimingNode states, antenna/device availability, whether
 a display is connected, keypad/beeper availability, device-network health,
@@ -191,14 +188,12 @@ state. Its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and
 `EventData` objects remain passive state holders. Concrete queue/thread choices
 belong to detailed design.
 
-`UpstreamProtocol` is a Domain protocol owned in the context of one
-`TimingSystem`. It covers transfer of TimingData plus
-synchronization/reconciliation and protocol-level handling such as ping/pong.
-System-level semantic operations enter/leave through
-`TimingSystem.UpstreamMessagePort`; node-level operations use the addressed
-`TimingNode.UpstreamMessagePort`. The upstream peer can remain functionally
-TimingNode-oriented; a ping does not require exposing `TimingSystemId`.
-Transport/session mechanics remain I/O concerns.
+`UpstreamData` is a shared Domain data/message capability alongside `EventData`
+and `TimingData`. It can carry canonical TimingData and the semantic reference-data,
+reconciliation and status messages needed by IF-06. It does not create another
+TimingData identity or ordering model. System-level UpstreamData enters/leaves through
+`TimingSystem.UpstreamMessagePort`; node-level UpstreamData uses the addressed
+`TimingNode.UpstreamMessagePort`. Transport/session mechanics remain I/O concerns.
 
 ### I/O routing view
 
