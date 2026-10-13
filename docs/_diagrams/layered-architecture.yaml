@@ -589,7 +589,9 @@ edges:
   to_anchor: {side: bottom, position: 0.50}
   route:
     - {x: 665, y: 1048}
-    - {x: 940, y: 1048}
+    - {x: 862, y: 1048}
+    - {x: 862, y: 928}
+    - {x: 940, y: 928}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
