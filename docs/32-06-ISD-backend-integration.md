@@ -422,8 +422,9 @@ create TimingData/LogBook records.
 :id: IF06-REQ-013  
 :status: D  
 
-The receiver of a valid PING shall answer with one PONG carrying the same `pingId`.
-This response rule applies in both directions. PONG shall not consume TimingData sequence
+The receiver of a valid PING shall answer with one PONG carrying the same `pingId` as
+part of processing that PING; the response shall not wait for the 30-second periodic
+PING schedule. This response rule applies in both directions. PONG shall not consume TimingData sequence
 identity or create TimingData/LogBook records.
 :::
 
