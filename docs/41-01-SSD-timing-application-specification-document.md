@@ -411,6 +411,63 @@ outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
+:::{req} Resolve TeamId without rewriting TimingData  
+:id: SI01-REQ-077  
+:status: D  
+:specifies: UC-010  
+:depends_on: SI01-REQ-063, IF06-REQ-015  
+
+For a RegistrationId, SI-01 shall use a non-null stable TeamId supplied by the
+configured EventData profile as authoritative. Only when EventData has no stable
+TeamId for that RegistrationId may the current TimingNode RaceData assignment
+supply the TeamId. If neither source resolves a TeamId, the registration remains
+valid committed TimingData but derived team/stage views shall treat it as unresolved.
+Reference-data updates shall not rewrite committed RegistrationId or TimingData
+sequence identity.
+:::
+
+:::{req} Apply RaceData as an atomic node-scoped snapshot  
+:id: SI01-REQ-078  
+:status: D  
+:specifies: UC-010  
+:depends_on: SI01-REQ-063, SI01-REQ-077, IF06-REQ-014, IF06-REQ-015  
+
+For each configured upstream source and TimingNode, SI-01 shall maintain the
+accepted RaceData revision and complete live RegistrationId-to-TeamId assignment
+snapshot. A higher valid revision shall atomically replace the current snapshot.
+Assignments that attempt to redefine a stable EventData TeamId, duplicate one
+TeamId across multiple live RegistrationIds, or otherwise violate the dataset
+contract shall reject the whole snapshot.
+:::
+
+:::{req} Apply StageStartTimes as an atomic node-scoped snapshot  
+:id: SI01-REQ-079  
+:status: D  
+:specifies: UC-010  
+:depends_on: SI01-REQ-063, IF06-REQ-014, IF06-REQ-016  
+
+For each configured upstream source and TimingNode, SI-01 shall maintain the
+accepted StageStartTimes revision and complete TeamId-to-start-definition snapshot.
+A higher valid revision shall atomically replace the current snapshot. A start
+definition shall contain local race time-of-day and may contain an explicit local
+date. A valid start time may be accepted before the corresponding TeamId is
+present in RaceData; reference-data delivery order shall not create a false
+validation dependency between the two datasets.
+:::
+
+:::{req} Derive StageTiming from committed timing and current reference state  
+:id: SI01-REQ-080  
+:status: D  
+:depends_on: SI01-REQ-077, SI01-REQ-079, SI01-REQ-042  
+
+StageTiming shall derive elapsed/ranking information from committed TimingData,
+the resolved TeamId and the current StageStartTimes state. A reference-data
+change may change the derived StageTiming result but shall not alter, remove,
+renumber or recommit the underlying TimingData. When TeamId or stage start data
+is unavailable, SI-01 shall expose the result as unresolved/incomplete rather
+than inventing a value.
+:::
+
 :::{req} Maintain upstream PING request/answer lifecycle  
 :id: SI01-REQ-075  
 :status: D  
@@ -768,6 +825,10 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
 | SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
 | SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with optional-mode-preserving PING ANSWER |
+| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; RaceData fallback only |
+| SI01-REQ-078 | UC-010 + IF06-REQ-014/015 | atomic revisioned RaceData snapshot |
+| SI01-REQ-079 | UC-010 + IF06-REQ-014/016 | atomic revisioned StageStartTimes snapshot |
+| SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
@@ -1237,7 +1298,12 @@ worker.
 :::{arch} StageStartTimes  
 :id: StageStartTimes  
 
-`StageStartTimes` owns the stage-start reference values used by one TimingNode.
+`StageStartTimes` is passive TimingNode-local reference state containing the
+latest accepted complete `TeamId -> StartDefinition` snapshot and its accepted
+revision per configured upstream source. A StartDefinition contains local
+race time-of-day plus an optional explicit local date. It owns data only; the
+TimingNode execution boundary owns mutation/order and StageTiming owns elapsed
+time interpretation.
 :::
 
 :::{arch} NextUpTeams  
@@ -1249,10 +1315,13 @@ worker.
 :::{arch} RaceData
 :id: RaceData
 
-`RaceData` is passive TimingNode-local runtime race data. It may be updated
-from upstream during an event and may contain live/temporary information such
-as reserve-tag mappings. It remains ordered with other TimingNode state through
-the owning TimingNode execution boundary.
+`RaceData` is passive TimingNode-local **live race state**, separate from the
+stable EventData profile. Its v1 promoted content is the latest accepted complete
+`RegistrationId -> TeamId` snapshot for registrations that do not already have
+a stable EventData TeamId, plus the accepted revision per configured upstream
+source. Reserve/dynamic participant assignment is the principal use case.
+RaceData cannot override stable EventData identity and remains ordered with
+other TimingNode state through the owning TimingNode execution boundary.
 :::
 
 :::{arch} EventData
@@ -1271,8 +1340,17 @@ separate TimingNode-local runtime/upstream race state.
 :::{arch} StageTiming  
 :id: StageTiming  
 
-`StageTiming` derives running-time and ranking results from the TimingNode's
-accepted timing state and reference data.
+`StageTiming` is a derived/read-side domain capability. It resolves TeamId using
+stable EventData first and TimingNode RaceData only as fallback, then combines
+the accepted committed TimingData effective time with that TeamId's current
+StageStartTimes definition. It derives elapsed/ranking results without becoming
+another writer and without changing TimingData or reference state. Missing
+TeamId/start data yields an unresolved result.
+
+For a time-only start definition, StageTiming uses the configured event/race
+time zone and the established rollover rule: resolve the most recent valid
+occurrence not after the registration. When an explicit start date is present,
+that date is authoritative.
 :::
 
 `LogBook` is passive state contained by one TimingNode and keeps that node's
