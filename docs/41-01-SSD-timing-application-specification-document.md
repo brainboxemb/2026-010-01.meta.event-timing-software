@@ -702,9 +702,12 @@ application/domain paths.
 :depends_on: SI01-REQ-064  
 
 Backoffice transport shall be selectable through external
-configuration/composition. An engineering connector using the supported IF-03
-HTTP/WebSocket boundary shall be usable for loop/integration testing of
-UpstreamData without requiring the production RabbitMQ connector.
+configuration/composition. An Engineering API connector shall use the supported
+IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData without
+requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
+SI-02 live-event WebSocket connection; no second SI-01 listener port or second SI-02
+WebSocket lifecycle is required. The connector shall enter the same semantic
+UpstreamData routing boundary as other backoffice connectors.
 :::
 
 :::{req} Verify production-shaped RabbitMQ connector behaviour  
