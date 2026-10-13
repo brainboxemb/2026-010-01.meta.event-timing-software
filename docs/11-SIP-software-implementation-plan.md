@@ -987,7 +987,7 @@ backoffice test environment while preserving local operation during outages.
 - expose committed TimingNode-scoped outbound data through transport-independent semantics;
 - retain pending outbound work across upstream outage and resume/reconcile after recovery;
 - add an **EngineeringApiBackofficeConnector** for ST-2 that is composed as a normal backoffice connector but uses existing IF-03 HTTP/JSON for inbound engineering messages and the IF-03 WebSocket event stream for outbound/status observation;
-- carry transport-neutral structured BackofficeEnvelope data through IF-03 rather than tunnelling RabbitMQ/proprietary wire payloads as opaque strings;
+- carry transport-neutral structured UpstreamData through IF-03 rather than tunnelling RabbitMQ/proprietary wire payloads as opaque strings;
 - use the SI-02 Backend pane to inject reference/start-time data, inspect outbound TimingData, control acknowledgement and force reconnect/error cases while reusing the existing API/Event connections;
 - qualify the production-shaped RabbitMQ connector only after semantic/reconciliation rules are stable;
 - give the **same SI-02 Backend Simulator** a RabbitMQ transport so it can act as the external backend peer through the broker instead of requiring a separate test program;
@@ -1016,7 +1016,7 @@ backoffice test environment while preserving local operation during outages.
 
 | ID | Activity |
 | --- | --- |
-| `D01` | Promote IF-06 backend semantic contract |
+| `D01` | Promote IF-06 UpstreamData semantic contract and public JSON reference representation |
 | `D02` | Define reference-data, TeamID and StageTiming ownership/semantics |
 | `D03` | Define outbound pending-work and reconciliation semantics |
 | `D04` | Align backoffice transport SDD plus Engineering API connector / hosted RabbitMQ verification topology |
@@ -1047,8 +1047,8 @@ backoffice connector. Its transport happens to be the already-established engine
 IF-03 boundary: SI-02 sends synthetic inbound semantic messages through HTTP/JSON and
 receives outbound semantic messages/status as typed IF-03 WebSocket events.
 
-The WebSocket event must carry a structured transport-neutral `BackofficeEnvelope` (plus
-connector/source identity and status metadata), not a pre-serialized RabbitMQ or private
+The WebSocket event must carry structured public/reference `UpstreamData` (plus only
+connector/source identity and status metadata needed by IF-03), not a pre-serialized RabbitMQ or private
 production payload. In that sense the WebSocket is only the engineering transport for the
 connector; normal UpstreamMessageRouter and application/domain processing is shared after
 the connector boundary.
@@ -1364,7 +1364,7 @@ These remain options until an earlier step creates a concrete need:
 - a small web client for exercising the API;
 - more elaborate image/update/rollback automation;
 - a dedicated integration host;
-- additional extension families beyond the planned TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider boundaries;
+- additional extension families beyond the planned TimingData, UpstreamData, Antenna, CAN-protocol and display-protocol provider boundaries;
 - a later Java runtime baseline;
 - additional custom electronics beyond what Step 8 justifies.
 
