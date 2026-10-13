@@ -58,8 +58,7 @@ The current public v1 design reserves these semantic families:
 - `TIMING_DATA`;
 - `REFERENCE_DATA`;
 - `SYNC`;
-- `PING`;
-- `PONG`;
+- `PING` (REQUEST and ANSWER);
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -113,56 +112,61 @@ defined only after Step-7 D02 promotes their semantic contract.
 The envelope and type are reserved in v1. Exact progress/acknowledgement members are
 defined only after Step-7 D03 promotes synchronization semantics.
 
-### PING / PONG
+### PING (REQUEST / ANSWER)
 
-PING and PONG are system/upstream-scoped messages and therefore do not require `nodeId`.
-The public/default v1 representation identifies the PING purpose with `purpose`
-(`HEARTBEAT` or `MANUAL`). The optional `pingId` is a reference-implementation
-extension for correlating individual exchanges; it is not an IF-06 semantic
-requirement. When present, the PONG echoes it unchanged.
+PING uses the **same UpstreamData message type** in both directions and for both
+request and response. Its `data` object has two mandatory, independent fields:
 
-PING:
+| Member | Values | Meaning |
+| --- | --- | --- |
+| `action` | `REQUEST`, `ANSWER` | whether this is the check or its response |
+| `purpose` | `HEARTBEAT`, `MANUAL` | whether the check is scheduled or explicitly initiated |
+| `pingId` | string, optional | reference correlation token for a specific exchange |
+
+PING is system/upstream-scoped and does not require `nodeId`. A receiver of a
+`REQUEST` issues one `ANSWER` with the same `purpose`. An `ANSWER` is not
+answered again. The request/answer action is not the transport direction:
+either SI-01 or the backend may initiate a REQUEST.
+
+Heartbeat request:
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "purpose": "HEARTBEAT",
-    "pingId": "p-0001"
+    "action": "REQUEST",
+    "purpose": "HEARTBEAT"
   }
 }
 ```
 
-Matching PONG:
+Corresponding answer:
 
 ```json
 {
   "v": 1,
-  "type": "PONG",
+  "type": "PING",
   "data": {
-    "purpose": "HEARTBEAT",
-    "pingId": "p-0001"
+    "action": "ANSWER",
+    "purpose": "HEARTBEAT"
   }
 }
 ```
 
-The message `type` distinguishes request (`PING`) from answer (`PONG`), while
-`purpose` independently distinguishes scheduled heartbeat from explicit manual check.
-These are separate concerns; the legacy answer marker and heartbeat marker are not
-copied into the public JSON representation.
+Manual checks use the same message structure with `purpose = MANUAL` and
+do not reset the scheduled heartbeat cycle. There is **no separate PONG
+message family** in the default representation.
 
-`purpose` is mandatory in the default JSON mapping, and PONG preserves the PING
-purpose. `HEARTBEAT` denotes an automatically scheduled check; `MANUAL` denotes
-an explicitly initiated one. A manual exchange does not reset the periodic heartbeat.
+A reference implementation may include the optional `pingId` on a REQUEST
+and echo the exact value on the corresponding ANSWER, for example
+`"pingId": "p-0001"`. The `pingId` is not required by the IF-06 interface
+and is not a TimingData or transport sequence. Old fixed-field protocol
+positions are not normative public JSON fields.
 
-The optional `pingId` illustrates reference-implementation correlation. When
-supplied, the PONG echoes it; when omitted, purpose-preserving PING/PONG remains valid.
-It is not a TimingData or transport sequence. No legacy wire-field positions are
-standardized here.
-
-PING/PONG carries no TimingData record and consumes no TimingData sequence identity. Its
-lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
+PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
+sequence identity. Its lifecycle/timing semantics are defined by
+IF06-REQ-011/012/013.
 
 ### STATUS
 
@@ -276,7 +280,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING/PONG carry heartbeat/manual purpose; optional `pingId` supports reference correlation; neither consumes TimingData identity |
+| IF06-REQ-011/012/013 | PING carries action REQUEST/ANSWER and purpose HEARTBEAT/MANUAL; optional `pingId` supports reference correlation without consuming TimingData identity |
 
 ## Open design points
 
