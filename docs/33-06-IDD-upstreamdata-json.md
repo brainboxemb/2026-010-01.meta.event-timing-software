@@ -20,14 +20,14 @@ queue names, private identifiers or proprietary protocol fields.
 ## Relationship to other documents
 
 This IDD implements the public/default representation of
-`32-06-ISD-backend-integration.md`.
+`32-06-ISD-upstream-integration.md`.
 
 Contained TimingData values conform to IF-05 and its public/default JSON mapping in
 `32-05-ISD-timingdata-interchange.md` and
 `33-05-IDD-timingdata-interchange.md`.
 
 Connector/session realization belongs to
-`43-01-SDD-03-backoffice-transport-design.md`.
+`43-01-SDD-03-upstream-transport-design.md`.
 
 ## Design baseline
 
@@ -68,7 +68,7 @@ become normative public members.
 
 A TIMING_DATA message carries one or more committed TimingData values as elements
 of its `data` array. The same envelope applies regardless of direction; this
-family ordinarily flows from SI-01 to the backend. For example, one committed
+family ordinarily flows from SI-01 to the upstream system. For example, one committed
 record is one child of an UpstreamData message:
 
 Conceptual JSON:
@@ -212,7 +212,7 @@ sentinel for “no snapshot known” and is not itself a valid REFERENCE_DATA sn
 revision.
 
 The same message shape is used in both directions. SI-01's `timingSeq` describes
-its local committed head; the backend's value describes its highest contiguously
+its local committed head; the upstream system's value describes its highest contiguously
 accepted record. A transport acknowledgement does not substitute for this value.
 
 SYNC contains no TimingData payload. Missing or older peer progress causes replay
@@ -235,7 +235,7 @@ PING is system/upstream-scoped and does not require `nodeId`. A receiver of
 `op = REQ` issues one `op = ANS`. The answer preserves the
 request's optional `mode`: if absent in the request, it is absent in the
 answer. Neither party shall answer an `ANS`. A `REQ` may originate from
-SI-01 or from the backend.
+SI-01 or from the upstream system.
 
 Heartbeat request (`REQ`):
 
@@ -362,7 +362,7 @@ The RabbitMQ connector may use the encoded UpstreamData JSON as its public/refer
 message body while RabbitMQ exchanges, queues, routing keys, delivery tags and connection
 state remain transport metadata outside the UpstreamData JSON object.
 
-SI-02 may use the same JSON representation when acting as the backend-side RabbitMQ test
+SI-02 may use the same JSON representation when acting as the upstream-system-side RabbitMQ test
 peer.
 
 ## Provider / codec boundary
