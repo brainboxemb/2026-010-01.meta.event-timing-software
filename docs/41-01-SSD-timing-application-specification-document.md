@@ -1350,6 +1350,32 @@ decisions on the existing TimingNode execution lane. It does not own transport
 connections or cross-node target resolution.
 :::
 
+:::{arch} TimingNode Processing
+:id: TimingNodeProcessing
+
+`TimingNodeProcessing` groups the node-local registration processing capability.
+It contains `TagProcessor` and its observation/duplicate filters. This group
+explains code and execution ownership; it is not an additional runtime aggregate
+or message bus.
+:::
+
+:::{arch} TimingNode Data
+:id: TimingNodeData
+
+`TimingNodeData` groups passive mutable state owned by the TimingNode serial
+boundary: `TeamAssignments`, `StageStartTimes` and
+`UniqueTeamRegistrations`. These data objects do not own workers.
+:::
+
+:::{arch} TimingNode Timing
+:id: TimingNodeTiming
+
+`TimingNodeTiming` groups read-side timing interpretation. It contains
+`StageTimingCalculator` plus immutable `StageTiming` result data and status.
+It derives results from committed TimingData and current node data without
+becoming another writer.
+:::
+
 :::{arch} TagProcessor  
 :id: TagProcessor  
 `TagProcessor` owns TimingNode-local processing of decoded tag observations and
