@@ -1,0 +1,141 @@
+step: 7
+
+planning_changes:
+  - date: '2026-10-13'
+    change: >-
+      Prepare Step 7 before activation. Existing SI-01 multi-node composition,
+      node-scoped IF-03 addressing, separate LogBooks and restart recovery already
+      have black-box coverage, so Step 7 adopts that as a baseline instead of
+      reimplementing it. Make IF-06 semantics, reference-data/StageTiming ownership
+      and reconciliation rules the first design gates. D01 becomes next only after
+      Step-6 V01 / VC-ST1-003 closes.
+
+activities:
+  - id: D01
+    lane: documentation
+    kind: decision
+    state: planned
+    note: >-
+      Promote IF-06 Backend Integration as the semantic system interface. Define
+      node/system addressing, inbound reference/start-time updates, outbound timing
+      data, synchronisation/status and externally observable accept/reject behaviour
+      without selecting RabbitMQ-specific wire details as the semantic contract.
+
+  - id: D02
+    lane: documentation
+    kind: decision
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Define ownership and semantics for RaceData, StageStartTimes, TeamID
+      interpretation and StageTiming. Specify node-scoped application, freshness and
+      validation rules so derived timing does not become transport-owned behaviour.
+
+  - id: D03
+    lane: documentation
+    kind: decision
+    state: planned
+    depends_on: [D01]
+    note: >-
+      Define pending outbound work and reconciliation semantics: acknowledgement,
+      retry, duplicate/idempotency handling, sequence preservation, recovery after
+      outage and the status needed to diagnose incomplete synchronisation.
+
+  - id: D04
+    lane: documentation
+    kind: decision
+    state: planned
+    depends_on: [D01, D03]
+    note: >-
+      Align 43-01-SDD-03 with the promoted IF-06 contract and fix the integration
+      verification order: lightweight socket/network ST-2 first, then RabbitMQ ST-3.
+      Keep connector/session mechanics below the semantic upstream boundary.
+
+  - id: A01
+    lane: application
+    kind: integration
+    state: planned
+    note: >-
+      Adopt the existing multi-node composition as the Step-7 baseline rather than
+      adding a second topology model. Requalify current one-system/two-node and
+      two-system/one-node-each configurations for the upcoming upstream/reference path.
+
+  - id: V01
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A01]
+    note: >-
+      Requalify node addressing, sequence isolation, separate physical LogBooks and
+      restart recovery using the existing multi-topology black-box fixtures. This is
+      foundation evidence only; it does not prove reference-data or backoffice behaviour.
+
+  - id: A02
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D01, D02, V01]
+    note: >-
+      Implement node-scoped semantic reference-data ingress and application-owned
+      RaceData/StageStartTimes updates, including TeamID interpretation without
+      changing committed TimingData identity.
+
+  - id: A03
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [A02, D02]
+    note: >-
+      Implement StageTiming using the promoted node-owned reference/start-time model
+      and existing committed TimingData stream. Keep calculation independent from
+      concrete backoffice transport/session mechanics.
+
+  - id: A04
+    lane: application
+    kind: implementation
+    state: planned
+    depends_on: [D01, D03, V01]
+    note: >-
+      Implement transport-independent outbound synchronisation and pending-work state
+      while preserving committed source identity/order and allowing local registration
+      to continue while upstream transport is unavailable.
+
+  - id: A05
+    lane: application
+    kind: integration
+    state: planned
+    depends_on: [D04, A02, A04]
+    note: >-
+      Implement the lightweight real network/socket backoffice adapter used by ST-2
+      to exercise semantic routing, inbound/outbound flow and reconnect without a
+      production broker dependency.
+
+  - id: V02
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A03, A05]
+    note: >-
+      Verify node-scoped reference-data application, TeamID/StageTiming results,
+      source routing and local continuity across socket disconnect/reconnect, including
+      pending outbound reconciliation after recovery.
+
+  - id: A06
+    lane: application
+    kind: integration
+    state: planned
+    depends_on: [D04, V02]
+    note: >-
+      Implement or qualify the RabbitMQ connector beneath the same semantic upstream
+      contract using synthetic/public broker topology. Production credentials, queue
+      names and proprietary codecs remain external/private.
+
+  - id: V03
+    lane: verification
+    kind: verification
+    state: planned
+    depends_on: [A06]
+    note: >-
+      Run ST-3 against a disposable RabbitMQ broker and verify source-specific
+      inbound/outbound routing, connection/consumer recovery and resumed pending
+      delivery after broker interruption without changing application semantics.
