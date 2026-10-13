@@ -1313,27 +1313,46 @@ that must be replayed.
 identity (`NodeId` and `LocationId`), lifecycle/state and the per-node
 components shown inside the TimingNode aggregate in Figure SI01-01.
 
-A TimingNode is also the **active serialization and ownership boundary** for mutable per-node
-state. State-dependent commands and reads that require exact ordering enter one bounded
-serial execution path and are processed in order. Current-state observation may instead use
-an immutable snapshot safely published by that owned path after completed transitions. Code
-outside the boundary does not directly read or mutate lifecycle/location state or the mutable
-contents of its contained `LogBook`, `TeamAssignments`, `StageStartTimes` and
-derived `UniqueTeamRegistrations` state. None of those data structures owns a
-worker. The LogBook keeps
-0..N committed immutable `TimingData` values and does not own a second worker or second
-timing-record representation.
+A TimingNode owns two distinct bounded logical execution lanes, potentially
+backed by the **same Runtime-owned physical ExecutorService**:
+
+- **Data Lane:** the single writer of lifecycle/location state, sequence allocation,
+  TimingData persistence, committed LogBook contents, live TeamAssignments,
+  StageStartTimes and derived registration state. Commands that affect these
+  values and ORDERED reads of them execute on this lane.
+- **Task Lane:** coordinates node activities such as upstream semantic message
+  handling, heartbeats and synchronization state. It may not directly read or
+  mutate Data Lane-owned mutable state.
+
+The two lanes have independent FIFO queues, admission, metrics and lifecycle.
+Serialization is guaranteed **within** a lane, not between the two lanes.
+Cross-lane state access therefore uses explicit bounded asynchronous commands
+and immutable replies, or a safely published immutable CURRENT snapshot.
+Neither lane may synchronously wait for work queued on the other lane when both
+might share a one-worker pool. The contained data objects remain passive; they
+do not receive individual execution threads or runners.
+
+The LogBook keeps 0..N committed immutable TimingData values. The durable append,
+LogBook visibility and related derived-state update remain one ordered Data Lane
+transaction, with recovery/failure semantics that prevent a later commit from
+overtaking a failed one.
 
 :::{arch} TimingNode UpstreamMessagePort  
 :id: TimingNodeUpstreamMessagePort  
 
-The TimingNode-level `UpstreamMessagePort` owns node-scoped upstream semantics.
-It is bound to one node-scoped `UpstreamStream` supplied by Messaging. When the
-stream signals that input may be available, the port schedules an
-`UpstreamMessageTask` on the existing TimingNode serial lane; that task reads one
-semantic message from the stream, processes it and writes any ACK/REQ/PING response
-back through the same stream. The port owns no executor, worker thread or blocking
-transport I/O.
+The TimingNode-level `UpstreamMessagePort` owns node-scoped upstream semantics,
+consuming the non-blocking node-scoped `UpstreamStream` provided by Messaging.
+Incoming semantic messages and heartbeat/synchronization coordination are
+admitted to the node's **Task Lane**. The port does not create a physical worker
+or own transport I/O.
+
+A protocol action requiring live assignments, a committed LogBook range or
+other Data Lane state is handed to that owner asynchronously. The Task Lane
+continues only when the corresponding committed result or immutable batch has
+returned. An upstream ACK must never precede successful application of the
+referenced data. Protocol ordering, at-most-one in-flight data change when
+needed, bounded replay batches, shutdown quiescence and failure handling remain
+explicit responsibilities of the upstream coordinator.
 :::
 
 :::{arch} NextUpTeams
@@ -1524,50 +1543,46 @@ physical worker
 ```
 
 A Timing Point Application may contain multiple TimingNodes without allocating
-one physical worker per node. Each TimingNode keeps an independent bounded
-serial lane so its mutable state remains ordered and isolated, while all
-TimingNode lanes use one shared physical TimingNode worker by default.
+a physical thread per lane or per node. Each node has an independent bounded
+**Data Lane** and **Task Lane**. The two lanes can share one physical
+`ExecutorService` with other ordinary Domain/application coordination lanes,
+including each TimingSystem Conductor's own serial lane. A `SerialTaskRunner`
+executes cooperative task steps on its supplied lane and does **not** create
+an additional executor or thread.
 
-Each TimingNode-local TagProcessor likewise owns its own logical scheduled
-serial lane, while all TagProcessor lanes share one physical TagProcessor
-worker by default.
+Each node-local TagProcessor retains its independent scheduled serial lane,
+backed by the separate shared TagProcessor role executor so tag ingress
+does not queue behind ordinary node work.
 
-Each TimingSystem `Conductor` owns a logical serial coordination lane.
-Its state reconciliation never runs synchronously on the thread emitting a
-TimingNode state event. Different system-Conductor lanes may share one
-Runtime-owned coordination worker. The Application `Conductor` performs
-lifecycle ordering and does not need its own coordination lane.
+AntennaManager retains its scheduled I/O lane backed by the shared I/O role
+executor. No separate worker is needed for each antenna initialization,
+switch or elapsed-time wait.
 
-AntennaManager owns one serial scheduled I/O lane. Self-test, initialize,
-power-control transitions, start/stop inventory and multiplex switching/rotation
-all enter that same logical lane; the lane runs on one Runtime-owned I/O-role
-worker. There is no separate initialization worker and no separate switching
-worker in the baseline. Elapsed-time waits such as power stabilization are
-scheduled continuations on that same lane, so the physical I/O worker is released
-while time passes.
-
-The baseline execution topology is therefore:
+The intended topology is:
 
 ```text
-Domain
-  TimingNode 1 ─ serial lane ─┐
-  TimingNode 2 ─ serial lane ─┼─> one shared TimingNode worker
-  TimingNode N ─ serial lane ─┘
+shared Domain/application ExecutorService
+  ├─ TimingNode A / Data Lane  (SerialExecutor)
+  ├─ TimingNode A / Task Lane  (SerialExecutor)
+  ├─ TimingNode B / Data Lane  (SerialExecutor)
+  ├─ TimingNode B / Task Lane  (SerialExecutor)
+  └─ TimingSystem Conductor lanes (SerialExecutor + optional SerialTaskRunner)
 
-  TagProcessor 1 ─ scheduled serial lane ─┐
-  TagProcessor 2 ─ scheduled serial lane ─┼─> one shared TagProcessor worker
-  TagProcessor N ─ scheduled serial lane ─┘
+shared TagProcessor ScheduledExecutorService
+  ├─ TagProcessor A (SerialScheduledExecutor)
+  └─ TagProcessor B (SerialScheduledExecutor)
 
-Domain
-  system Conductor 1 ─ serial lane ─┐
-  system Conductor N ─ serial lane ─┴─> one shared coordination worker
-
-I/O
-  AntennaManager ─ scheduled serial lane ─> one shared I/O worker
+shared I/O ScheduledExecutorService
+  └─ AntennaManager / other bounded I/O lanes
 ```
 
-The default is **one physical worker per functional role**, not one worker per
-component instance and not one worker per CPU core.
+The default is a small, bounded collection of physical workers by functional
+role, not one worker per component instance, lane or CPU core. A single-worker
+shared Domain executor preserves FIFO at task boundaries but cannot execute two
+lane tasks simultaneously. In particular, a synchronous durable append may
+briefly delay a heartbeat on another lane using that same worker. Required
+latency independence therefore needs measured physical parallelism, not merely
+a second logical lane.
 
 This minimal topology applies to both known deployment classes:
 
@@ -1619,11 +1634,12 @@ A provider that needs long-lived blocking behaviour must expose that behaviour
 through an execution design that does not stall unrelated work on the shared
 role worker.
 
-TimingNode is a different kind of execution boundary: one admitted Domain item is
-normally processed to its semantic completion before the next item on that
-TimingNode lane. That may include short in-process state work, LogBook/persistence
-commit and publication of the resulting immutable event. TimingNode work must not,
-however, sleep for elapsed time or wait on external hardware/network activity.
+The TimingNode Data Lane processes each admitted state operation to semantic
+completion before its next state operation. That may include durable persistence,
+LogBook updates and immutable event publication. The Task Lane handles node
+coordination separately and yields at bounded task boundaries. Neither lane
+may sleep for elapsed time, block on external network/device activity or wait
+synchronously for work pending on a potentially shared worker.
 
 The one-worker I/O baseline is therefore not justified by an assumption that
 device calls are free or instantaneous. It is justified by the intended quality
@@ -1868,7 +1884,7 @@ to node-scoped `UpstreamStream` instances, but not UpstreamData semantics.
 `UpstreamStream` is the non-blocking semantic mailbox presented by Messaging to
 one TimingNode. It reports whether communication is available, exposes queued
 inbound UpstreamData, and accepts outbound UpstreamData for transport. Real
-RabbitMQ/API/socket I/O never blocks the TimingNode serial lane.
+RabbitMQ/API/socket I/O never blocks the TimingNode Data Lane.
 :::
 
 
@@ -2359,13 +2375,13 @@ Architecture rules:
 - resolve the target TimingNode before state-dependent work enters its ordered path;
 - code outside a TimingNode does not directly inspect or mutate that node's mutable state;
 - two state changes for the same TimingNode do not run over each other;
-- the TimingNode behaves as an active object: one bounded serial execution
-  boundary owns state-dependent command ordering and ORDERED reads, and publishes
-  immutable current-state snapshots for CURRENT observation;
+- each TimingNode has a Data Lane for one-writer state-dependent command ordering
+  and ORDERED reads, plus a Task Lane for node task/protocol coordination;
+  immutable CURRENT snapshots may be published from completed Data Lane changes;
 - state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
 - the contained LogBook, StageStartTimes and EventData objects remain
   passive and do not each receive their own execution thread;
-- short read operations may capture immutable snapshots for longer calculations outside the TimingNode lane;
+- short read operations may capture immutable snapshots for longer calculations outside the Data Lane;
 - different TimingNodes may make progress at the same time;
 - file writes must not hold up RFID/device/operator callbacks;
 - a slow query or ranking calculation must not hold up LogBook commits;
@@ -2375,9 +2391,9 @@ Architecture rules:
 
 The primary latency risk is therefore **producer backpressure**, not whether every TimingNode operation is asynchronous. Device/RFID/TagProcessor ingress must use the submission-only path and return after bounded-queue admission; it does not wait for persistence or a domain result. Presentation/application callers may use a result-bearing command path when they need that result.
 
-ORDERED queries are allowed to occupy the TimingNode lane for a bounded period when exact sequencing with mutations is required. CURRENT queries may instead read a safely published immutable representation without entering that lane. Mutable LogBook traversal remains ordered. Read/query implementations may use direct bounded traversal, compact derived/indexed state or immutable snapshots according to the required consistency and measured cost. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
+ORDERED data queries are allowed to occupy the Data Lane for a bounded period when exact sequencing with mutations is required. CURRENT queries may instead read a safely published immutable representation without entering that lane. Mutable LogBook traversal remains ordered. Read/query implementations may use direct bounded traversal, compact derived/indexed state or immutable snapshots according to the required consistency and measured cost. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
 
-Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
+Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the Data Lane unless the adapter is proven to enqueue/buffer and return promptly.
 
 The SSD only sets these rules. SDD-01 describes state ordering, persistence and
 consumer visibility. SDD-02 chooses the Java queue/worker implementation. The
@@ -2781,8 +2797,9 @@ synchronization and status messages. TimingData identity/order remains owned by 
 encoded UpstreamData representation and own transport/session resources; they do not
 become owners of TimingData fields or UpstreamData semantics. The gateway presents
 one node-scoped `UpstreamStream` per TimingNode. The node's
-`UpstreamMessagePort` reads/writes that stream and executes semantic processing
-through `UpstreamMessageTask` on the existing TimingNode serial lane.
+`UpstreamMessagePort` reads/writes that stream and coordinates semantic messages
+on the node Task Lane. State-changing requests and committed data reads are
+handed to the Data Lane through bounded asynchronous operations.
 
 ```text
 external upstream / SI-02 backend peer
@@ -2801,7 +2818,11 @@ external upstream / SI-02 backend peer
                                              |
                                   UpstreamMessageTask
                                              |
-                                      serial lane
+                                       Task Lane
+                                       │
+                          async commands / immutable replies
+                                       │
+                                       Data Lane
 ```
 
 Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
@@ -2860,7 +2881,7 @@ antenna.
 Antenna lifecycle/device-control calls are separate from observation delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
 for its configured antennas. Self-test, power, initialize, inventory start/stop and shutdown
 are submitted as bounded control work so potentially blocking device I/O does not run on
-a TimingNode lane or on a presentation callback. Application startup may wait for a
+a Data Lane or on a presentation callback. Application startup may wait for a
 result-bearing manager operation because readiness depends on that outcome.
 
 The Java realization should use a shared bounded I/O `ExecutorService` rather than a
@@ -3046,7 +3067,7 @@ belonging to one Java helper class:
   when measurement demonstrates a concrete benefit;
 - keep blocking network/retry work behind capability-specific output boundaries rather
   than on the TimingNode execution lane;
-- move analysis-store writes off the TimingNode lane only when measurement shows that
+- move analysis-store writes off the Data Lane only when measurement shows that
   synchronous writes cause unacceptable delay;
 - measure queue high-water, storage latency, LogBook/query cost, heap/GC behaviour and
   scheduling/CPU effects before increasing concurrency or adding runtime complexity.
@@ -3065,7 +3086,7 @@ This table intentionally lives in the architecture section of this SSD because t
 | Java baseline | Java SE 8 is the current SI-01 baseline | architecture baseline; verify the selected runtime on the Pi target |
 | Extension mechanism | typed capability-specific provider contracts with startup composition; runtime/domain code remains provider-discovery agnostic | concrete Java discovery/loading is owned by SDD-02 |
 | Build | Maven | accepted |
-| Concurrency | TimingNode is an active object with one bounded serial execution boundary for mutation/ORDERED reads plus safely published immutable CURRENT state; contained state objects stay passive; callbacks, long calculations and slow delivery remain outside that lane | SDD-02 uses composition and keeps the executor implementation replaceable |
+| Concurrency | Each TimingNode owns a Data Lane for consistent mutation/ORDERED reads and a Task Lane for coordination; lanes can share a physical ExecutorService; safely published CURRENT state and passive contained data remain separate from protocol I/O | SDD-02 defines one-writer state ownership, bounded async handoffs and executor composition |
 | Internal messaging | typed immutable command/event/query objects only at async/ownership boundaries + explicit TimingNode mapping/routing at the owning boundary; no central generic dispatcher; direct calls inside a TimingNode task | architecture baseline; add/refine consumer API signatures only for concrete needs |
 | Time model | dedicated `TimingTimestamp`; raw `PlatformEnvironment.Clock`; Runtime-composed shared `TimeSource`; separate `MonotonicClock` | IF-05 fixes canonical external timestamp serialization; RuntimeTimeSources selects the timing source implementation/sharing scope; synchronization/correction policy remains to be completed |
 | Dependency injection | explicit/manual composition | add a framework only if measured/maintainability complexity justifies it |

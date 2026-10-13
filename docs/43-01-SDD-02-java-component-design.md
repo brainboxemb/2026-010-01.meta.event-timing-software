@@ -269,11 +269,11 @@ domain/
   system/
     SystemConductor.java                TimingSystem coordination and TimingNode lifecycle
   node/
-    TimingNode.java                     active serial ownership boundary
-    TimingNodeLogic.java                package-private mutable node logic
+    TimingNode.java                     Data/Task Lane composition boundary
+    TimingNodeLogic.java                Data Lane-owned mutable domain logic
     upstream/
-      UpstreamMessagePort.java          dispatch + TimingNode-lane admission
-      UpstreamMessageTask.java          one upstream turn on node serial lane
+      UpstreamMessagePort.java          protocol dispatch on Task Lane
+      UpstreamMessageTask.java          bounded Task Lane upstream turn
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
@@ -346,17 +346,20 @@ io/
 
 platform/
   execution/
-    SerialExecutor.java                    bounded serial lane + lifecycle
-    SerialExecutorMetrics.java             lane-local queue/execution measurements
-    SerialScheduledExecutor.java           serial lane + delayed/fixed-delay scheduling
-    SerialScheduledExecutorMetrics.java    scheduled-lane measurements
-    CooperativeTaskRunner.java             cooperative task-runner contract
-    SerialTaskRunner.java                  cooperative turns on SerialExecutor
-    ScheduledTaskRunner.java               cooperative turns + delayed/result handling
-    CooperativeTaskController.java         wake/coalescing for component state machines
-    AbstractTask.java                      reusable child-task execution lifecycle
-    CooperativeTask.java                   one-step state-machine task contract
-    TaskStep.java                          AGAIN / AFTER / DONE continuation decision
+    executors/
+      SerialExecutor.java                    bounded serial lane
+      SerialExecutorMetrics.java             lane metrics
+      SerialScheduledExecutor.java           scheduled serial lane
+      SerialScheduledExecutorMetrics.java    scheduled-lane metrics
+    tasks/
+      CooperativeTask.java                   task contract
+      AbstractTask.java                      child-task lifecycle
+      CooperativeTaskController.java         wake/coalescing
+      TaskStep.java                          continuation decision
+    taskrunners/
+      CooperativeTaskRunner.java             runner contract
+      SerialTaskRunner.java                  runner on existing SerialExecutor
+      ScheduledTaskRunner.java               timed/cooperative runner
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -376,46 +379,93 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-The SI-01 SSD defines the execution topology and ownership rules: component-local
-logical serial lanes, one shared physical worker per functional role by default, separate
-Application/I/O execution boundaries, and measurement-driven physical parallelism.
+The architecture distinguishes two logical serial lanes **per TimingNode**:
+a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence,
+live reference data, derived registration state and ORDERED reads, and a
+**Task Lane** for node coordination, heartbeat and upstream protocol state.
+Both are bounded `SerialExecutor` instances, each with its own FIFO/admission/
+metrics, but both may use the **same Runtime-owned ExecutorService**.
+The TagProcessor retains its independent scheduled lane.
 
-The Java realization uses `SerialExecutor` for the TimingNode lane. Each TimingNode
-receives a distinct instance with its own bounded `ArrayBlockingQueue`, admission state
-and lane-local metrics. All instances use the Runtime-owned single-worker
-`ThreadPoolExecutor` for the TimingNode role.
-
-`SerialScheduledExecutor` realizes the TagProcessor scheduled serial lane. Each
-TagProcessor receives a distinct logical lane, while all such lanes use the Runtime-owned
-single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
-housekeeping and immediate work therefore preserve node-local ordering without creating a
-thread per processor.
-
-Runtime creates a logical `SerialExecutor` per TimingSystem `Conductor`
-over a shared coordination worker and a `SerialScheduledExecutor` per
-AntennaManager over the shared scheduled I/O worker.
-
-The lane classes receive their backing JDK executor as an external dependency; they never
-create, configure or shut down the physical worker themselves. Closing a logical lane
-therefore never shuts down a shared worker. Runtime retains physical-worker lifecycle
-ownership.
-
-The current Java baseline uses one physical worker for each of these Runtime roles:
+The Task Lane cannot read or mutate Data Lane-owned collections directly.
+Cross-lane commands, reads and immutable replies must be non-blocking and
+bounded; synchronous Future-waiting between lanes is forbidden when they can
+share a single physical worker. `SerialTaskRunner` executes cooperative
+steps on an existing lane and creates neither a worker nor another lane.
+A single physical worker cannot process two lane items concurrently:
+slow durable persistence can temporarily delay a heartbeat despite the
+independent logical queues. V01 measures the need for additional workers.
 
 ```text
-TimingNode     -> ThreadPoolExecutor(1)
-TagProcessor   -> ScheduledThreadPoolExecutor(1)
-System coordination -> ThreadPoolExecutor(1)
-shared I/O     -> ScheduledThreadPoolExecutor(1)
+shared Domain ExecutorService
+  ├── TimingNode A: Data Lane (SerialExecutor)
+  ├── TimingNode A: Task Lane (SerialExecutor)
+  ├── TimingNode B: Data Lane (SerialExecutor)
+  ├── TimingNode B: Task Lane (SerialExecutor)
+  └── TimingSystem Conductor lanes (SerialExecutor + SerialTaskRunner)
+
+shared scheduled TagProcessor executor
+  └── one SerialScheduledExecutor lane per TagProcessor
+
+shared scheduled I/O executor
+  └── bounded AntennaManager and I/O lanes
 ```
 
-This worker count realizes the SSD baseline for both Raspberry Pi Zero and Raspberry Pi 3
-Model B deployments. It is not derived from available CPU-core count. V01 measurement
-evidence is required before increasing a role's physical worker count.
+Runtime owns physical workers, component/lifecycle owners own the logical
+lanes. The normal JVM thread priority baseline remains unchanged; physical
+parallelism is measurement-driven rather than derived from node or CPU count.
 
-All Runtime-owned workers use the normal JVM priority. Tests that need asynchronous
-execution create and own their test worker separately, while deterministic package-local
-seams may use direct execution.
+### TimingNode upstream decomposition
+
+Upstream processing is a TimingNode-owned domain concern, but it is not one
+undifferentiated component. The semantic handler delegates protocol families to
+small state owners while transport remains in the I/O layer:
+
+```text
+I/O messaging
+  UpstreamStream
+      |
+      | node-scoped semantic messages / non-blocking send
+      v
+TimingNode Task Lane
+  UpstreamMessagePort
+    ├── UpstreamMessageTask     one bounded upstream turn
+    ├── UpstreamHeartbeat       PING request/answer and heartbeat state
+    ├── UpstreamDataSync        RACE_DATA sequencing, ACK/REQ/SYNC protocol state
+    └── LogBookSync             TIMING_DATA replay/sync cursor and batching
+             |
+             | bounded asynchronous commands / immutable replies
+             v
+TimingNode Data Lane
+    ├── TeamAssignments
+    ├── StageStartTimes
+    ├── UniqueTeamRegistrations
+    └── LogBook / TimingData persistence
+```
+
+The ownership rule is responsibility-based:
+
+- `UpstreamMessagePort` and `UpstreamMessageTask` dispatch node-scoped upstream
+  work on the Task Lane; they do not own transport workers or mutable TimingData.
+- `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
+  Data Lane round-trip for ordinary PING request/answer handling.
+- `UpstreamDataSync` owns RACE_DATA sequence/gap/ACK protocol state on the Task
+  Lane. Changes to `TeamAssignments`, `StageStartTimes` and other Data
+  Lane-owned live race data are applied through bounded asynchronous Data Lane
+  commands. ACK is emitted only after the corresponding Data Lane application
+  result returns as an immutable reply.
+- `LogBookSync` owns replay cursor/batch coordination on the Task Lane. It may
+  use directly published immutable/scalar LogBook facts where explicitly
+  supported; record traversal and replay batches are obtained through bounded
+  Data Lane handoffs rather than direct collection access.
+- `UpstreamStream` remains an I/O/messaging boundary. `send` only hands a
+  semantic message to the local transport mailbox; Domain code does not perform
+  blocking network I/O.
+
+No Task Lane component may synchronously wait for a Data Lane Future when both
+lanes share the same physical worker. Cross-lane completion is continuation-
+based: request work, return the Task Lane, then continue when the immutable
+result is delivered back.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
@@ -702,7 +752,7 @@ registration, every TagId resolving to that RegistrationId is suppressed by the
 same duplicate window.
 
 `RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
-Its incremental changes are applied on the TimingNode lane to passive state such as
+Its incremental changes are applied on the Data Lane to passive state such as
 `TeamAssignments` and `StageStartTimes`. EventData remains the owner of stable
 TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
 RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
@@ -728,7 +778,7 @@ The snapshot is unavailable while initial recovery is still pending. `activate()
 the previous published snapshot, starts the node execution lane, admits recovery as the
 first ordered TimingNode task, starts its owned child lane(s) and returns without waiting
 for persistence I/O. The recovery task performs TimingData load, LogBook rebuild and
-contained recovery-failure handling on the TimingNode lane, then publishes the first
+contained recovery-failure handling on the Data Lane, then publishes the first
 immutable Status snapshot with safe cross-thread visibility. That first publication also
 emits the existing status event so externally composed current-state consumers can wake
 and reread CURRENT. Deactivation makes CURRENT status unavailable; reactivation queues a
@@ -741,14 +791,14 @@ CURRENT
   latest safely published completed snapshot; no lane admission/wait/timeout
 
 ORDERED
-  execute on the TimingNode serial lane after earlier accepted node work
+  execute on the Data Lane after earlier accepted node work
 ```
 
 The existing one-argument `query(query)` remains ORDERED. A caller chooses CURRENT only
 when the query definition supports it. Status supports CURRENT and ORDERED; TimingData
 count and bounded LogBook range/latest reads remain ORDERED only.
 
-State-changing commands still execute on the TimingNode serial lane. After a command
+State-changing commands still execute on the Data Lane. After a command
 completes its domain mutation, TimingNode builds and publishes the immutable after-Status
 before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
 status reader therefore observes only completed published transitions.
@@ -795,7 +845,7 @@ an Application-layer boundary object, not a second owner of TimingNode state.
 
 Status-change detection remains owned by the TimingNode serial boundary. A
 state-changing command compares authoritative status before and after the domain
-operation on that TimingNode lane. A real difference emits the TimingNode status
+operation on that Data Lane. A real difference emits the TimingNode status
 event before the result leaves ordered command execution. `TimingNodeProxy` maps
 that fact to the node-scoped Application-layer `TimingNodeStatus`; it does not perform a second before/after query
 outside the ordered boundary.
@@ -937,11 +987,24 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics and any demultiplexing needed when one physical connection carries several NodeIds. Messaging exposes one node-scoped `UpstreamStream` per TimingNode; the Java contract therefore lives under `io.messaging`, not under Domain. `TimingNode.UpstreamMessagePort` consumes that stream but owns only semantic-family dispatch and admission to the existing TimingNode serial lane. Cohesive protocol state is delegated to `UpstreamHeartbeat` (PING/heartbeat), `UpstreamDataSync` (Central `RACE_DATA` sequence/ACK/REQ/SYNC) and `LogBookSync` (`TIMING_DATA` head/SYNC/REQ and synchronization in batches of at most 256 records). `UpstreamMessageTask` executes one upstream turn at a time on the existing TimingNode serial lane; none of these helpers owns another worker or executor. No Application router and no `TimingSystem.UpstreamMessagePort` is part of the current design. `SystemId` remains an internal composition/simulation identity and is not required on the wire.
+`UpstreamData` carries semantic RACE_DATA, TIMING_DATA, SYNC, ACK, REQ
+and PING messages. I/O connectors and UpstreamGateway own transport/session
+mechanics and NodeId routing. Messaging supplies a node-scoped non-blocking
+`UpstreamStream`; `UpstreamMessagePort` processes semantic messages on
+the **Task Lane**. `UpstreamHeartbeat`, `UpstreamDataSync` and `LogBookSync`
+own their corresponding protocol cursors/state there, but no extra worker.
 
-The `domain.node.upstream` package is deliberately a Domain helper package rather than a transport package. Its classes interpret semantic `UpstreamData` and mutate/read TimingNode-owned state while the node serial lane is current. The `io.messaging` package owns the non-blocking mailbox/transport boundary. This split prevents RabbitMQ/API/session concerns from leaking into the TimingNode while also keeping protocol-state helpers out of the generic `domain.node` package.
-
-Non-obvious ownership and sequencing invariants in these helpers shall be documented close to the code in accordance with DR-10. In particular, comments/Javadoc shall make the TimingNode-lane ownership, contiguous RACE_DATA sequence state, fixed synchronization-head rule and heartbeat scheduling ownership discoverable without reverse-engineering the complete port.
+RACE_DATA applies TeamAssignments and StageStartTimes changes atomically on
+the **Data Lane**, then the Task Lane advances the protocol sequence and
+sends ACK only after successful application. In-flight ordering must prevent
+a later RACE_DATA sequence overtaking an earlier one. TIMING_DATA replay
+requests the captured head and bounded (maximum 256 records) immutable
+batches from the Data Lane asynchronously. The Task Lane sends the batches,
+tracks replay progress and handles transport/session cancellation.
+Neither helper waits synchronously for the other lane. The LogBook and
+derived state remain Data Lane-owned, and send/retry logic stays outside the
+data transaction. Document these ownership, retry, cancellation and
+commit-before-ACK guarantees in code.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -1249,7 +1312,7 @@ validated effective configuration
   -> PresentationRuntime.activate()
 
 TimingNode initial recovery task:
-  -> read/validate persisted TimingData on the TimingNode lane
+  -> read/validate persisted TimingData on the Data Lane
   -> rebuild LogBook / recovered mutable node state
   -> publish first CURRENT Status
   -> emit statusChangedEvent as a wake signal
@@ -1630,7 +1693,7 @@ backpressure onto TimingNode. Reconnect recovery uses `STATUS_SNAPSHOT` plus Log
 the current status of every composed `TimingNodeProxy` once and stores the
 result by `NodeId`. A later node-status event replaces only that node's cached
 entry and broadcasts the complete cached status. The event callback does not
-query TimingNodes, so it does not wait on another TimingNode serial lane.
+query TimingNodes, so it does not wait on another Data Lane.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
@@ -2423,7 +2486,7 @@ antenna/provider callback
   -> Event<TagObservation>
   -> TagProcessor
   -> TimingNode.offer(...)
-  -> TimingNode worker
+  -> Data Lane worker
   -> TimingDataPersistence.append(...)
   -> LogBook.add(...)
   -> timingDataCommittedEvent.emit(...)
@@ -2432,13 +2495,13 @@ antenna/provider callback
 The first four steps must stay short and must not write files, send network data or wait
 for presentation/upstream work. `TimingNode.offer(...)` is the fire-and-forget boundary:
 it performs only bounded queue admission and returns to TagProcessor without executing or
-waiting for the TimingNode command. The lower-priority TimingNode lane processes accepted
+waiting for the TimingNode command. The lower-priority Data Lane processes accepted
 work independently afterwards.
 
-The TimingNode worker is allowed to wait for the required
+The Data Lane worker is allowed to wait for the required
 `TimingDataPersistence.append(...)` call because that local durable write is part of the
 TimingData commit. After the record has been written and added to LogBook, short local
-post-commit listeners may run synchronously on the TimingNode worker.
+post-commit listeners may run synchronously on the Data Lane worker.
 
 A post-commit listener that needs socket I/O, retry, upstream delivery or another
 potentially slow operation must hand that work to its own bounded delivery mechanism and
@@ -2662,27 +2725,28 @@ Threads owned by the JDK or external libraries keep their own names.
 
 ### Thread priority and execution roles
 
-The execution design keeps latency-sensitive work on separate **role workers**, while
-each configured node retains its own logical serial lane. Initial TimingData recovery is
-a deliberate first node-lane task because it reconstructs node-owned mutable state; this
-does **not** imply one physical filesystem worker per node:
+The execution design isolates latency-sensitive TagProcessor work from the
+shared Domain/application workers. Each configured node has independent
+logical Data and Task lanes; the physical worker count is a separate capacity
+decision. Initial TimingData recovery runs first on the Data Lane.
 
 ```text
 shared TagProcessor role worker
-  -> serial TagProcessor lane per TimingNode
-  -> highest registration-ingress latency class candidate
+  -> one serial/scheduled TagProcessor lane per TimingNode
+  -> registration ingress/highest latency sensitivity
 
-shared TimingNode role worker
-  -> bounded serial TimingNode lane per TimingNode
-  -> medium registration/command latency class candidate
+shared Domain/application ExecutorService
+  -> Data Lane per TimingNode (ordered commits/reads)
+  -> Task Lane per TimingNode (node coordination/upstream/heartbeat)
+  -> TimingSystem Conductor serial lanes (task-runner when required)
 
-shared background/application execution
-  -> lower-priority candidate for non-critical periodic/data-processing work
+shared I/O executor
+  -> external hardware, messaging and other bounded I/O
 ```
 
-The third category is an execution resource for active background/application work; it is
-not a reason to turn passive Domain objects into threaded objects. Blocking device/I/O work
-also remains on its separate bounded I/O executor.
+All these lanes may be logical queues over a small fixed set of workers;
+a separate Task Lane does not make blocked persistence on a single worker
+run concurrently with a heartbeat. V01 measures physical worker demand.
 
 Step 5 still starts with normal/default Java thread priority for all roles. D04 defines
 functional separation and makes later role-specific tuning possible, but does not assign
@@ -2714,27 +2778,30 @@ JVM/OS combinations.
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBook reads and the local Event/EventSource publication boundary.
 
-The Java design implements the **Active Object pattern** for each TimingNode,
-but does not make `TimingNode` inherit from an `ActiveObject` base class.
-
-The architectural rule is simple:
+The Java design uses composition rather than an `ActiveObject` inheritance
+hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  +-- one bounded serial execution boundary
-  +-- at most one work item active on that lane
-  +-- physical TimingNode worker shared with other node lanes
-  |
-  +-- passive LogBook
-  +-- received TeamAssignments
-  +-- received StageStartTimes
-  +-- derived UniqueTeamRegistrations
-  |
-  +-- per-type store ports
+  ├── Data Lane  -> TimingNodeLogic, LogBook, persistence,
+  │                lifecycle/location, TeamAssignments, StageStartTimes,
+  │                UniqueTeamRegistrations
+  └── Task Lane  -> UpstreamMessagePort, heartbeat, protocol cursors,
+                   synchronization/replay coordination
 ```
 
-This gives one writer for all mutable per-node state and one clear ordering
-between registration, lifecycle and reference-data changes.
+The **Data Lane** is the sole writer for mutually consistent node data.
+A durable append and the resulting LogBook/derived-state publication remain
+one ordered transaction. INITIAL recovery runs as the first Data Lane task.
+The Task Lane cannot bypass that recovery to consume uninitialized data.
+Status CURRENT reads use a published immutable snapshot. ORDERED data
+queries and mutations enter the Data Lane, not the Task Lane.
+
+RACE_DATA and TIMING_DATA synchronization cross the boundary via bounded
+asynchronous commands and immutable results. No lane blocks on a Future
+belonging to the other lane while they may share one physical worker.
+Activation and shutdown must account for pending cross-lane replies before
+either lane is closed; no reply may ACK uncommitted data.
 
 ### Why composition instead of an ActiveObject base class
 
@@ -2744,13 +2811,14 @@ Composition keeps that choice replaceable and lets the public TimingNode API sta
 synchronous and domain-oriented.
 
 For state-dependent operations the caller waits for the result produced on the
-TimingNode lane. Queue admission and the processed operation result are represented
+Data Lane. Queue admission and the processed operation result are represented
 separately:
 
 ```java
 final class TimingNode {
     private final TimingNodeLogic logic;
-    private final SerialExecutor serialLane;
+    private final SerialExecutor dataLane;
+    private final SerialExecutor taskLane;
 
     <R> R invoke(TimingNodeCommand<R> command) {
         // admit + wait for the processed result
@@ -2801,7 +2869,7 @@ Active Object mechanism. It does not appear in the normal TimingNode
 application/domain interface. The current synchronous caller contract needs only an internal plain
 `Future<R>`; `CompletionStage` is not required.
 
-Code already running on the TimingNode lane uses direct private/domain methods
+Code already running on the Data Lane uses direct private/domain methods
 such as `doOpen()` rather than calling the blocking public `open()` method
 again. Re-entering a public blocking operation from the same serial lane would
 wait on work that cannot run until the current work item finishes.
@@ -2851,23 +2919,20 @@ outcome semantics differ from definite submission rejection.
 `SerialExecutor` preserves TimingNode execution semantics while separating the logical
 bounded lane from the physical worker.
 
-The production baseline is:
+The logical node-lane topology is:
 
 ```text
-Runtime TimingNode role executor
-  ThreadPoolExecutor
-    corePoolSize = 1
-    maximumPoolSize = 1
-    physical thread = tp-dl-node-worker
-
-TimingNode A SerialExecutor lane
-  bounded ArrayBlockingQueue
-  at most one drain token scheduled
-
-TimingNode B SerialExecutor lane
-  bounded ArrayBlockingQueue
-  at most one drain token scheduled
+Runtime-owned Domain ExecutorService
+  ├─ TimingNode A Data Lane -> bounded ArrayBlockingQueue
+  ├─ TimingNode A Task Lane -> bounded ArrayBlockingQueue
+  ├─ TimingNode B Data Lane -> bounded ArrayBlockingQueue
+  ├─ TimingNode B Task Lane -> bounded ArrayBlockingQueue
+  └─ TimingSystem Conductor lanes
 ```
+
+Each lane schedules at most one drain token. The physical executor may
+initially have one worker; a second worker is only justified by measured
+latency/throughput when blocking persistence is present.
 
 Only one lane item is processed per drain token. If another node already has a drain token
 waiting on the shared role executor, it gets an opportunity to run before a busy lane
@@ -2926,7 +2991,7 @@ semantics; `RejectedExecutionException` does not leak into normal TimingNode cal
 
 The required behaviour remains:
 
-- queue capacity is visible and bounded per TimingNode lane;
+- queue capacity is visible and bounded per Data Lane;
 - FIFO order is preserved for one TimingNode;
 - at most one work item from one lane executes at a time;
 - different node lanes share the role worker and make progress at task boundaries;
@@ -2941,11 +3006,11 @@ The required behaviour remains:
 - a fatal lane failure likewise never shuts down that executor;
 - Runtime shuts down the shared role executor only after component lanes have stopped.
 
-The TimingNode remains the owner of this execution lane. `SerialExecutor` is a Platform
+The TimingNode remains the lifecycle owner of both logical serial lanes. `SerialExecutor` is a Platform
 primitive and contains no TimingNode/domain/persistence logic.
 
 Execution measurements are owned by the separate `SerialExecutorMetrics` class in the same
-Platform execution package. `SerialExecutor` only records lifecycle/admission/execution facts
+Platform execution executors package. `SerialExecutor` only records lifecycle/admission/execution facts
 into that object and exposes it through `metrics()`. Hot-path updates remain
 primitive/low-allocation; an explicit `metrics().snapshot()` call creates the immutable
 engineering view. Keeping the metrics implementation in a separate source file prevents the
@@ -3035,7 +3100,7 @@ private void processRegistration(RegistrationInput input) {
 }
 ```
 
-Only the TimingNode worker calls this commit path, so a producer lock around
+Only the Data Lane worker calls this commit path, so a producer lock around
 sequence allocation is unnecessary.
 
 `LogBook.nextSequence()` reads committed state and does not consume the value.
@@ -3049,14 +3114,14 @@ but it is contained mutable TimingNode state rather than a globally readable
 repository.
 
 Code outside the TimingNode ownership boundary does not read the mutable
-LogBook list directly. A consistency-sensitive query enters the TimingNode lane
+LogBook list directly. A consistency-sensitive query enters the Data Lane
 and performs its bounded read in the same ordering as state changes.
 
 The read representation is deliberately not fixed to a copied list. Bounded
 IF-03 range/latest queries traverse the owned LogBook records on the TimingNode
 lane and build only the final response representation; no temporary LogBook
 `List` copy escapes the owner. Network
-write/send remains outside the TimingNode lane.
+write/send remains outside the Data Lane.
 
 For range/latest/ranking-style access, prefer direct bounded traversal of the
 owned records when that avoids unnecessary allocation and GC pressure. A query may
@@ -3068,11 +3133,11 @@ The important guarantees are:
 - each consistency-sensitive read has a defined place in the same ordering as
   state changes;
 - no external consumer retains a mutable collection owned by TimingNode;
-- normal runtime blocking I/O is not introduced casually on the TimingNode lane;
+- normal runtime blocking I/O is not introduced casually on the Data Lane;
 - initial persistence recovery is the explicit exception: it is the first ordered
   node task because it rebuilds TimingNode-owned state before later commands;
 - Runtime may still serialize those logical node recoveries on one shared physical
-  TimingNode worker rather than creating parallel filesystem workers;
+  Data Lane worker rather than creating parallel filesystem workers;
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
@@ -3120,7 +3185,7 @@ Runtime composition creates the file store and supplies it to
 `DefaultTimingDataPersistence`. No class under `io.storage` imports a Domain
 or Application class.
 
-The TimingNode worker fixes the order in which state changes execute against the node-owned state. The
+The Data Lane worker fixes the order in which state changes execute against the node-owned state. The
 current design may call the small/infrequent analysis-store writes on the
 same worker. If measurements show that one of those writes delays registrations,
 the worker can hand an immutable snapshot to a bounded storage executor. Do not
@@ -3128,34 +3193,44 @@ add one thread per state object and do not introduce an unbounded background
 queue.
 
 For the registration path, synchronous persistence on the node lane remains the baseline:
-producer callbacks return after command admission, while the shared TimingNode role worker
+producer callbacks return after command admission, while the shared Domain worker
 performs the durable append before LogBook/event visibility. Because that physical worker is
-shared, a long `FileChannel.force(true)` can temporarily delay other TimingNode lanes as
+shared, a long `FileChannel.force(true)` can temporarily delay other Data Lanes as
 well. That is an explicit trade-off for the resource-constrained baseline, not an assumption
 that nodes execute in parallel.
 
 Characterize store latency, per-lane queue high-water and fairness under the aggregate
-20 registrations/s application workload before moving durability work off the shared node
+20 registrations/s application workload before moving durability work off the shared Domain
 worker. If the reference Raspberry Pi cannot meet the workload because durable storage
 stalls the role worker, the next design step is a bounded durability mechanism that preserves
 commit-before-LogBook/event ordering; it is not to multiply the stress target per node.
 
-For example, one ordered RACE_DATA message containing a StageStartTimes change is:
+For example, an ordered RACE_DATA message containing a StageStartTimes
+change follows a **non-blocking two-lane handoff**:
 
 ```text
-TimingNode worker
-  -> verify raceData.seq == lastAppliedRaceSeq + 1
-  -> validate all RaceData changes
-  -> apply StageStartTimes SET/DEL and other changes atomically
-  -> advance lastAppliedRaceSeq
-  -> emit ACK(stream=RACE_DATA, seq=lastAppliedRaceSeq)
+Task Lane / UpstreamMessagePort
+  -> validate sequence, mark update in-flight
+  -> offer bounded immutable change to Data Lane
+  -> return without waiting
+
+Data Lane
+  -> validate change against current node state
+  -> atomically apply TeamAssignments/StageStartTimes SET/DEL
+  -> report committed result to Task Lane (bounded asynchronous handoff)
+
+Task Lane
+  -> advance lastAppliedRaceSeq only for the committed result
+  -> enqueue ACK(stream=RACE_DATA, seq=lastAppliedRaceSeq)
+  -> admit next ordered update
 ```
 
-If a later RaceData sequence arrives first, state is not changed and the upstream
-boundary emits `REQ(stream=RACE_DATA, fromSeq=lastAppliedRaceSeq+1)`. If live
-RaceData state is not persisted over reboot, the node restarts at sequence 0 and
-requests the retained stream from 1. An optional analysis/history store remains
-separate from this source-order contract.
+When a sequence gap is observed, no data mutation is admitted and the
+Task Lane requests the first missing sequence. Failed Data Lane admission,
+commit failure or shutdown must not advance the upstream cursor or ACK.
+If received RACE_DATA is not persisted over reboot, the node restarts at
+sequence 0 and requests the retained stream from 1. Optional analysis
+history does not change this ordering contract.
 
 ### Simple typed events
 
@@ -3227,7 +3302,7 @@ public EventSource<TimingData> timingDataCommittedEvent() {
 The commit path is therefore:
 
 ```text
-TimingNode serial lane
+Data Lane
   -> persist TimingData
   -> update committed LogBook state
   -> timingDataCommittedEvent.emit(timingData)
@@ -3240,7 +3315,7 @@ Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
 An owner that requires ordered/non-overlapping callbacks emits from its own ordered
 execution boundary; TimingNode status and committed-TimingData events therefore originate
-from the TimingNode serial lane.
+from the Data Lane.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
@@ -3249,7 +3324,7 @@ are not swallowed.
 Listeners must not become alternate owners of component mutable state. A listener must
 also remain short and non-blocking. Slow network delivery, retry or persistence work hands
 the immutable value to its own bounded mechanism and returns. A WebSocket or transport
-adapter therefore never uses the TimingNode lane as its backpressure mechanism.
+adapter therefore never uses the Data Lane as its backpressure mechanism.
 
 If listener notification fails after a TimingData record is committed, that does not roll
 back the commit. A consumer that needs reliable recovery uses authoritative
@@ -3271,28 +3346,13 @@ introduce events merely to replace an ordinary direct method call to one owned c
 
 ### Multiple TimingNodes
 
-The semantic requirement is one serial execution lane per TimingNode, not
-permanently one operating-system thread per node.
-
-The current realization is:
-
-```text
-1 TimingNode
-  -> 1 SerialExecutor
-       -> ThreadPoolExecutor(1 thread)
-       -> bounded ArrayBlockingQueue
-  -> passive state objects
-  -> store dependencies
-```
-
-The semantic requirement remains one serial lane per TimingNode, not one particular executor
-implementation forever. If later multi-node evidence shows that one JDK worker per node is
-too expensive, a shared execution implementation may be evaluated only if it preserves the
-same per-node ordering, bounded-admission and result semantics.
-
-The cross-cutting bounded-resource, single-writer, immutability and
-measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specifies the
-Java realization only where a concrete component boundary requires it.
+A TimingNode has one independent Data Lane and one independent Task Lane.
+Each lane uses its own bounded FIFO; other nodes have separate queues and
+state owners. The lanes share a Runtime-managed physical executor pool
+rather than creating one thread per node or per responsibility.
+This guarantees ordering and node ownership, but not simultaneous execution
+on a single physical worker. Runtime characterization verifies queue fairness
+and checks slow-persistence impact on protocol/heartbeat latency.
 
 :::
 
