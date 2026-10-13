@@ -239,7 +239,6 @@ nodes:
     - label: StageStartTimes
       object_id: StageStartTimes
     - label: UniqueTeamRegistrations
-      object_id: UniqueTeamRegistrations
   kind: service
   notation: packaging-component
   layout: {x: 630, y: 722, w: 215, h: 125}
@@ -249,11 +248,9 @@ nodes:
   label: "Timing"
   items:
     - label: StageTimingCalculator
-      object_id: StageTimingCalculator
     - label: StageTiming
       object_id: StageTiming
     - label: StageTimingStatus
-      object_id: StageTimingStatus
   kind: service
   notation: packaging-component
   layout: {x: 855, y: 722, w: 225, h: 125}
