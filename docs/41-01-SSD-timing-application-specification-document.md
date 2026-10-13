@@ -1032,6 +1032,7 @@ Application
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
               +-- data
@@ -1039,7 +1040,7 @@ Application
               |     +-- StageStartTimes
               +-- timing
               |     +-- UniqueTeamRegistrations
-              |     +-- StageStanding
+              |     +-- StagePassageList
               |     +-- StageRanking
               +-- LogBook
                     +-- 0..N TimingData
@@ -1262,6 +1263,7 @@ TimingSystem (1..N per Application)
     LocationId
     State
     UpstreamMessagePort       node-scoped upstream semantics
+    NextUpTeams                teams expected next
     processing
       TagProcessor
     data
@@ -1269,7 +1271,7 @@ TimingSystem (1..N per Application)
       StageStartTimes
     timing
       UniqueTeamRegistrations
-      StageStanding
+      StagePassageList
       StageRanking
     LogBook
       0..N TimingData
@@ -1334,6 +1336,15 @@ back through the same stream. The port owns no executor, worker thread or blocki
 transport I/O.
 :::
 
+:::{arch} NextUpTeams
+:id: NextUpTeams
+
+`NextUpTeams` is a TimingNode-local operational view of the teams expected next.
+It is kept separate from `TimingNodeData` because it is not received RACE_DATA,
+and separate from `TimingNodeTiming` because it is not elapsed-time/ranking
+calculation. Its detailed update rules are defined by the applicable requirements.
+:::
+
 :::{arch} TimingNode Processing
 :id: TimingNodeProcessing
 
@@ -1355,7 +1366,7 @@ from ordered upstream RACE_DATA and do not own workers.
 :id: TimingNodeTiming
 
 `TimingNodeTiming` groups derived timing information. `UniqueTeamRegistrations`
-tracks the active registration identities used by timing views. `StageStanding`
+tracks the active registration identities used by timing views. `StagePassageList`
 maintains the current digital passage/standing state per team from active registration
 history and current race data. `StageRanking` derives the ordered ranking from that
 standing. These capabilities are derived from committed TimingData plus current node
@@ -1382,7 +1393,7 @@ current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
-and StageStanding owns passage/elapsed-time interpretation.
+and StagePassageList owns passage/elapsed-time interpretation.
 :::
 
 :::{arch} TeamAssignments
@@ -1419,17 +1430,17 @@ EventData and TimingData provider families to each other. Live race state remain
 separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::
 
-:::{arch} StageStanding
-:id: StageStanding
+:::{arch} StagePassageList
+:id: StagePassageList
 
-`StageStanding` is the TimingNode read-side state for the current digital passage
+`StagePassageList` is the TimingNode read-side state for the current digital passage
 standing per team. It interprets active committed registration history together with
 current TeamId resolution and StageStartTimes. The standing retains the information
 needed to determine the currently relevant passage values when a team has multiple
 registrations and when a previously active registration is later revoked. It is not
 another writer and never rewrites TimingData or received race state.
 
-For a time-only start definition, StageStanding uses the configured event/race time
+For a time-only start definition, StagePassageList uses the configured event/race time
 zone and the established rollover rule: resolve the most recent valid occurrence not
 after the registration. When an explicit start date is present, that date is
 authoritative.
@@ -1438,7 +1449,7 @@ authoritative.
 :::{arch} StageRanking
 :id: StageRanking
 
-`StageRanking` derives the ordered stage ranking from `StageStanding`. It owns
+`StageRanking` derives the ordered stage ranking from `StagePassageList`. It owns
 ranking/order interpretation, not registration lifecycle reconstruction. A change to
 the standing may invalidate and rebuild the ranking view without changing committed
 TimingData or received race state.
@@ -2177,6 +2188,7 @@ Application
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
               +-- data
@@ -2184,7 +2196,7 @@ Application
               |     +-- StageStartTimes
               +-- timing
               |     +-- UniqueTeamRegistrations
-              |     +-- StageStanding
+              |     +-- StagePassageList
               |     +-- StageRanking
               +-- LogBook
                     +-- 0..N TimingData
