@@ -510,8 +510,9 @@ tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
 **Purpose**
 
-Verify bidirectional PING request/answer semantics, including heartbeat/manual
-purpose and optional reference correlation, without creating TimingData.
+Verify bidirectional PING REQUEST/ANSWER semantics: required `op`, optional
+HEARTBEAT `mode`, manual behavior when mode is absent, and optional
+reference correlation, without creating TimingData.
 
 **Setup**
 
@@ -526,19 +527,20 @@ purpose and optional reference correlation, without creating TimingData.
 1. Start SI-01 with the upstream connector not yet operationally connected.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
-3. Verify `PING(action=REQUEST, purpose=HEARTBEAT)` is published immediately
-   rather than waiting for the first 30-second period.
-4. Return `PING(action=ANSWER, purpose=HEARTBEAT)` and verify SI-01 processes
-   it as the response, without emitting another answer.
+3. Verify `PING(op=REQUEST, mode=HEARTBEAT)` is published immediately rather
+   than waiting for the first 30-second period.
+4. Return `PING(op=ANSWER, mode=HEARTBEAT)` and verify SI-01 processes it
+   as the response, without emitting another answer.
    If the default reference codec includes `pingId`, verify it is echoed.
 5. Keep the connection operational and verify the next heartbeat PING REQUEST
    after the 30-second period; return the corresponding PING ANSWER.
-6. From the backend peer send `PING(action=REQUEST, purpose=MANUAL)` without
-   `pingId`. Verify SI-01 returns exactly one
-   `PING(action=ANSWER, purpose=MANUAL)`, also without a mandatory `pingId`.
-   Repeat with an optional reference `pingId` and verify it is echoed.
+6. From the backend peer send `PING(op=REQUEST)` without `mode` or `pingId`.
+   Verify SI-01 returns exactly one `PING(op=ANSWER)` with `mode` still
+   absent. Repeat with an optional reference `pingId` and verify it is echoed.
    Also initiate a manual PING REQUEST from SI-01, verify its PING ANSWER,
    and confirm the separate periodic heartbeat schedule has not reset.
+   Send a request with unsupported `mode` and verify it is not silently
+   treated as a manual request.
 7. Disconnect the upstream peer and verify no further periodic PING is generated for that
    disconnected connector.
 8. Reconnect and verify a new connection cycle again starts with an immediate PING and
@@ -550,7 +552,7 @@ purpose and optional reference correlation, without creating TimingData.
 
 - immediate PING on each operational connect/reconnect;
 - periodic PING every 30 seconds while connected;
-- REQUEST receives exactly one ANSWER of the same HEARTBEAT/MANUAL purpose in both directions;
+- REQUEST receives exactly one ANSWER preserving optional HEARTBEAT `mode` or its absence in both directions;
 - optional reference `pingId` is echoed when present and is not required for a valid exchange;
 - no PING task remains active after disconnect;
 - PING request/answer does not alter TimingData or LogBook history.
@@ -588,7 +590,8 @@ values rather than sending a standalone legacy log-line frame.
    in place of that child object.
 4. Send a PING REQUEST from the backend peer using the same UpstreamData envelope;
    verify the outbound PING ANSWER has the same top-level `type = PING` but
-   `data.action = ANSWER`, preserving the request's `data.purpose`.
+   `data.op = ANSWER`, preserving the optional request `data.mode`
+   (including omission for manual requests).
 5. Verify encode/decode of both message families preserves their respective
    payload semantics and does not allocate an additional TimingData identity.
 
