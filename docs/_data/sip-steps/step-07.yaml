@@ -3,6 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete D04 engineering-backoffice transport design. EngineeringApiBackofficeConnector
+      reuses IF-03 POST /api/v1/dev/backoffice/message and the existing SI-02 event
+      WebSocket with role=backoffice; outbound semantic messages are UPSTREAM_DATA events.
+      No second listener port or SI-02 WebSocket lifecycle is added. The connector enters
+      the same UpstreamData boundary as RabbitMQ and its role connection drives the
+      engineering connector lifecycle.
+  - date: '2026-10-13'
+    change: >-
       Complete D03 synchronization semantics. TimingData sync uses the highest contiguous
       IF-05 sequence known per NodeId; transport delivery acknowledgement is not semantic
       acknowledgement. Pending work is rebuilt from LogBook plus per-target backend
@@ -75,20 +83,20 @@ activities:
   - id: D04
     lane: documentation
     kind: decision
-    state: next
+    state: done
     depends_on: [D01, D03]
     note: >-
-      Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
-      topology: EngineeringApiBackofficeConnector is the deterministic ST-2 connector,
-      using IF-03 HTTP inbound plus typed WebSocket outbound/status events. The connector
-      maps to the same semantic upstream boundary used by RabbitMqBackofficeConnector.
-      ST-3 then qualifies RabbitMQ against an external hosted broker such as CloudAMQP.
-      Keep transport/session mechanics below the semantic upstream boundary.
+      EngineeringApiBackofficeConnector is the deterministic ST-2 connector. It accepts
+      structured UpstreamData through the IF-03 development HTTP operation and emits
+      outbound UpstreamData on the existing SI-02 event WebSocket designated with
+      role=backoffice. That same role connection drives connector connect/disconnect,
+      PING and SYNC lifecycle. RabbitMQ uses the same semantic boundary; concrete broker
+      topology/session mechanics remain below it.
 
   - id: A01
     lane: application
     kind: integration
-    state: planned
+    state: next
     note: >-
       Adopt the existing multi-node composition as the Step-7 baseline rather than
       adding a second topology model. Requalify current one-system/two-node and
