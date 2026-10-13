@@ -97,7 +97,7 @@ In the default implementation, both inbound and outbound exchanges use the same
 UpstreamData JSON envelope. A message variant that carries TimingData embeds one
 or more committed IF-05 records as child values of a `TIMING_DATA` message; it
 does not send standalone legacy log lines or redefine TimingData identity/order
-semantics. PING/PONG and other message families share that envelope, with their
+semantics. PING request/answer and other message families share that envelope, with their
 own payloads. Deployment-specific adapters may translate asymmetric external
 wire protocols at the connector boundary without exposing them to application
 or domain code.
@@ -340,13 +340,14 @@ initial delay: 0
 period:        30 seconds
 ```
 
-The first execution therefore publishes heartbeat-purpose PING immediately.
-Later executions publish heartbeat-purpose PING at the 30-second period while
-that connector remains operationally connected. The reference implementation
-may assign a connector-scoped opaque `pingId` to individual requests and track
-whether a PONG echoing that identifier has been observed. This is an implementation
-choice rather than an IF-06 interface obligation. An explicit manual PING/PONG
-exchange does not reset the heartbeat scheduler.
+The first execution therefore publishes `PING(action=REQUEST, purpose=HEARTBEAT)`
+immediately. Later executions publish heartbeat PING REQUEST messages at the
+30-second period while that connector remains operationally connected. The
+reference implementation may assign a connector-scoped opaque `pingId` to
+individual requests and track whether a PING ANSWER echoing that identifier has
+been observed. This is an implementation choice rather than an IF-06 interface
+obligation. An explicit manual PING request/answer exchange does not reset the
+heartbeat scheduler.
 
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
 cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
@@ -358,17 +359,19 @@ heartbeat work. PING submission goes through the normal UpstreamData publisher/c
 path. It bypasses TimingData sequence allocation and LogBook persistence because PING is
 not a TimingData record.
 
-Inbound PING is handled at the same upstream semantic boundary: SI-01 creates one
-PONG with the same heartbeat/manual purpose as the request and publishes it through
-the connector without entering the TimingData/LogBook path. The reference codec
-echoes an optional incoming `pingId` when present.
+Inbound PING REQUEST is handled at the same upstream semantic boundary:
+SI-01 creates one PING ANSWER with the same heartbeat/manual purpose as the
+request and publishes it through the connector without entering the
+TimingData/LogBook path. Incoming PING ANSWER messages are processed as
+responses and must never trigger another answer. The reference codec echoes
+an optional incoming `pingId` when present.
 
-No missed-PONG timeout or disconnect threshold is fixed yet. Connector status may expose
-the last sent PING, last matching PONG and whether one or more PING exchanges are still
-unconfirmed, but policy for changing connection health remains a later decision.
+No missing-answer timeout or disconnect threshold is fixed yet. Connector status may
+expose the last sent PING REQUEST, last received PING ANSWER and whether exchanges
+remain unconfirmed, but policy for changing connection health remains a later decision.
 
 Transport-level keepalive mechanisms (for example broker/TCP heartbeat features) may
-coexist with this application-level PING/PONG exchange but do not replace
+coexist with this application-level PING request/answer exchange but do not replace
 IF06-REQ-011/012/013.
 
 ## Outbox and delivery
@@ -595,7 +598,7 @@ Temporary identifiers only.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
-- **CAND-BO-018** — Each operationally connected upstream connector shall publish one immediate UpstreamData PING and then one PING every 30 seconds until disconnect/deactivation; every valid PING shall receive one purpose-preserving PONG (with optional implementation-specific correlation).
+- **CAND-BO-018** — Each operationally connected upstream connector shall publish one immediate PING REQUEST with HEARTBEAT purpose and then another every 30 seconds until disconnect/deactivation; every valid PING REQUEST shall receive one purpose-preserving PING ANSWER (with optional implementation-specific correlation).
 - **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
 - **CAND-BO-017** — Backoffice routing/fan-out shall remain separate from concrete connector transport/resource handling.
