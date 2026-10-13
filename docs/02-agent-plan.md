@@ -281,7 +281,7 @@ topologies in black-box verification. Do not create another multi-node model.
 
 The first Step-7 sequence remains contract-first:
 
-1. promote IF-06 semantic responsibilities;
+1. promote IF-06 around the shared UpstreamData semantic model and public JSON reference representation;
 2. define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
 3. define acknowledgement/retry/idempotency/pending-work reconciliation semantics;
 4. align the backoffice transport SDD below those authorities;
@@ -292,7 +292,7 @@ The first Step-7 sequence remains contract-first:
 missing system-interface semantics. The EngineeringApiBackofficeConnector is a normal SI-01 backoffice connector whose
 engineering transport reuses IF-03. SI-02 supplies controls/visualisation; inbound semantic
 messages use HTTP/JSON and outbound/status information uses typed WebSocket events carrying
-structured transport-neutral BackofficeEnvelope data. The same normal router and
+structured public/reference UpstreamData. The same normal router and
 application/domain path is shared after the connector boundary. For ST-3, SI-01 uses the
 RabbitMQ backoffice connector and SI-02 uses a complementary RabbitMQ backend-peer
 transport behind the same Backend Simulator UI/model. Both connect to the same hosted
