@@ -24,14 +24,14 @@ documents:
   - {id: web-interface, source: docs/32-04-ISD-web-interface.md}
   - {id: timingdata-interchange, source: docs/32-05-ISD-timingdata-interchange.md}
   - {id: timingdata-interchange-design, source: docs/33-05-IDD-timingdata-interchange.md}
-  - {id: backend-integration, source: docs/32-06-ISD-backend-integration.md}
+  - {id: upstream-integration, source: docs/32-06-ISD-upstream-integration.md}
   - {id: upstreamdata-json-design, source: docs/33-06-IDD-upstreamdata-json.md}
   - {id: application-configuration, source: docs/32-11-ISD-application-configuration.md}
   - {id: timing-application-specification, source: docs/41-01-SSD-timing-application-specification-document.md}
   - {id: gui-application-specification, source: docs/41-02-SSD-gui-application-specification-document.md}
   - {id: data-display-design, source: docs/43-01-SDD-01-data-and-display-design.md}
   - {id: java-component-design, source: docs/43-01-SDD-02-java-component-design.md}
-  - {id: backoffice-transport-design, source: docs/43-01-SDD-03-backoffice-transport-design.md}
+  - {id: upstream-transport-design, source: docs/43-01-SDD-03-upstream-transport-design.md}
   - {id: lua-scripting-design, source: docs/43-02-SDD-01-lua-scripting-design.md}
   - {id: software-verification-plan, source: docs/60-SVP-software-verification-plan.md}
   - {id: timing-application-verification-test-specification, source: docs/61-01-VTS-timing-application-verification-test-specification.md}
