@@ -335,7 +335,9 @@ period:        30 seconds
 ```
 
 The first execution therefore publishes PING immediately. Later executions publish PING
-at the 30-second period while that connector remains operationally connected.
+at the 30-second period while that connector remains operationally connected. Each PING
+gets a connector-scoped opaque `pingId`; the connector tracks whether a PONG with that
+same `pingId` has been observed.
 
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
 cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
@@ -347,8 +349,17 @@ heartbeat work. PING submission goes through the normal UpstreamData publisher/c
 path. It bypasses TimingData sequence allocation and LogBook persistence because PING is
 not a TimingData record.
 
+Inbound PING is handled at the same upstream semantic boundary: SI-01 creates one PONG
+with the same `pingId` and publishes it through the connector without entering the
+TimingData/LogBook path.
+
+No missed-PONG timeout or disconnect threshold is fixed yet. Connector status may expose
+the last sent PING, last matching PONG and whether one or more PING exchanges are still
+unconfirmed, but policy for changing connection health remains a later decision.
+
 Transport-level keepalive mechanisms (for example broker/TCP heartbeat features) may
-coexist with this application-level PING but do not replace IF06-REQ-011/012.
+coexist with this application-level PING/PONG exchange but do not replace
+IF06-REQ-011/012/013.
 
 ## Outbox and delivery
 
@@ -389,6 +400,9 @@ Transport status and source status remain separately observable.
 BackofficeStatus
   selectedTransport
   connection/session state
+  lastPing
+  lastPong
+  pingPending
 
   source-01
     inbound
