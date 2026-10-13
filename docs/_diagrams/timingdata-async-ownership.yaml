@@ -66,7 +66,7 @@ nodes:
     layout: {x: 825, y: 470, w: 365, h: 98}
 
   - id: node-data
-    label: "Data-owned state\nTimingDataStore → LogBook + persistence\nRaceData • UniqueTeamRegistrations • StageTiming"
+    label: "Data-owned state\nLogBook • TimingDataPersistence\nRaceData • UniqueTeamRegistrations • StageTiming"
     kind: model
     group: node
     layout: {x: 405, y: 620, w: 365, h: 120}
