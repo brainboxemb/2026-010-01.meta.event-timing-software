@@ -220,7 +220,6 @@ nodes:
         - label: LogBook
           object_id: LogBook
         - label: "Persistence"
-          object_id: TimingDataPersistence
           items:
             - label: TimingDataPersistence
             - label: DefaultTimingDataPersistence
