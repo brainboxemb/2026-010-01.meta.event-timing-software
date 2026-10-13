@@ -31,8 +31,12 @@ Connector/session realization belongs to
 
 ## Design baseline
 
-The default/reference representation uses one UTF-8 JSON object per UpstreamData
-message.
+The default/reference representation uses **one UTF-8 JSON message format for
+both directions** of IF-06. Every exchange uses the same envelope; its `type`
+selects the message family and its `data` contains the type-specific payload.
+The envelope is the message. A TimingData record (the semantic counterpart of
+an individual log entry) is an item *inside* the `data` payload of a
+`TIMING_DATA` message; it is not a second, unrelated top-level wire format.
 
 The common envelope is intentionally small:
 
@@ -63,7 +67,10 @@ become normative public members.
 
 ### TIMING_DATA
 
-A TIMING_DATA message carries one or more committed TimingData values.
+A TIMING_DATA message carries one or more committed TimingData values as elements
+of its `data` array. The same envelope applies regardless of direction; this
+family ordinarily flows from SI-01 to the backend. For example, one committed
+record is one child of an UpstreamData message:
 
 Conceptual JSON:
 
@@ -89,6 +96,9 @@ Conceptual JSON:
 
 The nested TimingData objects use the applicable public IF-05 JSON mapping. The
 UpstreamData wrapper does not change their record key or source sequence.
+The JSON representation does not serialize a LogBook file, nor wrap old LBR
+text lines as opaque strings. It represents committed IF-05 records as structured
+child objects of one UpstreamData message.
 
 A batch may contain multiple records only from a semantically compatible source scope.
 Batching is delivery convenience and never creates another TimingData sequence.
@@ -195,7 +205,11 @@ authority for TimingData.
 
 ## Transport mapping
 
-The same encoded semantic object can be carried by different connector transports.
+The same UpstreamData JSON envelope is used for inbound and outbound
+messages; only its `type`, payload and any type-dependent scope differ. The
+encoded semantic object can be carried by different connector transports.
+Transport-specific or deployment-specific direction-dependent framing belongs
+in the adapter/codec rather than defining a second default message format.
 
 ### Engineering IF-03 transport
 
