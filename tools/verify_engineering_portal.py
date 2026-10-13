@@ -298,6 +298,8 @@ if "open object comparison workspace" not in object_page:
     raise SystemExit("IF05-REQ-007 object page missing comparison workspace action")
 
 explorer = (site / "explorer/index.html").read_text(encoding="utf-8")
+if provenance["source_revision"] not in explorer:
+    raise SystemExit("Engineering Explorer does not expose its source revision")
 for object_id in required_diagram_ids:
     if f'data-engineering-id="{object_id}"' not in explorer:
         raise SystemExit(

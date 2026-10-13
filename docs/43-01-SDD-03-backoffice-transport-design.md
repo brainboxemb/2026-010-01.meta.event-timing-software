@@ -48,11 +48,11 @@ Package/artifact placement follows `43-01-SDD-02-java-component-design.md`: a tr
 Backoffice target routing and transport are separate responsibilities:
 
 ```text
-SystemStatus / TimingNode.UpstreamMessagePort
+TimingNode.UpstreamMessagePort
                ^
                |
       UpstreamMessageRouter
-      upstream targets only
+      NodeId target resolution only
                |
                v
          Messaging (I/O)
@@ -73,10 +73,14 @@ exchanged with the external upstream system. **Upstream** identifies that
 relationship and remains bidirectional; it is not a per-message direction.
 `UpstreamGateway` and its connectors are I/O. Both transport
 implementations preserve the same semantic addressing and feed the same
-application router; neither connector owns application/TimingNode target
-resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
+application router; neither connector owns TimingNode target resolution.
+Current v1 messages that operate on node state are addressed by `NodeId`.
+`UpstreamMessageRouter` resolves only that target and delegates the complete
+semantic message to `TimingNode.UpstreamMessagePort`. The node port is
+bidirectional and owns message semantics. No current IF-06 message requires a
+TimingSystem-scoped target, so no system-level upstream message port is defined.
 
-## Semantic upstream/upstream boundary
+## Semantic upstream boundary
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
@@ -336,10 +340,10 @@ RabbitMqConnector / UpstreamGateway
 transport-neutral upstream message
       |
       v
-UpstreamMessageRouter resolves ApplicationId / TimingNodeId
+UpstreamMessageRouter resolves NodeId
       |
       v
-application target or TimingNode.UpstreamMessagePort
+TimingNode.UpstreamMessagePort
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.

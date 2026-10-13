@@ -127,7 +127,7 @@ highest contiguously applied RaceData sequence for each TimingNode.
 
 The current v1 RaceData payload can contain one or more incremental change sections:
 
-- `reserveTagMap` changes the live reserve RegistrationId -> TeamId assignment;
+- `teamAssignments` changes the live RegistrationId -> TeamId assignment;
 - `stageStartTimes` changes TeamId-scoped stage-start definitions.
 
 Each change uses an explicit operation such as `SET` or `DEL`. Absence of a
@@ -569,10 +569,11 @@ cause a RACE_DATA request from the first missing sequence.
 :id: IF06-REQ-015  
 :status: D  
 
-RACE_DATA shall be able to carry incremental reserve-tag-map changes as
+RACE_DATA shall be able to carry incremental TeamAssignments changes as
 RegistrationId-to-TeamId assignments that are not stable EventData profile identity.
+The semantic contract is generic and does not classify an assignment by tag type.
 It shall not redefine a stable RegistrationId-to-TeamId mapping supplied by EventData.
-Physical reserve TagIds remain resolved to their reserve RegistrationId by EventData.
+Physical TagIds remain resolved to their RegistrationId by EventData.
 :::
 
 :::{ifreq} Define StageStartTimes reference semantics  
@@ -580,9 +581,12 @@ Physical reserve TagIds remain resolved to their reserve RegistrationId by Event
 :status: D  
 
 RACE_DATA shall be able to carry incremental TeamId-scoped stage-start-time changes.
-A SET start definition shall contain a local race time-of-day and may contain an
-explicit local date; DEL removes the current definition. Transport and codec layers
-shall not perform elapsed-time or race-time-zone calculation.
+A SET shall carry one `TimingTimestamp` value containing at least local race
+time-of-day. The timestamp may also contain a local date or already be absolute
+when the source knows that information. A source that knows only time-of-day
+shall remain valid; no transport or codec layer shall invent a date or time zone.
+DEL removes the current definition. Elapsed-time and race-time-zone interpretation
+belong to SI-01 domain behaviour, not to transport or codec layers.
 :::
 
 :::{ifreq} Immediate upstream PING on connect  

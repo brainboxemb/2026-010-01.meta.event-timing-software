@@ -55,7 +55,7 @@ groups:
   properties_width: 220
   kind: model
   notation: component
-  layout: {x: 55, y: 586, w: 1080, h: 330}
+  layout: {x: 55, y: 586, w: 1080, h: 350}
 - id: timing-node-aggregate
   object_id: TimingNode
   label: "TimingNode (1..N)"
@@ -66,7 +66,7 @@ groups:
   properties_width: 240
   kind: model
   notation: component
-  layout: {x: 550, y: 606, w: 560, h: 300}
+  layout: {x: 390, y: 606, w: 720, h: 320}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
@@ -192,7 +192,7 @@ nodes:
   object_id: UpstreamMessageRouter
   group: application-layer
   label: "UpstreamMessageRouter"
-  subtitle: "upstream target resolution / routing"
+  subtitle: "NodeId → TimingNode.UpstreamMessagePort"
   kind: application
   notation: component
   layout: {x: 870, y: 425, w: 260, h: 50}
@@ -201,87 +201,78 @@ nodes:
   object_id: SystemConductor
   group: timing-system-aggregate
   label: "Conductor"
-  subtitle: "TimingNodes • shared inventory"
+  subtitle: "TimingNode lifecycle • system coordination"
   kind: service
   notation: component
-  layout: {x: 75, y: 667, w: 220, h: 50}
+  layout: {x: 75, y: 667, w: 280, h: 50}
 
 - id: system-status-domain
   object_id: SystemStatus
   group: timing-system-aggregate
   label: "SystemStatus"
-  subtitle: "complete system overview"
+  subtitle: "current system overview"
   kind: service
   notation: component
-  layout: {x: 315, y: 667, w: 220, h: 50}
+  layout: {x: 75, y: 732, w: 280, h: 50}
 
-- id: system-upstream-message-port
-  object_id: SystemUpstreamMessagePort
-  group: timing-system-aggregate
-  label: "UpstreamMessagePort"
-  subtitle: "system-level upstream"
-  kind: service
-  notation: component
-  layout: {x: 75, y: 732, w: 220, h: 50}
-
+# TimingNode is the active serial ownership boundary. Its internals are grouped
+# by architectural responsibility; concrete classes are listed only as contents
+# of those areas rather than promoted to peer architecture components.
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
   label: "UpstreamMessagePort"
-  subtitle: "node-level upstream"
+  subtitle: "node-scoped upstream semantics"
   kind: service
   notation: component
-  layout: {x: 850, y: 657, w: 240, h: 50}
+  layout: {x: 630, y: 657, w: 215, h: 50}
 
-- id: tag-processor
-  object_id: TagProcessor
+- id: node-processing
+  object_id: TimingNodeProcessing
   group: timing-node-aggregate
-  label: "TagProcessor"
-  subtitle: "RFID/tag processing"
+  label: "Processing"
+  items:
+    - label: TagProcessor
+      object_id: TagProcessor
+    - label: TagObservationFilter
+    - label: RegistrationDuplicateFilter
   kind: service
-  notation: component
-  layout: {x: 570, y: 722, w: 240, h: 50}
-- id: stage-start-times
-  object_id: StageStartTimes
+  notation: packaging-component
+  layout: {x: 405, y: 722, w: 215, h: 125}
+
+- id: node-data
+  object_id: TimingNodeData
   group: timing-node-aggregate
-  label: "StageStartTimes"
-  subtitle: "start-time reference"
+  label: "Data"
+  items:
+    - label: TeamAssignments
+      object_id: TeamAssignments
+    - label: StageStartTimes
+      object_id: StageStartTimes
+    - label: UniqueTeamRegistrations
   kind: service
-  notation: component
-  layout: {x: 850, y: 722, w: 240, h: 50}
-- id: next-up-teams
-  object_id: NextUpTeams
+  notation: packaging-component
+  layout: {x: 630, y: 722, w: 215, h: 125}
+
+- id: node-timing
+  object_id: TimingNodeTiming
   group: timing-node-aggregate
-  label: "NextUpTeams"
-  subtitle: "teams expected next"
+  label: "Timing"
+  items:
+    - label: "StageTiming — elapsed times + ranking"
+      object_id: StageTiming
   kind: service
-  notation: component
-  layout: {x: 570, y: 782, w: 240, h: 50}
-- id: reserve-tag-map
-  object_id: ReserveTagMap
-  group: timing-node-aggregate
-  label: "ReserveTagMap"
-  subtitle: "reserve regId → TeamId"
-  kind: service
-  notation: component
-  layout: {x: 850, y: 782, w: 240, h: 50}
-- id: stage-timing
-  object_id: StageTiming
-  group: timing-node-aggregate
-  label: "StageTiming"
-  subtitle: "running times + ranking"
-  kind: service
-  notation: component
-  layout: {x: 570, y: 842, w: 240, h: 50}
+  notation: packaging-component
+  layout: {x: 855, y: 722, w: 225, h: 125}
 
 - id: logbook-domain
   object_id: LogBook
   group: timing-node-aggregate
   label: "LogBook"
-  subtitle: "0..N TimingDataRecord"
+  subtitle: "committed TimingData • node-local"
   kind: service
   notation: component
-  layout: {x: 850, y: 842, w: 240, h: 50}
+  layout: {x: 630, y: 862, w: 215, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -296,7 +287,7 @@ nodes:
   object_id: TimingData
   group: domain-layer
   label: "TimingData"
-  subtitle: "records • factory • codec"
+  subtitle: "records • TimingTimestamp • factory • codec"
   kind: service
   notation: component
   layout: {x: 635, y: 956, w: 200, h: 50}
@@ -599,9 +590,10 @@ edges:
     - {x: 176, y: 1018}
 
 - from: upstream-message-router
-  to: timing-system-aggregate
+  to: upstream-message-port
+  label: "resolve NodeId"
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.875}
+  to_anchor: {side: top, position: 0.50}
 
 - from: upstream-message-router
   to: messaging-io
@@ -618,7 +610,7 @@ edges:
   to_anchor: {side: top, position: 0.50}
 
 
-- from: tag-processor
+- from: node-processing
   to: event-data-domain
   label: resolves
   dashed: true

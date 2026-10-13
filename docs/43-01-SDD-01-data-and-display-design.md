@@ -669,7 +669,7 @@ The prepare-team history sequence is a separate design question from the `Timing
 
 Start-time and participant/reference mappings supplied by an external system may also need to be available locally.
 
-The start-time semantic model must remain compatible with sources that define a race/stage start as **time-of-day only**. An optional date/race-day value may be carried when available, but consumers shall not require it. Accepted registration observations remain absolute `TimingTimestamp` values. For elapsed-time calculation, a time-only start is resolved in the configured event/race time zone to the most recent valid occurrence not after the registration timestamp, so a midnight crossing is handled as the next civil day rather than as a negative elapsed time.
+The start-time semantic model uses the same project-owned `TimingTimestamp` value as other timing data, while allowing the timestamp to contain only the information the source actually knows. A race/stage source may therefore provide **time-of-day only**; a date may be present when known, and an already absolute timestamp is also representable. Consumers shall not invent missing date/zone context. Accepted registration observations remain absolute `TimingTimestamp` values. For elapsed-time calculation, a time-only start is resolved in the configured event/race time zone to the most recent valid occurrence not after the registration timestamp, so a midnight crossing is handled as the next civil day rather than as a negative elapsed time.
 
 The application maintains local in-memory repositories and synchronises accepted data from the backoffice.
 

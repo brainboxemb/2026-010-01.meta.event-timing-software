@@ -481,7 +481,7 @@ transport session shall not cause either source sequence to be skipped.
 
 For a RegistrationId, SI-01 shall use a non-null stable TeamId supplied by the
 configured EventData profile as authoritative. Only when EventData has no stable
-TeamId for that RegistrationId may the current TimingNode ReserveTagMap assignment
+TeamId for that RegistrationId may the current TimingNode TeamAssignments assignment
 supply the TeamId. If neither source resolves a TeamId, the registration remains
 valid committed TimingData but derived team/stage views shall treat it as unresolved.
 RaceData updates shall not rewrite committed RegistrationId or TimingData sequence
@@ -523,13 +523,17 @@ false delivery-order dependency.
 :status: D  
 :depends_on: SI01-REQ-077, SI01-REQ-079, SI01-REQ-042  
 
-StageTiming shall derive elapsed stage-timing information from committed TimingData,
-the resolved TeamId and the current StageStartTimes state. A RaceData change may
-change the derived StageTiming result but shall not alter, remove, renumber or
-recommit the underlying TimingData. When TeamId or stage start data
-is unavailable, SI-01 shall expose the result as unresolved/incomplete rather
-than inventing a value. Ranking/grouping policy is a separate read-side concern
-and shall not be inferred without an explicit rule.
+StageTiming shall expose the current derived list of team stage times and their
+ranking from committed TimingData, resolved TeamId values and current
+StageStartTimes state. The ranking shall order resolved teams by ascending elapsed
+stage time; equal elapsed times share the same rank. A RaceData change may change
+the derived StageTiming view but shall not alter, remove, renumber or recommit the
+underlying TimingData.
+
+Registrations for which TeamId or stage-start data cannot currently be resolved
+shall not receive an invented elapsed time or ranking position. Such incomplete
+input may be exposed separately for diagnostics, but it is not a separate
+StageTiming result/status hierarchy.
 :::
 
 :::{req} Maintain upstream PING request/answer lifecycle  
@@ -891,7 +895,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
 | SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
 | SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with optional-mode-preserving PING ANSWER |
-| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; ReserveTagMap fallback only |
+| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; TeamAssignments fallback only |
 | SI01-REQ-078 | UC-010/012 + IF06-REQ-014/015 | ordered RACE_DATA sequence, apply and ACK |
 | SI01-REQ-079 | UC-010 + IF06-REQ-016 | incremental stage-start SET/DEL inside RACE_DATA |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
@@ -1018,25 +1022,27 @@ The compact software/domain ownership model is intentionally also kept as copyab
 Application
   +-- ApplicationId
   +-- Conductor                 application lifecycle / activation order
+  +-- UpstreamMessageRouter     NodeId target resolution only
   |
   +-- 1..N TimingSystem
-        +-- SystemId        internal composition/simulation identity
-        +-- Conductor             system-local coordination / inventory
-        +-- SystemStatus          complete current system overview
-        +-- UpstreamMessagePort   system-level upstream messages
+        +-- SystemId            internal composition/simulation identity
+        +-- Conductor           system-local coordination / inventory
+        +-- SystemStatus        complete current system overview
         +-- 1..N TimingNode
-              +-- NodeId   functional upstream/timing-data identity
+              +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamMessagePort
-              +-- TagProcessor
-              +-- StageStartTimes
+              +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- processing
+              |     +-- TagProcessor
+              +-- data
+              |     +-- TeamAssignments
+              |     +-- StageStartTimes
+              |     +-- UniqueTeamRegistrations
+              +-- timing
+              |     +-- StageTiming
               +-- LogBook
-              |     +-- 0..N TimingData
-              +-- NextUpTeams
-              +-- ReserveTagMap
-              +-- StageTiming
-              +-- uses / produces TimingData
+                    +-- 0..N TimingData
 
 Shared Domain contracts:
   +-- EventData
@@ -1246,18 +1252,19 @@ do not introduce messages merely to preserve a layer diagram.
 :::{arch} UpstreamMessageRouter  
 :id: UpstreamMessageRouter  
 
-`UpstreamMessageRouter` owns target resolution for messages exchanged with the
-upstream system at application scope. **Upstream** describes that external
+`UpstreamMessageRouter` owns only target resolution for messages exchanged with
+the upstream system at application scope. **Upstream** describes that external
 system relationship, not the direction of an individual message; the exchange is
-bidirectional. The upstream wire contract does not need to expose
-`SystemId`. Each configured upstream gateway/connector context belongs
-internally to one `TimingSystem`; node-scoped UpstreamData is routed
-functionally by `NodeId` to that system's addressed TimingNode. System-level
-UpstreamData such as synchronisation/status is routed to the owning
-`TimingSystem.UpstreamMessagePort` without involving a TimingNode.
+bidirectional. Current v1 messages that operate on TimingNode state are node-scoped.
+The router resolves `NodeId` across the application's configured TimingNodes and
+delegates the complete semantic message to that node's `UpstreamMessagePort`.
+It does not interpret message families, sequence outcomes, ACK/REQ behaviour or
+replay semantics. `SystemId` remains internal composition identity and is not
+required on the upstream wire.
 
 The router is deliberately **not** a generic application message bus or mediator
-for normal collaboration between domain components.
+for normal collaboration between domain components. A system-scoped upstream port
+shall be introduced only when a concrete system-scoped semantic message requires it.
 :::
 
 #### Domain
@@ -1268,23 +1275,24 @@ one parent/child tree:
 
 ```text
 TimingSystem (1..N per Application)
-  SystemId              internal only
-  Conductor                   first system coordinator; TimingNodes + inventory
+  SystemId                    internal only
+  Conductor                   system coordinator; TimingNodes + inventory
   SystemStatus                complete current system overview
-  UpstreamMessagePort         system-level upstream messages
   1..N TimingNode
-    NodeId              functional protocol/data identity
+    NodeId                    functional protocol/data identity
     LocationId
     State
-    UpstreamMessagePort       TimingNode-level upstream messages
-    TagProcessor
-    ReserveTagMap
-    StageStartTimes
+    UpstreamMessagePort       node-scoped upstream semantics
+    processing
+      TagProcessor
+    data
+      TeamAssignments
+      StageStartTimes
+      UniqueTeamRegistrations
+    timing
+      StageTiming
     LogBook
       0..N TimingData
-    NextUpTeams
-    EventData
-    StageTiming
     uses / produces TimingData
 
 Shared Domain contracts
@@ -1298,7 +1306,7 @@ Shared Domain contracts
     configured representation / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort` and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream addressing remains TimingNode-oriented through application-wide `NodeId` resolution.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
@@ -1328,31 +1336,45 @@ state. State-dependent commands and reads that require exact ordering enter one 
 serial execution path and are processed in order. Current-state observation may instead use
 an immutable snapshot safely published by that owned path after completed transitions. Code
 outside the boundary does not directly read or mutate lifecycle/location state or the mutable
-contents of its contained `LogBook`, `NextUpTeams`, `ReserveTagMap` and `StageStartTimes`
-objects. Those objects remain passive and do not receive their own workers. The LogBook keeps
+contents of its contained `LogBook`, `TeamAssignments`, `StageStartTimes` and
+`UniqueTeamRegistrations` objects. Those objects remain passive and do not receive
+their own workers. The LogBook keeps
 0..N committed immutable `TimingData` values and does not own a second worker or second
 timing-record representation.
-
-Both aggregate levels expose a bidirectional semantic `UpstreamMessagePort`.
-The two roles share the same semantic concept but have distinct engineering
-identities in Figure SI01-01 so interactive selection remains unambiguous.
-
-:::{arch} TimingSystem UpstreamMessagePort  
-:id: SystemUpstreamMessagePort  
-
-The TimingSystem-level `UpstreamMessagePort` receives and emits system-level
-operations such as status/heartbeat and synchronisation control that do not
-target one TimingNode. It does not own transport connections, connector
-lifecycle or cross-aggregate target resolution.
-:::
 
 :::{arch} TimingNode UpstreamMessagePort  
 :id: TimingNodeUpstreamMessagePort  
 
-The TimingNode-level `UpstreamMessagePort` receives and emits node-scoped
-operations after `UpstreamMessageRouter` has resolved the owning TimingSystem
-and target `NodeId`. It does not own transport connections or
-cross-aggregate target resolution.
+The TimingNode-level `UpstreamMessagePort` is the semantic entry point for
+node-scoped upstream messages after `UpstreamMessageRouter` has resolved the
+target `NodeId`. It owns node-scoped message semantics and serializes mutable
+decisions on the existing TimingNode execution lane. It does not own transport
+connections or cross-node target resolution.
+:::
+
+:::{arch} TimingNode Processing
+:id: TimingNodeProcessing
+
+`TimingNodeProcessing` groups the node-local registration processing capability.
+It contains `TagProcessor` and its observation/duplicate filters. This group
+explains code and execution ownership; it is not an additional runtime aggregate
+or message bus.
+:::
+
+:::{arch} TimingNode Data
+:id: TimingNodeData
+
+`TimingNodeData` groups passive mutable state owned by the TimingNode serial
+boundary: `TeamAssignments`, `StageStartTimes` and
+`UniqueTeamRegistrations`. These data objects do not own workers.
+:::
+
+:::{arch} TimingNode Timing
+:id: TimingNodeTiming
+
+`TimingNodeTiming` groups read-side timing interpretation. Its StageTiming capability
+exposes the current list of resolved elapsed times and ranking derived from committed
+TimingData and current node data, without becoming another writer.
 :::
 
 :::{arch} TagProcessor  
@@ -1371,25 +1393,31 @@ worker.
 :id: StageStartTimes  
 
 `StageStartTimes` is passive TimingNode-local live race state containing the
-current `TeamId -> StartDefinition` values produced by ordered RACE_DATA SET/DEL
-changes. A StartDefinition contains local race time-of-day plus an optional explicit
-local date. It owns data only; the TimingNode execution boundary owns mutation/order
+current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
+changes. A stage-start timestamp may contain time-of-day only, local date/time, or
+an already absolute time. The state object owns data only; it never invents a
+missing date or time zone. The TimingNode execution boundary owns mutation/order
 and StageTiming owns elapsed-time interpretation.
 :::
 
-:::{arch} NextUpTeams  
-:id: NextUpTeams  
+:::{arch} TeamAssignments
+:id: TeamAssignments
 
-`NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
+`TeamAssignments` is passive TimingNode-local live state populated by ordered
+RACE_DATA messages. It maps `RegistrationId -> TeamId` where live assignment data
+is needed and never overrides a stable TeamId supplied by EventData. SET/DEL
+mutations occur on the owning TimingNode execution boundary and never rewrite
+EventData or committed TimingData.
 :::
 
-:::{arch} ReserveTagMap
-:id: ReserveTagMap
+:::{arch} UniqueTeamRegistrations
+:id: UniqueTeamRegistrations
 
-`ReserveTagMap` is passive TimingNode-local live state populated by ordered
-RACE_DATA messages. It maps reserve RegistrationId to TeamId only where EventData
-has no stable TeamId. SET/DEL mutations occur on the owning TimingNode execution
-boundary and never rewrite EventData or committed TimingData.
+`UniqueTeamRegistrations` is compact passive TimingNode-local state used to derive
+the current number of unique teams with active registrations. It stores registration
+identity/lifecycle information, not resolved TeamId values; TeamId resolution happens
+at read time through EventData and TeamAssignments so later assignment changes are
+reflected without rewriting committed TimingData.
 :::
 
 :::{arch} EventData
@@ -1408,13 +1436,16 @@ separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::{arch} StageTiming  
 :id: StageTiming  
 
-`StageTiming` is a derived/read-side domain capability. It resolves TeamId using
-stable EventData first and TimingNode ReserveTagMap only as fallback, then combines
-the accepted committed TimingData effective time with that TeamId's current
-StageStartTimes definition. It derives elapsed stage-timing results without becoming
-another writer and without changing TimingData or live race state. Missing TeamId/start
-data yields an unresolved result. Ranking/grouping may consume StageTiming later, but
-StageTiming itself does not invent that policy.
+`StageTiming` is the TimingNode read-side capability for current elapsed stage
+times and ranking. It resolves TeamId using stable EventData first and TimingNode
+TeamAssignments only as fallback, combines committed registrations with the current
+StageStartTimes definitions, and exposes a ranked list of resolved team times. It is
+not another writer and never changes TimingData or live race state.
+
+The public StageTiming model is therefore the list/ranking view itself. Per-record
+calculation details and incomplete-input handling are implementation details and shall
+not appear as separate architecture components such as a public calculator/result/error
+hierarchy.
 
 For a time-only start definition, StageTiming uses the configured event/race
 time zone and the established rollover rule: resolve the most recent valid
@@ -2063,12 +2094,11 @@ interface and live delivery remains best effort.
 :id: TimingSystem  
 
 A `TimingSystem` is an internal parent domain aggregate.
-One **Timing Point Application** (SI-01) may host 1..N
-TimingSystems, for example to run multiple independent
-simulation contexts. Each TimingSystem owns a complete
-`SystemStatus` overview, a system-level
-`UpstreamMessagePort` and 1..N TimingNodes. Its internal `SystemId` is not
-assumed to be part of the upstream wire contract.
+One **Timing Point Application** (SI-01) may host 1..N TimingSystems, for example
+to run multiple independent simulation contexts. Each TimingSystem owns a complete
+`SystemStatus` overview and 1..N TimingNodes. Its internal `SystemId` is not
+assumed to be part of the upstream wire contract; current upstream routing resolves
+the globally configured `NodeId` target at application scope.
 :::
 
 :::{arch} SystemStatus  
@@ -2133,25 +2163,27 @@ The architecture deliberately uses **separate views** for software/domain decomp
 Application
   +-- ApplicationId
   +-- Conductor                 application lifecycle / activation order
+  +-- UpstreamMessageRouter     NodeId target resolution only
   |
   +-- 1..N TimingSystem
-        +-- SystemId        internal composition/simulation identity
-        +-- Conductor             system-local coordination / inventory
-        +-- SystemStatus          complete current system overview
-        +-- UpstreamMessagePort   system-level upstream messages
+        +-- SystemId            internal composition/simulation identity
+        +-- Conductor           system-local coordination / inventory
+        +-- SystemStatus        complete current system overview
         +-- 1..N TimingNode
-              +-- NodeId   functional upstream/timing-data identity
+              +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamMessagePort
-              +-- TagProcessor
-              +-- StageStartTimes
+              +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- processing
+              |     +-- TagProcessor
+              +-- data
+              |     +-- TeamAssignments
+              |     +-- StageStartTimes
+              |     +-- UniqueTeamRegistrations
+              +-- timing
+              |     +-- StageTiming
               +-- LogBook
-              |     +-- 0..N TimingData
-              +-- NextUpTeams
-              +-- RaceData
-              +-- StageTiming
-              +-- uses / produces TimingData
+                    +-- 0..N TimingData
 
 Shared Domain contracts:
   +-- EventData
@@ -2228,8 +2260,8 @@ Messaging
                 +-- EngineeringApiConnector
 
 UpstreamMessageRouter
-    +-- system-level message -> TimingSystem.UpstreamMessagePort
     +-- NodeId -> TimingNode.UpstreamMessagePort
+    +-- target resolution only
     +-- SystemId remains internal composition context
 ```
 
@@ -2248,10 +2280,9 @@ perspective.
 
 `UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges encoded
 UpstreamData with its configured connectors but does not own UpstreamData semantics.
-Each configured gateway/connector context is associated internally with one
-`TimingSystem`. `UpstreamMessageRouter` routes system-level UpstreamData to
-`TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted UpstreamData by
-`NodeId` to `TimingNode.UpstreamMessagePort`. No external `SystemId` field is
+`UpstreamMessageRouter` resolves current node-scoped UpstreamData by `NodeId`
+to `TimingNode.UpstreamMessagePort`. Transport connectors do not need a
+TimingSystem abstraction to address a node, and no external `SystemId` field is
 required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
@@ -2318,7 +2349,7 @@ Architecture rules:
   boundary owns state-dependent command ordering and ORDERED reads, and publishes
   immutable current-state snapshots for CURRENT observation;
 - state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
-- the contained LogBook, NextUpTeams, StageStartTimes and EventData objects remain
+- the contained LogBook, StageStartTimes and EventData objects remain
   passive and do not each receive their own execution thread;
 - short read operations may capture immutable snapshots for longer calculations outside the TimingNode lane;
 - different TimingNodes may make progress at the same time;
@@ -2363,17 +2394,18 @@ Time is an explicit architecture concern rather than an incidental use of `Date`
 
 #### `TimingTimestamp` value
 
-The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful **absolute event times** such as observations, accepted registrations and persisted/synchronised event timestamps. A race/stage start definition is not required to be an absolute timestamp: it may be supplied as local time-of-day without a date, or with an explicit date when that information is available.
+The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for semantically meaningful timing values. The same type can represent different levels of known temporal information: local time-of-day only, local date/time, or an absolute point on the UTC time line. Missing date, zone or offset information remains explicitly unknown and shall not be invented merely to construct a timestamp.
 
 Working semantics:
 
-- `TimingTimestamp` represents an absolute point on a UTC-based time line;
-- it does not contain an implicit local time zone or daylight-saving state;
-- conversion to/from local civil time happens at explicit presentation/configuration/integration boundaries;
-- its precision and external serialisation are explicit rather than inherited accidentally from a Java API or wire codec;
-- domain/application APIs pass `TimingTimestamp` rather than arbitrary `long`, `Date`, generic Java timestamp classes or local-date/time values where an absolute event time is intended.
+- `TimingTimestamp` records which temporal information is known;
+- `TIME_ONLY` means local time-of-day is known while the calendar date is not;
+- `LOCAL_DATE_TIME` means local date and time are known while zone/offset is not;
+- `ABSOLUTE` identifies one absolute point on the UTC-based time line;
+- conversion or resolution that requires missing date/zone context happens only in the domain or integration behaviour that owns that context;
+- domain/application APIs pass `TimingTimestamp` rather than unrelated `LocalTime`, `LocalDate`, `Instant`, raw `long`, `Date` or generic Java timestamp values as parallel representations of the same semantic time.
 
-The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. Time-only race/start definitions are a separate domain/reference-data concept and shall not be forced into `TimingTimestamp` by inventing a date.
+The dedicated class may internally use suitable `java.time` primitives, but its public semantic contract remains project-owned. Protocol-specific formatting, accepted forms and output precision remain profile/codec responsibilities. IF-05 requires absolute timestamps. IF-06 and event-specific upstream profiles may validly supply a time-only `TimingTimestamp`. A codec therefore maps the external representation to the generic value without inventing a date or time zone.
 
 When a race/stage start is defined only by local time-of-day, elapsed-time calculation shall resolve that clock time against the accepted registration timestamp using the configured event/race time zone. The resolved start is the most recent valid occurrence of that time-of-day that is not after the registration. This deliberately supports one civil-day rollover: a start at `23:59:50` followed by a registration at `00:00:10` resolves to an elapsed time of 20 seconds rather than a negative value. If an explicit start date is supplied, that date is authoritative. A time-only definition cannot by itself distinguish elapsed durations of 24 hours or more; such cases require an explicit date or another higher-level race-day reference.
 
@@ -2429,7 +2461,7 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` for events; resolve time-only race/start definitions through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` values for event facts; resolve time-only `TimingTimestamp` stage starts through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
 | clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or synchronization disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
@@ -2699,17 +2731,17 @@ Working rules:
 Keep the data roles simple:
 
 - `LogBook` is passive state and holds committed immutable `TimingData` values;
-- `NextUpTeams`, `ReserveTagMap` and `StageStartTimes` are separate passive
+- `TeamAssignments` and `StageStartTimes` are separate passive
   per-node state objects; `EventData` is the shared stable profile capability;
 - the TimingNode worker is the single writer for those mutable per-node objects;
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- when NextUpTeams, ReserveTagMap or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when TeamAssignments or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 If live RaceData state is not persisted across reboot, the TimingNode starts its
-applied RACE_DATA sequence at 0 and rebuilds ReserveTagMap/StageStartTimes by requesting
+applied RACE_DATA sequence at 0 and rebuilds TeamAssignments/StageStartTimes by requesting
 RACE_DATA from sequence 1. Optional persistence may later optimize this without changing
 the source-order protocol.
 
@@ -2737,10 +2769,10 @@ synchronization and status messages. TimingData identity/order remains owned by 
 encoded UpstreamData representation and own transport/session resources; they do not
 become owners of TimingData fields or UpstreamData semantics.
 `UpstreamMessageRouter` owns application-level target resolution after UpstreamData
-decoding. A system-level message is delivered through the owning
-`TimingSystem.UpstreamMessagePort`; a TimingNode-targeted message is resolved by
-`NodeId`, submitted through that TimingNode's serial boundary and enters/leaves through
-`TimingNode.UpstreamMessagePort`.
+decoding. Current v1 messages that operate on node state are resolved by `NodeId`
+and delegated to `TimingNode.UpstreamMessagePort`; the port owns node-scoped
+protocol semantics and uses the existing TimingNode serial boundary for mutable
+decisions.
 
 ```text
 external upstream / SI-02 backend peer
@@ -2756,12 +2788,12 @@ external upstream / SI-02 backend peer
                                              |
                                              v
                                     UpstreamMessageRouter
-                                       |              |
-                                       v              +--> NodeId
-                                 TimingSystem                |
-                            UpstreamMessagePort              v
-                                                       TimingNode
-                                                  UpstreamMessagePort
+                                             |
+                                          NodeId
+                                             |
+                                             v
+                                       TimingNode
+                                  UpstreamMessagePort
 ```
 
 Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
@@ -2769,7 +2801,7 @@ connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
 Public UpstreamData semantics and TimingData compatibility remain owned by Domain.
 
-`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. System-level UpstreamData uses the configured TimingSystem's `UpstreamMessagePort` and `SystemStatus`; it does not need to be forced through a TimingNode.
+`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides NodeId target resolution without becoming a generic internal message bus. A future system-scoped upstream semantic shall introduce an explicit system-level handling boundary only when that concrete need exists.
 
 #### RFID
 
