@@ -116,18 +116,43 @@ contained records retain their individual IF-05 identity and ordering.
 
 ### ReferenceData relationship
 
-ReferenceData messages update node-scoped race/event state used by SI-01. The
-current allocated data includes RaceData and StageStartTimes.
+ReferenceData messages update race/event state owned by one addressed TimingNode.
+The public v1 semantic datasets are `RACE_DATA` and `STAGE_START_TIMES`.
 
-Reference-data semantics shall define at least:
+Both datasets use **complete snapshot** semantics. Each snapshot carries a positive
+monotone revision for its configured upstream source + TimingNode + dataset scope.
+Application rules are:
 
-- addressed TimingNode or explicit broader scope;
-- dataset/type;
-- freshness/version information where applicable;
-- complete acceptance or explicit rejection outcome.
+- a higher revision is validated as a whole and, when valid, atomically replaces
+  the current snapshot for that scope;
+- a lower revision is stale and is not applied;
+- an equal revision with semantically equal content is an idempotent duplicate and
+  does not change state;
+- an equal revision with different content is conflicting and is rejected;
+- an empty valid snapshot explicitly clears the current live dataset;
+- validation failure never partially changes the current snapshot.
 
-Concrete dataset fields and update/snapshot rules are owned by the applicable
-Step-7 semantic design and shall not be inferred from a transport encoding.
+`RACE_DATA` owns **live participant assignment** that is not stable EventData.
+Its public v1 payload is a set of `RegistrationId -> TeamId` assignments. A
+RegistrationId that already resolves to a stable TeamId through the configured
+`EventData` profile shall not be remapped by RaceData. This keeps stable
+event/profile identity separate from event-time race state.
+
+`STAGE_START_TIMES` owns the current `TeamId -> stage start definition` snapshot
+for the TimingNode. A start definition contains a local race time-of-day and may
+also contain an explicit local date. Time-zone resolution is SI-01 domain/application
+behaviour; it is not owned by the transport or codec.
+
+ReferenceData therefore always defines:
+
+- addressed TimingNode;
+- dataset;
+- monotone revision;
+- complete snapshot payload;
+- complete acceptance, stale/duplicate no-op, or explicit rejection outcome.
+
+The configured upstream source is connector/application context and need not be
+duplicated inside every public JSON payload.
 
 ### Data synchronization
 
@@ -216,19 +241,20 @@ Required behaviour:
 
 Input:
 
-- reference-data family/type;
-- scope/address;
-- freshness/version information where required;
-- semantic payload for that dataset.
+- addressed TimingNode;
+- dataset `RACE_DATA` or `STAGE_START_TIMES`;
+- positive monotone revision;
+- complete semantic snapshot for that dataset.
 
 Outcome:
 
-- accepted and applied;
-- rejected with a diagnosable reason;
-- not applied because the message is stale/unsupported where the dataset contract
-  defines such an outcome.
+- accepted and atomically applied;
+- accepted as an idempotent equal-revision duplicate with no state change;
+- not applied because the revision is stale;
+- rejected because the equal revision conflicts, the target/dataset is unsupported,
+  or the snapshot is semantically invalid.
 
-The detailed RaceData and StageStartTimes payload semantics are refined separately.
+A rejected snapshot shall not be partially applied.
 
 ### IF06-OP-03 SYNC
 
@@ -425,6 +451,36 @@ backend connectors/transports. Selecting another transport shall not redefine Ti
 reference-data or synchronization semantics.
 :::
 
+:::{ifreq} Atomic revisioned reference snapshots  
+:id: IF06-REQ-014  
+:status: D  
+
+REFERENCE_DATA shall identify one TimingNode, one supported dataset and a positive
+monotone revision. A valid higher-revision snapshot shall replace that dataset
+atomically; stale lower revisions shall not apply; an equal-revision equal-content
+snapshot shall be idempotent; and an equal-revision different-content snapshot
+shall be rejected as conflicting. Invalid snapshots shall not be partially applied.
+:::
+
+:::{ifreq} Separate stable EventData from live RaceData  
+:id: IF06-REQ-015  
+:status: D  
+
+The public `RACE_DATA` dataset shall carry live RegistrationId-to-TeamId
+assignments that are not stable EventData profile identity. It shall not redefine
+a stable RegistrationId-to-TeamId mapping supplied by EventData.
+:::
+
+:::{ifreq} Define StageStartTimes reference semantics  
+:id: IF06-REQ-016  
+:status: D  
+
+The public `STAGE_START_TIMES` dataset shall carry TeamId-scoped stage start
+definitions for the addressed TimingNode. Each start definition shall contain
+a local race time-of-day and may contain an explicit local date; transport and
+codec layers shall not perform elapsed-time or race-time-zone calculation.
+:::
+
 :::{ifreq} Immediate upstream PING on connect  
 :id: IF06-REQ-011  
 :status: D  
@@ -466,8 +522,8 @@ identity or create TimingData/LogBook records.
 
 ## Open points
 
-- Exact RaceData semantic fields and snapshot/update rules (Step-7 D02).
-- Exact StageStartTimes semantic fields and correction/freshness rules (Step-7 D02).
+- Whether later RaceData or StageStartTimes versions need patch/delta operations in
+  addition to the v1 complete-snapshot model.
 - Acknowledgement, retry, duplicate/idempotency and pending-sync rules
   (Step-7 D03).
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
