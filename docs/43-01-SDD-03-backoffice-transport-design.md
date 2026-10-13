@@ -334,10 +334,13 @@ initial delay: 0
 period:        30 seconds
 ```
 
-The first execution therefore publishes PING immediately. Later executions publish PING
-at the 30-second period while that connector remains operationally connected. Each PING
-gets a connector-scoped opaque `pingId`; the connector tracks whether a PONG with that
-same `pingId` has been observed.
+The first execution therefore publishes heartbeat-purpose PING immediately.
+Later executions publish heartbeat-purpose PING at the 30-second period while
+that connector remains operationally connected. The reference implementation
+may assign a connector-scoped opaque `pingId` to individual requests and track
+whether a PONG echoing that identifier has been observed. This is an implementation
+choice rather than an IF-06 interface obligation. An explicit manual PING/PONG
+exchange does not reset the heartbeat scheduler.
 
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
 cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
@@ -349,9 +352,10 @@ heartbeat work. PING submission goes through the normal UpstreamData publisher/c
 path. It bypasses TimingData sequence allocation and LogBook persistence because PING is
 not a TimingData record.
 
-Inbound PING is handled at the same upstream semantic boundary: SI-01 creates one PONG
-with the same `pingId` as part of processing that request and publishes it through the connector without entering the
-TimingData/LogBook path.
+Inbound PING is handled at the same upstream semantic boundary: SI-01 creates one
+PONG with the same heartbeat/manual purpose as the request and publishes it through
+the connector without entering the TimingData/LogBook path. The reference codec
+echoes an optional incoming `pingId` when present.
 
 No missed-PONG timeout or disconnect threshold is fixed yet. Connector status may expose
 the last sent PING, last matching PONG and whether one or more PING exchanges are still
