@@ -28,6 +28,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 - `32-03-ISD-application-control-status.md` for IF-03 obligations;
 - `32-04-ISD-web-interface.md` for IF-04 Web interface obligations;
 - `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
+- `32-06-ISD-backend-integration.md` for IF-06 UpstreamData/backend obligations;
 - `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
@@ -378,6 +379,7 @@ state remains owned by the smart display.
 :id: SI01-REQ-063  
 :status: D  
 :specifies: UC-010  
+:depends_on: IF06-REQ-004, IF06-REQ-005  
 
 SI-01 shall accept decoded semantic reference-data updates from a configured
 backoffice boundary, resolve the addressed TimingNode, validate the update and
@@ -390,7 +392,7 @@ observable.
 :id: SI01-REQ-064  
 :status: D  
 :specifies: UC-011  
-:depends_on: SI01-REQ-042, SI01-REQ-045  
+:depends_on: SI01-REQ-042, SI01-REQ-045, IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-010  
 
 SI-01 shall expose committed TimingNode-scoped outbound data to configured
 backoffice connectors through transport-independent semantic messages while
@@ -402,7 +404,7 @@ not redefine TimingNode identity or registration semantics.
 :id: SI01-REQ-065  
 :status: D  
 :specifies: UC-011, UC-012  
-:depends_on: SI01-REQ-064  
+:depends_on: SI01-REQ-064, IF06-REQ-006, IF06-REQ-007  
 
 Loss of a configured backoffice transport shall not discard locally committed
 outbound work. After transport recovery, SI-01 shall resume pending
@@ -547,9 +549,9 @@ application/domain paths.
 :depends_on: SI01-REQ-064  
 
 Backoffice transport shall be selectable through external
-configuration/composition. A lightweight real-process network transport shall be
-usable for loop/integration testing of TimingNode-scoped semantic messaging
-without requiring the production RabbitMQ connector.
+configuration/composition. An engineering connector using the supported IF-03
+HTTP/WebSocket boundary shall be usable for loop/integration testing of
+UpstreamData without requiring the production RabbitMQ connector.
 :::
 
 :::{req} Verify production-shaped RabbitMQ connector behaviour  
@@ -558,11 +560,11 @@ without requiring the production RabbitMQ connector.
 :specifies: UC-018  
 :depends_on: SI01-REQ-064, SI01-REQ-065  
 
-The RabbitMQ backoffice connector shall support automated integration testing
-against a disposable broker for source-specific inbound/outbound routing,
-connection recovery, consumer restoration and resumed pending outbound delivery,
-without embedding production credentials or private topology in the public test
-fixture.
+The RabbitMQ backoffice connector shall support automated or repeatable external
+integration testing against a test broker for source-specific inbound/outbound
+routing, connection recovery, consumer restoration and resumed pending outbound
+delivery. The public test fixture shall not embed production credentials, private
+topology or deployment-specific message representations.
 :::
 
 ### Technical requirements
@@ -729,12 +731,12 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-060 | UC-005 | ready-team state/history + keypad/operator input |
 | SI01-REQ-061 | UC-006 | passive CAN display adapter |
 | SI01-REQ-062 | UC-007 | smart-display network boundary |
-| SI01-REQ-063 | UC-010 | backoffice reference-data ingress |
-| SI01-REQ-064/065 | UC-011/012 | transport-independent backoffice sync + outage recovery |
+| SI01-REQ-063 | UC-010 + IF06-REQ-004/005 | UpstreamData reference-data ingress |
+| SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
-| SI01-REQ-068 | UC-017 | alternative network backoffice transport |
-| SI01-REQ-069 | UC-018 | RabbitMQ integration verification |
+| SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
+| SI01-REQ-069 | UC-018 + IF06-REQ-010 | RabbitMQ UpstreamData integration verification |
 | SI01-REQ-070 | UC-019 | provider semantic-classification boundary |
 
 ## Software-item architecture
