@@ -45,6 +45,7 @@ The common envelope is intentionally small:
 | `v` | integer | UpstreamData representation version |
 | `type` | string | semantic message family/type |
 | `nodeId` | string, type-dependent | addressed/owning TimingNode when the message is node-scoped |
+| `seq` | integer, type-dependent | source sequence for an ordered top-level data stream; currently RACE_DATA |
 | `data` | object/array, type-dependent | semantic payload |
 
 The representation does not require a transport/delivery/session identifier in the
@@ -56,8 +57,10 @@ UpstreamData object.
 The current public v1 design reserves these semantic families:
 
 - `TIMING_DATA`;
-- `REFERENCE_DATA`;
+- `RACE_DATA`;
 - `SYNC`;
+- `ACK`;
+- `REQ`;
 - `PING` (REQ and ANS);
 - `STATUS`.
 
@@ -102,85 +105,89 @@ child objects of one UpstreamData message.
 A batch may contain multiple records only from a semantically compatible source scope.
 Batching is delivery convenience and never creates another TimingData sequence.
 
-### REFERENCE_DATA
+### RACE_DATA
 
-REFERENCE_DATA is node-scoped and therefore requires `nodeId`. The default v1
-representation uses complete revisioned snapshots:
+RACE_DATA is the ordered Central System -> SI-01 live race-state stream. It is
+node-scoped and requires both `nodeId` and a positive top-level `seq`.
 
-| Member | Type | Meaning |
-| --- | --- | --- |
-| `dataset` | string | `RACE_DATA` or `STAGE_START_TIMES` |
-| `rev` | integer | positive monotone revision for node + dataset |
-| `items` | array | complete current snapshot; empty array clears the dataset |
-
-Transport/source routing is outside this semantic freshness key; the same node/dataset
-revision has the same meaning regardless of which configured connector delivered it.
-
-RaceData example:
+Example:
 
 ```json
 {
   "v": 1,
-  "type": "REFERENCE_DATA",
+  "type": "RACE_DATA",
   "nodeId": "A",
+  "seq": 123,
   "data": {
-    "dataset": "RACE_DATA",
-    "rev": 12,
-    "items": [
+    "reserveTagMap": [
       {
+        "op": "SET",
         "regId": "RT-R-0001",
         "teamId": "0042"
       }
-    ]
-  }
-}
-```
-
-Each RaceData item contains exactly one RegistrationId-to-TeamId live assignment.
-Duplicate `regId` or duplicate `teamId` entries are invalid. Application
-validation additionally rejects an assignment that attempts to redefine a
-RegistrationId whose stable TeamId is already supplied by EventData.
-
-StageStartTimes example:
-
-```json
-{
-  "v": 1,
-  "type": "REFERENCE_DATA",
-  "nodeId": "A",
-  "data": {
-    "dataset": "STAGE_START_TIMES",
-    "rev": 7,
-    "items": [
+    ],
+    "stageStartTimes": [
       {
+        "op": "SET",
         "teamId": "0042",
         "startTime": "23:59:50.00"
-      },
-      {
-        "teamId": "0043",
-        "startTime": "00:02:00.00",
-        "startDate": "2026-10-14"
       }
     ]
   }
 }
 ```
 
-`startTime` is local civil race time in `HH:mm:ss` or `HH:mm:ss.SS` form.
-`startDate`, when present, is an ISO local date (`YYYY-MM-DD`). The codec
-preserves these semantic values; SI-01 resolves them using the configured
-event/race time zone. Duplicate `teamId` entries are invalid.
+`seq` is the Central-owned source order for RACE_DATA of the addressed TimingNode.
+It starts at 1 and increases by one for each RaceData message. The JSON-safe range is
+1..9007199254740991.
 
-For both datasets, `rev` is in the JSON-safe positive integer range
-1..9007199254740991. Unknown datasets are unsupported rather than reinterpreted.
-The representation does not define patch/delta updates in v1.
+The `data` object contains **incremental changes**, not a complete snapshot. Supported
+v1 sections are optional:
+
+| Section | Key | Operations |
+| --- | --- | --- |
+| `reserveTagMap` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
+| `stageStartTimes` | `teamId` | `SET` with `startTime` and optional `startDate`; `DEL` removes the definition |
+
+At least one non-empty supported change section is required. An omitted section means
+“no change”; it never means “clear that entire state”.
+
+Reserve-tag mapping example for removal:
+
+```json
+{
+  "v": 1,
+  "type": "RACE_DATA",
+  "nodeId": "A",
+  "seq": 124,
+  "data": {
+    "reserveTagMap": [
+      {
+        "op": "DEL",
+        "regId": "RT-R-0001"
+      }
+    ]
+  }
+}
+```
+
+The map intentionally uses `regId`: stable EventData already maps both physical
+reserve tags (for example `TT-R-0001-1/2`) to `RT-R-0001`. RACE_DATA supplies
+the live team assignment only.
+
+`startTime` is local civil race time in `HH:mm:ss` or `HH:mm:ss.SS` form.
+`startDate`, when present, is an ISO local date (`YYYY-MM-DD`). The codec preserves
+those semantic values; SI-01 owns event/race-time-zone interpretation.
+
+One RACE_DATA message is validated and applied as one ordered unit. A sequence gap is
+not silently skipped and the message is not partially applied before its ACK point
+advances.
 
 ### SYNC
 
-SYNC is node-scoped and therefore requires `nodeId`. It advertises the sender's
-current semantic progress; it is not a correlated request/answer exchange.
+SYNC advertises the source head of one ordered stream for one `nodeId`.
 
-Example:
+TimingNode -> Central System:
 
 ```json
 {
@@ -188,37 +195,106 @@ Example:
   "type": "SYNC",
   "nodeId": "A",
   "data": {
-    "timingSeq": 42,
-    "refs": {
-      "RACE_DATA": 12,
-      "STAGE_START_TIMES": 7
-    }
+    "stream": "TIMING_DATA",
+    "seq": 42
+  }
+}
+```
+
+Central System -> TimingNode:
+
+```json
+{
+  "v": 1,
+  "type": "SYNC",
+  "nodeId": "A",
+  "data": {
+    "stream": "RACE_DATA",
+    "seq": 123
   }
 }
 ```
 
 Members:
 
-| Member | Type | Meaning |
+| Member | Values | Meaning |
 | --- | --- | --- |
-| `timingSeq` | integer | highest contiguous TimingData source sequence known by sender; 0 means none |
-| `refs` | object, optional | dataset revision state known by sender |
-| `refs.RACE_DATA` | integer, optional | current RaceData revision; 0 may denote no snapshot |
-| `refs.STAGE_START_TIMES` | integer, optional | current StageStartTimes revision; 0 may denote no snapshot |
+| `stream` | `TIMING_DATA`, `RACE_DATA` | source stream being advertised |
+| `seq` | integer 0..9007199254740991 | current highest source sequence; 0 means the source stream is empty |
 
-`timingSeq` uses the JSON-safe range 0..9007199254740991. Reference revision
-values use 0..9007199254740991 in SYNC; value 0 is the synchronization-state
-sentinel for “no snapshot known” and is not itself a valid REFERENCE_DATA snapshot
-revision.
+For TIMING_DATA, `seq` is the TimingNode's LogBook/IF-05 source head. For RACE_DATA,
+`seq` is the Central System's RaceData source head. A receiver that is behind uses
+REQ from its first missing sequence.
 
-The same message shape is used in both directions. SI-01's `timingSeq` describes
-its local committed head; the backend's value describes its highest contiguously
-accepted record. A transport acknowledgement does not substitute for this value.
+SYNC carries no stream payload and consumes no source sequence itself.
 
-SYNC contains no TimingData payload. Missing or older peer progress causes replay
-of the original TIMING_DATA records; record identities and source sequence values
-are never regenerated for retransmission. Reference revision mismatch is repaired
-with REFERENCE_DATA rather than placing snapshot payloads inside SYNC.
+### ACK
+
+ACK confirms ordered semantic application. Public v1 requires ACK for the
+Central System -> SI-01 RACE_DATA stream.
+
+```json
+{
+  "v": 1,
+  "type": "ACK",
+  "nodeId": "A",
+  "data": {
+    "stream": "RACE_DATA",
+    "seq": 123
+  }
+}
+```
+
+`seq` means that SI-01 has successfully applied RACE_DATA contiguously through that
+sequence. ACK is emitted only after semantic application. Re-receiving an already
+applied RaceData message does not apply it again; SI-01 may repeat its cumulative ACK.
+
+### REQ
+
+REQ is bidirectional and requests retransmission from one source sequence.
+
+Central System requests TimingData:
+
+```json
+{
+  "v": 1,
+  "type": "REQ",
+  "nodeId": "A",
+  "data": {
+    "stream": "TIMING_DATA",
+    "fromSeq": 41
+  }
+}
+```
+
+TimingNode requests RaceData:
+
+```json
+{
+  "v": 1,
+  "type": "REQ",
+  "nodeId": "A",
+  "data": {
+    "stream": "RACE_DATA",
+    "fromSeq": 121
+  }
+}
+```
+
+`fromSeq` is in the range 1..9007199254740991 and is inclusive. `fromSeq = 1`
+means replay from the retained beginning of the selected stream.
+
+A deployment-specific legacy codec may map the semantic request
+
+```text
+REQ stream=TIMING_DATA fromSeq=1
+```
+
+to a legacy “receive all” sentinel such as `RECV package-id = 0000`, and decode
+that sentinel back to the same semantic request. The public source sequence still
+starts at 1; `0000` remains a legacy wire representation detail. Arbitrary
+`fromSeq` values are available only when the selected legacy representation can
+express them.
 
 ### PING (REQUEST / ANSWER)
 
@@ -407,16 +483,16 @@ format.
 | IF06-REQ-001 | JSON represents transport-independent UpstreamData |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
-| IF06-REQ-004/005 | REFERENCE_DATA carries addressed dataset + revision + complete snapshot |
-| IF06-REQ-014 | `rev` + complete `items` snapshot realizes atomic freshness semantics |
-| IF06-REQ-015 | RACE_DATA items carry live `regId` -> `teamId` assignment |
-| IF06-REQ-016 | STAGE_START_TIMES items carry `teamId`, local `startTime` and optional `startDate` |
-| IF06-REQ-006 | SYNC preserves IF-05 source identity and order |
-| IF06-REQ-017 | `timingSeq` carries cumulative contiguous TimingData progress |
-| IF06-REQ-018 | SYNC progress, not transport acknowledgement, advances semantic state |
-| IF06-REQ-019 | replay reuses original TimingData identity/content |
-| IF06-REQ-020 | optional `refs` advertises RaceData/StageStartTimes revisions |
-| IF06-REQ-021 | fresh node-scoped SYNC exchange re-establishes state after connect/reconnect |
+| IF06-REQ-004/005 | RACE_DATA carries node-scoped ordered incremental changes and explicit application outcome |
+| IF06-REQ-014 | top-level RACE_DATA `seq` + cumulative ACK realize ordered application |
+| IF06-REQ-015 | `reserveTagMap` carries live `regId` -> `teamId` SET/DEL changes |
+| IF06-REQ-016 | `stageStartTimes` carries TeamId-scoped SET/DEL changes |
+| IF06-REQ-006 | SYNC/REQ preserve the authoritative source identity/order of each stream |
+| IF06-REQ-017 | SYNC uses `stream` + current source-head `seq` |
+| IF06-REQ-018 | transport acknowledgement does not replace RACE_DATA semantic ACK/source sync |
+| IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
+| IF06-REQ-020 | REQ uses `stream` + inclusive `fromSeq` in either direction |
+| IF06-REQ-021 | fresh source-head SYNC/REQ re-establish state after connect/reconnect |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
