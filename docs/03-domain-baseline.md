@@ -187,7 +187,7 @@ belong to detailed design.
 
 `UpstreamData` is a shared Domain data/message capability alongside `EventData`
 and `TimingData`. It can carry canonical TimingData and the semantic reference-data,
-reconciliation and status messages needed by IF-06. It does not create another
+synchronization and status messages needed by IF-06. It does not create another
 TimingData identity or ordering model. System-level UpstreamData enters/leaves through
 `TimingSystem.UpstreamMessagePort`; node-level UpstreamData uses the addressed
 `TimingNode.UpstreamMessagePort`. Transport/session mechanics remain I/O concerns.
