@@ -990,7 +990,8 @@ backoffice test environment while preserving local operation during outages.
 - carry transport-neutral structured BackofficeEnvelope data through IF-03 rather than tunnelling RabbitMQ/proprietary wire payloads as opaque strings;
 - use the SI-02 Backend pane to inject reference/start-time data, inspect outbound TimingData, control acknowledgement and force reconnect/error cases while reusing the existing API/Event connections;
 - qualify the production-shaped RabbitMQ connector only after semantic/reconciliation rules are stable;
-- use a hosted RabbitMQ service such as CloudAMQP for the external ST-3 integration run, with credentials supplied outside the repository;
+- give the **same SI-02 Backend Simulator** a RabbitMQ transport so it can act as the external backend peer through the broker instead of requiring a separate test program;
+- use a hosted RabbitMQ service such as CloudAMQP for the external ST-3 integration run, with both SI-01 and SI-02 connected to the broker and credentials supplied outside the repository;
 - keep private production message schemas, credentials and topology outside the public core.
 
 ### Not in this step
@@ -1026,8 +1027,8 @@ backoffice test environment while preserving local operation during outages.
 | `A04` | Implement transport-independent outbound sync/outbox/reconciliation |
 | `A05` | Implement EngineeringApiBackofficeConnector plus SI-02 Backend pane |
 | `V02` | Verify reference-data, derived timing and reconciliation through the Engineering API backoffice connector |
-| `A06` | Implement/qualify RabbitMQ connector and external hosted-broker test profile |
-| `V03` | Verify production-shaped RabbitMQ routing/recovery against CloudAMQP or equivalent hosted RabbitMQ |
+| `A06` | Implement/qualify SI-01 RabbitMQ connector plus SI-02 RabbitMQ backend-peer transport |
+| `V03` | Verify SI-02 ↔ hosted RabbitMQ ↔ SI-01 routing/recovery end-to-end |
 
 ### Planning order
 
@@ -1056,10 +1057,28 @@ This avoids another listener port and another SI-02 connection lifecycle while s
 keeping direct Java/domain calls out of the Engineering Client. It intentionally does not
 prove RabbitMQ connection/channel behaviour; that is the separate ST-3 purpose.
 
-After that local semantic flow is stable, ST-3 qualifies the RabbitMQ adapter against a
-real external broker. A managed service such as **CloudAMQP** is a suitable first hosted
-test environment. Hosted-broker credentials/configuration stay outside source control,
-and external broker availability is not made a mandatory fast-CI dependency.
+After that local semantic flow is stable, ST-3 keeps the same SI-02 Backend Simulator
+and replaces only its transport. SI-02 receives a RabbitMQ backend-peer adapter while
+SI-01 uses its RabbitMqBackofficeConnector. Both connect to the same real external broker:
+
+```text
+SI-02 Backend Simulator
+        |
+RabbitMqBackendTransport
+        |
+        v
+   hosted RabbitMQ
+        ^
+        |
+RabbitMqBackofficeConnector
+        |
+SI-01 semantic backoffice boundary
+```
+
+A managed service such as **CloudAMQP** is a suitable first hosted test environment.
+That makes SI-02 the controllable backend-side peer for both ST-2 and ST-3 instead of
+introducing another test program. Hosted-broker credentials/configuration stay outside
+source control, and external broker availability is not made a mandatory fast-CI dependency.
 
 ### Result
 
@@ -1068,7 +1087,7 @@ and external broker availability is not made a mandatory fast-CI dependency.
 - TeamID interpretation and StageTiming use defined reference-data ownership.
 - Local registration continues during upstream outage.
 - Pending outbound timing work resumes/reconciles after recovery.
-- Socket and RabbitMQ transports share one semantic upstream contract.
+- Engineering-API and RabbitMQ transports exercise the same semantic upstream contract.
 
 ### Demo
 
@@ -1077,7 +1096,7 @@ and external broker availability is not made a mandatory fast-CI dependency.
 - Feed simulated registrations and inspect TeamID/StageTiming results per node.
 - Use the SI-02 Backend pane over IF-03 to send RaceData/StageStartTimes and inspect typed outbound backoffice events.
 - Force acknowledgement delay/disconnect, continue local registrations, reconnect and reconcile.
-- Repeat the transport-specific recovery subset against a hosted RabbitMQ instance such as CloudAMQP.
+- Switch the SI-02 Backend Simulator to RabbitMQ transport and repeat the recovery flow through the hosted broker against SI-01.
 
 ### Done
 
@@ -1087,7 +1106,7 @@ and external broker availability is not made a mandatory fast-CI dependency.
 - reference-data application and StageTiming have explicit ownership and repeatable tests;
 - committed outbound source identity/order survive outage and reconciliation;
 - local registration remains independent from backoffice transport availability;
-- ST-2 through the EngineeringApiBackofficeConnector/SI-02 Backend pane and ST-3 against a real hosted RabbitMQ broker are repeatable;
+- ST-2 through IF-03 and ST-3 through SI-02 ↔ hosted RabbitMQ ↔ SI-01 are repeatable using the same Backend Simulator semantics;
 - private production topology/protocol details remain outside the public baseline.
 
 ---
