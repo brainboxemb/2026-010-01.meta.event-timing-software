@@ -981,12 +981,12 @@ backoffice test environment while preserving local operation during outages.
 
 - promote IF-06 Backend Integration semantics before transport implementation drives them;
 - define RaceData, StageStartTimes, TeamID interpretation, StagePassageList and StageRanking ownership;
-- define freshness, acknowledgement, duplicate/idempotency and source-head/REQ/replay synchronization rules;
+- define freshness, acknowledgement, duplicate/idempotency and source-head/REQ/LogBook synchronization rules;
 - adopt the existing multi-node composition/isolation baseline and verify it as Step-7 input;
 - receive/apply node-scoped synthetic/public reference data;
 - derive StagePassageList and StageRanking from explicit local/reference inputs;
 - expose committed TimingNode-scoped outbound data through transport-independent semantics;
-- replay committed LogBook data from an explicitly requested sequence after upstream outage/recovery, without maintaining a second durable outbox;
+- send committed LogBook data again from an explicitly requested sequence after upstream outage/recovery, without maintaining a second durable outbox;
 - add an **EngineeringApiBackofficeConnector** for ST-2 that is composed as a normal backoffice connector but uses existing IF-03 HTTP/JSON for inbound engineering messages and the IF-03 WebSocket event stream for outbound/status observation;
 - carry transport-neutral structured UpstreamData through IF-03 rather than tunnelling RabbitMQ/proprietary wire payloads as opaque strings;
 - use the SI-02 Backend pane to inject reference/start-time data, inspect outbound TimingData, control acknowledgement and force reconnect/error cases while reusing the existing API/Event connections;
@@ -1019,13 +1019,13 @@ backoffice test environment while preserving local operation during outages.
 | --- | --- |
 | `D01` | Promote IF-06 UpstreamData semantic contract and public JSON reference representation |
 | `D02` | Define reference-data, TeamID, StagePassageList and StageRanking ownership/semantics |
-| `D03` | Define source-head, acknowledgement, REQ and replay synchronization semantics |
+| `D03` | Define source-head, acknowledgement, REQ and LogBook synchronization semantics |
 | `D04` | Align backoffice transport SDD plus Engineering API connector / hosted RabbitMQ verification topology |
 | `A01` | Adopt and qualify the existing multi-node composition baseline |
 | `V01` | Requalify multi-node addressing, isolation, persistence and recovery |
 | `A02` | Implement node-scoped reference-data ingress and TeamID interpretation |
 | `A03` | Implement StagePassageList and StageRanking using the promoted reference-data model |
-| `A04` | Implement transport-independent TIMING_DATA SYNC/REQ replay |
+| `A04` | Implement transport-independent TIMING_DATA SYNC/REQ LogBook synchronization |
 | `A05` | Implement EngineeringApiBackofficeConnector plus SI-02 Backend pane |
 | `V02` | Verify reference-data, derived timing and synchronization through the Engineering API backoffice connector |
 | `A06` | Implement/qualify SI-01 RabbitMQ connector plus SI-02 RabbitMQ backend-peer transport |
@@ -1036,14 +1036,14 @@ backoffice test environment while preserving local operation during outages.
 A04 is completed in the Java implementation through issue #491 / PR #509. Each
 TimingNode consumes one node-scoped `UpstreamStream`; TIMING_DATA SYNC advertises
 the committed LogBook head, inbound RACE_DATA SYNC requests the first missing sequence,
-and inbound TIMING_DATA REQ replays original committed records in bounded batches using
-a captured source head. There is no second durable outbox and no application-level
+and inbound TIMING_DATA REQ sends the original committed records again in batches of
+at most 256 records using a captured source head. There is no second durable outbox and no application-level
 UpstreamMessageRouter.
 
 The follow-up Java refactor #510 / #511 keeps that behaviour but separates ownership:
 `UpstreamMessagePort` performs dispatch and TimingNode-lane admission,
 `UpstreamDataSync` owns RACE_DATA synchronization, `LogBookSync` owns TIMING_DATA
-head/REQ/replay and `UpstreamHeartbeat` owns heartbeat state. `UpstreamStream` is an
+head/REQ/batch synchronization and `UpstreamHeartbeat` owns heartbeat state. `UpstreamStream` is an
 I/O Messaging contract rather than Domain data.
 
 ### Planning order
