@@ -1339,10 +1339,14 @@ transport I/O.
 :::{arch} NextUpTeams
 :id: NextUpTeams
 
-`NextUpTeams` is a TimingNode-local operational view of the teams expected next.
-It is kept separate from `TimingNodeData` because it is not received RACE_DATA,
-and separate from `TimingNodeTiming` because it is not elapsed-time/ranking
-calculation. Its detailed update rules are defined by the applicable requirements.
+`NextUpTeams` is the TimingNode-local ready-team registry defined by
+SI01-REQ-060 / UC-005. It maintains the current teams preparing next, accepts
+controlled add/remove changes from keypad or operator input through the TimingNode
+state-change path, and keeps the required ready-team change history traceable
+separately from participant TimingData. SI01-REQ-061 consumes this current state for
+passive-display refresh/recovery. It remains separate from `TimingNodeData`
+because it is not received RACE_DATA, and separate from `TimingNodeTiming`
+because it is not elapsed-time/ranking calculation.
 :::
 
 :::{arch} TimingNode Processing
