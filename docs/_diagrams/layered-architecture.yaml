@@ -228,6 +228,7 @@ nodes:
   layout: {x: 630, y: 657, w: 215, h: 50}
 
 - id: node-processing
+  object_id: TimingNodeProcessing
   group: timing-node-aggregate
   label: "Processing"
   items:
@@ -240,6 +241,7 @@ nodes:
   layout: {x: 405, y: 722, w: 215, h: 125}
 
 - id: node-data
+  object_id: TimingNodeData
   group: timing-node-aggregate
   label: "Data"
   items:
@@ -253,6 +255,7 @@ nodes:
   layout: {x: 630, y: 722, w: 215, h: 125}
 
 - id: node-timing
+  object_id: TimingNodeTiming
   group: timing-node-aggregate
   label: "Timing"
   items:
