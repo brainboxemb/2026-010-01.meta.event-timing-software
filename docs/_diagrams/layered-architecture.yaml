@@ -299,7 +299,7 @@ nodes:
   subtitle: "records • factory • codec"
   kind: service
   notation: component
-  layout: {x: 680, y: 956, w: 200, h: 50}
+  layout: {x: 635, y: 956, w: 200, h: 50}
 
 - id: upstream-data-domain
   object_id: UpstreamData
@@ -308,8 +308,8 @@ nodes:
   subtitle: "timing • race • sync • ack • req • ping"
   kind: service
   notation: component
-  # Keep UpstreamData central; TimingData sits clearly below TimingNode while staying inside the Domain shoulder.
-  layout: {x: 375, y: 956, w: 220, h: 50}
+  # Evenly distribute EventData, UpstreamData and TimingData with 80 px gaps; TimingData remains below TimingNode.
+  layout: {x: 335, y: 956, w: 220, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -623,20 +623,21 @@ edges:
   label: resolves
   dashed: true
   from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: top, position: 0.65}
+  to_anchor: {side: top, position: 0.50}
   route:
     - {x: 530, y: 747}
     - {x: 530, y: 932}
-    - {x: 290, y: 932}
+    - {x: 155, y: 932}
 
 - from: timing-node-aggregate
   to: timing-data-domain
   label: uses / produces
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.75}
+  to_anchor: {side: top, position: 0.50}
   route:
     - {x: 830, y: 936}
+    - {x: 735, y: 936}
 
 - from: upstream-data-domain
   to: timing-data-domain
