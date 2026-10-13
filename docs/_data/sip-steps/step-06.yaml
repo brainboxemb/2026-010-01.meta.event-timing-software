@@ -3,6 +3,12 @@ step: 6
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Close Step 6 on repeated real SI-02/SI-01 exploratory running-system use rather
+      than require a second artificial line-by-line execution of VC-ST1-003. Record V01
+      as accepted integrated-client evidence without claiming a formally completed
+      checklist; keep VC-ST1-003 as reusable regression guidance for later verification.
+  - date: '2026-10-13'
+    change: >-
       Record the post-A01 SI-02 extension as part of the Step-6 baseline: source-driven
       capability diagnostics, client-side Lua engineering scripting, focused Lua SDD
       and Engineering Client SUM are implemented and automatically verified. V01 /
@@ -110,12 +116,12 @@ activities:
   - id: V01
     lane: verification
     kind: verification
-    state: next
+    state: done
     depends_on: [A01, A02, V02]
     note: >-
-      Run VC-ST1-003 on the real packaged SI-02 against a real SI-01 process. Verify
-      SYNCING -> LIVE, lifecycle/registration source history, trash -> REV with immutable
-      ADD, interpreted DELETED, restart/reconnect recovery without live replay, Device
-      Log / Client Log independence, canonical time precision and clean shutdown.
-      Record actual source/runtime versions and PASS/FAIL evidence. Headless or packaged
-      smoke tests do not substitute for this UI evidence.
+      Accepted through repeated interactive use of the real Engineering Client against
+      SI-01 during the Step-6 increment. Connection/synchronisation, workbench views,
+      registration/simulation, capability diagnostics, scripting and restart/debug
+      behaviour were exercised in the running GUI. This is exploratory integrated-client
+      acceptance, not a claim that every VC-ST1-003 checklist line was executed in one
+      formal scripted run; retain that checklist as regression guidance.
