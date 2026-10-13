@@ -7,8 +7,9 @@ Software item: **SI-01 — Timing Point Application**
 ## Purpose
 
 This SDD explains **how the upstream connection is implemented**. The SSD still
-defines SI-01's integration responsibilities, and IF-06/other IDDs define what is
-visible on the external interface. This document does not create another protocol
+defines SI-01's integration responsibilities, `32-06-ISD-backend-integration.md`
+defines the UpstreamData semantics and `33-06-IDD-upstreamdata-json.md` defines the
+public/default JSON representation. This document does not create another protocol
 definition.
 
 ## Terms and abbreviations
@@ -82,20 +83,24 @@ The reusable application-core/domain side should work with semantic source-aware
 Illustrative contracts:
 
 ```java
-interface BackofficePublisherPort {
-    void publish(RegistrationSourceKey source, BackofficeEnvelope message);
+interface UpstreamPublisherPort {
+    void publish(UpstreamData message);
 }
 
-interface BackofficeInboundListener {
-    void onMessage(RegistrationSourceKey source, BackofficeEnvelope message);
+interface UpstreamInboundListener {
+    void onMessage(UpstreamData message);
 }
 ```
 
-`BackofficeEnvelope` is a reusable/public semantic envelope or test representation. It must not force proprietary production serialization into the public application core.
+`UpstreamData` is the reusable/public semantic message contract defined by IF-06. A
+message variant that carries TimingData uses the existing shared TimingData contract;
+it does not copy or redefine TimingData identity/order semantics.
 
 These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
-The final system-level backoffice ISD can define the semantic obligations that both sides must fulfil. A separate IDD or private transport specification can define concrete encoding where required.
+The system-level IF-06 ISD defines the semantic obligations that both sides must fulfil.
+The public/default JSON representation is defined by the IF-06 IDD; a deployment may
+supply another UpstreamData codec/provider behind the same semantic boundary.
 
 ## Registration-source separation
 
@@ -160,14 +165,15 @@ SI-02 Backend Simulator / pane
 EngineeringApiBackofficeConnector
              |
              v
-semantic backoffice boundary
+semantic UpstreamData boundary
              |
              v
 UpstreamMessageRouter / normal SI-01 path
 ```
 
-The payload at the engineering connector boundary is a structured transport-neutral
-`BackofficeEnvelope` plus the required connector/source identity and status metadata.
+The payload at the engineering connector boundary is structured `UpstreamData` using
+the public/default JSON representation plus only the IF-03 wrapper metadata needed for
+that engineering operation/event.
 Do not tunnel a pre-serialized RabbitMQ frame or proprietary production message as an
 opaque string through IF-03.
 
@@ -376,17 +382,24 @@ itself remains owned by the existing API/Event interfaces.
 
 ## Java package and artifact boundaries
 
-Working package direction inside the reusable application core:
+Working package/artifact direction:
 
 ```text
-io.github.brainboxemb.eventtiming.domain.backoffice
-    semantic backoffice contracts/state/outbox concepts
+shared/upstream-data
+    UpstreamData
+    UpstreamDataCodec
+    UpstreamDataProvider
+    default/reference JSON implementation
+
+application/domain
+    semantic routing, reference-state application, outbox/reconciliation state
 
 existing IF-03 presentation/application adapter
-    engineering-api backoffice connector
+    EngineeringApiBackofficeConnector
 
-io.github.brainboxemb.eventtiming.comm.rabbitmq
-    RabbitMQ connection/channel/consumer/publisher implementation
+io.messaging.rabbitmq
+    RabbitMqBackofficeConnector
+    broker connection/channel/consumer/publisher implementation
 ```
 
 This does **not** require three Maven libraries.
@@ -406,9 +419,10 @@ Without such evidence, clean package boundaries are sufficient and keep extracti
 Public core/test code may define:
 
 - transport-independent semantic ports;
-- generic `RegistrationSourceKey`;
-- generic/test `BackofficeEnvelope`;
-- Engineering API backoffice adapter using structured public semantic envelopes;
+- generic source/node binding identities where connector routing requires them;
+- shared public `UpstreamData` + provider/codec contracts;
+- built-in public/reference JSON UpstreamData representation;
+- Engineering API backoffice adapter using structured public UpstreamData;
 - RabbitMQ connection/consumer infrastructure if proprietary production codec details remain separate;
 - SI-02 RabbitMQ backend-peer test transport using synthetic/public topology;
 - synthetic RabbitMQ topology for integration tests.
@@ -517,7 +531,7 @@ Temporary identifiers only.
 - **CAND-BO-001** — SI-01 backoffice semantics shall be independent from the concrete communication transport.
 - **CAND-BO-002** — The backoffice transport shall be selectable through external configuration/composition.
 - **CAND-BO-003** — An Engineering API backoffice connector shall be available for deterministic ST-2 testing without requiring RabbitMQ.
-- **CAND-BO-004** — The Engineering API connector shall carry structured semantic backoffice messages for multiple logical registration sources through existing IF-03 HTTP/WebSocket transport.
+- **CAND-BO-004** — The Engineering API connector shall carry structured public/reference UpstreamData through existing IF-03 HTTP/WebSocket transport.
 - **CAND-BO-005** — RabbitMQ shall support a source-specific inbound queue configuration for each configured registration source.
 - **CAND-BO-006** — RabbitMQ shall support source-specific outbound routing configuration for each configured registration source.
 - **CAND-BO-007** — Multiple RabbitMQ source consumers shall be able to share one physical broker connection.
@@ -534,7 +548,6 @@ Temporary identifiers only.
 
 ## Open questions
 
-- What exact semantic messages belong in the public backoffice ISD?
 - What exact IF-03 HTTP operation and WebSocket event schema should carry the engineering backoffice envelope?
 - Which acknowledgement/reconciliation controls need to be exposed in the SI-02 Backend Simulator?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?

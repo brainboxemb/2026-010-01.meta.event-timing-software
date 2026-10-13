@@ -47,6 +47,8 @@ Working context does not replace promoted requirements, interfaces or design.
 - [32-04-ISD — Web interface](32-04-ISD-web-interface.md)
 - [32-05-ISD — TimingData interchange](32-05-ISD-timingdata-interchange.md)
 - [33-05-IDD — TimingData reference design](33-05-IDD-timingdata-interchange.md)
+- [32-06-ISD — Backend Integration / UpstreamData](32-06-ISD-backend-integration.md)
+- [33-06-IDD — UpstreamData public JSON design](33-06-IDD-upstreamdata-json.md)
 - [32-11-ISD — Application configuration](32-11-ISD-application-configuration.md)
 
 ## Software items

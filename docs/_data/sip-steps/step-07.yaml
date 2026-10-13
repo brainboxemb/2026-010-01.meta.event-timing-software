@@ -3,6 +3,11 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete D01 by promoting IF-06 around shared UpstreamData semantics and adding
+      the public/reference JSON representation. Replace the old UpstreamProtocol /
+      BackofficeEnvelope concepts in architecture/design. D02 is next.
+  - date: '2026-10-13'
+    change: >-
       Use one SI-02 Backend Simulator with two transports: IF-03 for deterministic ST-2
       and RabbitMQ for hosted ST-3. Both exercise the same semantic backoffice contract;
       CloudAMQP or equivalent may provide the external broker.
@@ -24,17 +29,18 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: next
+    state: done
     note: >-
-      Promote IF-06 Backend Integration as the semantic system interface. Define
-      node/system addressing, inbound reference/start-time updates, outbound timing
-      data, synchronisation/status and externally observable accept/reject behaviour
-      without selecting RabbitMQ-specific wire details as the semantic contract.
+      IF-06 now defines transport-independent UpstreamData: canonical TimingData
+      transfer plus reference-data, reconciliation and status families. The public
+      reference representation is versioned JSON; deployment-specific representations
+      remain behind an UpstreamData provider/codec boundary. RabbitMQ and IF-03 remain
+      connector transports below those semantics.
 
   - id: D02
     lane: documentation
     kind: decision
-    state: planned
+    state: next
     depends_on: [D01]
     note: >-
       Define ownership and semantics for RaceData, StageStartTimes, TeamID
@@ -121,7 +127,7 @@ activities:
     note: >-
       Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
       edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
-      outbound BackofficeEnvelope/synchronisation events from the existing IF-03 WebSocket.
+      outbound UpstreamData/synchronisation events from the existing IF-03 WebSocket.
       The connector enters/leaves at the normal semantic backoffice boundary; direct
       domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
       production payloads through the engineering API.

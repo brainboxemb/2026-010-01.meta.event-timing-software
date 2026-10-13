@@ -215,6 +215,25 @@ shared/timing-data/
       private automatic/manual default value implementations
 ```
 
+The Step-7 UpstreamData capability follows the same shared-capability direction:
+
+```text
+shared/upstream-data/
+  io.github.brainboxemb.eventtiming.upstreamdata/
+    UpstreamData.java
+    UpstreamDataCodec.java
+    UpstreamDataProvider.java
+    defaultprofile/
+      DefaultUpstreamDataCodec.java        public/reference JSON
+      DefaultUpstreamDataProvider.java
+      public/reference UpstreamData values
+```
+
+`UpstreamData` is not a replacement TimingData hierarchy. Message variants that carry
+TimingData hold/use the existing shared `TimingData` contract so NodeId + sequence and
+record semantics stay IF-05-owned. The shared UpstreamData artifact may therefore depend
+on the shared TimingData artifact; the reverse dependency is forbidden.
+
 `TimingDataFactory.Context` is the one immutable value-only construction context for
 fields shared by every TimingData variant. Do not mirror the semantic type tree
 with `AutomaticRegistrationContext`, `ManualRegistrationContext` or nested
@@ -269,10 +288,6 @@ domain/
   timingdata/
     TimingDataPersistence.java          TimingData-specific persistence contract
     DefaultTimingDataPersistence.java   TimingData codec/identity/sequence mapping
-  upstream/
-    UpstreamProtocol.java               TimingData + sync/ping semantics
-    UpstreamProtocolProvider.java       typed extension provider contract
-
 io/
   devices/
     antenna/
@@ -311,9 +326,10 @@ io/
   messaging/
     UpstreamGateway.java            when upstream messaging is implemented
     Connector.java                 only if multiple transports justify a shared contract
+    engineering/
+      EngineeringApiConnector.java       IF-03 engineering transport when implemented
     rabbitmq/
-      RabbitMqConnector.java
-      DebugConnector.java                 engineering/debug connector when implemented
+      RabbitMqConnector.java             production-shaped upstream transport
   storage/
     AppendOnlyRecordStore.java             generic opaque-record storage contract
     FileAppendOnlyRecordStore.java         LF framing • file append/recovery
@@ -897,10 +913,10 @@ mirror the hardware name.
 
 :::{design} Domain data, upstream and system-status composition
 :id: DD-DomainIntegration
-:elaborates: UpstreamMessageRouter, SystemUpstreamMessagePort, TimingNodeUpstreamMessagePort, UpstreamGateway, TimingSystem, SystemStatus, UpstreamProtocol
+:elaborates: UpstreamMessageRouter, SystemUpstreamMessagePort, TimingNodeUpstreamMessagePort, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
 
-Detailed Domain composition for LogBook/TimingData ownership, UpstreamProtocol
-routing boundaries and SystemStatus aggregation.
+Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
+semantics, routing boundaries and SystemStatus aggregation.
 
 `TimingNode` contains its passive `LogBook` as part of the TimingNode
 aggregate. LogBook keeps 0..N committed `TimingData` values. The current
@@ -913,7 +929,7 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamProtocol` is a Domain capability owned by one `TimingSystem` and built partly on `TimingData`. It adds synchronization and protocol-level messages such as ping/pong so individual TimingNodes do not need to implement those concerns. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `DebugConnector` owns transport/session mechanics, not TimingData or UpstreamProtocol semantics. `DebugConnector` is the engineering transport intended for an independent desktop/debug tool; that tool remains an external consumer rather than part of SI-01. `UpstreamMessageRouter` resolves semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
+`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds the message families needed for reference-data, reconciliation and status exchange without creating another timing-record identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics, not TimingData or UpstreamData semantics. `UpstreamMessageRouter` resolves decoded semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -956,8 +972,8 @@ application
   commands, queries, application-level ports and authoritative running
   configuration semantics
 
-domain
-  domain model, semantic ports, TimingData representation/codec and UpstreamProtocol semantics
+domain / shared semantic artifacts
+  domain model, semantic ports, TimingData and UpstreamData contracts/representation codecs
 
 io
   hardware, messaging and storage adapters
@@ -3554,7 +3570,7 @@ class-loader/discovery mechanics belong under application-core Infrastructure
 support. Domain, Application and I/O component code must not depend on
 `URLClassLoader`, `ServiceLoader` or a generic extension interface.
 
-Later slices may register typed `UpstreamProtocolProvider`,
+Step 7 adds the typed `UpstreamDataProvider` family. Later slices may register
 `AntennaProvider`, `CanProtocolProvider` and
 `DisplayProtocolProvider` families in the same registry pattern when those
 capabilities are implemented. They are intentionally not created as empty

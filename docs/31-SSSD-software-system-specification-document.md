@@ -182,7 +182,7 @@ normal LAN/Wi-Fi IP path may carry IF-03.
 
 ### **Timing Point Application** (SI-01) ↔ backend
 
-The **Timing Point Application** (SI-01) exchanges race/reference data, timing records, status and reconciliation information with the upstream system through a system-owned semantic interface. SI-01 owns the semantic `TimingData` representation and `UpstreamProtocol` behaviour; concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
+The **Timing Point Application** (SI-01) exchanges race/reference data, timing records, status and reconciliation information with the upstream system through the system-owned **IF-06 Backend Integration** semantic interface. `TimingData` remains the canonical timing-record model from IF-05; **UpstreamData** is the small transport-independent semantic message layer that may carry TimingData plus reference-data, reconciliation and status messages. Concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
 
 ### **Timing Point Application** (SI-01) ↔ field devices
 
@@ -203,7 +203,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-03 API** | SI-02 / automated test tooling ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
 | **IF-04 Web Interface** | Operator/browser ↔ SI-01 | browser-facing HTTP + WebSocket; one binding per TimingNode | Browser-based TimingNode status and control | `32-04-ISD-web-interface.md` |
 | **IF-05 TimingData Interchange** | SI-01 / engineering & test tools / compatible data consumers | append-only file / record interchange | Canonical timing-record semantics, identity, ordering, versioning and reference encoding | `32-05-ISD-timingdata-interchange.md` + `33-05-IDD-timingdata-interchange.md` |
-| **IF-06 Backend Integration** | SI-01 ↔ Backend | transport implementation below semantic boundary | Race/reference-data sync, registrations, reconciliation/status | system ISD; proprietary wire/design details may remain private |
+| **IF-06 Backend Integration** | SI-01 ↔ Backend | UpstreamData semantics over configured connector transport | TimingData transfer, race/reference-data sync, reconciliation/status | `32-06-ISD-backend-integration.md` + public/default `33-06-IDD-upstreamdata-json.md`; deployment-specific wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device ISD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system ISD candidate |
@@ -291,7 +291,7 @@ The **Timing Point Application** (SI-01) keeps the local operational state. Losi
 
 System contracts used by public reference/core implementation code must allow private production implementations to plug in without public code depending on private source or proprietary identities.
 
-Selected implementation families may be supplied by Java-8-compatible extension providers behind those stable contracts. The expected extension families are timing-data representation/codec, upstream protocol, antenna implementation, CAN protocol and display protocol. Extension discovery and provider selection are SI-01 implementation/composition concerns; they must not change the software-system interfaces or require proprietary source in the public repositories. Public/reference compositions must remain executable with synthetic/reference implementations so the public system can be built and verified independently.
+Selected implementation families may be supplied by Java-8-compatible extension providers behind those stable contracts. The expected extension families are timing-data representation/codec, upstream-data representation/codec, antenna implementation, CAN protocol and display protocol. Extension discovery and provider selection are SI-01 implementation/composition concerns; they must not change the software-system interfaces or require proprietary source in the public repositories. Public/reference compositions must remain executable with synthetic/reference implementations so the public system can be built and verified independently.
 
 ### Interface-first separation
 

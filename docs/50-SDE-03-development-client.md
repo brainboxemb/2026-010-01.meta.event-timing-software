@@ -284,9 +284,10 @@ For offline/import/export/compatibility inspection, the Development Client may
 decode or encode TimingData through the shared TimingData API/provider boundary.
 That capability does not make the client an owner of live SI-01 domain state.
 
-Backend/upstream injection through a `DebugConnector` is a separate engineering
-capability. It is added only when an upstream/backoffice simulation use case requires it;
-it is not part of the registration-control workbench.
+Backend/upstream simulation is a separate Engineering Client capability built around
+shared `UpstreamData`. The Step-7 Backend pane may use IF-03 as its deterministic local
+transport or RabbitMQ as the external integration transport; it is not part of the
+registration-control workbench.
 
 ## Current UI baseline
 
@@ -399,8 +400,8 @@ passage, including whether one or multiple EventData-mapped tags are observed. R
 selection is seedable so a run can be repeated. **Stop** prevents later scenario starts;
 it does not undo a scenario already accepted by SI-01.
 
-DebugConnector/upstream simulation remains a separate capability for inbound backoffice
-behaviour such as start-time/reference-data updates.
+Backend/UpstreamData simulation remains a separate capability for inbound reference-data
+and outbound timing/reconciliation behaviour.
 
 ## Existing web-application compatibility
 
