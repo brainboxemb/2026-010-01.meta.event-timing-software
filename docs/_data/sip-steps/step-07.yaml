@@ -9,12 +9,12 @@ planning_changes:
       addressing, sequence isolation, separate LogBooks and restart recovery.
   - date: '2026-10-13'
     change: >-
-      Complete D04 engineering-backoffice transport design. EngineeringApiBackofficeConnector
-      reuses IF-03 POST /api/v1/dev/backoffice/message and the existing SI-02 event
-      WebSocket with role=backoffice; outbound semantic messages are UPSTREAM_DATA events.
-      No second listener port or SI-02 WebSocket lifecycle is added. The connector enters
-      the same UpstreamData boundary as RabbitMQ and its role connection drives the
-      engineering connector lifecycle.
+      Complete D04 engineering upstream transport design. EngineeringApiUpstreamConnector
+      reuses IF-03 POST /api/v1/dev/upstream/message and the existing SI-02 event
+      WebSocket with role=upstream; outbound semantic messages are UPSTREAM_DATA events.
+      No second listener port or SI-02 WebSocket lifecycle is added. SI-02 acts as the
+      Central System Simulator and the connector enters the same UpstreamData boundary
+      as RabbitMQ.
   - date: '2026-10-13'
     change: >-
       Complete the D02/D03 ordered-stream model before A02 implementation. TIMING_DATA
@@ -33,8 +33,8 @@ planning_changes:
       manual PING omits mode. No unanswered-PING timeout policy is fixed yet.
   - date: '2026-10-13'
     change: >-
-      Use one SI-02 Backend Simulator with two transports: IF-03 for deterministic ST-2
-      and RabbitMQ for hosted ST-3. Both exercise the same semantic backoffice contract;
+      Use one SI-02 Central System Simulator with two transports: IF-03 for deterministic
+      ST-2 and RabbitMQ for hosted ST-3. Both exercise the same semantic upstream contract;
       deployment-specific protocol mappings remain below the UpstreamData boundary.
   - date: '2026-10-13'
     change: >-
@@ -84,10 +84,10 @@ activities:
     state: done
     depends_on: [D01, D03]
     note: >-
-      EngineeringApiBackofficeConnector is the deterministic ST-2 connector. It accepts
+      EngineeringApiUpstreamConnector is the deterministic ST-2 connector. It accepts
       structured UpstreamData through the IF-03 development HTTP operation and emits
       outbound UpstreamData on the existing SI-02 event WebSocket designated with
-      role=backoffice. That same role connection drives connector connect/disconnect,
+      role=upstream. That same role connection drives connector connect/disconnect,
       PING and SYNC lifecycle. RabbitMQ uses the same semantic boundary; concrete broker
       topology/session mechanics remain below it.
 
@@ -149,12 +149,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
-      edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
-      outbound UpstreamData/synchronization events from the existing IF-03 WebSocket.
-      The connector enters/leaves at the normal semantic backoffice boundary; direct
-      domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
-      production payloads through the engineering API.
+      Add EngineeringApiUpstreamConnector plus the SI-02 Central System Simulator pane.
+      SI-02 shall send ordered RACE_DATA, inspect ACK/REQ/SYNC and request LogBook
+      TIMING_DATA over the existing IF-03 HTTP/WebSocket pair. The connector enters/leaves
+      at the normal semantic upstream boundary; direct domain-object calls are not allowed.
+      Do not tunnel pre-serialized RabbitMQ/private production payloads through the
+      engineering API.
 
   - id: V02
     lane: verification
@@ -165,8 +165,8 @@ activities:
       Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
       node-scoped reference-data application, TeamID/StageTiming results, outbound
       semantic events, acknowledgement/synchronization behaviour and recovery after
-      IF-03 reconnect. This verifies backoffice semantics but not RabbitMQ session/channel
-      behaviour, which belongs to V03.
+      IF-03 reconnect. This verifies upstream semantics but not RabbitMQ session/channel behaviour,
+      which belongs to V03.
 
   - id: A06
     lane: application
@@ -175,9 +175,8 @@ activities:
     depends_on: [D04, V02]
     note: >-
       Implement/qualify RabbitMQ on both sides of the test topology: SI-01 uses
-      RabbitMqBackofficeConnector and the existing SI-02 Backend Simulator gains a
-      RabbitMqBackendTransport that plays the external backend peer. Both connect to
-      the same hosted broker. Credentials/topology are supplied through secrets or
+      RabbitMqUpstreamConnector and the existing SI-02 Central System Simulator gains a
+      RabbitMqCentralSystemTransport. Both connect to the same hosted broker. Credentials/topology are supplied through secrets or
       external configuration; private production mappings/codecs stay outside the repo.
 
   - id: V03
@@ -186,7 +185,7 @@ activities:
     state: planned
     depends_on: [A06]
     note: >-
-      Run ST-3 end-to-end as SI-02 Backend Simulator <-> hosted RabbitMQ <-> SI-01.
+      Run ST-3 end-to-end as SI-02 Central System Simulator <-> hosted RabbitMQ <-> SI-01.
       Verify source-specific routing, broker connection/consumer recovery, acknowledgement
       behaviour and resumed pending delivery. Keep hosted-broker availability outside the
       mandatory fast-CI path.
