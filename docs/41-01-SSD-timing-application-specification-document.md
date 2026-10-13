@@ -28,7 +28,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 - `32-03-ISD-application-control-status.md` for IF-03 obligations;
 - `32-04-ISD-web-interface.md` for IF-04 Web interface obligations;
 - `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
-- `32-06-ISD-backend-integration.md` for IF-06 UpstreamData/backend obligations;
+- `32-06-ISD-upstream-integration.md` for IF-06 UpstreamData/backend obligations;
 - `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
@@ -50,7 +50,7 @@ Implementation detail is split over focused SDDs:
 | --- | --- |
 | `43-01-SDD-01-data-and-display-design.md` | internal data/runtime behaviour: LogBook recording, commit ordering, persistence/recovery algorithms, query isolation, prepare-team/reference/display data |
 | `43-01-SDD-02-java-component-design.md` | concrete Java realisation: modules, packages, classes/interfaces, queue/executor/thread choices, provider discovery and dependency enforcement |
-| `43-01-SDD-03-backoffice-transport-design.md` | concrete transport realisation below the system/upstream semantic boundary |
+| `43-01-SDD-03-upstream-transport-design.md` | concrete transport realisation below the system/upstream semantic boundary |
 | applicable ISD | externally visible interface/file/protocol requirements/semantics; an SDD shall not redefine them |
 
 An SDD may choose the concrete mechanism, as long as it still fits this SSD and
@@ -200,7 +200,7 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
-:::{req} Keep local registration independent from presentation, logging and backoffice delivery  
+:::{req} Keep local registration independent from presentation, logging and upstream delivery  
 :id: SI01-REQ-051  
 :status: D  
 :specifies: UC-003, UC-012  
@@ -373,16 +373,16 @@ complete current snapshot before relying on later incremental changes; rendering
 state remains owned by the smart display.
 :::
 
-#### Registration cabinet and backoffice
+#### Registration cabinet and Upstream System
 
-:::{req} Apply TimingNode-scoped reference data from backoffice  
+:::{req} Apply TimingNode-scoped reference data from the upstream system  
 :id: SI01-REQ-063  
 :status: D  
 :specifies: UC-010  
 :depends_on: IF06-REQ-004, IF06-REQ-005  
 
 SI-01 shall accept decoded semantic reference-data updates from a configured
-backoffice boundary, resolve the addressed TimingNode, validate the update and
+upstream boundary, resolve the addressed TimingNode, validate the update and
 apply it only to that TimingNode's owning reference state. Accepted/rejected
 outcome and enough freshness/health state to diagnose synchronisation shall be
 observable.
@@ -395,45 +395,45 @@ observable.
 :depends_on: SI01-REQ-042, SI01-REQ-045, IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-010  
 
 SI-01 shall expose committed TimingNode-scoped outbound data to configured
-backoffice connectors through transport-independent semantic messages while
+upstream connectors through transport-independent semantic messages while
 preserving source identity and source ordering. Concrete connector routing shall
 not redefine TimingNode identity or registration semantics.
 :::
 
-:::{req} Preserve pending outbound work across backoffice outage  
+:::{req} Preserve pending outbound work across upstream outage  
 :id: SI01-REQ-065  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-064, IF06-REQ-006, IF06-REQ-007  
 
-Loss of a configured backoffice transport shall not discard locally committed
+Loss of a configured upstream transport shall not discard locally committed
 outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
-:::{req} Derive pending TimingData from backend contiguous progress  
+:::{req} Derive pending TimingData from upstream-system contiguous progress  
 :id: SI01-REQ-081  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-042, SI01-REQ-064, SI01-REQ-065, IF06-REQ-017, IF06-REQ-018  
 
 For each configured logical upstream target and TimingNode, SI-01 shall track the
-backend's latest known highest contiguous TimingData sequence. Pending outbound
+upstream system's latest known highest contiguous TimingData sequence. Pending outbound
 TimingData shall be the retained committed records after that sequence. Transport
 delivery success shall not remove a record from semantic pending state.
 :::
 
-:::{req} Replay retained TimingData after reconnect or backend rollback  
+:::{req} Replay retained TimingData after reconnect or upstream-system rollback  
 :id: SI01-REQ-082  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-081, IF06-REQ-019  
 
-After connection/reconnection or receipt of backend progress behind the local
+After connection/reconnection or receipt of upstream-system progress behind the local
 committed head, SI-01 shall replay the missing retained TimingData in source order
 using each record's original NodeId, sequence and semantic content. If backend
 progress is lower than a previously observed value, SI-01 shall treat the current
-backend state as requiring replay rather than assuming an older transport session
+upstream-system state as requiring replay rather than assuming an older transport session
 still proves synchronization.
 :::
 
@@ -447,7 +447,7 @@ The authoritative payload source for TimingData replay shall remain the TimingNo
 LogBook. SI-01 shall not require a second durable copy of the same TimingData merely
 to represent an outbound outbox. After restart, pending work may be rebuilt after
 the backend's semantic progress is known. Cached sync progress may support status or
-performance but shall not replace LogBook history or backend reconciliation.
+performance but shall not replace LogBook history or upstream-system reconciliation.
 :::
 
 :::{req} Expose diagnosable synchronization state  
@@ -457,12 +457,12 @@ performance but shall not replace LogBook history or backend reconciliation.
 
 For each configured logical upstream target and TimingNode, SI-01 shall expose enough
 state to distinguish unknown synchronization, synchronized state, pending TimingData
-and conflict/error. When backend progress is known, status shall expose local committed
-head, backend contiguous sequence and pending count. Reference-data revision state
+and conflict/error. When upstream-system progress is known, status shall expose local committed
+head, upstream-system contiguous sequence and pending count. Reference-data revision state
 shall remain separately observable from TimingData progress.
 :::
 
-:::{req} Re-establish backend progress on connect and reconnect  
+:::{req} Re-establish upstream-system progress on connect and reconnect  
 :id: SI01-REQ-085  
 :status: D  
 :specifies: UC-011, UC-012  
@@ -470,9 +470,9 @@ shall remain separately observable from TimingData progress.
 
 When a configured upstream target becomes operationally connected or reconnects,
 SI-01 shall make its current node-scoped SYNC state available and shall treat the
-backend progress for that connection as unknown until fresh backend SYNC state is
+upstream-system progress for that connection as unknown until fresh backend SYNC state is
 received. SI-01 shall not treat cached progress or transport/session success from an
-earlier connection as proof that the backend still holds those TimingData records.
+earlier connection as proof that the upstream system still holds those TimingData records.
 :::
 
 :::{req} Resolve TeamId without rewriting TimingData  
@@ -679,7 +679,7 @@ of internal application or domain state.
 
 A simulation composition shall be able to host multiple TimingNodes, inject
 synthetic device behaviour through normal adapter boundaries and exercise the
-same TimingNode, persistence and backoffice paths as a production composition
+same TimingNode, persistence and upstream paths as a production composition
 without introducing a second domain/application implementation.
 :::
 
@@ -695,7 +695,7 @@ so injected reads, discovery, disconnects, faults and recovery traverse normal
 application/domain paths.
 :::
 
-:::{req} Select alternative backoffice transport for loop testing  
+:::{req} Select alternative upstream transport for loop testing  
 :id: SI01-REQ-068  
 :status: D  
 :specifies: UC-017  
@@ -707,7 +707,7 @@ IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData witho
 requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
 SI-02 live-event WebSocket connection; no second SI-01 listener port or second SI-02
 WebSocket lifecycle is required. The connector shall enter the same semantic
-UpstreamData routing boundary as other backoffice connectors.
+UpstreamData routing boundary as other upstream connectors.
 :::
 
 :::{req} Verify production-shaped RabbitMQ connector behaviour  
@@ -716,7 +716,7 @@ UpstreamData routing boundary as other backoffice connectors.
 :specifies: UC-018  
 :depends_on: SI01-REQ-064, SI01-REQ-065  
 
-The RabbitMQ backoffice connector shall support automated or repeatable external
+The RabbitMQ upstream connector shall support automated or repeatable external
 integration testing against a test broker for source-specific inbound/outbound
 routing, connection recovery, consumer restoration and resumed pending outbound
 delivery. The public test fixture shall not embed production credentials, private
@@ -879,7 +879,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
-| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
+| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and upstream delivery |
 | SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
 | SI01-REQ-053 | UC-003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
@@ -895,8 +895,8 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-078 | UC-010 + IF06-REQ-014/015 | atomic revisioned RaceData snapshot |
 | SI01-REQ-079 | UC-010 + IF06-REQ-014/016 | atomic revisioned StageStartTimes snapshot |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
-| SI01-REQ-081 | UC-011/012 + IF06-REQ-017/018 | pending TimingData from backend contiguous sequence |
-| SI01-REQ-082 | UC-011/012 + IF06-REQ-019 | replay original records after reconnect/backend rollback |
+| SI01-REQ-081 | UC-011/012 + IF06-REQ-017/018 | pending TimingData from upstream-system contiguous sequence |
+| SI01-REQ-082 | UC-011/012 + IF06-REQ-019 | replay original records after reconnect/upstream-system rollback |
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
 | SI01-REQ-084 | IF06-REQ-020 + SI01-REQ-081 | observable per-target/node synchronization state |
 | SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SYNC state after connect/reconnect |
@@ -920,9 +920,9 @@ The **Timing Point Application** (SI-01) architecture is driven by these concern
 - isolate external I/O concurrency from application/domain state mutation;
 - keep the local registration work from antenna observation through TagProcessor,
   TimingNode queue admission, the required TimingData write and LogBook commit
-  independent from presentation, diagnostic logging and backoffice delivery;
+  independent from presentation, diagnostic logging and upstream delivery;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
-- remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
+- remain testable without production RFID, CAN, upstream or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep the public reference/core implementation independent of private production source;
@@ -2743,7 +2743,7 @@ decoding. A system-level message is delivered through the owning
 `TimingNode.UpstreamMessagePort`.
 
 ```text
-external upstream / SI-02 backend peer
+external Upstream System / SI-02 upstream-system peer
         |
         +--> RabbitMqConnector --------+
         +--> EngineeringApiConnector --+--> UpstreamGateway
@@ -3100,7 +3100,7 @@ Current focused SDDs:
   Maven artifacts, packages, classes/interfaces, queue/thread/executor choices,
   provider discovery and dependency checks
 
-43-01-SDD-03-backoffice-transport-design.md
+43-01-SDD-03-upstream-transport-design.md
   transport realisation below the upstream semantic boundary
 ```
 
@@ -3116,7 +3116,7 @@ Open architecture questions include:
 
 - operational policy for material wall-clock corrections when it affects timing
   correctness or operator action;
-- final upstream/backoffice semantic responsibilities as IF-06 is promoted;
+- final upstream semantic responsibilities as IF-06 is promoted;
 - whether measured multi-TimingNode/Pi resource behaviour ever requires changing
   the current ordered-per-node responsibility model;
 - any target-runtime limitation that forces a change to the Java-8/application
