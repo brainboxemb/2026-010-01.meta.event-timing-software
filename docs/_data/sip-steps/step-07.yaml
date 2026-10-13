@@ -3,6 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete A03 on Java main revision 006a92e65e07412cb7caf603f853c90c58b86f5e.
+      StageTiming now derives deterministic elapsed results from committed TimingData
+      plus current EventData/ReserveTagMap/StageStartTimes state, with explicit unresolved
+      outcomes and an explicit ZoneId for civil-time rollover. REV/lifecycle records do
+      not become new stage passages. Ranking remains a future query policy because no
+      ranking/tie/grouping rule is currently specified.
+  - date: '2026-10-13'
+    change: >-
       Complete A02 on Java main revision 99d1d5839c7f837d19095f3b253708728952cdc1.
       The UpstreamData base, ordered per-node RACE_DATA sequence, ReserveTagMap and
       StageStartTimes SET/DEL state, apply-before-ACK semantics, gap-to-REQ behavior,
@@ -132,7 +140,7 @@ activities:
   - id: A03
     lane: application
     kind: implementation
-    state: next
+    state: done
     depends_on: [A02, D02]
     note: >-
       Implement StageTiming using the node-owned ReserveTagMap/StageStartTimes live
@@ -142,7 +150,7 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    state: planned
+    state: next
     depends_on: [D01, D03, V01]
     note: >-
       Implement transport-independent SYNC/REQ replay in both directions: advertise
