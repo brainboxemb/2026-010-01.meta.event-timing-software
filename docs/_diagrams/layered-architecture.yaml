@@ -257,11 +257,11 @@ nodes:
   kind: service
   notation: component
   layout: {x: 570, y: 782, w: 240, h: 50}
-- id: race-data
-  object_id: RaceData
+- id: reserve-tag-map
+  object_id: ReserveTagMap
   group: timing-node-aggregate
-  label: "RaceData"
-  subtitle: "runtime / upstream race data"
+  label: "ReserveTagMap"
+  subtitle: "reserve regId → TeamId"
   kind: service
   notation: component
   layout: {x: 850, y: 782, w: 240, h: 50}
@@ -305,10 +305,11 @@ nodes:
   object_id: UpstreamData
   group: domain-layer
   label: "UpstreamData"
-  subtitle: "timing • ref • sync • ping req/ans"
+  subtitle: "timing • race • sync • ack • req • ping"
   kind: service
   notation: component
-  layout: {x: 565, y: 956, w: 235, h: 50}
+  # Keep a deliberate label corridor between TimingData and UpstreamData.
+  layout: {x: 625, y: 956, w: 265, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -640,7 +641,7 @@ edges:
 
 - from: upstream-data-domain
   to: timing-data-domain
-  label: carries
+  label: carries TimingData
   dashed: true
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
