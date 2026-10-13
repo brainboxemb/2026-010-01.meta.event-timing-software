@@ -504,19 +504,18 @@ the `A` in `RT-A` is not the TimingNode identifier. These cases inject the
 RegistrationIds directly through IF-03. They do not verify the separate RFID
 tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
-:::{vc} Verify upstream PING lifecycle  
+:::{vc} Verify upstream PING/PONG lifecycle  
 :id: VC-ST1-009  
-:verifies: SI01-REQ-075, IF06-REQ-011, IF06-REQ-012  
+:verifies: SI01-REQ-075, SI01-REQ-076, IF06-REQ-011, IF06-REQ-012, IF06-REQ-013  
 
 **Purpose**
 
-Verify that one configured upstream connector publishes the semantic PING lifecycle
-without creating TimingData.
+Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
 
 **Setup**
 
 - SI-01 with one deterministic upstream connector using the Engineering API transport;
-- independent backend/engineering peer that can observe outbound UpstreamData;
+- independent backend/engineering peer that can observe and answer UpstreamData;
 - empty TimingData persistence;
 - timing observation sufficient to distinguish immediate connect behaviour from the
   30-second periodic interval.
@@ -526,29 +525,34 @@ without creating TimingData.
 1. Start SI-01 with the upstream connector not yet operationally connected.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
-3. Verify one PING is published immediately as part of that connection cycle rather than
-   waiting for the first 30-second period.
-4. Keep the connection operational and verify the next PING is generated after the
-   30-second period.
-5. Disconnect the upstream peer and verify no further PING is generated for that
+3. Verify one PING with a `pingId` is published immediately rather than waiting for the
+   first 30-second period.
+4. Return one PONG with the same `pingId` and verify SI-01 accepts it as the matching
+   liveness response.
+5. Keep the connection operational and verify the next PING is generated after the
+   30-second period with a new correlation exchange; return the matching PONG.
+6. From the backend peer send a valid PING with another `pingId`. Verify SI-01 returns
+   exactly one PONG with the same `pingId`.
+7. Disconnect the upstream peer and verify no further periodic PING is generated for that
    disconnected connector.
-6. Reconnect and verify a new connection cycle again starts with an immediate PING,
-   followed by the 30-second period.
-7. Query/inspect TimingData history and verify the PING activity added no TimingData
+8. Reconnect and verify a new connection cycle again starts with an immediate PING and
+   matching PONG exchange, followed by the 30-second period.
+9. Query/inspect TimingData history and verify all PING/PONG activity added no TimingData
    record and consumed no TimingData sequence value.
 
 **Expected result**
 
 - immediate PING on each operational connect/reconnect;
 - periodic PING every 30 seconds while connected;
+- matching PONG correlation is preserved in both directions;
 - no PING task remains active after disconnect;
-- PING does not alter TimingData or LogBook history.
+- PING/PONG does not alter TimingData or LogBook history.
 
 The exact 30-second schedule should additionally have a deterministic component-level
 test around the scheduler boundary so CI does not rely only on long wall-clock sleeps.
+The test does not assert a missed-PONG timeout because that policy is not yet defined.
 
 :::
-
 ## Evidence
 
 A VTS case defines what must be exercised and observed; it does not say that a

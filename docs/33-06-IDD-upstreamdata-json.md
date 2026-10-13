@@ -55,6 +55,7 @@ The current public v1 design reserves these semantic families:
 - `REFERENCE_DATA`;
 - `SYNC`;
 - `PING`;
+- `PONG`;
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -102,22 +103,40 @@ defined only after Step-7 D02 promotes their semantic contract.
 The envelope and type are reserved in v1. Exact progress/acknowledgement members are
 defined only after Step-7 D03 promotes synchronization semantics.
 
-### PING
+### PING / PONG
 
-PING is a system/upstream-scoped message and therefore does not require `nodeId`.
-The public/default v1 representation is intentionally minimal:
+PING and PONG are system/upstream-scoped messages and therefore do not require `nodeId`.
+The public/default v1 representation uses one correlation value `pingId`.
+
+PING:
 
 ```json
 {
   "v": 1,
   "type": "PING",
-  "data": {}
+  "data": {
+    "pingId": "p-0001"
+  }
 }
 ```
 
-A PING carries no TimingData record and does not consume TimingData sequence identity.
-Its lifecycle/timing semantics are defined by IF06-REQ-011/012. The public/reference
-representation does not define a PONG message.
+Matching PONG:
+
+```json
+{
+  "v": 1,
+  "type": "PONG",
+  "data": {
+    "pingId": "p-0001"
+  }
+}
+```
+
+`pingId` is an opaque correlation identifier within the liveness exchange. The PONG
+echoes the same value and does not reinterpret it as a TimingData or transport sequence.
+
+PING/PONG carries no TimingData record and consumes no TimingData sequence identity. Its
+lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
 
 ### STATUS
 
@@ -227,7 +246,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012 | PING is a dedicated system-scoped message with no TimingData identity |
+| IF06-REQ-011/012/013 | PING/PONG use a shared `pingId` and have no TimingData identity |
 
 ## Open design points
 
