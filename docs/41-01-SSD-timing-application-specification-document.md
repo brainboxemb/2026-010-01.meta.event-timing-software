@@ -417,7 +417,7 @@ synchronisation without inventing or reusing committed source sequence identity.
 :depends_on: IF06-REQ-011, IF06-REQ-012, IF06-REQ-013  
 
 For each configured upstream connector, SI-01 shall send one
-`PING(action=REQUEST, mode=HEARTBEAT)` immediately when the connector
+`PING(op=REQUEST, mode=HEARTBEAT)` immediately when the connector
 reaches its operational connected state and shall continue sending a heartbeat
 PING REQUEST every 30 seconds while that connection remains operational.
 SI-01 shall process PING ANSWER responses preserving the request's optional
@@ -434,8 +434,8 @@ consume TimingData sequence identity.
 :status: D  
 :depends_on: IF06-REQ-013  
 
-When SI-01 receives a valid upstream PING with `action = REQUEST`, it shall
-send one PING with `action = ANSWER` preserving the request's optional `mode`
+When SI-01 receives a valid upstream PING with `op = REQUEST`, it shall
+send one PING with `op = ANSWER` preserving the request's optional `mode`
 through the same configured upstream semantic connection. For a manual request
 (no `mode`) its answer shall likewise omit `mode`.
 SI-01 shall not reply to a PING ANSWER with another answer. An optional
