@@ -3,6 +3,11 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Extend the completed IF-06 D01 baseline with application-level PING semantics:
+      immediate PING on operational connect/reconnect, then every 30 seconds while
+      connected. PING is UpstreamData and does not consume TimingData sequence.
+  - date: '2026-10-13'
+    change: >-
       Complete D01 by promoting IF-06 around shared UpstreamData semantics and adding
       the public/reference JSON representation. Replace the old UpstreamProtocol /
       BackofficeEnvelope concepts in architecture/design. D02 is next.
@@ -15,14 +20,14 @@ planning_changes:
     change: >-
       Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
       next: promote IF-06 backend semantic responsibilities before reference-data,
-      reconciliation or transport implementation proceeds.
+      synchronization or transport implementation proceeds.
   - date: '2026-10-13'
     change: >-
       Prepare Step 7 before activation. Existing SI-01 multi-node composition,
       node-scoped IF-03 addressing, separate LogBooks and restart recovery already
       have black-box coverage, so Step 7 adopts that as a baseline instead of
       reimplementing it. Make IF-06 semantics, reference-data/StageTiming ownership
-      and reconciliation rules the first design gates. D01 becomes next only after
+      and synchronization rules the first design gates. D01 becomes next only after
       Step-6 V01 / VC-ST1-003 closes.
 
 activities:
@@ -32,7 +37,7 @@ activities:
     state: done
     note: >-
       IF-06 now defines transport-independent UpstreamData: canonical TimingData
-      transfer plus reference-data, reconciliation and status families. The public
+      transfer plus reference-data, synchronization, PING and status families. The public
       reference representation is versioned JSON; deployment-specific representations
       remain behind an UpstreamData provider/codec boundary. RabbitMQ and IF-03 remain
       connector transports below those semantics.
@@ -53,9 +58,9 @@ activities:
     state: planned
     depends_on: [D01]
     note: >-
-      Define pending outbound work and reconciliation semantics: acknowledgement,
+      Define pending outbound work and synchronization semantics: acknowledgement,
       retry, duplicate/idempotency handling, sequence preservation, recovery after
-      outage and the status needed to diagnose incomplete synchronisation.
+      outage and the status needed to diagnose incomplete synchronization.
 
   - id: D04
     lane: documentation
@@ -115,7 +120,7 @@ activities:
     state: planned
     depends_on: [D01, D03, V01]
     note: >-
-      Implement transport-independent outbound synchronisation and pending-work state
+      Implement transport-independent outbound synchronization and pending-work state
       while preserving committed source identity/order and allowing local registration
       to continue while upstream transport is unavailable.
 
@@ -127,7 +132,7 @@ activities:
     note: >-
       Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
       edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
-      outbound UpstreamData/synchronisation events from the existing IF-03 WebSocket.
+      outbound UpstreamData/synchronization events from the existing IF-03 WebSocket.
       The connector enters/leaves at the normal semantic backoffice boundary; direct
       domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
       production payloads through the engineering API.
@@ -140,7 +145,7 @@ activities:
     note: >-
       Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
       node-scoped reference-data application, TeamID/StageTiming results, outbound
-      semantic events, acknowledgement/reconciliation behaviour and recovery after
+      semantic events, acknowledgement/synchronization behaviour and recovery after
       IF-03 reconnect. This verifies backoffice semantics but not RabbitMQ session/channel
       behaviour, which belongs to V03.
 
