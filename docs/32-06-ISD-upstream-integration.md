@@ -35,7 +35,7 @@ Java classes, provider discovery or private deployment protocol details.
 - **ISD** — Interface Specification Document
 - **IDD** — Interface Design Description
 - **SI-01** — Timing Point Application
-- **Upstream System** — external race/event upstream system system
+- **Upstream System** — external central race/event system relative to SI-01
 - **TimingData** — committed timing record model defined by IF-05
 - **UpstreamData** — transport-independent semantic message exchanged through IF-06
 - **reference data** — upstream system-owned or upstream system-synchronized race/event data used by SI-01
@@ -77,7 +77,7 @@ UpstreamData family, not by the selected transport.
 ### UpstreamData
 
 UpstreamData is the common semantic boundary between application behaviour and
-upstream system transports. The public/reference representation uses **one message model
+Upstream System transports. The public/reference representation uses **one message model
 in both directions**. A TimingData/log-record value is carried *inside* a
 TIMING_DATA message as payload, rather than being a separate wire-message format.
 PING requests/answers, reference-data and synchronization exchanges use the
@@ -93,7 +93,7 @@ The current semantic families are:
 | ReferenceData update | Upstream System -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
 | Ping request / answer | bidirectional | one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check |
-| Status | bidirectional | expose upstream system/source synchronization and connector health relevant to integration |
+| Status | bidirectional | expose Upstream System/source synchronization and connector health relevant to integration |
 
 The public RaceData, StageStartTimes and synchronization semantics are defined below.
 Their representations must remain compatible with the common requirements in this ISD.
