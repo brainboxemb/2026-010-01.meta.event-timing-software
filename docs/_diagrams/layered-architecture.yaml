@@ -218,6 +218,15 @@ nodes:
   notation: component
   layout: {x: 815, y: 857, w: 280, h: 50}
 
+- id: next-up-teams
+  object_id: NextUpTeams
+  group: timing-node-aggregate
+  label: "NextUpTeams"
+  subtitle: "teams expected next"
+  kind: service
+  notation: component
+  layout: {x: 640, y: 657, w: 220, h: 50}
+
 - id: node-processing
   object_id: TimingNodeProcessing
   group: timing-node-aggregate
@@ -251,8 +260,8 @@ nodes:
   items:
     - label: UniqueTeamRegistrations
       object_id: UniqueTeamRegistrations
-    - label: StageStanding
-      object_id: StageStanding
+    - label: StagePassageList
+      object_id: StagePassageList
     - label: StageRanking
       object_id: StageRanking
   kind: service
