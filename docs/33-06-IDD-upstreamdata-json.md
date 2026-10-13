@@ -106,7 +106,10 @@ defined only after Step-7 D03 promotes synchronization semantics.
 ### PING / PONG
 
 PING and PONG are system/upstream-scoped messages and therefore do not require `nodeId`.
-The public/default v1 representation uses one correlation value `pingId`.
+The public/default v1 representation identifies the PING purpose with `purpose`
+(`HEARTBEAT` or `MANUAL`). The optional `pingId` is a reference-implementation
+extension for correlating individual exchanges; it is not an IF-06 semantic
+requirement. When present, the PONG echoes it unchanged.
 
 PING:
 
@@ -115,6 +118,8 @@ PING:
   "v": 1,
   "type": "PING",
   "data": {
+    "purpose": "HEARTBEAT",
+    "purpose": "HEARTBEAT",
     "pingId": "p-0001"
   }
 }
@@ -132,8 +137,14 @@ Matching PONG:
 }
 ```
 
-`pingId` is an opaque correlation identifier within the liveness exchange. The PONG
-echoes the same value and does not reinterpret it as a TimingData or transport sequence.
+`purpose` is mandatory in the default JSON mapping, and PONG preserves the PING
+purpose. `HEARTBEAT` denotes an automatically scheduled check; `MANUAL` denotes
+an explicitly initiated one. A manual exchange does not reset the periodic heartbeat.
+
+The optional `pingId` illustrates reference-implementation correlation. When
+supplied, the PONG echoes it; when omitted, purpose-preserving PING/PONG remains valid.
+It is not a TimingData or transport sequence. No legacy wire-field positions are
+standardized here.
 
 PING/PONG carries no TimingData record and consumes no TimingData sequence identity. Its
 lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
@@ -246,7 +257,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING/PONG use a shared `pingId` and have no TimingData identity |
+| IF06-REQ-011/012/013 | PING/PONG carry heartbeat/manual purpose; optional `pingId` supports reference correlation; neither consumes TimingData identity |
 
 ## Open design points
 
