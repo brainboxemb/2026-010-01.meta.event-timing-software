@@ -855,9 +855,6 @@ Application
         +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
-        +-- UpstreamProtocol
-        |     +-- heartbeat / ping
-        |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
               +-- NodeId   functional upstream/timing-data identity
               +-- LocationId
@@ -875,6 +872,7 @@ Application
 Shared Domain contracts:
   +-- EventData
   +-- TimingData
+  +-- UpstreamData
 ```
 
 <a id="fig-si01-01"></a>
@@ -1083,11 +1081,11 @@ do not introduce messages merely to preserve a layer diagram.
 upstream system at application scope. **Upstream** describes that external
 system relationship, not the direction of an individual message; the exchange is
 bidirectional. The upstream wire contract does not need to expose
-`SystemId`. Each configured upstream protocol/gateway context belongs
-internally to one `TimingSystem`; node-scoped messages are routed functionally
-by `NodeId` to that system's addressed TimingNode. Protocol-level
-messages such as ping/heartbeat can be handled by
-`TimingSystem`/`UpstreamProtocol` without involving a TimingNode.
+`SystemId`. Each configured upstream gateway/connector context belongs
+internally to one `TimingSystem`; node-scoped UpstreamData is routed
+functionally by `NodeId` to that system's addressed TimingNode. System-level
+UpstreamData such as synchronisation/status is routed to the owning
+`TimingSystem.UpstreamMessagePort` without involving a TimingNode.
 
 The router is deliberately **not** a generic application message bus or mediator
 for normal collaboration between domain components.
@@ -1105,10 +1103,6 @@ TimingSystem (1..N per Application)
   Conductor                   first system coordinator; TimingNodes + inventory
   SystemStatus                complete current system overview
   UpstreamMessagePort         system-level upstream messages
-  UpstreamProtocol
-    TimingData transfer
-    synchronisation / reconciliation
-    ping / pong and other protocol messages
   1..N TimingNode
     NodeId              functional protocol/data identity
     LocationId
@@ -1123,13 +1117,18 @@ TimingSystem (1..N per Application)
     StageTiming
     uses / produces TimingData
 
-TimingData
-  common semantic contracts
-  configured concrete profile
-  factory / codec / compatibility
+Shared Domain contracts
+  EventData
+  TimingData
+    common semantic contracts
+    configured concrete profile
+    factory / codec / compatibility
+  UpstreamData
+    TimingData + reference data + reconciliation/status
+    configured representation / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview, a system-level `UpstreamMessagePort` and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. This lets one process simulate or host multiple independent timing systems without changing the functional TimingNode-oriented external contract.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
@@ -1263,7 +1262,16 @@ persistence or event publication. The same common provider/API boundary is
 reusable by SI-01 and engineering tools such as the JavaFX Development Client;
 normal domain users remain unaware of provider discovery mechanics.
 
-`UpstreamProtocol` is a Domain responsibility owned in the context of one `TimingSystem`. It uses `TimingData` for timing-record transfer and additionally defines semantic messages needed for synchronisation, reconciliation, heartbeat/ping and other upstream-system exchanges. It is therefore broader than the TimingData record format itself. Protocol-level activity that is not about one TimingNode stays here rather than leaking into each TimingNode. A concrete protocol implementation may be selected through an `UpstreamProtocolProvider`; the semantic boundary remains the same whether the implementation is built in or extension-provided.
+`UpstreamData` is a shared Domain capability alongside `EventData` and
+`TimingData`. It realises the semantic message model of IF-06 and is a small layer
+above/around existing data models: it may carry canonical `TimingData` and also
+reference-data, reconciliation and status messages needed by upstream integration.
+It does not create another TimingData identity or sequence.
+
+An `UpstreamDataProvider` supplies one coherent concrete representation/codec
+family. The built-in public/reference family is JSON-oriented; deployment-specific
+representations may be supplied behind the same provider/codec boundary without
+leaking their wire classes into public Domain/Application code.
 
 `PlatformEnvironment` supplies the process/runtime environment capabilities used by
 SI-01: a raw absolute wall-clock `Clock`, a `MonotonicClock` for elapsed-time
@@ -1501,9 +1509,9 @@ messaging is configured it contains one `UpstreamGateway`; the gateway uses
 1..N connectors and concrete connectors own transport resources,
 delivery/session mechanics and transport-specific addressing.
 
-The semantic `UpstreamProtocol` remains in Domain. Messaging may transport an
-encoded protocol representation without interpreting `TimingData` fields or
-reimplementing synchronisation rules; after protocol decoding,
+The semantic `UpstreamData` model remains in Domain. Messaging transports an
+encoded UpstreamData representation without interpreting `TimingData` fields or
+reimplementing reconciliation/reference-data rules; after UpstreamData decoding,
 `UpstreamMessageRouter` owns application-level target resolution.
 :::
 
@@ -1627,7 +1635,7 @@ messages/events received inward.
 :id: UpstreamGateway  
 
 `UpstreamGateway` is the Messaging-owned external upstream transport/session
-boundary. It owns connector coordination but not UpstreamProtocol semantics.
+boundary. It owns connector coordination but not UpstreamData semantics.
 :::
 
 :::{arch} Connector  
@@ -1645,15 +1653,13 @@ transport-specific addressing.
 production-shaped upstream messaging.
 :::
 
-:::{arch} DebugConnector  
-:id: DebugConnector  
+:::{arch} EngineeringApiConnector  
+:id: EngineeringApiConnector  
 
-`DebugConnector` is the development/debug implementation of the Connector role.
-It provides a production-semantics-preserving upstream transport path that an
-independent engineering desktop/debug tool can use without becoming part of
-SI-01 or bypassing UpstreamGateway/UpstreamProtocol. The concrete debug transport
-and desktop-tool interaction are refined by downstream design rather than by
-Figure SI01-01.
+`EngineeringApiConnector` is the development/engineering implementation of the
+Connector role. It carries the public/reference UpstreamData representation through
+the existing IF-03 engineering API/Event transport so SI-02 can exercise the normal
+upstream semantic path without direct access to SI-01 Domain objects.
 :::
 
 #### Platform
@@ -1877,7 +1883,7 @@ One **Timing Point Application** (SI-01) may host 1..N
 TimingSystems, for example to run multiple independent
 simulation contexts. Each TimingSystem owns a complete
 `SystemStatus` overview, a system-level
-`UpstreamMessagePort`, one `UpstreamProtocol` context and 1..N TimingNodes. Its internal `SystemId` is not
+`UpstreamMessagePort` and 1..N TimingNodes. Its internal `SystemId` is not
 assumed to be part of the upstream wire contract.
 :::
 
@@ -1921,16 +1927,16 @@ system-owned IF-05 inside SI-01. It exposes the typed
 common `TimingData` semantic interfaces plus configured factory/codec services needed
 by application code. Canonical record/file semantics and
 compatibility remain defined by IF-05; Storage, Web and upstream
-protocol code consume that contract without redefining it.
+integration code consume that contract without redefining it.
 :::
 
-:::{arch} UpstreamProtocol  
-:id: UpstreamProtocol  
+:::{arch} UpstreamData  
+:id: UpstreamData  
 
-Each TimingSystem owns one `UpstreamProtocol` context. It uses
-TimingData for timing-record transfer and owns protocol-level
-synchronisation, reconciliation and ping/heartbeat semantics so
-those concerns do not leak into individual TimingNodes.
+`UpstreamData` is the shared Domain capability that realises IF-06 inside SI-01.
+It may carry canonical TimingData plus reference-data, reconciliation and status
+messages. Its representation/codec boundary is independent from connector transport;
+the public/reference representation is JSON-oriented.
 :::
 
 
@@ -1966,8 +1972,10 @@ Application
               +-- StageTiming
               +-- uses / produces TimingData
 
-Shared Domain contract:
+Shared Domain contracts:
+  +-- EventData
   +-- TimingData
+  +-- UpstreamData
 ```
 
 `ApplicationId` identifies the running Timing Point Application instance. `SystemId` is an internal identity used only to distinguish 1..N hosted TimingSystem contexts. `NodeId` remains the functional identity used by TimingData and upstream node addressing and scopes the node's registration sequence and synchronisation semantics. `LocationId` is the separately configured physical event location. The upstream contract therefore does not gain a TimingSystem identifier merely because one process can host multiple systems.
@@ -2036,7 +2044,7 @@ Messaging
     +-- UpstreamGateway
           +-- Connector (1..N)
                 +-- RabbitMqConnector
-                +-- DebugConnector
+                +-- EngineeringApiConnector
 
 UpstreamMessageRouter
     +-- system-level message -> TimingSystem.UpstreamMessagePort
@@ -2057,7 +2065,13 @@ I/O/device-network responsibilities. A keypad, beeper or display may interact wi
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges transport-neutral messages with its configured connectors but does not own protocol semantics. Each configured gateway/protocol context is associated internally with one `TimingSystem`. `UpstreamMessageRouter` routes system-level semantic operations to `TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted operations by `NodeId` to `TimingNode.UpstreamMessagePort`; `UpstreamProtocol` owns protocol semantics such as ping, status exchange and synchronisation. No external `SystemId` field is required.
+`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges encoded
+UpstreamData with its configured connectors but does not own UpstreamData semantics.
+Each configured gateway/connector context is associated internally with one
+`TimingSystem`. `UpstreamMessageRouter` routes system-level UpstreamData to
+`TimingSystem.UpstreamMessagePort` and resolves TimingNode-targeted UpstreamData by
+`NodeId` to `TimingNode.UpstreamMessagePort`. No external `SystemId` field is
+required.
 
 Connectors do not route directly to Domain or TimingNodes and do not own domain
 semantics. A connector-specific external name or routing key may participate in
@@ -2065,12 +2079,11 @@ boundary mapping, but it does not replace the stable functional `NodeId`.
 Internal `SystemId` is local composition context rather than a new
 upstream routing identity. One gateway may use multiple connectors and one
 TimingNode may exchange messages through more than one connector via the gateway,
-router and its bidirectional port. `RabbitMqConnector` represents the
-production-shaped transport; `DebugConnector` provides an engineering/debug
-transport to an external desktop/debug tool while preserving the same gateway
-and protocol boundary.
+router and its bidirectional port. `RabbitMqConnector` represents the production-shaped transport;
+`EngineeringApiConnector` provides the engineering transport used by SI-02 while
+preserving the same UpstreamData/gateway boundary.
 
-`ApplicationId` remains a runtime/application identity and is not assumed to be an upstream protocol address. Protocol-level exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `NodeId`.
+`ApplicationId` remains a runtime/application identity and is not assumed to be an upstream address. System-level upstream exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `NodeId`.
 
 Runtime-wide infrastructure may be shared where that does not leak mutable TimingNode state. The Java baseline shares physical execution workers by functional role while each TimingNode keeps its own bounded serial command lane and node-local TagProcessor state. Logging infrastructure, HTTP server infrastructure, connector infrastructure, configuration loading and network monitoring may likewise be shared where their semantics remain isolated.
 
@@ -2534,49 +2547,47 @@ The **external device and network topology is owned by the SSSD**, because RFID/
 #### Upstream messaging
 
 Upstream messaging is a semantic system boundary, not a RabbitMQ API.
-`UpstreamProtocol` in Domain defines the messages and state semantics exchanged
-with the upstream system. It uses `TimingData` for timing-record payloads and
-also owns synchronisation/reconciliation and system-level protocol messages such
-as ping/pong.
+`UpstreamData` in Domain defines the transport-independent semantic messages exchanged
+through IF-06. It may carry canonical `TimingData` and also reference-data,
+reconciliation and status messages. TimingData identity/order remains owned by IF-05.
 
-`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They
-carry the encoded protocol representation and own transport/session resources;
-they do not become owners of TimingData fields or upstream protocol semantics.
-`UpstreamMessageRouter` owns application-level target resolution after semantic
-protocol decoding. A system-level operation is delivered through the owning
-`TimingSystem.UpstreamMessagePort`; a TimingNode-targeted operation is resolved
-by `NodeId`, submitted through that TimingNode's serial boundary and
-enters/leaves through `TimingNode.UpstreamMessagePort`. Protocol-level
-operations such as heartbeat/status and synchronisation control therefore do
-not need to be forced through a TimingNode.
+`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry an
+encoded UpstreamData representation and own transport/session resources; they do not
+become owners of TimingData fields or UpstreamData semantics.
+`UpstreamMessageRouter` owns application-level target resolution after UpstreamData
+decoding. A system-level message is delivered through the owning
+`TimingSystem.UpstreamMessagePort`; a TimingNode-targeted message is resolved by
+`NodeId`, submitted through that TimingNode's serial boundary and enters/leaves through
+`TimingNode.UpstreamMessagePort`.
 
 ```text
-external upstream system
+external upstream / SI-02 backend peer
         |
-        +--> RabbitMqConnector --+
-        +--> DebugConnector -----+--> UpstreamGateway
-                                      |
-                                      | encoded UpstreamProtocol
-                                      v
-                               UpstreamProtocol
-                                 /          \
-                                /            +--> TimingData
-                               v
-                      UpstreamMessageRouter
-                         |              |
-                         v              +--> NodeId
-                   TimingSystem                |
-              UpstreamMessagePort              v
-               status / ping              TimingNode
-                                       UpstreamMessagePort
+        +--> RabbitMqConnector --------+
+        +--> EngineeringApiConnector --+--> UpstreamGateway
+                                             |
+                                             | encoded UpstreamData
+                                             v
+                                        UpstreamData
+                                             |
+                                             +---- carries ----> TimingData
+                                             |
+                                             v
+                                    UpstreamMessageRouter
+                                       |              |
+                                       v              +--> NodeId
+                                 TimingSystem                |
+                            UpstreamMessagePort              v
+                                                       TimingNode
+                                                  UpstreamMessagePort
 ```
 
 Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
 connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
-Public protocol semantics and TimingData compatibility remain owned by Domain.
+Public UpstreamData semantics and TimingData compatibility remain owned by Domain.
 
-`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. Protocol messages that belong to the configured TimingSystem use its `UpstreamMessagePort` and `UpstreamProtocol`/`SystemStatus`; they do not need to be forced through a TimingNode.
+`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides target resolution without becoming a generic internal message bus. System-level UpstreamData uses the configured TimingSystem's `UpstreamMessagePort` and `SystemStatus`; it does not need to be forced through a TimingNode.
 
 #### RFID
 
@@ -2771,7 +2782,7 @@ SI-01 uses one small **typed provider/extension mechanism** for implementation f
 
 ```text
 TimingDataProvider
-UpstreamProtocolProvider
+UpstreamDataProvider
 AntennaProvider
 CanProtocolProvider
 DisplayProtocolProvider
