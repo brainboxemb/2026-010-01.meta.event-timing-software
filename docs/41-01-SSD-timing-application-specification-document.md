@@ -432,9 +432,8 @@ sequence identity.
 :specifies: UC-010  
 :depends_on: SI01-REQ-063, SI01-REQ-077, IF06-REQ-014, IF06-REQ-015  
 
-For each configured upstream source and TimingNode, SI-01 shall maintain the
-accepted RaceData revision and complete live RegistrationId-to-TeamId assignment
-snapshot. A higher valid revision shall atomically replace the current snapshot.
+For each TimingNode, SI-01 shall maintain one accepted RaceData revision and one
+complete live RegistrationId-to-TeamId assignment snapshot. A higher valid revision shall atomically replace the current snapshot.
 Assignments that attempt to redefine a stable EventData TeamId, duplicate one
 TeamId across multiple live RegistrationIds, or otherwise violate the dataset
 contract shall reject the whole snapshot.
@@ -446,8 +445,8 @@ contract shall reject the whole snapshot.
 :specifies: UC-010  
 :depends_on: SI01-REQ-063, IF06-REQ-014, IF06-REQ-016  
 
-For each configured upstream source and TimingNode, SI-01 shall maintain the
-accepted StageStartTimes revision and complete TeamId-to-start-definition snapshot.
+For each TimingNode, SI-01 shall maintain one accepted StageStartTimes revision and
+one complete TeamId-to-start-definition snapshot.
 A higher valid revision shall atomically replace the current snapshot. A start
 definition shall contain local race time-of-day and may contain an explicit local
 date. A valid start time may be accepted before the corresponding TeamId is
@@ -1300,7 +1299,7 @@ worker.
 
 `StageStartTimes` is passive TimingNode-local reference state containing the
 latest accepted complete `TeamId -> StartDefinition` snapshot and its accepted
-revision per configured upstream source. A StartDefinition contains local
+revision. A StartDefinition contains local
 race time-of-day plus an optional explicit local date. It owns data only; the
 TimingNode execution boundary owns mutation/order and StageTiming owns elapsed
 time interpretation.
@@ -1318,8 +1317,7 @@ time interpretation.
 `RaceData` is passive TimingNode-local **live race state**, separate from the
 stable EventData profile. Its v1 promoted content is the latest accepted complete
 `RegistrationId -> TeamId` snapshot for registrations that do not already have
-a stable EventData TeamId, plus the accepted revision per configured upstream
-source. Reserve/dynamic participant assignment is the principal use case.
+a stable EventData TeamId, plus the accepted revision. Reserve/dynamic participant assignment is the principal use case.
 RaceData cannot override stable EventData identity and remains ordered with
 other TimingNode state through the owning TimingNode execution boundary.
 :::
