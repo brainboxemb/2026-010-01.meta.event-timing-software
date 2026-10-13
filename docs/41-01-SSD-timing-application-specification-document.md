@@ -462,6 +462,19 @@ head, backend contiguous sequence and pending count. Reference-data revision sta
 shall remain separately observable from TimingData progress.
 :::
 
+:::{req} Re-establish backend progress on connect and reconnect  
+:id: SI01-REQ-085  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-081, SI01-REQ-082, IF06-REQ-021  
+
+When a configured upstream target becomes operationally connected or reconnects,
+SI-01 shall make its current node-scoped SYNC state available and shall treat the
+backend progress for that connection as unknown until fresh backend SYNC state is
+received. SI-01 shall not treat cached progress or transport/session success from an
+earlier connection as proof that the backend still holds those TimingData records.
+:::
+
 :::{req} Resolve TeamId without rewriting TimingData  
 :id: SI01-REQ-077  
 :status: D  
@@ -883,6 +896,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-082 | UC-011/012 + IF06-REQ-019 | replay original records after reconnect/backend rollback |
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
 | SI01-REQ-084 | IF06-REQ-020 + SI01-REQ-081 | observable per-target/node synchronization state |
+| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SYNC state after connect/reconnect |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
