@@ -215,13 +215,16 @@ nodes:
   label: "NodeDataProcessor"
   subtitle: "Data Lane • commands • ordered queries"
   items:
-    - label: "TimingDataStore"
-      object_id: TimingDataStore
+    - label: "Node data"
+      object_id: TimingNodeData
       items:
         - label: LogBook
           object_id: LogBook
-        - label: TimingDataPersistence
+        - label: "Persistence"
           object_id: TimingDataPersistence
+          items:
+            - label: TimingDataPersistence
+            - label: DefaultTimingDataPersistence
     - label: "RaceData"
       object_id: TimingNodeRaceData
       items:
