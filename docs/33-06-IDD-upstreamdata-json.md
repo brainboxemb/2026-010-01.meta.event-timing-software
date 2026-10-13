@@ -104,8 +104,75 @@ Batching is delivery convenience and never creates another TimingData sequence.
 
 ### REFERENCE_DATA
 
-The envelope and type are reserved in v1. Exact RaceData/StageStartTimes members are
-defined only after Step-7 D02 promotes their semantic contract.
+REFERENCE_DATA is node-scoped and therefore requires `nodeId`. The default v1
+representation uses complete revisioned snapshots:
+
+| Member | Type | Meaning |
+| --- | --- | --- |
+| `dataset` | string | `RACE_DATA` or `STAGE_START_TIMES` |
+| `rev` | integer | positive monotone revision for source + node + dataset |
+| `items` | array | complete current snapshot; empty array clears the dataset |
+
+The configured upstream source is connector context and is not repeated in the JSON.
+
+RaceData example:
+
+```json
+{
+  "v": 1,
+  "type": "REFERENCE_DATA",
+  "nodeId": "A",
+  "data": {
+    "dataset": "RACE_DATA",
+    "rev": 12,
+    "items": [
+      {
+        "regId": "RT-R-0001",
+        "teamId": "0042"
+      }
+    ]
+  }
+}
+```
+
+Each RaceData item contains exactly one RegistrationId-to-TeamId live assignment.
+Duplicate `regId` or duplicate `teamId` entries are invalid. Application
+validation additionally rejects an assignment that attempts to redefine a
+RegistrationId whose stable TeamId is already supplied by EventData.
+
+StageStartTimes example:
+
+```json
+{
+  "v": 1,
+  "type": "REFERENCE_DATA",
+  "nodeId": "A",
+  "data": {
+    "dataset": "STAGE_START_TIMES",
+    "rev": 7,
+    "items": [
+      {
+        "teamId": "0042",
+        "startTime": "23:59:50.00"
+      },
+      {
+        "teamId": "0043",
+        "startTime": "00:02:00.00",
+        "startDate": "2026-10-14"
+      }
+    ]
+  }
+}
+```
+
+`startTime` is local civil race time in `HH:mm:ss` or `HH:mm:ss.SS` form.
+`startDate`, when present, is an ISO local date (`YYYY-MM-DD`). The codec
+preserves these semantic values; SI-01 resolves them using the configured
+event/race time zone. Duplicate `teamId` entries are invalid.
+
+For both datasets, `rev` is in the JSON-safe positive integer range
+1..9007199254740991. Unknown datasets are unsupported rather than reinterpreted.
+The representation does not define patch/delta updates in v1.
 
 ### SYNC
 
@@ -299,7 +366,10 @@ format.
 | IF06-REQ-001 | JSON represents transport-independent UpstreamData |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
-| IF06-REQ-004/005 | REFERENCE_DATA family reserved for D02-defined semantic payload |
+| IF06-REQ-004/005 | REFERENCE_DATA carries addressed dataset + revision + complete snapshot |
+| IF06-REQ-014 | `rev` + complete `items` snapshot realizes atomic freshness semantics |
+| IF06-REQ-015 | RACE_DATA items carry live `regId` -> `teamId` assignment |
+| IF06-REQ-016 | STAGE_START_TIMES items carry `teamId`, local `startTime` and optional `startDate` |
 | IF06-REQ-006 | SYNC family reserved for D03-defined progress semantics |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
@@ -309,7 +379,6 @@ format.
 
 ## Open design points
 
-- Final REFERENCE_DATA JSON members after D02.
 - Final SYNC JSON members after D03.
 - Final common STATUS JSON members.
 - Whether TIMING_DATA remains single-source per message or permits an explicit
