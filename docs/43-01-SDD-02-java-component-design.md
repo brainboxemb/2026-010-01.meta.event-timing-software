@@ -245,7 +245,7 @@ The TimingNode implementation is grouped as:
 application/
   ApplicationId.java
   ApplicationConductor.java        application lifecycle / activation order
-  UpstreamMessageRouter.java       when upstream messaging is implemented
+  UpstreamMessageRouter.java       resolves node-scoped upstream targets by NodeId
   ConfigurationControl.java        configuration query/update use-cases
 infra/
   lifecycle/
@@ -272,11 +272,10 @@ domain/
     TimingSystemId.java                 internal composition/simulation identity
     SystemConductor.java                first system coordinator; node lifecycle + inventory
     SystemStatus.java                   complete current TimingSystem overview
-    UpstreamMessagePort.java            system-level upstream messages
   node/
     TimingNode.java
     TimingNodeId.java
-    UpstreamMessagePort.java          TimingNode-level upstream messages
+    UpstreamMessagePort.java          node-scoped upstream semantic handler
     NextUpTeams.java                  passive per-node state
     NextUpTeamsStore.java             persistence port for next-up analysis history
     ReserveTagMap.java               passive reserve RegistrationId -> TeamId state
@@ -913,7 +912,7 @@ mirror the hardware name.
 
 :::{design} Domain data, upstream and system-status composition
 :id: DD-DomainIntegration
-:elaborates: UpstreamMessageRouter, SystemUpstreamMessagePort, TimingNodeUpstreamMessagePort, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
+:elaborates: UpstreamMessageRouter, TimingNodeUpstreamMessagePort, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
 
 Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
 semantics, routing boundaries and SystemStatus aggregation.
@@ -929,7 +928,7 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics, not TimingData or UpstreamData semantics. `UpstreamMessageRouter` resolves decoded semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
+`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics, not TimingData or UpstreamData semantics. Current v1 messages that operate on TimingNode state are node-scoped. `UpstreamMessageRouter` therefore performs only application-level `NodeId` target resolution and delegates the complete semantic message to `TimingNode.UpstreamMessagePort`; the node port owns protocol semantics and mutable node-state decisions on the TimingNode serial lane. No `TimingSystem.UpstreamMessagePort` is part of the current design because no current upstream semantic message requires a TimingSystem target. `SystemId` remains an internal composition/simulation identity and is not required on the wire.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
