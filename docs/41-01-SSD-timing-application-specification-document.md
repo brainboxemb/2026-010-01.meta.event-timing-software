@@ -411,20 +411,22 @@ outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
-:::{req} Maintain upstream PING/PONG lifecycle  
+:::{req} Maintain upstream PING request/answer lifecycle  
 :id: SI01-REQ-075  
 :status: D  
 :depends_on: IF06-REQ-011, IF06-REQ-012, IF06-REQ-013  
 
-For each configured upstream connector, SI-01 shall send one heartbeat-purpose PING
-immediately when the connector reaches its operational connected state and shall
-continue sending heartbeat PING every 30 seconds while that connection remains
-operational. SI-01 shall process PONG responses preserving the corresponding PING
+For each configured upstream connector, SI-01 shall send one
+`PING(action=REQUEST, purpose=HEARTBEAT)` immediately when the connector
+reaches its operational connected state and shall continue sending a heartbeat
+PING REQUEST every 30 seconds while that connection remains operational.
+SI-01 shall process PING ANSWER responses preserving the corresponding request
 purpose. Disconnect/deactivation shall stop that connector's periodic heartbeat task.
-A later reconnect shall start a new cycle with an immediate heartbeat PING. Explicit
-manual PING exchanges shall not reset the heartbeat schedule. Correlation identifiers
-may be supported by a specific implementation but are not mandatory IF-06 semantics.
-PING/PONG activity shall not append TimingData or consume TimingData sequence identity.
+A later reconnect shall start a new cycle with an immediate heartbeat PING REQUEST.
+Explicit manual PING requests shall not reset the heartbeat schedule. Correlation
+identifiers may be supported by a specific implementation but are not mandatory
+IF-06 semantics. PING request/answer activity shall not append TimingData or
+consume TimingData sequence identity.
 :::
 
 :::{req} Answer inbound upstream PING  
@@ -432,11 +434,13 @@ PING/PONG activity shall not append TimingData or consume TimingData sequence id
 :status: D  
 :depends_on: IF06-REQ-013  
 
-When SI-01 receives a valid upstream PING (heartbeat or manual), it shall send
-one PONG preserving the request's purpose through the same configured upstream
-semantic connection. An implementation-specific correlation identifier, if supplied,
-shall be echoed according to that representation. The response shall not append
-TimingData or consume TimingData sequence identity.
+When SI-01 receives a valid upstream PING with `action = REQUEST` (heartbeat or
+manual purpose), it shall send one PING with `action = ANSWER` preserving the
+request's purpose through the same configured upstream semantic connection.
+SI-01 shall not reply to a PING ANSWER with another answer. An optional
+implementation-specific correlation identifier, if supplied, shall be echoed
+according to that representation. The response shall not append TimingData or
+consume TimingData sequence identity.
 :::
 
 #### Errors and recovery
@@ -761,8 +765,8 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-062 | UC-007 | smart-display network boundary |
 | SI01-REQ-063 | UC-010 + IF06-REQ-004/005 | UpstreamData reference-data ingress |
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
-| SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second PING with matching PONG tracking |
-| SI01-REQ-076 | IF06-REQ-013 | answer inbound PING with correlated PONG |
+| SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
+| SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with purpose-preserving PING ANSWER |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
