@@ -518,17 +518,18 @@ corresponding reserve mapping exists; the two RaceData sections shall not create
 false delivery-order dependency.
 :::
 
-:::{req} Derive StageTiming from committed timing and current reference state  
+:::{req} Derive StageTiming from committed timing and current race state  
 :id: SI01-REQ-080  
 :status: D  
 :depends_on: SI01-REQ-077, SI01-REQ-079, SI01-REQ-042  
 
-StageTiming shall derive elapsed/ranking information from committed TimingData,
+StageTiming shall derive elapsed stage-timing information from committed TimingData,
 the resolved TeamId and the current StageStartTimes state. A RaceData change may
 change the derived StageTiming result but shall not alter, remove, renumber or
 recommit the underlying TimingData. When TeamId or stage start data
 is unavailable, SI-01 shall expose the result as unresolved/incomplete rather
-than inventing a value.
+than inventing a value. Ranking/grouping policy is a separate read-side concern
+and shall not be inferred without an explicit rule.
 :::
 
 :::{req} Maintain upstream PING request/answer lifecycle  
@@ -1410,9 +1411,10 @@ separate TimingNode-local state populated by ordered RACE_DATA messages.
 `StageTiming` is a derived/read-side domain capability. It resolves TeamId using
 stable EventData first and TimingNode ReserveTagMap only as fallback, then combines
 the accepted committed TimingData effective time with that TeamId's current
-StageStartTimes definition. It derives elapsed/ranking results without becoming
-another writer and without changing TimingData or reference state. Missing
-TeamId/start data yields an unresolved result.
+StageStartTimes definition. It derives elapsed stage-timing results without becoming
+another writer and without changing TimingData or live race state. Missing TeamId/start
+data yields an unresolved result. Ranking/grouping may consume StageTiming later, but
+StageTiming itself does not invent that policy.
 
 For a time-only start definition, StageTiming uses the configured event/race
 time zone and the established rollover rule: resolve the most recent valid
