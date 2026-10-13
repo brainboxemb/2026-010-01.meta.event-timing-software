@@ -431,7 +431,7 @@ delivery success shall not remove a record from semantic pending state.
 
 After connection/reconnection or receipt of upstream-system progress behind the local
 committed head, SI-01 shall replay the missing retained TimingData in source order
-using each record's original NodeId, sequence and semantic content. If backend
+using each record's original NodeId, sequence and semantic content. If upstream-system
 progress is lower than a previously observed value, SI-01 shall treat the current
 upstream-system state as requiring replay rather than assuming an older transport session
 still proves synchronization.
