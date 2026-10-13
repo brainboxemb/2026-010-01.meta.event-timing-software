@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Close A01/V01 by requalifying the existing multi-topology baseline on Java main
+      revision 7d87344725d9deb8c91bfda524b35c085b53b401. VC-ST1-007 and VC-ST1-008
+      both pass in the integrated -Psystem-test run, confirming independent node
+      addressing, sequence isolation, separate LogBooks and restart recovery.
+  - date: '2026-10-13'
+    change: >-
       Complete D04 engineering-backoffice transport design. EngineeringApiBackofficeConnector
       reuses IF-03 POST /api/v1/dev/backoffice/message and the existing SI-02 event
       WebSocket with role=backoffice; outbound semantic messages are UPSTREAM_DATA events.
@@ -96,26 +102,27 @@ activities:
   - id: A01
     lane: application
     kind: integration
-    state: next
+    state: done
     note: >-
-      Adopt the existing multi-node composition as the Step-7 baseline rather than
-      adding a second topology model. Requalify current one-system/two-node and
-      two-system/one-node-each configurations for the upcoming upstream/reference path.
+      Adopt the existing multi-node composition unchanged as the Step-7 baseline.
+      Current one-system/two-node and two-system/one-node-each configurations remain
+      the application topology used by upcoming upstream/reference work.
 
   - id: V01
     lane: verification
     kind: verification
-    state: planned
+    state: done
     depends_on: [A01]
     note: >-
-      Requalify node addressing, sequence isolation, separate physical LogBooks and
-      restart recovery using the existing multi-topology black-box fixtures. This is
-      foundation evidence only; it does not prove reference-data or backoffice behaviour.
+      Requalified on Java main revision
+      7d87344725d9deb8c91bfda524b35c085b53b401: VC-ST1-007 and VC-ST1-008 pass
+      in the integrated black-box system-test run. This remains foundation evidence
+      only; it does not prove reference-data or backoffice behaviour.
 
   - id: A02
     lane: application
     kind: implementation
-    state: planned
+    state: next
     depends_on: [D01, D02, V01]
     note: >-
       Implement node-scoped semantic reference-data ingress and application-owned
