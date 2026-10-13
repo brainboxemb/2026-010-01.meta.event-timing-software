@@ -158,15 +158,39 @@ same semantic TimingNode state.
 ### Data synchronization
 
 Synchronization is metadata around semantic source state. It is not a second
-TimingData stream.
+TimingData stream and it does not introduce delivery sequence numbers.
 
-Synchronization may refer to TimingData source progress, reference-data freshness
-or pending outbound work, but shall preserve the source identities owned by those
-data models.
+For TimingData, each side advertises the **highest contiguous IF-05 source sequence**
+it currently knows for one NodeId:
 
-The detailed acknowledgement, retry, duplicate/idempotency and pending-work rules
-are refined by Step-7 D03. They shall not use transient transport/session identity
-as a replacement for committed TimingData identity.
+- SI-01 advertises its highest locally committed sequence;
+- the backend advertises its highest contiguously accepted sequence;
+- sequence 0 means no TimingData is known yet for that node.
+
+The backend-advertised contiguous sequence is the semantic acknowledgement boundary.
+A transport/session acknowledgement, publisher confirm, HTTP success or queue delivery
+receipt does **not** by itself advance semantic synchronization state.
+
+For each configured logical upstream target and NodeId, SI-01 derives pending TimingData
+from its committed LogBook and the backend's advertised sequence. If local head is 42 and
+the backend knows through 39, records 40..42 are pending. A reconnect or backend recovery
+may report a lower sequence than SI-01 saw previously; SI-01 shall then replay the
+retained committed records after that sequence rather than assuming the older transport
+session was authoritative.
+
+Retransmission uses the original TimingData values unchanged. A repeated record with the
+same NodeId + sequence and the same semantic content is idempotent. The same record key
+with different semantic content is a synchronization conflict and shall not overwrite
+either source silently. New records shall advance backend progress only through a
+contiguous source sequence; a gap cannot advance the contiguous acknowledgement point.
+
+SYNC may also advertise current reference-data revisions. For SI-01 these are the
+accepted RaceData and StageStartTimes revisions; for the backend they are its current
+authoritative revisions. Reference-data mismatch is repaired through REFERENCE_DATA
+snapshots rather than embedding reference payloads in SYNC.
+
+Multiple configured upstream targets maintain independent synchronization progress.
+Target/session identity never becomes TimingData identity.
 
 ### PING request / answer lifecycle
 
@@ -259,14 +283,20 @@ A rejected snapshot shall not be partially applied.
 
 ### IF06-OP-03 SYNC
 
-This operation exchanges enough semantic state to determine whether either side has
-pending or missing integration work.
+This bidirectional operation advertises the sender's current semantic state for one
+addressed TimingNode:
 
-The operation may refer to TimingData source progress and reference-data freshness,
-but it shall not renumber TimingData or substitute transport/session counters for the
-IF-05 source sequence.
+- highest contiguous TimingData sequence known by the sender, where 0 means none;
+- current known/accepted RaceData revision, when any;
+- current known/accepted StageStartTimes revision, when any.
 
-Detailed acknowledgement and retry policy remains a D03 design decision.
+The receiver compares that state with its own source state. SI-01 uses backend TimingData
+progress to derive pending outbound records and replay them in source order. Reference
+revision differences are reconciled by sending the applicable REFERENCE_DATA snapshot.
+
+SYNC state is cumulative state, not a request/response correlation protocol. It may be
+sent on initial connection, reconnect, after meaningful progress, or when either peer
+needs to re-establish synchronization.
 
 ### IF06-OP-04 STATUS
 
@@ -452,6 +482,44 @@ backend connectors/transports. Selecting another transport shall not redefine Ti
 reference-data or synchronization semantics.
 :::
 
+:::{ifreq} Synchronize by contiguous TimingData source sequence  
+:id: IF06-REQ-017  
+:status: D  
+
+For one NodeId, SYNC shall represent the sender's highest contiguous TimingData
+source sequence. Sequence 0 shall mean no TimingData is known. The backend's value
+shall act as the semantic acknowledgement boundary used by SI-01 to determine which
+committed records remain pending for that upstream target.
+:::
+
+:::{ifreq} Keep transport acknowledgement separate from semantic acknowledgement  
+:id: IF06-REQ-018  
+:status: D  
+
+Transport/session delivery success shall not by itself mark committed TimingData as
+semantically synchronized. Pending state may advance only from backend semantic state
+that identifies accepted source progress.
+:::
+
+:::{ifreq} Make TimingData retransmission idempotent by record identity  
+:id: IF06-REQ-019  
+:status: D  
+
+Retransmission shall preserve the original NodeId, source sequence and TimingData
+content. Re-receiving the same record key with the same semantic content shall be
+idempotent. Re-receiving the same record key with different semantic content shall
+be treated as a synchronization conflict and shall not silently overwrite data.
+:::
+
+:::{ifreq} Reconcile reference-data freshness through SYNC state  
+:id: IF06-REQ-020  
+:status: D  
+
+SYNC shall be able to advertise the known RaceData and StageStartTimes revisions for
+the addressed TimingNode. Revision mismatch shall be reconciled using the applicable
+REFERENCE_DATA snapshot and shall not create another reference-data revision namespace.
+:::
+
 :::{ifreq} Atomic revisioned reference snapshots  
 :id: IF06-REQ-014  
 :status: D  
@@ -525,8 +593,9 @@ identity or create TimingData/LogBook records.
 
 - Whether later RaceData or StageStartTimes versions need patch/delta operations in
   addition to the v1 complete-snapshot model.
-- Acknowledgement, retry, duplicate/idempotency and pending-sync rules
-  (Step-7 D03).
+- Exact operational retry/backoff timing; semantic replay/idempotency and pending-work
+  rules are defined, while connector-specific retry timing remains a D04/implementation
+  concern.
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.
 - Timeout/health policy for missing or late PING ANSWER messages.
