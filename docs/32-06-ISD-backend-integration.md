@@ -86,6 +86,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
+| Ping | SI-01 -> Backend | prove that an operational upstream connection is active |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
@@ -135,6 +136,27 @@ The detailed acknowledgement, retry, duplicate/idempotency and pending-work rule
 are refined by Step-7 D03. They shall not use transient transport/session identity
 as a replacement for committed TimingData identity.
 
+### Ping lifecycle
+
+`PING` is an UpstreamData message used to show that the configured upstream
+connection remains operational.
+
+For each active upstream connector:
+
+- when the connector first reaches its operational **CONNECTED** state, SI-01 sends one
+  PING immediately;
+- while that connection remains operational, SI-01 sends another PING every **30 seconds**;
+- when the connector leaves the operational connected state, periodic PING generation
+  stops;
+- after a later reconnect, a new cycle begins with another immediate PING followed by
+  the 30-second period.
+
+PING is connection/upstream activity. It is **not TimingData**, does not consume a
+TimingData sequence number and does not create or modify a LogBook record.
+
+IF-06 currently defines no corresponding PONG requirement. A transport may have its own
+lower-level keepalive mechanism, but that does not replace the semantic PING above.
+
 ## Operation identifiers
 
 Operations use stable semantic identifiers independent from transport.
@@ -145,6 +167,7 @@ Operations use stable semantic identifiers independent from transport.
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
 | `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
+| `IF06-OP-05 PING` | SI-01 -> Backend | indicate an operational upstream connection |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -206,6 +229,15 @@ Integration status may expose:
 
 Transport-specific diagnostic detail may be added by an implementation, but the
 common semantic status shall remain transport-independent.
+
+### IF06-OP-05 PING
+
+PING has no TimingData payload and no TimingData record identity. Its semantic meaning is
+limited to an operational upstream-connection heartbeat.
+
+The first PING follows the connector transition to operational CONNECTED immediately.
+Subsequent PING messages are generated at a 30-second period while that same connection
+remains operational.
 
 ## Failure semantics
 
@@ -348,6 +380,25 @@ depend on deployment-specific wire-format classes or private source.
 The same applicable UpstreamData semantics shall be usable through different configured
 backend connectors/transports. Selecting another transport shall not redefine TimingData,
 reference-data or synchronization semantics.
+:::
+
+:::{ifreq} Immediate upstream PING on connect  
+:id: IF06-REQ-011  
+:status: D  
+
+When a configured upstream connector reaches its operational connected state, SI-01
+shall send one PING UpstreamData message immediately.
+:::
+
+:::{ifreq} Periodic upstream PING while connected  
+:id: IF06-REQ-012  
+:status: D  
+
+While a configured upstream connector remains operationally connected after its initial
+PING, SI-01 shall send a further PING every 30 seconds. PING generation shall stop when
+that connector is no longer operationally connected and shall restart with an immediate
+PING after a later reconnect. PING shall not consume TimingData sequence identity or
+create TimingData/LogBook records.
 :::
 
 ## Open points
