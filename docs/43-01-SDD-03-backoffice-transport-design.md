@@ -154,9 +154,17 @@ adding another SI-01 listener port or another SI-02 connection lifecycle.
 It is composed as a normal SI-01 backoffice connector, but uses the already-established
 engineering interface:
 
-- **IF-03 HTTP/JSON** for SI-02 to submit synthetic inbound semantic backoffice messages;
-- **IF-03 WebSocket events** for SI-01 to expose outbound semantic messages and connector
-  status back to SI-02.
+- **IF-03 HTTP/JSON** `POST /api/v1/dev/backoffice/message` for SI-02 to submit
+  structured inbound UpstreamData;
+- the **existing IF-03 WebSocket event connection** at
+  `/api/v1/events?role=backoffice` for SI-01 outbound UpstreamData plus normal
+  status/events.
+
+There is no additional listener port and SI-02 does not open a second WebSocket
+connection for the Backend Simulator. The backoffice role designates the existing
+event connection as the one active engineering backend peer. After its normal
+STATUS_SNAPSHOT baseline is sent, that connection drives the Engineering API
+connector's operational CONNECTED state; close/overload makes it DISCONNECTED.
 
 This transport is for engineering and verification. It does not redefine IF-06 and does
 not make IF-03 the production backoffice interface.
@@ -177,9 +185,9 @@ semantic UpstreamData boundary
 UpstreamMessageRouter / normal SI-01 path
 ```
 
-The payload at the engineering connector boundary is structured `UpstreamData` using
-the public/default JSON representation plus only the IF-03 wrapper metadata needed for
-that engineering operation/event.
+The HTTP request body is one structured public/default `UpstreamData` object.
+Outbound messages are wrapped only by the established IF-03 event envelope as
+`eventType = UPSTREAM_DATA`; its `payload` is the same UpstreamData object.
 Do not tunnel a pre-serialized RabbitMQ frame or proprietary production message as an
 opaque string through IF-03.
 
@@ -187,17 +195,59 @@ The same SI-02 Backend Simulator can therefore edit/send synthetic RaceData and
 StageStartTimes, inspect outbound TimingData/synchronisation state, and exercise
 acknowledgement/synchronization behaviour without direct access to SI-01 Java objects.
 
+### Engineering connector lifecycle and wiring
+
+`EngineeringApiBackofficeConnector` is one normal BackofficeConnector implementation.
+Presentation/IF-03 code owns HTTP/WebSocket mechanics; the connector owns the engineering
+peer lifecycle and forwards decoded UpstreamData through the same
+`UpstreamMessageRouter` used by RabbitMQ.
+
+Conceptually:
+
+```text
+HttpEndpoint POST /dev/backoffice/message
+                  |
+                  v
+EngineeringApiBackofficeConnector
+                  |
+                  v
+          UpstreamMessageRouter
+
+UpstreamMessageRouter / publisher
+                  |
+                  v
+EngineeringApiBackofficeConnector
+                  |
+                  v
+WebSocketEndpoint role=backoffice
+       eventType=UPSTREAM_DATA
+```
+
+Only one backoffice-role peer is active at a time. Generic IF-03 event clients remain
+independent and do not receive UPSTREAM_DATA. Existing bounded WebSocket backpressure
+policy applies; if the backoffice peer is closed for overload, semantic TimingData
+remains recoverable from LogBook + SYNC progress.
+
+The SI-02 Backend Simulator owns the peer behavior, not SI-01 test shortcuts. It shall
+be able to inspect raw structured UpstreamData, send reference snapshots and SYNC state,
+auto-answer PING REQ with PING ANS preserving optional mode/pingId, send manual PING,
+and deliberately disconnect/reconnect for recovery tests.
+
 ### ST-2 scenarios
 
-Candidate scenarios include:
+ST-2 scenarios include:
 
-- submit source/node-specific reference data from SI-02 through IF-03;
-- verify it reaches the correct semantic source path;
-- trigger normal TimingNode/application behaviour;
-- observe outbound semantic backoffice events in SI-02;
-- reconnect IF-03 Events and rebuild the relevant engineering view;
-- exercise acknowledgement, pending-work and synchronization behaviour;
-- repeat against one or multiple TimingNode/source combinations.
+- connect SI-02's normal event stream with `role=backoffice` and observe the normal
+  status baseline followed by immediate PING/SYNC UpstreamData;
+- submit RaceData and StageStartTimes through the HTTP backoffice operation and inspect
+  their semantic APPLIED/DUPLICATE/STALE/conflict outcomes;
+- observe outbound TIMING_DATA and SYNC UpstreamData in the Backend Simulator;
+- let SI-02 answer PING REQ automatically and allow explicit manual PING in either
+  direction;
+- make SI-02 advertise backend `timingSeq` through SYNC to drive pending/replay tests;
+- disconnect/reconnect the existing IF-03 event connection and verify fresh SYNC state
+  plus replay from the backend's current contiguous sequence;
+- repeat against configured bindings for one or multiple TimingNodes.
 
 This profile verifies backoffice semantics and application routing. It deliberately does
 not prove RabbitMQ connection/channel/consumer behaviour.
@@ -626,8 +676,6 @@ Temporary identifiers only.
 
 ## Open questions
 
-- What exact IF-03 HTTP operation and WebSocket event schema should carry the engineering backoffice envelope?
-- Which acknowledgement/synchronization controls need to be exposed in the SI-02 Backend Simulator?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
