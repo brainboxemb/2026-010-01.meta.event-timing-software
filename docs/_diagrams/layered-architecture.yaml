@@ -206,6 +206,15 @@ nodes:
   notation: component
   layout: {x: 75, y: 667, w: 280, h: 50}
 
+- id: system-status-domain
+  object_id: SystemStatus
+  group: timing-system-aggregate
+  label: "SystemStatus"
+  subtitle: "current system overview"
+  kind: service
+  notation: component
+  layout: {x: 75, y: 732, w: 280, h: 50}
+
 # TimingNode is the active serial ownership boundary. Its internals are grouped
 # by architectural responsibility; concrete classes are listed only as contents
 # of those areas rather than promoted to peer architecture components.
