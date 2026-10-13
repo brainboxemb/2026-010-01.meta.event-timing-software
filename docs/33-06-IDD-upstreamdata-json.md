@@ -119,7 +119,7 @@ Example:
   "nodeId": "A",
   "seq": 123,
   "data": {
-    "reserveTagMap": [
+    "teamAssignments": [
       {
         "op": "SET",
         "regId": "RT-R-0001",
@@ -130,7 +130,7 @@ Example:
       {
         "op": "SET",
         "teamId": "0042",
-        "startTime": "23:59:50.00"
+        "start": "23:59:50.00"
       }
     ]
   }
@@ -146,8 +146,8 @@ v1 sections are optional:
 
 | Section | Key | Operations |
 | --- | --- | --- |
-| `reserveTagMap` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
-| `stageStartTimes` | `teamId` | `SET` with `startTime` and optional `startDate`; `DEL` removes the definition |
+| `teamAssignments` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
+| `stageStartTimes` | `teamId` | `SET` with one `start` TimingTimestamp value; `DEL` removes the definition |
 
 At least one non-empty supported change section is required. An omitted section means
 “no change”; it never means “clear that entire state”.
@@ -161,7 +161,7 @@ Reserve-tag mapping example for removal:
   "nodeId": "A",
   "seq": 124,
   "data": {
-    "reserveTagMap": [
+    "teamAssignments": [
       {
         "op": "DEL",
         "regId": "RT-R-0001"
@@ -171,13 +171,19 @@ Reserve-tag mapping example for removal:
 }
 ```
 
-The map intentionally uses `regId`: stable EventData already maps both physical
-reserve tags (for example `TT-R-0001-1/2`) to `RT-R-0001`. RACE_DATA supplies
-the live team assignment only.
+The assignment uses `regId`: EventData resolves physical TagIds to their
+RegistrationId, while RACE_DATA supplies only the live RegistrationId-to-TeamId
+assignment. The UpstreamData contract does not classify that assignment as a
+special reserve-tag concept.
 
-`startTime` is local civil race time in `HH:mm:ss` or `HH:mm:ss.SS` form.
-`startDate`, when present, is an ISO local date (`YYYY-MM-DD`). The codec preserves
-those semantic values; SI-01 owns event/race-time-zone interpretation.
+`start` is one textual `TimingTimestamp` value. The default v1 profile accepts:
+- time-only: `HH:mm:ss[.fraction]`;
+- local date/time: `YYYY-MM-DDTHH:mm:ss[.fraction]`;
+- absolute UTC: `YYYY-MM-DDTHH:mm:ss[.fraction]Z`.
+
+A source may provide time-only data; the codec shall not invent a date or zone.
+SI-01 StageTiming owns any event/race-time-zone and rollover interpretation needed
+to calculate an absolute start.
 
 One RACE_DATA message is validated and applied as one ordered unit. A sequence gap is
 not silently skipped and the message is not partially applied before its ACK point
@@ -485,7 +491,7 @@ format.
 | IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
 | IF06-REQ-004/005 | RACE_DATA carries node-scoped ordered incremental changes and explicit application outcome |
 | IF06-REQ-014 | top-level RACE_DATA `seq` + cumulative ACK realize ordered application |
-| IF06-REQ-015 | `reserveTagMap` carries live `regId` -> `teamId` SET/DEL changes |
+| IF06-REQ-015 | `teamAssignments` carries live `regId` -> `teamId` SET/DEL changes |
 | IF06-REQ-016 | `stageStartTimes` carries TeamId-scoped SET/DEL changes |
 | IF06-REQ-006 | SYNC/REQ preserve the authoritative source identity/order of each stream |
 | IF06-REQ-017 | SYNC uses `stream` + current source-head `seq` |
