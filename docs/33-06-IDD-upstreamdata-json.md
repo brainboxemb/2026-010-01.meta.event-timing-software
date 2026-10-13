@@ -53,7 +53,7 @@ The current public v1 design reserves these semantic families:
 
 - `TIMING_DATA`;
 - `REFERENCE_DATA`;
-- `RECONCILE`;
+- `SYNC`;
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -96,10 +96,10 @@ Batching is delivery convenience and never creates another TimingData sequence.
 The envelope and type are reserved in v1. Exact RaceData/StageStartTimes members are
 defined only after Step-7 D02 promotes their semantic contract.
 
-### RECONCILE
+### SYNC
 
 The envelope and type are reserved in v1. Exact progress/acknowledgement members are
-defined only after Step-7 D03 promotes reconciliation semantics.
+defined only after Step-7 D03 promotes synchronization semantics.
 
 ### STATUS
 
@@ -204,7 +204,7 @@ format.
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
 | IF06-REQ-004/005 | REFERENCE_DATA family reserved for D02-defined semantic payload |
-| IF06-REQ-006 | RECONCILE family reserved for D03-defined progress semantics |
+| IF06-REQ-006 | SYNC family reserved for D03-defined progress semantics |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
@@ -213,7 +213,7 @@ format.
 ## Open design points
 
 - Final REFERENCE_DATA JSON members after D02.
-- Final RECONCILE JSON members after D03.
+- Final SYNC JSON members after D03.
 - Final common STATUS JSON members.
 - Whether TIMING_DATA remains single-source per message or permits an explicit
   multi-source batch envelope in a later version.
