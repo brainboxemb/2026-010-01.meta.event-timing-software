@@ -504,6 +504,51 @@ the `A` in `RT-A` is not the TimingNode identifier. These cases inject the
 RegistrationIds directly through IF-03. They do not verify the separate RFID
 tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
+:::{vc} Verify upstream PING lifecycle  
+:id: VC-ST1-009  
+:verifies: SI01-REQ-075, IF06-REQ-011, IF06-REQ-012  
+
+**Purpose**
+
+Verify that one configured upstream connector publishes the semantic PING lifecycle
+without creating TimingData.
+
+**Setup**
+
+- SI-01 with one deterministic upstream connector using the Engineering API transport;
+- independent backend/engineering peer that can observe outbound UpstreamData;
+- empty TimingData persistence;
+- timing observation sufficient to distinguish immediate connect behaviour from the
+  30-second periodic interval.
+
+**Procedure**
+
+1. Start SI-01 with the upstream connector not yet operationally connected.
+2. Establish the backend/engineering connection and observe the connector reach its
+   operational connected state.
+3. Verify one PING is published immediately as part of that connection cycle rather than
+   waiting for the first 30-second period.
+4. Keep the connection operational and verify the next PING is generated after the
+   30-second period.
+5. Disconnect the upstream peer and verify no further PING is generated for that
+   disconnected connector.
+6. Reconnect and verify a new connection cycle again starts with an immediate PING,
+   followed by the 30-second period.
+7. Query/inspect TimingData history and verify the PING activity added no TimingData
+   record and consumed no TimingData sequence value.
+
+**Expected result**
+
+- immediate PING on each operational connect/reconnect;
+- periodic PING every 30 seconds while connected;
+- no PING task remains active after disconnect;
+- PING does not alter TimingData or LogBook history.
+
+The exact 30-second schedule should additionally have a deterministic component-level
+test around the scheduler boundary so CI does not rely only on long wall-clock sleeps.
+
+:::
+
 ## Evidence
 
 A VTS case defines what must be exercised and observed; it does not say that a
