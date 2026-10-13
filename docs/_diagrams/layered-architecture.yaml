@@ -216,7 +216,7 @@ nodes:
   subtitle: "UpstreamStream • node serial lane"
   kind: service
   notation: component
-  layout: {x: 620, y: 657, w: 260, h: 50}
+  layout: {x: 640, y: 857, w: 260, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -264,7 +264,7 @@ nodes:
   subtitle: "committed TimingData • node-local"
   kind: service
   notation: component
-  layout: {x: 640, y: 857, w: 220, h: 50}
+  layout: {x: 405, y: 857, w: 220, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -585,11 +585,11 @@ edges:
 
 - from: messaging-io
   to: upstream-message-port
-  from_anchor: {side: top, position: 1.00}
-  to_anchor: {side: right, position: 0.50}
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
   route:
-    - {x: 868, y: 1060}
-    - {x: 868, y: 682}
+    - {x: 665, y: 1048}
+    - {x: 770, y: 1048}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
