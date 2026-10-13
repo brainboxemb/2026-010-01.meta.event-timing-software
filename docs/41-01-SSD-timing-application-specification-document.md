@@ -1712,8 +1712,7 @@ connection carries messages for multiple NodeIds.
 The semantic `UpstreamData` model remains in Domain. Messaging transports and
 decodes the configured UpstreamData representation without interpreting
 `TimingData` fields or reimplementing synchronization/reference-data rules.
-Each TimingNode consumes only its own node-scoped stream; no application-level
-UpstreamMessageRouter is required.
+Each TimingNode consumes only its own node-scoped stream; no separate application-level router is required.
 :::
 
 ### Nested I/O component identities
@@ -2160,7 +2159,6 @@ The architecture deliberately uses **separate views** for software/domain decomp
 Application
   +-- ApplicationId
   +-- Conductor                 application lifecycle / activation order
-  +-- UpstreamMessageRouter     NodeId target resolution only
   |
   +-- 1..N TimingSystem
         +-- SystemId            internal composition/simulation identity
@@ -2176,8 +2174,8 @@ Application
               +-- data
               |     +-- TeamAssignments
               |     +-- StageStartTimes
-              |     +-- UniqueTeamRegistrations
               +-- timing
+              |     +-- UniqueTeamRegistrations
               |     +-- StageTiming
               +-- LogBook
                     +-- 0..N TimingData
