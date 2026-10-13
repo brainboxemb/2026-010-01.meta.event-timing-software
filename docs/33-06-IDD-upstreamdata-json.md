@@ -115,20 +115,21 @@ defined only after Step-7 D03 promotes synchronization semantics.
 ### PING (REQUEST / ANSWER)
 
 PING uses the **same UpstreamData message type** in both directions and for both
-request and response. Its `data` object has two mandatory, independent fields:
+request and answer. The `data` object has one required field and two optional fields:
 
 | Member | Values | Meaning |
 | --- | --- | --- |
-| `action` | `REQUEST`, `ANSWER` | whether this is the check or its response |
-| `purpose` | `HEARTBEAT`, `MANUAL` | whether the check is scheduled or explicitly initiated |
-| `pingId` | string, optional | reference correlation token for a specific exchange |
+| `action` | `REQUEST`, `ANSWER` (required) | initiates a check or answers one |
+| `mode` | `HEARTBEAT` (optional) | marks a scheduled heartbeat; absence means a manual/explicit check |
+| `pingId` | string (optional) | reference correlation token for a specific exchange |
 
-PING is system/upstream-scoped and does not require `nodeId`. A receiver of a
-`REQUEST` issues one `ANSWER` with the same `purpose`. An `ANSWER` is not
-answered again. The request/answer action is not the transport direction:
-either SI-01 or the backend may initiate a REQUEST.
+PING is system/upstream-scoped and does not require `nodeId`. A receiver of
+`action = REQUEST` issues one `action = ANSWER`. The answer preserves the
+request's optional `mode`: if absent in the request, it is absent in the
+answer. Neither party shall answer an ANSWER. A REQUEST may originate from
+SI-01 or from the backend.
 
-Heartbeat request:
+Heartbeat REQUEST:
 
 ```json
 {
@@ -136,12 +137,12 @@ Heartbeat request:
   "type": "PING",
   "data": {
     "action": "REQUEST",
-    "purpose": "HEARTBEAT"
+    "mode": "HEARTBEAT"
   }
 }
 ```
 
-Corresponding answer:
+Heartbeat ANSWER:
 
 ```json
 {
@@ -149,20 +150,44 @@ Corresponding answer:
   "type": "PING",
   "data": {
     "action": "ANSWER",
-    "purpose": "HEARTBEAT"
+    "mode": "HEARTBEAT"
   }
 }
 ```
 
-Manual checks use the same message structure with `purpose = MANUAL` and
-do not reset the scheduled heartbeat cycle. There is **no separate PONG
+Manual REQUEST (no `mode`):
+
+```json
+{
+  "v": 1,
+  "type": "PING",
+  "data": {
+    "action": "REQUEST"
+  }
+}
+```
+
+Manual ANSWER:
+
+```json
+{
+  "v": 1,
+  "type": "PING",
+  "data": {
+    "action": "ANSWER"
+  }
+}
+```
+
+The default v1 reader accepts missing `mode` as manual/explicit. It rejects an
+unsupported `mode` value rather than guessing it means manual. A manual request
+does not reset the periodic heartbeat cycle. There is **no separate PONG
 message family** in the default representation.
 
-A reference implementation may include the optional `pingId` on a REQUEST
-and echo the exact value on the corresponding ANSWER, for example
-`"pingId": "p-0001"`. The `pingId` is not required by the IF-06 interface
-and is not a TimingData or transport sequence. Old fixed-field protocol
-positions are not normative public JSON fields.
+A reference implementation may include optional `pingId` on a REQUEST and
+echo it on the corresponding ANSWER, for example `"pingId": "p-0001"`.
+It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
+Legacy fixed-field protocol positions are not normative public JSON fields.
 
 PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
 sequence identity. Its lifecycle/timing semantics are defined by
@@ -280,7 +305,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING carries action REQUEST/ANSWER and purpose HEARTBEAT/MANUAL; optional `pingId` supports reference correlation without consuming TimingData identity |
+| IF06-REQ-011/012/013 | PING carries required action REQUEST/ANSWER and optional mode HEARTBEAT (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
 
 ## Open design points
 
