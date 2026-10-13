@@ -340,14 +340,14 @@ initial delay: 0
 period:        30 seconds
 ```
 
-The first execution therefore publishes `PING(action=REQUEST, purpose=HEARTBEAT)`
+The first execution therefore publishes `PING(action=REQUEST, mode=HEARTBEAT)`
 immediately. Later executions publish heartbeat PING REQUEST messages at the
 30-second period while that connector remains operationally connected. The
 reference implementation may assign a connector-scoped opaque `pingId` to
 individual requests and track whether a PING ANSWER echoing that identifier has
 been observed. This is an implementation choice rather than an IF-06 interface
-obligation. An explicit manual PING request/answer exchange does not reset the
-heartbeat scheduler.
+obligation. A manual PING request omits `mode`; the answer does too.
+A manual request/answer exchange does not reset the heartbeat scheduler.
 
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
 cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
@@ -360,9 +360,9 @@ path. It bypasses TimingData sequence allocation and LogBook persistence because
 not a TimingData record.
 
 Inbound PING REQUEST is handled at the same upstream semantic boundary:
-SI-01 creates one PING ANSWER with the same heartbeat/manual purpose as the
-request and publishes it through the connector without entering the
-TimingData/LogBook path. Incoming PING ANSWER messages are processed as
+SI-01 creates one PING ANSWER retaining the request's optional `mode`
+(`HEARTBEAT` when present; absent for manual) and publishes it through
+the connector without entering the TimingData/LogBook path. Incoming PING ANSWER messages are processed as
 responses and must never trigger another answer. The reference codec echoes
 an optional incoming `pingId` when present.
 
@@ -598,7 +598,7 @@ Temporary identifiers only.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
-- **CAND-BO-018** — Each operationally connected upstream connector shall publish one immediate PING REQUEST with HEARTBEAT purpose and then another every 30 seconds until disconnect/deactivation; every valid PING REQUEST shall receive one purpose-preserving PING ANSWER (with optional implementation-specific correlation).
+- **CAND-BO-018** — Each operationally connected upstream connector shall publish one immediate PING REQUEST with HEARTBEAT purpose and then another every 30 seconds until disconnect/deactivation; every valid PING REQUEST shall receive one PING ANSWER preserving optional HEARTBEAT mode (manual requests omit mode; correlation remains optional).
 - **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
 - **CAND-BO-017** — Backoffice routing/fan-out shall remain separate from concrete connector transport/resource handling.
