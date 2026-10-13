@@ -269,11 +269,11 @@ domain/
   system/
     SystemConductor.java                TimingSystem coordination and TimingNode lifecycle
   node/
-    TimingNode.java                     active serial ownership boundary
-    TimingNodeLogic.java                package-private mutable node logic
+    TimingNode.java                     Data/Task Lane composition boundary
+    TimingNodeLogic.java                Data Lane-owned mutable domain logic
     upstream/
-      UpstreamMessagePort.java          dispatch + TimingNode-lane admission
-      UpstreamMessageTask.java          one upstream turn on node serial lane
+      UpstreamMessagePort.java          protocol dispatch on Task Lane
+      UpstreamMessageTask.java          bounded Task Lane upstream turn
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
@@ -346,17 +346,20 @@ io/
 
 platform/
   execution/
-    SerialExecutor.java                    bounded serial lane + lifecycle
-    SerialExecutorMetrics.java             lane-local queue/execution measurements
-    SerialScheduledExecutor.java           serial lane + delayed/fixed-delay scheduling
-    SerialScheduledExecutorMetrics.java    scheduled-lane measurements
-    CooperativeTaskRunner.java             cooperative task-runner contract
-    SerialTaskRunner.java                  cooperative turns on SerialExecutor
-    ScheduledTaskRunner.java               cooperative turns + delayed/result handling
-    CooperativeTaskController.java         wake/coalescing for component state machines
-    AbstractTask.java                      reusable child-task execution lifecycle
-    CooperativeTask.java                   one-step state-machine task contract
-    TaskStep.java                          AGAIN / AFTER / DONE continuation decision
+    executors/
+      SerialExecutor.java                    bounded serial lane
+      SerialExecutorMetrics.java             lane metrics
+      SerialScheduledExecutor.java           scheduled serial lane
+      SerialScheduledExecutorMetrics.java    scheduled-lane metrics
+    tasks/
+      CooperativeTask.java                   task contract
+      AbstractTask.java                      child-task lifecycle
+      CooperativeTaskController.java         wake/coalescing
+      TaskStep.java                          continuation decision
+    taskrunners/
+      CooperativeTaskRunner.java             runner contract
+      SerialTaskRunner.java                  runner on existing SerialExecutor
+      ScheduledTaskRunner.java               timed/cooperative runner
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -376,46 +379,41 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-The SI-01 SSD defines the execution topology and ownership rules: component-local
-logical serial lanes, one shared physical worker per functional role by default, separate
-Application/I/O execution boundaries, and measurement-driven physical parallelism.
+The architecture distinguishes two logical serial lanes **per TimingNode**:
+a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence,
+live reference data, derived registration state and ORDERED reads, and a
+**Task Lane** for node coordination, heartbeat and upstream protocol state.
+Both are bounded `SerialExecutor` instances, each with its own FIFO/admission/
+metrics, but both may use the **same Runtime-owned ExecutorService**.
+The TagProcessor retains its independent scheduled lane.
 
-The Java realization uses `SerialExecutor` for the TimingNode lane. Each TimingNode
-receives a distinct instance with its own bounded `ArrayBlockingQueue`, admission state
-and lane-local metrics. All instances use the Runtime-owned single-worker
-`ThreadPoolExecutor` for the TimingNode role.
-
-`SerialScheduledExecutor` realizes the TagProcessor scheduled serial lane. Each
-TagProcessor receives a distinct logical lane, while all such lanes use the Runtime-owned
-single-worker `ScheduledThreadPoolExecutor` for the TagProcessor role. Scheduled
-housekeeping and immediate work therefore preserve node-local ordering without creating a
-thread per processor.
-
-Runtime creates a logical `SerialExecutor` per TimingSystem `Conductor`
-over a shared coordination worker and a `SerialScheduledExecutor` per
-AntennaManager over the shared scheduled I/O worker.
-
-The lane classes receive their backing JDK executor as an external dependency; they never
-create, configure or shut down the physical worker themselves. Closing a logical lane
-therefore never shuts down a shared worker. Runtime retains physical-worker lifecycle
-ownership.
-
-The current Java baseline uses one physical worker for each of these Runtime roles:
+The Task Lane cannot read or mutate Data Lane-owned collections directly.
+Cross-lane commands, reads and immutable replies must be non-blocking and
+bounded; synchronous Future-waiting between lanes is forbidden when they can
+share a single physical worker. `SerialTaskRunner` executes cooperative
+steps on an existing lane and creates neither a worker nor another lane.
+A single physical worker cannot process two lane items concurrently:
+slow durable persistence can temporarily delay a heartbeat despite the
+independent logical queues. V01 measures the need for additional workers.
 
 ```text
-TimingNode     -> ThreadPoolExecutor(1)
-TagProcessor   -> ScheduledThreadPoolExecutor(1)
-System coordination -> ThreadPoolExecutor(1)
-shared I/O     -> ScheduledThreadPoolExecutor(1)
+shared Domain ExecutorService
+  ├── TimingNode A: Data Lane (SerialExecutor)
+  ├── TimingNode A: Task Lane (SerialExecutor)
+  ├── TimingNode B: Data Lane (SerialExecutor)
+  ├── TimingNode B: Task Lane (SerialExecutor)
+  └── TimingSystem Conductor lanes (SerialExecutor + SerialTaskRunner)
+
+shared scheduled TagProcessor executor
+  └── one SerialScheduledExecutor lane per TagProcessor
+
+shared scheduled I/O executor
+  └── bounded AntennaManager and I/O lanes
 ```
 
-This worker count realizes the SSD baseline for both Raspberry Pi Zero and Raspberry Pi 3
-Model B deployments. It is not derived from available CPU-core count. V01 measurement
-evidence is required before increasing a role's physical worker count.
-
-All Runtime-owned workers use the normal JVM priority. Tests that need asynchronous
-execution create and own their test worker separately, while deterministic package-local
-seams may use direct execution.
+Runtime owns physical workers, component/lifecycle owners own the logical
+lanes. The normal JVM thread priority baseline remains unchanged; physical
+parallelism is measurement-driven rather than derived from node or CPU count.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
@@ -937,11 +935,24 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics and any demultiplexing needed when one physical connection carries several NodeIds. Messaging exposes one node-scoped `UpstreamStream` per TimingNode; the Java contract therefore lives under `io.messaging`, not under Domain. `TimingNode.UpstreamMessagePort` consumes that stream but owns only semantic-family dispatch and admission to the existing TimingNode serial lane. Cohesive protocol state is delegated to `UpstreamHeartbeat` (PING/heartbeat), `UpstreamDataSync` (Central `RACE_DATA` sequence/ACK/REQ/SYNC) and `LogBookSync` (`TIMING_DATA` head/SYNC/REQ and synchronization in batches of at most 256 records). `UpstreamMessageTask` executes one upstream turn at a time on the existing TimingNode serial lane; none of these helpers owns another worker or executor. No Application router and no `TimingSystem.UpstreamMessagePort` is part of the current design. `SystemId` remains an internal composition/simulation identity and is not required on the wire.
+`UpstreamData` carries semantic RACE_DATA, TIMING_DATA, SYNC, ACK, REQ
+and PING messages. I/O connectors and UpstreamGateway own transport/session
+mechanics and NodeId routing. Messaging supplies a node-scoped non-blocking
+`UpstreamStream`; `UpstreamMessagePort` processes semantic messages on
+the **Task Lane**. `UpstreamHeartbeat`, `UpstreamDataSync` and `LogBookSync`
+own their corresponding protocol cursors/state there, but no extra worker.
 
-The `domain.node.upstream` package is deliberately a Domain helper package rather than a transport package. Its classes interpret semantic `UpstreamData` and mutate/read TimingNode-owned state while the node serial lane is current. The `io.messaging` package owns the non-blocking mailbox/transport boundary. This split prevents RabbitMQ/API/session concerns from leaking into the TimingNode while also keeping protocol-state helpers out of the generic `domain.node` package.
-
-Non-obvious ownership and sequencing invariants in these helpers shall be documented close to the code in accordance with DR-10. In particular, comments/Javadoc shall make the TimingNode-lane ownership, contiguous RACE_DATA sequence state, fixed synchronization-head rule and heartbeat scheduling ownership discoverable without reverse-engineering the complete port.
+RACE_DATA applies TeamAssignments and StageStartTimes changes atomically on
+the **Data Lane**, then the Task Lane advances the protocol sequence and
+sends ACK only after successful application. In-flight ordering must prevent
+a later RACE_DATA sequence overtaking an earlier one. TIMING_DATA replay
+requests the captured head and bounded (maximum 256 records) immutable
+batches from the Data Lane asynchronously. The Task Lane sends the batches,
+tracks replay progress and handles transport/session cancellation.
+Neither helper waits synchronously for the other lane. The LogBook and
+derived state remain Data Lane-owned, and send/retry logic stays outside the
+data transaction. Document these ownership, retry, cancellation and
+commit-before-ACK guarantees in code.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -2714,27 +2725,30 @@ JVM/OS combinations.
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBook reads and the local Event/EventSource publication boundary.
 
-The Java design implements the **Active Object pattern** for each TimingNode,
-but does not make `TimingNode` inherit from an `ActiveObject` base class.
-
-The architectural rule is simple:
+The Java design uses composition rather than an `ActiveObject` inheritance
+hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  +-- one bounded serial execution boundary
-  +-- at most one work item active on that lane
-  +-- physical TimingNode worker shared with other node lanes
-  |
-  +-- passive LogBook
-  +-- received TeamAssignments
-  +-- received StageStartTimes
-  +-- derived UniqueTeamRegistrations
-  |
-  +-- per-type store ports
+  ├── Data Lane  -> TimingNodeLogic, LogBook, persistence,
+  │                lifecycle/location, TeamAssignments, StageStartTimes,
+  │                UniqueTeamRegistrations
+  └── Task Lane  -> UpstreamMessagePort, heartbeat, protocol cursors,
+                   synchronization/replay coordination
 ```
 
-This gives one writer for all mutable per-node state and one clear ordering
-between registration, lifecycle and reference-data changes.
+The **Data Lane** is the sole writer for mutually consistent node data.
+A durable append and the resulting LogBook/derived-state publication remain
+one ordered transaction. INITIAL recovery runs as the first Data Lane task.
+The Task Lane cannot bypass that recovery to consume uninitialized data.
+Status CURRENT reads use a published immutable snapshot. ORDERED data
+queries and mutations enter the Data Lane, not the Task Lane.
+
+RACE_DATA and TIMING_DATA synchronization cross the boundary via bounded
+asynchronous commands and immutable results. No lane blocks on a Future
+belonging to the other lane while they may share one physical worker.
+Activation and shutdown must account for pending cross-lane replies before
+either lane is closed; no reply may ACK uncommitted data.
 
 ### Why composition instead of an ActiveObject base class
 
@@ -3271,28 +3285,13 @@ introduce events merely to replace an ordinary direct method call to one owned c
 
 ### Multiple TimingNodes
 
-The semantic requirement is one serial execution lane per TimingNode, not
-permanently one operating-system thread per node.
-
-The current realization is:
-
-```text
-1 TimingNode
-  -> 1 SerialExecutor
-       -> ThreadPoolExecutor(1 thread)
-       -> bounded ArrayBlockingQueue
-  -> passive state objects
-  -> store dependencies
-```
-
-The semantic requirement remains one serial lane per TimingNode, not one particular executor
-implementation forever. If later multi-node evidence shows that one JDK worker per node is
-too expensive, a shared execution implementation may be evaluated only if it preserves the
-same per-node ordering, bounded-admission and result semantics.
-
-The cross-cutting bounded-resource, single-writer, immutability and
-measurement-before-concurrency rules are owned by the SI-01 SSD. This SDD specifies the
-Java realization only where a concrete component boundary requires it.
+A TimingNode has one independent Data Lane and one independent Task Lane.
+Each lane uses its own bounded FIFO; other nodes have separate queues and
+state owners. The lanes share a Runtime-managed physical executor pool
+rather than creating one thread per node or per responsibility.
+This guarantees ordering and node ownership, but not simultaneous execution
+on a single physical worker. Runtime characterization verifies queue fairness
+and checks slow-persistence impact on protocol/heartbeat latency.
 
 :::
 
