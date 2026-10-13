@@ -3,6 +3,11 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
+      next: promote IF-06 backend semantic responsibilities before reference-data,
+      reconciliation or transport implementation proceeds.
+  - date: '2026-10-13'
+    change: >-
       Prepare Step 7 before activation. Existing SI-01 multi-node composition,
       node-scoped IF-03 addressing, separate LogBooks and restart recovery already
       have black-box coverage, so Step 7 adopts that as a baseline instead of
@@ -14,7 +19,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: planned
+    state: next
     note: >-
       Promote IF-06 Backend Integration as the semantic system interface. Define
       node/system addressing, inbound reference/start-time updates, outbound timing
