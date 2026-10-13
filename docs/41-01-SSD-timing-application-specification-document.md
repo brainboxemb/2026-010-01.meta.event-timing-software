@@ -411,6 +411,70 @@ outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
+:::{req} Derive pending TimingData from backend contiguous progress  
+:id: SI01-REQ-081  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-042, SI01-REQ-064, SI01-REQ-065, IF06-REQ-017, IF06-REQ-018  
+
+For each configured logical upstream target and TimingNode, SI-01 shall track the
+backend's latest known highest contiguous TimingData sequence. Pending outbound
+TimingData shall be the retained committed records after that sequence. Transport
+delivery success shall not remove a record from semantic pending state.
+:::
+
+:::{req} Replay retained TimingData after reconnect or backend rollback  
+:id: SI01-REQ-082  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-081, IF06-REQ-019  
+
+After connection/reconnection or receipt of backend progress behind the local
+committed head, SI-01 shall replay the missing retained TimingData in source order
+using each record's original NodeId, sequence and semantic content. If backend
+progress is lower than a previously observed value, SI-01 shall treat the current
+backend state as requiring replay rather than assuming an older transport session
+still proves synchronization.
+:::
+
+:::{req} Rebuild TimingData pending work without a second payload history  
+:id: SI01-REQ-083  
+:status: D  
+:specifies: UC-012, UC-013  
+:depends_on: SI01-REQ-042, SI01-REQ-081  
+
+The authoritative payload source for TimingData replay shall remain the TimingNode
+LogBook. SI-01 shall not require a second durable copy of the same TimingData merely
+to represent an outbound outbox. After restart, pending work may be rebuilt after
+the backend's semantic progress is known. Cached sync progress may support status or
+performance but shall not replace LogBook history or backend reconciliation.
+:::
+
+:::{req} Expose diagnosable synchronization state  
+:id: SI01-REQ-084  
+:status: D  
+:depends_on: SI01-REQ-081, IF06-REQ-020  
+
+For each configured logical upstream target and TimingNode, SI-01 shall expose enough
+state to distinguish unknown synchronization, synchronized state, pending TimingData
+and conflict/error. When backend progress is known, status shall expose local committed
+head, backend contiguous sequence and pending count. Reference-data revision state
+shall remain separately observable from TimingData progress.
+:::
+
+:::{req} Re-establish backend progress on connect and reconnect  
+:id: SI01-REQ-085  
+:status: D  
+:specifies: UC-011, UC-012  
+:depends_on: SI01-REQ-081, SI01-REQ-082, IF06-REQ-021  
+
+When a configured upstream target becomes operationally connected or reconnects,
+SI-01 shall make its current node-scoped SYNC state available and shall treat the
+backend progress for that connection as unknown until fresh backend SYNC state is
+received. SI-01 shall not treat cached progress or transport/session success from an
+earlier connection as proof that the backend still holds those TimingData records.
+:::
+
 :::{req} Resolve TeamId without rewriting TimingData  
 :id: SI01-REQ-077  
 :status: D  
@@ -828,6 +892,11 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-078 | UC-010 + IF06-REQ-014/015 | atomic revisioned RaceData snapshot |
 | SI01-REQ-079 | UC-010 + IF06-REQ-014/016 | atomic revisioned StageStartTimes snapshot |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
+| SI01-REQ-081 | UC-011/012 + IF06-REQ-017/018 | pending TimingData from backend contiguous sequence |
+| SI01-REQ-082 | UC-011/012 + IF06-REQ-019 | replay original records after reconnect/backend rollback |
+| SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
+| SI01-REQ-084 | IF06-REQ-020 + SI01-REQ-081 | observable per-target/node synchronization state |
+| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SYNC state after connect/reconnect |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |

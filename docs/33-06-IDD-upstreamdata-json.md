@@ -177,8 +177,48 @@ The representation does not define patch/delta updates in v1.
 
 ### SYNC
 
-The envelope and type are reserved in v1. Exact progress/acknowledgement members are
-defined only after Step-7 D03 promotes synchronization semantics.
+SYNC is node-scoped and therefore requires `nodeId`. It advertises the sender's
+current semantic progress; it is not a correlated request/answer exchange.
+
+Example:
+
+```json
+{
+  "v": 1,
+  "type": "SYNC",
+  "nodeId": "A",
+  "data": {
+    "timingSeq": 42,
+    "refs": {
+      "RACE_DATA": 12,
+      "STAGE_START_TIMES": 7
+    }
+  }
+}
+```
+
+Members:
+
+| Member | Type | Meaning |
+| --- | --- | --- |
+| `timingSeq` | integer | highest contiguous TimingData source sequence known by sender; 0 means none |
+| `refs` | object, optional | dataset revision state known by sender |
+| `refs.RACE_DATA` | integer, optional | current RaceData revision; 0 may denote no snapshot |
+| `refs.STAGE_START_TIMES` | integer, optional | current StageStartTimes revision; 0 may denote no snapshot |
+
+`timingSeq` uses the JSON-safe range 0..9007199254740991. Reference revision
+values use 0..9007199254740991 in SYNC; value 0 is the synchronization-state
+sentinel for “no snapshot known” and is not itself a valid REFERENCE_DATA snapshot
+revision.
+
+The same message shape is used in both directions. SI-01's `timingSeq` describes
+its local committed head; the backend's value describes its highest contiguously
+accepted record. A transport acknowledgement does not substitute for this value.
+
+SYNC contains no TimingData payload. Missing or older peer progress causes replay
+of the original TIMING_DATA records; record identities and source sequence values
+are never regenerated for retransmission. Reference revision mismatch is repaired
+with REFERENCE_DATA rather than placing snapshot payloads inside SYNC.
 
 ### PING (REQUEST / ANSWER)
 
@@ -371,7 +411,12 @@ format.
 | IF06-REQ-014 | `rev` + complete `items` snapshot realizes atomic freshness semantics |
 | IF06-REQ-015 | RACE_DATA items carry live `regId` -> `teamId` assignment |
 | IF06-REQ-016 | STAGE_START_TIMES items carry `teamId`, local `startTime` and optional `startDate` |
-| IF06-REQ-006 | SYNC family reserved for D03-defined progress semantics |
+| IF06-REQ-006 | SYNC preserves IF-05 source identity and order |
+| IF06-REQ-017 | `timingSeq` carries cumulative contiguous TimingData progress |
+| IF06-REQ-018 | SYNC progress, not transport acknowledgement, advances semantic state |
+| IF06-REQ-019 | replay reuses original TimingData identity/content |
+| IF06-REQ-020 | optional `refs` advertises RaceData/StageStartTimes revisions |
+| IF06-REQ-021 | fresh node-scoped SYNC exchange re-establishes state after connect/reconnect |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
@@ -380,7 +425,6 @@ format.
 
 ## Open design points
 
-- Final SYNC JSON members after D03.
 - Final common STATUS JSON members.
 - Whether TIMING_DATA remains single-source per message or permits an explicit
   multi-source batch envelope in a later version.
