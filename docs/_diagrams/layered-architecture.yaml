@@ -224,7 +224,6 @@ nodes:
             - label: TimingDataPersistence
             - label: DefaultTimingDataPersistence
     - label: "RaceData"
-      object_id: TimingNodeRaceData
       items:
         - label: TeamAssignments
           object_id: TeamAssignments
@@ -236,7 +235,6 @@ nodes:
         - label: UniqueTeamRegistrations
           object_id: UniqueTeamRegistrations
         - label: StageTiming
-          object_id: StageTiming
   kind: service
   notation: packaging-component
   layout: {x: 405, y: 662, w: 330, h: 238}
@@ -249,11 +247,8 @@ nodes:
     - label: "UpstreamHandler"
       items:
         - label: UpstreamHeartbeat
-          object_id: UpstreamHeartbeat
         - label: UpstreamDataSync
-          object_id: UpstreamDataSync
         - label: LogBookSync
-          object_id: LogBookSync
   kind: service
   notation: packaging-component
   layout: {x: 755, y: 662, w: 340, h: 238}
