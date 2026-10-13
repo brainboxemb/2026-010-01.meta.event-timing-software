@@ -129,9 +129,6 @@ TimingApplication
         +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
-        +-- UpstreamProtocol
-        |     +-- heartbeat / ping
-        |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
