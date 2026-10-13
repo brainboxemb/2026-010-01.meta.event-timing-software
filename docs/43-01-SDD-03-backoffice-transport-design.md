@@ -340,7 +340,7 @@ initial delay: 0
 period:        30 seconds
 ```
 
-The first execution therefore publishes `PING(action=REQUEST, mode=HEARTBEAT)`
+The first execution therefore publishes `PING(op=REQUEST, mode=HEARTBEAT)`
 immediately. Later executions publish heartbeat PING REQUEST messages at the
 30-second period while that connector remains operationally connected. The
 reference implementation may assign a connector-scoped opaque `pingId` to
