@@ -89,14 +89,16 @@ The current semantic families are:
 
 | Family | Typical direction | Purpose |
 | --- | --- | --- |
-| TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
-| ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
-| Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
+| TimingData transfer | SI-01 -> Central System | transfer committed TimingData records using their existing LogBook/IF-05 sequence |
+| RaceData transfer | Central System -> SI-01 | transfer ordered incremental race-state changes using a Central-owned source sequence |
+| SYNC | bidirectional | advertise the current source head of one ordered stream |
+| ACK | SI-01 -> Central System | acknowledge contiguously applied RaceData through a sequence number |
+| REQ | bidirectional | request retransmission of TIMING_DATA or RACE_DATA from a sequence number |
 | Ping request / answer | bidirectional | one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check |
-| Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
+| Status | bidirectional | expose upstream/source synchronization and connector health relevant to integration |
 
-The public RaceData, StageStartTimes and synchronization semantics are defined below.
-Their representations must remain compatible with the common requirements in this ISD.
+The public RaceData and synchronization semantics are defined below. Their
+representations must remain compatible with the common requirements in this ISD.
 
 ### TimingData relationship
 
@@ -113,83 +115,86 @@ When an UpstreamData message carries TimingData:
 A transport may batch multiple TimingData records into one delivery, but the
 contained records retain their individual IF-05 identity and ordering.
 
-### ReferenceData relationship
+### RaceData relationship
 
-ReferenceData messages update race/event state owned by one addressed TimingNode.
-The public v1 semantic datasets are `RACE_DATA` and `STAGE_START_TIMES`.
+`RACE_DATA` is the ordered Central System -> SI-01 stream for live race-state
+changes owned by one addressed TimingNode. It is **not** a complete snapshot and
+does not carry a separate revision number.
 
-Both datasets use **complete snapshot** semantics. Each snapshot carries a positive
-monotone revision for its TimingNode + dataset scope.
-Application rules are:
+Each RACE_DATA message carries one positive source `seq` for that NodeId. The
+Central System allocates this sequence monotonically starting at 1. SI-01 keeps the
+highest contiguously applied RaceData sequence for each TimingNode.
 
-- a higher revision is validated as a whole and, when valid, atomically replaces
-  the current snapshot for that scope;
-- a lower revision is stale and is not applied;
-- an equal revision with semantically equal content is an idempotent duplicate and
-  does not change state;
-- an equal revision with different content is conflicting and is rejected;
-- an empty valid snapshot explicitly clears the current live dataset;
-- validation failure never partially changes the current snapshot.
+The current v1 RaceData payload can contain one or more incremental change sections:
 
-`RACE_DATA` owns **live participant assignment** that is not stable EventData.
-Its public v1 payload is a set of `RegistrationId -> TeamId` assignments. A
-RegistrationId that already resolves to a stable TeamId through the configured
-`EventData` profile shall not be remapped by RaceData. This keeps stable
-event/profile identity separate from event-time race state.
+- `reserveTagMap` changes the live reserve RegistrationId -> TeamId assignment;
+- `stageStartTimes` changes TeamId-scoped stage-start definitions.
 
-`STAGE_START_TIMES` owns the current `TeamId -> stage start definition` snapshot
-for the TimingNode. A start definition contains a local race time-of-day and may
-also contain an explicit local date. Time-zone resolution is SI-01 domain/application
-behaviour; it is not owned by the transport or codec.
+Each change uses an explicit operation such as `SET` or `DEL`. Absence of a
+section means no change to that part of RaceData. Receiving a RACE_DATA message
+therefore never implies that omitted state must be cleared.
 
-ReferenceData therefore always defines:
+The reserve mapping is keyed by RegistrationId rather than physical TagId because
+stable EventData already resolves both reserve tags, for example
+`TT-R-0001-1/2 -> RT-R-0001`. RaceData supplies only the live
+`RT-R-0001 -> TeamId` assignment. A RegistrationId that already resolves to a
+stable TeamId through EventData shall not be remapped by RaceData.
 
-- addressed TimingNode;
-- dataset;
-- monotone revision;
-- complete snapshot payload;
-- complete acceptance, stale/duplicate no-op, or explicit rejection outcome.
+A RACE_DATA message is validated as one ordered unit before its sequence advances:
 
-Connector/source identity does not create a second reference-data state. Multiple
-transport paths that deliver the same node/dataset revision therefore converge on the
-same semantic TimingNode state.
+- `seq = lastApplied + 1`: validate and apply all changes; only after successful
+  application advance `lastApplied` and send ACK for that sequence;
+- `seq <= lastApplied`: do not apply the changes again; the receiver may repeat
+  its current cumulative ACK;
+- `seq > lastApplied + 1`: a gap exists; do not apply the out-of-order message and
+  request RACE_DATA again from `lastApplied + 1`.
+
+This makes loss detectable without repeatedly sending the full race state. If SI-01
+does not persist RaceData across a restart, it starts with RaceData sequence 0 and
+can rebuild state by requesting RACE_DATA from sequence 1.
 
 ### Data synchronization
 
-Synchronization is metadata around semantic source state. It is not a second
-TimingData stream and it does not introduce delivery sequence numbers.
+Synchronization uses the **existing source sequence of each stream**. IF-06 does not
+create one generic delivery sequence over all message types.
 
-For TimingData, each side advertises the **highest contiguous IF-05 source sequence**
-it currently knows for one NodeId:
+The two ordered streams are:
 
-- SI-01 advertises its highest locally committed sequence;
-- the backend advertises its highest contiguously accepted sequence;
-- sequence 0 means no TimingData is known yet for that node.
+- `TIMING_DATA`: SI-01 -> Central System, ordered by the existing IF-05/LogBook
+  `seqNr` for one NodeId;
+- `RACE_DATA`: Central System -> SI-01, ordered by the Central-owned RACE_DATA
+  `seq` for one NodeId.
 
-The backend-advertised contiguous sequence is the semantic acknowledgement boundary.
-A transport/session acknowledgement, publisher confirm, HTTP success or queue delivery
-receipt does **not** by itself advance semantic synchronization state.
+`SYNC` advertises the sender's current source head for one stream. Sequence 0 means
+that source currently has no records/messages for the addressed TimingNode.
 
-For each configured logical upstream target and NodeId, SI-01 derives pending TimingData
-from its committed LogBook and the backend's advertised sequence. If local head is 42 and
-the backend knows through 39, records 40..42 are pending. A reconnect or backend recovery
-may report a lower sequence than SI-01 saw previously; SI-01 shall then replay the
-retained committed records after that sequence rather than assuming the older transport
-session was authoritative.
+The receiving peer compares that source head with its own highest contiguous received
+or applied sequence. When it is behind, it sends `REQ` for that stream from the first
+missing sequence:
 
-Retransmission uses the original TimingData values unchanged. A repeated record with the
-same NodeId + sequence and the same semantic content is idempotent. The same record key
-with different semantic content is a synchronization conflict and shall not overwrite
-either source silently. New records shall advance backend progress only through a
-contiguous source sequence; a gap cannot advance the contiguous acknowledgement point.
+- Central System -> SI-01: `REQ(stream=TIMING_DATA, fromSeq=N)` requests LogBook
+  TimingData beginning at IF-05 `seqNr=N`;
+- SI-01 -> Central System: `REQ(stream=RACE_DATA, fromSeq=N)` requests Central
+  RaceData beginning at RACE_DATA `seq=N`.
 
-SYNC may also advertise current reference-data revisions. For SI-01 these are the
-accepted RaceData and StageStartTimes revisions; for the backend they are its current
-authoritative revisions. Reference-data mismatch is repaired through REFERENCE_DATA
-snapshots rather than embedding reference payloads in SYNC.
+`fromSeq=1` therefore means “send the complete retained stream from its beginning”.
+A deployment-specific legacy codec may map this semantic request to an older special
+wire value such as a RECV/package-id value of `0000`; that legacy sentinel is not
+the public source sequence itself.
 
-Multiple configured upstream targets maintain independent synchronization progress.
-Target/session identity never becomes TimingData identity.
+For RaceData, `ACK(stream=RACE_DATA, seq=N)` confirms that SI-01 has successfully
+applied the stream contiguously through N. ACK is sent only after semantic application;
+transport/session delivery acknowledgement is not a substitute. A sequence gap causes
+REQ rather than advancement of the ACK point.
+
+For TimingData, the LogBook remains the authoritative replay source. SI-01 may publish
+newly committed records proactively, but loss does not require a second durable outbox:
+after reconnect or SYNC, the Central System can request any retained TimingData sequence
+again through REQ. Retransmission preserves the original IF-05 record identity and
+content.
+
+PING, ACK, REQ and SYNC are control messages. They do not consume TimingData `seqNr`
+or RaceData `seq` values themselves.
 
 ### PING request / answer lifecycle
 
@@ -235,12 +240,14 @@ Operations use stable semantic identifiers independent from transport.
 
 | Operation | Direction | Meaning |
 | --- | --- | --- |
-| `IF06-OP-01 DELIVER_TIMING_DATA` | SI-01 -> Backend | deliver committed TimingData without changing IF-05 identity/order |
-| `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
-| `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
+| `IF06-OP-01 DELIVER_TIMING_DATA` | SI-01 -> Central System | deliver committed TimingData without changing IF-05 identity/order |
+| `IF06-OP-02 APPLY_RACE_DATA` | Central System -> SI-01 | validate and apply one ordered incremental RaceData message |
+| `IF06-OP-03 SYNC` | bidirectional | advertise one source stream's current head sequence |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
 | `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with op REQ and optional HB mode |
 | `IF06-OP-06 PING_ANSWER` | bidirectional | answer a PING request with op ANS, retaining the request's optional mode |
+| `IF06-OP-07 ACK` | SI-01 -> Central System | acknowledge contiguously applied RACE_DATA through sequence N |
+| `IF06-OP-08 REQ` | bidirectional | request TIMING_DATA or RACE_DATA retransmission from sequence N |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -261,41 +268,54 @@ Required behaviour:
 - permit retransmission for synchronization;
 - never imply that transport delivery rewrites local committed data.
 
-### IF06-OP-02 APPLY_REFERENCE_DATA
+### IF06-OP-02 APPLY_RACE_DATA
 
 Input:
 
 - addressed TimingNode;
-- dataset `RACE_DATA` or `STAGE_START_TIMES`;
-- positive monotone revision;
-- complete semantic snapshot for that dataset.
+- positive Central-owned RACE_DATA `seq`;
+- one or more incremental RaceData changes.
 
 Outcome:
 
-- accepted and atomically applied;
-- accepted as an idempotent equal-revision duplicate with no state change;
-- not applied because the revision is stale;
-- rejected because the equal revision conflicts, the target/dataset is unsupported,
-  or the snapshot is semantically invalid.
-
-A rejected snapshot shall not be partially applied.
+- next expected sequence and all changes valid: apply the message as one ordered unit,
+  advance the contiguous RaceData sequence and emit ACK;
+- duplicate/already-applied sequence: do not apply again; cumulative ACK may be repeated;
+- sequence gap: do not apply the message and issue REQ RACE_DATA from the first missing
+  sequence;
+- semantically invalid change: do not advance the sequence and expose a diagnosable
+  rejection/conflict.
 
 ### IF06-OP-03 SYNC
 
-This bidirectional operation advertises the sender's current semantic state for one
+This bidirectional operation advertises one source stream's current head for an
 addressed TimingNode:
 
-- highest contiguous TimingData sequence known by the sender, where 0 means none;
-- current known/accepted RaceData revision, when any;
-- current known/accepted StageStartTimes revision, when any.
+- `stream = TIMING_DATA`: the TimingNode's current LogBook/IF-05 source head;
+- `stream = RACE_DATA`: the Central System's current RaceData source head.
 
-The receiver compares that state with its own source state. SI-01 uses backend TimingData
-progress to derive pending outbound records and replay them in source order. Reference
-revision differences are reconciled by sending the applicable REFERENCE_DATA snapshot.
+Sequence 0 means no data currently exists in that source stream. A receiver that is
+behind requests the missing range with IF06-OP-08 REQ. SYNC itself does not replay
+payloads and does not consume either source sequence.
 
-SYNC state is cumulative state, not a request/response correlation protocol. It may be
-sent on initial connection, reconnect, after meaningful progress, or when either peer
-needs to re-establish synchronization.
+### IF06-OP-07 ACK
+
+ACK confirms semantic application of an ordered source stream. In public v1 the
+required use is SI-01 acknowledging RACE_DATA. The ACK carries the addressed NodeId,
+`stream = RACE_DATA` and the highest contiguous sequence successfully applied.
+
+### IF06-OP-08 REQ
+
+REQ is bidirectional and carries:
+
+- addressed TimingNode;
+- `stream = TIMING_DATA | RACE_DATA`;
+- `fromSeq >= 1`.
+
+Central System uses TIMING_DATA REQ to request LogBook records beginning at IF-05
+sequence `fromSeq`. SI-01 uses RACE_DATA REQ to request Central messages beginning
+at RaceData sequence `fromSeq`. `fromSeq=1` means resend the retained stream from
+its beginning.
 
 ### IF06-OP-04 STATUS
 
@@ -421,17 +441,18 @@ TimingData record key or source sequence.
 :id: IF06-REQ-004  
 :status: D  
 
-IF-06 shall support backend-to-SI-01 reference-data updates with explicit semantic scope,
-dataset/type and sufficient freshness/version information for SI-01 to determine whether
-the update can be applied.
+IF-06 shall support Central System-to-SI-01 RACE_DATA messages with explicit NodeId,
+positive ordered source sequence and incremental race-state changes. RaceData source
+ordering shall be independent from TimingData source ordering.
 :::
 
 :::{ifreq} Explicit reference-data outcome  
 :id: IF06-REQ-005  
 :status: D  
 
-A reference-data update shall have an observable accepted/applied or rejected/not-applied
-outcome with enough semantic reason/status information for synchronization diagnosis.
+A RACE_DATA message shall have an observable applied, duplicate, gap or rejected
+outcome. SI-01 shall acknowledge only contiguously applied RaceData and shall expose
+enough reason/status information to diagnose a gap or invalid change.
 :::
 
 :::{ifreq} Synchronization preserves source identity  
@@ -485,19 +506,21 @@ reference-data or synchronization semantics.
 :id: IF06-REQ-017  
 :status: D  
 
-For one NodeId, SYNC shall represent the sender's highest contiguous TimingData
-source sequence. Sequence 0 shall mean no TimingData is known. The backend's value
-shall act as the semantic acknowledgement boundary used by SI-01 to determine which
-committed records remain pending for that upstream target.
+For one NodeId, SYNC shall advertise the current source head of one ordered stream.
+TIMING_DATA uses the TimingNode's existing IF-05/LogBook sequence and RACE_DATA uses
+the Central System's RaceData source sequence. Sequence 0 shall mean that the selected
+source stream currently contains no data. A receiver behind that head shall use REQ
+from its first missing sequence.
 :::
 
 :::{ifreq} Keep transport acknowledgement separate from semantic acknowledgement  
 :id: IF06-REQ-018  
 :status: D  
 
-Transport/session delivery success shall not by itself mark committed TimingData as
-semantically synchronized. Pending state may advance only from backend semantic state
-that identifies accepted source progress.
+Transport/session delivery success shall not replace source-sequence synchronization.
+For RACE_DATA, only successful ordered semantic application advances the ACK point.
+For TIMING_DATA, retained LogBook records remain replayable until the Central System
+no longer requests them during source synchronization.
 :::
 
 :::{ifreq} Make TimingData retransmission idempotent by record identity  
@@ -514,9 +537,10 @@ be treated as a synchronization conflict and shall not silently overwrite data.
 :id: IF06-REQ-020  
 :status: D  
 
-SYNC shall be able to advertise the known RaceData and StageStartTimes revisions for
-the addressed TimingNode. Revision mismatch shall be reconciled using the applicable
-REFERENCE_DATA snapshot and shall not create another reference-data revision namespace.
+IF-06 shall support bidirectional REQ by source sequence. Central System shall be able
+to request TIMING_DATA from an IF-05/LogBook sequence and SI-01 shall be able to request
+RACE_DATA from a Central source sequence. A request from sequence 1 shall mean replay
+from the retained beginning of that stream.
 :::
 
 :::{ifreq} Re-establish synchronization after connection changes  
@@ -524,41 +548,41 @@ REFERENCE_DATA snapshot and shall not create another reference-data revision nam
 :status: D  
 
 When an upstream semantic connection is established or re-established, the peers
-shall exchange fresh SYNC state for the applicable TimingNodes before treating that
-connection as synchronized. Progress remembered from an earlier transport/session
-shall not by itself prove current backend state. A backend TimingData sequence greater
-than SI-01's local committed head is a synchronization conflict and shall not cause
-SI-01 to invent or skip source records.
+shall exchange fresh SYNC source-head state for the applicable TimingNodes. Each
+receiver shall compare the advertised source head with its own highest contiguous
+received/applied position and request missing data with REQ. Progress remembered from
+an earlier transport/session shall not cause either source sequence to be skipped.
 :::
 
-:::{ifreq} Atomic revisioned reference snapshots  
+:::{ifreq} Ordered RaceData application and acknowledgement  
 :id: IF06-REQ-014  
 :status: D  
 
-REFERENCE_DATA shall identify one TimingNode, one supported dataset and a positive
-monotone revision. A valid higher-revision snapshot shall replace that dataset
-atomically; stale lower revisions shall not apply; an equal-revision equal-content
-snapshot shall be idempotent; and an equal-revision different-content snapshot
-shall be rejected as conflicting. Invalid snapshots shall not be partially applied.
+Each node-scoped RACE_DATA message shall carry a positive Central-owned source sequence.
+SI-01 shall apply only the next expected sequence, advance its contiguous RaceData
+position only after successful application, and then acknowledge that applied sequence.
+A duplicate shall not be applied twice. A sequence gap shall not be skipped and shall
+cause a RACE_DATA request from the first missing sequence.
 :::
 
 :::{ifreq} Separate stable EventData from live RaceData  
 :id: IF06-REQ-015  
 :status: D  
 
-The public `RACE_DATA` dataset shall carry live RegistrationId-to-TeamId
-assignments that are not stable EventData profile identity. It shall not redefine
-a stable RegistrationId-to-TeamId mapping supplied by EventData.
+RACE_DATA shall be able to carry incremental reserve-tag-map changes as
+RegistrationId-to-TeamId assignments that are not stable EventData profile identity.
+It shall not redefine a stable RegistrationId-to-TeamId mapping supplied by EventData.
+Physical reserve TagIds remain resolved to their reserve RegistrationId by EventData.
 :::
 
 :::{ifreq} Define StageStartTimes reference semantics  
 :id: IF06-REQ-016  
 :status: D  
 
-The public `STAGE_START_TIMES` dataset shall carry TeamId-scoped stage start
-definitions for the addressed TimingNode. Each start definition shall contain
-a local race time-of-day and may contain an explicit local date; transport and
-codec layers shall not perform elapsed-time or race-time-zone calculation.
+RACE_DATA shall be able to carry incremental TeamId-scoped stage-start-time changes.
+A SET start definition shall contain a local race time-of-day and may contain an
+explicit local date; DEL removes the current definition. Transport and codec layers
+shall not perform elapsed-time or race-time-zone calculation.
 :::
 
 :::{ifreq} Immediate upstream PING on connect  
@@ -602,11 +626,9 @@ identity or create TimingData/LogBook records.
 
 ## Open points
 
-- Whether later RaceData or StageStartTimes versions need patch/delta operations in
-  addition to the v1 complete-snapshot model.
-- Exact operational retry/backoff timing; semantic replay/idempotency and pending-work
-  rules are defined, while connector-specific retry timing remains a D04/implementation
-  concern.
+- Exact operational retry/backoff timing for repeated REQ/ACK when a peer remains
+  unavailable; source ordering and replay semantics are defined while connector timing
+  remains an implementation concern.
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.
 - Timeout/health policy for missing or late PING ANSWER messages.
