@@ -283,10 +283,8 @@ domain/
       RegistrationDuplicateFilter.java registration duplicate suppression
       TagProcessingPolicy.java          compiled processing policy
     timing/
-      StageTimingCalculator.java        read-side stage timing calculation
-      data/
-        StageTiming.java                immutable calculated result
-        StageTimingStatus.java          result status
+      StageTiming.java                  current elapsed-time list + ranking
+      StageTime.java                    one ranked team/registration time
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
