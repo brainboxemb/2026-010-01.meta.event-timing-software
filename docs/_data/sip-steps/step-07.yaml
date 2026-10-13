@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Shorten default PING JSON wire values: data.op now uses REQ / ANS
+      (request / answer), and the optional data.mode uses HB for heartbeat.
+      Mode remains absent for manually initiated checks. No protocol
+      semantic change, only compact default representation codes.
+  - date: '2026-10-13'
+    change: >-
       Settle the concise default PING payload: required data.op=REQUEST/ANSWER,
       optional data.mode=HEARTBEAT (missing mode means manual/explicit), and
       optional reference pingId for correlation. Answers preserve mode
