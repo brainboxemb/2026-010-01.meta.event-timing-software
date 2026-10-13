@@ -190,6 +190,7 @@ Current examples are:
 43-01-SDD-01-data-and-display-design
 43-01-SDD-02-java-component-design
 43-01-SDD-03-backoffice-transport-design
+43-02-SDD-01-lua-scripting-design
 44-01-GPD-java-design-rules
 
 50-SDE-01-software-development-environment
