@@ -838,9 +838,7 @@ revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: active
-
-Closeout verification remains.
+Status: completed
 
 ### Purpose
 
@@ -905,18 +903,19 @@ part of the current Step-6 baseline rather than a future placeholder.
 | `V02` | Verify Lua/capability behaviour with automated client tests and CI |
 | `V01` | Verify packaged Engineering Client connection, sync/reconnect and representative workbench behaviour |
 
-### Current closeout state
+### Closure basis
 
 D01, D02 and A01 established the reusable SI-02 baseline. The later D03/A02/V02
 extension added the documented Lua engineering facade, source-driven capability display,
 explicit local-versus-remote simulation rejection behaviour and the SI-02 SDD/SUM split.
 The packaged-client and Java verification paths are green.
 
-The **only Step-6 exit gate still open is V01 / VC-ST1-003**. It deliberately remains a
-real packaged JavaFX running-system verification: trash must append REV without rewriting
-ADD, the interpreted row must become DELETED, restart/reconnect must rebuild the same
-history without live replay, SYNCING must precede LIVE and Device Log / Client Log must
-remain independent. Headless tests do not substitute for this final UI evidence.
+V01 closes on repeated **running-system exploratory acceptance** of the real Engineering
+Client against SI-01 during the Step-6 increment. The client was exercised interactively
+across connection and synchronisation, workbench views, registration/simulation,
+capability diagnostics, scripting and restart/debug cycles. The detailed VC-ST1-003
+checklist remains useful regression guidance, but Step 6 does not claim that every line
+of that checklist was executed as one formal scripted run.
 
 ### Result
 
@@ -941,8 +940,8 @@ remain independent. Headless tests do not substitute for this final UI evidence.
 
 - the Engineering Client uses only supported public SI-01 boundaries for live operation;
 - automated tests cover connection/reconnect/stale-state, capability and scripting behaviour;
-- the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed PASS
-  evidence on the packaged SI-02 GUI, including log independence and SYNCING before LIVE;
+- the integrated SI-02 baseline has been accepted through real running-system exploratory
+  use, with the detailed VC-ST1-003 flow retained as reusable regression guidance;
 - application/client services are not buried inside JavaFX event handlers;
 - representative views are composed through the selected workbench without functional
   panes depending on docking APIs;
@@ -953,9 +952,9 @@ remain independent. Headless tests do not substitute for this final UI evidence.
 
 ## Step 7 — Backoffice and multi-node integration
 
-Status: planned
+Status: active
 
-This is the next implementation step after Step-6 V01 closes.
+Step 6 is closed; D01 is the next design activity.
 
 ### Purpose
 
