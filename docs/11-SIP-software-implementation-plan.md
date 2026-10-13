@@ -838,7 +838,9 @@ revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: active — closeout verification remaining
+Status: active
+
+Closeout verification remains.
 
 ### Purpose
 
@@ -951,7 +953,9 @@ remain independent. Headless tests do not substitute for this final UI evidence.
 
 ## Step 7 — Backoffice and multi-node integration
 
-Status: planned — next after Step-6 V01
+Status: planned
+
+This is the next implementation step after Step-6 V01 closes.
 
 ### Purpose
 
