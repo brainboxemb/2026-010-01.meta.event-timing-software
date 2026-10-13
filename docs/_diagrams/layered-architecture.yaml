@@ -213,7 +213,7 @@ nodes:
   object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
   label: "UpstreamMessagePort"
-  subtitle: "stream-driven • node serial lane"
+  subtitle: "UpstreamStream • node serial lane"
   kind: service
   notation: component
   layout: {x: 620, y: 657, w: 260, h: 50}
@@ -229,7 +229,7 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 405, y: 722, w: 215, h: 120}
+  layout: {x: 405, y: 722, w: 220, h: 120}
 
 - id: node-data
   object_id: TimingNodeData
@@ -242,7 +242,7 @@ nodes:
       object_id: StageStartTimes
   kind: service
   notation: packaging-component
-  layout: {x: 635, y: 722, w: 215, h: 120}
+  layout: {x: 640, y: 722, w: 220, h: 120}
 
 - id: node-timing
   object_id: TimingNodeTiming
@@ -255,7 +255,7 @@ nodes:
       object_id: StageTiming
   kind: service
   notation: packaging-component
-  layout: {x: 865, y: 722, w: 215, h: 120}
+  layout: {x: 875, y: 722, w: 220, h: 120}
 
 - id: logbook-domain
   object_id: LogBook
@@ -264,7 +264,7 @@ nodes:
   subtitle: "committed TimingData • node-local"
   kind: service
   notation: component
-  layout: {x: 635, y: 857, w: 215, h: 50}
+  layout: {x: 640, y: 857, w: 220, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -279,7 +279,7 @@ nodes:
   object_id: TimingData
   group: domain-layer
   label: "TimingData"
-  subtitle: "records • TimingTimestamp • factory • codec"
+  subtitle: "records • timestamp • factory • codec"
   kind: service
   notation: component
   layout: {x: 635, y: 956, w: 200, h: 50}
@@ -585,12 +585,11 @@ edges:
 
 - from: messaging-io
   to: upstream-message-port
-  label: "UpstreamStream"
   from_anchor: {side: top, position: 1.00}
   to_anchor: {side: right, position: 0.50}
   route:
-    - {x: 860, y: 1060}
-    - {x: 860, y: 682}
+    - {x: 868, y: 1060}
+    - {x: 868, y: 682}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
@@ -605,7 +604,7 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 513, y: 932}
+    - {x: 515, y: 932}
     - {x: 155, y: 932}
 
 - from: timing-node-aggregate
