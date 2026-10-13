@@ -58,7 +58,7 @@ The current public v1 design reserves these semantic families:
 - `TIMING_DATA`;
 - `REFERENCE_DATA`;
 - `SYNC`;
-- `PING` (REQUEST and ANSWER);
+- `PING` (REQ and ANS);
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -119,62 +119,62 @@ request and answer. The `data` object has one required field and two optional fi
 
 | Member | Values | Meaning |
 | --- | --- | --- |
-| `op` | `REQUEST`, `ANSWER` (required) | initiates a check or answers one |
-| `mode` | `HEARTBEAT` (optional) | marks a scheduled heartbeat; absence means a manual/explicit check |
+| `op` | `REQ`, `ANS` (required) | request or answer |
+| `mode` | `HB` (optional) | scheduled heartbeat; absence means manual/explicit |
 | `pingId` | string (optional) | reference correlation token for a specific exchange |
 
 PING is system/upstream-scoped and does not require `nodeId`. A receiver of
-`op = REQUEST` issues one `op = ANSWER`. The answer preserves the
+`op = REQ` issues one `op = ANS`. The answer preserves the
 request's optional `mode`: if absent in the request, it is absent in the
-answer. Neither party shall answer an ANSWER. A REQUEST may originate from
+answer. Neither party shall answer an `ANS`. A `REQ` may originate from
 SI-01 or from the backend.
 
-Heartbeat REQUEST:
+Heartbeat request (`REQ`):
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "op": "REQUEST",
-    "mode": "HEARTBEAT"
+    "op": "REQ",
+    "mode": "HB"
   }
 }
 ```
 
-Heartbeat ANSWER:
+Heartbeat answer (`ANS`):
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "op": "ANSWER",
-    "mode": "HEARTBEAT"
+    "op": "ANS",
+    "mode": "HB"
   }
 }
 ```
 
-Manual REQUEST (no `mode`):
+Manual request (`REQ`, no `mode`):
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "op": "REQUEST"
+    "op": "REQ"
   }
 }
 ```
 
-Manual ANSWER:
+Manual answer (`ANS`):
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "op": "ANSWER"
+    "op": "ANS"
   }
 }
 ```
@@ -184,8 +184,8 @@ unsupported `mode` value rather than guessing it means manual. A manual request
 does not reset the periodic heartbeat cycle. There is **no separate PONG
 message family** in the default representation.
 
-A reference implementation may include optional `pingId` on a REQUEST and
-echo it on the corresponding ANSWER, for example `"pingId": "p-0001"`.
+A reference implementation may include optional `pingId` on a `REQ` and
+echo it on the corresponding `ANS`, for example `"pingId": "p-0001"`.
 It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
 Legacy fixed-field protocol positions are not normative public JSON fields.
 
@@ -305,7 +305,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING carries required op REQUEST/ANSWER and optional mode HEARTBEAT (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
+| IF06-REQ-011/012/013 | PING carries required op REQ/ANS and optional mode HB (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
 
 ## Open design points
 
