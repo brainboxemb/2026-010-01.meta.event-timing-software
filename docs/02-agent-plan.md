@@ -261,58 +261,47 @@ At closure:
 
 AP-4 closed only the repository/tooling/framework-skeleton coordination goal. Subsequent SIP Steps 2, 3 and 4 have since closed; the current coordination focus is maintained separately below.
 
-## Current coordination focus — Step 6 closeout / Step 7 preparation
+## Current coordination focus — SIP Step 7
 
-The current implementation-planning focus is the **formal closeout of SIP Step 6 —
-Engineering Desktop Client**, followed immediately by the first design gates of
-**Step 7 — Backoffice and multi-node integration**.
+SIP Step 6 — Engineering Desktop Client is closed. The SI-02 baseline includes the
+Java 21 / JavaFX 21 / BentoFX workbench, client/application service boundary, explicit
+synchronisation/stale-state handling, capability diagnostics, client-side Lua scripting,
+Windows app-image packaging and separated SSD/SDD/SUM documentation. V01 is accepted
+from repeated real SI-02/SI-01 exploratory use; the detailed VC-ST1-003 checklist remains
+regression guidance rather than a claim of a single formally scripted acceptance run.
 
-Step 6 has grown beyond the original desktop-workbench restructuring. SI-02 now has:
+The active implementation-planning focus is now **SIP Step 7 — Backoffice and multi-node
+integration**. The first activity is **D01 — promote IF-06 Backend Integration semantic
+responsibilities**.
 
-- the Java 21 / JavaFX 21 / BentoFX workbench and Windows app-image baseline;
-- instance-scoped client/application services below JavaFX controls;
-- explicit synchronisation/stale-state handling;
-- source-driven capability diagnostics;
-- client-side Lua engineering scripting through the same public IF-03 client path;
-- a focused Lua SDD and a separate SI-02 Software User Manual;
-- automated Java/client/package verification for the implemented baseline.
+Step 7 starts from an already working multi-node application baseline: current SI-01 can
+compose multiple TimingNodes, address them through IF-03, keep node-owned sequences and
+separate LogBooks, and recover one-system/two-node and two-system/one-node-each
+topologies in black-box verification. Do not create another multi-node model.
 
-Do **not** report Step 6 completed yet. The remaining formal exit gate is
-**V01 / VC-ST1-003**, issue `2026-010-02.java.timing-point-application#342`.
-That case must still be executed with the real packaged SI-02 GUI against a running
-SI-01 and record PASS/FAIL evidence for SYNCING -> LIVE, revoke -> REV/DELETED,
-restart/reconnect recovery without live replay, Device Log / Client Log independence,
-time precision and clean shutdown. Headless tests and packaged startup smoke do not
-replace this evidence.
+The first Step-7 sequence remains contract-first:
 
-Step 7 planning is prepared but remains **planned** until that V01 gate closes. Its
-starting point is materially better than the original roadmap assumed: current SI-01
-already composes multiple TimingNodes, addresses them through IF-03, keeps separate
-node-owned sequences/LogBooks and verifies restart recovery for one-system/two-node
-and two-system/one-node-each topologies. Step 7 should therefore adopt/requalify that
-baseline rather than implement another multi-node model.
-
-The first Step-7 work is contract-first:
-
-1. promote **IF-06 Backend Integration** semantic responsibilities;
-2. define ownership/freshness for RaceData, StageStartTimes, TeamID interpretation
-   and StageTiming;
+1. promote IF-06 semantic responsibilities;
+2. define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
 3. define acknowledgement/retry/idempotency/pending-work reconciliation semantics;
-4. align the existing backoffice transport SDD to those authorities;
-5. only then implement reference-data/upstream behaviour and exercise ST-2 socket
-   before ST-3 RabbitMQ.
+4. align the backoffice transport SDD below those authorities;
+5. implement **EngineeringApiBackofficeConnector + SI-02 Backend pane**, using IF-03 HTTP inbound and typed WebSocket outbound/status events to verify ST-2 through the normal semantic backoffice path;
+6. keep the same SI-02 Backend Simulator but switch it to a RabbitMQ backend-peer transport; qualify ST-3 end-to-end as SI-02 ↔ hosted RabbitMQ ↔ SI-01.
 
-The existing `43-01-SDD-03-backoffice-transport-design.md` is useful design input, but
-it must not become the authority for missing system-interface semantics. RabbitMQ is a
-transport realization below IF-06, not the source of the application protocol model.
+`43-01-SDD-03-backoffice-transport-design.md` is design input, not the authority for
+missing system-interface semantics. The EngineeringApiBackofficeConnector is a normal SI-01 backoffice connector whose
+engineering transport reuses IF-03. SI-02 supplies controls/visualisation; inbound semantic
+messages use HTTP/JSON and outbound/status information uses typed WebSocket events carrying
+structured transport-neutral BackofficeEnvelope data. The same normal router and
+application/domain path is shared after the connector boundary. For ST-3, SI-01 uses the
+RabbitMQ backoffice connector and SI-02 uses a complementary RabbitMQ backend-peer
+transport behind the same Backend Simulator UI/model. Both connect to the same hosted
+broker. External hosted-broker credentials stay outside source control and hosted service
+availability must not become a mandatory fast-CI dependency.
 
-Keep target/Pi bring-up, real hardware adapters and production-private broker/message
-details in their later roadmap steps. Step 7 remains a development-host integration
-phase whose purpose is to prove semantic ownership, routing, derived timing and recovery
-before platform/device uncertainty is introduced.
-
-Keep the SIP as the implementation-sequence authority. Per-step YAML owns activity
-state/change history; issues/PRs and retained evidence own execution detail.
+Keep target/Pi bring-up, real hardware adapters and private production broker/message
+details in their later roadmap steps. Per-step YAML owns activity state/change history;
+issues/PRs and retained evidence own execution detail.
 
 ## Ongoing supporting activity — source collection
 

@@ -157,13 +157,13 @@ steps:
 
   "6":
     estimate_project_days: 4
-    remaining_estimate_project_days: 0.5
+    completed_date: "2026-10-13"
     workstream: client
     docs:
       requirements: {level: review, scope: "SI-02 requirements from UC-009, public IF-03 engineering behaviour, capability display and client-side scripting"}
       idd: {level: review, scope: "API consumed by Engineering Client"}
       design: {level: review, scope: "Java 21 / JavaFX 21 / BentoFX client-service, Lua scripting and Windows app-image baseline implemented"}
-      verification: {level: working, scope: "automated client coverage complete; packaged VC-ST1-003 running-GUI closeout remains"}
+      verification: {level: review, scope: "automated client coverage plus accepted exploratory running-system SI-02 use; VC-ST1-003 retained as regression guidance"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
       - {name: 41-02-SSD, title: SI-02 Engineering Desktop Client specification, maturity: review, completeness: 70}

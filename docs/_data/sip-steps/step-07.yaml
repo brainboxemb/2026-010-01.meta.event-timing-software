@@ -3,6 +3,16 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Use one SI-02 Backend Simulator with two transports: IF-03 for deterministic ST-2
+      and RabbitMQ for hosted ST-3. Both exercise the same semantic backoffice contract;
+      CloudAMQP or equivalent may provide the external broker.
+  - date: '2026-10-13'
+    change: >-
+      Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
+      next: promote IF-06 backend semantic responsibilities before reference-data,
+      reconciliation or transport implementation proceeds.
+  - date: '2026-10-13'
+    change: >-
       Prepare Step 7 before activation. Existing SI-01 multi-node composition,
       node-scoped IF-03 addressing, separate LogBooks and restart recovery already
       have black-box coverage, so Step 7 adopts that as a baseline instead of
@@ -14,7 +24,7 @@ activities:
   - id: D01
     lane: documentation
     kind: decision
-    state: planned
+    state: next
     note: >-
       Promote IF-06 Backend Integration as the semantic system interface. Define
       node/system addressing, inbound reference/start-time updates, outbound timing
@@ -47,9 +57,12 @@ activities:
     state: planned
     depends_on: [D01, D03]
     note: >-
-      Align 43-01-SDD-03 with the promoted IF-06 contract and fix the integration
-      verification order: lightweight socket/network ST-2 first, then RabbitMQ ST-3.
-      Keep connector/session mechanics below the semantic upstream boundary.
+      Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
+      topology: EngineeringApiBackofficeConnector is the deterministic ST-2 connector,
+      using IF-03 HTTP inbound plus typed WebSocket outbound/status events. The connector
+      maps to the same semantic upstream boundary used by RabbitMqBackofficeConnector.
+      ST-3 then qualifies RabbitMQ against an external hosted broker such as CloudAMQP.
+      Keep transport/session mechanics below the semantic upstream boundary.
 
   - id: A01
     lane: application
@@ -106,9 +119,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Implement the lightweight real network/socket backoffice adapter used by ST-2
-      to exercise semantic routing, inbound/outbound flow and reconnect without a
-      production broker dependency.
+      Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
+      edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
+      outbound BackofficeEnvelope/synchronisation events from the existing IF-03 WebSocket.
+      The connector enters/leaves at the normal semantic backoffice boundary; direct
+      domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
+      production payloads through the engineering API.
 
   - id: V02
     lane: verification
@@ -116,9 +132,11 @@ activities:
     state: planned
     depends_on: [A03, A05]
     note: >-
-      Verify node-scoped reference-data application, TeamID/StageTiming results,
-      source routing and local continuity across socket disconnect/reconnect, including
-      pending outbound reconciliation after recovery.
+      Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
+      node-scoped reference-data application, TeamID/StageTiming results, outbound
+      semantic events, acknowledgement/reconciliation behaviour and recovery after
+      IF-03 reconnect. This verifies backoffice semantics but not RabbitMQ session/channel
+      behaviour, which belongs to V03.
 
   - id: A06
     lane: application
@@ -126,9 +144,11 @@ activities:
     state: planned
     depends_on: [D04, V02]
     note: >-
-      Implement or qualify the RabbitMQ connector beneath the same semantic upstream
-      contract using synthetic/public broker topology. Production credentials, queue
-      names and proprietary codecs remain external/private.
+      Implement/qualify RabbitMQ on both sides of the test topology: SI-01 uses
+      RabbitMqBackofficeConnector and the existing SI-02 Backend Simulator gains a
+      RabbitMqBackendTransport that plays the external backend peer. Both connect to
+      the same hosted broker. Credentials/topology are supplied through secrets or
+      external configuration; private production mappings/codecs stay outside the repo.
 
   - id: V03
     lane: verification
@@ -136,6 +156,7 @@ activities:
     state: planned
     depends_on: [A06]
     note: >-
-      Run ST-3 against a disposable RabbitMQ broker and verify source-specific
-      inbound/outbound routing, connection/consumer recovery and resumed pending
-      delivery after broker interruption without changing application semantics.
+      Run ST-3 end-to-end as SI-02 Backend Simulator <-> hosted RabbitMQ <-> SI-01.
+      Verify source-specific routing, broker connection/consumer recovery, acknowledgement
+      behaviour and resumed pending delivery. Keep hosted-broker availability outside the
+      mandatory fast-CI path.

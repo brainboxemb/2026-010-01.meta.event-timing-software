@@ -26,10 +26,15 @@ semantic boundary. The applicable system interface contract defines externally v
 semantics; this document defines connector/transport realisation without redefining that
 contract.
 
-Two transport implementations are planned:
+Two SI-01 connector implementations are planned for the current integration path:
 
-- a lightweight **socket implementation** for automated loop/network system tests;
-- a **RabbitMQ implementation** for production-shaped integration and deployment.
+- an **Engineering API backoffice connector** for deterministic ST-2 testing through
+  existing IF-03 HTTP/WebSocket transport;
+- a **RabbitMQ backoffice connector** for production-shaped integration and deployment.
+
+The Engineering Client (SI-02) owns one Backend Simulator model/pane. It can drive the
+same semantic test data through either IF-03 or RabbitMQ. In RabbitMQ mode SI-02 is the
+controllable external backend peer; it is not part of SI-01.
 
 The application/domain model must not depend on RabbitMQ classes, socket classes, broker names, or the proprietary production message format.
 
@@ -55,10 +60,11 @@ SystemStatus / TimingNode.UpstreamMessagePort
        +-------+-------+
        |               |
        v               v
- SocketConnector   RabbitMqConnector
+Engineering API   RabbitMQ
+BackofficeConnector BackofficeConnector
        |               |
        v               v
- socket test peer  RabbitMQ broker
+     IF-03         RabbitMQ broker
 ```
 
 `UpstreamMessageRouter` is application behaviour scoped only to messages
@@ -66,7 +72,7 @@ exchanged with the external upstream system. **Upstream** identifies that
 relationship and remains bidirectional; it is not a per-message direction.
 `UpstreamGateway` and its connectors are I/O. Both transport
 implementations preserve the same semantic addressing and feed the same
-application router; neither transport owns application/TimingNode target
+application router; neither connector owns application/TimingNode target
 resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
 
 ## Semantic upstream/backoffice boundary
@@ -107,7 +113,7 @@ source-02
   outbound semantic stream
 ```
 
-This logical separation remains the same regardless of whether the selected transport is an in-memory stub, socket connection, or RabbitMQ.
+This logical separation remains the same regardless of whether the selected transport is an in-memory stub, the Engineering API connector, or RabbitMQ.
 
 ## Transport selection and composition
 
@@ -117,77 +123,79 @@ Pseudo-configuration:
 
 ```yaml
 backoffice:
-  transport: socket-test   # or rabbitmq
+  transport: engineering-api   # or rabbitmq
 ```
 
-The executable application resolves this selection to a concrete communication implementation. A public reference/test application can use `socket-test` or a stub. A private/product application can select RabbitMQ plus private mappings/codecs where required.
+The executable application resolves this selection to a concrete communication implementation.
+A public reference/test application can use `engineering-api` or a stub. A
+private/product application can select RabbitMQ plus private mappings/codecs where
+required.
 
 This selection does not imply a separate Maven artifact for every transport. Initial implementations may coexist in the core library while their boundaries are being tested.
 
-## Socket test transport
+## Engineering API test transport
 
 ### Purpose
 
-The socket implementation provides a lightweight real communication boundary without requiring RabbitMQ or Docker.
+The Engineering API connector provides a deterministic local backoffice transport without
+adding another SI-01 listener port or another SI-02 connection lifecycle.
 
-It is intended for automated system tests that need to prove:
+It is composed as a normal SI-01 backoffice connector, but uses the already-established
+engineering interface:
 
-- SI-01 runs as a real process;
-- source-aware messages cross a real TCP/socket boundary;
-- inbound and outbound routing works for several sources;
-- connect/disconnect/reconnect behaviour is observable;
-- tests can run quickly and locally without production infrastructure.
+- **IF-03 HTTP/JSON** for SI-02 to submit synthetic inbound semantic backoffice messages;
+- **IF-03 WebSocket events** for SI-01 to expose outbound semantic messages and connector
+  status back to SI-02.
 
-It is not intended to define or expose the production backoffice protocol.
+This transport is for engineering and verification. It does not redefine IF-06 and does
+not make IF-03 the production backoffice interface.
 
-### Test topology
-
-```text
-System test driver / backoffice simulator
-             |
-             | simple TCP socket
-             v
-SocketBackoffice
-             |
-             v
-Backoffice semantic boundary
-             |
-             v
-application-core domain/platform
-```
-
-One connection can multiplex several logical registration sources because every test message includes a generic source key.
-
-### Test framing
-
-The exact framing remains an implementation choice. A simple public test protocol could use a length-prefixed or line-delimited synthetic envelope such as:
+### Engineering topology
 
 ```text
-sourceKey
-messageType
-payload
+SI-02 Backend Simulator / pane
+      |                    ^
+      | IF-03 HTTP         | IF-03 WebSocket
+      v                    |
+EngineeringApiBackofficeConnector
+             |
+             v
+semantic backoffice boundary
+             |
+             v
+UpstreamMessageRouter / normal SI-01 path
 ```
 
-The socket test protocol must use only synthetic/public fields and must not copy proprietary production serialization.
+The payload at the engineering connector boundary is a structured transport-neutral
+`BackofficeEnvelope` plus the required connector/source identity and status metadata.
+Do not tunnel a pre-serialized RabbitMQ frame or proprietary production message as an
+opaque string through IF-03.
 
-The important contract is deterministic framing, source identity, reconnect behaviour and unambiguous message boundaries.
+The same SI-02 Backend Simulator can therefore edit/send synthetic RaceData and
+StageStartTimes, inspect outbound TimingData/synchronisation state, and exercise
+acknowledgement/reconciliation behaviour without direct access to SI-01 Java objects.
 
-### Socket-loop scenarios
+### ST-2 scenarios
 
 Candidate scenarios include:
 
-- connect a backoffice simulator to a real application process;
-- inject source-01 and source-02 messages over one connection;
-- verify they reach the correct source path;
-- trigger application behaviour through the normal application interface;
-- observe outbound source messages at the simulator;
-- drop the socket and verify status/reconnect behaviour;
-- reconnect and continue without changing committed registration-sequence identity;
-- exercise one or multiple `TimingNode`/asset/source combinations according to the selected executable topology.
+- submit source/node-specific reference data from SI-02 through IF-03;
+- verify it reaches the correct semantic source path;
+- trigger normal TimingNode/application behaviour;
+- observe outbound semantic backoffice events in SI-02;
+- reconnect IF-03 Events and rebuild the relevant engineering view;
+- exercise acknowledgement, pending-work and reconciliation behaviour;
+- repeat against one or multiple TimingNode/source combinations.
+
+This profile verifies backoffice semantics and application routing. It deliberately does
+not prove RabbitMQ connection/channel/consumer behaviour.
 
 ## RabbitMQ transport
 
 RabbitMQ is a concrete communication implementation beneath the same semantic boundary.
+For ST-3 the Engineering Client uses the same Backend Simulator model/pane as ST-2, but
+switches to a RabbitMQ backend-peer transport. SI-01 and SI-02 then both connect to the
+same broker; SI-02 plays the external backend side of the exchange.
 
 ![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
 
@@ -226,6 +234,26 @@ application
 ```
 
 A `RabbitMqBackofficeConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
+
+The ST-3 engineering peer is separate from that SI-01 connector:
+
+```text
+SI-02 Backend Simulator
+        |
+RabbitMqBackendTransport
+        |
+        v
+    RabbitMQ broker
+        ^
+        |
+RabbitMqBackofficeConnector
+        |
+SI-01 semantic backoffice boundary
+```
+
+The SI-02 transport uses backend-side queue/exchange/routing configuration complementary
+to SI-01. It reuses the same semantic simulator data as the IF-03 transport so that ST-2
+and ST-3 differ primarily in transport, not test intent.
 
 One connector may multiplex several source-specific queues/channels over one physical broker connection. Separate connectors may use different brokers, credentials or routing domains. A TimingNode may intentionally participate in more than one connector.
 
@@ -301,9 +329,9 @@ local outbox / sync state
        v
 BackofficePublisherPort
        |
-       +--> SocketBackoffice
+       +--> EngineeringApiBackofficeConnector
        |
-       +--> RabbitMqBackoffice
+       +--> RabbitMqBackofficeConnector
 ```
 
 A locally committed registration must not disappear because a transport is unavailable.
@@ -341,7 +369,10 @@ BackofficeStatus
     ...
 ```
 
-For RabbitMQ, connection status can additionally expose broker/authentication/recovery information. For socket testing, it can expose connected/disconnected peer state.
+For RabbitMQ, connection status can additionally expose broker/authentication/recovery
+information. For the Engineering API connector, status can expose whether the connector is
+enabled plus its last inbound/outbound engineering interaction; IF-03 connection state
+itself remains owned by the existing API/Event interfaces.
 
 ## Java package and artifact boundaries
 
@@ -351,8 +382,8 @@ Working package direction inside the reusable application core:
 io.github.brainboxemb.eventtiming.domain.backoffice
     semantic backoffice contracts/state/outbox concepts
 
-io.github.brainboxemb.eventtiming.comm.socket
-    socket session/framing/test transport
+existing IF-03 presentation/application adapter
+    engineering-api backoffice connector
 
 io.github.brainboxemb.eventtiming.comm.rabbitmq
     RabbitMQ connection/channel/consumer/publisher implementation
@@ -377,8 +408,9 @@ Public core/test code may define:
 - transport-independent semantic ports;
 - generic `RegistrationSourceKey`;
 - generic/test `BackofficeEnvelope`;
-- socket-test communication implementation/protocol;
+- Engineering API backoffice adapter using structured public semantic envelopes;
 - RabbitMQ connection/consumer infrastructure if proprietary production codec details remain separate;
+- SI-02 RabbitMQ backend-peer test transport using synthetic/public topology;
 - synthetic RabbitMQ topology for integration tests.
 
 Private components/configuration may provide:
@@ -410,59 +442,73 @@ real application process
 
 This is the fastest system-level feedback loop and does not require a network backoffice service.
 
-### ST-2 — Socket loop/network
+### ST-2 — Engineering API backoffice loop
 
-Goal: add a real communication/process boundary with minimal infrastructure.
+Goal: verify the semantic backoffice path through the existing Engineering Client and
+IF-03 transport before broker-specific behaviour is introduced.
 
 ```text
-application test driver --> real application process
-backoffice simulator <----> simple socket implementation
+SI-02 Backend Simulator
+      | IF-03 HTTP / WebSocket
+      v
+EngineeringApiBackofficeConnector
+      |
+      v
+real SI-01 semantic backoffice path
 ```
 
-This profile verifies source multiplexing/routing, network session state, disconnect/reconnect and outbound/inbound semantics without RabbitMQ.
+This profile verifies source/node routing, inbound/outbound semantics,
+acknowledgement/reconciliation and recovery of the engineering view without RabbitMQ.
 
 ### ST-3 — RabbitMQ integration
 
-Goal: verify the production-shaped broker transport with a real disposable broker.
+Goal: verify the production-shaped broker transport end-to-end with SI-02 as the
+controllable backend peer.
 
 ```text
-system-test driver
+SI-02 Backend Simulator
       |
-      +--> application interface
+RabbitMqBackendTransport
       |
-      +--> RabbitMQ test broker (Docker Compose)
+      v
+hosted RabbitMQ
+      ^
+      |
+RabbitMqBackofficeConnector
+      |
+      v
+real SI-01
 ```
 
-This verifies broker connection/channel/consumer behaviour, source-specific queues/routing, outbox recovery and broker restart scenarios.
+A hosted broker such as CloudAMQP is a suitable initial environment. This verifies
+broker connection/channel/consumer behaviour, source-specific queues/routing,
+acknowledgement, outbox recovery and reconnect/recovery scenarios. Hosted-broker
+availability is integration evidence and must not become a prerequisite for every fast CI
+run.
 
 These profiles complement unit/component tests and Pi Zero/hardware-in-the-loop verification; they do not replace them.
 
-## Docker-based RabbitMQ test environment
+## RabbitMQ test environment
 
-RabbitMQ is a good candidate for a containerised integration dependency because it is a real external service with meaningful connection and recovery behaviour.
+The first production-shaped ST-3 environment may use a hosted RabbitMQ service such as
+CloudAMQP. Broker URI, credentials, vhost and test topology are provided through external
+configuration/secrets and are never committed to the public repository.
 
-The integration/reference test environment may provide a small Compose environment:
+A local disposable RabbitMQ container remains a useful optional fallback for repeatable
+offline regression tests, but it is not required for ST-2 and does not replace the hosted
+end-to-end verification.
 
-```text
-compose.yaml
-  rabbitmq-test
-```
-
-The broker must use synthetic/public queue names and credentials.
-
-Typical lifecycle:
+The intended ST-3 operator flow is:
 
 ```text
-start RabbitMQ container
-wait for health
-start application
-exercise several source consumers + publisher
-stop/restart broker
-verify consumer restoration + pending delivery
-clean up
+configure test broker
+start SI-01 with RabbitMqBackofficeConnector
+connect SI-02 Backend Simulator using RabbitMqBackendTransport
+exercise inbound/outbound source flows
+force/recover broker or client connection where practical
+verify pending delivery / reconciliation
+clean up test topology
 ```
-
-Docker remains optional for ST-1 and ST-2 so most behaviour can be tested without container startup cost.
 
 ## Candidate requirements
 
@@ -470,8 +516,8 @@ Temporary identifiers only.
 
 - **CAND-BO-001** — SI-01 backoffice semantics shall be independent from the concrete communication transport.
 - **CAND-BO-002** — The backoffice transport shall be selectable through external configuration/composition.
-- **CAND-BO-003** — A lightweight socket transport shall be available for automated system/integration testing without requiring RabbitMQ.
-- **CAND-BO-004** — The socket test protocol shall support multiple logical registration sources over a real communication boundary.
+- **CAND-BO-003** — An Engineering API backoffice connector shall be available for deterministic ST-2 testing without requiring RabbitMQ.
+- **CAND-BO-004** — The Engineering API connector shall carry structured semantic backoffice messages for multiple logical registration sources through existing IF-03 HTTP/WebSocket transport.
 - **CAND-BO-005** — RabbitMQ shall support a source-specific inbound queue configuration for each configured registration source.
 - **CAND-BO-006** — RabbitMQ shall support source-specific outbound routing configuration for each configured registration source.
 - **CAND-BO-007** — Multiple RabbitMQ source consumers shall be able to share one physical broker connection.
@@ -480,7 +526,7 @@ Temporary identifiers only.
 - **CAND-BO-010** — Loss of external backoffice transport shall not discard locally committed registration data.
 - **CAND-BO-011** — Reconnection shall restore configured source communication and resume pending outbound synchronisation.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
-- **CAND-BO-013** — A disposable RabbitMQ broker shall be available for automated ST-3 integration tests.
+- **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
 - **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
@@ -489,8 +535,8 @@ Temporary identifiers only.
 ## Open questions
 
 - What exact semantic messages belong in the public backoffice ISD?
-- What minimal public socket-test framing should be used: length-prefixed binary, line-delimited JSON, or another simple representation?
-- Should the socket implementation use one bidirectional connection or separate inbound/outbound sockets?
+- What exact IF-03 HTTP operation and WebSocket event schema should carry the engineering backoffice envelope?
+- Which acknowledgement/reconciliation controls need to be exposed in the SI-02 Backend Simulator?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
