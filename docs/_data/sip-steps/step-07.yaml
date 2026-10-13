@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Refine IF-06 PING/PONG semantics: classify heartbeat versus manually initiated
+      liveness requests. PONG preserves request purpose, while an optional reference
+      correlation identifier stays outside the mandatory top-level interface.
+      Manual requests do not reset the 30-second heartbeat.
+  - date: '2026-10-13'
+    change: >-
       Complete the liveness baseline with correlated PING/PONG in both directions.
       SI-01 initiates immediately on connect and every 30 seconds, accepts matching
       PONG responses, and answers inbound PING. Missed-PONG timeout policy remains open.
