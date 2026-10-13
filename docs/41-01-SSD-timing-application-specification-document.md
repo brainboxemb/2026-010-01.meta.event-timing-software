@@ -481,7 +481,7 @@ transport session shall not cause either source sequence to be skipped.
 
 For a RegistrationId, SI-01 shall use a non-null stable TeamId supplied by the
 configured EventData profile as authoritative. Only when EventData has no stable
-TeamId for that RegistrationId may the current TimingNode ReserveTagMap assignment
+TeamId for that RegistrationId may the current TimingNode TeamAssignments assignment
 supply the TeamId. If neither source resolves a TeamId, the registration remains
 valid committed TimingData but derived team/stage views shall treat it as unresolved.
 RaceData updates shall not rewrite committed RegistrationId or TimingData sequence
@@ -891,7 +891,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
 | SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
 | SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with optional-mode-preserving PING ANSWER |
-| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; ReserveTagMap fallback only |
+| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; TeamAssignments fallback only |
 | SI01-REQ-078 | UC-010/012 + IF06-REQ-014/015 | ordered RACE_DATA sequence, apply and ACK |
 | SI01-REQ-079 | UC-010 + IF06-REQ-016 | incremental stage-start SET/DEL inside RACE_DATA |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
@@ -1034,7 +1034,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- ReserveTagMap
+              +-- TeamAssignments
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -1278,7 +1278,7 @@ TimingSystem (1..N per Application)
     State
     UpstreamMessagePort       TimingNode-level upstream messages
     TagProcessor
-    ReserveTagMap
+    TeamAssignments
     StageStartTimes
     LogBook
       0..N TimingData
@@ -1328,7 +1328,7 @@ state. State-dependent commands and reads that require exact ordering enter one 
 serial execution path and are processed in order. Current-state observation may instead use
 an immutable snapshot safely published by that owned path after completed transitions. Code
 outside the boundary does not directly read or mutate lifecycle/location state or the mutable
-contents of its contained `LogBook`, `NextUpTeams`, `ReserveTagMap` and `StageStartTimes`
+contents of its contained `LogBook`, `NextUpTeams`, `TeamAssignments` and `StageStartTimes`
 objects. Those objects remain passive and do not receive their own workers. The LogBook keeps
 0..N committed immutable `TimingData` values and does not own a second worker or second
 timing-record representation.
@@ -1371,9 +1371,10 @@ worker.
 :id: StageStartTimes  
 
 `StageStartTimes` is passive TimingNode-local live race state containing the
-current `TeamId -> StartDefinition` values produced by ordered RACE_DATA SET/DEL
-changes. A StartDefinition contains local race time-of-day plus an optional explicit
-local date. It owns data only; the TimingNode execution boundary owns mutation/order
+current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
+changes. A stage-start timestamp may contain time-of-day only, local date/time, or
+an already absolute time. The state object owns data only; it never invents a
+missing date or time zone. The TimingNode execution boundary owns mutation/order
 and StageTiming owns elapsed-time interpretation.
 :::
 
@@ -1383,10 +1384,10 @@ and StageTiming owns elapsed-time interpretation.
 `NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
 :::
 
-:::{arch} ReserveTagMap
-:id: ReserveTagMap
+:::{arch} TeamAssignments
+:id: TeamAssignments
 
-`ReserveTagMap` is passive TimingNode-local live state populated by ordered
+`TeamAssignments` is passive TimingNode-local live state populated by ordered
 RACE_DATA messages. It maps reserve RegistrationId to TeamId only where EventData
 has no stable TeamId. SET/DEL mutations occur on the owning TimingNode execution
 boundary and never rewrite EventData or committed TimingData.
@@ -1409,7 +1410,7 @@ separate TimingNode-local state populated by ordered RACE_DATA messages.
 :id: StageTiming  
 
 `StageTiming` is a derived/read-side domain capability. It resolves TeamId using
-stable EventData first and TimingNode ReserveTagMap only as fallback, then combines
+stable EventData first and TimingNode TeamAssignments only as fallback, then combines
 the accepted committed TimingData effective time with that TeamId's current
 StageStartTimes definition. It derives elapsed stage-timing results without becoming
 another writer and without changing TimingData or live race state. Missing TeamId/start
@@ -2363,17 +2364,18 @@ Time is an explicit architecture concern rather than an incidental use of `Date`
 
 #### `TimingTimestamp` value
 
-The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for externally meaningful **absolute event times** such as observations, accepted registrations and persisted/synchronised event timestamps. A race/stage start definition is not required to be an absolute timestamp: it may be supplied as local time-of-day without a date, or with an explicit date when that information is available.
+The **Timing Point Application** (SI-01) uses one dedicated immutable application/domain class named `TimingTimestamp` for semantically meaningful timing values. The same type can represent different levels of known temporal information: local time-of-day only, local date/time, or an absolute point on the UTC time line. Missing date, zone or offset information remains explicitly unknown and shall not be invented merely to construct a timestamp.
 
 Working semantics:
 
-- `TimingTimestamp` represents an absolute point on a UTC-based time line;
-- it does not contain an implicit local time zone or daylight-saving state;
-- conversion to/from local civil time happens at explicit presentation/configuration/integration boundaries;
-- its precision and external serialisation are explicit rather than inherited accidentally from a Java API or wire codec;
-- domain/application APIs pass `TimingTimestamp` rather than arbitrary `long`, `Date`, generic Java timestamp classes or local-date/time values where an absolute event time is intended.
+- `TimingTimestamp` records which temporal information is known;
+- `TIME_ONLY` means local time-of-day is known while the calendar date is not;
+- `LOCAL_DATE_TIME` means local date and time are known while zone/offset is not;
+- `ABSOLUTE` identifies one absolute point on the UTC-based time line;
+- conversion or resolution that requires missing date/zone context happens only in the domain or integration behaviour that owns that context;
+- domain/application APIs pass `TimingTimestamp` rather than unrelated `LocalTime`, `LocalDate`, `Instant`, raw `long`, `Date` or generic Java timestamp values as parallel representations of the same semantic time.
 
-The dedicated class may internally delegate to a suitable Java primitive such as `Instant`, but its public semantic contract remains project-owned. Protocol-specific formatting/parsing and deployment-specific zone conversion belong in boundary adapters/codecs rather than in `TimingTimestamp` itself. Time-only race/start definitions are a separate domain/reference-data concept and shall not be forced into `TimingTimestamp` by inventing a date.
+The dedicated class may internally use suitable `java.time` primitives, but its public semantic contract remains project-owned. Protocol-specific formatting, accepted forms and output precision remain profile/codec responsibilities. IF-05 requires absolute timestamps. IF-06 and event-specific upstream profiles may validly supply a time-only `TimingTimestamp`. A codec therefore maps the external representation to the generic value without inventing a date or time zone.
 
 When a race/stage start is defined only by local time-of-day, elapsed-time calculation shall resolve that clock time against the accepted registration timestamp using the configured event/race time zone. The resolved start is the most recent valid occurrence of that time-of-day that is not after the registration. This deliberately supports one civil-day rollover: a start at `23:59:50` followed by a registration at `00:00:10` resolves to an elapsed time of 20 seconds rather than a negative value. If an explicit start date is supplied, that date is authoritative. A time-only definition cannot by itself distinguish elapsed durations of 24 hours or more; such cases require an explicit date or another higher-level race-day reference.
 
@@ -2429,7 +2431,7 @@ This is an explicit architecture risk because timing software can produce plausi
 
 | Risk | Possible consequence | Architectural mitigation / open work |
 | --- | --- | --- |
-| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` for events; resolve time-only race/start definitions through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
+| daylight-saving transition repeats or skips local civil times | ambiguous/non-existent local timestamps and wrong ordering if local time is persisted directly | persist/use absolute `TimingTimestamp` values for event facts; resolve time-only `TimingTimestamp` stage starts through an explicit event-zone rule and require more context where a local time is ambiguous/non-existent; add DST transition tests |
 | NTP, manual correction or platform synchronisation steps wall clock backwards/forwards | negative/large elapsed differences; a later observation can have an earlier wall-clock timestamp | use monotonic time for durations; source sequence for ordering; expose/inject wall clock; define correction/health policy |
 | clock offset/drift differs between the application and external systems | incorrect elapsed/race-time calculations or synchronization disagreement | define clock synchronisation/offset acceptance requirements and verification before timing accuracy is accepted |
 | restart loses monotonic origin | process-local duration marks cannot be compared across restart | never persist monotonic marks as event timestamps; restore from absolute `TimingTimestamp` plus domain/source state |
@@ -2699,17 +2701,17 @@ Working rules:
 Keep the data roles simple:
 
 - `LogBook` is passive state and holds committed immutable `TimingData` values;
-- `NextUpTeams`, `ReserveTagMap` and `StageStartTimes` are separate passive
+- `NextUpTeams`, `TeamAssignments` and `StageStartTimes` are separate passive
   per-node state objects; `EventData` is the shared stable profile capability;
 - the TimingNode worker is the single writer for those mutable per-node objects;
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- when NextUpTeams, ReserveTagMap or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when NextUpTeams, TeamAssignments or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 If live RaceData state is not persisted across reboot, the TimingNode starts its
-applied RACE_DATA sequence at 0 and rebuilds ReserveTagMap/StageStartTimes by requesting
+applied RACE_DATA sequence at 0 and rebuilds TeamAssignments/StageStartTimes by requesting
 RACE_DATA from sequence 1. Optional persistence may later optimize this without changing
 the source-order protocol.
 
