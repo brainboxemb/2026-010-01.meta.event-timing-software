@@ -283,7 +283,7 @@ The first Step-7 sequence remains contract-first:
 
 1. promote IF-06 around the shared UpstreamData semantic model and public JSON reference representation;
 2. define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
-3. define acknowledgement/retry/idempotency/pending-work reconciliation semantics;
+3. define acknowledgement/retry/idempotency/pending-sync semantics;
 4. align the backoffice transport SDD below those authorities;
 5. implement **EngineeringApiBackofficeConnector + SI-02 Backend pane**, using IF-03 HTTP inbound and typed WebSocket outbound/status events to verify ST-2 through the normal semantic backoffice path;
 6. keep the same SI-02 Backend Simulator but switch it to a RabbitMQ backend-peer transport; qualify ST-3 end-to-end as SI-02 ↔ hosted RabbitMQ ↔ SI-01.
