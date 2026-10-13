@@ -1022,7 +1022,6 @@ The compact software/domain ownership model is intentionally also kept as copyab
 Application
   +-- ApplicationId
   +-- Conductor                 application lifecycle / activation order
-  +-- UpstreamMessageRouter     NodeId target resolution only
   |
   +-- 1..N TimingSystem
         +-- SystemId            internal composition/simulation identity
@@ -1038,8 +1037,8 @@ Application
               +-- data
               |     +-- TeamAssignments
               |     +-- StageStartTimes
-              |     +-- UniqueTeamRegistrations
               +-- timing
+              |     +-- UniqueTeamRegistrations
               |     +-- StageTiming
               +-- LogBook
                     +-- 0..N TimingData
@@ -1182,9 +1181,6 @@ application/
 
   ConfigurationControl
     configuration query/update use-cases
-
-  UpstreamMessageRouter
-    upstream-only application/domain target resolution and routing
 ```
 
 :::{arch} Application Conductor
@@ -1249,24 +1245,6 @@ contains `ADD`, while any additional action requires its own defined TimingData 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
 do not introduce messages merely to preserve a layer diagram.
 
-:::{arch} UpstreamMessageRouter  
-:id: UpstreamMessageRouter  
-
-`UpstreamMessageRouter` owns only target resolution for messages exchanged with
-the upstream system at application scope. **Upstream** describes that external
-system relationship, not the direction of an individual message; the exchange is
-bidirectional. Current v1 messages that operate on TimingNode state are node-scoped.
-The router resolves `NodeId` across the application's configured TimingNodes and
-delegates the complete semantic message to that node's `UpstreamMessagePort`.
-It does not interpret message families, sequence outcomes, ACK/REQ behaviour or
-replay semantics. `SystemId` remains internal composition identity and is not
-required on the upstream wire.
-
-The router is deliberately **not** a generic application message bus or mediator
-for normal collaboration between domain components. A system-scoped upstream port
-shall be introduced only when a concrete system-scoped semantic message requires it.
-:::
-
 #### Domain
 
 The domain owns timing semantics, per-TimingSystem system semantics and
@@ -1288,8 +1266,8 @@ TimingSystem (1..N per Application)
     data
       TeamAssignments
       StageStartTimes
-      UniqueTeamRegistrations
     timing
+      UniqueTeamRegistrations
       StageTiming
     LogBook
       0..N TimingData
@@ -1306,7 +1284,7 @@ Shared Domain contracts
     configured representation / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream addressing remains TimingNode-oriented through application-wide `NodeId` resolution.
+`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
@@ -1337,19 +1315,21 @@ serial execution path and are processed in order. Current-state observation may 
 an immutable snapshot safely published by that owned path after completed transitions. Code
 outside the boundary does not directly read or mutate lifecycle/location state or the mutable
 contents of its contained `LogBook`, `TeamAssignments`, `StageStartTimes` and
-`UniqueTeamRegistrations` objects. Those objects remain passive and do not receive
-their own workers. The LogBook keeps
+derived `UniqueTeamRegistrations` state. None of those data structures owns a
+worker. The LogBook keeps
 0..N committed immutable `TimingData` values and does not own a second worker or second
 timing-record representation.
 
 :::{arch} TimingNode UpstreamMessagePort  
 :id: TimingNodeUpstreamMessagePort  
 
-The TimingNode-level `UpstreamMessagePort` is the semantic entry point for
-node-scoped upstream messages after `UpstreamMessageRouter` has resolved the
-target `NodeId`. It owns node-scoped message semantics and serializes mutable
-decisions on the existing TimingNode execution lane. It does not own transport
-connections or cross-node target resolution.
+The TimingNode-level `UpstreamMessagePort` owns node-scoped upstream semantics.
+It is bound to one node-scoped `UpstreamStream` supplied by Messaging. When the
+stream signals that input may be available, the port schedules an
+`UpstreamMessageTask` on the existing TimingNode serial lane; that task reads one
+semantic message from the stream, processes it and writes any ACK/REQ/PING response
+back through the same stream. The port owns no executor, worker thread or blocking
+transport I/O.
 :::
 
 :::{arch} TimingNode Processing
@@ -1364,17 +1344,19 @@ or message bus.
 :::{arch} TimingNode Data
 :id: TimingNodeData
 
-`TimingNodeData` groups passive mutable state owned by the TimingNode serial
-boundary: `TeamAssignments`, `StageStartTimes` and
-`UniqueTeamRegistrations`. These data objects do not own workers.
+`TimingNodeData` groups received/current race data owned by the TimingNode serial
+boundary: `TeamAssignments` and `StageStartTimes`. These objects are populated
+from ordered upstream RACE_DATA and do not own workers.
 :::
 
 :::{arch} TimingNode Timing
 :id: TimingNodeTiming
 
-`TimingNodeTiming` groups read-side timing interpretation. Its StageTiming capability
-exposes the current list of resolved elapsed times and ranking derived from committed
-TimingData and current node data, without becoming another writer.
+`TimingNodeTiming` groups derived timing information. `UniqueTeamRegistrations`
+tracks the derived active-registration set used for unique-team counts, while
+`StageTiming` exposes the current list of resolved elapsed times and ranking.
+Both are derived from committed TimingData plus current node data and do not become
+independent writers or workers.
 :::
 
 :::{arch} TagProcessor  
@@ -1413,11 +1395,12 @@ EventData or committed TimingData.
 :::{arch} UniqueTeamRegistrations
 :id: UniqueTeamRegistrations
 
-`UniqueTeamRegistrations` is compact passive TimingNode-local state used to derive
-the current number of unique teams with active registrations. It stores registration
-identity/lifecycle information, not resolved TeamId values; TeamId resolution happens
-at read time through EventData and TeamAssignments so later assignment changes are
-reflected without rewriting committed TimingData.
+`UniqueTeamRegistrations` is compact derived TimingNode-local timing state used to
+calculate the current number of unique teams with active registrations. It is updated
+from committed registration ADD/REV lifecycle and stores registration identity rather
+than received race data or resolved TeamId values. TeamId resolution happens at read
+time through EventData and TeamAssignments so later assignment changes are reflected
+without rewriting committed TimingData.
 :::
 
 :::{arch} EventData
@@ -1721,13 +1704,15 @@ rendering/domain behaviour.
 
 `Messaging` owns the external upstream transport/session package. When upstream
 messaging is configured it contains one `UpstreamGateway`; the gateway uses
-1..N connectors and concrete connectors own transport resources,
-delivery/session mechanics and transport-specific addressing.
+1..N connectors and exposes one node-scoped `UpstreamStream` per TimingNode.
+Concrete connectors own transport resources, delivery/session mechanics,
+transport-specific addressing and any demultiplexing required when one physical
+connection carries messages for multiple NodeIds.
 
-The semantic `UpstreamData` model remains in Domain. Messaging transports an
-encoded UpstreamData representation without interpreting `TimingData` fields or
-reimplementing synchronization/reference-data rules; after UpstreamData decoding,
-`UpstreamMessageRouter` owns application-level target resolution.
+The semantic `UpstreamData` model remains in Domain. Messaging transports and
+decodes the configured UpstreamData representation without interpreting
+`TimingData` fields or reimplementing synchronization/reference-data rules.
+Each TimingNode consumes only its own node-scoped stream; no separate application-level router is required.
 :::
 
 ### Nested I/O component identities
@@ -1850,8 +1835,19 @@ messages/events received inward.
 :id: UpstreamGateway  
 
 `UpstreamGateway` is the Messaging-owned external upstream transport/session
-boundary. It owns connector coordination but not UpstreamData semantics.
+boundary. It owns connector coordination and the mapping from configured connectors
+to node-scoped `UpstreamStream` instances, but not UpstreamData semantics.
 :::
+
+:::{arch} UpstreamStream
+:id: UpstreamStream
+
+`UpstreamStream` is the non-blocking semantic mailbox presented by Messaging to
+one TimingNode. It reports whether communication is available, exposes queued
+inbound UpstreamData, and accepts outbound UpstreamData for transport. Real
+RabbitMQ/API/socket I/O never blocks the TimingNode serial lane.
+:::
+
 
 :::{arch} Connector  
 :id: Connector  
@@ -2163,7 +2159,6 @@ The architecture deliberately uses **separate views** for software/domain decomp
 Application
   +-- ApplicationId
   +-- Conductor                 application lifecycle / activation order
-  +-- UpstreamMessageRouter     NodeId target resolution only
   |
   +-- 1..N TimingSystem
         +-- SystemId            internal composition/simulation identity
@@ -2179,8 +2174,8 @@ Application
               +-- data
               |     +-- TeamAssignments
               |     +-- StageStartTimes
-              |     +-- UniqueTeamRegistrations
               +-- timing
+              |     +-- UniqueTeamRegistrations
               |     +-- StageTiming
               +-- LogBook
                     +-- 0..N TimingData
@@ -2255,14 +2250,10 @@ Device Networks
 
 Messaging
     +-- UpstreamGateway
+          +-- UpstreamStream (1 per TimingNode)
           +-- Connector (1..N)
                 +-- RabbitMqConnector
                 +-- EngineeringApiConnector
-
-UpstreamMessageRouter
-    +-- NodeId -> TimingNode.UpstreamMessagePort
-    +-- target resolution only
-    +-- SystemId remains internal composition context
 ```
 
 <a id="fig-si01-03"></a>
@@ -2279,19 +2270,17 @@ to a human, but it is still an external device from SI-01's architecture
 perspective.
 
 `UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges encoded
-UpstreamData with its configured connectors but does not own UpstreamData semantics.
-`UpstreamMessageRouter` resolves current node-scoped UpstreamData by `NodeId`
-to `TimingNode.UpstreamMessagePort`. Transport connectors do not need a
+UpstreamData with its configured connectors and exposes a separate node-scoped
+`UpstreamStream` to each TimingNode. Transport connectors do not need a
 TimingSystem abstraction to address a node, and no external `SystemId` field is
 required.
 
-Connectors do not route directly to Domain or TimingNodes and do not own domain
-semantics. A connector-specific external name or routing key may participate in
-boundary mapping, but it does not replace the stable functional `NodeId`.
-Internal `SystemId` is local composition context rather than a new
-upstream routing identity. One gateway may use multiple connectors and one
-TimingNode may exchange messages through more than one connector via the gateway,
-router and its bidirectional port. `RabbitMqConnector` represents the production-shaped transport;
+Connectors do not own domain semantics. A connector-specific external name or
+routing key may participate in NodeId demultiplexing, but it does not replace the
+stable functional `NodeId`. Internal `SystemId` is local composition context
+rather than a new upstream routing identity. One gateway may use multiple
+connectors; each TimingNode consumes its own semantic stream through
+`TimingNode.UpstreamMessagePort`. `RabbitMqConnector` represents the production-shaped transport;
 `EngineeringApiConnector` provides the engineering transport used by SI-02 while
 preserving the same UpstreamData/gateway boundary.
 
@@ -2375,8 +2364,6 @@ External ingress still keeps its functional routing responsibilities:
 - `PresentationGateway` exposes application-wide presentation metadata/capabilities and node proxies;
 - `TimingNodeProxy` exposes node-scoped presentation operations, reads and events;
 - configured device/antenna mappings resolve device observations to TimingNodes;
-- `UpstreamMessageRouter` resolves system-level versus TimingNode-targeted
-  upstream messages;
 - scheduled work retains its owning target.
 
 There is no central dispatcher through which commands and queries must pass. Components may expose local typed events such as `timingDataCommittedEvent` for post-fact notification; those events are not the owner or execution path for TimingNode state.
@@ -2767,12 +2754,10 @@ synchronization and status messages. TimingData identity/order remains owned by 
 
 `UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry an
 encoded UpstreamData representation and own transport/session resources; they do not
-become owners of TimingData fields or UpstreamData semantics.
-`UpstreamMessageRouter` owns application-level target resolution after UpstreamData
-decoding. Current v1 messages that operate on node state are resolved by `NodeId`
-and delegated to `TimingNode.UpstreamMessagePort`; the port owns node-scoped
-protocol semantics and uses the existing TimingNode serial boundary for mutable
-decisions.
+become owners of TimingData fields or UpstreamData semantics. The gateway presents
+one node-scoped `UpstreamStream` per TimingNode. The node's
+`UpstreamMessagePort` reads/writes that stream and executes semantic processing
+through `UpstreamMessageTask` on the existing TimingNode serial lane.
 
 ```text
 external upstream / SI-02 backend peer
@@ -2780,20 +2765,18 @@ external upstream / SI-02 backend peer
         +--> RabbitMqConnector --------+
         +--> EngineeringApiConnector --+--> UpstreamGateway
                                              |
-                                             | encoded UpstreamData
-                                             v
-                                        UpstreamData
+                                      NodeId demultiplexing
                                              |
-                                             +---- carries ----> TimingData
-                                             |
-                                             v
-                                    UpstreamMessageRouter
-                                             |
-                                          NodeId
+                                      UpstreamStream
+                                   (one per TimingNode)
                                              |
                                              v
                                        TimingNode
                                   UpstreamMessagePort
+                                             |
+                                  UpstreamMessageTask
+                                             |
+                                      serial lane
 ```
 
 Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
@@ -2801,7 +2784,9 @@ connector-level decisions. Product/deployment-specific upstream-system names and
 private transport details remain outside the public architecture documentation.
 Public UpstreamData semantics and TimingData compatibility remain owned by Domain.
 
-`SystemId` and `ApplicationId` are not required on the upstream wire. `UpstreamMessageRouter` provides NodeId target resolution without becoming a generic internal message bus. A future system-scoped upstream semantic shall introduce an explicit system-level handling boundary only when that concrete need exists.
+`SystemId` and `ApplicationId` are not required on the upstream wire. If one
+physical connection carries several NodeIds, demultiplexing belongs to the Messaging
+adapter that creates the node-scoped streams, not to a separate Application router.
 
 #### RFID
 

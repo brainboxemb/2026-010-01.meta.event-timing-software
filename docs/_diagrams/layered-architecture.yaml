@@ -162,7 +162,7 @@ nodes:
   subtitle: "lifecycle / activation order"
   kind: application
   notation: component
-  layout: {x: 295, y: 425, w: 220, h: 50}
+  layout: {x: 870, y: 425, w: 260, h: 50}
 
 - id: presentation-gateway
   object_id: PresentationGateway
@@ -188,15 +188,6 @@ nodes:
   kind: application
   notation: component
   layout: {x: 55, y: 425, w: 220, h: 50}
-- id: upstream-message-router
-  object_id: UpstreamMessageRouter
-  group: application-layer
-  label: "UpstreamMessageRouter"
-  subtitle: "NodeId → TimingNode.UpstreamMessagePort"
-  kind: application
-  notation: component
-  layout: {x: 870, y: 425, w: 260, h: 50}
-
 - id: system-conductor
   object_id: SystemConductor
   group: timing-system-aggregate
@@ -222,10 +213,10 @@ nodes:
   object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
   label: "UpstreamMessagePort"
-  subtitle: "node-scoped upstream semantics"
+  subtitle: "UpstreamStream • node serial lane"
   kind: service
   notation: component
-  layout: {x: 630, y: 657, w: 215, h: 50}
+  layout: {x: 800, y: 857, w: 280, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -238,7 +229,7 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 405, y: 722, w: 215, h: 125}
+  layout: {x: 405, y: 722, w: 220, h: 120}
 
 - id: node-data
   object_id: TimingNodeData
@@ -249,21 +240,22 @@ nodes:
       object_id: TeamAssignments
     - label: StageStartTimes
       object_id: StageStartTimes
-    - label: UniqueTeamRegistrations
   kind: service
   notation: packaging-component
-  layout: {x: 630, y: 722, w: 215, h: 125}
+  layout: {x: 640, y: 722, w: 220, h: 120}
 
 - id: node-timing
   object_id: TimingNodeTiming
   group: timing-node-aggregate
   label: "Timing"
   items:
-    - label: "StageTiming — elapsed times + ranking"
+    - label: UniqueTeamRegistrations
+      object_id: UniqueTeamRegistrations
+    - label: "StageTiming — elapsed + ranking"
       object_id: StageTiming
   kind: service
   notation: packaging-component
-  layout: {x: 855, y: 722, w: 225, h: 125}
+  layout: {x: 875, y: 722, w: 220, h: 120}
 
 - id: logbook-domain
   object_id: LogBook
@@ -272,7 +264,7 @@ nodes:
   subtitle: "committed TimingData • node-local"
   kind: service
   notation: component
-  layout: {x: 630, y: 862, w: 215, h: 50}
+  layout: {x: 500, y: 857, w: 220, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -287,7 +279,7 @@ nodes:
   object_id: TimingData
   group: domain-layer
   label: "TimingData"
-  subtitle: "records • TimingTimestamp • factory • codec"
+  subtitle: "records • timestamp • factory • codec"
   kind: service
   notation: component
   layout: {x: 635, y: 956, w: 200, h: 50}
@@ -374,6 +366,8 @@ nodes:
     - label: "UpstreamGateway"
       object_id: UpstreamGateway
       items:
+        - label: "UpstreamStream (1 per TimingNode)"
+          object_id: UpstreamStream
         - label: "Connector (1..N)"
           object_id: Connector
           items:
@@ -383,7 +377,7 @@ nodes:
               object_id: EngineeringApiConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1098, w: 260, h: 120}
+  layout: {x: 535, y: 1090, w: 260, h: 150}
 
 - id: platform-execution
   object_id: PlatformExecution
@@ -589,20 +583,15 @@ edges:
     - {x: 20, y: 1018}
     - {x: 176, y: 1018}
 
-- from: upstream-message-router
+- from: messaging-io
   to: upstream-message-port
-  label: "resolve NodeId"
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-
-- from: upstream-message-router
-  to: messaging-io
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
+  from_anchor: {side: top, position: 0.50}
+  to_anchor: {side: bottom, position: 0.50}
   route:
-    - {x: 1165, y: 459}
-    - {x: 1165, y: 1046}
-    - {x: 665, y: 1046}
+    - {x: 665, y: 1048}
+    - {x: 862, y: 1048}
+    - {x: 862, y: 928}
+    - {x: 940, y: 928}
 
 - from: timing-node-proxy
   to: timing-node-aggregate
@@ -614,11 +603,10 @@ edges:
   to: event-data-domain
   label: resolves
   dashed: true
-  from_anchor: {side: left, position: 0.50}
+  from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
   route:
-    - {x: 530, y: 747}
-    - {x: 530, y: 932}
+    - {x: 515, y: 932}
     - {x: 155, y: 932}
 
 - from: timing-node-aggregate
@@ -635,5 +623,5 @@ edges:
   to: timing-data-domain
   label: carries
   dashed: true
-  from_anchor: {side: left, position: 0.50}
-  to_anchor: {side: right, position: 0.50}
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
