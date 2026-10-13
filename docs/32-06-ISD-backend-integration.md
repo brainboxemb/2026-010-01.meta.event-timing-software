@@ -86,7 +86,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Ping / Pong | bidirectional | request and confirm upstream liveness with correlation |
+| Ping / Pong | bidirectional | request and confirm upstream liveness; distinguish automatic heartbeat from manual requests |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
@@ -141,20 +141,26 @@ as a replacement for committed TimingData identity.
 `PING` and `PONG` are UpstreamData messages used to verify that the configured
 upstream connection remains operational.
 
-Each PING carries a correlation identifier `pingId`. The receiver of a valid PING
-answers with one PONG carrying the same `pingId`. This rule is bidirectional: SI-01
-may initiate PING and process the matching backend PONG, and SI-01 shall also answer an
-inbound backend PING with a matching PONG.
+Every PING identifies its semantic purpose: **heartbeat** (automatically scheduled
+liveness check) or **manual** (explicitly initiated check). The receiver of a valid
+PING answers with one PONG preserving that purpose. This rule is bidirectional:
+SI-01 may initiate PING and receive the corresponding backend PONG, and SI-01
+shall also answer an inbound backend PING with a PONG. A request/correlation
+identifier is not part of the mandatory IF-06 semantic contract; an implementation
+may use one to associate responses with individual requests.
 
 For each active upstream connector initiated by SI-01:
 
 - when the connector first reaches its operational **CONNECTED** state, SI-01 sends one
-  PING immediately;
-- while that connection remains operational, SI-01 sends another PING every **30 seconds**;
+  **heartbeat** PING immediately;
+- while that connection remains operational, SI-01 sends another **heartbeat** PING every **30 seconds**;
 - when the connector leaves the operational connected state, periodic PING generation
   stops;
 - after a later reconnect, a new cycle begins with another immediate PING followed by
   the 30-second period.
+
+A **manual** PING may be explicitly initiated by either party; it does not change,
+reset or replace SI-01's scheduled heartbeat cycle.
 
 PING/PONG is connection/upstream activity. It is **not TimingData**, does not consume a
 TimingData sequence number and does not create or modify a LogBook record.
@@ -173,8 +179,8 @@ Operations use stable semantic identifiers independent from transport.
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
 | `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
-| `IF06-OP-05 PING` | bidirectional | request liveness confirmation using a `pingId` |
-| `IF06-OP-06 PONG` | bidirectional | answer one PING using the same `pingId` |
+| `IF06-OP-05 PING` | bidirectional | request liveness confirmation, identifying heartbeat or manual purpose |
+| `IF06-OP-06 PONG` | bidirectional | answer one PING, preserving its purpose |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -239,21 +245,25 @@ common semantic status shall remain transport-independent.
 
 ### IF06-OP-05 PING
 
-PING has no TimingData payload and no TimingData record identity. It carries a `pingId`
-that identifies the liveness request.
+PING has no TimingData payload and no TimingData record identity. It identifies
+whether the request is an automatically scheduled **heartbeat** or an explicitly
+initiated **manual** check. Neither a wire-level marker nor a sequence/correlation
+number is mandated by IF-06.
 
 For the SI-01 initiated heartbeat, the first PING follows the connector transition to
-operational CONNECTED immediately. Subsequent PING messages are generated at a 30-second
-period while that same connection remains operational.
+operational CONNECTED immediately. Subsequent heartbeat PING messages are generated
+at a 30-second period while that same connection remains operational. Manual PING
+does not affect that schedule.
 
 ### IF06-OP-06 PONG
 
-A receiver of a valid PING answers with one PONG carrying the same `pingId`. PONG has no
-TimingData payload and no TimingData record identity.
+A receiver of a valid PING answers with one PONG preserving the PING's heartbeat
+or manual purpose. PONG has no TimingData payload and no TimingData record identity.
 
-A matching PONG confirms completion of that individual liveness exchange. IF-06 does not
-yet define how many unanswered PING messages, or what elapsed time, changes connector
-health/state.
+A PONG confirms receipt and handling of a liveness request; implementations may
+add correlation identifiers to match individual requests and responses. IF-06 does
+not yet define how many unanswered PING messages, or what elapsed time, changes
+connector health/state.
 
 ## Failure semantics
 
@@ -403,8 +413,7 @@ reference-data or synchronization semantics.
 :status: D  
 
 When a configured upstream connector reaches its operational connected state, SI-01
-shall send one PING UpstreamData message immediately. That PING shall contain a correlation
-identifier `pingId`.
+shall send one heartbeat-purpose PING UpstreamData message immediately.
 :::
 
 :::{ifreq} Periodic upstream PING while connected  
@@ -412,20 +421,24 @@ identifier `pingId`.
 :status: D  
 
 While a configured upstream connector remains operationally connected after its initial
-PING, SI-01 shall send a further PING every 30 seconds. PING generation shall stop when
-that connector is no longer operationally connected and shall restart with an immediate
-PING after a later reconnect. PING shall not consume TimingData sequence identity or
-create TimingData/LogBook records.
+heartbeat PING, SI-01 shall send a further heartbeat PING every 30 seconds. Scheduled
+PING generation shall stop when that connector is no longer operationally connected
+and shall restart with an immediate heartbeat PING after a later reconnect.
+An explicitly initiated manual PING shall not reset this schedule. PING shall not
+consume TimingData sequence identity or create TimingData/LogBook records.
 :::
 
-:::{ifreq} Correlated PING/PONG response  
+:::{ifreq} PING purpose and PONG response  
 :id: IF06-REQ-013  
 :status: D  
 
-The receiver of a valid PING shall answer with one PONG carrying the same `pingId` as
-part of processing that PING; the response shall not wait for the 30-second periodic
-PING schedule. This response rule applies in both directions. PONG shall not consume TimingData sequence
-identity or create TimingData/LogBook records.
+Each PING shall distinguish automatic heartbeat from explicitly initiated manual
+liveness checks. The receiver of a valid PING shall answer with one PONG preserving
+the same purpose as part of processing that PING; the response shall not wait for
+the 30-second periodic heartbeat schedule. This rule applies in both directions.
+IF-06 does not mandate a PING sequence number or correlation identifier; a
+specific representation/implementation may add one. PONG shall not consume
+TimingData sequence identity or create TimingData/LogBook records.
 :::
 
 ## Open points
