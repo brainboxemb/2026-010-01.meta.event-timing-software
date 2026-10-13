@@ -305,7 +305,7 @@ nodes:
   object_id: UpstreamData
   group: domain-layer
   label: "UpstreamData"
-  subtitle: "TimingData • ref • sync"
+  subtitle: "timing • ref • sync • ping"
   kind: service
   notation: component
   layout: {x: 565, y: 956, w: 235, h: 50}
