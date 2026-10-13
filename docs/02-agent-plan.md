@@ -285,15 +285,16 @@ The first Step-7 sequence remains contract-first:
 2. define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
 3. define acknowledgement/retry/idempotency/pending-work reconciliation semantics;
 4. align the backoffice transport SDD below those authorities;
-5. implement a local **Backend Simulator in SI-02** and verify ST-2 through the real backend transport/interface boundary;
+5. implement the local engineering transport pair: **SI-01 EngineeringBackendServer + SI-02 Backend connector/pane**, and verify ST-2 through the normal semantic backoffice path after that adapter;
 6. qualify RabbitMQ as ST-3 against a real hosted broker, initially CloudAMQP or equivalent, beneath the same semantic boundary.
 
 `43-01-SDD-03-backoffice-transport-design.md` is design input, not the authority for
-missing system-interface semantics. The SI-02 Backend Simulator is an engineering fixture,
-not a second product backend: it may provide local controls/visualisation but must talk to
-SI-01 through the real backend boundary. RabbitMQ remains a transport realization below
-IF-06. External hosted-broker credentials stay outside source control and hosted service
-availability must not become a mandatory fast-CI dependency.
+missing system-interface semantics. The EngineeringBackendServer is an engineering/test transport adapter hosted by SI-01;
+SI-02 is its client and provides the controls/visualisation. The server adapter joins the
+same semantic upstream boundary as the real RabbitMQ connector, so the normal router and
+application/domain path is shared after transport. RabbitMQ remains a transport realization
+below IF-06. External hosted-broker credentials stay outside source control and hosted
+service availability must not become a mandatory fast-CI dependency.
 
 Keep target/Pi bring-up, real hardware adapters and private production broker/message
 details in their later roadmap steps. Per-step YAML owns activity state/change history;
