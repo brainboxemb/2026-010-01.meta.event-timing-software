@@ -510,7 +510,8 @@ tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
 **Purpose**
 
-Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
+Verify bidirectional heartbeat/manual PING/PONG semantics, with optional
+reference correlation, without creating TimingData.
 
 **Setup**
 
@@ -525,14 +526,16 @@ Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
 1. Start SI-01 with the upstream connector not yet operationally connected.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
-3. Verify one PING with a `pingId` is published immediately rather than waiting for the
+3. Verify one HEARTBEAT PING is published immediately rather than waiting for the
    first 30-second period.
-4. Return one PONG with the same `pingId` and verify SI-01 accepts it as the matching
-   liveness response.
-5. Keep the connection operational and verify the next PING is generated after the
-   30-second period with a new correlation exchange; return the matching PONG.
-6. From the backend peer send a valid PING with another `pingId`. Verify SI-01 returns
-   exactly one PONG with the same `pingId`.
+4. Return one HEARTBEAT PONG and verify SI-01 processes the response.
+   If the default reference codec includes `pingId`, verify it is echoed.
+5. Keep the connection operational and verify the next HEARTBEAT PING is generated
+   after the 30-second period; return a HEARTBEAT PONG.
+6. From the backend peer send a MANUAL PING (with no `pingId`). Verify SI-01 returns
+   exactly one MANUAL PONG. Repeat with a reference `pingId` and verify it is echoed.
+   Also initiate a manual PING from SI-01, verify its MANUAL PONG, and confirm the
+   separate periodic HEARTBEAT schedule has not reset.
 7. Disconnect the upstream peer and verify no further periodic PING is generated for that
    disconnected connector.
 8. Reconnect and verify a new connection cycle again starts with an immediate PING and
@@ -544,7 +547,8 @@ Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
 
 - immediate PING on each operational connect/reconnect;
 - periodic PING every 30 seconds while connected;
-- matching PONG correlation is preserved in both directions;
+- HEARTBEAT and MANUAL purpose is preserved in both directions;
+- optional reference `pingId` is echoed when present and is not required for a valid exchange;
 - no PING task remains active after disconnect;
 - PING/PONG does not alter TimingData or LogBook history.
 
