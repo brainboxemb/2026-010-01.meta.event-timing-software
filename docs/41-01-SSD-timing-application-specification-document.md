@@ -1033,7 +1033,7 @@ Application
               +-- LogBook
               |     +-- 0..N TimingData
               +-- NextUpTeams
-              +-- RaceData
+              +-- ReserveTagMap
               +-- StageTiming
               +-- uses / produces TimingData
 
@@ -1327,7 +1327,7 @@ state. State-dependent commands and reads that require exact ordering enter one 
 serial execution path and are processed in order. Current-state observation may instead use
 an immutable snapshot safely published by that owned path after completed transitions. Code
 outside the boundary does not directly read or mutate lifecycle/location state or the mutable
-contents of its contained `LogBook`, `NextUpTeams`, `StageStartTimes` and `RaceData`
+contents of its contained `LogBook`, `NextUpTeams`, `ReserveTagMap` and `StageStartTimes`
 objects. Those objects remain passive and do not receive their own workers. The LogBook keeps
 0..N committed immutable `TimingData` values and does not own a second worker or second
 timing-record representation.
@@ -1369,12 +1369,11 @@ worker.
 :::{arch} StageStartTimes  
 :id: StageStartTimes  
 
-`StageStartTimes` is passive TimingNode-local reference state containing the
-latest accepted complete `TeamId -> StartDefinition` snapshot and its accepted
-revision. A StartDefinition contains local
-race time-of-day plus an optional explicit local date. It owns data only; the
-TimingNode execution boundary owns mutation/order and StageTiming owns elapsed
-time interpretation.
+`StageStartTimes` is passive TimingNode-local live race state containing the
+current `TeamId -> StartDefinition` values produced by ordered RACE_DATA SET/DEL
+changes. A StartDefinition contains local race time-of-day plus an optional explicit
+local date. It owns data only; the TimingNode execution boundary owns mutation/order
+and StageTiming owns elapsed-time interpretation.
 :::
 
 :::{arch} NextUpTeams  
@@ -1382,9 +1381,6 @@ time interpretation.
 
 `NextUpTeams` owns the ordered/expected teams that are next for one TimingNode.
 :::
-
-:::{arch} RaceData
-:id: RaceData
 
 :::{arch} ReserveTagMap
 :id: ReserveTagMap
@@ -1404,8 +1400,8 @@ semantics, including the 1..N relationship between `RegistrationId` and
 event-specific typed provider/profile library supplies the concrete profile.
 That provider may be discovered and loaded at Runtime through the same typed
 extension architecture used for TimingData providers, without coupling the
-EventData and TimingData provider families to each other. `RaceData` remains
-separate TimingNode-local runtime/upstream race state.
+EventData and TimingData provider families to each other. Live race state remains
+separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::
 
 :::{arch} StageTiming  
@@ -2710,9 +2706,10 @@ Keep the data roles simple:
 - when NextUpTeams, ReserveTagMap or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
-For example, StageStartTimes may be sent again when a TimingNode is opened after
-a reboot, while the separately stored historical snapshots remain useful for
-post-event analysis.
+If live RaceData state is not persisted across reboot, the TimingNode starts its
+applied RACE_DATA sequence at 0 and rebuilds ReserveTagMap/StageStartTimes by requesting
+RACE_DATA from sequence 1. Optional persistence may later optimize this without changing
+the source-order protocol.
 
 The persistence architecture permits simple local files and does not require an
 embedded database. SDD-01 defines ordering, commit/visibility and the different persistence
