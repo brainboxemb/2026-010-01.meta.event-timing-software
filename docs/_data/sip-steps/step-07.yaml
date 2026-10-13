@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Settle the concise default PING payload: required data.op=REQUEST/ANSWER,
+      optional data.mode=HEARTBEAT (missing mode means manual/explicit), and
+      optional reference pingId for correlation. Answers preserve mode
+      including absence. Preserve historical decision entries below.
+  - date: '2026-10-13'
+    change: >-
       Simplify default PING wire semantics to a single UpstreamData type PING:
       data.action=REQUEST/ANSWER and independent data.purpose=HEARTBEAT/MANUAL.
       No separate PONG message family. Keep optional reference pingId,
