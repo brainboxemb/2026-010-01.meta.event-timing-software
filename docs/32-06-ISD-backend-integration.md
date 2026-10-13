@@ -86,7 +86,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Ping | SI-01 -> Backend | prove that an operational upstream connection is active |
+| Ping / Pong | bidirectional | request and confirm upstream liveness with correlation |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
@@ -136,12 +136,17 @@ The detailed acknowledgement, retry, duplicate/idempotency and pending-work rule
 are refined by Step-7 D03. They shall not use transient transport/session identity
 as a replacement for committed TimingData identity.
 
-### Ping lifecycle
+### Ping / Pong lifecycle
 
-`PING` is an UpstreamData message used to show that the configured upstream
-connection remains operational.
+`PING` and `PONG` are UpstreamData messages used to verify that the configured
+upstream connection remains operational.
 
-For each active upstream connector:
+Each PING carries a correlation identifier `pingId`. The receiver of a valid PING
+answers with one PONG carrying the same `pingId`. This rule is bidirectional: SI-01
+may initiate PING and process the matching backend PONG, and SI-01 shall also answer an
+inbound backend PING with a matching PONG.
+
+For each active upstream connector initiated by SI-01:
 
 - when the connector first reaches its operational **CONNECTED** state, SI-01 sends one
   PING immediately;
@@ -151,11 +156,12 @@ For each active upstream connector:
 - after a later reconnect, a new cycle begins with another immediate PING followed by
   the 30-second period.
 
-PING is connection/upstream activity. It is **not TimingData**, does not consume a
+PING/PONG is connection/upstream activity. It is **not TimingData**, does not consume a
 TimingData sequence number and does not create or modify a LogBook record.
 
-IF-06 currently defines no corresponding PONG requirement. A transport may have its own
-lower-level keepalive mechanism, but that does not replace the semantic PING above.
+The timeout/failure policy for an unanswered PING is intentionally not fixed yet. A
+transport may also have a lower-level keepalive mechanism, but that does not replace the
+semantic PING/PONG exchange.
 
 ## Operation identifiers
 
@@ -167,7 +173,8 @@ Operations use stable semantic identifiers independent from transport.
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
 | `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
-| `IF06-OP-05 PING` | SI-01 -> Backend | indicate an operational upstream connection |
+| `IF06-OP-05 PING` | bidirectional | request liveness confirmation using a `pingId` |
+| `IF06-OP-06 PONG` | bidirectional | answer one PING using the same `pingId` |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -232,12 +239,21 @@ common semantic status shall remain transport-independent.
 
 ### IF06-OP-05 PING
 
-PING has no TimingData payload and no TimingData record identity. Its semantic meaning is
-limited to an operational upstream-connection heartbeat.
+PING has no TimingData payload and no TimingData record identity. It carries a `pingId`
+that identifies the liveness request.
 
-The first PING follows the connector transition to operational CONNECTED immediately.
-Subsequent PING messages are generated at a 30-second period while that same connection
-remains operational.
+For the SI-01 initiated heartbeat, the first PING follows the connector transition to
+operational CONNECTED immediately. Subsequent PING messages are generated at a 30-second
+period while that same connection remains operational.
+
+### IF06-OP-06 PONG
+
+A receiver of a valid PING answers with one PONG carrying the same `pingId`. PONG has no
+TimingData payload and no TimingData record identity.
+
+A matching PONG confirms completion of that individual liveness exchange. IF-06 does not
+yet define how many unanswered PING messages, or what elapsed time, changes connector
+health/state.
 
 ## Failure semantics
 
@@ -387,7 +403,8 @@ reference-data or synchronization semantics.
 :status: D  
 
 When a configured upstream connector reaches its operational connected state, SI-01
-shall send one PING UpstreamData message immediately.
+shall send one PING UpstreamData message immediately. That PING shall contain a correlation
+identifier `pingId`.
 :::
 
 :::{ifreq} Periodic upstream PING while connected  
@@ -401,6 +418,15 @@ PING after a later reconnect. PING shall not consume TimingData sequence identit
 create TimingData/LogBook records.
 :::
 
+:::{ifreq} Correlated PING/PONG response  
+:id: IF06-REQ-013  
+:status: D  
+
+The receiver of a valid PING shall answer with one PONG carrying the same `pingId`.
+This response rule applies in both directions. PONG shall not consume TimingData sequence
+identity or create TimingData/LogBook records.
+:::
+
 ## Open points
 
 - Exact RaceData semantic fields and snapshot/update rules (Step-7 D02).
@@ -409,3 +435,4 @@ create TimingData/LogBook records.
   (Step-7 D03).
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.
+- Timeout/health policy for unanswered or late PONG responses.
