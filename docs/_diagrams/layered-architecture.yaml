@@ -309,7 +309,7 @@ nodes:
   kind: service
   notation: component
   # Keep a deliberate label corridor between TimingData and UpstreamData.
-  layout: {x: 625, y: 956, w: 265, h: 50}
+  layout: {x: 755, y: 956, w: 265, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -641,7 +641,7 @@ edges:
 
 - from: upstream-data-domain
   to: timing-data-domain
-  label: carries TimingData
+  label: carries
   dashed: true
   from_anchor: {side: left, position: 0.50}
   to_anchor: {side: right, position: 0.50}
