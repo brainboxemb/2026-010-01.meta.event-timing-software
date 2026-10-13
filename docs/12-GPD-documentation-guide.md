@@ -202,6 +202,7 @@ Current examples are:
 61-01-VTS-timing-application-verification-test-specification
 
 70-01-SUM-headless-timing-application
+70-02-SUM-engineering-client
 ```
 
 Numbering rules:

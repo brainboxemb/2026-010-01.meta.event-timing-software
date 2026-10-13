@@ -330,8 +330,9 @@ submissions. The UI shows progress without blocking JavaFX.
 automatically running a dropped file, issuing direct internal AntennaManager
 calls, or treating a simulation request as a committed LogBook registration.
 Scripts remain **trusted operator-selected local code**, not a security
-boundary suitable for untrusted workloads. The supported Lua interface is
-specified in `43-02-SDD-01-lua-scripting-design.md`.
+boundary suitable for untrusted workloads. The supported Lua facade and internal
+design are specified in `43-02-SDD-01-lua-scripting-design.md`; user workflows and
+examples belong in `70-02-SUM-engineering-client.md`.
 
 ## Windows acceptance path
 

@@ -209,12 +209,12 @@ benefit.
 
 ### Application/service boundary
 
-D02 also fixes a design constraint needed by the workbench and future automation:
+D02 also fixes the service boundary used by the workbench and client-side automation:
 
 ```text
 JavaFX / BentoFX views ----+
                            |
-future scripting ----------+--> client/application services --> public SI-01 interfaces
+Lua scripting -------------+--> client/application services --> public SI-01 interfaces
                            |
 tests / fakes -------------+
 ```
@@ -224,13 +224,9 @@ reconciliation, command execution, raw-message context and target/system state b
 client/application services rather than JavaFX event handlers or docking objects.
 
 A connected timing system is modelled as an **instance-scoped client context**, not as
-global UI state. The first Step-6 workbench may still present one primary system, but
-this boundary allows later multi-system engineering workflows and the scripting direction
-tracked separately without another architectural rewrite.
-
-Future embedded scripting is intentionally **not** part of D02 implementation scope.
-When introduced, a Lua or other script adapter shall call the same application/client
-services as the GUI; it shall not automate JavaFX controls.
+global UI state. The current workbench presents one primary system, while the same
+boundary allows the Lua adapter and later multi-system engineering workflows to reuse
+client/application services without automating JavaFX controls.
 
 ## Component architecture
 
@@ -307,7 +303,7 @@ The layout is composed through BentoFX docking leaves:
 | Workbench area | Selected view responsibility |
 | --- | --- |
 | Systems Explorer | Available TimingNodes and actual status/location/problems, Sync view action |
-| TimingNode / API / Registration / Simulation tabs | Engineering commands, API version/status, manual/direct registration and simulated tags |
+| TimingNode / API / Registration / Simulation / Scripts tabs | Engineering commands, API version/status, manual/direct registration, simulated tags and client-side Lua |
 | Registrations | Interpreted current/open location data (or operator-selected All) |
 | LogBook | Committed source history, sequence and raw-record inspection |
 | Raw Data / Events | Unmodified API JSON and received WebSocket event JSON |
@@ -363,45 +359,15 @@ and Client Log remains local and usable while SI-01 is offline.
 
 ### Client-side automation with Lua
 
-The Engineering Client includes a **Scripts** tab alongside **Simulation**.
-A human engineer may load/drop/edit a local `.lua` file and explicitly Run
-or Stop it. LuaJ is packaged only in the `test-client` module. Scripts do not
-run in SI-01 and do not use the Timing Application command shell.
+SI-02 includes a **Scripts** tab and packages LuaJ only in the Engineering Client
+module. The script adapter calls the same client/application services and public IF-03
+boundary as the GUI; it does not automate JavaFX controls and does not run in SI-01.
 
-The script boundary is a small `timing` facade exposing
-`batch{count,from,to,order,seed,intervalMs,profile}`,
-`simulate(registrationId,profile)`, `sleep(ms)` and `log(message)`.
-These actions reuse the existing simulation plan and public IF-03 simulation
-endpoint. Simulated antenna observations remain different from the IF-03
-direct auto-registration injection path. One selected TimingNode and target
-are captured at Run; a node change, loss of LIVE/simulation capability or
-disconnection invalidates the run. The interpreter operates on a dedicated
-background worker, reports results via FX dispatch and provides a stop request
-checked between commands and Lua instruction batches. Already accepted
-requests cannot be rolled back.
-
-The client does not expose Java reflection, Java bridge, process/file loaders
-or arbitrary platform globals into Lua. Local scripts are **trusted engineering
-inputs**, not a hardened sandbox for remote/untrusted Lua. No script starts
-on application startup or merely because a file was dropped. The
-[44-02 design rule UI-17](44-02-GPD-engineering-client-design-rules.md)
-governs maintenance of the facade, safety checks and presentation behavior.
-
-### Engineering scripts
-
-The **Scripts** tab is a local SI-02 facility. It uses embedded LuaJ from
-the Engineering Client module only. A script is opened or dropped, edited,
-and explicitly started by an engineer. Run and Stop control one client
-worker and the selected TimingNode context.
-
-`timing.batch{count,from,to,order,seed,intervalMs,profile}` generates
-repeatable linear or seeded random registration IDs and sends each through
-the existing public IF-03 simulated-registration endpoint.
-`timing.simulate(registrationId,profile)`, `timing.sleep(milliseconds)`
-and `timing.log(text)` provide individual operations and timing/output.
-The command path is intentionally separate from SI-01's direct auto-reg
-injection. A dropped file never starts on its own. The client script
-facade is specified further in [UI-17](44-02-GPD-engineering-client-design-rules.md).
+This SDE records only that development/runtime boundary. The supported Lua facade,
+worker/cancellation model and safety design are owned by
+[43-02-SDD-01](43-02-SDD-01-lua-scripting-design.md). Practical script loading,
+Run/Stop use, examples and troubleshooting are owned by
+[70-02-SUM](70-02-SUM-engineering-client.md).
 
 ## Capability-driven engineering controls
 

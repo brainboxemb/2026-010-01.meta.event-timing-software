@@ -27,8 +27,9 @@ SI-02 consumes:
 - applicable external inputs registered by `20-EXT-external-system-inputs.md`.
 
 `50-SDE-03-development-client.md` records the selected desktop technology,
-workbench and detailed working UI/client-service baseline. The SIP schedules the
-work. Neither document replaces this software-item specification.
+workbench and development/client-service baseline. `70-02-SUM-engineering-client.md`
+provides downstream user instructions for the Engineering Client. The SIP schedules
+the work. None of these documents replaces this software-item specification.
 
 ## Software-item role
 
@@ -251,6 +252,8 @@ facade provides client-local output/waits and capability-gated IF-03 simulated-t
 requests. Script execution shall not depend on JavaFX control automation and shall
 not add Lua or internal Java access to SI-01.
 
-The supported function signatures, preconditions, cancellation and security
-limitations are defined in `43-02-SDD-01-lua-scripting-design.md`. Extended multi-system
-control and state assertions are future extensions, not current functions.
+The supported facade contract, execution design, preconditions, cancellation and
+security limitations are defined in `43-02-SDD-01-lua-scripting-design.md`.
+Practical use, examples and troubleshooting are documented in
+`70-02-SUM-engineering-client.md`. Extended multi-system control and state assertions
+are future extensions, not current functions.

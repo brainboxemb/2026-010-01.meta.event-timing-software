@@ -33,6 +33,11 @@ WebSocket representation by [33-03 IDD](33-03-IDD-api-http-websocket.md).
 SI-02 design/review rules and [50-SDE-03](50-SDE-03-development-client.md)
 defines the development/runtime baseline.
 
+[70-02 SUM](70-02-SUM-engineering-client.md) is the user-facing manual. It owns
+the practical workflows, examples and troubleshooting for running Lua scripts.
+This SDD owns the internal design and the stable Lua-visible facade contract; it
+does not duplicate step-by-step user instructions.
+
 ## Design scope and ownership
 
 Lua is an **SI-02-local programming interface**. Scripts execute inside SI-02
@@ -43,23 +48,9 @@ This design does not create another system IF-xx, does not add Lua to SI-01 and
 does not permit scripts to bypass the public client/service boundary and call
 SI-01 internals, AntennaManager internals or JavaFX controls directly.
 
-## Design
+## Detailed design
 
-### Execution model
-
-- Interpreter: embedded LuaJ 3.0.1, using its Lua 5.2-style language support.
-- Script source is UTF-8 text with a maximum size of 128 KiB.
-- A file may be opened/dropped or source edited; **Run** is always explicit.
-  Dropping a file never starts it automatically.
-- Script execution uses one dedicated SI-02 worker and never runs on the JavaFX
-  application thread or on SI-01 execution lanes.
-- A run captures the selected TimingNode/target at start.
-- A GUI simulation batch and a Lua simulation batch may not run concurrently.
-- **Stop**, disconnect or selected-node change stops further script execution and
-  request submission. A request already accepted by SI-01 cannot be undone by
-  cancelling the local script.
-
-### Lua-visible engineering facade
+### Lua-visible facade contract
 
 | Signature | Arguments and result | Design behaviour |
 | --- | --- | --- |
@@ -80,14 +71,22 @@ SI-01 internals, AntennaManager internals or JavaFX controls directly.
 
 Generated registration identifiers use `RT-A-%04d`.
 
-Example:
+The user-facing examples and operational procedure for these calls are maintained in
+[70-02 SUM](70-02-SUM-engineering-client.md).
 
-```lua
-print("Local Lua works")
-timing.log("Starting test")
-timing.batch{count=10, from=1, to=100, order="random",
-             seed=42, intervalMs=500, profile="normal"}
-```
+### Internal execution model
+
+- Interpreter: embedded LuaJ 3.0.1, using its Lua 5.2-style language support.
+- Script source is UTF-8 text with a maximum size of 128 KiB.
+- A file may be opened/dropped or source edited; **Run** is always explicit.
+  Dropping a file never starts it automatically.
+- Script execution uses one dedicated SI-02 worker and never runs on the JavaFX
+  application thread or on SI-01 execution lanes.
+- A run captures the selected TimingNode/target at start.
+- A GUI simulation batch and a Lua simulation batch may not run concurrently.
+- **Stop**, disconnect or selected-node change stops further script execution and
+  request submission. A request already accepted by SI-01 cannot be undone by
+  cancelling the local script.
 
 ### Capability handling
 
