@@ -2418,7 +2418,7 @@ antenna/provider callback
 ```
 
 The first four steps must stay short and must not write files, send network data or wait
-for presentation/backoffice work. `TimingNode.offer(...)` is the fire-and-forget boundary:
+for presentation/upstream work. `TimingNode.offer(...)` is the fire-and-forget boundary:
 it performs only bounded queue admission and returns to TagProcessor without executing or
 waiting for the TimingNode command. The lower-priority TimingNode lane processes accepted
 work independently afterwards.
@@ -2428,7 +2428,7 @@ The TimingNode worker is allowed to wait for the required
 TimingData commit. After the record has been written and added to LogBook, short local
 post-commit listeners may run synchronously on the TimingNode worker.
 
-A post-commit listener that needs socket I/O, retry, backoffice delivery or another
+A post-commit listener that needs socket I/O, retry, upstream delivery or another
 potentially slow operation must hand that work to its own bounded delivery mechanism and
 return. Synchronous `Event<T>` delivery is therefore allowed; Step-5 measurements check
 whether listener execution time materially increases TimingNode queue wait or queue
@@ -3601,7 +3601,7 @@ Expected private/product-specific areas may include:
 - production RFID control/protocol details;
 - product-specific I/O/protocol implementations;
 - production asset/source inventory and mappings;
-- production upstream/backoffice schemas/codecs where sensitive;
+- production upstream schemas/codecs where sensitive;
 - deployment-specific composition/policies.
 
 Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model. The provider mechanism above is the explicit runtime-extension boundary; do not generalise it into arbitrary plugin access from domain/application code.
