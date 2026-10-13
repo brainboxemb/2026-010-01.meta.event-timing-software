@@ -73,11 +73,11 @@ GET  /api/v1/node/{id}/logbook?last=...
 
 POST /api/v1/dev/node/{id}/auto-reg
 POST /api/v1/dev/node/{id}/simulation/registration
-POST /api/v1/dev/backoffice/message
+POST /api/v1/dev/upstream/message
 POST /api/v1/node/{id}/configuration/tag-processing
 
 WS   /api/v1/events
-WS   /api/v1/events?role=backoffice
+WS   /api/v1/events?role=upstream
 ```
 
 The path `{id}` is the public TimingNodeId.
@@ -173,12 +173,12 @@ A contained TimingData recovery failure is represented for example as:
 The message is diagnostic text; clients use `state`, `code` and `nodeId` for
 machine behaviour.
 
-When the Engineering API backoffice connector is configured, status may additionally
+When the Engineering API upstream connector is configured, status may additionally
 contain this compatible v1 branch:
 
 ```json
 {
-  "backoffice": [
+  "upstream": [
     {
       "id": "engineering",
       "type": "engineering-api",
@@ -186,10 +186,10 @@ contain this compatible v1 branch:
       "nodes": [
         {
           "nodeId": "A",
-          "sync": "PENDING",
-          "localTimingSeq": 42,
-          "backendTimingSeq": 39,
-          "pendingCount": 3
+          "sync": "SYNCED",
+          "timingDataHead": 42,
+          "raceDataAppliedSeq": 123,
+          "raceDataGapFrom": null
         }
       ]
     }
@@ -198,10 +198,12 @@ contain this compatible v1 branch:
 ```
 
 `state` is `DISCONNECTED`, `SYNCHRONIZING`, `CONNECTED` or `ERROR`.
-Node `sync` is `UNKNOWN`, `SYNCED`, `PENDING` or `CONFLICT`.
-`backendTimingSeq` and `pendingCount` may be null while synchronization is
-unknown. These values are semantic status; socket/library diagnostics may be added
-separately without redefining them.
+Node `sync` is `UNKNOWN`, `SYNCED`, `GAP` or `CONFLICT`.
+`timingDataHead` is the local LogBook/IF-05 source head.
+`raceDataAppliedSeq` is the highest contiguously applied Central RACE_DATA sequence;
+`raceDataGapFrom` is non-null only while a missing RaceData sequence is known.
+These are semantic status values; socket/library diagnostics may be added separately
+without redefining them.
 
 ## IF03-OP-004 — Capabilities
 
@@ -227,7 +229,7 @@ Current response shape:
       "enabled": true
     },
     {
-      "id": "ENGINEERING_BACKOFFICE",
+      "id": "ENGINEERING_UPSTREAM",
       "supported": true,
       "enabled": true
     }
@@ -236,8 +238,7 @@ Current response shape:
 ```
 
 `TAG_SCENARIO_SIMULATION` is enabled only for a composition that provides the
-simulated-tag control and a SimulatedAntenna source. `ENGINEERING_BACKOFFICE`
-is enabled only when the Engineering API backoffice connector is configured.
+simulated-tag control and a SimulatedAntenna source. `ENGINEERING_UPSTREAM` is enabled only when the Engineering API upstream connector is configured.
 Unknown capability IDs are compatible additions.
 
 ## IF03-OP-005 — Open at a location
@@ -661,20 +662,21 @@ Development-v1 live mutation supports the four timing/cadence fields. A changed
 `observationQueueCapacity` yields `RESTART_REQUIRED` because it sizes the
 already-composed bounded observation queue.
 
-## IF03-OP-014 — Engineering backoffice UpstreamData ingress
+## IF03-OP-014 — Engineering upstream UpstreamData ingress
 
 HTTP mapping:
 
 ```text
-POST /api/v1/dev/backoffice/message
+POST /api/v1/dev/upstream/message
 ```
 
 The request body is exactly one public/default IF-06 UpstreamData JSON object.
 There is no opaque RabbitMQ/private frame wrapper around it.
 
-The development-v1 engineering connector accepts inbound semantic families that
-are meaningful from backend to SI-01, currently `REFERENCE_DATA`, `SYNC` and
-`PING`. A family used in an unsupported direction is rejected explicitly.
+The development-v1 Engineering API upstream connector accepts Central System
+messages needed for deterministic ST-2, including `RACE_DATA`,
+`SYNC(stream=RACE_DATA,...)`, `REQ(stream=TIMING_DATA,...)` and `PING`.
+A message family or direction not supported by IF-06 is rejected explicitly.
 
 Examples of successful response bodies are:
 
@@ -682,32 +684,34 @@ Examples of successful response bodies are:
 {"result":"ACCEPTED"}
 ```
 
-for accepted PING/SYNC input, and:
+for accepted control input, and:
 
 ```json
-{"result":"APPLIED"}
+{"result":"APPLIED","seq":123}
 ```
 
-for an applied REFERENCE_DATA snapshot. Stable reference-data no-change outcomes
-are `DUPLICATE` and `STALE`.
+after ordered RACE_DATA sequence 123 has been applied. An already-applied RaceData
+sequence may return `DUPLICATE`; it is not applied a second time. A detected sequence
+gap returns `GAP` and causes SI-01 to emit a RACE_DATA REQ from the first missing
+sequence on the upstream event connection.
 
 HTTP mapping:
 
 | Situation | HTTP | Result/error |
 | --- | ---: | --- |
-| semantic input accepted | 200 | `ACCEPTED` |
-| reference snapshot applied | 200 | `APPLIED` |
-| equal-revision duplicate | 200 | `DUPLICATE` |
-| stale reference revision | 200 | `STALE` |
+| semantic control input accepted | 200 | `ACCEPTED` |
+| next RACE_DATA sequence applied | 200 | `APPLIED` + applied `seq` |
+| already-applied RACE_DATA sequence | 200 | `DUPLICATE` |
+| RACE_DATA sequence gap | 409 | `GAP` + expected sequence |
 | malformed/unsupported message or direction | 400 | stable error code |
 | unknown TimingNode | 404 | `UNKNOWN_NODE` |
-| semantic conflict | 409 | `CONFLICT` |
-| no active backoffice-role peer | 409 | `BACKOFFICE_NOT_CONNECTED` |
+| semantic conflict/invalid RaceData change | 409 | `CONFLICT` |
+| no active upstream-role peer | 409 | `UPSTREAM_NOT_CONNECTED` |
 | bounded application admission unavailable | 503 | `BUSY` / `UNAVAILABLE` |
 
-The HTTP result confirms processing of the inbound operation only. An IF-06 semantic
-answer generated by SI-01 is emitted as outbound UpstreamData on the designated
-backoffice event peer.
+The HTTP result confirms processing of the inbound operation only. IF-06 control
+messages generated while processing it, such as RACE_DATA ACK/REQ or a PING answer,
+are emitted as outbound UpstreamData on the designated upstream event peer.
 
 ## IF03-OP-003 — Live events
 
@@ -715,17 +719,17 @@ WebSocket paths/roles:
 
 ```text
 /api/v1/events
-/api/v1/events?role=backoffice
+/api/v1/events?role=upstream
 ```
 
 Both forms use the same configured WebSocket listener/port and the same physical
-SI-02 event connection. The optional `role=backoffice` marks that event client as
-the single active peer for the configured Engineering API backoffice connector.
-A second simultaneous backoffice-role connection is rejected/closed with policy
+SI-02 event connection. The optional `role=upstream` marks that event client as the single active
+Central System Simulator peer for the configured Engineering API upstream connector.
+A second simultaneous upstream-role connection is rejected/closed with policy
 violation code 1008. Normal event clients without the role are unaffected.
 
 The current realization may use a dedicated configured WebSocket listener/port
-relative to HTTP, but D04 does not add another listener for backoffice traffic.
+relative to HTTP, but D04 does not add another listener for upstream traffic.
 
 Event envelope:
 
@@ -753,9 +757,9 @@ shape from `GET /api/v1/status`.
 For `TIMING_DATA_COMMITTED`, `payload` is one committed public IF-05 TimingData record.
 
 For `UPSTREAM_DATA`, `payload` is exactly one public/default IF-06
-UpstreamData JSON object emitted by the Engineering API backoffice connector. This
-event is sent only to the designated `role=backoffice` connection; other live-event
-clients do not receive backoffice semantic traffic.
+UpstreamData JSON object emitted by the Engineering API upstream connector. This
+event is sent only to the designated `role=upstream` connection; other live-event
+clients do not receive upstream semantic traffic.
 
 For `CONFIGURATION_CHANGED`, `payload` identifies the changed runtime
 configuration branch and contains its resulting current view:
@@ -778,11 +782,13 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 
 WebSocket listener startup does not wait for TimingNode recovery. After connection
 SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
-change events. For a `role=backoffice` connection, the Engineering API connector is
-marked operationally connected only after that initial snapshot is successfully sent.
-It then emits its immediate heartbeat PING and fresh node-scoped SYNC state as normal
-`UPSTREAM_DATA` events. Closing that WebSocket marks the connector disconnected and
-stops its heartbeat lifecycle without clearing semantic pending work. If one or more TimingNodes have not published their initial CURRENT
+change events. For a `role=upstream` connection, the Engineering API connector is marked operationally
+connected only after that initial snapshot is successfully sent. It then emits its
+immediate heartbeat PING and node-scoped `SYNC(stream=TIMING_DATA, seq=<LogBook head>)`
+as normal `UPSTREAM_DATA` events. The Central System Simulator answers with its
+RACE_DATA source-head SYNC and can issue TIMING_DATA REQ as required. Closing that
+WebSocket marks the connector disconnected and stops its heartbeat lifecycle without
+clearing LogBook or applied RaceData state. If one or more TimingNodes have not published their initial CURRENT
 status yet, SI-01 closes that connection with code **1013 (Try Again Later)** and
 reason `TimingNode status not ready`; the client reconnects and obtains the complete
 snapshot once recovery has published current state.
@@ -810,7 +816,7 @@ committed TimingData. Transient live events are not durably replayed.
 
 The current client-side sequence is:
 
-1. connect/reconnect to `/api/v1/events` (SI-02 uses `?role=backoffice` when its Backend Simulator is the configured engineering peer);
+1. connect/reconnect to `/api/v1/events` (SI-02 uses `?role=upstream` when its Central System Simulator is the configured engineering peer);
 2. receive `STATUS_SNAPSHOT`;
 3. start buffering later live events during baseline recovery;
 4. replace cached status from the snapshot;
@@ -898,8 +904,8 @@ development-v1 design yet.
 | IF03-OP-011 / IF03-REQ-022 | `POST /api/v1/node/{id}/registration/revoke` |
 | IF03-OP-012 / IF03-REQ-023 | `POST /api/v1/node/{id}/registration/manual` |
 | IF03-OP-013 / IF03-REQ-024 | `POST /api/v1/dev/node/{id}/simulation/registration` |
-| IF03-OP-014 / IF03-REQ-025 | `POST /api/v1/dev/backoffice/message` with structured UpstreamData |
-| IF03-OP-003 / IF03-REQ-026/027 | `/api/v1/events?role=backoffice` + `UPSTREAM_DATA` + normal status events |
+| IF03-OP-014 / IF03-REQ-025 | `POST /api/v1/dev/upstream/message` with structured UpstreamData |
+| IF03-OP-003 / IF03-REQ-026/027 | `/api/v1/events?role=upstream` + `UPSTREAM_DATA` + normal status events |
 | IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
 
 ## Open design points
