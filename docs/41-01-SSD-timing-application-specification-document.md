@@ -1955,9 +1955,6 @@ Application
         +-- Conductor             system-local coordination / inventory
         +-- SystemStatus          complete current system overview
         +-- UpstreamMessagePort   system-level upstream messages
-        +-- UpstreamProtocol
-        |     +-- heartbeat / ping
-        |     +-- synchronisation / reconciliation
         +-- 1..N TimingNode
               +-- NodeId   functional upstream/timing-data identity
               +-- LocationId
