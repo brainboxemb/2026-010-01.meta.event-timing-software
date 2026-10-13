@@ -1,4 +1,4 @@
-# Backoffice transport detailed design
+# Upstream transport detailed design
 
 Status: working draft / focused detailed design
 
@@ -29,13 +29,13 @@ contract.
 
 Two SI-01 connector implementations are planned for the current integration path:
 
-- an **Engineering API backoffice connector** for deterministic ST-2 testing through
+- an **Engineering API upstream connector** for deterministic ST-2 testing through
   existing IF-03 HTTP/WebSocket transport;
-- a **RabbitMQ backoffice connector** for production-shaped integration and deployment.
+- a **RabbitMQ upstream connector** for production-shaped integration and deployment.
 
-The Engineering Client (SI-02) owns one Backend Simulator model/pane. It can drive the
+The Engineering Client (SI-02) owns one Central System Simulator model/pane. It can drive the
 same semantic test data through either IF-03 or RabbitMQ. In RabbitMQ mode SI-02 is the
-controllable external backend peer; it is not part of SI-01.
+controllable external Central System peer; it is not part of SI-01.
 
 The application/domain model must not depend on RabbitMQ classes, socket classes, broker names, or the proprietary production message format.
 
@@ -62,7 +62,7 @@ SystemStatus / TimingNode.UpstreamMessagePort
        |               |
        v               v
 Engineering API   RabbitMQ
-BackofficeConnector BackofficeConnector
+UpstreamConnector UpstreamConnector
        |               |
        v               v
      IF-03         RabbitMQ broker
@@ -76,7 +76,7 @@ implementations preserve the same semantic addressing and feed the same
 application router; neither connector owns application/TimingNode target
 resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
 
-## Semantic upstream/backoffice boundary
+## Semantic upstream/upstream boundary
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
@@ -110,7 +110,7 @@ supply another UpstreamData codec/provider behind the same semantic boundary.
 
 ## Registration-source separation
 
-Every configured `RegistrationSource` has its own logical inbound and outbound backoffice path.
+Every configured `RegistrationSource` has its own logical inbound and outbound upstream path.
 
 Conceptually:
 
@@ -133,7 +133,7 @@ Backoffice transport is selected through settings/application composition rather
 Pseudo-configuration:
 
 ```yaml
-backoffice:
+upstream:
   transport: engineering-api   # or rabbitmq
 ```
 
@@ -148,21 +148,21 @@ This selection does not imply a separate Maven artifact for every transport. Ini
 
 ### Purpose
 
-The Engineering API connector provides a deterministic local backoffice transport without
+The Engineering API connector provides a deterministic local upstream transport without
 adding another SI-01 listener port or another SI-02 connection lifecycle.
 
-It is composed as a normal SI-01 backoffice connector, but uses the already-established
+It is composed as a normal SI-01 upstream connector, but uses the already-established
 engineering interface:
 
-- **IF-03 HTTP/JSON** `POST /api/v1/dev/backoffice/message` for SI-02 to submit
+- **IF-03 HTTP/JSON** `POST /api/v1/dev/upstream/message` for SI-02 to submit
   structured inbound UpstreamData;
 - the **existing IF-03 WebSocket event connection** at
-  `/api/v1/events?role=backoffice` for SI-01 outbound UpstreamData plus normal
+  `/api/v1/events?role=upstream` for SI-01 outbound UpstreamData plus normal
   status/events.
 
 There is no additional listener port and SI-02 does not open a second WebSocket
-connection for the Backend Simulator. The backoffice role designates the existing
-event connection as the one active engineering backend peer. After its normal
+connection for the Central System Simulator. The upstream role designates the existing
+event connection as the one active engineering Central System peer. After its normal
 STATUS_SNAPSHOT baseline is sent, that connection drives the Engineering API
 connector's operational CONNECTED state; close/overload makes it DISCONNECTED.
 
@@ -172,11 +172,11 @@ not make IF-03 the production backoffice interface.
 ### Engineering topology
 
 ```text
-SI-02 Backend Simulator / pane
+SI-02 Central System Simulator / pane
       |                    ^
       | IF-03 HTTP         | IF-03 WebSocket
       v                    |
-EngineeringApiBackofficeConnector
+EngineeringApiUpstreamConnector
              |
              v
 semantic UpstreamData boundary
@@ -191,13 +191,13 @@ Outbound messages are wrapped only by the established IF-03 event envelope as
 Do not tunnel a pre-serialized RabbitMQ frame or proprietary production message as an
 opaque string through IF-03.
 
-The same SI-02 Backend Simulator can therefore edit/send synthetic RaceData and
-StageStartTimes, inspect outbound TimingData/synchronisation state, and exercise
-acknowledgement/synchronization behaviour without direct access to SI-01 Java objects.
+The same SI-02 Central System Simulator can therefore emit ordered RACE_DATA changes,
+inspect ACK/REQ/SYNC and outbound TimingData, deliberately create sequence gaps and
+exercise replay behaviour without direct access to SI-01 Java objects.
 
 ### Engineering connector lifecycle and wiring
 
-`EngineeringApiBackofficeConnector` is one normal BackofficeConnector implementation.
+`EngineeringApiUpstreamConnector` is one normal UpstreamConnector implementation.
 Presentation/IF-03 code owns HTTP/WebSocket mechanics; the connector owns the engineering
 peer lifecycle and forwards decoded UpstreamData through the same
 `UpstreamMessageRouter` used by RabbitMQ.
@@ -205,10 +205,10 @@ peer lifecycle and forwards decoded UpstreamData through the same
 Conceptually:
 
 ```text
-HttpEndpoint POST /dev/backoffice/message
+HttpEndpoint POST /dev/upstream/message
                   |
                   v
-EngineeringApiBackofficeConnector
+EngineeringApiUpstreamConnector
                   |
                   v
           UpstreamMessageRouter
@@ -216,20 +216,21 @@ EngineeringApiBackofficeConnector
 UpstreamMessageRouter / publisher
                   |
                   v
-EngineeringApiBackofficeConnector
+EngineeringApiUpstreamConnector
                   |
                   v
-WebSocketEndpoint role=backoffice
+WebSocketEndpoint role=upstream
        eventType=UPSTREAM_DATA
 ```
 
-Only one backoffice-role peer is active at a time. Generic IF-03 event clients remain
+Only one upstream-role peer is active at a time. Generic IF-03 event clients remain
 independent and do not receive UPSTREAM_DATA. Existing bounded WebSocket backpressure
 policy applies; if the backoffice peer is closed for overload, semantic TimingData
 remains recoverable from LogBook + SYNC progress.
 
-The SI-02 Backend Simulator owns the peer behavior, not SI-01 test shortcuts. It shall
-be able to inspect raw structured UpstreamData, send reference snapshots and SYNC state,
+The SI-02 Central System Simulator owns the peer behavior, not SI-01 test shortcuts. It shall
+be able to inspect raw structured UpstreamData, allocate/send RACE_DATA source sequences,
+track SI-01 ACK, satisfy RACE_DATA REQ, issue TIMING_DATA REQ, exchange source-head SYNC,
 auto-answer PING REQ with PING ANS preserving optional mode/pingId, send manual PING,
 and deliberately disconnect/reconnect for recovery tests.
 
@@ -237,11 +238,11 @@ and deliberately disconnect/reconnect for recovery tests.
 
 ST-2 scenarios include:
 
-- connect SI-02's normal event stream with `role=backoffice` and observe the normal
+- connect SI-02's normal event stream with `role=upstream` and observe the normal
   status baseline followed by immediate PING/SYNC UpstreamData;
 - submit RaceData and StageStartTimes through the HTTP backoffice operation and inspect
   their semantic APPLIED/DUPLICATE/STALE/conflict outcomes;
-- observe outbound TIMING_DATA and SYNC UpstreamData in the Backend Simulator;
+- observe outbound TIMING_DATA and SYNC UpstreamData in the Central System Simulator;
 - let SI-02 answer PING REQ automatically and allow explicit manual PING in either
   direction;
 - make SI-02 advertise backend `timingSeq` through SYNC to drive pending/replay tests;
@@ -249,15 +250,15 @@ ST-2 scenarios include:
   plus replay from the backend's current contiguous sequence;
 - repeat against configured bindings for one or multiple TimingNodes.
 
-This profile verifies backoffice semantics and application routing. It deliberately does
+This profile verifies upstream semantics and application routing. It deliberately does
 not prove RabbitMQ connection/channel/consumer behaviour.
 
 ## RabbitMQ transport
 
 RabbitMQ is a concrete communication implementation beneath the same semantic boundary.
-For ST-3 the Engineering Client uses the same Backend Simulator model/pane as ST-2, but
+For ST-3 the Engineering Client uses the same Central System Simulator model/pane as ST-2, but
 switches to a RabbitMQ backend-peer transport. SI-01 and SI-02 then both connect to the
-same broker; SI-02 plays the external backend side of the exchange.
+same broker; SI-02 plays the external Central System side of the exchange.
 
 ![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
 
@@ -282,38 +283,38 @@ If production uses the default exchange or a direct-to-queue convention, the imp
 
 ### RabbitMQ connector topology
 
-The application may compose 0..N `BackofficeConnector` instances. RabbitMQ is one concrete connector implementation:
+The application may compose 0..N `UpstreamConnector` instances. RabbitMQ is one concrete connector implementation:
 
 ```text
 application
-  +-- BackofficeConnector connector-01
-  |     -> RabbitMqBackofficeConnector
+  +-- UpstreamConnector connector-01
+  |     -> RabbitMqUpstreamConnector
   |     -> 1..N TimingNode/source bindings
   |
-  +-- BackofficeConnector connector-02
-        -> RabbitMqBackofficeConnector
+  +-- UpstreamConnector connector-02
+        -> RabbitMqUpstreamConnector
         -> 1..N TimingNode/source bindings
 ```
 
-A `RabbitMqBackofficeConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
+A `RabbitMqUpstreamConnector` owns its broker connection/channel/consumer/publisher resources internally. Those mechanics are implementation detail, not a separate architectural manager component.
 
 The ST-3 engineering peer is separate from that SI-01 connector:
 
 ```text
-SI-02 Backend Simulator
+SI-02 Central System Simulator
         |
-RabbitMqBackendTransport
+RabbitMqCentralSystemTransport
         |
         v
     RabbitMQ broker
         ^
         |
-RabbitMqBackofficeConnector
+RabbitMqUpstreamConnector
         |
-SI-01 semantic backoffice boundary
+SI-01 semantic upstream boundary
 ```
 
-The SI-02 transport uses backend-side queue/exchange/routing configuration complementary
+The SI-02 transport uses Central-System-side queue/exchange/routing configuration complementary
 to SI-01. It reuses the same semantic simulator data as the IF-03 transport so that ST-2
 and ST-3 differ primarily in transport, not test intent.
 
@@ -348,7 +349,7 @@ Each consumer must have controlled channel ownership. Arbitrary domain threads m
 Pseudo-configuration only:
 
 ```yaml
-backoffice:
+upstream:
   connectors:
     - id: connector-01
       type: rabbitmq
@@ -524,10 +525,10 @@ application/domain
     semantic routing, RaceData ordered application, ACK/REQ/SYNC state
 
 existing IF-03 presentation/application adapter
-    EngineeringApiBackofficeConnector
+    EngineeringApiUpstreamConnector
 
 io.messaging.rabbitmq
-    RabbitMqBackofficeConnector
+    RabbitMqUpstreamConnector
     broker connection/channel/consumer/publisher implementation
 ```
 
@@ -551,7 +552,7 @@ Public core/test code may define:
 - generic source/node binding identities where connector routing requires them;
 - shared public `UpstreamData` + provider/codec contracts;
 - built-in public/reference JSON UpstreamData representation;
-- Engineering API backoffice adapter using structured public UpstreamData;
+- Engineering API upstream adapter using structured public UpstreamData;
 - RabbitMQ connection/consumer infrastructure if proprietary production codec details remain separate;
 - SI-02 RabbitMQ backend-peer test transport using synthetic/public topology;
 - synthetic RabbitMQ topology for integration tests.
@@ -583,21 +584,21 @@ real application process
       +-- in-memory/stub backoffice port
 ```
 
-This is the fastest system-level feedback loop and does not require a network backoffice service.
+This is the fastest system-level feedback loop and does not require a network upstream service.
 
 ### ST-2 — Engineering API backoffice loop
 
-Goal: verify the semantic backoffice path through the existing Engineering Client and
+Goal: verify the semantic upstream path through the existing Engineering Client and
 IF-03 transport before broker-specific behaviour is introduced.
 
 ```text
-SI-02 Backend Simulator
+SI-02 Central System Simulator
       | IF-03 HTTP / WebSocket
       v
-EngineeringApiBackofficeConnector
+EngineeringApiUpstreamConnector
       |
       v
-real SI-01 semantic backoffice path
+real SI-01 semantic upstream path
 ```
 
 This profile verifies source/node routing, inbound/outbound semantics,
@@ -606,18 +607,18 @@ acknowledgement/synchronization and recovery of the engineering view without Rab
 ### ST-3 — RabbitMQ integration
 
 Goal: verify the production-shaped broker transport end-to-end with SI-02 as the
-controllable backend peer.
+controllable Central System peer.
 
 ```text
-SI-02 Backend Simulator
+SI-02 Central System Simulator
       |
-RabbitMqBackendTransport
+RabbitMqCentralSystemTransport
       |
       v
 hosted RabbitMQ
       ^
       |
-RabbitMqBackofficeConnector
+RabbitMqUpstreamConnector
       |
       v
 real SI-01
@@ -645,11 +646,11 @@ The intended ST-3 operator flow is:
 
 ```text
 configure test broker
-start SI-01 with RabbitMqBackofficeConnector
-connect SI-02 Backend Simulator using RabbitMqBackendTransport
+start SI-01 with RabbitMqUpstreamConnector
+connect SI-02 Central System Simulator using RabbitMqCentralSystemTransport
 exercise inbound/outbound source flows
 force/recover broker or client connection where practical
-verify pending delivery / synchronization
+verify source-head SYNC, ACK/REQ and replay synchronization
 clean up test topology
 ```
 
@@ -657,28 +658,28 @@ clean up test topology
 
 Temporary identifiers only.
 
-- **CAND-BO-001** — SI-01 backoffice semantics shall be independent from the concrete communication transport.
-- **CAND-BO-002** — The backoffice transport shall be selectable through external configuration/composition.
-- **CAND-BO-003** — An Engineering API backoffice connector shall be available for deterministic ST-2 testing without requiring RabbitMQ.
+- **CAND-BO-001** — SI-01 upstream semantics shall be independent from the concrete communication transport.
+- **CAND-BO-002** — The upstream transport shall be selectable through external configuration/composition.
+- **CAND-BO-003** — An Engineering API upstream connector shall be available for deterministic ST-2 testing without requiring RabbitMQ.
 - **CAND-BO-004** — The Engineering API connector shall carry structured public/reference UpstreamData through existing IF-03 HTTP/WebSocket transport.
 - **CAND-BO-005** — RabbitMQ shall support a source-specific inbound queue configuration for each configured registration source.
 - **CAND-BO-006** — RabbitMQ shall support source-specific outbound routing configuration for each configured registration source.
 - **CAND-BO-007** — Multiple RabbitMQ source consumers shall be able to share one physical broker connection.
 - **CAND-BO-008** — External transport callbacks shall not directly mutate timing-domain state.
 - **CAND-BO-009** — Transport connection status and per-source inbound/outbound status shall be observable independently.
-- **CAND-BO-010** — Loss of external backoffice transport shall not discard locally committed registration data; LogBook remains the authoritative replay payload history.
-- **CAND-BO-011** — Reconnection shall restore configured source communication, exchange semantic SYNC state and replay records after the backend's highest contiguous accepted sequence.
+- **CAND-BO-010** — Loss of external upstream transport shall not discard locally committed registration data; LogBook remains the authoritative replay payload history.
+- **CAND-BO-011** — Reconnection shall exchange fresh source-head SYNC state and use bidirectional REQ to recover missing TIMING_DATA or RACE_DATA without changing either source sequence.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
-- **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
-- **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
+- **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 Central System transport so the Engineering Client can exercise the upstream Central System role end-to-end.
+- **CAND-BO-014** — SI-01 shall support zero or more configured upstream connectors within one application composition.
 - **CAND-BO-018** — Each operationally connected upstream connector shall publish one immediate PING REQUEST with `mode = HB` and then another every 30 seconds until disconnect/deactivation; every valid PING REQUEST shall receive one PING ANSWER preserving optional HEARTBEAT mode (manual requests omit mode; correlation remains optional).
-- **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
+- **CAND-BO-015** — A upstream connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
-- **CAND-BO-017** — Backoffice routing/fan-out shall remain separate from concrete connector transport/resource handling.
+- **CAND-BO-017** — Upstream routing/fan-out shall remain separate from concrete connector transport/resource handling.
 
 ## Open questions
 
-- Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
+- Within one RabbitMqUpstreamConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
 - What connector-specific retry/backoff timing is appropriate for the Engineering API
