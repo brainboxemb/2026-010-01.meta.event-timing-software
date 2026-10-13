@@ -200,23 +200,15 @@ nodes:
 - id: system-conductor
   object_id: SystemConductor
   group: timing-system-aggregate
-  label: "SystemConductor"
-  subtitle: "TimingNode lifecycle • system composition"
+  label: "Conductor"
+  subtitle: "TimingNode lifecycle • system coordination"
   kind: service
   notation: component
   layout: {x: 75, y: 667, w: 280, h: 50}
 
 # TimingNode is the active serial ownership boundary. Its internals are grouped
-# by responsibility to mirror the Java package structure instead of presenting
-# every helper as a peer component.
-- id: timing-node-logic
-  group: timing-node-aggregate
-  label: "TimingNodeLogic"
-  subtitle: "node state • core domain decisions"
-  kind: service
-  notation: component
-  layout: {x: 415, y: 657, w: 210, h: 50}
-
+# by architectural responsibility; concrete classes are listed only as contents
+# of those areas rather than promoted to peer architecture components.
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
@@ -224,11 +216,11 @@ nodes:
   subtitle: "node-scoped upstream semantics"
   kind: service
   notation: component
-  layout: {x: 855, y: 657, w: 225, h: 50}
+  layout: {x: 630, y: 657, w: 215, h: 50}
 
 - id: node-processing
   group: timing-node-aggregate
-  label: "node.processing"
+  label: "Processing"
   items:
     - label: TagProcessor
       object_id: TagProcessor
@@ -240,7 +232,7 @@ nodes:
 
 - id: node-data
   group: timing-node-aggregate
-  label: "node.data"
+  label: "Data"
   items:
     - label: TeamAssignments
       object_id: TeamAssignments
@@ -254,7 +246,7 @@ nodes:
 
 - id: node-timing
   group: timing-node-aggregate
-  label: "node.timing"
+  label: "Timing"
   items:
     - label: StageTimingCalculator
       object_id: StageTimingCalculator
