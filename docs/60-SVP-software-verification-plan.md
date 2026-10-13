@@ -538,7 +538,7 @@ private source. Verification should cover at least:
 - built-in-provider discovery and selection;
 - `SimulatedAntenna` availability with no external extension JARs;
 - loading a synthetic external test provider through the same startup path intended for production extensions;
-- typed conformance for TimingData, UpstreamProtocol, Antenna, CAN-protocol and display-protocol provider contracts as those contracts are implemented;
+- typed conformance for TimingData, UpstreamData, Antenna, CAN-protocol and display-protocol provider contracts as those contracts are implemented;
 - deterministic failure for duplicate provider IDs, unknown configured provider IDs and incompatible provider configuration;
 - proof that domain/application behaviour receives normal typed contracts and does not depend on extension-loader classes.
 
