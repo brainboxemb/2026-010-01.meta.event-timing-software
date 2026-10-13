@@ -520,6 +520,18 @@ the addressed TimingNode. Revision mismatch shall be reconciled using the applic
 REFERENCE_DATA snapshot and shall not create another reference-data revision namespace.
 :::
 
+:::{ifreq} Re-establish synchronization after connection changes  
+:id: IF06-REQ-021  
+:status: D  
+
+When an upstream semantic connection is established or re-established, the peers
+shall exchange fresh SYNC state for the applicable TimingNodes before treating that
+connection as synchronized. Progress remembered from an earlier transport/session
+shall not by itself prove current backend state. A backend TimingData sequence greater
+than SI-01's local committed head is a synchronization conflict and shall not cause
+SI-01 to invent or skip source records.
+:::
+
 :::{ifreq} Atomic revisioned reference snapshots  
 :id: IF06-REQ-014  
 :status: D  
