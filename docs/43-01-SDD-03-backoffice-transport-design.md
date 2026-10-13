@@ -92,9 +92,15 @@ interface UpstreamInboundListener {
 }
 ```
 
-`UpstreamData` is the reusable/public semantic message contract defined by IF-06. A
-message variant that carries TimingData uses the existing shared TimingData contract;
-it does not copy or redefine TimingData identity/order semantics.
+`UpstreamData` is the reusable/public semantic message contract defined by IF-06.
+In the default implementation, both inbound and outbound exchanges use the same
+UpstreamData JSON envelope. A message variant that carries TimingData embeds one
+or more committed IF-05 records as child values of a `TIMING_DATA` message; it
+does not send standalone legacy log lines or redefine TimingData identity/order
+semantics. PING/PONG and other message families share that envelope, with their
+own payloads. Deployment-specific adapters may translate asymmetric external
+wire protocols at the connector boundary without exposing them to application
+or domain code.
 
 These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
