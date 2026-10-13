@@ -321,6 +321,35 @@ backoffice:
 
 For two configured sources, two inbound consumers exist even if they share one physical RabbitMQ connection.
 
+## PING scheduling and connector lifecycle
+
+PING scheduling belongs to the lifecycle of each configured upstream connector, not to a
+TimingNode and not to TimingData persistence.
+
+When a connector reports that it has reached its operational connected state, the owning
+connector/gateway lifecycle starts one periodic PING task with:
+
+```text
+initial delay: 0
+period:        30 seconds
+```
+
+The first execution therefore publishes PING immediately. Later executions publish PING
+at the 30-second period while that connector remains operationally connected.
+
+When the connector disconnects, deactivates or is replaced, its scheduled PING task is
+cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
+Only one active PING task may exist per active connector.
+
+The Java implementation should use the application's existing scheduled-executor
+infrastructure rather than introduce a separate `java.util.Timer` thread solely for
+heartbeat work. PING submission goes through the normal UpstreamData publisher/connector
+path. It bypasses TimingData sequence allocation and LogBook persistence because PING is
+not a TimingData record.
+
+Transport-level keepalive mechanisms (for example broker/TCP heartbeat features) may
+coexist with this application-level PING but do not replace IF06-REQ-011/012.
+
 ## Outbox and delivery
 
 Local commitment and external transport are deliberately separated.
@@ -542,6 +571,7 @@ Temporary identifiers only.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
+- **CAND-BO-015** — Each operationally connected upstream connector shall publish one immediate UpstreamData PING and then one PING every 30 seconds until disconnect/deactivation.
 - **CAND-BO-015** — A backoffice connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
 - **CAND-BO-016** — Connector-specific external names/routing identities shall not redefine the internal `TimingNodeId`.
 - **CAND-BO-017** — Backoffice routing/fan-out shall remain separate from concrete connector transport/resource handling.
