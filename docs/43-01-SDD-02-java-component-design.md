@@ -188,7 +188,7 @@ the same event-profile semantics. Event-specific provider JARs may supply
 alternative EventData profiles through the normal typed extension mechanism.
 Runtime discovery treats `EventDataProvider` as a typed provider family parallel
 to `TimingDataProvider`; neither provider API depends on the other. Live race state
-such as `ReserveTagMap` and `StageStartTimes` remains separate TimingNode-local
+such as `TeamAssignments` and `StageStartTimes` remains separate TimingNode-local
 mutable state and is not part of the shared EventData artifact.
 
 The shared TimingData artifact has its own package root:
@@ -268,21 +268,25 @@ runtime/
 
 domain/
   system/
-    TimingSystem.java                   parent aggregate for 1..N TimingNodes
-    TimingSystemId.java                 internal composition/simulation identity
-    SystemConductor.java                first system coordinator; node lifecycle + inventory
-    SystemStatus.java                   complete current TimingSystem overview
+    SystemConductor.java                TimingSystem coordination and TimingNode lifecycle
   node/
-    TimingNode.java
-    TimingNodeId.java
-    UpstreamMessagePort.java          node-scoped upstream semantic handler
-    NextUpTeams.java                  passive per-node state
-    NextUpTeamsStore.java             persistence port for next-up analysis history
-    ReserveTagMap.java               passive reserve RegistrationId -> TeamId state
-    StageStartTimes.java              passive per-node live start-time state
-    StageStartTimesStore.java         optional persistence port for start-time analysis history
-    TagProcessor.java                 node-local registration-passage processing
-    TagProcessingPolicy.java          compiled defaults + active tag-processing policy
+    TimingNode.java                     active serial ownership boundary
+    TimingNodeLogic.java                package-private mutable node logic
+    UpstreamMessagePort.java            node-scoped upstream semantic handler
+    data/
+      TeamAssignments.java              live RegistrationId -> TeamId assignments
+      StageStartTimes.java              live TeamId -> TimingTimestamp starts
+      UniqueTeamRegistrations.java      compact active-registration state
+    processing/
+      TagProcessor.java                 registration-passage processing
+      TagObservationFilter.java         observation selection
+      RegistrationDuplicateFilter.java registration duplicate suppression
+      TagProcessingPolicy.java          compiled processing policy
+    timing/
+      StageTimingCalculator.java        read-side stage timing calculation
+      data/
+        StageTiming.java                immutable calculated result
+        StageTimingStatus.java          result status
   logbook/
     LogBook.java                        passive committed TimingData history
   timingdata/
@@ -672,7 +676,7 @@ RegistrationId registrationIdFor(TeamId teamId)
 A missing stable mapping is represented explicitly by the API contract. In the
 default/reference profile, normal RegistrationId/TeamId conversion is
 algorithmic while reserve RegistrationId/TeamId conversion has no stable
-EventData answer until assignment data exists. Runtime TeamId resolution may layer a TimingNode `ReserveTagMap` fallback on top of
+EventData answer until assignment data exists. Runtime TeamId resolution may layer TimingNode `TeamAssignments` on top of
 EventData without changing TagProcessor's TagId-to-RegistrationId responsibility.
 
 The provider/antenna implementation may decode or decrypt proprietary source
@@ -694,9 +698,9 @@ same duplicate window.
 
 `RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
 Its incremental changes are applied on the TimingNode lane to passive state such as
-`ReserveTagMap` and `StageStartTimes`. EventData remains the owner of stable
-TagId/RegistrationId/TeamId profile semantics; ReserveTagMap owns only the live
-reserve RegistrationId-to-TeamId fallback.
+`TeamAssignments` and `StageStartTimes`. EventData remains the owner of stable
+TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
+RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
@@ -2713,15 +2717,15 @@ TimingNode
   +-- physical TimingNode worker shared with other node lanes
   |
   +-- passive LogBook
-  +-- passive NextUpTeams
-  +-- passive ReserveTagMap
+  +-- passive TeamAssignments
   +-- passive StageStartTimes
+  +-- passive UniqueTeamRegistrations
   |
   +-- per-type store ports
 ```
 
 This gives one writer for all mutable per-node state and one clear ordering
-between registration, lifecycle, next-up and reference-data changes.
+between registration, lifecycle and reference-data changes.
 
 ### Why composition instead of an ActiveObject base class
 
@@ -3369,15 +3373,14 @@ TimingNode state policy, allocate sequence numbers, resolve `TagId` or
 stay with the TimingNode and its contained domain components.
 
 Source/reference resolution happens outside the TimingData factory. EventData owns
-TagId-to-RegistrationId and stable RegistrationId-to-TeamId relationships. Live reserve
-TeamId lookup is a fallback through ReserveTagMap:
+TagId-to-RegistrationId and stable RegistrationId-to-TeamId relationships. Live TeamId lookup may fall back through TeamAssignments:
 
 ```text
 TagId -> EventData -> RegistrationId
                         |
                         +-> EventData stable TeamId
                         |
-                        +-> ReserveTagMap fallback TeamId
+                        +-> TeamAssignments fallback TeamId
 ```
 
 TimingData continues to store the already resolved RegistrationId; TeamId is derived
