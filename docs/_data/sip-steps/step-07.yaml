@@ -3,6 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete D02 reference-data semantics. EventData remains stable profile identity;
+      RaceData supplies live node-scoped RegistrationId-to-TeamId assignments only where
+      EventData has no stable TeamId; StageStartTimes is a revisioned TeamId-to-start
+      snapshot; StageTiming is derived from committed TimingData plus current reference
+      state and never rewrites TimingData. Reference snapshots are atomic and revisioned
+      per TimingNode + dataset.
+  - date: '2026-10-13'
+    change: >-
       Complete the D01 IF-06 baseline. Use one bidirectional UpstreamData model with
       a public/reference JSON representation: TIMING_DATA embeds structured IF-05
       records, while PING uses op=REQ/ANS with optional mode=HB and optional pingId.
@@ -35,17 +43,19 @@ activities:
   - id: D02
     lane: documentation
     kind: decision
-    state: next
+    state: done
     depends_on: [D01]
     note: >-
-      Define ownership and semantics for RaceData, StageStartTimes, TeamID
-      interpretation and StageTiming. Specify node-scoped application, freshness and
-      validation rules so derived timing does not become transport-owned behaviour.
+      EventData owns stable profile identity. RaceData owns live node-scoped
+      RegistrationId-to-TeamId fallback assignments; StageStartTimes owns revisioned
+      TeamId-to-start snapshots; StageTiming derives results from committed TimingData
+      plus current reference state. Reference snapshots use atomic monotone revision
+      semantics per TimingNode + dataset and remain transport-independent.
 
   - id: D03
     lane: documentation
     kind: decision
-    state: planned
+    state: next
     depends_on: [D01]
     note: >-
       Define pending outbound work and synchronization semantics: acknowledgement,
