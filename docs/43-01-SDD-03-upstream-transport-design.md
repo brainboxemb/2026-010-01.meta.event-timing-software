@@ -35,7 +35,7 @@ Two SI-01 connector implementations are planned for the current integration path
 
 The Engineering Client (SI-02) owns one Upstream System Simulator model/pane. It can drive the
 same semantic test data through either IF-03 or RabbitMQ. In RabbitMQ mode SI-02 is the
-controllable external upstream system peer; it is not part of SI-01.
+controllable external Upstream System peer; it is not part of SI-01.
 
 The application/domain model must not depend on RabbitMQ classes, socket classes, broker names, or the proprietary production message format.
 
@@ -69,14 +69,14 @@ UpstreamConnector UpstreamConnector
 ```
 
 `UpstreamMessageRouter` is application behaviour scoped only to messages
-exchanged with the external upstream system. **Upstream** identifies that
+exchanged with the external Upstream System. **Upstream** identifies that
 relationship and remains bidirectional; it is not a per-message direction.
 `UpstreamGateway` and its connectors are I/O. Both transport
 implementations preserve the same semantic addressing and feed the same
 application router; neither connector owns application/TimingNode target
 resolution. `TimingNode.UpstreamMessagePort` is bidirectional.
 
-## Semantic upstream/upstream boundary
+## Semantic Upstream System boundary
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
@@ -257,7 +257,7 @@ not prove RabbitMQ connection/channel/consumer behaviour.
 RabbitMQ is a concrete communication implementation beneath the same semantic boundary.
 For ST-3 the Engineering Client uses the same Upstream System Simulator model/pane as ST-2, but
 switches to a RabbitMQ upstream system-peer transport. SI-01 and SI-02 then both connect to the
-same broker; SI-02 plays the external upstream system side of the exchange.
+same broker; SI-02 plays the external Upstream System side of the exchange.
 
 ![RabbitMQ shared connection with per-source consumers and controlled publishing](../../../raw/prod/docs/assets/architecture/rabbitmq-source-topology.svg)
 
@@ -313,7 +313,7 @@ RabbitMqUpstreamConnector
 SI-01 semantic upstream boundary
 ```
 
-The SI-02 transport uses upstream system-side queue/exchange/routing configuration complementary
+The SI-02 transport uses Upstream-System-side queue/exchange/routing configuration complementary
 to SI-01. It reuses the same semantic simulator data as the IF-03 transport so that ST-2
 and ST-3 differ primarily in transport, not test intent.
 
@@ -667,7 +667,7 @@ Temporary identifiers only.
 - **CAND-UP-010** — Loss of external upstream transport shall not discard locally committed registration data; LogBook remains the authoritative replay payload history.
 - **CAND-UP-011** — Reconnection shall restore configured source communication, exchange semantic SYNC state and replay records after the upstream system's highest contiguous accepted sequence.
 - **CAND-UP-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
-- **CAND-UP-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 upstream system-peer transport so the Engineering Client can exercise the broker-side upstream system role end-to-end.
+- **CAND-UP-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 upstream system-peer transport so the Engineering Client can exercise the broker-side Upstream System role end-to-end.
 - **CAND-UP-014** — SI-01 shall support zero or more configured upstream connectors within one application composition.
 - **CAND-UP-018** — Each operationally connected upstream connector shall publish one immediate PING REQUEST with `mode = HB` and then another every 30 seconds until disconnect/deactivation; every valid PING REQUEST shall receive one PING ANSWER preserving optional HEARTBEAT mode (manual requests omit mode; correlation remains optional).
 - **CAND-UP-015** — A upstream connector shall support bindings for one or more TimingNodes, and one TimingNode may be bound to more than one connector.
