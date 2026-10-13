@@ -3,13 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
-      Refine the integration topology: host the deterministic local Backend Simulator
-      inside SI-02 as an engineering fixture, but keep all SI-01 interaction on the real
-      backend transport/interface boundary. Use that for ST-2 reference-data,
-      acknowledgement and reconnect scenarios. Follow with an actual external RabbitMQ
-      ST-3 run using CloudAMQP or an equivalent hosted broker; keep broker credentials
-      outside source control and do not make hosted service availability a mandatory
-      fast-CI dependency.
+      Refine the integration topology: SI-01 hosts a dedicated EngineeringBackendServer
+      as the deterministic ST-2 transport adapter, analogous in infrastructure role to
+      LoggingServer. SI-02 connects through a backend client connector in its connection
+      layer and provides the Backend pane. The SI-01 server enters/leaves at the same
+      semantic backoffice boundary as the later RabbitMQ connector, so only transport is
+      substituted. Follow with an external RabbitMQ ST-3 run using CloudAMQP or equivalent;
+      keep broker credentials outside source control and hosted service availability out
+      of mandatory fast CI.
   - date: '2026-10-13'
     change: >-
       Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
@@ -62,11 +63,11 @@ activities:
     depends_on: [D01, D03]
     note: >-
       Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
-      integration topology: SI-02 hosts a local Backend Simulator for deterministic
-      ST-2 scenarios, while all communication with SI-01 still crosses the real backend
-      transport/interface boundary. ST-3 then qualifies RabbitMQ against an external
-      hosted broker such as CloudAMQP. Keep connector/session mechanics below the
-      semantic upstream boundary.
+      topology: SI-01 hosts an EngineeringBackendServer for deterministic ST-2 scenarios;
+      SI-02 connects through a Backend client connector/pane. The server adapter maps to
+      the same semantic upstream boundary used by RabbitMqBackofficeConnector. ST-3 then
+      qualifies RabbitMQ against an external hosted broker such as CloudAMQP. Keep all
+      connector/session mechanics below the semantic upstream boundary.
 
   - id: A01
     lane: application
@@ -123,11 +124,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Add a Backend Simulator to SI-02. It shall edit/send synthetic RaceData and
-      StageStartTimes, display received outbound TimingData/synchronisation state,
-      control acknowledgement and deliberately trigger disconnect/reconnect/failure.
-      Its SI-01 communication must use the real backend transport/interface boundary;
-      direct calls into SI-01 internals or IF-03 shortcuts are not allowed.
+      Add the local engineering transport pair: SI-01 EngineeringBackendServer plus
+      the SI-02 Backend client connector/pane. SI-02 shall edit/send synthetic RaceData
+      and StageStartTimes, display outbound TimingData/synchronisation state, control
+      acknowledgement and deliberately trigger disconnect/reconnect/failure. On SI-01,
+      the server adapter enters/leaves at the normal semantic backoffice boundary;
+      direct domain-object calls and IF-03 shortcuts are not allowed.
 
   - id: V02
     lane: verification
@@ -135,10 +137,10 @@ activities:
     state: planned
     depends_on: [A03, A05]
     note: >-
-      Use the SI-02 Backend Simulator to verify node-scoped reference-data application,
-      TeamID/StageTiming results, outbound visibility, acknowledgement handling and
-      local continuity across deliberate disconnect/reconnect, including pending-work
-      reconciliation after recovery.
+      Connect SI-02 to the SI-01 EngineeringBackendServer and verify node-scoped
+      reference-data application, TeamID/StageTiming results, outbound visibility,
+      acknowledgement handling and local continuity across deliberate disconnect/reconnect,
+      including pending-work reconciliation after recovery.
 
   - id: A06
     lane: application
