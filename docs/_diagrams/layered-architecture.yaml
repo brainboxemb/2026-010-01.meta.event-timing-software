@@ -37,15 +37,15 @@ groups:
   layout: {x: 30, y: 546, w: 1120, h: 485}
   # Domain keeps a compact, regular gap below the aggregate and TimingData.
   # The right shoulder remains slightly shallower so the Domain/I/O relation is
-  # visible without making Devices look embedded in Domain.
+  # visible; its break is shifted right enough to keep the shared data row inside Domain.
   outline:
     corner_radius: 10
     points:
       - {x: 0.0, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 0.84}
-      - {x: 0.7203390, y: 0.84}
-      - {x: 0.6694915, y: 1.0}
+      - {x: 0.7767857, y: 0.84}
+      - {x: 0.7187500, y: 1.0}
       - {x: 0.0, y: 1.0}
 - id: timing-system-aggregate
   object_id: TimingSystem
@@ -78,8 +78,8 @@ groups:
     corner_radius: 10
     points:
       - {x: 0.0, y: 0.3007752}
-      - {x: 0.6694915, y: 0.3007752}
-      - {x: 0.7203390, y: 0.0}
+      - {x: 0.7187500, y: 0.3007752}
+      - {x: 0.7767857, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 1.0}
       - {x: 0.0, y: 1.0}
@@ -299,7 +299,7 @@ nodes:
   subtitle: "records • factory • codec"
   kind: service
   notation: component
-  layout: {x: 275, y: 956, w: 200, h: 50}
+  layout: {x: 680, y: 956, w: 200, h: 50}
 
 - id: upstream-data-domain
   object_id: UpstreamData
@@ -308,8 +308,8 @@ nodes:
   subtitle: "timing • race • sync • ack • req • ping"
   kind: service
   notation: component
-  # Keep a readable label corridor between TimingData and UpstreamData without pushing UpstreamData to the right edge.
-  layout: {x: 605, y: 956, w: 220, h: 50}
+  # Keep UpstreamData central; TimingData sits clearly below TimingNode while staying inside the Domain shoulder.
+  layout: {x: 375, y: 956, w: 220, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -634,10 +634,9 @@ edges:
   label: uses / produces
   dashed: true
   from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.70}
+  to_anchor: {side: top, position: 0.75}
   route:
     - {x: 830, y: 936}
-    - {x: 415, y: 936}
 
 - from: upstream-data-domain
   to: timing-data-domain
