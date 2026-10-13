@@ -63,7 +63,7 @@ groups:
     - NodeId
     - LocationId
     - State
-  properties_width: 240
+  properties_width: 220
   kind: model
   notation: component
   layout: {x: 390, y: 606, w: 720, h: 320}
