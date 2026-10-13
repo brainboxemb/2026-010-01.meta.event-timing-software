@@ -3,6 +3,13 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete A02 on Java main revision 99d1d5839c7f837d19095f3b253708728952cdc1.
+      The UpstreamData base, ordered per-node RACE_DATA sequence, ReserveTagMap and
+      StageStartTimes SET/DEL state, apply-before-ACK semantics, gap-to-REQ behavior,
+      node UpstreamMessagePort and application UpstreamMessageRouter are implemented
+      and qualified by Java verification and runtime characterization.
+  - date: '2026-10-13'
+    change: >-
       Close A01/V01 by requalifying the existing multi-topology baseline on Java main
       revision 7d87344725d9deb8c91bfda524b35c085b53b401. VC-ST1-007 and VC-ST1-008
       both pass in the integrated -Psystem-test run, confirming independent node
@@ -114,7 +121,7 @@ activities:
   - id: A02
     lane: application
     kind: implementation
-    state: next
+    state: done
     depends_on: [D01, D02, V01]
     note: >-
       Implement the Central-to-node ordered RACE_DATA ingress base: source-sequence
@@ -125,12 +132,12 @@ activities:
   - id: A03
     lane: application
     kind: implementation
-    state: planned
+    state: next
     depends_on: [A02, D02]
     note: >-
-      Implement StageTiming using the promoted node-owned reference/start-time model
-      and existing committed TimingData stream. Keep calculation independent from
-      concrete backoffice transport/session mechanics.
+      Implement StageTiming using the node-owned ReserveTagMap/StageStartTimes live
+      race state and existing committed TimingData stream. Keep calculation independent
+      from concrete upstream connector/session mechanics.
 
   - id: A04
     lane: application
