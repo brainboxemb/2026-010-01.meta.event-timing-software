@@ -95,9 +95,8 @@ The current semantic families are:
 | Ping request / answer | bidirectional | one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
-The public RaceData and StageStartTimes reference-data semantics are defined below.
-Synchronization payload semantics remain a Step-7 D03 decision. Their representations
-must remain compatible with the common requirements in this ISD.
+The public RaceData, StageStartTimes and synchronization semantics are defined below.
+Their representations must remain compatible with the common requirements in this ISD.
 
 ### TimingData relationship
 
