@@ -364,10 +364,10 @@ contains one or more target IDs; Sphinx-Needs generates incoming backlinks.
 Example of a MyST interface requirement:
 
 ```markdown
-:::{ifreq} Status query
-:id: IF03-REQ-004
-:status: R
-:specifies: UC-001, UC-008, UC-009
+:::{ifreq} Status query  
+:id: IF03-REQ-004  
+:status: R  
+:specifies: UC-001, UC-008, UC-009  
 
 IF-03 shall provide IF03-OP-002.
 :::
