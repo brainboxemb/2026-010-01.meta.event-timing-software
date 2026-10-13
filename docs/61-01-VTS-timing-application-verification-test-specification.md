@@ -510,8 +510,8 @@ tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
 **Purpose**
 
-Verify bidirectional PING REQUEST/ANSWER semantics: required `op`, optional
-HEARTBEAT `mode`, manual behavior when mode is absent, and optional
+Verify bidirectional PING request/answer semantics: required `op = REQ | ANS`,
+optional heartbeat `mode = HB`, manual behavior when mode is absent, and optional
 reference correlation, without creating TimingData.
 
 **Setup**
@@ -527,15 +527,15 @@ reference correlation, without creating TimingData.
 1. Start SI-01 with the upstream connector not yet operationally connected.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
-3. Verify `PING(op=REQUEST, mode=HEARTBEAT)` is published immediately rather
+3. Verify `PING(op=REQ, mode=HB)` is published immediately rather
    than waiting for the first 30-second period.
-4. Return `PING(op=ANSWER, mode=HEARTBEAT)` and verify SI-01 processes it
+4. Return `PING(op=ANS, mode=HB)` and verify SI-01 processes it
    as the response, without emitting another answer.
    If the default reference codec includes `pingId`, verify it is echoed.
 5. Keep the connection operational and verify the next heartbeat PING REQUEST
    after the 30-second period; return the corresponding PING ANSWER.
-6. From the backend peer send `PING(op=REQUEST)` without `mode` or `pingId`.
-   Verify SI-01 returns exactly one `PING(op=ANSWER)` with `mode` still
+6. From the backend peer send `PING(op=REQ)` without `mode` or `pingId`.
+   Verify SI-01 returns exactly one `PING(op=ANS)` with `mode` still
    absent. Repeat with an optional reference `pingId` and verify it is echoed.
    Also initiate a manual PING REQUEST from SI-01, verify its PING ANSWER,
    and confirm the separate periodic heartbeat schedule has not reset.
@@ -590,7 +590,7 @@ values rather than sending a standalone legacy log-line frame.
    in place of that child object.
 4. Send a PING REQUEST from the backend peer using the same UpstreamData envelope;
    verify the outbound PING ANSWER has the same top-level `type = PING` but
-   `data.op = ANSWER`, preserving the optional request `data.mode`
+   `data.op = ANS`, preserving the optional request `data.mode`
    (including omission for manual requests).
 5. Verify encode/decode of both message families preserves their respective
    payload semantics and does not allocate an additional TimingData identity.
