@@ -1,0 +1,17 @@
+{
+  "schema": "brainboxemb.execution-evidence",
+  "schema_version": 1,
+  "capability": "docs.diagrams",
+  "owner": "brainboxemb/2026-010-01.meta.event-timing-software",
+  "action": "diagrams",
+  "source_revision": "37b14026b3d16ad7ebb0483568f5d445958627d4",
+  "owner_revision": "37b14026b3d16ad7ebb0483568f5d445958627d4",
+  "status": "success",
+  "exit_code": 0,
+  "log": "execution.log",
+  "domain_evidence": [],
+  "tool_eng_docs_sha": "417feac3b9f8b277a544337968087d97b8204a3d",
+  "details": {
+    "file_count": 67
+  }
+}

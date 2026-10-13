@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="1160" viewBox="0 0 1450 1160">
+<defs>
+<marker id="seq-filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+<marker id="seq-open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L9,3 L0,6" fill="none" stroke="#5f6368" stroke-width="1.5"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD05 — LogBook query isolation</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">The query never reads LogBook directly from outside TimingNode ownership.</text>
+<rect x="4.3" y="100.0" width="181.4" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="95.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Query caller</text>
+<line data-sequence-lifeline="client" x1="95.0" y1="158.0" x2="95.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="256.3" y="100.0" width="181.4" height="58.0" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="347.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Query / StageTiming</text>
+<line data-sequence-lifeline="query" x1="347.0" y1="158.0" x2="347.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="508.3" y="100.0" width="181.4" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="599.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<line data-sequence-lifeline="node" x1="599.0" y1="158.0" x2="599.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="760.3" y="100.0" width="181.4" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="851.0" y="120.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">LogBook</text>
+<text x="851.0" y="138.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">committed TimingData</text>
+<line data-sequence-lifeline="logbook" x1="851.0" y1="158.0" x2="851.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1012.3" y="100.0" width="181.4" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="1103.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Registration producer</text>
+<line data-sequence-lifeline="producer" x1="1103.0" y1="158.0" x2="1103.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1264.3" y="100.0" width="181.4" height="58.0" fill="#f4cccc" stroke="#b85450" stroke-width="2"/>
+<text x="1355.0" y="120.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingDataStore</text>
+<text x="1355.0" y="138.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">file persistence / recovery</text>
+<line data-sequence-lifeline="store" x1="1355.0" y1="158.0" x2="1355.0" y2="1103.2" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect data-sequence-activation="0" x="341.0" y="195.0" width="12.0" height="883.2" fill="#fff2cc" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="1" x="593.0" y="247.0" width="12.0" height="346.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="2" x="597.0" y="400.9" width="12.0" height="581.3" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="3" x="845.0" y="469.6" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="4" x="597.0" y="625.6" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="5" x="597.0" y="746.2" width="12.0" height="236.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="6" x="1349.0" y="798.2" width="12.0" height="72.0" fill="#f4cccc" stroke="#b85450" stroke-width="1.4"/>
+<rect data-sequence-activation="7" x="845.0" y="902.2" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="8" x="345.0" y="1006.2" width="12.0" height="80.0" fill="#fff2cc" stroke="#d6b656" stroke-width="1.4"/>
+<line data-sequence-message="1" x1="95.0" y1="205.0" x2="341.0" y2="205.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="218.0" y="193.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">calculate</text>
+<line data-sequence-message="2" x1="353.0" y1="257.0" x2="593.0" y2="257.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="473.0" y="245.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">captureTimingView()</text>
+<path data-sequence-message="3" data-sequence-self-message="true" d="M 605.0 325.6 H 647.0 V 349.6 H 605.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="613.0" y="305.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">queue query +</text>
+<text x="613.0" y="322.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">hidden Future</text>
+<path data-sequence-message="4" data-sequence-self-message="true" d="M 609.0 410.9 H 651.0 V 434.9 H 609.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="617.0" y="382.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker executes</text>
+<text x="617.0" y="398.9" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">consistency-sensitive</text>
+<text x="617.0" y="415.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">read</text>
+<line data-sequence-message="5" x1="609.0" y1="479.6" x2="845.0" y2="479.6" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="727.0" y="459.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">copy immutable</text>
+<text x="727.0" y="475.9" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">record references</text>
+<line data-sequence-message="6" x1="845.0" y1="531.6" x2="609.0" y2="531.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="727.0" y="519.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">stable read view</text>
+<line data-sequence-message="7" x1="597.0" y1="583.6" x2="353.0" y2="583.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="475.0" y="571.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">immutable TimingView</text>
+<line data-sequence-message="8" x1="1103.0" y1="635.6" x2="609.0" y2="635.6" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="856.0" y="623.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">submit registration work</text>
+<line data-sequence-message="9" x1="609.0" y1="687.6" x2="1103.0" y2="687.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="856.0" y="675.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">ACCEPTED</text>
+<path data-sequence-message="10" data-sequence-self-message="true" d="M 609.0 756.2 H 651.0 V 780.2 H 609.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="617.0" y="735.9" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">worker processes</text>
+<text x="617.0" y="752.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">later registration</text>
+<line data-sequence-message="11" x1="609.0" y1="808.2" x2="1349.0" y2="808.2" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="979.0" y="796.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">append(record N)</text>
+<line data-sequence-message="12" x1="1349.0" y1="860.2" x2="609.0" y2="860.2" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="979.0" y="848.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">durable</text>
+<line data-sequence-message="13" x1="609.0" y1="912.2" x2="845.0" y2="912.2" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="727.0" y="900.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">add(record N)</text>
+<line data-sequence-message="14" x1="845.0" y1="964.2" x2="609.0" y2="964.2" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="727.0" y="952.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">visible</text>
+<path data-sequence-message="15" data-sequence-self-message="true" d="M 357.0 1016.2 H 399.0 V 1040.2 H 357.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="365.0" y="1004.2" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">calculate(TimingView)</text>
+<line data-sequence-message="16" x1="345.0" y1="1068.2" x2="95.0" y2="1068.2" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="220.0" y="1056.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">result</text>
+</svg>
