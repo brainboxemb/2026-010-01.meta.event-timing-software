@@ -416,13 +416,15 @@ synchronisation without inventing or reusing committed source sequence identity.
 :status: D  
 :depends_on: IF06-REQ-011, IF06-REQ-012, IF06-REQ-013  
 
-For each configured upstream connector, SI-01 shall send one PING immediately when the
-connector reaches its operational connected state and shall continue sending PING every
-30 seconds while that connection remains operational. Each PING shall have a correlation
-`pingId`; SI-01 shall accept a matching PONG with the same `pingId` as completion of
-that liveness exchange. Disconnect/deactivation shall stop that connector's periodic PING
-task. A later reconnect shall start a new cycle with an immediate PING. PING/PONG activity
-shall not append TimingData or consume TimingData sequence identity.
+For each configured upstream connector, SI-01 shall send one heartbeat-purpose PING
+immediately when the connector reaches its operational connected state and shall
+continue sending heartbeat PING every 30 seconds while that connection remains
+operational. SI-01 shall process PONG responses preserving the corresponding PING
+purpose. Disconnect/deactivation shall stop that connector's periodic heartbeat task.
+A later reconnect shall start a new cycle with an immediate heartbeat PING. Explicit
+manual PING exchanges shall not reset the heartbeat schedule. Correlation identifiers
+may be supported by a specific implementation but are not mandatory IF-06 semantics.
+PING/PONG activity shall not append TimingData or consume TimingData sequence identity.
 :::
 
 :::{req} Answer inbound upstream PING  
@@ -430,8 +432,10 @@ shall not append TimingData or consume TimingData sequence identity.
 :status: D  
 :depends_on: IF06-REQ-013  
 
-When SI-01 receives a valid upstream PING, it shall send one PONG with the same `pingId`
-through the same configured upstream semantic connection. The response shall not append
+When SI-01 receives a valid upstream PING (heartbeat or manual), it shall send
+one PONG preserving the request's purpose through the same configured upstream
+semantic connection. An implementation-specific correlation identifier, if supplied,
+shall be echoed according to that representation. The response shall not append
 TimingData or consume TimingData sequence identity.
 :::
 
