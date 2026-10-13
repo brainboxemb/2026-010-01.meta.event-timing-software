@@ -77,7 +77,13 @@ UpstreamData family, not by the selected transport.
 ### UpstreamData
 
 UpstreamData is the common semantic boundary between application behaviour and
-backend transports.
+backend transports. The public/reference representation uses **one message model
+in both directions**. A TimingData/log-record value is carried *inside* a
+TIMING_DATA message as payload, rather than being a separate wire-message format.
+PING, PONG, reference-data and synchronization exchanges use that same message
+model with their own message types. A deployment-specific adapter may encode
+the inbound and outbound wire directions differently, without changing the
+shared semantic UpstreamData model.
 
 The current semantic families are:
 
@@ -387,7 +393,10 @@ remain separately representable.
 :status: D  
 
 The public/reference implementation shall provide a versioned JSON representation of
-UpstreamData suitable for development, engineering and integration verification.
+UpstreamData suitable for development, engineering and integration verification. The
+same UpstreamData message structure shall be used in both directions; committed
+TimingData records shall be nested in a TIMING_DATA message payload rather than
+being transmitted as standalone legacy log-line messages.
 :::
 
 :::{ifreq} Alternative representation support  
