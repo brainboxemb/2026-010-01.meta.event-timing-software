@@ -179,7 +179,7 @@ opaque string through IF-03.
 
 The same SI-02 Backend Simulator can therefore edit/send synthetic RaceData and
 StageStartTimes, inspect outbound TimingData/synchronisation state, and exercise
-acknowledgement/reconciliation behaviour without direct access to SI-01 Java objects.
+acknowledgement/synchronization behaviour without direct access to SI-01 Java objects.
 
 ### ST-2 scenarios
 
@@ -190,7 +190,7 @@ Candidate scenarios include:
 - trigger normal TimingNode/application behaviour;
 - observe outbound semantic backoffice events in SI-02;
 - reconnect IF-03 Events and rebuild the relevant engineering view;
-- exercise acknowledgement, pending-work and reconciliation behaviour;
+- exercise acknowledgement, pending-work and synchronization behaviour;
 - repeat against one or multiple TimingNode/source combinations.
 
 This profile verifies backoffice semantics and application routing. It deliberately does
@@ -347,10 +347,10 @@ Working direction:
 1. commit registration locally according to the final persistence rule;
 2. represent it as pending in local outbox/synchronisation state;
 3. selected transport attempts delivery;
-4. transport acknowledgement/reconciliation advances pending state;
+4. transport acknowledgement/synchronization advances pending state;
 5. failure remains pending and visible through status.
 
-The exact acknowledgement, retry, duplicate/idempotency and reconciliation rules remain open and belong to their owning requirements, ISD/IDD and detailed design.
+The exact acknowledgement, retry, duplicate/idempotency and synchronization rules remain open and belong to their owning requirements, ISD/IDD and detailed design.
 
 ## Status model
 
@@ -392,7 +392,7 @@ shared/upstream-data
     default/reference JSON implementation
 
 application/domain
-    semantic routing, reference-state application, outbox/reconciliation state
+    semantic routing, reference-state application, outbox/sync state
 
 existing IF-03 presentation/application adapter
     EngineeringApiBackofficeConnector
@@ -433,7 +433,7 @@ Private components/configuration may provide:
 - actual broker topology names;
 - proprietary message schemas/codecs;
 - authentication details;
-- production-specific retry/reconciliation protocol details where sensitive.
+- production-specific retry/synchronization protocol details where sensitive.
 
 ## Automated system-test profiles
 
@@ -472,7 +472,7 @@ real SI-01 semantic backoffice path
 ```
 
 This profile verifies source/node routing, inbound/outbound semantics,
-acknowledgement/reconciliation and recovery of the engineering view without RabbitMQ.
+acknowledgement/synchronization and recovery of the engineering view without RabbitMQ.
 
 ### ST-3 — RabbitMQ integration
 
@@ -520,7 +520,7 @@ start SI-01 with RabbitMqBackofficeConnector
 connect SI-02 Backend Simulator using RabbitMqBackendTransport
 exercise inbound/outbound source flows
 force/recover broker or client connection where practical
-verify pending delivery / reconciliation
+verify pending delivery / synchronization
 clean up test topology
 ```
 
@@ -549,11 +549,11 @@ Temporary identifiers only.
 ## Open questions
 
 - What exact IF-03 HTTP operation and WebSocket event schema should carry the engineering backoffice envelope?
-- Which acknowledgement/reconciliation controls need to be exposed in the SI-02 Backend Simulator?
+- Which acknowledgement/synchronization controls need to be exposed in the SI-02 Backend Simulator?
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
-- What is the production acknowledgement/reconciliation protocol?
+- What is the production acknowledgement/synchronization protocol?
 - Which outbound items require durable local outbox persistence versus rebuildable state?
 - What publisher-confirm/retry policy is required?
 - How are duplicates/redeliveries detected and handled?
