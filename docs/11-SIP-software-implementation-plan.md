@@ -838,238 +838,235 @@ revoke/recovery behaviour is verified as part of Step 6 V01 using SI-02.
 
 ## Step 6 — Engineering Desktop Client
 
-Status: active
+Status: active — closeout verification remaining
 
 ### Purpose
 
 Turn the existing Development Client into a maintainable Engineering Desktop Client
 after SI-01 has stable state and registration behaviour worth inspecting.
 
-This step does **not** introduce a second operator-facing desktop product. Normal
-field/operator interaction is the browser-facing IF-04 Web Interface. The desktop client
-serves development, integration, commissioning and diagnosis through supported public
-boundaries such as IF-03.
+Normal field/operator interaction remains the browser-facing IF-04 Web Interface.
+SI-02 serves development, integration, commissioning, diagnosis and system testing
+through supported public boundaries such as IF-03.
 
-The engineering risk here is different from Step 5: keep a richer desktop workbench,
-protocol inspection and negative-path tooling maintainable without letting JavaFX event
-handlers or docking infrastructure become owners of client/application behaviour.
+The main engineering risk is to keep a richer desktop workbench, protocol inspection,
+negative-path tooling and automation maintainable without letting JavaFX/docking code
+become the owner of application/client behaviour.
 
 ### Goal
 
-Evolve the existing JavaFX Development Client into the project's full Engineering
-Desktop Client while preserving its public-interface-only boundary to SI-01.
+Establish SI-02 as the reusable Engineering Desktop Client, with a reproducible desktop
+runtime/package baseline and public-interface-only operation against SI-01.
 
 ### Scope
 
-- select the Engineering Client GUI/runtime/workbench and packaging baseline;
-- retain the existing public IF-03 HTTP/JSON + WebSocket client behaviour where it
-  remains suitable;
-- separate connection/synchronisation/command behaviour from JavaFX controls so GUI,
-  later scripting and tests can use the same client/application services;
-- keep explicit NOT SYNCED / SYNCING / LIVE / STALE behaviour;
-- retain application/version, TimingNode status, Registrations, technical LogBook and
-  raw-message inspection;
-- retain engineering-only surfaces such as Device Log, Client Log, Remote Shell and
-  capability-gated simulation;
-- use an application-owned workbench composition so views do not depend directly on the
-  selected docking framework;
-- keep the architecture compatible with later named multi-system automation and embedded
-  scripting without making scripting an implementation requirement for this step;
-- define a reproducible desktop build/run/package path;
-- continue using only supported public SI-01 boundaries for live operation.
+- Java 21 / JavaFX 21 Engineering Client runtime;
+- BentoFX workbench with application-owned functional panes;
+- reusable client/application services below JavaFX controls;
+- explicit NOT SYNCED / SYNCING / LIVE / STALE behaviour;
+- application/version, TimingNode status, Registrations, LogBook and raw inspection;
+- Device Log, Client Log, Remote Shell and capability-gated engineering controls;
+- source-driven capability diagnostics;
+- client-side Lua engineering scripting through the same client/application services;
+- self-contained Windows `jpackage` app-image;
+- SI-02 specification, focused Lua SDD and Engineering Client SUM;
+- live operation only through supported public SI-01 boundaries.
+
+Lua was not required to release the original A01 restructuring, but the architecture
+made it small enough to implement and verify during the same SI-02 increment. It is now
+part of the current Step-6 baseline rather than a future placeholder.
 
 ### Not in this step
 
 - a separate restricted/safe desktop operator product;
 - replacing the IF-04 Web operator interface;
 - moving SI-01 timing/domain ownership into the client;
-- implementing the future Lua scripting capability;
-- making GUI layout or docking state part of the IF-03 contract.
+- multi-system Lua orchestration, node lifecycle scripting or state-assertion DSLs;
+- making GUI layout/docking state part of the IF-03 contract.
 
 ### Needs
 
 - stable IF-03 behaviour from Steps 3-5;
 - representative running SI-01 test data;
 - Experiment 008 JavaFX/BentoFX workbench evidence;
-- Step-5 SI-01/server revoke and persistence behaviour available as the system baseline;
-- VC-ST1-003 real-running-client GUI verification assigned to Step-6 V01.
-
-Step-6 V01 uses the Engineering Desktop Client itself for the complete GUI
-revoke/recovery scenario; headless tests do not substitute for that evidence.
+- packaged SI-02 and the dedicated VC-ST1-003 fixture for final running-GUI evidence.
 
 ### Activities
 
 | ID | Activity |
 | --- | --- |
-| `D01` | Establish first SI-02 Engineering Client requirement slice |
+| `D01` | Establish SI-02 Engineering Client requirement slice |
 | `D02` | Select Engineering Client desktop stack, client boundary and packaging |
-| `A01` | Restructure the existing Engineering Client around the selected workbench/services |
-| `V01` | Verify Engineering Client connection, sync/reconnect and representative workbench behaviour |
+| `A01` | Restructure the Engineering Client around the selected workbench/services |
+| `D03` | Complete SI-02 scripting design and user-documentation split |
+| `A02` | Add client-side Lua engineering automation and capability diagnostics |
+| `V02` | Verify Lua/capability behaviour with automated client tests and CI |
+| `V01` | Verify packaged Engineering Client connection, sync/reconnect and representative workbench behaviour |
 
-### D01 — SI-02 Engineering Client requirement baseline
+### Current closeout state
 
-D01 establishes the first technology-independent SI-02 requirements in 41-02-SSD.
-The slice covers public-interface-only operation, target selection, explicit
-connection/synchronisation state, connected identity, TimingNode status, stale state,
-baseline/history rebuild, committed registration presentation and explicit command
-outcomes. These requirements trace to UC-009 and IF-03.
+D01, D02 and A01 established the reusable SI-02 baseline. The later D03/A02/V02
+extension added the documented Lua engineering facade, source-driven capability display,
+explicit local-versus-remote simulation rejection behaviour and the SI-02 SDD/SUM split.
+The packaged-client and Java verification paths are green.
 
-### D02 — Engineering Client technology and packaging decision
-
-D02 is complete. The selected Engineering Client baseline is:
-
-- **Java 21** runtime;
-- **JavaFX 21** desktop UI;
-- **BentoFX 0.16.0** workbench;
-- application-owned JavaFX CSS as the required styling layer, with Transit optional
-  rather than architecture-critical;
-- JDK `HttpClient` + JDK WebSocket and Jackson for IF-03 HTTP/JSON + live events;
-- Maven build;
-- self-contained Windows `jpackage` **app-image** as the first distribution target;
-- classpath/non-JPMS initially.
-
-Experiment 008 is retained evidence for the workbench decision. BentoFX is preferred to
-SnapFX because the explicit workbench structure, smaller corrective adapter burden and
-normal Maven Central dependency fit the Engineering Client better. Plain JavaFX remains a
-fallback if docking later ceases to add useful engineering value.
-
-No second .NET, Compose or desktop-web toolchain is introduced: the existing Java client,
-its public-interface services and Experiment 008 already qualify the required desktop
-behaviour, while another stack would duplicate protocol/client work without a demonstrated
-benefit.
-
-The existing JDK HTTP/WebSocket client approach remains because no current IF-03 gap
-requires another transport library.
-
-The first packaging step deliberately stops at a self-contained application image.
-Installer/update machinery and JPMS are later decisions driven by concrete deployment or
-maintainability needs rather than prerequisites for A01.
-
-D02 also fixes the service boundary for future automation: connection/session state,
-baseline synchronisation, live-event reconciliation, command execution and raw-message
-context belong below JavaFX/docking presentation. A connected system is an instance-scoped
-client context so later multi-system work does not require a new architecture. Future Lua
-or another embedded scripting adapter may call those same services; scripting itself is
-not a Step-6 implementation requirement.
-
-### A01 — SI-02 desktop restructuring
-
-A01 is complete through Java issue #401 / PR #402.
-
-The standalone `test-client` now implements the selected SI-02 baseline:
-
-- Java 21 / JavaFX 21 with BentoFX 0.16.0;
-- an instance-scoped `EngineeringSystemContext` for one connected SI-01 target;
-- TimingNode / Registration / Simulation, Device Log, Terminal, Client Log,
-  Registrations, LogBook and Raw Data / Events composed as real workbench panes;
-- functional JavaFX panes kept independent from BentoFX-specific APIs;
-- existing IF-03 synchronisation/reconnect, registration/revoke, simulation,
-  Remote Shell and diagnostic-log behaviour retained;
-- a Windows `jpackage` app-image built and checked in CI.
-
-A01 provides the runnable client needed by V01. It does not itself constitute the
-manual VC-ST1-003 GUI verification result.
+The **only Step-6 exit gate still open is V01 / VC-ST1-003**. It deliberately remains a
+real packaged JavaFX running-system verification: trash must append REV without rewriting
+ADD, the interpreted row must become DELETED, restart/reconnect must rebuild the same
+history without live replay, SYNCING must precede LIVE and Device Log / Client Log must
+remain independent. Headless tests do not substitute for this final UI evidence.
 
 ### Result
 
-- SI-02 is defined as the maintainable Engineering Desktop Client software item.
+- SI-02 is a reusable Engineering Desktop Client software item.
 - Normal operator interaction remains IF-04 Web.
-- SI-02 remains independent from SI-01 implementation classes/files and keeps
-  engineering behaviour behind public interfaces.
-- The Java 21 / BentoFX workbench and Windows app-image path are implemented and
-  CI-qualified; V01 remains the running-system GUI verification.
+- Client/application behaviour remains below JavaFX/docking presentation.
+- Java 21 / BentoFX / Windows app-image operation is CI-qualified.
+- Lua scripting reuses the same public client/service boundary instead of creating a
+  second SI-01 command path.
+- SI-02 design and user guidance are separated into SSD/SDD/SUM roles.
 
 ### Demo
 
-- Start the Engineering Client and connect it to a running SI-01.
-- Show connection/synchronisation state, current TimingNode status, registrations,
-  technical LogBook and selected raw data.
-- Exercise one supported engineering command/simulation and inspect the result.
-- Disconnect/reconnect and rebuild the authoritative view.
-- Using SI-02, revoke through the trash action,
-  confirm immutable ADD plus new REV and interpreted DELETED, restart SI-01,
-  recover unchanged source history and confirm recovered events are not replayed
-  as new live events.
-- Show Device Log / Client Log / Remote Shell independently where available.
+- Start packaged SI-02 and connect it to a running SI-01.
+- Observe SYNCING then LIVE, TimingNode state, interpreted registrations, technical
+  LogBook and raw diagnostics.
+- Exercise registration/simulation and one Lua engineering script.
+- Revoke through the GUI, restart SI-01, reconnect and prove DELETED/history recovery.
+- Show Device Log, Client Log and Remote Shell as independent engineering surfaces.
 
 ### Done
 
 - the Engineering Client uses only supported public SI-01 boundaries for live operation;
-- connection/reconnect/stale-state behaviour retains useful automated coverage;
-- the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed
-  manual running-GUI evidence on SI-02, including log
-  independence and SYNCING before LIVE;
+- automated tests cover connection/reconnect/stale-state, capability and scripting behaviour;
+- the full VC-ST1-003 revoke/DELETED/restart/reconnect scenario has observed PASS
+  evidence on the packaged SI-02 GUI, including log independence and SYNCING before LIVE;
 - application/client services are not buried inside JavaFX event handlers;
-- representative views are composed through the selected workbench without depending on
-  docking APIs themselves;
-- the selected desktop runtime/dependency/package path is reproducible;
-- SI-02 requirements and architecture remain aligned with UC-009 and the public IF-03
-  boundary without duplicating the normal IF-04 operator workflow.
+- representative views are composed through the selected workbench without functional
+  panes depending on docking APIs;
+- the desktop runtime/dependency/package path is reproducible;
+- SI-02 specification, detailed design and user guidance match the implemented baseline.
 
 ---
 
 ## Step 7 — Backoffice and multi-node integration
 
-Status: planned
+Status: planned — next after Step-6 V01
 
 ### Purpose
 
-Add external reference data and source synchronisation while the whole setup can still run
-on development machines.
+Add external reference data, derived timing and upstream synchronisation while the setup
+can still run entirely on development/test hosts.
 
-This is the right point to add multi-TimingNode operation: independent node streams and
-routing become important when reference data and committed timing data move between SI-01
-and a backoffice test setup. It also provides the missing inputs for StageTiming. Doing
-this before target/hardware bring-up keeps protocol, routing and reconciliation failures
-separate from physical-device problems.
+A substantial part of the **multi-node runtime foundation already exists**: SI-01 can
+compose multiple TimingNodes, address them through IF-03, keep separate sequences and
+LogBooks, and recover them independently in black-box tests. Step 7 must adopt and
+requalify that baseline rather than reimplement multi-node composition.
+
+The largest remaining uncertainty is now the semantic backoffice contract: which
+reference data is authoritative, how node-scoped updates are applied, what StageTiming
+derives from those inputs, and how committed outbound work is reconciled after an outage.
 
 ### Goal
 
-Run a representative multi-node SI-01 setup that exchanges reference/timing data with a
-reproducible backoffice test environment.
+Run a representative multi-node SI-01 setup that consumes reference/start-time data,
+produces derived timing, and exchanges node-scoped timing data with a reproducible
+backoffice test environment while preserving local operation during outages.
 
 ### Scope
 
-- receive and apply synthetic/public RaceData and StageStartTimes;
-- resolve RegistrationId to TeamID for interpreted/operator views where RaceData provides
-  that relation, without changing committed TimingData identity;
-- resolve the reference data needed for local timing calculations;
-- add StageTiming/derived timing behaviour that depends on those references;
-- send committed TimingData/results upstream as required by the promoted contract;
-- host and address multiple independent TimingNodes in one process;
-- keep node lifecycle, sequence, history and reference state isolated;
-- exercise a representative multi-node test topology rather than a special simulation bypass;
-- handle disconnect, reconnect and required reconciliation/recovery;
-- select and test the concrete development transport(s), including RabbitMQ when that contract is ready;
-- exercise the typed `UpstreamProtocol` provider boundary using public test implementations.
+- promote IF-06 Backend Integration semantics before transport implementation drives them;
+- define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
+- define freshness, acknowledgement, retry, duplicate/idempotency and reconciliation rules;
+- adopt the existing multi-node composition/isolation baseline and verify it as Step-7 input;
+- receive/apply node-scoped synthetic/public reference data;
+- derive StageTiming from explicit local/reference inputs;
+- expose committed TimingNode-scoped outbound data through transport-independent semantics;
+- retain pending outbound work across upstream outage and resume/reconcile after recovery;
+- use a lightweight real network/socket transport for ST-2 before broker-specific work;
+- qualify RabbitMQ with a disposable broker only after semantic/reconciliation rules are stable;
+- keep private production message schemas, credentials and topology outside the public core.
+
+### Not in this step
+
+- target/Pi bring-up or deployment tuning;
+- production RFID/CAN/display adapters;
+- proprietary production message schemas or credentials in the public repositories;
+- replacing NodeId with connector- or broker-specific routing identities;
+- making transport availability a prerequisite for local registration commits.
 
 ### Needs
 
-- Steps 4-6 local behaviour and public interfaces;
-- backoffice semantic/interface information;
-- synthetic/public reference data and identities;
-- reproducible broker/socket test infrastructure where required.
+- completed Step-6 Engineering Client baseline;
+- SI01-REQ-063..069 and the existing upstream architecture as working inputs;
+- a promoted IF-06 semantic contract;
+- synthetic/public RaceData and StageStartTimes fixtures;
+- existing multi-topology black-box fixtures;
+- disposable socket/RabbitMQ integration infrastructure where the selected verification needs it.
+
+### Activities
+
+| ID | Activity |
+| --- | --- |
+| `D01` | Promote IF-06 backend semantic contract |
+| `D02` | Define reference-data, TeamID and StageTiming ownership/semantics |
+| `D03` | Define outbound pending-work and reconciliation semantics |
+| `D04` | Align backoffice transport SDD and ST-2/ST-3 verification topology |
+| `A01` | Adopt and qualify the existing multi-node composition baseline |
+| `V01` | Requalify multi-node addressing, isolation, persistence and recovery |
+| `A02` | Implement node-scoped reference-data ingress and TeamID interpretation |
+| `A03` | Implement StageTiming using the promoted reference-data model |
+| `A04` | Implement transport-independent outbound sync/outbox/reconciliation |
+| `A05` | Implement lightweight socket backoffice transport for ST-2 |
+| `V02` | Verify reference-data, derived timing and socket outage/reconnect flow |
+| `A06` | Implement/qualify RabbitMQ connector against the same semantic boundary |
+| `V03` | Verify production-shaped RabbitMQ routing and recovery with a disposable broker |
+
+### Planning order
+
+D01-D03 are the first design gates. In particular, the existing
+`43-01-SDD-03-backoffice-transport-design.md` must not become the authority for missing
+external semantics: IF-06 owns the semantic contract; the SDD owns connector/transport
+realisation below it.
+
+A01/V01 should be short qualification work, because current black-box fixtures already
+exercise one system with nodes A/B and two systems with one node each, including separate
+LogBooks and restart recovery. That evidence reduces multi-node implementation risk but
+does not prove backoffice/reference-data behaviour.
+
+ST-2 socket work precedes RabbitMQ so routing/reconciliation can be debugged across a real
+process/network boundary without broker-specific failure modes. RabbitMQ is then a
+production-shaped adapter qualification rather than the place where application semantics
+are invented.
 
 ### Result
 
-- Multiple TimingNodes keep independent state and ordered data streams.
-- Reference data can be received and used for local derived timing and TeamID
-  interpretation.
-- Local registration continues through a backoffice outage and synchronisation can resume.
+- Multiple TimingNodes retain independent state, sequence and storage.
+- Node-scoped reference/start-time data can be received and applied explicitly.
+- TeamID interpretation and StageTiming use defined reference-data ownership.
+- Local registration continues during upstream outage.
+- Pending outbound timing work resumes/reconciles after recovery.
+- Socket and RabbitMQ transports share one semantic upstream contract.
 
 ### Demo
 
-- Start a small multi-node SI-01 test setup and load reference/start-time data.
-- Feed simulated registrations and inspect node-specific derived timing and outbound data.
-- Interrupt the backoffice service, continue local work, reconnect and reconcile.
+- Start a multi-node SI-01 test composition.
+- Load synthetic RaceData and StageStartTimes for the addressed nodes.
+- Feed simulated registrations and inspect TeamID/StageTiming results per node.
+- Exchange committed data with the socket backoffice simulator.
+- Interrupt the upstream connection, continue local registrations, reconnect and reconcile.
+- Repeat the transport-specific recovery subset with a disposable RabbitMQ broker.
 
 ### Done
 
-- multi-node addressing and state isolation have repeatable automated coverage;
-- reference-data application and derived timing use explicit domain ownership;
-- outbound source identity/order remain intact across the selected transport;
-- outage/reconnect behaviour is repeatable and does not stop required local registration;
-- transport-specific details remain outside the generic domain contracts.
+- IF-06 semantic responsibilities are reviewable and implemented without leaking
+  transport details into Domain/Application contracts;
+- multi-node addressing/state/storage isolation remains green in automated verification;
+- reference-data application and StageTiming have explicit ownership and repeatable tests;
+- committed outbound source identity/order survive outage and reconciliation;
+- local registration remains independent from backoffice transport availability;
+- ST-2 socket disconnect/reconnect and ST-3 RabbitMQ broker recovery are repeatable;
+- private production topology/protocol details remain outside the public baseline.
 
 ---
 
