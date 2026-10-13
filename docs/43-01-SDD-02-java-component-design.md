@@ -187,9 +187,9 @@ and JavaFX so both the Timing Point Application and engineering tools can consum
 the same event-profile semantics. Event-specific provider JARs may supply
 alternative EventData profiles through the normal typed extension mechanism.
 Runtime discovery treats `EventDataProvider` as a typed provider family parallel
-to `TimingDataProvider`; neither provider API depends on the other. `RaceData`
-remains a separate TimingNode-local mutable/runtime data source and is not part
-of the shared EventData artifact.
+to `TimingDataProvider`; neither provider API depends on the other. Live race state
+such as `ReserveTagMap` and `StageStartTimes` remains separate TimingNode-local
+mutable state and is not part of the shared EventData artifact.
 
 The shared TimingData artifact has its own package root:
 
@@ -279,8 +279,9 @@ domain/
     UpstreamMessagePort.java          TimingNode-level upstream messages
     NextUpTeams.java                  passive per-node state
     NextUpTeamsStore.java             persistence port for next-up analysis history
-    StageStartTimes.java              passive per-node reference state
-    StageStartTimesStore.java         persistence port for start-time analysis history
+    ReserveTagMap.java               passive reserve RegistrationId -> TeamId state
+    StageStartTimes.java              passive per-node live start-time state
+    StageStartTimesStore.java         optional persistence port for start-time analysis history
     TagProcessor.java                 node-local registration-passage processing
     TagProcessingPolicy.java          compiled defaults + active tag-processing policy
   logbook/
@@ -672,9 +673,8 @@ RegistrationId registrationIdFor(TeamId teamId)
 A missing stable mapping is represented explicitly by the API contract. In the
 default/reference profile, normal RegistrationId/TeamId conversion is
 algorithmic while reserve RegistrationId/TeamId conversion has no stable
-EventData answer until assignment data exists. Runtime resolution may layer a
-RaceData override on top of EventData without changing TagProcessor's TagId to
-RegistrationId responsibility.
+EventData answer until assignment data exists. Runtime TeamId resolution may layer a TimingNode `ReserveTagMap` fallback on top of
+EventData without changing TagProcessor's TagId-to-RegistrationId responsibility.
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
@@ -693,11 +693,11 @@ The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
 registration, every TagId resolving to that RegistrationId is suppressed by the
 same duplicate window.
 
-RaceData remains a separate TimingNode-local runtime source. It may receive
-upstream updates such as reserve-tag mappings during the event. Resolution code
-may therefore combine the selected EventData profile with RaceData overrides,
-but EventData remains the owner of stable event-profile semantics and RaceData
-remains the owner of live per-node state.
+`RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
+Its incremental changes are applied on the TimingNode lane to passive state such as
+`ReserveTagMap` and `StageStartTimes`. EventData remains the owner of stable
+TagId/RegistrationId/TeamId profile semantics; ReserveTagMap owns only the live
+reserve RegistrationId-to-TeamId fallback.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers. It owns
 serialized access through the injected `SerialExecutor`, operation admission/timeout
@@ -929,7 +929,7 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds the message families needed for reference-data, reconciliation and status exchange without creating another timing-record identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics, not TimingData or UpstreamData semantics. `UpstreamMessageRouter` resolves decoded semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
+`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics, not TimingData or UpstreamData semantics. `UpstreamMessageRouter` resolves decoded semantic work inside the already selected TimingSystem context: system-level work uses `TimingSystem.UpstreamMessagePort`, while node-level work is resolved by `TimingNodeId` to `TimingNode.UpstreamMessagePort`. `TimingSystemId` is not required on the wire.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
@@ -2715,8 +2715,8 @@ TimingNode
   |
   +-- passive LogBook
   +-- passive NextUpTeams
+  +-- passive ReserveTagMap
   +-- passive StageStartTimes
-  +-- passive RaceData
   |
   +-- per-type store ports
 ```
@@ -3007,7 +3007,7 @@ private void processRegistration(RegistrationInput input) {
     TimingDataFactory.Context context =
         timingDataContext(sequence, activeLocationId, input.effectiveTime(), timeSource.now());
 
-    RegistrationId registrationId = raceData.resolveRegistrationId(input);
+    RegistrationId registrationId = input.registrationId();
 
     TimingData data;
     if (input.isAutomatic()) {
@@ -3128,18 +3128,22 @@ worker. If the reference Raspberry Pi cannot meet the workload because durable s
 stalls the role worker, the next design step is a bounded durability mechanism that preserves
 commit-before-LogBook/event ordering; it is not to multiply the stress target per node.
 
-For example, a StageStartTimes update may be:
+For example, one ordered RACE_DATA message containing a StageStartTimes change is:
 
 ```text
 TimingNode worker
-  -> validate received snapshot
-  -> replace StageStartTimes live state
-  -> StageStartTimesStore.append(snapshot for analysis)
+  -> verify raceData.seq == lastAppliedRaceSeq + 1
+  -> validate all RaceData changes
+  -> apply StageStartTimes SET/DEL and other changes atomically
+  -> advance lastAppliedRaceSeq
+  -> emit ACK(stream=RACE_DATA, seq=lastAppliedRaceSeq)
 ```
 
-After a reboot, the live protocol can send the current StageStartTimes again
-(for example as part of OPEN handling). The historical file is still retained
-for analysis.
+If a later RaceData sequence arrives first, state is not changed and the upstream
+boundary emits `REQ(stream=RACE_DATA, fromSeq=lastAppliedRaceSeq+1)`. If live
+RaceData state is not persisted over reboot, the node restarts at sequence 0 and
+requests the retained stream from 1. An optional analysis/history store remains
+separate from this source-order contract.
 
 ### Simple typed events
 
@@ -3365,13 +3369,20 @@ TimingNode state policy, allocate sequence numbers, resolve `TagId` or
 `TeamId`, commit data, own a LogBook or publish events. Those responsibilities
 stay with the TimingNode and its contained domain components.
 
-Source/reference resolution happens before TimingData factory construction. Stable event-profile relationships come from EventData while live per-node overrides may come from RaceData:
+Source/reference resolution happens outside the TimingData factory. EventData owns
+TagId-to-RegistrationId and stable RegistrationId-to-TeamId relationships. Live reserve
+TeamId lookup is a fallback through ReserveTagMap:
 
 ```text
-TagId  ------> EventData --------\
-                 + RaceData ------+--> RegistrationId
-TeamId ---------------------------/
+TagId -> EventData -> RegistrationId
+                        |
+                        +-> EventData stable TeamId
+                        |
+                        +-> ReserveTagMap fallback TeamId
 ```
+
+TimingData continues to store the already resolved RegistrationId; TeamId is derived
+for race/stage views and does not become TimingData identity.
 
 The factory receives the already selected common construction values in one
 generic context and only the extra values required by the requested variant:
