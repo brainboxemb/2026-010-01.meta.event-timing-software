@@ -411,6 +411,19 @@ outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
+:::{req} Maintain upstream PING lifecycle  
+:id: SI01-REQ-075  
+:status: D  
+:depends_on: IF06-REQ-011, IF06-REQ-012  
+
+For each configured upstream connector, SI-01 shall send one PING immediately when the
+connector reaches its operational connected state and shall continue sending PING every
+30 seconds while that connection remains operational. Disconnect/deactivation shall stop
+that connector's periodic PING task. A later reconnect shall start a new cycle with an
+immediate PING. PING activity shall not append TimingData or consume TimingData sequence
+identity.
+:::
+
 #### Errors and recovery
 
 :::{req} Contain and expose antenna startup and runtime failure  
@@ -733,6 +746,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-062 | UC-007 | smart-display network boundary |
 | SI01-REQ-063 | UC-010 + IF06-REQ-004/005 | UpstreamData reference-data ingress |
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
+| SI01-REQ-075 | IF06-REQ-011/012 | immediate + 30-second upstream PING lifecycle |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
