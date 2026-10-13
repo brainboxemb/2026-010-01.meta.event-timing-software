@@ -119,7 +119,6 @@ PING:
   "type": "PING",
   "data": {
     "purpose": "HEARTBEAT",
-    "purpose": "HEARTBEAT",
     "pingId": "p-0001"
   }
 }
@@ -132,6 +131,7 @@ Matching PONG:
   "v": 1,
   "type": "PONG",
   "data": {
+    "purpose": "HEARTBEAT",
     "pingId": "p-0001"
   }
 }
