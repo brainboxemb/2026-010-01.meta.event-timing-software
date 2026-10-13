@@ -343,26 +343,26 @@ The initial profile identifiers are `simple`, `normal` and `edge`. Their
 internal observation pattern is engineering simulation behaviour rather than
 TimingData/domain semantics.
 
-### IF03-OP-014 — Submit engineering backoffice UpstreamData
+### IF03-OP-014 — Submit engineering upstream UpstreamData
 
 This development/engineering operation submits one structured public/reference
 IF-06 UpstreamData message to SI-01 through the configured
-`EngineeringApiBackofficeConnector`.
+`EngineeringApiUpstreamConnector`.
 
 Inputs:
 
 - one complete UpstreamData value;
 - any NodeId scope is carried by that UpstreamData value itself.
 
-The operation is available only when the engineering backoffice connector is
+The operation is available only when the engineering upstream connector is
 configured/enabled and one IF03-OP-003 event connection has registered the
-`backoffice` role. The HTTP adapter does not call TimingNode/domain objects
+`upstream` role. The HTTP adapter does not call TimingNode/domain objects
 directly; the message enters the same semantic upstream routing boundary used by
-other backoffice connectors.
+other upstream connectors.
 
 The HTTP response reports the submission/application outcome. Semantic outbound
 messages generated while processing the input, such as a PING answer, are delivered
-through the backoffice-role IF03-OP-003 event stream rather than being substituted
+through the upstream-role IF03-OP-003 event stream rather than being substituted
 as the HTTP response body.
 
 ## Operation ordering and concurrency
@@ -667,35 +667,35 @@ SI-01 shall preserve the supplied effective time when creating the MAN_REG recor
 
 IF-03 shall provide IF03-OP-014 as a development-only HTTP/JSON operation that
 accepts structured public/reference UpstreamData and routes it through the configured
-Engineering API backoffice connector without direct domain-object access or
+Engineering API upstream connector without direct domain-object access or
 proprietary transport framing.
 :::
 
-:::{ifreq} Reuse one IF-03 event connection for the engineering backend peer  
+:::{ifreq} Reuse one IF-03 event connection for the Central System simulator peer  
 :id: IF03-REQ-026  
 :status: D  
 :specifies: UC-017  
 :refines: SI01-REQ-068  
 
-IF03-OP-003 shall allow one connected client to register the `backoffice` role
+IF03-OP-003 shall allow one connected client to register the `upstream` role
 using the normal IF-03 WebSocket event connection. That connection shall continue
 to receive the normal live-event stream and shall additionally receive outbound
 structured UpstreamData events. No second SI-01 listener port or second SI-02
-WebSocket lifecycle shall be required. At most one active backoffice-role peer
+WebSocket lifecycle shall be required. At most one active upstream-role peer
 shall be admitted for one Engineering API connector.
 :::
 
-:::{ifreq} Expose Engineering API backoffice connection and sync status  
+:::{ifreq} Expose Engineering API upstream connection and sync status  
 :id: IF03-REQ-027  
 :status: D  
 :specifies: UC-017  
 :refines: SI01-REQ-068, SI01-REQ-084, SI01-REQ-085  
 
 Current IF-03 status and status-change events shall expose whether the Engineering
-API backoffice peer is disconnected, synchronizing, synchronized, pending or in
-conflict, together with node-scoped semantic progress required for engineering
-diagnosis. Closing the designated backoffice-role event connection shall make that
-connector disconnected without discarding semantic pending work.
+API upstream peer is disconnected, synchronizing, synchronized or in conflict,
+together with node-scoped TimingData-head and RaceData-sequence state required for
+engineering diagnosis. Closing the designated upstream-role event connection shall
+make that connector disconnected without discarding LogBook or applied RaceData state.
 :::
 
 :::{ifreq} Simulated tag passage control  

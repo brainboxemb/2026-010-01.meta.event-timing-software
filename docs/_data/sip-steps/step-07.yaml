@@ -9,28 +9,21 @@ planning_changes:
       addressing, sequence isolation, separate LogBooks and restart recovery.
   - date: '2026-10-13'
     change: >-
-      Complete D04 engineering-backoffice transport design. EngineeringApiBackofficeConnector
-      reuses IF-03 POST /api/v1/dev/backoffice/message and the existing SI-02 event
-      WebSocket with role=backoffice; outbound semantic messages are UPSTREAM_DATA events.
-      No second listener port or SI-02 WebSocket lifecycle is added. The connector enters
-      the same UpstreamData boundary as RabbitMQ and its role connection drives the
-      engineering connector lifecycle.
+      Complete D04 engineering upstream transport design. EngineeringApiUpstreamConnector
+      reuses IF-03 POST /api/v1/dev/upstream/message and the existing SI-02 event
+      WebSocket with role=upstream; outbound semantic messages are UPSTREAM_DATA events.
+      No second listener port or SI-02 WebSocket lifecycle is added. SI-02 acts as the
+      Central System Simulator and the connector enters the same UpstreamData boundary
+      as RabbitMQ.
   - date: '2026-10-13'
     change: >-
-      Complete D03 synchronization semantics. TimingData sync uses the highest contiguous
-      IF-05 sequence known per NodeId; transport delivery acknowledgement is not semantic
-      acknowledgement. Pending work is rebuilt from LogBook plus per-target backend
-      progress, retransmission is idempotent by TimingData record identity, and fresh
-      SYNC state is exchanged after connect/reconnect. Reference revisions are advertised
-      through SYNC but reference payloads remain REFERENCE_DATA.
-  - date: '2026-10-13'
-    change: >-
-      Complete D02 reference-data semantics. EventData remains stable profile identity;
-      RaceData supplies live node-scoped RegistrationId-to-TeamId assignments only where
-      EventData has no stable TeamId; StageStartTimes is a revisioned TeamId-to-start
-      snapshot; StageTiming is derived from committed TimingData plus current reference
-      state and never rewrites TimingData. Reference snapshots are atomic and revisioned
-      per TimingNode + dataset.
+      Complete the D02/D03 ordered-stream model before A02 implementation. TIMING_DATA
+      keeps the existing per-node LogBook/IF-05 seqNr. Central-to-node RACE_DATA gets
+      its own per-node source seq and carries incremental reserveTagMap/StageStartTimes
+      changes. SI-01 ACKs RaceData only after ordered semantic application; gaps cause
+      bidirectional REQ from the first missing sequence. SYNC advertises a stream's
+      source head. REQ TIMING_DATA fromSeq=1 is the semantic equivalent of the legacy
+      receive-all/package-id 0000 request.
   - date: '2026-10-13'
     change: >-
       Complete the D01 IF-06 baseline. Use one bidirectional UpstreamData model with
@@ -40,8 +33,8 @@ planning_changes:
       manual PING omits mode. No unanswered-PING timeout policy is fixed yet.
   - date: '2026-10-13'
     change: >-
-      Use one SI-02 Backend Simulator with two transports: IF-03 for deterministic ST-2
-      and RabbitMQ for hosted ST-3. Both exercise the same semantic backoffice contract;
+      Use one SI-02 Central System Simulator with two transports: IF-03 for deterministic
+      ST-2 and RabbitMQ for hosted ST-3. Both exercise the same semantic upstream contract;
       deployment-specific protocol mappings remain below the UpstreamData boundary.
   - date: '2026-10-13'
     change: >-
@@ -56,9 +49,8 @@ activities:
     kind: decision
     state: done
     note: >-
-      IF-06 now defines transport-independent UpstreamData: canonical TimingData
-      transfer plus reference-data, synchronization, PING request/answer and status
-      families. The public reference representation is versioned JSON; deployment-specific
+      IF-06 now defines transport-independent UpstreamData: canonical TimingData,
+      ordered RaceData, SYNC/ACK/REQ control, PING request/answer and status families. The public reference representation is versioned JSON; deployment-specific
       representations remain behind an UpstreamData provider/codec boundary. RabbitMQ
       and IF-03 remain connector transports below those semantics.
 
@@ -68,11 +60,11 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      EventData owns stable profile identity. RaceData owns live node-scoped
-      RegistrationId-to-TeamId fallback assignments; StageStartTimes owns revisioned
-      TeamId-to-start snapshots; StageTiming derives results from committed TimingData
-      plus current reference state. Reference snapshots use atomic monotone revision
-      semantics per TimingNode + dataset and remain transport-independent.
+      EventData owns stable profile identity. RACE_DATA is the Central-owned ordered
+      per-node live-data stream; reserveTagMap and stageStartTimes are incremental SET/DEL
+      sections inside it. The TimingNode applies only the next expected RaceData seq,
+      updates passive ReserveTagMap/StageStartTimes state, then ACKs the applied seq.
+      StageTiming derives results from committed TimingData plus that live state.
 
   - id: D03
     lane: documentation
@@ -80,11 +72,11 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      TimingData synchronization uses cumulative contiguous IF-05 sequence progress
-      per NodeId. Backend progress is the semantic acknowledgement boundary; transport
-      acknowledgement does not clear pending work. LogBook remains the replay payload
-      source, per-target progress derives pending work, retransmission is idempotent by
-      record identity, and reconnect requires fresh SYNC state.
+      Synchronization keeps two independent source sequences per NodeId: TIMING_DATA
+      uses the existing LogBook/IF-05 seqNr and RACE_DATA uses the Central-owned message
+      seq. SYNC advertises a source head; REQ requests either stream from an inclusive
+      sequence. RaceData is ACKed only after semantic application. The LogBook remains
+      the TimingData replay source; control messages consume neither source sequence.
 
   - id: D04
     lane: documentation
@@ -92,10 +84,10 @@ activities:
     state: done
     depends_on: [D01, D03]
     note: >-
-      EngineeringApiBackofficeConnector is the deterministic ST-2 connector. It accepts
+      EngineeringApiUpstreamConnector is the deterministic ST-2 connector. It accepts
       structured UpstreamData through the IF-03 development HTTP operation and emits
       outbound UpstreamData on the existing SI-02 event WebSocket designated with
-      role=backoffice. That same role connection drives connector connect/disconnect,
+      role=upstream. That same role connection drives connector connect/disconnect,
       PING and SYNC lifecycle. RabbitMQ uses the same semantic boundary; concrete broker
       topology/session mechanics remain below it.
 
@@ -125,9 +117,10 @@ activities:
     state: next
     depends_on: [D01, D02, V01]
     note: >-
-      Implement node-scoped semantic reference-data ingress and application-owned
-      RaceData/StageStartTimes updates, including TeamID interpretation without
-      changing committed TimingData identity.
+      Implement the Central-to-node ordered RACE_DATA ingress base: source-sequence
+      validation, semantic apply-before-ACK, gap detection/REQ, ReserveTagMap and
+      StageStartTimes SET/DEL application, and TeamID interpretation without changing
+      committed TimingData identity.
 
   - id: A03
     lane: application
@@ -145,9 +138,10 @@ activities:
     state: planned
     depends_on: [D01, D03, V01]
     note: >-
-      Implement transport-independent outbound synchronization and pending-work state
-      while preserving committed source identity/order and allowing local registration
-      to continue while upstream transport is unavailable.
+      Implement transport-independent SYNC/REQ replay in both directions: advertise
+      TimingData head from LogBook, serve TIMING_DATA REQ from LogBook, compare the
+      Central RACE_DATA head with the applied RaceData seq, and request missing RaceData.
+      Local registration shall continue while upstream transport is unavailable.
 
   - id: A05
     lane: application
@@ -155,12 +149,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
-      edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
-      outbound UpstreamData/synchronization events from the existing IF-03 WebSocket.
-      The connector enters/leaves at the normal semantic backoffice boundary; direct
-      domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
-      production payloads through the engineering API.
+      Add EngineeringApiUpstreamConnector plus the SI-02 Central System Simulator pane.
+      SI-02 shall send ordered RACE_DATA, inspect ACK/REQ/SYNC and request LogBook
+      TIMING_DATA over the existing IF-03 HTTP/WebSocket pair. The connector enters/leaves
+      at the normal semantic upstream boundary; direct domain-object calls are not allowed.
+      Do not tunnel pre-serialized RabbitMQ/private production payloads through the
+      engineering API.
 
   - id: V02
     lane: verification
@@ -171,8 +165,8 @@ activities:
       Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
       node-scoped reference-data application, TeamID/StageTiming results, outbound
       semantic events, acknowledgement/synchronization behaviour and recovery after
-      IF-03 reconnect. This verifies backoffice semantics but not RabbitMQ session/channel
-      behaviour, which belongs to V03.
+      IF-03 reconnect. This verifies upstream semantics but not RabbitMQ session/channel behaviour,
+      which belongs to V03.
 
   - id: A06
     lane: application
@@ -181,9 +175,8 @@ activities:
     depends_on: [D04, V02]
     note: >-
       Implement/qualify RabbitMQ on both sides of the test topology: SI-01 uses
-      RabbitMqBackofficeConnector and the existing SI-02 Backend Simulator gains a
-      RabbitMqBackendTransport that plays the external backend peer. Both connect to
-      the same hosted broker. Credentials/topology are supplied through secrets or
+      RabbitMqUpstreamConnector and the existing SI-02 Central System Simulator gains a
+      RabbitMqCentralSystemTransport. Both connect to the same hosted broker. Credentials/topology are supplied through secrets or
       external configuration; private production mappings/codecs stay outside the repo.
 
   - id: V03
@@ -192,7 +185,7 @@ activities:
     state: planned
     depends_on: [A06]
     note: >-
-      Run ST-3 end-to-end as SI-02 Backend Simulator <-> hosted RabbitMQ <-> SI-01.
+      Run ST-3 end-to-end as SI-02 Central System Simulator <-> hosted RabbitMQ <-> SI-01.
       Verify source-specific routing, broker connection/consumer recovery, acknowledgement
       behaviour and resumed pending delivery. Keep hosted-broker availability outside the
       mandatory fast-CI path.
