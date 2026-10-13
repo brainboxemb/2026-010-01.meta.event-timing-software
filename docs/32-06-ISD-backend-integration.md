@@ -38,7 +38,7 @@ Java classes, provider discovery or private deployment protocol details.
 - **Backend** — external race/event backend system
 - **TimingData** — committed timing record model defined by IF-05
 - **UpstreamData** — transport-independent semantic message exchanged through IF-06
-- **reference data** — backend-owned or backend-synchronised race/event data used by SI-01
+- **reference data** — backend-owned or backend-synchronized race/event data used by SI-01
 
 ## Relationship to other documents
 
@@ -86,7 +86,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Status | bidirectional | expose backend/source synchronisation and connector health relevant to integration |
+| Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
 Step-7 design activities D02 and D03. Their eventual representation must remain
@@ -199,7 +199,7 @@ Detailed acknowledgement and retry policy remains a D03 design decision.
 Integration status may expose:
 
 - connector/backend availability;
-- source/node synchronisation state;
+- source/node synchronization state;
 - pending outbound work;
 - last accepted/rejected reference-data update;
 - last successful inbound/outbound semantic exchange.
