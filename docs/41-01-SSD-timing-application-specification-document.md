@@ -2628,13 +2628,13 @@ Working rules:
 Keep the data roles simple:
 
 - `LogBook` is passive state and holds committed immutable `TimingData` values;
-- `NextUpTeams`, `StageStartTimes` and `EventData` are separate passive
-  per-node state objects;
+- `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
+  per-node state objects; `EventData` is the shared stable profile capability;
 - the TimingNode worker is the single writer for those mutable per-node objects;
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- when NextUpTeams, StageStartTimes or EventData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when NextUpTeams, StageStartTimes or RaceData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 For example, StageStartTimes may be sent again when a TimingNode is opened after
