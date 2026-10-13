@@ -557,6 +557,46 @@ test around the scheduler boundary so CI does not rely only on long wall-clock s
 The test does not assert a missed-PONG timeout because that policy is not yet defined.
 
 :::
+
+:::{vc} Verify default UpstreamData envelope and embedded TimingData  
+:id: VC-ST1-010  
+:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010  
+
+**Purpose**
+
+Verify that the default JSON representation uses one message envelope in both
+directions and embeds committed IF-05 TimingData records as structured child
+values rather than sending a standalone legacy log-line frame.
+
+**Setup**
+
+- SI-01 and an independent backend/engineering peer using the default UpstreamData
+  JSON representation over the Engineering API connector;
+- one configured TimingNode with a committed TimingData record of known identity
+  and values.
+
+**Procedure**
+
+1. Deliver the committed TimingData record to the backend peer. Verify the outer
+   message has `v = 1`, `type = TIMING_DATA` and the proper `nodeId`.
+2. Verify `data` is an array containing the complete IF-05 TimingData object,
+   preserving its node, sequence, record type and timestamp exactly.
+3. Verify no standalone legacy log-line or opaque serialized LBR string is used
+   in place of that child object.
+4. Send a valid PING from the backend peer using the same UpstreamData envelope;
+   verify the outbound PONG uses that envelope with its own `type` and `data`,
+   preserving the request purpose.
+5. Verify encode/decode of both message families preserves their respective
+   payload semantics and does not allocate an additional TimingData identity.
+
+**Expected result**
+
+- one common versioned UpstreamData JSON envelope for inbound and outbound exchange;
+- the timing log record is an embedded IF-05 object inside TIMING_DATA `data`;
+- PING/PONG use the same envelope, not a separate direction-specific public format;
+- neither transport metadata nor message framing changes TimingData identity.
+
+:::
 ## Evidence
 
 A VTS case defines what must be exercised and observed; it does not say that a
