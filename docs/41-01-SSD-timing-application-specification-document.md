@@ -411,30 +411,28 @@ outbound work. After transport recovery, SI-01 shall resume pending
 synchronisation without inventing or reusing committed source sequence identity.
 :::
 
-:::{req} Derive pending TimingData from backend contiguous progress  
+:::{req} Advertise TimingData source head from the LogBook  
 :id: SI01-REQ-081  
 :status: D  
 :specifies: UC-011, UC-012  
-:depends_on: SI01-REQ-042, SI01-REQ-064, SI01-REQ-065, IF06-REQ-017, IF06-REQ-018  
+:depends_on: SI01-REQ-042, SI01-REQ-064, SI01-REQ-065, IF06-REQ-017  
 
-For each configured logical upstream target and TimingNode, SI-01 shall track the
-backend's latest known highest contiguous TimingData sequence. Pending outbound
-TimingData shall be the retained committed records after that sequence. Transport
-delivery success shall not remove a record from semantic pending state.
+For each TimingNode, SI-01 shall be able to advertise through SYNC the current
+TIMING_DATA source head equal to the last committed LogBook/IF-05 sequence, or 0
+when the LogBook is empty. This advertisement shall not allocate another sequence
+or imply that the Central System has already received that record.
 :::
 
-:::{req} Replay retained TimingData after reconnect or backend rollback  
+:::{req} Serve TimingData requests from the retained LogBook  
 :id: SI01-REQ-082  
 :status: D  
 :specifies: UC-011, UC-012  
-:depends_on: SI01-REQ-081, IF06-REQ-019  
+:depends_on: SI01-REQ-081, IF06-REQ-019, IF06-REQ-020  
 
-After connection/reconnection or receipt of backend progress behind the local
-committed head, SI-01 shall replay the missing retained TimingData in source order
-using each record's original NodeId, sequence and semantic content. If backend
-progress is lower than a previously observed value, SI-01 shall treat the current
-backend state as requiring replay rather than assuming an older transport session
-still proves synchronization.
+When the Central System sends `REQ(stream=TIMING_DATA, fromSeq=N)`, SI-01 shall
+replay retained committed TimingData from LogBook sequence N in source order using
+each record's original NodeId, sequence and semantic content. A request from
+sequence 1 shall represent replay from the retained beginning of the LogBook.
 :::
 
 :::{req} Rebuild TimingData pending work without a second payload history  
@@ -445,34 +443,33 @@ still proves synchronization.
 
 The authoritative payload source for TimingData replay shall remain the TimingNode
 LogBook. SI-01 shall not require a second durable copy of the same TimingData merely
-to represent an outbound outbox. After restart, pending work may be rebuilt after
-the backend's semantic progress is known. Cached sync progress may support status or
-performance but shall not replace LogBook history or backend reconciliation.
+to represent an outbound outbox. Loss of an upstream delivery is recovered by the
+Central System requesting the required LogBook sequence again.
 :::
 
-:::{req} Expose diagnosable synchronization state  
+:::{req} Expose diagnosable source synchronization state  
 :id: SI01-REQ-084  
 :status: D  
-:depends_on: SI01-REQ-081, IF06-REQ-020  
+:depends_on: SI01-REQ-081, SI01-REQ-078, IF06-REQ-017, IF06-REQ-020  
 
-For each configured logical upstream target and TimingNode, SI-01 shall expose enough
-state to distinguish unknown synchronization, synchronized state, pending TimingData
-and conflict/error. When backend progress is known, status shall expose local committed
-head, backend contiguous sequence and pending count. Reference-data revision state
-shall remain separately observable from TimingData progress.
+For each TimingNode, SI-01 shall expose at least the current TIMING_DATA LogBook head
+and the highest contiguously applied RACE_DATA sequence. Synchronization status shall
+distinguish normal ordered state, a detected RaceData gap and semantic rejection/error.
+Transport connection state shall remain separately observable.
 :::
 
-:::{req} Re-establish backend progress on connect and reconnect  
+:::{req} Re-establish both ordered streams on connect and reconnect  
 :id: SI01-REQ-085  
 :status: D  
 :specifies: UC-011, UC-012  
-:depends_on: SI01-REQ-081, SI01-REQ-082, IF06-REQ-021  
+:depends_on: SI01-REQ-081, SI01-REQ-082, SI01-REQ-078, IF06-REQ-021  
 
-When a configured upstream target becomes operationally connected or reconnects,
-SI-01 shall make its current node-scoped SYNC state available and shall treat the
-backend progress for that connection as unknown until fresh backend SYNC state is
-received. SI-01 shall not treat cached progress or transport/session success from an
-earlier connection as proof that the backend still holds those TimingData records.
+When a configured upstream connection becomes operational or reconnects, SI-01 shall
+advertise its current TIMING_DATA source head and process the Central System's current
+RACE_DATA source head. If SI-01 is behind the advertised RaceData head, it shall issue
+`REQ(stream=RACE_DATA, fromSeq=lastApplied+1)`. If the Central System is behind the
+advertised TimingData head, it can recover through its TIMING_DATA REQ. An earlier
+transport session shall not cause either source sequence to be skipped.
 :::
 
 :::{req} Resolve TeamId without rewriting TimingData  
@@ -483,39 +480,41 @@ earlier connection as proof that the backend still holds those TimingData record
 
 For a RegistrationId, SI-01 shall use a non-null stable TeamId supplied by the
 configured EventData profile as authoritative. Only when EventData has no stable
-TeamId for that RegistrationId may the current TimingNode RaceData assignment
+TeamId for that RegistrationId may the current TimingNode ReserveTagMap assignment
 supply the TeamId. If neither source resolves a TeamId, the registration remains
 valid committed TimingData but derived team/stage views shall treat it as unresolved.
-Reference-data updates shall not rewrite committed RegistrationId or TimingData
-sequence identity.
+RaceData updates shall not rewrite committed RegistrationId or TimingData sequence
+identity.
 :::
 
-:::{req} Apply RaceData as an atomic node-scoped snapshot  
+:::{req} Apply ordered incremental RaceData and acknowledge it  
 :id: SI01-REQ-078  
 :status: D  
-:specifies: UC-010  
+:specifies: UC-010, UC-012  
 :depends_on: SI01-REQ-063, SI01-REQ-077, IF06-REQ-014, IF06-REQ-015  
 
-For each TimingNode, SI-01 shall maintain one accepted RaceData revision and one
-complete live RegistrationId-to-TeamId assignment snapshot. A higher valid revision shall atomically replace the current snapshot.
-Assignments that attempt to redefine a stable EventData TeamId, duplicate one
-TeamId across multiple live RegistrationIds, or otherwise violate the dataset
-contract shall reject the whole snapshot.
+For each TimingNode, SI-01 shall maintain the highest contiguously applied RACE_DATA
+source sequence, initially 0 when no live RaceData state has been applied. SI-01 shall
+apply only `seq = lastApplied + 1` and shall validate/apply all changes in that
+message before advancing the sequence and emitting ACK for the applied sequence.
+
+A duplicate/already-applied sequence shall not reapply its changes. A sequence greater
+than `lastApplied + 1` shall not be applied; SI-01 shall request RACE_DATA again from
+`lastApplied + 1`. Invalid changes shall not advance or acknowledge the sequence.
 :::
 
-:::{req} Apply StageStartTimes as an atomic node-scoped snapshot  
+:::{req} Apply RaceData stage-start-time changes  
 :id: SI01-REQ-079  
 :status: D  
 :specifies: UC-010  
-:depends_on: SI01-REQ-063, IF06-REQ-014, IF06-REQ-016  
+:depends_on: SI01-REQ-078, IF06-REQ-016  
 
-For each TimingNode, SI-01 shall maintain one accepted StageStartTimes revision and
-one complete TeamId-to-start-definition snapshot.
-A higher valid revision shall atomically replace the current snapshot. A start
-definition shall contain local race time-of-day and may contain an explicit local
-date. A valid start time may be accepted before the corresponding TeamId is
-present in RaceData; reference-data delivery order shall not create a false
-validation dependency between the two datasets.
+Within an accepted ordered RACE_DATA message, SI-01 shall apply StageStartTimes
+changes by TeamId. SET shall create/replace the current start definition and DEL
+shall remove it. A SET definition shall contain local race time-of-day and may
+contain an explicit local date. A start-time change may be valid before the
+corresponding reserve mapping exists; the two RaceData sections shall not create a
+false delivery-order dependency.
 :::
 
 :::{req} Derive StageTiming from committed timing and current reference state  
@@ -524,9 +523,9 @@ validation dependency between the two datasets.
 :depends_on: SI01-REQ-077, SI01-REQ-079, SI01-REQ-042  
 
 StageTiming shall derive elapsed/ranking information from committed TimingData,
-the resolved TeamId and the current StageStartTimes state. A reference-data
-change may change the derived StageTiming result but shall not alter, remove,
-renumber or recommit the underlying TimingData. When TeamId or stage start data
+the resolved TeamId and the current StageStartTimes state. A RaceData change may
+change the derived StageTiming result but shall not alter, remove, renumber or
+recommit the underlying TimingData. When TeamId or stage start data
 is unavailable, SI-01 shall expose the result as unresolved/incomplete rather
 than inventing a value.
 :::
@@ -891,15 +890,15 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
 | SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
 | SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with optional-mode-preserving PING ANSWER |
-| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; RaceData fallback only |
-| SI01-REQ-078 | UC-010 + IF06-REQ-014/015 | atomic revisioned RaceData snapshot |
-| SI01-REQ-079 | UC-010 + IF06-REQ-014/016 | atomic revisioned StageStartTimes snapshot |
+| SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; ReserveTagMap fallback only |
+| SI01-REQ-078 | UC-010/012 + IF06-REQ-014/015 | ordered RACE_DATA sequence, apply and ACK |
+| SI01-REQ-079 | UC-010 + IF06-REQ-016 | incremental stage-start SET/DEL inside RACE_DATA |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
-| SI01-REQ-081 | UC-011/012 + IF06-REQ-017/018 | pending TimingData from backend contiguous sequence |
-| SI01-REQ-082 | UC-011/012 + IF06-REQ-019 | replay original records after reconnect/backend rollback |
+| SI01-REQ-081 | UC-011/012 + IF06-REQ-017 | advertise TimingData LogBook source head |
+| SI01-REQ-082 | UC-011/012 + IF06-REQ-019/020 | serve TIMING_DATA REQ from LogBook |
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
-| SI01-REQ-084 | IF06-REQ-020 + SI01-REQ-081 | observable per-target/node synchronization state |
-| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SYNC state after connect/reconnect |
+| SI01-REQ-084 | IF06-REQ-017/020 + SI01-REQ-078/081 | observable TimingData head and RaceData applied sequence |
+| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh source-head SYNC/REQ after reconnect |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
@@ -1278,6 +1277,7 @@ TimingSystem (1..N per Application)
     State
     UpstreamMessagePort       TimingNode-level upstream messages
     TagProcessor
+    ReserveTagMap
     StageStartTimes
     LogBook
       0..N TimingData
@@ -1386,12 +1386,13 @@ time interpretation.
 :::{arch} RaceData
 :id: RaceData
 
-`RaceData` is passive TimingNode-local **live race state**, separate from the
-stable EventData profile. Its v1 promoted content is the latest accepted complete
-`RegistrationId -> TeamId` snapshot for registrations that do not already have
-a stable EventData TeamId, plus the accepted revision. Reserve/dynamic participant assignment is the principal use case.
-RaceData cannot override stable EventData identity and remains ordered with
-other TimingNode state through the owning TimingNode execution boundary.
+:::{arch} ReserveTagMap
+:id: ReserveTagMap
+
+`ReserveTagMap` is passive TimingNode-local live state populated by ordered
+RACE_DATA messages. It maps reserve RegistrationId to TeamId only where EventData
+has no stable TeamId. SET/DEL mutations occur on the owning TimingNode execution
+boundary and never rewrite EventData or committed TimingData.
 :::
 
 :::{arch} EventData
@@ -1411,7 +1412,7 @@ separate TimingNode-local runtime/upstream race state.
 :id: StageTiming  
 
 `StageTiming` is a derived/read-side domain capability. It resolves TeamId using
-stable EventData first and TimingNode RaceData only as fallback, then combines
+stable EventData first and TimingNode ReserveTagMap only as fallback, then combines
 the accepted committed TimingData effective time with that TeamId's current
 StageStartTimes definition. It derives elapsed/ranking results without becoming
 another writer and without changing TimingData or reference state. Missing
@@ -2700,13 +2701,13 @@ Working rules:
 Keep the data roles simple:
 
 - `LogBook` is passive state and holds committed immutable `TimingData` values;
-- `NextUpTeams`, `StageStartTimes` and `RaceData` are separate passive
+- `NextUpTeams`, `ReserveTagMap` and `StageStartTimes` are separate passive
   per-node state objects; `EventData` is the shared stable profile capability;
 - the TimingNode worker is the single writer for those mutable per-node objects;
 - each state type that needs persistence owns its semantic persistence rules above the lower Storage layer;
 - `TimingDataPersistence` is the durable/recovery semantic boundary for committed timing data;
 - lower Storage contracts remain generic and contain no TimingData/TimingNode semantics;
-- when NextUpTeams, StageStartTimes or RaceData require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
+- when NextUpTeams, ReserveTagMap or StageStartTimes require persistence, that persistence follows the same dependency direction rather than adding Domain interfaces implemented by I/O;
 - queries read consistent state without becoming another owner of it.
 
 For example, StageStartTimes may be sent again when a TimingNode is opened after
