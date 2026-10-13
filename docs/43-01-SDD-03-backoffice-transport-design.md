@@ -424,54 +424,56 @@ Transport-level keepalive mechanisms (for example broker/TCP heartbeat features)
 coexist with this application-level PING request/answer exchange but do not replace
 IF06-REQ-011/012/013.
 
-## Outbox and delivery
+## Ordered stream synchronization and replay
 
-Local commitment and external transport are deliberately separated. For the public
-v1 TimingData path, the **LogBook is the durable outbound payload history**; SI-01
-does not persist a second copy of each record merely to implement an outbox.
+Local TimingData commitment and external delivery remain deliberately separated. The
+public v1 design uses the **existing source sequence of each direction** rather than
+a second outbox sequence.
 
 ```text
-TimingNode LogBook (authoritative committed TimingData)
+TimingNode -> Central System
+  TimingNode LogBook
+    seqNr 1..N
        |
-       +--> local committed head sequence
+       +--> proactive TIMING_DATA publish
+       +--> SYNC stream=TIMING_DATA seq=N
+       +--> serve REQ stream=TIMING_DATA fromSeq=M
+              by replaying retained LogBook records M..N
+
+Central System -> TimingNode
+  RACE_DATA source
+    seq 1..R
        |
        v
-per logical upstream target + NodeId sync cursor/state
+  TimingNode ordered apply boundary
        |
-       +--> backend highest contiguous accepted sequence
-       +--> pending = LogBook records after backend sequence
-       |
-       v
-BackofficePublisherPort
-       |
-       +--> EngineeringApiBackofficeConnector
-       |
-       +--> RabbitMqBackofficeConnector
+       +--> next expected seq: apply all changes, then ACK seq
+       +--> duplicate seq: do not apply again; ACK may repeat
+       +--> gap: do not apply; REQ stream=RACE_DATA fromSeq=missing
 ```
 
-Working direction:
+For TimingData, the LogBook is the durable replay payload history. SI-01 does not
+persist a second copy of each committed TimingData merely to implement an outbox.
+A failed proactive publish is therefore recoverable: after SYNC, the Central System
+can request the required LogBook sequence again.
 
-1. commit TimingData locally and make it durable in the LogBook;
-2. publish/replay records in original source order;
-3. transport delivery/confirm may show that bytes reached the selected transport,
-   but does not clear semantic pending state;
-4. backend sends SYNC state with its highest contiguous accepted sequence;
-5. SI-01 derives pending records as committed sequence values after that point;
-6. on reconnect or backend rollback, replay retained records from the backend's
-   current contiguous sequence + 1;
-7. identical duplicate record delivery is idempotent; same record key with changed
-   content is a conflict.
+For RaceData, the Central System owns the source sequence. SI-01 advances its
+node-scoped applied RaceData sequence only after the complete message has been
+validated and applied on the TimingNode serialization boundary. ACK is semantic
+confirmation of that application, not merely transport delivery.
 
-Each configured logical upstream target keeps independent progress for each bound
-NodeId. A connector reconnect creates a new transport session but not a new TimingData
-identity or synchronization namespace.
+No out-of-order RaceData buffering is required by the v1 baseline. When sequence N
+is expected and a later sequence arrives, SI-01 leaves state unchanged and requests
+RaceData from N. The Central System is responsible for retaining enough RaceData
+history to satisfy the supported REQ range.
+
+A reconnect creates a new transport session but does not create new source sequence
+namespaces. The peers exchange fresh source-head SYNC messages and use REQ where the
+receiver is behind.
 
 No exact millisecond retry/backoff policy is fixed by D03. Connectors may use suitable
-transport retry/backoff, while the semantic guarantee is that uncertain delivery can
-be repeated and pending TimingData remains derivable until backend progress confirms it.
-
-Reference-data synchronization uses the same SYNC exchange only for revision state.
-Actual RaceData/StageStartTimes content is still transferred as REFERENCE_DATA snapshots.
+transport retry/backoff for control-message retransmission, while the semantic recovery
+mechanism remains SYNC + REQ + source sequence.
 
 ## Status model
 
@@ -490,10 +492,10 @@ BackofficeStatus
       configured
       active
       lastMessage
-    outbound
-      localTimingSeq
-      backendTimingSeq
-      pendingCount
+    streams
+      timingDataHead
+      raceDataAppliedSeq
+      raceDataGapFrom
       syncState
       lastPublish
       lastFailure
@@ -519,7 +521,7 @@ shared/upstream-data
     default/reference JSON implementation
 
 application/domain
-    semantic routing, reference-state application, outbox/sync state
+    semantic routing, RaceData ordered application, ACK/REQ/SYNC state
 
 existing IF-03 presentation/application adapter
     EngineeringApiBackofficeConnector
