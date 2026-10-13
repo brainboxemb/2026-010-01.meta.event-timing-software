@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Simplify default PING wire semantics to a single UpstreamData type PING:
+      data.action=REQUEST/ANSWER and independent data.purpose=HEARTBEAT/MANUAL.
+      No separate PONG message family. Keep optional reference pingId,
+      bidirectional replies, and existing 30-second heartbeat lifecycle.
+  - date: '2026-10-13'
+    change: >-
       Confirm one default UpstreamData JSON envelope for both message directions.
       Committed TimingData/log records are structured children of TIMING_DATA
       messages, not separate legacy log-line frames. Direction-dependent
