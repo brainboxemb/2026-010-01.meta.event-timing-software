@@ -301,10 +301,8 @@ nodes:
   label: "Storage"
   items:
     - label: AppendOnlyRecordStore
-      object_id: AppendOnlyRecordStore
       items:
         - label: FileAppendOnlyRecordStore
-          object_id: FileAppendOnlyRecordStore
   kind: storage
   notation: packaging-component
   # Keep this compact: only implemented storage is shown here. Future DB/state
