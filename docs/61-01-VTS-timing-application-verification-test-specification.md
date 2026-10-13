@@ -504,13 +504,15 @@ the `A` in `RT-A` is not the TimingNode identifier. These cases inject the
 RegistrationIds directly through IF-03. They do not verify the separate RFID
 tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 
-:::{vc} Verify upstream PING/PONG lifecycle  
+:::{vc} Verify upstream PING request/answer lifecycle  
 :id: VC-ST1-009  
 :verifies: SI01-REQ-075, SI01-REQ-076, IF06-REQ-011, IF06-REQ-012, IF06-REQ-013  
 
 **Purpose**
 
-Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
+Verify bidirectional PING request/answer semantics: required `op = REQ | ANS`,
+optional heartbeat `mode = HB`, manual behavior when mode is absent, and optional
+reference correlation, without creating TimingData.
 
 **Setup**
 
@@ -525,32 +527,80 @@ Verify the correlated upstream PING/PONG lifecycle without creating TimingData.
 1. Start SI-01 with the upstream connector not yet operationally connected.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
-3. Verify one PING with a `pingId` is published immediately rather than waiting for the
-   first 30-second period.
-4. Return one PONG with the same `pingId` and verify SI-01 accepts it as the matching
-   liveness response.
-5. Keep the connection operational and verify the next PING is generated after the
-   30-second period with a new correlation exchange; return the matching PONG.
-6. From the backend peer send a valid PING with another `pingId`. Verify SI-01 returns
-   exactly one PONG with the same `pingId`.
+3. Verify `PING(op=REQ, mode=HB)` is published immediately rather
+   than waiting for the first 30-second period.
+4. Return `PING(op=ANS, mode=HB)` and verify SI-01 processes it
+   as the response, without emitting another answer.
+   If the default reference codec includes `pingId`, verify it is echoed.
+5. Keep the connection operational and verify the next heartbeat PING REQUEST
+   after the 30-second period; return the corresponding PING ANSWER.
+6. From the backend peer send `PING(op=REQ)` without `mode` or `pingId`.
+   Verify SI-01 returns exactly one `PING(op=ANS)` with `mode` still
+   absent. Repeat with an optional reference `pingId` and verify it is echoed.
+   Also initiate a manual PING REQUEST from SI-01, verify its PING ANSWER,
+   and confirm the separate periodic heartbeat schedule has not reset.
+   Send a request with unsupported `mode` and verify it is not silently
+   treated as a manual request.
 7. Disconnect the upstream peer and verify no further periodic PING is generated for that
    disconnected connector.
 8. Reconnect and verify a new connection cycle again starts with an immediate PING and
-   matching PONG exchange, followed by the 30-second period.
-9. Query/inspect TimingData history and verify all PING/PONG activity added no TimingData
+   PING ANSWER exchange, followed by the 30-second period.
+9. Query/inspect TimingData history and verify PING request/answer activity added no TimingData
    record and consumed no TimingData sequence value.
 
 **Expected result**
 
 - immediate PING on each operational connect/reconnect;
 - periodic PING every 30 seconds while connected;
-- matching PONG correlation is preserved in both directions;
+- REQUEST receives exactly one ANSWER preserving optional HEARTBEAT `mode` or its absence in both directions;
+- optional reference `pingId` is echoed when present and is not required for a valid exchange;
 - no PING task remains active after disconnect;
-- PING/PONG does not alter TimingData or LogBook history.
+- PING request/answer does not alter TimingData or LogBook history.
 
 The exact 30-second schedule should additionally have a deterministic component-level
 test around the scheduler boundary so CI does not rely only on long wall-clock sleeps.
-The test does not assert a missed-PONG timeout because that policy is not yet defined.
+The test does not assert a missing-PING-ANSWER timeout because that policy is not yet defined.
+
+:::
+
+:::{vc} Verify default UpstreamData envelope and embedded TimingData  
+:id: VC-ST1-010  
+:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010  
+
+**Purpose**
+
+Verify that the default JSON representation uses one message envelope in both
+directions and embeds committed IF-05 TimingData records as structured child
+values rather than sending a standalone legacy log-line frame.
+
+**Setup**
+
+- SI-01 and an independent backend/engineering peer using the default UpstreamData
+  JSON representation over the Engineering API connector;
+- one configured TimingNode with a committed TimingData record of known identity
+  and values.
+
+**Procedure**
+
+1. Deliver the committed TimingData record to the backend peer. Verify the outer
+   message has `v = 1`, `type = TIMING_DATA` and the proper `nodeId`.
+2. Verify `data` is an array containing the complete IF-05 TimingData object,
+   preserving its node, sequence, record type and timestamp exactly.
+3. Verify no standalone legacy log-line or opaque serialized LBR string is used
+   in place of that child object.
+4. Send a PING REQUEST from the backend peer using the same UpstreamData envelope;
+   verify the outbound PING ANSWER has the same top-level `type = PING` but
+   `data.op = ANS`, preserving the optional request `data.mode`
+   (including omission for manual requests).
+5. Verify encode/decode of both message families preserves their respective
+   payload semantics and does not allocate an additional TimingData identity.
+
+**Expected result**
+
+- one common versioned UpstreamData JSON envelope for inbound and outbound exchange;
+- the timing log record is an embedded IF-05 object inside TIMING_DATA `data`;
+- PING REQUEST/ANSWER uses the same `type = PING` envelope in both directions, not separate message formats;
+- neither transport metadata nor message framing changes TimingData identity.
 
 :::
 ## Evidence

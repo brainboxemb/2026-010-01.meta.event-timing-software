@@ -77,7 +77,13 @@ UpstreamData family, not by the selected transport.
 ### UpstreamData
 
 UpstreamData is the common semantic boundary between application behaviour and
-backend transports.
+backend transports. The public/reference representation uses **one message model
+in both directions**. A TimingData/log-record value is carried *inside* a
+TIMING_DATA message as payload, rather than being a separate wire-message format.
+PING requests/answers, reference-data and synchronization exchanges use the
+same message model with their respective message types and payloads. A deployment-specific adapter may encode
+the inbound and outbound wire directions differently, without changing the
+shared semantic UpstreamData model.
 
 The current semantic families are:
 
@@ -86,7 +92,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Ping / Pong | bidirectional | request and confirm upstream liveness with correlation |
+| Ping request / answer | bidirectional | one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
@@ -136,32 +142,43 @@ The detailed acknowledgement, retry, duplicate/idempotency and pending-work rule
 are refined by Step-7 D03. They shall not use transient transport/session identity
 as a replacement for committed TimingData identity.
 
-### Ping / Pong lifecycle
+### PING request / answer lifecycle
 
-`PING` and `PONG` are UpstreamData messages used to verify that the configured
-upstream connection remains operational.
+`PING` is one bidirectional UpstreamData message family used to verify that the
+configured upstream connection remains operational. A PING exchange has:
 
-Each PING carries a correlation identifier `pingId`. The receiver of a valid PING
-answers with one PONG carrying the same `pingId`. This rule is bidirectional: SI-01
-may initiate PING and process the matching backend PONG, and SI-01 shall also answer an
-inbound backend PING with a matching PONG.
+- **op** (required): `REQ` initiates a check; `ANS` responds to it;
+- **mode** (optional): `HB` marks an automatically scheduled heartbeat; when
+  `mode` is absent, the request is an explicitly initiated/manual check.
+
+A receiver of a valid PING `op = REQ` replies with one PING `op = ANS`. The
+answer preserves the request's `mode`, including its absence for a manual
+request. This applies in both directions: SI-01 may initiate a request and
+receive the backend's answer, and SI-01 also answers requests received from
+the backend. There is no separate PONG message type in the default model.
+A request/correlation identifier is not part of the mandatory IF-06 semantic
+contract; an implementation may use one to associate answers with requests.
 
 For each active upstream connector initiated by SI-01:
 
 - when the connector first reaches its operational **CONNECTED** state, SI-01 sends one
-  PING immediately;
-- while that connection remains operational, SI-01 sends another PING every **30 seconds**;
+  **heartbeat** PING immediately;
+- while that connection remains operational, SI-01 sends another **heartbeat** PING every **30 seconds**;
 - when the connector leaves the operational connected state, periodic PING generation
   stops;
 - after a later reconnect, a new cycle begins with another immediate PING followed by
   the 30-second period.
 
-PING/PONG is connection/upstream activity. It is **not TimingData**, does not consume a
-TimingData sequence number and does not create or modify a LogBook record.
+A **manual** PING may be explicitly initiated by either party; it does not change,
+reset or replace SI-01's scheduled heartbeat cycle.
+
+PING REQUEST/ANSWER is connection/upstream activity. It is **not TimingData**,
+does not consume a TimingData sequence number and does not create or modify a
+LogBook record.
 
 The timeout/failure policy for an unanswered PING is intentionally not fixed yet. A
 transport may also have a lower-level keepalive mechanism, but that does not replace the
-semantic PING/PONG exchange.
+semantic PING request/answer exchange.
 
 ## Operation identifiers
 
@@ -173,8 +190,8 @@ Operations use stable semantic identifiers independent from transport.
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
 | `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
-| `IF06-OP-05 PING` | bidirectional | request liveness confirmation using a `pingId` |
-| `IF06-OP-06 PONG` | bidirectional | answer one PING using the same `pingId` |
+| `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with op REQ and optional HB mode |
+| `IF06-OP-06 PING_ANSWER` | bidirectional | answer a PING request with op ANS, retaining the request's optional mode |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -237,23 +254,30 @@ Integration status may expose:
 Transport-specific diagnostic detail may be added by an implementation, but the
 common semantic status shall remain transport-independent.
 
-### IF06-OP-05 PING
+### IF06-OP-05 PING_REQUEST
 
-PING has no TimingData payload and no TimingData record identity. It carries a `pingId`
-that identifies the liveness request.
+A PING request has `op = REQ`. An automatically generated heartbeat
+request adds `mode = HB`; a manually initiated request omits `mode`.
+It has no TimingData payload or record identity.
+Neither a legacy wire-level marker nor a sequence/correlation number is mandated
+by IF-06.
 
-For the SI-01 initiated heartbeat, the first PING follows the connector transition to
-operational CONNECTED immediately. Subsequent PING messages are generated at a 30-second
-period while that same connection remains operational.
+For the SI-01 initiated heartbeat, the first PING REQUEST follows the connector
+transition to operational CONNECTED immediately. Subsequent heartbeat requests
+are generated at a 30-second period while that same connection remains operational.
+Manual PING requests do not affect that schedule.
 
-### IF06-OP-06 PONG
+### IF06-OP-06 PING_ANSWER
 
-A receiver of a valid PING answers with one PONG carrying the same `pingId`. PONG has no
-TimingData payload and no TimingData record identity.
+The receiver of a valid PING REQUEST responds with one PING message carrying
+`op = ANS` and the request's unchanged optional `mode`. If the
+request omits `mode`, the answer also omits it. An answer has no TimingData
+payload or record identity and must not trigger another answer.
 
-A matching PONG confirms completion of that individual liveness exchange. IF-06 does not
-yet define how many unanswered PING messages, or what elapsed time, changes connector
-health/state.
+A PING ANSWER confirms receipt and handling of a liveness request.
+Implementations may add correlation identifiers to match individual requests
+and answers. IF-06 does not yet define how many unanswered PING requests,
+or what elapsed time, changes connector health/state.
 
 ## Failure semantics
 
@@ -377,7 +401,10 @@ remain separately representable.
 :status: D  
 
 The public/reference implementation shall provide a versioned JSON representation of
-UpstreamData suitable for development, engineering and integration verification.
+UpstreamData suitable for development, engineering and integration verification. The
+same UpstreamData message structure shall be used in both directions; committed
+TimingData records shall be nested in a TIMING_DATA message payload rather than
+being transmitted as standalone legacy log-line messages.
 :::
 
 :::{ifreq} Alternative representation support  
@@ -403,8 +430,8 @@ reference-data or synchronization semantics.
 :status: D  
 
 When a configured upstream connector reaches its operational connected state, SI-01
-shall send one PING UpstreamData message immediately. That PING shall contain a correlation
-identifier `pingId`.
+shall send one PING UpstreamData message with `op = REQ` and
+`mode = HB` immediately.
 :::
 
 :::{ifreq} Periodic upstream PING while connected  
@@ -412,19 +439,28 @@ identifier `pingId`.
 :status: D  
 
 While a configured upstream connector remains operationally connected after its initial
-PING, SI-01 shall send a further PING every 30 seconds. PING generation shall stop when
-that connector is no longer operationally connected and shall restart with an immediate
-PING after a later reconnect. PING shall not consume TimingData sequence identity or
-create TimingData/LogBook records.
+heartbeat PING, SI-01 shall send a further heartbeat PING every 30 seconds. Scheduled
+PING generation shall stop when that connector is no longer operationally connected
+and shall restart with an immediate heartbeat PING after a later reconnect.
+An explicitly initiated manual PING shall not reset this schedule. PING shall not
+consume TimingData sequence identity or create TimingData/LogBook records.
 :::
 
-:::{ifreq} Correlated PING/PONG response  
+:::{ifreq} PING request op, answer and optional heartbeat mode  
 :id: IF06-REQ-013  
 :status: D  
 
-The receiver of a valid PING shall answer with one PONG carrying the same `pingId` as
-part of processing that PING; the response shall not wait for the 30-second periodic
-PING schedule. This response rule applies in both directions. PONG shall not consume TimingData sequence
+IF-06 shall use one PING semantic message family with required
+`op = REQ | ANS` and optional `mode = HB`. A PING REQUEST
+without `mode` denotes an explicitly initiated/manual check; no `MANUAL`
+value is required. The receiver of a valid PING REQUEST shall send one
+PING ANSWER preserving the request's `mode` (including its absence)
+as part of processing the request, without waiting for the 30-second
+heartbeat schedule. A PING with `op = ANS` shall not itself be answered. This applies in
+both directions. Unknown `mode` values shall not silently be treated as manual
+checks. No separate PONG message type, PING sequence number or correlation
+identifier is mandated by the interface; a representation/implementation may add
+optional correlation. PING REQUEST/ANSWER shall not consume TimingData sequence
 identity or create TimingData/LogBook records.
 :::
 
@@ -436,4 +472,4 @@ identity or create TimingData/LogBook records.
   (Step-7 D03).
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.
-- Timeout/health policy for unanswered or late PONG responses.
+- Timeout/health policy for missing or late PING ANSWER messages.

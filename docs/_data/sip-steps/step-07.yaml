@@ -3,37 +3,22 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
-      Complete the liveness baseline with correlated PING/PONG in both directions.
-      SI-01 initiates immediately on connect and every 30 seconds, accepts matching
-      PONG responses, and answers inbound PING. Missed-PONG timeout policy remains open.
-  - date: '2026-10-13'
-    change: >-
-      Extend the completed IF-06 D01 baseline with application-level PING semantics:
-      immediate PING on operational connect/reconnect, then every 30 seconds while
-      connected. PING is UpstreamData and does not consume TimingData sequence.
-  - date: '2026-10-13'
-    change: >-
-      Complete D01 by promoting IF-06 around shared UpstreamData semantics and adding
-      the public/reference JSON representation. Replace the old UpstreamProtocol /
-      BackofficeEnvelope concepts in architecture/design. D02 is next.
+      Complete the D01 IF-06 baseline. Use one bidirectional UpstreamData model with
+      a public/reference JSON representation: TIMING_DATA embeds structured IF-05
+      records, while PING uses op=REQ/ANS with optional mode=HB and optional pingId.
+      SI-01 sends heartbeat REQ immediately on connect/reconnect and every 30 seconds;
+      manual PING omits mode. No unanswered-PING timeout policy is fixed yet.
   - date: '2026-10-13'
     change: >-
       Use one SI-02 Backend Simulator with two transports: IF-03 for deterministic ST-2
       and RabbitMQ for hosted ST-3. Both exercise the same semantic backoffice contract;
-      CloudAMQP or equivalent may provide the external broker.
+      deployment-specific protocol mappings remain below the UpstreamData boundary.
   - date: '2026-10-13'
     change: >-
-      Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
-      next: promote IF-06 backend semantic responsibilities before reference-data,
-      synchronization or transport implementation proceeds.
-  - date: '2026-10-13'
-    change: >-
-      Prepare Step 7 before activation. Existing SI-01 multi-node composition,
-      node-scoped IF-03 addressing, separate LogBooks and restart recovery already
-      have black-box coverage, so Step 7 adopts that as a baseline instead of
-      reimplementing it. Make IF-06 semantics, reference-data/StageTiming ownership
-      and synchronization rules the first design gates. D01 becomes next only after
-      Step-6 V01 / VC-ST1-003 closes.
+      Activate Step 7 after Step 6 closeout and adopt the existing multi-node,
+      node-addressing, separate-LogBook and restart-recovery implementation as the
+      baseline instead of rebuilding that topology. Continue with reference-data,
+      synchronization and backoffice integration work from that baseline.
 
 activities:
   - id: D01
@@ -42,10 +27,10 @@ activities:
     state: done
     note: >-
       IF-06 now defines transport-independent UpstreamData: canonical TimingData
-      transfer plus reference-data, synchronization, PING/PONG and status families. The public
-      reference representation is versioned JSON; deployment-specific representations
-      remain behind an UpstreamData provider/codec boundary. RabbitMQ and IF-03 remain
-      connector transports below those semantics.
+      transfer plus reference-data, synchronization, PING request/answer and status
+      families. The public reference representation is versioned JSON; deployment-specific
+      representations remain behind an UpstreamData provider/codec boundary. RabbitMQ
+      and IF-03 remain connector transports below those semantics.
 
   - id: D02
     lane: documentation

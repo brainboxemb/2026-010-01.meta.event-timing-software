@@ -31,8 +31,12 @@ Connector/session realization belongs to
 
 ## Design baseline
 
-The default/reference representation uses one UTF-8 JSON object per UpstreamData
-message.
+The default/reference representation uses **one UTF-8 JSON message format for
+both directions** of IF-06. Every exchange uses the same envelope; its `type`
+selects the message family and its `data` contains the type-specific payload.
+The envelope is the message. A TimingData record (the semantic counterpart of
+an individual log entry) is an item *inside* the `data` payload of a
+`TIMING_DATA` message; it is not a second, unrelated top-level wire format.
 
 The common envelope is intentionally small:
 
@@ -54,8 +58,7 @@ The current public v1 design reserves these semantic families:
 - `TIMING_DATA`;
 - `REFERENCE_DATA`;
 - `SYNC`;
-- `PING`;
-- `PONG`;
+- `PING` (REQ and ANS);
 - `STATUS`.
 
 Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
@@ -63,7 +66,10 @@ become normative public members.
 
 ### TIMING_DATA
 
-A TIMING_DATA message carries one or more committed TimingData values.
+A TIMING_DATA message carries one or more committed TimingData values as elements
+of its `data` array. The same envelope applies regardless of direction; this
+family ordinarily flows from SI-01 to the backend. For example, one committed
+record is one child of an UpstreamData message:
 
 Conceptual JSON:
 
@@ -89,6 +95,9 @@ Conceptual JSON:
 
 The nested TimingData objects use the applicable public IF-05 JSON mapping. The
 UpstreamData wrapper does not change their record key or source sequence.
+The JSON representation does not serialize a LogBook file, nor wrap old LBR
+text lines as opaque strings. It represents committed IF-05 records as structured
+child objects of one UpstreamData message.
 
 A batch may contain multiple records only from a semantically compatible source scope.
 Batching is delivery convenience and never creates another TimingData sequence.
@@ -103,40 +112,86 @@ defined only after Step-7 D02 promotes their semantic contract.
 The envelope and type are reserved in v1. Exact progress/acknowledgement members are
 defined only after Step-7 D03 promotes synchronization semantics.
 
-### PING / PONG
+### PING (REQUEST / ANSWER)
 
-PING and PONG are system/upstream-scoped messages and therefore do not require `nodeId`.
-The public/default v1 representation uses one correlation value `pingId`.
+PING uses the **same UpstreamData message type** in both directions and for both
+request and answer. The `data` object has one required field and two optional fields:
 
-PING:
+| Member | Values | Meaning |
+| --- | --- | --- |
+| `op` | `REQ`, `ANS` (required) | request or answer |
+| `mode` | `HB` (optional) | scheduled heartbeat; absence means manual/explicit |
+| `pingId` | string (optional) | reference correlation token for a specific exchange |
+
+PING is system/upstream-scoped and does not require `nodeId`. A receiver of
+`op = REQ` issues one `op = ANS`. The answer preserves the
+request's optional `mode`: if absent in the request, it is absent in the
+answer. Neither party shall answer an `ANS`. A `REQ` may originate from
+SI-01 or from the backend.
+
+Heartbeat request (`REQ`):
 
 ```json
 {
   "v": 1,
   "type": "PING",
   "data": {
-    "pingId": "p-0001"
+    "op": "REQ",
+    "mode": "HB"
   }
 }
 ```
 
-Matching PONG:
+Heartbeat answer (`ANS`):
 
 ```json
 {
   "v": 1,
-  "type": "PONG",
+  "type": "PING",
   "data": {
-    "pingId": "p-0001"
+    "op": "ANS",
+    "mode": "HB"
   }
 }
 ```
 
-`pingId` is an opaque correlation identifier within the liveness exchange. The PONG
-echoes the same value and does not reinterpret it as a TimingData or transport sequence.
+Manual request (`REQ`, no `mode`):
 
-PING/PONG carries no TimingData record and consumes no TimingData sequence identity. Its
-lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
+```json
+{
+  "v": 1,
+  "type": "PING",
+  "data": {
+    "op": "REQ"
+  }
+}
+```
+
+Manual answer (`ANS`):
+
+```json
+{
+  "v": 1,
+  "type": "PING",
+  "data": {
+    "op": "ANS"
+  }
+}
+```
+
+The default v1 reader accepts missing `mode` as manual/explicit. It rejects an
+unsupported `mode` value rather than guessing it means manual. A manual request
+does not reset the periodic heartbeat cycle. There is **no separate PONG
+message family** in the default representation.
+
+A reference implementation may include optional `pingId` on a `REQ` and
+echo it on the corresponding `ANS`, for example `"pingId": "p-0001"`.
+It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
+Legacy fixed-field protocol positions are not normative public JSON fields.
+
+PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
+sequence identity. Its lifecycle/timing semantics are defined by
+IF06-REQ-011/012/013.
 
 ### STATUS
 
@@ -179,7 +234,11 @@ authority for TimingData.
 
 ## Transport mapping
 
-The same encoded semantic object can be carried by different connector transports.
+The same UpstreamData JSON envelope is used for inbound and outbound
+messages; only its `type`, payload and any type-dependent scope differ. The
+encoded semantic object can be carried by different connector transports.
+Transport-specific or deployment-specific direction-dependent framing belongs
+in the adapter/codec rather than defining a second default message format.
 
 ### Engineering IF-03 transport
 
@@ -246,7 +305,7 @@ format.
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING/PONG use a shared `pingId` and have no TimingData identity |
+| IF06-REQ-011/012/013 | PING carries required op REQ/ANS and optional mode HB (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
 
 ## Open design points
 
