@@ -100,7 +100,7 @@ ApplicationConfig
 │       ├── SystemId
 │       ├── eventDataProvider
 │       ├── timingDataProvider
-│       ├── upstreamProtocolProvider
+│       ├── upstreamDataProvider
 │       └── timingNodes
 │           └── <timingNode>
 │               ├── NodeId
@@ -193,7 +193,7 @@ timingSystems:
   - systemId: "{ID}"
     eventDataProvider: reference
     timingDataProvider: reference
-    upstreamProtocolProvider: reference
+    upstreamDataProvider: reference
     timingNodes:
       - nodeId: "{ID}"
         tagProcessing:
@@ -391,7 +391,7 @@ registration-asset identity is not part of the active software configuration
 model.
 
 Provider IDs are implementation-selection keys, not domain/device identities.
-The same rule applies to configured EventData, TimingData, UpstreamProtocol,
+The same rule applies to configured EventData, TimingData, UpstreamData,
 CAN-protocol and display-protocol providers.
 
 For `eventDataProvider`, `reference` selects the built-in public/reference
@@ -401,8 +401,13 @@ TagId/RegistrationId semantics through the same shared EventData contract.
 For `timingDataProvider`, `reference` selects the built-in implementation of
 the canonical IF-05 representation. An alternate/private TimingData provider may
 select another external representation/translator, but it still realises the
-same IF-05 `TimingDataRecord` semantics; provider selection does not select a
-different public record model.
+same IF-05 TimingData semantics; provider selection does not select a different
+public record model.
+
+For `upstreamDataProvider`, `reference` selects the built-in public/default IF-06
+JSON representation. An alternate/private UpstreamData provider may select another
+representation/translator while preserving the same applicable IF-06 semantics and
+without exposing deployment-specific wire classes to normal application/domain code.
 
 Provider selection and provider-specific translation configuration are resolved
 during bootstrap, before the codec is used by persistence or inspection code.
@@ -432,7 +437,7 @@ perspective; it does not define the direction of each message. The relationship
 is bidirectional.
 
 When upstream messaging is enabled, configuration associates each upstream
-gateway/protocol context with exactly one internal `TimingSystem`. That context
+gateway/UpstreamData context with exactly one internal `TimingSystem`. That context
 may use 1..N connectors. Lower transport resources may later be shared when that
 does not blur the semantic system boundary.
 
@@ -450,18 +455,18 @@ io
               type: rabbitmq
               credentials: rabbitmq-main
             connector-02
-              type: socket
+              type: engineering-api
 ```
 
 The `timingSystem` reference is local composition information; it is not added
-to the upstream protocol merely for routing. `UpstreamGateway` owns the
-external transport/session boundary. The associated Domain `UpstreamProtocol`
-handles system-level protocol semantics such as ping/synchronisation, while
-`UpstreamMessageRouter` resolves TimingNode-targeted messages by
+to UpstreamData merely for routing. `UpstreamGateway` owns the external
+transport/session boundary. Shared Domain `UpstreamData` defines the semantic
+message families; `UpstreamMessageRouter` resolves system- and TimingNode-targeted
+messages by
 `NodeId` to the corresponding bidirectional `UpstreamMessagePort`.
 
-A connector owns transport resources such as RabbitMQ connections/channels or a
-socket session. It does not own Domain/TimingNode selection or message
+A connector owns transport resources such as RabbitMQ connections/channels or the
+existing IF-03 engineering transport mapping. It does not own Domain/TimingNode selection or message
 semantics. The router is upstream-specific and is not used as a generic internal
 application message bus.
 
@@ -777,7 +782,7 @@ Validation includes, where applicable:
 - antenna-routing targets that do not belong to the manager's referenced
   TimingSystem;
 - duplicate discovered provider IDs;
-- unknown configured TimingData/UpstreamProtocol/Antenna/CAN/display provider IDs;
+- unknown configured TimingData/UpstreamData/Antenna/CAN/display provider IDs;
 - provider/configuration combinations rejected by the selected provider;
 - invalid CAN device-network settings when CAN is enabled;
 - invalid network-device service settings when the network device service is enabled;
