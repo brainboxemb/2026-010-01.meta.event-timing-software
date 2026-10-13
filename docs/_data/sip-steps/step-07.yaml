@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Confirm one default UpstreamData JSON envelope for both message directions.
+      Committed TimingData/log records are structured children of TIMING_DATA
+      messages, not separate legacy log-line frames. Direction-dependent
+      deployment wire formats remain adapter concerns.
+  - date: '2026-10-13'
+    change: >-
       Refine IF-06 PING/PONG semantics: classify heartbeat versus manually initiated
       liveness requests. PONG preserves request purpose, while an optional reference
       correlation identifier stays outside the mandatory top-level interface.
