@@ -3,6 +3,11 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Complete the liveness baseline with correlated PING/PONG in both directions.
+      SI-01 initiates immediately on connect and every 30 seconds, accepts matching
+      PONG responses, and answers inbound PING. Missed-PONG timeout policy remains open.
+  - date: '2026-10-13'
+    change: >-
       Extend the completed IF-06 D01 baseline with application-level PING semantics:
       immediate PING on operational connect/reconnect, then every 30 seconds while
       connected. PING is UpstreamData and does not consume TimingData sequence.
@@ -37,7 +42,7 @@ activities:
     state: done
     note: >-
       IF-06 now defines transport-independent UpstreamData: canonical TimingData
-      transfer plus reference-data, synchronization, PING and status families. The public
+      transfer plus reference-data, synchronization, PING/PONG and status families. The public
       reference representation is versioned JSON; deployment-specific representations
       remain behind an UpstreamData provider/codec boundary. RabbitMQ and IF-03 remain
       connector transports below those semantics.
