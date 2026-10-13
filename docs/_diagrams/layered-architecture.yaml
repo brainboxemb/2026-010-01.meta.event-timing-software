@@ -290,7 +290,7 @@ nodes:
   subtitle: "tag • registration • provider"
   kind: service
   notation: component
-  layout: {x: 55, y: 956, w: 220, h: 50}
+  layout: {x: 55, y: 956, w: 200, h: 50}
 
 - id: timing-data-domain
   object_id: TimingData
@@ -299,7 +299,7 @@ nodes:
   subtitle: "records • factory • codec"
   kind: service
   notation: component
-  layout: {x: 295, y: 956, w: 220, h: 50}
+  layout: {x: 275, y: 956, w: 200, h: 50}
 
 - id: upstream-data-domain
   object_id: UpstreamData
@@ -308,8 +308,8 @@ nodes:
   subtitle: "timing • race • sync • ack • req • ping"
   kind: service
   notation: component
-  # Keep a deliberate label corridor between TimingData and UpstreamData.
-  layout: {x: 725, y: 956, w: 240, h: 50}
+  # Keep a readable label corridor between TimingData and UpstreamData without pushing UpstreamData to the right edge.
+  layout: {x: 605, y: 956, w: 220, h: 50}
 
 - id: storage-io
   object_id: Storage
@@ -637,7 +637,7 @@ edges:
   to_anchor: {side: top, position: 0.70}
   route:
     - {x: 830, y: 936}
-    - {x: 625, y: 936}
+    - {x: 415, y: 936}
 
 - from: upstream-data-domain
   to: timing-data-domain
