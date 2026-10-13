@@ -210,7 +210,6 @@ nodes:
 # Mutable work is owned by explicit processors; the aggregate itself does not own
 # queue/Future execution mechanics.
 - id: node-data-processor
-  object_id: NodeDataProcessor
   group: timing-node-aggregate
   label: "NodeDataProcessor"
   subtitle: "Data Lane • commands • ordered queries"
@@ -244,13 +243,11 @@ nodes:
   layout: {x: 405, y: 662, w: 330, h: 238}
 
 - id: node-task-processor
-  object_id: NodeTaskProcessor
   group: timing-node-aggregate
   label: "NodeTaskProcessor"
   subtitle: "Task Lane • coordination • protocol"
   items:
     - label: "UpstreamHandler"
-      object_id: UpstreamHandler
       items:
         - label: UpstreamHeartbeat
           object_id: UpstreamHeartbeat
