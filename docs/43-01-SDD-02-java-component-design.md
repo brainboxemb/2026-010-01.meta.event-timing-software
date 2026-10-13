@@ -415,7 +415,7 @@ Runtime owns physical workers, component/lifecycle owners own the logical
 lanes. The normal JVM thread priority baseline remains unchanged; physical
 parallelism is measurement-driven rather than derived from node or CPU count.
 
-#### TimingNode upstream decomposition
+### TimingNode upstream decomposition
 
 Upstream processing is a TimingNode-owned domain concern, but it is not one
 undifferentiated component. The semantic handler delegates protocol families to
