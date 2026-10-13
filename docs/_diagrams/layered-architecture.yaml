@@ -206,31 +206,64 @@ nodes:
   notation: component
   layout: {x: 75, y: 732, w: 280, h: 50}
 
-# TimingNode is the active serial ownership boundary. Its internals are grouped
-# by architectural responsibility; concrete classes are listed only as contents
-# of those areas rather than promoted to peer architecture components.
-- id: upstream-message-port
-  object_id: TimingNodeUpstreamMessagePort
+# TimingNode is the top-level node component and composition/lifecycle boundary.
+# Mutable work is owned by explicit processors; the aggregate itself does not own
+# queue/Future execution mechanics.
+- id: node-data-processor
+  object_id: NodeDataProcessor
   group: timing-node-aggregate
-  label: "UpstreamMessagePort"
-  subtitle: "UpstreamStream • node serial lane"
+  label: "NodeDataProcessor"
+  subtitle: "Data Lane • commands • ordered queries"
+  items:
+    - label: "TimingDataStore"
+      object_id: TimingDataStore
+      items:
+        - label: LogBook
+          object_id: LogBook
+        - label: TimingDataPersistence
+          object_id: TimingDataPersistence
+    - label: "RaceData"
+      object_id: TimingNodeRaceData
+      items:
+        - label: TeamAssignments
+          object_id: TeamAssignments
+        - label: StageStartTimes
+          object_id: StageStartTimes
+    - label: "Timing"
+      object_id: TimingNodeTiming
+      items:
+        - label: UniqueTeamRegistrations
+          object_id: UniqueTeamRegistrations
+        - label: StageTiming
+          object_id: StageTiming
   kind: service
-  notation: component
-  layout: {x: 815, y: 857, w: 280, h: 50}
+  notation: packaging-component
+  layout: {x: 405, y: 662, w: 330, h: 238}
 
-- id: next-up-teams
-  object_id: NextUpTeams
+- id: node-task-processor
+  object_id: NodeTaskProcessor
   group: timing-node-aggregate
-  label: "NextUpTeams"
-  subtitle: "teams expected next"
+  label: "NodeTaskProcessor"
+  subtitle: "Task Lane • coordination • protocol"
+  items:
+    - label: "UpstreamHandler"
+      object_id: UpstreamHandler
+      items:
+        - label: UpstreamHeartbeat
+          object_id: UpstreamHeartbeat
+        - label: UpstreamDataSync
+          object_id: UpstreamDataSync
+        - label: LogBookSync
+          object_id: LogBookSync
   kind: service
-  notation: component
-  layout: {x: 640, y: 657, w: 220, h: 50}
+  notation: packaging-component
+  layout: {x: 755, y: 662, w: 340, h: 238}
 
 - id: node-processing
   object_id: TimingNodeProcessing
   group: timing-node-aggregate
-  label: "Processing"
+  label: "Tag processing"
+  subtitle: "independent scheduled lane"
   items:
     - label: TagProcessor
       object_id: TagProcessor
@@ -238,44 +271,7 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 405, y: 722, w: 220, h: 120}
-
-- id: node-data
-  object_id: TimingNodeData
-  group: timing-node-aggregate
-  label: "Data"
-  items:
-    - label: TeamAssignments
-      object_id: TeamAssignments
-    - label: StageStartTimes
-      object_id: StageStartTimes
-  kind: service
-  notation: packaging-component
-  layout: {x: 640, y: 722, w: 220, h: 120}
-
-- id: node-timing
-  object_id: TimingNodeTiming
-  group: timing-node-aggregate
-  label: "Timing"
-  items:
-    - label: UniqueTeamRegistrations
-      object_id: UniqueTeamRegistrations
-    - label: StagePassageList
-      object_id: StagePassageList
-    - label: StageRanking
-      object_id: StageRanking
-  kind: service
-  notation: packaging-component
-  layout: {x: 875, y: 722, w: 220, h: 120}
-
-- id: logbook-domain
-  object_id: LogBook
-  group: timing-node-aggregate
-  label: "LogBook"
-  subtitle: "committed TimingData • node-local"
-  kind: service
-  notation: component
-  layout: {x: 405, y: 857, w: 280, h: 50}
+  layout: {x: 405, y: 606, w: 690, h: 48}
 
 - id: event-data-domain
   object_id: EventData
@@ -310,9 +306,11 @@ nodes:
   group: io-layer
   label: "Storage"
   items:
-    - label: TimingDataStore
+    - label: AppendOnlyRecordStore
+      object_id: AppendOnlyRecordStore
       items:
-        - label: FileTimingDataStore
+        - label: FileAppendOnlyRecordStore
+          object_id: FileAppendOnlyRecordStore
   kind: storage
   notation: packaging-component
   # Keep this compact: only implemented storage is shown here. Future DB/state
@@ -599,4 +597,12 @@ edges:
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
+# TimingNode is a composition/facade boundary. Its two processors own execution;
+# TagProcessor retains its independent scheduled lane.
+- from: node-task-processor
+  to: node-data-processor
+  dashed: true
+- from: node-processing
+  to: node-data-processor
+  dashed: true
 
