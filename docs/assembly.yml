@@ -141,6 +141,8 @@ books:
       - web-interface
       - timingdata-interchange
       - timingdata-interchange-design
+      - backend-integration
+      - upstreamdata-json-design
       - application-configuration
       - timing-application-specification
       - gui-application-specification
