@@ -200,12 +200,12 @@ tie handling and implementation scheduling belong to the detailed design.
 
 This requirement does not introduce a minimum-RSSI rejection threshold.
 
-:::{req} Keep local registration independent from presentation, logging and backoffice delivery  
+:::{req} Keep local registration independent from presentation, logging and upstream delivery  
 :id: SI01-REQ-051  
 :status: D  
 :specifies: UC-003, UC-012  
 
-SI-01 shall not require presentation clients, diagnostic logging or backoffice
+SI-01 shall not require presentation clients, diagnostic logging or upstream
 delivery for a local RFID registration to be accepted and committed. Failure or
 unavailability of those functions shall not by itself stop an operational TimingNode
 from accepting and committing local registrations.
@@ -373,42 +373,43 @@ complete current snapshot before relying on later incremental changes; rendering
 state remains owned by the smart display.
 :::
 
-#### Registration cabinet and backoffice
+#### Registration cabinet and upstream Central System
 
-:::{req} Apply TimingNode-scoped reference data from backoffice  
+:::{req} Apply TimingNode-scoped RaceData from the Central System  
 :id: SI01-REQ-063  
 :status: D  
 :specifies: UC-010  
 :depends_on: IF06-REQ-004, IF06-REQ-005  
 
-SI-01 shall accept decoded semantic reference-data updates from a configured
-backoffice boundary, resolve the addressed TimingNode, validate the update and
-apply it only to that TimingNode's owning reference state. Accepted/rejected
-outcome and enough freshness/health state to diagnose synchronisation shall be
-observable.
+SI-01 shall accept decoded semantic RACE_DATA from a configured upstream boundary,
+resolve the addressed TimingNode, validate source ordering and apply accepted changes
+only to that TimingNode's live race state. Applied/duplicate/gap/rejected outcome,
+ACK/REQ behavior and enough source-sequence state to diagnose synchronization shall
+be observable.
 :::
 
-:::{req} Transport-independent outbound backoffice synchronisation  
+:::{req} Transport-independent upstream synchronization  
 :id: SI01-REQ-064  
 :status: D  
 :specifies: UC-011  
 :depends_on: SI01-REQ-042, SI01-REQ-045, IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-010  
 
-SI-01 shall expose committed TimingNode-scoped outbound data to configured
-backoffice connectors through transport-independent semantic messages while
-preserving source identity and source ordering. Concrete connector routing shall
-not redefine TimingNode identity or registration semantics.
+SI-01 shall expose committed TimingNode-scoped outbound TimingData and control
+messages to configured upstream connectors through transport-independent semantic
+UpstreamData while preserving source identity and source ordering. Concrete connector
+routing shall not redefine TimingNode identity or registration semantics.
 :::
 
-:::{req} Preserve pending outbound work across backoffice outage  
+:::{req} Preserve replayability across upstream outage  
 :id: SI01-REQ-065  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-064, IF06-REQ-006, IF06-REQ-007  
 
-Loss of a configured backoffice transport shall not discard locally committed
-outbound work. After transport recovery, SI-01 shall resume pending
-synchronisation without inventing or reusing committed source sequence identity.
+Loss of a configured upstream transport shall not discard locally committed
+TimingData or corrupt the applied RaceData sequence. After transport recovery,
+source-head SYNC and REQ shall allow either receiver to recover missing retained
+stream data without inventing or reusing source sequence identity.
 :::
 
 :::{req} Advertise TimingData source head from the LogBook  
@@ -678,7 +679,7 @@ of internal application or domain state.
 
 A simulation composition shall be able to host multiple TimingNodes, inject
 synthetic device behaviour through normal adapter boundaries and exercise the
-same TimingNode, persistence and backoffice paths as a production composition
+same TimingNode, persistence and upstream paths as a production composition
 without introducing a second domain/application implementation.
 :::
 
@@ -694,19 +695,19 @@ so injected reads, discovery, disconnects, faults and recovery traverse normal
 application/domain paths.
 :::
 
-:::{req} Select alternative backoffice transport for loop testing  
+:::{req} Select alternative upstream transport for loop testing  
 :id: SI01-REQ-068  
 :status: D  
 :specifies: UC-017  
 :depends_on: SI01-REQ-064  
 
-Backoffice transport shall be selectable through external
-configuration/composition. An Engineering API connector shall use the supported
+Upstream transport shall be selectable through external
+configuration/composition. An Engineering API upstream connector shall use the supported
 IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData without
 requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
 SI-02 live-event WebSocket connection; no second SI-01 listener port or second SI-02
 WebSocket lifecycle is required. The connector shall enter the same semantic
-UpstreamData routing boundary as other backoffice connectors.
+UpstreamData routing boundary as other upstream connectors.
 :::
 
 :::{req} Verify production-shaped RabbitMQ connector behaviour  
@@ -715,10 +716,9 @@ UpstreamData routing boundary as other backoffice connectors.
 :specifies: UC-018  
 :depends_on: SI01-REQ-064, SI01-REQ-065  
 
-The RabbitMQ backoffice connector shall support automated or repeatable external
+The RabbitMQ upstream connector shall support automated or repeatable external
 integration testing against a test broker for source-specific inbound/outbound
-routing, connection recovery, consumer restoration and resumed pending outbound
-delivery. The public test fixture shall not embed production credentials, private
+routing, connection recovery, consumer restoration and resumed SYNC/ACK/REQ replay. The public test fixture shall not embed production credentials, private
 topology or deployment-specific message representations.
 :::
 
@@ -878,7 +878,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
-| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and backoffice delivery |
+| SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and upstream delivery |
 | SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
 | SI01-REQ-053 | UC-003 + IF-11 antenna mapping | TimingNode-driven antenna inventory/power lifecycle |
 | SI01-REQ-054 | UC-003 + IF-11 antenna manager policy | mutually exclusive antenna inventory scheduling |
@@ -919,9 +919,9 @@ The **Timing Point Application** (SI-01) architecture is driven by these concern
 - isolate external I/O concurrency from application/domain state mutation;
 - keep the local registration work from antenna observation through TagProcessor,
   TimingNode queue admission, the required TimingData write and LogBook commit
-  independent from presentation, diagnostic logging and backoffice delivery;
+  independent from presentation, diagnostic logging and upstream delivery;
 - preserve unambiguous time semantics across local time zones, daylight-saving transitions and wall-clock corrections;
-- remain testable without production RFID, CAN, upstream/backoffice or proprietary implementations;
+- remain testable without production RFID, CAN, upstream transport or proprietary implementations;
 - expose one coherent command/query/status/event model to local and network presentation adapters;
 - support local persistence/recovery and disconnected operation;
 - keep the public reference/core implementation independent of private production source;
