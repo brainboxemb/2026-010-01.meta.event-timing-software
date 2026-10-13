@@ -261,73 +261,58 @@ At closure:
 
 AP-4 closed only the repository/tooling/framework-skeleton coordination goal. Subsequent SIP Steps 2, 3 and 4 have since closed; the current coordination focus is maintained separately below.
 
-## Current coordination focus — SIP Step 5
+## Current coordination focus — Step 6 closeout / Step 7 preparation
 
-The current implementation-planning focus is **SIP Step 5 — Simulated antenna
-input and runtime behaviour**.
+The current implementation-planning focus is the **formal closeout of SIP Step 6 —
+Engineering Desktop Client**, followed immediately by the first design gates of
+**Step 7 — Backoffice and multi-node integration**.
 
-Step 4 is closed on the accepted first durable registration slice. Step 5 moves
-the input boundary outward to the built-in `SimulatedAntenna` for one TimingNode,
-adds the minimal synthetic TagId-to-RegistrationId reference fixture needed to
-exercise that path, and characterizes queueing/allocation/runtime behaviour before
-target hardware or multi-node integration is introduced.
+Step 6 has grown beyond the original desktop-workbench restructuring. SI-02 now has:
 
-D01 defines the development-host measurement/evidence baseline. A01 is now
-complete against D04: the simulated antenna/tag-processing path includes
-AntennaManager lifecycle/control, application-owned subscriptions and TagProcessor
-lifecycle, and the normal non-blocking TimingNode admission/commit boundary without
-bypassing LogBook or persistence.
+- the Java 21 / JavaFX 21 / BentoFX workbench and Windows app-image baseline;
+- instance-scoped client/application services below JavaFX controls;
+- explicit synchronisation/stale-state handling;
+- source-driven capability diagnostics;
+- client-side Lua engineering scripting through the same public IF-03 client path;
+- a focused Lua SDD and a separate SI-02 Software User Manual;
+- automated Java/client/package verification for the implemented baseline.
 
-A02 is complete on Java main through PR #325: runtime measurements are now read
-through the engineering-only `runtime.measurement.RuntimeMeasurementReader` rather than
-the public TimingNode Domain contract.
+Do **not** report Step 6 completed yet. The remaining formal exit gate is
+**V01 / VC-ST1-003**, issue `2026-010-02.java.timing-point-application#342`.
+That case must still be executed with the real packaged SI-02 GUI against a running
+SI-01 and record PASS/FAIL evidence for SYNCING -> LIVE, revoke -> REV/DELETED,
+restart/reconnect recovery without live replay, Device Log / Client Log independence,
+time precision and clean shutdown. Headless tests and packaged startup smoke do not
+replace this evidence.
 
-T01 is complete on Java main through PR #327: the optional
-runtime-characterization module provides deterministic steady, burst and growing-history
-workloads plus retained machine-readable JSON evidence.
+Step 7 planning is prepared but remains **planned** until that V01 gate closes. Its
+starting point is materially better than the original roadmap assumed: current SI-01
+already composes multiple TimingNodes, addresses them through IF-03, keeps separate
+node-owned sequences/LogBooks and verifies restart recovery for one-system/two-node
+and two-system/one-node-each topologies. Step 7 should therefore adopt/requalify that
+baseline rather than implement another multi-node model.
 
-V01 development-host evidence is retained on `prod/characterization` for Java
-revision `efc5797f2fb430e16ee1221fe60a91620d6db71b`. Steady 20 registrations/s and
-both 1,000/9,999-record history cases completed without queue-full; the deliberately
-unpaced burst exposed the bounded TimingNode queue as intended. V01 is therefore
-complete for Step 5 and A03 is released for its evidence-based design decision.
-Real target repetitions no longer block this step: Step 8 selects the platform and
-Step 9 owns image/provisioning, Java/runtime/deployment bring-up and repeated target
-measurements.
+The first Step-7 work is contract-first:
 
-D02 now defines OPEN/CLOSE TimingData as `NODE_INFO` with OPEN/CLOSE code.
-D03 defines append-only registration revoke using the original `regId + time`,
-with AUTO_REG `REV` and MAN_REG `REV,AUTO` / `REV,MAN`. A04 and A05 are
-complete on Java main through PR #330: lifecycle and revoke records use the normal
-TimingNode-owned TimingData sequence/persistence/LogBook path, while business
-interpretation of ADD/REV stays outside bookkeeping. V03 is complete through Java
-PR #333 using the normal SimulatedAntenna -> TagProcessor -> TimingNode ->
-persistence/LogBook path across restart. V05 is complete through Java PR #332 and
-green black-box VC-ST1-005 evidence. Server-side V06 / VC-ST1-006 is also green
-through that PR; the remaining client verification is the manual VC-ST1-003
-Development Client run for trash -> REV, the DELETED interpreted projection and
-restart/recovery in the real JavaFX client. D06 is complete through meta issue
-#564 / PR #570: focused SDD Detailed Design Needs are linked from SSD architecture
-objects and are navigable in both directions in the engineering graph/Object Explorer.
-D07 is complete through meta issue #567 / PR #572 using released
-tool.eng-docs v0.10.0: Figure SI01-01 now places external HTTP/WebSocket/TCP/console
-ports on the in-process Presentation adapters, while SharedTerminalHandler and
-PresentationGateway remain internal and portless.
-A03 is complete from the retained V01 development-host evidence: ordinary
-allocation, direct bounded LogBook traversal, the current serial execution model and
-ordinary JVM scheduling remain the baseline; no pool/cache/snapshot/index or
-thread-priority optimization is justified. V02 is also complete through Java issue #334 /
-PR #335: bounded slow-client disconnect does not stop later TimingNode commits or LogBook
-progress, so no additional queue/worker/priority mechanism is justified. The remaining Step-5 work is the manual V06 Development Client evidence. Runtime optimization choices remain evidence-driven; batching,
-pooling, copied snapshots/caches and extra asynchronous workers are not baseline
-assumptions.
+1. promote **IF-06 Backend Integration** semantic responsibilities;
+2. define ownership/freshness for RaceData, StageStartTimes, TeamID interpretation
+   and StageTiming;
+3. define acknowledgement/retry/idempotency/pending-work reconciliation semantics;
+4. align the existing backoffice transport SDD to those authorities;
+5. only then implement reference-data/upstream behaviour and exercise ST-2 socket
+   before ST-3 RabbitMQ.
 
-Multi-node operation, backoffice reference data and StageTiming remain later
-roadmap work and must not be pulled into Step 5.
+The existing `43-01-SDD-03-backoffice-transport-design.md` is useful design input, but
+it must not become the authority for missing system-interface semantics. RabbitMQ is a
+transport realization below IF-06, not the source of the application protocol model.
 
-Keep the SIP as the implementation-sequence plan. Detailed current execution/evidence
-belongs in active issues/PRs, verification evidence and per-step activity data rather
-than in this broad coordination plan.
+Keep target/Pi bring-up, real hardware adapters and production-private broker/message
+details in their later roadmap steps. Step 7 remains a development-host integration
+phase whose purpose is to prove semantic ownership, routing, derived timing and recovery
+before platform/device uncertainty is introduced.
+
+Keep the SIP as the implementation-sequence authority. Per-step YAML owns activity
+state/change history; issues/PRs and retained evidence own execution detail.
 
 ## Ongoing supporting activity — source collection
 

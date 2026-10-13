@@ -67,6 +67,7 @@ notes:
   - Document maturity describes the established content; completeness is approximate project-wide document coverage, not completion of only the current slice.
   - Completeness percentages are planning indicators, intentionally coarse rather than time-tracking precision.
   - Planning changes belong on the matching per-step detail board, not on the broad roadmap.
+  - Step 7 inherits an already verified multi-node composition/storage baseline; its main remaining uncertainty is IF-06/reference-data/reconciliation semantics and external integration.
   - Re-estimate when implementation evidence materially changes uncertainty.
 
 steps:
@@ -156,19 +157,22 @@ steps:
 
   "6":
     estimate_project_days: 4
-    remaining_estimate_project_days: 1
+    remaining_estimate_project_days: 0.5
     workstream: client
     docs:
-      requirements: {level: review, scope: "SI-02 requirements from UC-009 and public IF-03 engineering behaviour"}
+      requirements: {level: review, scope: "SI-02 requirements from UC-009, public IF-03 engineering behaviour, capability display and client-side scripting"}
       idd: {level: review, scope: "API consumed by Engineering Client"}
-      design: {level: working, scope: "Java 21 / JavaFX 21 / BentoFX client-service and Windows app-image baseline implemented"}
-      verification: {level: working, scope: "client connection/data/reconnect/workbench behaviour"}
+      design: {level: review, scope: "Java 21 / JavaFX 21 / BentoFX client-service, Lua scripting and Windows app-image baseline implemented"}
+      verification: {level: working, scope: "automated client coverage complete; packaged VC-ST1-003 running-GUI closeout remains"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 85}
-      - {name: 41-02-SSD, title: SI-02 Engineering Desktop Client specification, maturity: working, completeness: 45}
-      - {name: 50-SDE-03, title: Engineering Client development baseline, maturity: working, completeness: 80}
+      - {name: 41-02-SSD, title: SI-02 Engineering Desktop Client specification, maturity: review, completeness: 70}
+      - {name: 43-02-SDD-01, title: SI-02 Lua scripting detailed design, maturity: working, completeness: 80}
+      - {name: 44-02-GPD, title: Engineering Client design rules, maturity: working, completeness: 90}
+      - {name: 50-SDE-03, title: Engineering Client development baseline, maturity: review, completeness: 90}
+      - {name: 70-02-SUM, title: Engineering Client user manual, maturity: working, completeness: 70}
       - {name: 32-03-IDD, title: API interface, maturity: review, completeness: 85}
-      - {name: 60-SVP, title: Engineering-client verification direction, maturity: review, completeness: 75}
+      - {name: 60-SVP, title: Engineering-client verification direction, maturity: review, completeness: 80}
 
   "7":
     estimate_project_days: 7

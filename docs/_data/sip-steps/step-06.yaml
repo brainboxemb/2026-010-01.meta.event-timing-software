@@ -1,6 +1,13 @@
 step: 6
 
 planning_changes:
+  - date: '2026-10-13'
+    change: >-
+      Record the post-A01 SI-02 extension as part of the Step-6 baseline: source-driven
+      capability diagnostics, client-side Lua engineering scripting, focused Lua SDD
+      and Engineering Client SUM are implemented and automatically verified. V01 /
+      VC-ST1-003 remains the only formal closeout gate; reduce the remaining estimate
+      to 0.5 project day and do not report Step 6 complete before the real packaged-GUI run.
   - date: '2026-10-09'
     change: >-
       Complete A01 through Java PR #402: SI-02 now runs on Java 21 / JavaFX 21
@@ -65,18 +72,50 @@ activities:
       instance-scoped EngineeringSystemContext and builds a CI-verified Windows
       jpackage app-image while preserving public-interface-only operation.
 
+  - id: D03
+    lane: documentation
+    kind: documentation
+    state: done
+    depends_on: [A01]
+    note: >-
+      Complete the current SI-02 documentation split after scripting became a real
+      Engineering Client capability. SI02-REQ-009/010 cover capability display and
+      scripting; 43-02-SDD-01 owns the Lua facade/internal design and 70-02-SUM owns
+      practical Engineering Client and Lua use. SDE-03 remains the development/runtime
+      baseline instead of duplicating user instructions.
+
+  - id: A02
+    lane: application
+    kind: implementation
+    state: done
+    depends_on: [A01]
+    note: >-
+      Add the local Lua engineering worker/facade, explicit Run/Stop, repeatable
+      simulate/batch operations through the public IF-03 client path and the dynamic
+      API capability display. Local print/log/sleep remains usable independently from
+      TAG_SCENARIO_SIMULATION; simulation calls are capability-gated and distinguish
+      local refusal from actual IF-03 rejection.
+
+  - id: V02
+    lane: verification
+    kind: verification
+    state: done
+    depends_on: [A02, D03]
+    note: >-
+      Automated SI-02 tests and Java/Windows packaging verification cover the scripting
+      starter, Lua facade limits/cancellation, capability display/unknown state and
+      local-versus-remote simulation refusal semantics. These checks complement but do
+      not replace the manual packaged-GUI V01 scenario.
+
   - id: V01
     lane: verification
     kind: verification
     state: next
-    depends_on: [A01]
+    depends_on: [A01, A02, V02]
     note: >-
-      Verify connection/status identity, stale/disconnected state, baseline
-      rebuild after reconnect, representative workbench views and selected
-      engineering controls using deterministic client tests plus a real SI-01
-      public-interface integration path. Run the VC-ST1-003 real-GUI scenario on
-      SI-02: trash
-      appends REV without rewriting ADD, interpreted row remains DELETED,
-      restart/reconnect rebuilds sequence/history without live replay,
-      SYNCING precedes LIVE, and Device/Client Logs remain independent.
-      Headless tests do not substitute for this UI evidence.
+      Run VC-ST1-003 on the real packaged SI-02 against a real SI-01 process. Verify
+      SYNCING -> LIVE, lifecycle/registration source history, trash -> REV with immutable
+      ADD, interpreted DELETED, restart/reconnect recovery without live replay, Device
+      Log / Client Log independence, canonical time precision and clean shutdown.
+      Record actual source/runtime versions and PASS/FAIL evidence. Headless or packaged
+      smoke tests do not substitute for this UI evidence.
