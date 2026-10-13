@@ -176,17 +176,19 @@ steps:
 
   "7":
     estimate_project_days: 7
-    remaining_estimate_project_days: 9
+    remaining_estimate_project_days: 8.5
     workstream: backoffice
     docs:
-      requirements: {level: working, scope: "backoffice reference/timing flows and multi-node behaviour"}
-      idd: {level: working, scope: "reference-data, TimingData and selected transport contracts"}
+      requirements: {level: working, scope: "IF-06 UpstreamData, reference/timing flows and multi-node behaviour"}
+      idd: {level: working, scope: "public/reference UpstreamData JSON plus reference-data and transport contracts"}
       design: {level: working, scope: "multi-node routing, StageTiming and transport/recovery behaviour"}
       verification: {level: working, scope: "multi-node integration, outage/reconnect and reconciliation tests"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
       - {name: 41-01-SSD, title: SI-01 specification, maturity: review, completeness: 85}
-      - {name: 43-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 60}
+      - {name: 32-06-ISD, title: IF-06 Backend Integration / UpstreamData, maturity: working, completeness: 55}
+      - {name: 33-06-IDD, title: Public/reference UpstreamData JSON, maturity: working, completeness: 45}
+      - {name: 43-01-SDD-03, title: Backoffice transport design, maturity: working, completeness: 70}
       - {name: 60-SVP, title: Backoffice integration verification, maturity: review, completeness: 85}
 
   "8":
