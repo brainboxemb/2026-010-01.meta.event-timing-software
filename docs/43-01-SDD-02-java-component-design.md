@@ -415,6 +415,58 @@ Runtime owns physical workers, component/lifecycle owners own the logical
 lanes. The normal JVM thread priority baseline remains unchanged; physical
 parallelism is measurement-driven rather than derived from node or CPU count.
 
+#### TimingNode upstream decomposition
+
+Upstream processing is a TimingNode-owned domain concern, but it is not one
+undifferentiated component. The semantic handler delegates protocol families to
+small state owners while transport remains in the I/O layer:
+
+```text
+I/O messaging
+  UpstreamStream
+      |
+      | node-scoped semantic messages / non-blocking send
+      v
+TimingNode Task Lane
+  UpstreamMessagePort
+    ├── UpstreamMessageTask     one bounded upstream turn
+    ├── UpstreamHeartbeat       PING request/answer and heartbeat state
+    ├── UpstreamDataSync        RACE_DATA sequencing, ACK/REQ/SYNC protocol state
+    └── LogBookSync             TIMING_DATA replay/sync cursor and batching
+             |
+             | bounded asynchronous commands / immutable replies
+             v
+TimingNode Data Lane
+    ├── TeamAssignments
+    ├── StageStartTimes
+    ├── UniqueTeamRegistrations
+    └── LogBook / TimingData persistence
+```
+
+The ownership rule is responsibility-based:
+
+- `UpstreamMessagePort` and `UpstreamMessageTask` dispatch node-scoped upstream
+  work on the Task Lane; they do not own transport workers or mutable TimingData.
+- `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
+  Data Lane round-trip for ordinary PING request/answer handling.
+- `UpstreamDataSync` owns RACE_DATA sequence/gap/ACK protocol state on the Task
+  Lane. Changes to `TeamAssignments`, `StageStartTimes` and other Data
+  Lane-owned live race data are applied through bounded asynchronous Data Lane
+  commands. ACK is emitted only after the corresponding Data Lane application
+  result returns as an immutable reply.
+- `LogBookSync` owns replay cursor/batch coordination on the Task Lane. It may
+  use directly published immutable/scalar LogBook facts where explicitly
+  supported; record traversal and replay batches are obtained through bounded
+  Data Lane handoffs rather than direct collection access.
+- `UpstreamStream` remains an I/O/messaging boundary. `send` only hands a
+  semantic message to the local transport mailbox; Domain code does not perform
+  blocking network I/O.
+
+No Task Lane component may synchronously wait for a Data Lane Future when both
+lanes share the same physical worker. Cross-lane completion is continuation-
+based: request work, return the Task Lane, then continue when the immutable
+result is delivered back.
+
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
 
