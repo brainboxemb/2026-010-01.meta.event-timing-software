@@ -593,6 +593,9 @@ hide:
 ---
 
 <h1 class="eng-explorer-title">Engineering explorer</h1>
+<p class="eng-explorer-revision">
+  Source revision: <code>{html.escape(view["source_revision"])}</code>
+</p>
 
 <div class="eng-workspace-nav eng-workspace-nav--compact" aria-label="Engineering portal navigation">
   <a href="../">Home</a>
