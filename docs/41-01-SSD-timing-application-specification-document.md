@@ -28,7 +28,7 @@ The SI-01 specification consumes the software-system allocation and the interfac
 - `32-03-ISD-application-control-status.md` for IF-03 obligations;
 - `32-04-ISD-web-interface.md` for IF-04 Web interface obligations;
 - `32-05-ISD-timingdata-interchange.md` for IF-05 TimingData obligations;
-- `32-06-ISD-upstream-integration.md` for IF-06 UpstreamData/backend obligations;
+- `32-06-ISD-upstream-integration.md` for IF-06 UpstreamData/upstream-system obligations;
 - `32-11-ISD-application-configuration.md` for IF-11 obligations;
 - applicable parent/external-system inputs registered by `20-EXT-external-system-inputs.md` when an obligation is allocated directly to SI-01.
 
@@ -205,7 +205,7 @@ This requirement does not introduce a minimum-RSSI rejection threshold.
 :status: D  
 :specifies: UC-003, UC-012  
 
-SI-01 shall not require presentation clients, diagnostic logging or backoffice
+SI-01 shall not require presentation clients, diagnostic logging or upstream
 delivery for a local RFID registration to be accepted and committed. Failure or
 unavailability of those functions shall not by itself stop an operational TimingNode
 from accepting and committing local registrations.
@@ -388,7 +388,7 @@ outcome and enough freshness/health state to diagnose synchronisation shall be
 observable.
 :::
 
-:::{req} Transport-independent outbound backoffice synchronisation  
+:::{req} Transport-independent outbound upstream synchronisation  
 :id: SI01-REQ-064  
 :status: D  
 :specifies: UC-011  
@@ -446,7 +446,7 @@ still proves synchronization.
 The authoritative payload source for TimingData replay shall remain the TimingNode
 LogBook. SI-01 shall not require a second durable copy of the same TimingData merely
 to represent an outbound outbox. After restart, pending work may be rebuilt after
-the backend's semantic progress is known. Cached sync progress may support status or
+the upstream system's semantic progress is known. Cached sync progress may support status or
 performance but shall not replace LogBook history or upstream-system reconciliation.
 :::
 
@@ -470,7 +470,7 @@ shall remain separately observable from TimingData progress.
 
 When a configured upstream target becomes operationally connected or reconnects,
 SI-01 shall make its current node-scoped SYNC state available and shall treat the
-upstream-system progress for that connection as unknown until fresh backend SYNC state is
+upstream-system progress for that connection as unknown until fresh upstream-system SYNC state is
 received. SI-01 shall not treat cached progress or transport/session success from an
 earlier connection as proof that the upstream system still holds those TimingData records.
 :::
@@ -701,7 +701,7 @@ application/domain paths.
 :specifies: UC-017  
 :depends_on: SI01-REQ-064  
 
-Backoffice transport shall be selectable through external
+Upstream transport shall be selectable through external
 configuration/composition. An Engineering API connector shall use the supported
 IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData without
 requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
