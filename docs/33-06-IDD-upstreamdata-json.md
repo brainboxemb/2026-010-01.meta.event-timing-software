@@ -110,10 +110,11 @@ representation uses complete revisioned snapshots:
 | Member | Type | Meaning |
 | --- | --- | --- |
 | `dataset` | string | `RACE_DATA` or `STAGE_START_TIMES` |
-| `rev` | integer | positive monotone revision for source + node + dataset |
+| `rev` | integer | positive monotone revision for node + dataset |
 | `items` | array | complete current snapshot; empty array clears the dataset |
 
-The configured upstream source is connector context and is not repeated in the JSON.
+Transport/source routing is outside this semantic freshness key; the same node/dataset
+revision has the same meaning regardless of which configured connector delivered it.
 
 RaceData example:
 
