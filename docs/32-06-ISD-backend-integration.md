@@ -120,7 +120,7 @@ ReferenceData messages update race/event state owned by one addressed TimingNode
 The public v1 semantic datasets are `RACE_DATA` and `STAGE_START_TIMES`.
 
 Both datasets use **complete snapshot** semantics. Each snapshot carries a positive
-monotone revision for its configured upstream source + TimingNode + dataset scope.
+monotone revision for its TimingNode + dataset scope.
 Application rules are:
 
 - a higher revision is validated as a whole and, when valid, atomically replaces
@@ -151,8 +151,9 @@ ReferenceData therefore always defines:
 - complete snapshot payload;
 - complete acceptance, stale/duplicate no-op, or explicit rejection outcome.
 
-The configured upstream source is connector/application context and need not be
-duplicated inside every public JSON payload.
+Connector/source identity does not create a second reference-data state. Multiple
+transport paths that deliver the same node/dataset revision therefore converge on the
+same semantic TimingNode state.
 
 ### Data synchronization
 
