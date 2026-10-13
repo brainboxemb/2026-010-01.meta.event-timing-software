@@ -416,6 +416,7 @@ format.
 | IF06-REQ-018 | SYNC progress, not transport acknowledgement, advances semantic state |
 | IF06-REQ-019 | replay reuses original TimingData identity/content |
 | IF06-REQ-020 | optional `refs` advertises RaceData/StageStartTimes revisions |
+| IF06-REQ-021 | fresh node-scoped SYNC exchange re-establishes state after connect/reconnect |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
