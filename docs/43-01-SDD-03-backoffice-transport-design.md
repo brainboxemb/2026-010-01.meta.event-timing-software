@@ -376,14 +376,20 @@ IF06-REQ-011/012/013.
 
 ## Outbox and delivery
 
-Local commitment and external transport are deliberately separated.
+Local commitment and external transport are deliberately separated. For the public
+v1 TimingData path, the **LogBook is the durable outbound payload history**; SI-01
+does not persist a second copy of each record merely to implement an outbox.
 
 ```text
-RegistrationSource
-  committed record
+TimingNode LogBook (authoritative committed TimingData)
+       |
+       +--> local committed head sequence
        |
        v
-local outbox / sync state
+per logical upstream target + NodeId sync cursor/state
+       |
+       +--> backend highest contiguous accepted sequence
+       +--> pending = LogBook records after backend sequence
        |
        v
 BackofficePublisherPort
@@ -393,17 +399,29 @@ BackofficePublisherPort
        +--> RabbitMqBackofficeConnector
 ```
 
-A locally committed registration must not disappear because a transport is unavailable.
-
 Working direction:
 
-1. commit registration locally according to the final persistence rule;
-2. represent it as pending in local outbox/synchronisation state;
-3. selected transport attempts delivery;
-4. transport acknowledgement/synchronization advances pending state;
-5. failure remains pending and visible through status.
+1. commit TimingData locally and make it durable in the LogBook;
+2. publish/replay records in original source order;
+3. transport delivery/confirm may show that bytes reached the selected transport,
+   but does not clear semantic pending state;
+4. backend sends SYNC state with its highest contiguous accepted sequence;
+5. SI-01 derives pending records as committed sequence values after that point;
+6. on reconnect or backend rollback, replay retained records from the backend's
+   current contiguous sequence + 1;
+7. identical duplicate record delivery is idempotent; same record key with changed
+   content is a conflict.
 
-The exact acknowledgement, retry, duplicate/idempotency and synchronization rules remain open and belong to their owning requirements, ISD/IDD and detailed design.
+Each configured logical upstream target keeps independent progress for each bound
+NodeId. A connector reconnect creates a new transport session but not a new TimingData
+identity or synchronization namespace.
+
+No exact millisecond retry/backoff policy is fixed by D03. Connectors may use suitable
+transport retry/backoff, while the semantic guarantee is that uncertain delivery can
+be repeated and pending TimingData remains derivable until backend progress confirms it.
+
+Reference-data synchronization uses the same SYNC exchange only for revision state.
+Actual RaceData/StageStartTimes content is still transferred as REFERENCE_DATA snapshots.
 
 ## Status model
 
@@ -423,7 +441,10 @@ BackofficeStatus
       active
       lastMessage
     outbound
+      localTimingSeq
+      backendTimingSeq
       pendingCount
+      syncState
       lastPublish
       lastFailure
 
@@ -593,8 +614,8 @@ Temporary identifiers only.
 - **CAND-BO-007** — Multiple RabbitMQ source consumers shall be able to share one physical broker connection.
 - **CAND-BO-008** — External transport callbacks shall not directly mutate timing-domain state.
 - **CAND-BO-009** — Transport connection status and per-source inbound/outbound status shall be observable independently.
-- **CAND-BO-010** — Loss of external backoffice transport shall not discard locally committed registration data.
-- **CAND-BO-011** — Reconnection shall restore configured source communication and resume pending outbound synchronisation.
+- **CAND-BO-010** — Loss of external backoffice transport shall not discard locally committed registration data; LogBook remains the authoritative replay payload history.
+- **CAND-BO-011** — Reconnection shall restore configured source communication, exchange semantic SYNC state and replay records after the backend's highest contiguous accepted sequence.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 backend-peer transport so the Engineering Client can exercise the broker-side backend role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured backoffice connectors within one application composition.
@@ -610,8 +631,8 @@ Temporary identifiers only.
 - Within one RabbitMqBackofficeConnector, is one physical connection sufficient, or should consumer and publisher traffic use separate connections?
 - Are RabbitMQ queues/exchanges pre-provisioned or should the application declare/bind any topology?
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
-- What is the production acknowledgement/synchronization protocol?
-- Which outbound items require durable local outbox persistence versus rebuildable state?
-- What publisher-confirm/retry policy is required?
-- How are duplicates/redeliveries detected and handled?
+- What connector-specific retry/backoff timing is appropriate for the Engineering API
+  and RabbitMQ implementations?
+- Should cached per-target synchronization progress be persisted for faster status
+  restoration, even though it is never authoritative and is re-established by SYNC?
 - What broker/client settings are appropriate on the Raspberry Pi Zero memory/CPU budget?
