@@ -3,14 +3,14 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
-      Refine the integration topology: SI-01 hosts a dedicated EngineeringBackendServer
-      as the deterministic ST-2 transport adapter, analogous in infrastructure role to
-      LoggingServer. SI-02 connects through a backend client connector in its connection
-      layer and provides the Backend pane. The SI-01 server enters/leaves at the same
-      semantic backoffice boundary as the later RabbitMQ connector, so only transport is
-      substituted. Follow with an external RabbitMQ ST-3 run using CloudAMQP or equivalent;
-      keep broker credentials outside source control and hosted service availability out
-      of mandatory fast CI.
+      Refine the integration topology: compose an EngineeringApiBackofficeConnector as
+      a normal SI-01 backoffice connector for deterministic ST-2 scenarios. It uses the
+      existing IF-03 HTTP/JSON boundary for inbound semantic messages and typed IF-03
+      WebSocket events for outbound/status observation. SI-02 provides the Backend pane
+      without another listener port or connection lifecycle. Carry structured semantic
+      BackofficeEnvelope data, not RabbitMQ/private wire payload strings. Follow with an
+      external RabbitMQ ST-3 run using CloudAMQP or equivalent; keep broker credentials
+      outside source control and hosted service availability out of mandatory fast CI.
   - date: '2026-10-13'
     change: >-
       Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
@@ -63,11 +63,11 @@ activities:
     depends_on: [D01, D03]
     note: >-
       Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
-      topology: SI-01 hosts an EngineeringBackendServer for deterministic ST-2 scenarios;
-      SI-02 connects through a Backend client connector/pane. The server adapter maps to
-      the same semantic upstream boundary used by RabbitMqBackofficeConnector. ST-3 then
-      qualifies RabbitMQ against an external hosted broker such as CloudAMQP. Keep all
-      connector/session mechanics below the semantic upstream boundary.
+      topology: EngineeringApiBackofficeConnector is the deterministic ST-2 connector,
+      using IF-03 HTTP inbound plus typed WebSocket outbound/status events. The connector
+      maps to the same semantic upstream boundary used by RabbitMqBackofficeConnector.
+      ST-3 then qualifies RabbitMQ against an external hosted broker such as CloudAMQP.
+      Keep transport/session mechanics below the semantic upstream boundary.
 
   - id: A01
     lane: application
@@ -124,12 +124,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Add the local engineering transport pair: SI-01 EngineeringBackendServer plus
-      the SI-02 Backend client connector/pane. SI-02 shall edit/send synthetic RaceData
-      and StageStartTimes, display outbound TimingData/synchronisation state, control
-      acknowledgement and deliberately trigger disconnect/reconnect/failure. On SI-01,
-      the server adapter enters/leaves at the normal semantic backoffice boundary;
-      direct domain-object calls and IF-03 shortcuts are not allowed.
+      Add EngineeringApiBackofficeConnector plus the SI-02 Backend pane. SI-02 shall
+      edit/send synthetic RaceData and StageStartTimes over IF-03 HTTP and display typed
+      outbound BackofficeEnvelope/synchronisation events from the existing IF-03 WebSocket.
+      The connector enters/leaves at the normal semantic backoffice boundary; direct
+      domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
+      production payloads through the engineering API.
 
   - id: V02
     lane: verification
@@ -137,10 +137,11 @@ activities:
     state: planned
     depends_on: [A03, A05]
     note: >-
-      Connect SI-02 to the SI-01 EngineeringBackendServer and verify node-scoped
-      reference-data application, TeamID/StageTiming results, outbound visibility,
-      acknowledgement handling and local continuity across deliberate disconnect/reconnect,
-      including pending-work reconciliation after recovery.
+      Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
+      node-scoped reference-data application, TeamID/StageTiming results, outbound
+      semantic events, acknowledgement/reconciliation behaviour and recovery after
+      IF-03 reconnect. This verifies backoffice semantics but not RabbitMQ session/channel
+      behaviour, which belongs to V03.
 
   - id: A06
     lane: application
