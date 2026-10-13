@@ -179,9 +179,11 @@ Current examples are:
 32-03-ISD-application-control-status
 32-04-ISD-web-interface
 32-05-ISD-timingdata-interchange
+32-06-ISD-backend-integration
 32-11-ISD-application-configuration
 33-03-IDD-api-http-websocket
 33-05-IDD-timingdata-interchange
+33-06-IDD-upstreamdata-json
 
 40-01-UC                         reserved / optional for SI-01
 41-01-SSD-timing-application-specification-document
