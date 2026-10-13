@@ -1884,7 +1884,7 @@ to node-scoped `UpstreamStream` instances, but not UpstreamData semantics.
 `UpstreamStream` is the non-blocking semantic mailbox presented by Messaging to
 one TimingNode. It reports whether communication is available, exposes queued
 inbound UpstreamData, and accepts outbound UpstreamData for transport. Real
-RabbitMQ/API/socket I/O never blocks the TimingNode serial lane.
+RabbitMQ/API/socket I/O never blocks the TimingNode Data Lane.
 :::
 
 
@@ -2381,7 +2381,7 @@ Architecture rules:
 - state-dependent validation is performed when the operation executes against the current ordered state, not from a stale pre-queue read;
 - the contained LogBook, StageStartTimes and EventData objects remain
   passive and do not each receive their own execution thread;
-- short read operations may capture immutable snapshots for longer calculations outside the TimingNode lane;
+- short read operations may capture immutable snapshots for longer calculations outside the Data Lane;
 - different TimingNodes may make progress at the same time;
 - file writes must not hold up RFID/device/operator callbacks;
 - a slow query or ranking calculation must not hold up LogBook commits;
@@ -2393,7 +2393,7 @@ The primary latency risk is therefore **producer backpressure**, not whether eve
 
 ORDERED data queries are allowed to occupy the Data Lane for a bounded period when exact sequencing with mutations is required. CURRENT queries may instead read a safely published immutable representation without entering that lane. Mutable LogBook traversal remains ordered. Read/query implementations may use direct bounded traversal, compact derived/indexed state or immutable snapshots according to the required consistency and measured cost. Longer ranking/formatting work must still avoid becoming a second writer or unboundedly holding up timing commits. Synchronous persistence may occupy the lane; its impact is controlled through bounded queues and observable queue/store latency.
 
-Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the TimingNode lane unless the adapter is proven to enqueue/buffer and return promptly.
+Post-commit listeners are subject to the same rule: network/backpressure work must not execute synchronously on the Data Lane unless the adapter is proven to enqueue/buffer and return promptly.
 
 The SSD only sets these rules. SDD-01 describes state ordering, persistence and
 consumer visibility. SDD-02 chooses the Java queue/worker implementation. The
@@ -2881,7 +2881,7 @@ antenna.
 Antenna lifecycle/device-control calls are separate from observation delivery. One AntennaManager belongs to one TimingSystem and owns ordered control state
 for its configured antennas. Self-test, power, initialize, inventory start/stop and shutdown
 are submitted as bounded control work so potentially blocking device I/O does not run on
-a TimingNode lane or on a presentation callback. Application startup may wait for a
+a Data Lane or on a presentation callback. Application startup may wait for a
 result-bearing manager operation because readiness depends on that outcome.
 
 The Java realization should use a shared bounded I/O `ExecutorService` rather than a
@@ -3067,7 +3067,7 @@ belonging to one Java helper class:
   when measurement demonstrates a concrete benefit;
 - keep blocking network/retry work behind capability-specific output boundaries rather
   than on the TimingNode execution lane;
-- move analysis-store writes off the TimingNode lane only when measurement shows that
+- move analysis-store writes off the Data Lane only when measurement shows that
   synchronous writes cause unacceptable delay;
 - measure queue high-water, storage latency, LogBook/query cost, heap/GC behaviour and
   scheduling/CPU effects before increasing concurrency or adding runtime complexity.
