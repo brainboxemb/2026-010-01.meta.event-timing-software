@@ -92,7 +92,7 @@ The current semantic families are:
 | TimingData transfer | SI-01 -> Backend | transfer one or more committed TimingData records |
 | ReferenceData update | Backend -> SI-01 | provide node-scoped race/event reference data |
 | Data synchronization | bidirectional | compare or advance known source state without redefining TimingData identity |
-| Ping request / answer | bidirectional | one PING family with REQUEST/ANSWER action and an optional HEARTBEAT mode; mode absence denotes a manual check |
+| Ping request / answer | bidirectional | one PING family with REQUEST/ANSWER op and an optional HEARTBEAT mode; mode absence denotes a manual check |
 | Status | bidirectional | expose backend/source synchronization and connector health relevant to integration |
 
 The exact type-specific reference-data and synchronization payloads are refined by
@@ -147,7 +147,7 @@ as a replacement for committed TimingData identity.
 `PING` is one bidirectional UpstreamData message family used to verify that the
 configured upstream connection remains operational. A PING exchange has:
 
-- **action** (required): `REQUEST` initiates a check; `ANSWER` responds to it;
+- **op** (required): `REQUEST` initiates a check; `ANSWER` responds to it;
 - **mode** (optional): `HEARTBEAT` marks an automatically scheduled check; when
   `mode` is absent, the request is an explicitly initiated/manual check.
 
@@ -190,8 +190,8 @@ Operations use stable semantic identifiers independent from transport.
 | `IF06-OP-02 APPLY_REFERENCE_DATA` | Backend -> SI-01 | offer node-scoped reference data for validation/application |
 | `IF06-OP-03 SYNC` | bidirectional | exchange data-synchronization state |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
-| `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with action REQUEST and optional HEARTBEAT mode |
-| `IF06-OP-06 PING_ANSWER` | bidirectional | answer a PING request with action ANSWER, retaining the request's optional mode |
+| `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with op REQUEST and optional HEARTBEAT mode |
+| `IF06-OP-06 PING_ANSWER` | bidirectional | answer a PING request with op ANSWER, retaining the request's optional mode |
 
 These identifiers describe semantic interaction. A concrete transport may map them
 to messages, routes, topics, requests or events without changing their meaning.
@@ -256,7 +256,7 @@ common semantic status shall remain transport-independent.
 
 ### IF06-OP-05 PING_REQUEST
 
-A PING request has `action = REQUEST`. An automatically generated heartbeat
+A PING request has `op = REQUEST`. An automatically generated heartbeat
 request adds `mode = HEARTBEAT`; a manually initiated request omits `mode`.
 It has no TimingData payload or record identity.
 Neither a legacy wire-level marker nor a sequence/correlation number is mandated
@@ -270,7 +270,7 @@ Manual PING requests do not affect that schedule.
 ### IF06-OP-06 PING_ANSWER
 
 The receiver of a valid PING REQUEST responds with one PING message carrying
-`action = ANSWER` and the request's unchanged optional `mode`. If the
+`op = ANSWER` and the request's unchanged optional `mode`. If the
 request omits `mode`, the answer also omits it. An answer has no TimingData
 payload or record identity and must not trigger another answer.
 
@@ -430,7 +430,7 @@ reference-data or synchronization semantics.
 :status: D  
 
 When a configured upstream connector reaches its operational connected state, SI-01
-shall send one PING UpstreamData message with `action = REQUEST` and
+shall send one PING UpstreamData message with `op = REQUEST` and
 `mode = HEARTBEAT` immediately.
 :::
 
@@ -446,12 +446,12 @@ An explicitly initiated manual PING shall not reset this schedule. PING shall no
 consume TimingData sequence identity or create TimingData/LogBook records.
 :::
 
-:::{ifreq} PING request action, answer and optional heartbeat mode  
+:::{ifreq} PING request op, answer and optional heartbeat mode  
 :id: IF06-REQ-013  
 :status: D  
 
 IF-06 shall use one PING semantic message family with required
-`action = REQUEST | ANSWER` and optional `mode = HEARTBEAT`. A PING REQUEST
+`op = REQUEST | ANSWER` and optional `mode = HEARTBEAT`. A PING REQUEST
 without `mode` denotes an explicitly initiated/manual check; no `MANUAL`
 value is required. The receiver of a valid PING REQUEST shall send one
 PING ANSWER preserving the request's `mode` (including its absence)
